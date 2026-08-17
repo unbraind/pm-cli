@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "boundary_id": "sentry-event-response",
+  "capture_source": "captured_redacted",
+  "capture_provenance": "Captured from a Sentry project events response; organization, project, issue, event, release, and user values were replaced.",
+  "redactions": [
+    "organization and project identifiers replaced",
+    "issue and event identifiers replaced",
+    "release identifier replaced",
+    "user and request data removed"
+  ],
+  "input": {
+    "environment": "production",
+    "query": "is:unresolved"
+  },
+  "observed": {
+    "issue": "ISSUE-REDACTED",
+    "event_id": "00000000000000000000000000000000",
+    "dateCreated": "2026-08-16T00:00:00Z",
+    "tags": [
+      ["environment", "production"],
+      ["release", "release-redacted"]
+    ]
+  }
+}

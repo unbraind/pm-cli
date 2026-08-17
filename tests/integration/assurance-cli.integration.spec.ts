@@ -30,6 +30,64 @@ const gate = {
 };
 
 describe("assurance CLI integration", () => {
+  it("explains change risk through the public CLI action", async () => {
+    await withTempPmPath(async (context) => {
+      const request = {
+        policy: {
+          version: 1,
+          evidence_epoch: "2026-08-17T00:00:00.000Z",
+          families: [
+            {
+              id: "cli-contract-drift",
+              version: 1,
+              title: "CLI contract drift",
+              owner_item_id: "pm-assurance-owner",
+              escape_class: "review_caught_late",
+              triggers: { file_patterns: ["src/cli/**"] },
+              checks: {
+                local: ["pnpm contracts:check"],
+                hosted: ["CI / contract-drift"],
+              },
+              negative_control: { files: ["src/cli/register-assurance.ts"] },
+              historical_item_ids: ["pm-assurance-owner"],
+              budget: { max_escape_rate: 0, max_false_positive_rate: 0.05 },
+            },
+          ],
+        },
+        change: { files: ["src/cli/register-assurance.ts"] },
+      };
+      const result = await context.runCliInProcess(
+        ["assurance", "risk", "--definition", JSON.stringify(request), "--json"],
+        { expectJson: true },
+      );
+
+      expect(result.code).toBe(0);
+      expect(result.json).toMatchObject({
+        risk_detected: true,
+        total: 1,
+        items: [{ family_id: "cli-contract-drift" }],
+        required_local_checks: ["pnpm contracts:check"],
+        required_hosted_checks: ["CI / contract-drift"],
+      });
+    });
+  });
+
+  it("returns a typed usage refusal for malformed change-risk JSON", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await context.runCliInProcess(
+        ["assurance", "risk", "--definition", "{", "--json"],
+        { expectJson: true },
+      );
+
+      expect(result.code).toBe(2);
+      expect(JSON.parse(result.stderr)).toMatchObject({
+        code: "invalid_argument_value",
+        exit_code: 2,
+        detail: "assurance risk definition must be valid JSON",
+      });
+    });
+  });
+
   it("uses one SDK path for registry CRUD, dry runs, and durable verdicts", async () => {
     await withTempPmPath(async (context) => {
       for (const [kind, definition] of [

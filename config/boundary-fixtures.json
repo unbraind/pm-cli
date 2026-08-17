@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "inventory_scope": "External values crossing Claude Code, GitHub Actions, npm/Bun, Git, Sentry, extension-provider, and filesystem boundaries consumed by the pm CLI and SDK.",
+  "boundaries": [
+    {
+      "id": "claude-project-directory-slug",
+      "producer": "Claude Code project storage",
+      "consumer": "src/core/shared/author.ts",
+      "format": "absolute workspace path encoded as a dash-prefixed directory slug",
+      "fixture_path": "tests/fixtures/boundaries/claude-project-directory-slug.json"
+    },
+    {
+      "id": "github-actions-run-payload",
+      "producer": "GitHub Actions REST API",
+      "consumer": "release and review automation scripts",
+      "format": "redacted workflow-run JSON payload with check name, conclusion, and head SHA",
+      "fixture_path": "tests/fixtures/boundaries/github-actions-run-payload.json"
+    },
+    {
+      "id": "npm-local-package-spec",
+      "producer": "npm package manager",
+      "consumer": "src/core/extensions install-source resolution",
+      "format": "native path and file URL package specifications including spaces and percent encoding",
+      "fixture_path": "tests/fixtures/boundaries/npm-local-package-spec.json"
+    },
+    {
+      "id": "git-rev-parse-commit",
+      "producer": "Git CLI",
+      "consumer": "src/sdk/governance/assurance-runtime.ts",
+      "format": "rev-parse commit output with one lowercase hexadecimal object id and trailing newline",
+      "fixture_path": "tests/fixtures/boundaries/git-rev-parse-commit.json"
+    },
+    {
+      "id": "sentry-event-response",
+      "producer": "Sentry Events API",
+      "consumer": "scripts/release/sentry-release-gate.mjs",
+      "format": "redacted event JSON with issue id, timestamp, tags, and environment",
+      "fixture_path": "tests/fixtures/boundaries/sentry-event-response.json"
+    },
+    {
+      "id": "bunx-forwarded-argv",
+      "producer": "Bun package runner",
+      "consumer": "dist/cli.js bootstrap parser",
+      "format": "argv forwarding and executable-path conventions across Bun releases",
+      "waiver_reason": "The matrix is exercised on hosted Bun runners; a single committed argv capture would falsely imply cross-version completeness.",
+      "waiver_owner": "pm-lpqln4",
+      "waiver_expires_at": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "id": "windows-filesystem-errno",
+      "producer": "Windows Node.js filesystem runtime",
+      "consumer": "host-environment error normalization",
+      "format": "Win32 errno code, syscall, path, and message combinations",
+      "waiver_reason": "The existing windows-latest nightly is authoritative; private runner paths cannot be committed safely and need a redacted capture exporter first.",
+      "waiver_owner": "pm-j668gl",
+      "waiver_expires_at": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "id": "macos-filesystem-errno",
+      "producer": "macOS Node.js filesystem runtime",
+      "consumer": "host-environment error normalization",
+      "format": "Darwin errno code, syscall, path, and message combinations",
+      "waiver_reason": "The hosted macOS nightly is authoritative until the cross-platform redacted errno corpus exporter exists.",
+      "waiver_owner": "pm-3lhth4",
+      "waiver_expires_at": "2026-11-16T00:00:00.000Z"
+    },
+    {
+      "id": "extension-provider-response",
+      "producer": "third-party assurance provider",
+      "consumer": "src/sdk/governance/assurance-runtime.ts",
+      "format": "provider-defined numeric or string-list measurement response",
+      "waiver_reason": "Providers are extension-owned and validated against their runtime contract; each provider package must own its captured service fixture.",
+      "waiver_owner": "pm-0pzgit",
+      "waiver_expires_at": "2026-11-16T00:00:00.000Z"
+    }
+  ]
+}

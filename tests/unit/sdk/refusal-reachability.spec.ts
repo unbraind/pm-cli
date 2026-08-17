@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { definePmErrorCodeCatalog } from "../../../src/sdk/error-code-catalog.js";
 import {
+  censusPmRecoveryReferenceProducers,
   derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
   verifyPmRefusalReachability,
@@ -224,6 +225,8 @@ describe("recovery-reference reachability", () => {
       recovery: {
         suggested_retry: "pm list --json",
         candidate_commands: ["list", "search"],
+        fallback_candidates: [{ command: "pm context" }, { command: "" }, {}],
+        next_best_command: "pm search recurrence",
       },
       examples: ["pm list --status open"],
       next_steps: ["Run the bounded read"],
@@ -237,9 +240,159 @@ describe("recovery-reference reachability", () => {
       ["restore_with", "behavior_preserving"],
       ["candidate_command", "recovery"],
       ["candidate_command", "recovery"],
+      ["candidate_command", "recovery"],
+      ["candidate_command", "recovery"],
       ["suggested_retry", "recovery"],
     ]);
     expect(new Set(derived.map(({ id }) => id)).size).toBe(derived.length);
+  });
+
+  it("censuses every literal recovery producer kind", () => {
+    const report = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/producer.ts",
+        content: `({
+          suggested_retry: "pm list",
+          candidate_commands: ["list"],
+          fallback_candidates: [{ command: "pm context" }],
+          next_best_command: "pm search",
+          examples: ["pm list"],
+          next_steps: ["Run it"],
+          migration_hint: "Use the replacement",
+          restore_with: "Unbounded",
+        })`,
+      },
+    ]);
+    expect(report).toMatchObject({
+      ok: true,
+      scanned_file_count: 1,
+      producer_count: 8,
+      producer_count_by_kind: {
+        suggested_retry: 1,
+        candidate_command: 3,
+        example: 1,
+        next_step: 1,
+        migration_hint: 1,
+        restore_with: 1,
+      },
+      findings: [],
+    });
+    expect(report.producers[0]).toMatchObject({
+      path: "src/producer.ts",
+      line: 2,
+    });
+  });
+
+  it("rejects uncontracted recovery fields", () => {
+    const broken = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/broken.ts",
+        content: `({ candidate_command_hint: "pm list", candidate_command_hint: "pm show" })`,
+      },
+    ]);
+    expect(broken.ok).toBe(false);
+    expect(broken.findings).toContainEqual(
+      expect.objectContaining({ kind: "unknown_recovery_field" }),
+    );
+    expect(
+      broken.findings.filter(({ kind }) => kind === "missing_kind_producer"),
+    ).toHaveLength(6);
+  });
+
+  it("sorts recovery producers by code-unit path and field", () => {
+    const sorted = censusPmRecoveryReferenceProducers([
+      { path: "src/z.ts", content: `({ examples: ["pm z"] })` },
+      {
+        path: "src/a.ts",
+        content: `({ next_steps: ["Run"], examples: ["pm a"], candidate_command_total: 1 })`,
+      },
+    ]);
+    expect(
+      sorted.producers.map(({ path, field }) => `${path}:${field}`),
+    ).toEqual([
+      "src/a.ts:examples",
+      "src/a.ts:next_steps",
+      "src/z.ts:examples",
+    ]);
+  });
+
+  it("excludes non-executable recovery-like syntax", () => {
+    const syntaxAware = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/syntax.ts",
+        content: `
+          type RecoveryShape = { suggested_retry: string };
+          // ({ candidate_command: "not executable" })
+          const text = '({ examples: ["not executable"] })';
+          const destructured = { suggested_retry: ignored } = source;
+          const arrow = ({ examples: ignored }) => ignored;
+          function read({ migration_hint: ignored }: { migration_hint: string }) { return ignored; }
+          if (ready) { next_best_command: run(); }
+          const regex = /fallback_candidates:\\s*/u;
+          const arrowRegex = (value: string) => /candidate_command:\\s*/u.test(value);
+          const template = \`restore_with: \${ignored}\`;
+          const real = { "next_steps": ["Run it"] };
+        `,
+      },
+      { path: "src/line-comment.ts", content: "// suggested_retry: never" },
+      {
+        path: "src/block-comment.ts",
+        content: "/* candidate_command: never */",
+      },
+      { path: "src/identifier.ts", content: "identifier" },
+    ]);
+    expect(syntaxAware.producers).toEqual([
+      expect.objectContaining({
+        field: "next_steps",
+        kind: "next_step",
+        line: 12,
+      }),
+    ]);
+    expect(syntaxAware.producer_count_by_kind).toMatchObject({
+      suggested_retry: 0,
+      candidate_command: 0,
+      example: 0,
+      next_step: 1,
+    });
+  });
+
+  it("reports malformed sources and resumes after closed comments", () => {
+    const malformed = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/unterminated-comment.ts",
+        content: "const before = 1; /* suggested_retry: never",
+      },
+      {
+        path: "src/invalid-syntax.ts",
+        content: "const value: = 1",
+      },
+    ]);
+    expect(malformed.producers).toEqual([]);
+    expect(malformed.findings).toContainEqual(
+      expect.objectContaining({
+        kind: "invalid_source",
+        subject: "src/unterminated-comment.ts",
+      }),
+    );
+    expect(malformed.findings).toContainEqual(
+      expect.objectContaining({
+        kind: "invalid_source",
+        subject: "src/invalid-syntax.ts",
+      }),
+    );
+    expect(
+      censusPmRecoveryReferenceProducers([
+        {
+          path: "src/closed-comment.ts",
+          content: "/* closed comment */ ({ next_steps: ['Run it'] })",
+        },
+      ]).producers,
+    ).toEqual([
+      expect.objectContaining({
+        path: "src/closed-comment.ts",
+        field: "next_steps",
+      }),
+    ]);
   });
 
   it("keeps raw slash-bearing keys distinct from nested source paths", () => {
@@ -249,6 +402,17 @@ describe("recovery-reference reachability", () => {
     });
     expect(derived).toHaveLength(2);
     expect(new Set(derived.map(({ id }) => id)).size).toBe(2);
+  });
+
+  it("ignores prototype-inherited recovery contract names", () => {
+    expect(
+      derivePmRecoveryReferenceObligations(
+        "prototype",
+        JSON.parse(
+          '{"constructor":"pm list","__proto__":"pm search","prototype":"pm context"}',
+        ),
+      ),
+    ).toEqual([]);
   });
 
   it("ignores empty recovery references and rejects mismatched semantics", () => {
@@ -279,5 +443,17 @@ describe("recovery-reference reachability", () => {
     expect(report.findings).toContainEqual(
       expect.objectContaining({ kind: "wrong_semantics" }),
     );
+
+    expect(
+      derivePmRecoveryReferenceObligations("migration", {
+        semantics: "behavior_preserving",
+        migration_hint: "Use the stable replacement",
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        kind: "migration_hint",
+        semantics: "behavior_preserving",
+      }),
+    ]);
   });
 });

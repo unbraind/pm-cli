@@ -4,6 +4,8 @@
  * Verifies real-entrypoint observations against refusal states declared by the
  * generated public error-code catalog.
  */
+import { stripTypeScriptTypes } from "node:module";
+
 import type {
   PmErrorCodeContract,
   PmErrorCodeClass,
@@ -68,6 +70,101 @@ export type PmRecoveryReferenceSemantics =
   | "recovery"
   | "replacement"
   | "behavior_preserving";
+
+const RECOVERY_REFERENCE_FIELD_CONTRACTS = {
+  suggested_retry: { kind: "suggested_retry", semantics: "recovery" },
+  retry_command: { kind: "suggested_retry", semantics: "recovery" },
+  candidate_command: { kind: "candidate_command", semantics: "recovery" },
+  candidate_commands: { kind: "candidate_command", semantics: "recovery" },
+  fallback_candidates: {
+    kind: "candidate_command",
+    semantics: "recovery",
+    nested_value_field: "command",
+  },
+  next_best_command: { kind: "candidate_command", semantics: "recovery" },
+  example: { kind: "example", semantics: "recovery" },
+  examples: { kind: "example", semantics: "recovery" },
+  next_step: { kind: "next_step", semantics: "recovery" },
+  next_steps: { kind: "next_step", semantics: "recovery" },
+  suggested_next_steps: { kind: "next_step", semantics: "recovery" },
+  migration_hint: { kind: "migration_hint", semantics: "replacement" },
+  migration_hints: { kind: "migration_hint", semantics: "replacement" },
+  restore_with: {
+    kind: "restore_with",
+    semantics: "behavior_preserving",
+  },
+} as const satisfies Readonly<
+  Record<
+    string,
+    {
+      kind: PmRecoveryReferenceKind;
+      semantics: PmRecoveryReferenceSemantics;
+      nested_value_field?: string;
+    }
+  >
+>;
+
+/** Literal envelope fields recognized as recovery-reference producers. */
+export const PM_RECOVERY_REFERENCE_FIELDS = Object.freeze(
+  Object.keys(RECOVERY_REFERENCE_FIELD_CONTRACTS) as Array<
+    keyof typeof RECOVERY_REFERENCE_FIELD_CONTRACTS
+  >,
+);
+
+/** Resolve an own recovery-field contract without trusting object prototypes. */
+function recoveryReferenceContract(field: string) {
+  if (!Object.hasOwn(RECOVERY_REFERENCE_FIELD_CONTRACTS, field))
+    return undefined;
+  return RECOVERY_REFERENCE_FIELD_CONTRACTS[
+    field as keyof typeof RECOVERY_REFERENCE_FIELD_CONTRACTS
+  ];
+}
+
+/** One source file supplied to the producer-census analyzer. */
+export interface PmRecoveryProducerSource {
+  /** Repository-relative source path. */
+  path: string;
+  /** Complete source text. */
+  content: string;
+}
+
+/** One literal recovery field emitted from a source location. */
+export interface PmRecoveryProducerLocation {
+  /** Repository-relative producer source path. */
+  path: string;
+  /** One-based source line. */
+  line: number;
+  /** Literal structured-envelope field. */
+  field: (typeof PM_RECOVERY_REFERENCE_FIELDS)[number];
+  /** Normalized recovery kind. */
+  kind: PmRecoveryReferenceKind;
+}
+
+/** Producer-census failure that requires a new field contract or producer. */
+export interface PmRecoveryProducerCensusFinding {
+  /** Stable finding kind. */
+  kind: "invalid_source" | "missing_kind_producer" | "unknown_recovery_field";
+  /** Source path or normalized kind. */
+  subject: string;
+  /** Actionable explanation. */
+  detail: string;
+}
+
+/** Complete literal producer-table census for recovery references. */
+export interface PmRecoveryProducerCensusReport {
+  /** Whether every recovery kind has a producer and no unknown fields exist. */
+  ok: boolean;
+  /** Source files inspected. */
+  scanned_file_count: number;
+  /** Literal producer locations. */
+  producer_count: number;
+  /** Stable counts by normalized recovery kind. */
+  producer_count_by_kind: Record<PmRecoveryReferenceKind, number>;
+  /** Stable producer locations. */
+  producers: PmRecoveryProducerLocation[];
+  /** Missing-kind or unknown-field findings. */
+  findings: PmRecoveryProducerCensusFinding[];
+}
 
 /** One derived promise that another invocation or command path is reachable. */
 export interface PmRecoveryReferenceObligation {
@@ -139,29 +236,387 @@ export interface PmRecoveryReferenceReport {
   findings: PmRecoveryReferenceFinding[];
 }
 
-const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
-  Record<
-    string,
-    {
-      kind: PmRecoveryReferenceKind;
-      semantics: PmRecoveryReferenceSemantics;
+/** One object-literal property retained after TypeScript syntax stripping. */
+interface SourcePropertyToken {
+  /** Literal identifier or quoted property name. */
+  field: string;
+  /** Zero-based offset preserved from the original source. */
+  offset: number;
+}
+
+interface SourceSyntaxToken {
+  /** Token category needed by the lightweight structural parser. */
+  kind: "identifier" | "string" | "punctuator";
+  /** Decoded identifier/string or literal punctuator. */
+  value: string;
+  /** Zero-based offset preserved from the original source. */
+  offset: number;
+}
+
+const SOURCE_REGEXP_PREFIX_PUNCTUATORS = new Set([
+  ..."=([{,:;!?&|+-*%^~<>",
+  "=>",
+]);
+
+interface SourceDelimiterFrame {
+  /** Delimiter role used to distinguish object members from blocks and patterns. */
+  kind: "object" | "block" | "pattern" | "paren" | "array";
+  /** Whether the next token may begin a static object member. */
+  member_start?: boolean;
+  /** Candidates committed only if this frame remains an object expression. */
+  candidates?: SourcePropertyToken[];
+  /** Whether a parenthesized region is a declared function parameter list. */
+  parameter_list?: boolean;
+}
+
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function skipQuotedSourceToken(
+  source: string,
+  index: number,
+): { next: number; value: string } {
+  const quote = source[index];
+  let next = index + 1;
+  let value = "";
+  while (next < source.length && source[next] !== quote) {
+    if (source[next] === "\\") next += 2;
+    else {
+      value += source[next];
+      next += 1;
     }
-  >
-> = {
-  suggested_retry: { kind: "suggested_retry", semantics: "recovery" },
-  candidate_command: { kind: "candidate_command", semantics: "recovery" },
-  candidate_commands: { kind: "candidate_command", semantics: "recovery" },
-  example: { kind: "example", semantics: "recovery" },
-  examples: { kind: "example", semantics: "recovery" },
-  next_step: { kind: "next_step", semantics: "recovery" },
-  next_steps: { kind: "next_step", semantics: "recovery" },
-  migration_hint: { kind: "migration_hint", semantics: "replacement" },
-  migration_hints: { kind: "migration_hint", semantics: "replacement" },
-  restore_with: {
-    kind: "restore_with",
-    semantics: "behavior_preserving",
-  },
-};
+  }
+  if (source[next] === quote) next += 1;
+  return { next, value };
+}
+
+function canStartRegularExpression(
+  previous: SourceSyntaxToken | undefined,
+): boolean {
+  return (
+    previous === undefined ||
+    (previous.kind === "punctuator" &&
+      SOURCE_REGEXP_PREFIX_PUNCTUATORS.has(previous.value)) ||
+    (previous.kind === "identifier" &&
+      ["return", "case", "throw", "else", "yield"].includes(previous.value))
+  );
+}
+
+function sourceTriviaEnd(source: string, index: number): number | undefined {
+  if (/\s/u.test(source[index]!)) return index + 1;
+  if (source.startsWith("//", index)) {
+    const newline = source.indexOf("\n", index + 2);
+    return newline === -1 ? source.length : newline + 1;
+  }
+  if (!source.startsWith("/*", index)) return undefined;
+  // stripTypeScriptTypes validates block-comment termination before tokenization.
+  return source.indexOf("*/", index + 2) + 2;
+}
+
+function regularExpressionEnd(
+  source: string,
+  index: number,
+  previous: SourceSyntaxToken | undefined,
+): number | undefined {
+  if (source[index] !== "/" || !canStartRegularExpression(previous))
+    return undefined;
+  let next = index + 1;
+  let inClass = false;
+  while (next < source.length) {
+    if (source[next] === "\\") next += 2;
+    else if (source[next] === "[") {
+      inClass = true;
+      next += 1;
+    } else if (source[next] === "]") {
+      inClass = false;
+      next += 1;
+    } else if (source[next] === "/" && !inClass) {
+      next += 1;
+      while (/[A-Za-z]/u.test(source.charAt(next))) next += 1;
+      return next;
+    } else next += 1;
+  }
+  return next;
+}
+
+function readSourceSyntaxToken(
+  source: string,
+  index: number,
+): { next: number; token?: SourceSyntaxToken } {
+  const character = source[index]!;
+  if (character === "'" || character === '"' || character === "`") {
+    const quoted = skipQuotedSourceToken(source, index);
+    return character === "`"
+      ? { next: quoted.next }
+      : {
+          next: quoted.next,
+          token: { kind: "string", value: quoted.value, offset: index + 1 },
+        };
+  }
+  if (/[A-Za-z_$]/u.test(character)) {
+    let next = index + 1;
+    while (/[A-Za-z0-9_$]/u.test(source[next] ?? "")) next += 1;
+    return {
+      next,
+      token: {
+        kind: "identifier",
+        value: source.slice(index, next),
+        offset: index,
+      },
+    };
+  }
+  const punctuator = source.startsWith("=>", index) ? "=>" : character;
+  return {
+    next: index + punctuator.length,
+    token: { kind: "punctuator", value: punctuator, offset: index },
+  };
+}
+
+/** Tokenize executable JavaScript while ignoring comments, templates, and regex bodies. */
+function tokenizeExecutableSource(source: string): SourceSyntaxToken[] {
+  const tokens: SourceSyntaxToken[] = [];
+  let index = 0;
+  while (index < source.length) {
+    const ignoredEnd = sourceTriviaEnd(source, index);
+    if (ignoredEnd !== undefined) {
+      index = ignoredEnd;
+      continue;
+    }
+    const regexEnd = regularExpressionEnd(source, index, tokens.at(-1));
+    if (regexEnd !== undefined) {
+      index = regexEnd;
+      continue;
+    }
+    const read = readSourceSyntaxToken(source, index);
+    if (read.token) tokens.push(read.token);
+    index = read.next;
+  }
+  return tokens;
+}
+
+const SOURCE_BRACE_FRAME_KINDS = new Set<SourceDelimiterFrame["kind"]>([
+  "object",
+  "block",
+  "pattern",
+]);
+const SOURCE_PATTERN_DECLARATIONS = new Set(["const", "let", "var"]);
+const SOURCE_CLOSING_TOKENS = new Set(["}", ")", "]"]);
+const SOURCE_OBJECT_PRECEDERS = new Set([
+  "=",
+  "(",
+  "[",
+  ",",
+  ":",
+  "?",
+  "return",
+]);
+
+function objectFrameKind(
+  tokens: readonly SourceSyntaxToken[],
+  index: number,
+  stack: readonly SourceDelimiterFrame[],
+): SourceDelimiterFrame["kind"] {
+  const enclosingBrace = [...stack]
+    .reverse()
+    .find((frame) => SOURCE_BRACE_FRAME_KINDS.has(frame.kind));
+  if (enclosingBrace?.kind === "pattern") return "pattern";
+  if (stack.at(-1)?.kind === "paren" && stack.at(-1)?.parameter_list)
+    return "pattern";
+  const previous = tokens[index - 1];
+  if (
+    previous?.kind === "identifier" &&
+    SOURCE_PATTERN_DECLARATIONS.has(previous.value)
+  ) {
+    return "pattern";
+  }
+  if (previous?.value === "=>" || previous?.value === ")") return "block";
+  return previous && SOURCE_OBJECT_PRECEDERS.has(previous.value)
+    ? "object"
+    : "block";
+}
+
+function openingSourceFrame(
+  tokens: readonly SourceSyntaxToken[],
+  index: number,
+  stack: readonly SourceDelimiterFrame[],
+): SourceDelimiterFrame | undefined {
+  const token = tokens[index]!;
+  if (token.value === "{") {
+    const kind = objectFrameKind(tokens, index, stack);
+    return {
+      kind,
+      ...(kind === "object" ? { member_start: true, candidates: [] } : {}),
+    };
+  }
+  if (token.value === "[") return { kind: "array" };
+  if (token.value !== "(") return undefined;
+  const previous = tokens[index - 1];
+  const beforePrevious = tokens[index - 2];
+  const parameterList =
+    previous?.value === "function" || beforePrevious?.value === "function";
+  return { kind: "paren", ...(parameterList ? { parameter_list: true } : {}) };
+}
+
+function staticObjectMember(
+  frame: SourceDelimiterFrame | undefined,
+  token: SourceSyntaxToken,
+  next: SourceSyntaxToken | undefined,
+): SourcePropertyToken | undefined {
+  if (
+    frame?.kind !== "object" ||
+    !frame.member_start ||
+    (token.kind !== "identifier" && token.kind !== "string") ||
+    next?.value !== ":" ||
+    !/^[A-Za-z][A-Za-z0-9_]*$/u.test(token.value)
+  ) {
+    return undefined;
+  }
+  return { field: token.value, offset: token.offset };
+}
+
+function isPatternLikeObjectClosure(
+  tokens: readonly SourceSyntaxToken[],
+  index: number,
+): boolean {
+  return (
+    (tokens[index + 1]?.value === ")" && tokens[index + 2]?.value === "=>") ||
+    tokens[index + 1]?.value === "="
+  );
+}
+
+/** Parse static object-literal members without treating patterns or labels as producers. */
+function scanSourcePropertyTokens(source: string): SourcePropertyToken[] {
+  const tokens = tokenizeExecutableSource(
+    stripTypeScriptTypes(source, { mode: "strip" }),
+  );
+  const properties: SourcePropertyToken[] = [];
+  const stack: SourceDelimiterFrame[] = [];
+  for (const [index, token] of tokens.entries()) {
+    const frame = stack.at(-1);
+    const property = staticObjectMember(frame, token, tokens[index + 1]);
+    if (property) frame!.candidates!.push(property);
+    const opening = openingSourceFrame(tokens, index, stack);
+    if (opening) {
+      stack.push(opening);
+    } else if (SOURCE_CLOSING_TOKENS.has(token.value)) {
+      const closed = stack.pop();
+      if (
+        closed?.kind === "object" &&
+        !isPatternLikeObjectClosure(tokens, index)
+      ) {
+        properties.push(...closed.candidates!);
+      }
+    } else if (token.value === "," && frame?.kind === "object") {
+      frame.member_start = true;
+    } else if (frame?.kind === "object" && token.value !== ":") {
+      frame.member_start = false;
+    }
+  }
+  return properties;
+}
+
+function sourceLineStarts(source: string): number[] {
+  const starts = [0];
+  for (let index = 0; index < source.length; index += 1) {
+    if (source[index] === "\n") starts.push(index + 1);
+  }
+  return starts;
+}
+
+function sourceLineAtOffset(starts: readonly number[], offset: number): number {
+  let low = 0;
+  let high = starts.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (starts[middle]! <= offset) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+/** Census syntax-parsed structured-envelope producers without executing source code. */
+export function censusPmRecoveryReferenceProducers(
+  sources: readonly PmRecoveryProducerSource[],
+): PmRecoveryProducerCensusReport {
+  const producers: PmRecoveryProducerLocation[] = [];
+  const findings: PmRecoveryProducerCensusFinding[] = [];
+  for (const source of [...sources].sort((left, right) =>
+    compareCodeUnits(left.path, right.path),
+  )) {
+    const lineStarts = sourceLineStarts(source.content);
+    let properties: SourcePropertyToken[];
+    try {
+      properties = scanSourcePropertyTokens(source.content);
+    } catch (error: unknown) {
+      findings.push({
+        kind: "invalid_source",
+        subject: source.path,
+        detail: `${source.path} could not be parsed for recovery producers: ${String(error)}.`,
+      });
+      continue;
+    }
+    for (const property of properties) {
+      const field = property.field;
+      const line = sourceLineAtOffset(lineStarts, property.offset);
+      const contract = recoveryReferenceContract(field);
+      if (contract) {
+        producers.push({
+          path: source.path,
+          line,
+          field: field as PmRecoveryProducerLocation["field"],
+          kind: contract.kind,
+        });
+      } else if (
+        /(?:retry_command|candidate_command|fallback_candidate|next_best_command|example|next_step|migration_hint|restore_with)/u.test(
+          field,
+        ) &&
+        !/(?:_total|_truncated)$/u.test(field)
+      ) {
+        findings.push({
+          kind: "unknown_recovery_field",
+          subject: `${source.path}:${line}:${field}`,
+          detail: `${field} resembles a recovery reference but has no typed field contract.`,
+        });
+      }
+    }
+  }
+  const producerCountByKind = Object.fromEntries(
+    PM_RECOVERY_REFERENCE_KINDS.map((kind) => [
+      kind,
+      producers.filter((producer) => producer.kind === kind).length,
+    ]),
+  ) as Record<PmRecoveryReferenceKind, number>;
+  for (const kind of PM_RECOVERY_REFERENCE_KINDS) {
+    if (producerCountByKind[kind] === 0) {
+      findings.push({
+        kind: "missing_kind_producer",
+        subject: kind,
+        detail: `No source producer emits the ${kind} recovery-reference kind.`,
+      });
+    }
+  }
+  producers.sort((left, right) =>
+    left.path !== right.path
+      ? compareCodeUnits(left.path, right.path)
+      : left.line !== right.line
+        ? left.line - right.line
+        : compareCodeUnits(left.field, right.field),
+  );
+  findings.sort((left, right) =>
+    left.subject !== right.subject
+      ? compareCodeUnits(left.subject, right.subject)
+      : compareCodeUnits(left.kind, right.kind),
+  );
+  return {
+    ok: findings.length === 0,
+    scanned_file_count: sources.length,
+    producer_count: producers.length,
+    producer_count_by_kind: producerCountByKind,
+    producers,
+    findings,
+  };
+}
 
 /** Derive typed obligations from every recognized recovery field in an emitted envelope. */
 export function derivePmRecoveryReferenceObligations(
@@ -176,18 +631,33 @@ export function derivePmRecoveryReferenceObligations(
     }
     if (typeof value !== "object" || value === null) return;
     for (const [key, entry] of Object.entries(value).sort(([left], [right]) =>
-      left.localeCompare(right),
+      compareCodeUnits(left, right),
     )) {
-      const baseContract = RECOVERY_REFERENCE_FIELD_CONTRACTS[key];
+      const baseContract = recoveryReferenceContract(key);
       const contract =
         baseContract?.kind === "migration_hint" &&
         (value as { semantics?: unknown }).semantics === "behavior_preserving"
           ? { ...baseContract, semantics: "behavior_preserving" as const }
           : baseContract;
-      const entries = Array.isArray(entry) ? entry : [entry];
+      const entries = [entry].flat();
       if (contract !== undefined) {
         entries.forEach((candidate, index) => {
-          if (typeof candidate !== "string" || candidate.trim().length === 0)
+          const nestedValueField =
+            "nested_value_field" in contract &&
+            typeof contract.nested_value_field === "string"
+              ? contract.nested_value_field
+              : undefined;
+          const resolvedCandidate =
+            nestedValueField &&
+            typeof candidate === "object" &&
+            candidate !== null &&
+            !Array.isArray(candidate)
+              ? (candidate as Record<string, unknown>)[nestedValueField]
+              : candidate;
+          if (
+            typeof resolvedCandidate !== "string" ||
+            resolvedCandidate.trim().length === 0
+          )
             return;
           const coordinate = [...path, key, String(index)]
             .map((segment) => encodeURIComponent(segment))
@@ -197,7 +667,7 @@ export function derivePmRecoveryReferenceObligations(
             probe_id: probeId,
             kind: contract.kind,
             semantics: contract.semantics,
-            value: candidate,
+            value: resolvedCandidate,
           });
         });
       }

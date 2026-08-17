@@ -1063,7 +1063,6 @@ export const PRIVATE_SDK_IMPORT_ALLOWLIST = new Set([
   "src/sdk/extension/scaffold.ts",
   "src/sdk/extension/shared.ts",
   "src/sdk/lifecycle/lifecycle-transitions.ts",
-  "src/sdk/schema.ts",
 ]);
 
 /** Resolve SDK modules reachable through published export declarations. */

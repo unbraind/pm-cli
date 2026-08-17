@@ -2,11 +2,13 @@ id: pm-0pzgit
 title: "Boundary-fixture gate: every value that must match a system outside this repository is tested against a captured real sample, never against a fixture the production code generated"
 description: "Established by root-cause analysis of a same-day defect escape on 2026-08-03, generalized to the class it belongs to.\n\nThe escape. PR #874 shipped a resolver that reads the model the primary harness publishes in its own session record. The resolver derives the harness's project directory name from the workspace path by substituting the path separator. The harness substitutes a wider character class, folding underscores as well. In this repository, whose path contains an underscore, the two names differ, the file is not found, and the model is permanently recorded as null. Coverage for the delivered code is exact 100 percent.\n\nWhy every existing gate passed. The unit fixtures build the session directory by applying the same separator-only transform the production code applies. Fixture and implementation are computed from one definition, so they agree unconditionally. The test asserts that the function is consistent with itself, which is true, rather than that the function agrees with the harness, which is false.\n\nWhy the planned gates would not have caught it either, which is the reason this needs its own owner:\n\n- Literal all-src coverage is satisfied: every line and branch of the resolver executes.\n- A mutation-score ratchet is satisfied: mutating the transform mutates the fixture generator too, because they are the same expression, so the mutant is not killed and the mutation score does not notice. This class is a structural blind spot of mutation testing, not a coverage shortfall it would eventually reach.\n- The defect-escape ratchet is the right policy and would demand a gate after the fact; it does not say which gate, and the obvious one - another unit test on the same transform - would reproduce the flaw.\n- Contract and conformance gates check pm against its own declarations, and the declaration here is also written from pm's side.\n\nThe invariant that distinguishes this class. A value is a boundary value when its correctness is defined by a system this repository does not control. For a boundary value, self-consistency carries no information, and the only admissible evidence is a sample captured from the other system. Everything else in the suite may legitimately be computed; a boundary value may not.\n\nKnown population to inventory, from a first pass: harness session-file paths and slugs, harness environment key names and their value domains, MCP client name strings, npm and Bun CLI invocation shapes, git tag and ref grammars, GitHub workflow output field names, changelog heading formats consumed by external readers, and the on-disk workspace format wherever an independent implementation is promised.\n\nBoundary with existing owners. The mutation-testing ratchet and the defect-escape ratchet both remain; this is the gate that covers what they cannot. The open-format specification and its conformance suite are the same argument applied to pm's own outputs read by others; this is the inbound direction, where pm must match someone else's format."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[5]: "area:testing",ci,defect-escape,instrument-integrity,quality-gate
 created_at: "2026-08-03T06:31:40.504Z"
-updated_at: "2026-08-03T20:38:18.150Z"
+updated_at: "2026-08-17T00:47:59.150Z"
+closed_at: "2026-08-16T19:27:44.667Z"
+completed_at: "2026-08-16T19:27:44.667Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "An inventory exists of every boundary value: paths, filenames, slugs, env keys, wire formats, and any string that must be byte-identical to a value produced by a system this repository does not control; Each inventory entry is either backed by a captured real sample committed as a fixture, or carries a recorded waiver stating why no sample can be captured; A test that constructs its expected value by calling the production transform is rejected by the gate for any inventoried boundary; The gate names the inventory entry and the missing sample when it fails, so the remediation is mechanical; The captured samples are redaction-safe: no operator path, host, or token is committed; The claude_session_file slug encoding is the first entry, with a committed sample directory name proving the underscore fold"
@@ -16,7 +18,10 @@ why_now: "It escaped on 2026-08-03 in the highest-stakes place available: the re
 parent: pm-u9d0
 risk: medium
 confidence: high
-dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Implemented a typed boundary-fixture SDK registry, repository assurance gate, captured samples, waivers, docs, and regression coverage."
+expected_result: "Every external boundary has captured or explicitly waived evidence, with circular fixtures rejected."
+actual_result: Nine boundaries are governed; five use captured redaction-safe fixtures and four use expiring waivers; positive and negative controls pass.
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-4jk8kx,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-9c7h9x,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-9gvazz,discovered_from,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
@@ -28,7 +33,31 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+  pm-qtbc,recurs_from,"2026-08-16T18:35:01.407Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-08-03T11:09:24.678Z","harness:codex","Estimate basis 2026-08-03: 480 minutes covers boundary inventory, redacted real fixtures, negative gate controls, CI integration, and cross-platform verification; uncertainty is bounded because the first failing boundary and acceptance contract are already identified."
   "2026-08-03T20:38:18.150Z","harness:claude-code","A live instance of the exact structural blind spot this gate is scoped to, observed 2026-08-03 in the failing Windows nightly leg.\n\nThe failing assertion is in the agent runtime provenance suite, on the test that extracts bounded model and version fields from a harness session file. The value under test is a directory name that must be byte-identical to one produced by an external harness this repository does not control. The test does not assert against a captured sample. It rebuilds the expected name in the test body, branching on platform, using the same rule the production code uses.\n\nThat construction can only fail when the two restatements of one rule disagree, which is what happened on Windows and what did not happen on POSIX. On POSIX it is a tautology: the test passes because both sides encode the same assumption, including the case where the shared assumption is wrong. The external contract is never exercised on any platform.\n\nThis is the inventory entry this gate exists to reject, and it is worth keeping as the reference instance because it shows the failure mode is not hypothetical: the same test was simultaneously unable to fail on one platform and unable to pass on another, and neither outcome tested the boundary. A captured sample from a real harness project directory would have decided both.\n\nRecorded as evidence and as a candidate first fixture, not as a second item.\n"
+  "2026-08-16T19:05:23.953Z","harness:codex","Evidence linkage: associated the repository evidence gate test that exercises captured fixtures, authoritative tracker reads, focused modes, malformed scope rejection, missing lineage, ineffective controls, and fail-closed negative controls."
+  "2026-08-16T19:27:26.368Z","harness:codex","Completion evidence 2026-08-16: registry gate PASS with 8 inventoried boundaries, 4 captured external samples, 4 explicit expiring waivers, zero findings; seeded self-generated fixture negative control exits 1 and names claude-project-directory-slug. Linked test run passed 25/25. Package tarball inventory contained 1,408 paths and no credential/private-key/.env filename matches."
+  "2026-08-16T20:01:01.963Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1043. The PR ships the captured boundary fixture registry, safe samples, provenance validation, expiring waiver contract, and repository gate tracked by this task."
+learnings[1]{created_at,author,text}:
+  "2026-08-16T19:27:26.980Z","harness:codex",External-boundary fixtures must preserve captured provenance and redaction metadata; a production-generated expected value is circular evidence and is rejected even when its bytes match.
+files[10]{path,scope,note}:
+  config/boundary-fixtures.json,project,Complete external-boundary inventory
+  scripts/release/defect-evidence-gate.mjs,project,Fail-closed repository gate
+  src/sdk/governance/boundary-fixtures.ts,project,Public captured-boundary evidence analyzer
+  tests/fixtures/boundaries/claude-project-directory-slug.json,project,Captured Claude Code slug sample
+  tests/fixtures/boundaries/git-rev-parse-commit.json,project,Captured redacted Git rev-parse boundary sample
+  tests/fixtures/boundaries/github-actions-run-payload.json,project,Captured GitHub Actions payload sample
+  tests/fixtures/boundaries/npm-local-package-spec.json,project,Captured npm package-spec sample
+  tests/fixtures/boundaries/sentry-event-response.json,project,Captured Sentry response sample
+  tests/unit/scripts/release/defect-evidence-gate.spec.ts,project,"Repository evidence gate positive,focused,and negative-control coverage"
+  tests/unit/sdk/governance/boundary-fixtures.spec.ts,project,Boundary evidence negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/boundary-fixtures.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msw72ngy-t2o1hi,test,passed,"2026-08-16T19:25:00.636Z","2026-08-16T19:25:14.194Z","2026-08-16T19:25:14.194Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/DEFECT_RECURRENCE.md,project,Boundary capture and waiver contract
+close_reason: "Implemented and verified captured external-boundary evidence with fail-closed negative controls, packed-artifact inspection, and 25 passing linked tests."
 body: ""

@@ -17,6 +17,8 @@ const HYPHEN_TIME =
   /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})-(\d{2})(?:-(\d{2}))?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
 const COMPACT_TIME =
   /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
+const RFC_3339_DATE_TIME =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-](\d{2}):(\d{2}))$/i;
 
 /** Implements now iso for the public runtime surface of this module. */
 export function nowIso(): string {
@@ -26,6 +28,42 @@ export function nowIso(): string {
 /** Implements check whether timestamp literal for the public runtime surface of this module. */
 export function isTimestampLiteral(input: string): boolean {
   return Number.isFinite(Date.parse(input));
+}
+
+/** Return whether a string is a calendar-valid RFC 3339 date-time. */
+export function isRfc3339DateTime(input: string): boolean {
+  const match = RFC_3339_DATE_TIME.exec(input);
+  if (!match || !Number.isFinite(Date.parse(input))) return false;
+  const [
+    ,
+    yearRaw,
+    monthRaw,
+    dayRaw,
+    hourRaw,
+    minuteRaw,
+    secondRaw,
+    offsetHourRaw,
+    offsetMinuteRaw,
+  ] = match;
+  const [year, month, day, hour, minute, second] = [
+    yearRaw,
+    monthRaw,
+    dayRaw,
+    hourRaw,
+    minuteRaw,
+    secondRaw,
+  ].map(Number);
+  return (
+    month! >= 1 &&
+    month! <= 12 &&
+    day! >= 1 &&
+    day! <= daysInUtcMonth(year!, month! - 1) &&
+    hour! <= 23 &&
+    minute! <= 59 &&
+    second! <= 59 &&
+    (offsetHourRaw === undefined || Number(offsetHourRaw) <= 23) &&
+    (offsetMinuteRaw === undefined || Number(offsetMinuteRaw) <= 59)
+  );
 }
 
 /**

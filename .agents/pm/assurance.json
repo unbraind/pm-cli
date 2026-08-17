@@ -694,6 +694,16 @@
         "key": "recovery-reference"
       },
       "max_cost": 1
+    },
+    {
+      "id": "repository-defect-evidence-pass",
+      "description": "Captured boundary, defect escape evidence, and recurrence-family policy pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "defect-evidence"
+      },
+      "max_cost": 1
     }
   ],
   "assertions": [
@@ -1899,6 +1909,29 @@
           }
         ]
       }
+    },
+    {
+      "id": "repository-defect-evidence-required",
+      "measurement_id": "repository-defect-evidence-pass",
+      "owner_item_id": "pm-rtn5h6",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
@@ -1987,13 +2020,14 @@
         "repository-absence-tolerance-required",
         "repository-token-budget-required",
         "repository-context-intent-calibration-required",
-        "repository-docs-skills-required"
+        "repository-docs-skills-required",
+        "repository-defect-evidence-required"
       ],
       "triggers": [
         "ci",
         "pre-release"
       ],
-      "description": "SDK-native composition of deterministic repository static-quality providers.",
+      "description": "SDK-native composition of deterministic repository static-quality, boundary-evidence, and recurrence-policy providers.",
       "provider_policy": {
         "allowed_providers": [
           "repository-quality"

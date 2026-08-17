@@ -1,10 +1,12 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
+import fg from "fast-glob";
 import { describe, expect, it } from "vitest";
 import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
 import { PM_READ_OUTPUT_SURFACE_CONTRACTS } from "../../src/sdk/read-output-contracts.js";
 import {
+  censusPmRecoveryReferenceProducers,
   derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
   verifyPmRefusalReachability,
@@ -15,7 +17,9 @@ import {
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 /** Remove invocation-only amount receipts before comparing replacement results. */
-function withoutReadInvocationReceipts(stdout: string): Record<string, unknown> {
+function withoutReadInvocationReceipts(
+  stdout: string,
+): Record<string, unknown> {
   const normalized = structuredClone(JSON.parse(stdout)) as Record<
     string,
     unknown
@@ -34,6 +38,25 @@ function withoutReadInvocationReceipts(stdout: string): Record<string, unknown> 
 }
 
 describe("real-entrypoint refusal reachability", () => {
+  it("censuses the complete source producer table without unknown recovery fields", async () => {
+    const sourcePaths = await fg("src/**/*.ts", { cwd: process.cwd() });
+    const sources = await Promise.all(
+      sourcePaths.map(async (sourcePath) => ({
+        path: sourcePath,
+        content: await readFile(path.join(process.cwd(), sourcePath), "utf8"),
+      })),
+    );
+    const report = censusPmRecoveryReferenceProducers(sources);
+
+    expect(report.ok, JSON.stringify(report.findings, null, 2)).toBe(true);
+    expect(report.scanned_file_count).toBeGreaterThan(400);
+    expect(
+      Object.entries(report.producer_count_by_kind).filter(
+        ([, count]) => count === 0,
+      ),
+    ).toEqual([]);
+  });
+
   it("reaches every declared state as its typed code and exit class", async () => {
     await withTempPmPath(async (context) => {
       const invalidRoot = path.join(context.tempRoot, "tracker-root-file");

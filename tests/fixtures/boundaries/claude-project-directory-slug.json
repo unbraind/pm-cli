@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "boundary_id": "claude-project-directory-slug",
+  "capture_source": "captured_redacted",
+  "capture_provenance": "Observed from Claude Code project storage on Linux; the workspace root was replaced before commit while preserving punctuation classes.",
+  "redactions": [
+    "absolute workspace root replaced with /workspace",
+    "session identifier replaced with session-redacted"
+  ],
+  "input": {
+    "workspace": "/workspace/provenance workspace+with_symbols"
+  },
+  "observed": {
+    "project_directory": "-workspace-provenance-workspace-with-symbols",
+    "session_file": "session-redacted.jsonl"
+  }
+}

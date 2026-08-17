@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "boundary_id": "github-actions-run-payload",
+  "capture_source": "captured_redacted",
+  "capture_provenance": "Captured from the GitHub Actions REST API for this public repository; run ids and commit identities were replaced.",
+  "redactions": [
+    "workflow run id replaced with 1",
+    "head SHA replaced with forty zeroes",
+    "URLs removed"
+  ],
+  "input": {
+    "event": "pull_request",
+    "workflow": "CI"
+  },
+  "observed": {
+    "id": 1,
+    "name": "CI",
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "0000000000000000000000000000000000000000"
+  }
+}

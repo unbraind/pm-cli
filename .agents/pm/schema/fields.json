@@ -1,3 +1,75 @@
 {
-  "fields": []
+  "fields": [
+    {
+      "key": "escape_class",
+      "type": "string",
+      "commands": ["create", "update", "list", "search", "context"],
+      "description": "Defect escape taxonomy: production_defect, nightly_regression, scanner_finding, or review_caught_late.",
+      "value_schema": {
+        "type": "string",
+        "enum": [
+          "production_defect",
+          "nightly_regression",
+          "scanner_finding",
+          "review_caught_late"
+        ]
+      }
+    },
+    {
+      "key": "gate_evidence",
+      "type": "object",
+      "commands": ["create", "update", "list", "search", "context"],
+      "description": "Structured gate-added, gate-strengthened, or explicit-waiver evidence for terminal defect work.",
+      "value_schema": {
+        "type": "object",
+        "required": ["disposition", "owner"],
+        "additional_properties": false,
+        "properties": {
+          "disposition": {
+            "type": "string",
+            "enum": ["gate_added", "gate_strengthened", "explicit_waiver"]
+          },
+          "owner": { "type": "string", "min_length": 1 },
+          "gate_id": { "type": "string", "min_length": 1 },
+          "negative_control": { "type": "string", "min_length": 1 },
+          "local_checks": {
+            "type": "array",
+            "min_items": 1,
+            "items": { "type": "string", "min_length": 1 }
+          },
+          "hosted_checks": {
+            "type": "array",
+            "min_items": 1,
+            "items": { "type": "string", "min_length": 1 }
+          },
+          "waiver_reason": { "type": "string", "min_length": 1 },
+          "waiver_expires_at": { "type": "string", "format": "date-time" }
+        },
+        "one_of": [
+          {
+            "properties": { "disposition": { "const": "gate_added" } },
+            "required": [
+              "gate_id",
+              "negative_control",
+              "local_checks",
+              "hosted_checks"
+            ]
+          },
+          {
+            "properties": { "disposition": { "const": "gate_strengthened" } },
+            "required": [
+              "gate_id",
+              "negative_control",
+              "local_checks",
+              "hosted_checks"
+            ]
+          },
+          {
+            "properties": { "disposition": { "const": "explicit_waiver" } },
+            "required": ["waiver_reason", "waiver_expires_at"]
+          }
+        ]
+      }
+    }
+  ]
 }

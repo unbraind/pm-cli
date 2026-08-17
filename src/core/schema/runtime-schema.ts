@@ -24,6 +24,7 @@ import type {
   ItemTypeDefinition,
   RuntimeFieldCommand,
   RuntimeFieldDefinition,
+  RuntimeFieldValueSchema,
   RuntimeFieldType,
   RuntimeSchemaSettings,
   RuntimeStatusDefinition,
@@ -99,6 +100,8 @@ export interface RuntimeFieldDefinitionResolved {
   required_types: string[];
   /** Value that configures or reports allow unset for this contract. */
   allow_unset: boolean;
+  /** Optional semantic JSON-value constraints enforced on create and update. */
+  value_schema?: RuntimeFieldValueSchema;
 }
 
 /** Documents the runtime status registry payload exchanged by command, SDK, and package integrations. */
@@ -165,6 +168,157 @@ const RUNTIME_FIELD_COMMAND_SET = new Set<string>(RUNTIME_FIELD_COMMAND_VALUES);
 const RUNTIME_UNKNOWN_FIELD_POLICY_SET = new Set<string>(
   RUNTIME_UNKNOWN_FIELD_POLICY_VALUES,
 );
+const RUNTIME_FIELD_VALUE_TYPE_SET = new Set([
+  "string",
+  "number",
+  "boolean",
+  "array",
+  "object",
+]);
+const MAX_RUNTIME_FIELD_VALUE_SCHEMA_DEPTH = 16;
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const RUNTIME_FIELD_VALUE_SCHEMA_SHAPE_VALIDATORS: ReadonlyArray<
+  (schema: Readonly<Record<string, unknown>>) => boolean
+> = [
+  (schema) =>
+    schema.type === undefined ||
+    (typeof schema.type === "string" &&
+      RUNTIME_FIELD_VALUE_TYPE_SET.has(schema.type)),
+  (schema) =>
+    !Object.hasOwn(schema, "const") || isStructuredJsonValue(schema.const),
+  (schema) =>
+    schema.enum === undefined ||
+    (Array.isArray(schema.enum) &&
+      schema.enum.every((entry) => isStructuredJsonValue(entry))),
+  (schema) =>
+    schema.min_length === undefined ||
+    (Number.isInteger(schema.min_length) &&
+      (schema.min_length as number) >= 0),
+  (schema) =>
+    schema.min_items === undefined ||
+    (Number.isInteger(schema.min_items) && (schema.min_items as number) >= 0),
+  (schema) => schema.format === undefined || schema.format === "date-time",
+  (schema) =>
+    schema.required === undefined ||
+    (Array.isArray(schema.required) &&
+      schema.required.every(
+        (entry) => typeof entry === "string" && entry.length > 0,
+      )),
+  (schema) =>
+    schema.additional_properties === undefined ||
+    typeof schema.additional_properties === "boolean",
+  (schema) =>
+    schema.properties === undefined ||
+    isPlainObject(schema.properties),
+  (schema) =>
+    schema.one_of === undefined ||
+    (Array.isArray(schema.one_of) && schema.one_of.length > 0),
+];
+
+function isStructuredJsonValue(
+  value: unknown,
+  ancestors = new Set<object>(),
+): boolean {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value !== "object" || ancestors.has(value)) return false;
+  ancestors.add(value);
+  const valid = Array.isArray(value)
+    ? value.every((entry) => isStructuredJsonValue(entry, ancestors))
+    : Object.values(value).every((entry) =>
+        isStructuredJsonValue(entry, ancestors),
+      );
+  ancestors.delete(value);
+  return valid;
+}
+
+/** Normalize an untrusted recursive custom-field value schema or reject it. */
+function normalizeRuntimeFieldValueSchema(
+  value: unknown,
+  depth = 0,
+  ancestors = new Set<object>(),
+): RuntimeFieldValueSchema | undefined {
+  if (
+    !isPlainObject(value) ||
+    depth > MAX_RUNTIME_FIELD_VALUE_SCHEMA_DEPTH ||
+    ancestors.has(value)
+  ) {
+    return undefined;
+  }
+  ancestors.add(value);
+  const schema = value;
+  const type = schema.type;
+  const enumValues = schema.enum;
+  const oneOf = schema.one_of;
+  const properties = schema.properties;
+  const items = schema.items;
+  const required = schema.required;
+  const minLength = schema.min_length;
+  const minItems = schema.min_items;
+  const format = schema.format;
+  const additionalProperties = schema.additional_properties;
+  if (!RUNTIME_FIELD_VALUE_SCHEMA_SHAPE_VALIDATORS.every((check) => check(schema))) {
+    ancestors.delete(value);
+    return undefined;
+  }
+  const normalizedProperties =
+    properties === undefined
+      ? undefined
+      : Object.fromEntries(
+          Object.entries(properties as Record<string, unknown>).map(([key, entry]) => [
+            key,
+            normalizeRuntimeFieldValueSchema(entry, depth + 1, ancestors),
+          ]),
+        );
+  const normalizedItems =
+    items === undefined
+      ? undefined
+      : normalizeRuntimeFieldValueSchema(items, depth + 1, ancestors);
+  const normalizedOneOf =
+    oneOf === undefined
+      ? undefined
+      : (oneOf as unknown[]).map((entry) =>
+          normalizeRuntimeFieldValueSchema(entry, depth + 1, ancestors),
+        );
+  const normalizedNestedSchemas = [
+    ...Object.values(normalizedProperties ?? {}),
+    ...(items === undefined ? [] : [normalizedItems]),
+    ...(normalizedOneOf ?? []),
+  ];
+  if (normalizedNestedSchemas.some((entry) => entry === undefined)) {
+    ancestors.delete(value);
+    return undefined;
+  }
+  ancestors.delete(value);
+  return Object.fromEntries(
+    Object.entries({
+      type: type as RuntimeFieldValueSchema["type"],
+      const: Object.hasOwn(schema, "const") ? schema.const : undefined,
+      enum: enumValues as RuntimeFieldValueSchema["enum"],
+      min_length: minLength as number | undefined,
+      min_items: minItems as number | undefined,
+      format: format as RuntimeFieldValueSchema["format"],
+      properties: normalizedProperties,
+      required:
+        required === undefined
+          ? undefined
+          : [...new Set(required as string[])],
+      additional_properties: additionalProperties as boolean | undefined,
+      items: normalizedItems,
+      one_of: normalizedOneOf,
+    }).filter(([, entry]) => entry !== undefined),
+  ) as RuntimeFieldValueSchema;
+}
 
 function normalizeStringList(values: string[] | undefined): string[] {
   const candidates = Array.isArray(values) ? values : [];
@@ -389,6 +543,13 @@ function normalizeRuntimeFieldDefinition(
   })();
   const description = definition.description?.trim();
   const requiredTypes = normalizeStringList(definition.required_types);
+  const valueSchema =
+    definition.value_schema === undefined
+      ? undefined
+      : normalizeRuntimeFieldValueSchema(definition.value_schema);
+  if (definition.value_schema !== undefined && valueSchema === undefined) {
+    return null;
+  }
   return {
     key,
     metadata_key: metadataKey,
@@ -398,11 +559,14 @@ function normalizeRuntimeFieldDefinition(
       description && description.length > 0 ? description : undefined,
     type,
     commands,
-    repeatable: definition.repeatable === true || type === "string_array",
+    repeatable: [definition.repeatable === true, type === "string_array"].includes(
+      true,
+    ),
     required: definition.required === true,
     required_on_create: definition.required_on_create === true,
     required_types: requiredTypes,
     allow_unset: definition.allow_unset !== false,
+    value_schema: valueSchema,
   };
 }
 
@@ -497,6 +661,7 @@ function serializeRuntimeFieldDefinition(
         ? [...definition.required_types]
         : undefined,
     allow_unset: definition.allow_unset === false ? false : undefined,
+    value_schema: definition.value_schema,
   };
 }
 

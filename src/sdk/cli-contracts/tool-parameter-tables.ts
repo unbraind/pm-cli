@@ -672,6 +672,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
         "apply",
         "derive",
         "promote",
+        "risk",
       ],
     },
     preset: {
@@ -2125,8 +2126,8 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
   assurance: {
     subcommand: {
       description:
-        "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, or promote.",
-      examples: ["list", "run", "derive", "promote"],
+        "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, promote, or risk.",
+      examples: ["list", "run", "derive", "promote", "risk"],
     },
     kind: {
       description:

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "boundary_id": "npm-local-package-spec",
+  "capture_source": "captured_redacted",
+  "capture_provenance": "Captured from npm pack/install diagnostics while reproducing a percent-encoded local path failure; temporary roots were normalized.",
+  "redactions": [
+    "temporary root replaced with /workspace"
+  ],
+  "input": {
+    "package_alias": "npm:file:///workspace/package%20with%20spaces"
+  },
+  "observed": {
+    "native_pack_target": "/workspace/package with spaces",
+    "package_name": "fixture-package"
+  }
+}

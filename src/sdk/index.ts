@@ -233,6 +233,10 @@ export {
   type SchemaEvolutionItemPlan,
   type SchemaEvolutionMigrationPlan,
 } from "./schema-migration.js";
+export type {
+  RuntimeFieldDefinition,
+  RuntimeFieldValueSchema,
+} from "./schema.js";
 export {
   runWithActiveExtensions,
   type ActiveExtensionScopeOptions,
@@ -542,6 +546,8 @@ export * from "./governance/assurance.js";
 export * from "./governance/assurance-action.js";
 export * from "./governance/assurance-runtime.js";
 export * from "./governance/assurance-presets.js";
+export * from "./governance/boundary-fixtures.js";
+export * from "./governance/defect-recurrence.js";
 export * from "./compile-cache.js";
 export * from "./environment/project-runtime-compatibility.js";
 export * from "./environment/source-context.js";
