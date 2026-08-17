@@ -506,6 +506,81 @@ describe("scripts/release/hosted-analysis-gate", () => {
     expect(process.exitCode).toBe(0);
   });
 
+  it.each([
+    {
+      label: "validates the squash-message PR when GitHub has not published commit association",
+      reviewedStatuses: SUCCESSFUL_DEEPSCAN,
+      expected: {
+        ok: true,
+        sha: SHA,
+        analyzed_sha: PARENT_SHA,
+        analysis_source: "identical_tree_squash_pr_head",
+      },
+    },
+    {
+      label: "reports reviewed squash provenance when DeepScan is absent",
+      reviewedStatuses: { statuses: [] },
+      expected: {
+        ok: false,
+        reason: expect.stringContaining("DeepScan status is missing"),
+        sha: SHA,
+        analyzed_sha: PARENT_SHA,
+        analysis_source: "identical_tree_squash_pr_head",
+      },
+    },
+  ])("$label", async ({ reviewedStatuses, expected }) => {
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "show") {
+        return {
+          status: 0,
+          stdout: "Preserve reviewed provenance through PM delivery closeout (#1022)\n\nDetails.\n",
+          stderr: "",
+        };
+      }
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 1, stdout: "", stderr: "not a merge commit" };
+        return { status: 0, stdout: target.endsWith("^{tree}") ? `${treeSha}\n` : `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return { status: 0, stdout: JSON.stringify(STRICT_PROTECTION), stderr: "" };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return { status: 0, stdout: "[]", stderr: "" };
+      }
+      if (target === "repos/unbraind/pm-cli/pulls/1022") {
+        const [pullRequest] = JSON.parse(reviewedPullRequestResponse().stdout) as unknown[];
+        return { status: 0, stdout: JSON.stringify(pullRequest), stderr: "" };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}` || target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({ commit: { tree: { sha: treeSha } } }),
+          stderr: "",
+        };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}/status`) {
+        return { status: 0, stdout: JSON.stringify(reviewedStatuses), stderr: "" };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}/check-runs?per_page=100`) {
+        return { status: 0, stdout: JSON.stringify(SUCCESSFUL_CODEFACTOR), stderr: "" };
+      }
+      if (target.endsWith("/status")) {
+        return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+      }
+      if (target.includes("/check-runs")) {
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisSquashMessageFallback");
+    expect(payload).toMatchObject(expected);
+    expect(process.exitCode).toBe(expected.ok ? 0 : 1);
+  });
+
   it("rejects an identical-tree merge parent without a reviewed pull-request association", async () => {
     const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
     const spawnSync = vi.fn((_command: string, args: string[]) => {
@@ -628,6 +703,23 @@ describe("scripts/release/hosted-analysis-gate", () => {
       pulls: [],
       mergeMessage: "Merge pull request #1022 from unbraind/reviewed-head\n",
       mergePull: "{",
+    },
+    {
+      label: "non-terminal squash reference",
+      pulls: [],
+      mergeMessage: "Reviewed change (#1022) with trailing text\n",
+    },
+    {
+      label: "squash message with mismatched pull-request merge",
+      pulls: [],
+      mergeMessage: "Reviewed change (#1022)\n",
+      mergePull: {
+        state: "closed",
+        merged_at: "2026-07-26T00:02:53Z",
+        merge_commit_sha: PARENT_SHA,
+        base: { ref: "main" },
+        head: { sha: PARENT_SHA },
+      },
     },
     { label: "unavailable squash commit", exactCommitStatus: 1 },
     { label: "malformed squash commit", exactCommit: "{" },

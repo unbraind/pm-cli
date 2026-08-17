@@ -220,7 +220,7 @@ function selectReviewedPullRequestHead(pullRequests, sha) {
   return { state: "found", head: candidates[0].head.sha.toLowerCase() };
 }
 
-/** Resolve the unique reviewed PR head that GitHub merged as this commit. */
+/** Resolve the unique reviewed PR head from association or validated merge metadata. */
 function readReviewedPullRequestHead(repository, sha) {
   const associationResult = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/pulls?per_page=100`]);
   let association = { state: "invalid", head: null };
@@ -236,8 +236,14 @@ function readReviewedPullRequestHead(repository, sha) {
   }
 
   const messageResult = runCaptured(GIT, ["show", "--no-patch", "--format=%B", sha]);
-  const pullRequestNumber = messageResult.stdout.match(/^Merge pull request #([1-9]\d*) from [^\n]+$/m)?.[1];
-  if (messageResult.status !== 0 || pullRequestNumber === undefined) {
+  if (messageResult.status !== 0) {
+    return null;
+  }
+  const subject = messageResult.stdout.split(/\r?\n/u, 1)[0];
+  const pullRequestNumber =
+    subject.match(/^Merge pull request #([1-9]\d*) from [^\r\n]+$/u)?.[1] ??
+    subject.match(/^.+ \(#([1-9]\d*)\)$/u)?.[1];
+  if (pullRequestNumber === undefined) {
     return null;
   }
   const pullRequestResult = runCaptured(GH, ["api", `repos/${repository}/pulls/${pullRequestNumber}`]);
@@ -533,11 +539,31 @@ function main() {
     return;
   }
   if (!deepScan.ok) {
-    report(outputJson, { ...deepScan, repository: repository.value, sha: sha.value }, 1);
+    report(
+      outputJson,
+      {
+        ...deepScan,
+        repository: repository.value,
+        sha: sha.value,
+        analyzed_sha: resolvedEvidence.analyzedSha,
+        analysis_source: resolvedEvidence.analysisSource,
+      },
+      1,
+    );
     return;
   }
   if (!codeFactor.ok) {
-    report(outputJson, { ...codeFactor, repository: repository.value, sha: sha.value }, 1);
+    report(
+      outputJson,
+      {
+        ...codeFactor,
+        repository: repository.value,
+        sha: sha.value,
+        analyzed_sha: resolvedEvidence.analyzedSha,
+        analysis_source: resolvedEvidence.analysisSource,
+      },
+      1,
+    );
     return;
   }
   const branchProtection = inspectBranchProtection(
