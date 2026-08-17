@@ -71,23 +71,53 @@ export type PmRecoveryReferenceSemantics =
   | "replacement"
   | "behavior_preserving";
 
+const RECOVERY_REFERENCE_FIELD_CONTRACTS = {
+  suggested_retry: { kind: "suggested_retry", semantics: "recovery" },
+  retry_command: { kind: "suggested_retry", semantics: "recovery" },
+  candidate_command: { kind: "candidate_command", semantics: "recovery" },
+  candidate_commands: { kind: "candidate_command", semantics: "recovery" },
+  fallback_candidates: {
+    kind: "candidate_command",
+    semantics: "recovery",
+    nested_value_field: "command",
+  },
+  next_best_command: { kind: "candidate_command", semantics: "recovery" },
+  example: { kind: "example", semantics: "recovery" },
+  examples: { kind: "example", semantics: "recovery" },
+  next_step: { kind: "next_step", semantics: "recovery" },
+  next_steps: { kind: "next_step", semantics: "recovery" },
+  suggested_next_steps: { kind: "next_step", semantics: "recovery" },
+  migration_hint: { kind: "migration_hint", semantics: "replacement" },
+  migration_hints: { kind: "migration_hint", semantics: "replacement" },
+  restore_with: {
+    kind: "restore_with",
+    semantics: "behavior_preserving",
+  },
+} as const satisfies Readonly<
+  Record<
+    string,
+    {
+      kind: PmRecoveryReferenceKind;
+      semantics: PmRecoveryReferenceSemantics;
+      nested_value_field?: string;
+    }
+  >
+>;
+
 /** Literal envelope fields recognized as recovery-reference producers. */
-export const PM_RECOVERY_REFERENCE_FIELDS = [
-  "suggested_retry",
-  "retry_command",
-  "candidate_command",
-  "candidate_commands",
-  "fallback_candidates",
-  "next_best_command",
-  "example",
-  "examples",
-  "next_step",
-  "next_steps",
-  "suggested_next_steps",
-  "migration_hint",
-  "migration_hints",
-  "restore_with",
-] as const;
+export const PM_RECOVERY_REFERENCE_FIELDS = Object.freeze(
+  Object.keys(RECOVERY_REFERENCE_FIELD_CONTRACTS) as Array<
+    keyof typeof RECOVERY_REFERENCE_FIELD_CONTRACTS
+  >,
+);
+
+/** Resolve an own recovery-field contract without trusting object prototypes. */
+function recoveryReferenceContract(field: string) {
+  if (!Object.hasOwn(RECOVERY_REFERENCE_FIELD_CONTRACTS, field)) return undefined;
+  return RECOVERY_REFERENCE_FIELD_CONTRACTS[
+    field as keyof typeof RECOVERY_REFERENCE_FIELD_CONTRACTS
+  ];
+}
 
 /** One source file supplied to the producer-census analyzer. */
 export interface PmRecoveryProducerSource {
@@ -112,7 +142,10 @@ export interface PmRecoveryProducerLocation {
 /** Producer-census failure that requires a new field contract or producer. */
 export interface PmRecoveryProducerCensusFinding {
   /** Stable finding kind. */
-  kind: "missing_kind_producer" | "unknown_recovery_field";
+  kind:
+    | "invalid_source"
+    | "missing_kind_producer"
+    | "unknown_recovery_field";
   /** Source path or normalized kind. */
   subject: string;
   /** Actionable explanation. */
@@ -205,39 +238,6 @@ export interface PmRecoveryReferenceReport {
   findings: PmRecoveryReferenceFinding[];
 }
 
-const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
-  Record<
-    string,
-    {
-      kind: PmRecoveryReferenceKind;
-      semantics: PmRecoveryReferenceSemantics;
-      nested_value_field?: string;
-    }
-  >
-> = {
-  suggested_retry: { kind: "suggested_retry", semantics: "recovery" },
-  retry_command: { kind: "suggested_retry", semantics: "recovery" },
-  candidate_command: { kind: "candidate_command", semantics: "recovery" },
-  candidate_commands: { kind: "candidate_command", semantics: "recovery" },
-  fallback_candidates: {
-    kind: "candidate_command",
-    semantics: "recovery",
-    nested_value_field: "command",
-  },
-  next_best_command: { kind: "candidate_command", semantics: "recovery" },
-  example: { kind: "example", semantics: "recovery" },
-  examples: { kind: "example", semantics: "recovery" },
-  next_step: { kind: "next_step", semantics: "recovery" },
-  next_steps: { kind: "next_step", semantics: "recovery" },
-  suggested_next_steps: { kind: "next_step", semantics: "recovery" },
-  migration_hint: { kind: "migration_hint", semantics: "replacement" },
-  migration_hints: { kind: "migration_hint", semantics: "replacement" },
-  restore_with: {
-    kind: "restore_with",
-    semantics: "behavior_preserving",
-  },
-};
-
 /** One object-literal property retained after TypeScript syntax stripping. */
 interface SourcePropertyToken {
   /** Literal identifier or quoted property name. */
@@ -307,8 +307,8 @@ function sourceTriviaEnd(source: string, index: number): number | undefined {
     return newline === -1 ? source.length : newline + 1;
   }
   if (!source.startsWith("/*", index)) return undefined;
-  const closing = source.indexOf("*/", index + 2);
-  return closing + 2;
+  // stripTypeScriptTypes validates block-comment termination before tokenization.
+  return source.indexOf("*/", index + 2) + 2;
 }
 
 function regularExpressionEnd(
@@ -543,10 +543,21 @@ export function censusPmRecoveryReferenceProducers(
     compareCodeUnits(left.path, right.path),
   )) {
     const lineStarts = sourceLineStarts(source.content);
-    for (const property of scanSourcePropertyTokens(source.content)) {
+    let properties: SourcePropertyToken[];
+    try {
+      properties = scanSourcePropertyTokens(source.content);
+    } catch (error: unknown) {
+      findings.push({
+        kind: "invalid_source",
+        subject: source.path,
+        detail: `${source.path} could not be parsed for recovery producers: ${String(error)}.`,
+      });
+      continue;
+    }
+    for (const property of properties) {
       const field = property.field;
       const line = sourceLineAtOffset(lineStarts, property.offset);
-      const contract = RECOVERY_REFERENCE_FIELD_CONTRACTS[field];
+      const contract = recoveryReferenceContract(field);
       if (contract) {
         producers.push({
           path: source.path,
@@ -621,23 +632,26 @@ export function derivePmRecoveryReferenceObligations(
     for (const [key, entry] of Object.entries(value).sort(([left], [right]) =>
       compareCodeUnits(left, right),
     )) {
-      const baseContract = RECOVERY_REFERENCE_FIELD_CONTRACTS[key];
+      const baseContract = recoveryReferenceContract(key);
       const contract =
         baseContract?.kind === "migration_hint" &&
         (value as { semantics?: unknown }).semantics === "behavior_preserving"
           ? { ...baseContract, semantics: "behavior_preserving" as const }
           : baseContract;
-      const entries = Array.isArray(entry) ? entry : [entry];
+      const entries = [entry].flat();
       if (contract !== undefined) {
         entries.forEach((candidate, index) => {
+          const nestedValueField =
+            "nested_value_field" in contract &&
+            typeof contract.nested_value_field === "string"
+              ? contract.nested_value_field
+              : undefined;
           const resolvedCandidate =
-            contract.nested_value_field &&
+            nestedValueField &&
             typeof candidate === "object" &&
             candidate !== null &&
             !Array.isArray(candidate)
-              ? (candidate as Record<string, unknown>)[
-                  contract.nested_value_field
-                ]
+              ? (candidate as Record<string, unknown>)[nestedValueField]
               : candidate;
           if (
             typeof resolvedCandidate !== "string" ||

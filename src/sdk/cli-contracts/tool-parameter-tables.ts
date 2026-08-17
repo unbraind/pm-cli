@@ -672,6 +672,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
         "apply",
         "derive",
         "promote",
+        "risk",
       ],
     },
     preset: {

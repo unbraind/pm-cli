@@ -578,16 +578,36 @@ Object schemas can model discriminated evidence contracts. The following accepts
     "required": ["disposition", "owner"],
     "additional_properties": false,
     "properties": {
-      "disposition": { "enum": ["gate_added", "explicit_waiver"] },
+      "disposition": {
+        "enum": ["gate_added", "gate_strengthened", "explicit_waiver"],
+      },
       "owner": { "type": "string", "min_length": 1 },
       "gate_id": { "type": "string", "min_length": 1 },
+      "negative_control": { "type": "string", "min_length": 1 },
+      "local_checks": {
+        "type": "array",
+        "min_items": 1,
+        "items": { "type": "string", "min_length": 1 },
+      },
+      "hosted_checks": {
+        "type": "array",
+        "min_items": 1,
+        "items": { "type": "string", "min_length": 1 },
+      },
       "waiver_reason": { "type": "string", "min_length": 1 },
       "waiver_expires_at": { "type": "string", "format": "date-time" },
     },
     "one_of": [
       {
-        "properties": { "disposition": { "const": "gate_added" } },
-        "required": ["gate_id"],
+        "properties": {
+          "disposition": { "enum": ["gate_added", "gate_strengthened"] },
+        },
+        "required": [
+          "gate_id",
+          "negative_control",
+          "local_checks",
+          "hosted_checks",
+        ],
       },
       {
         "properties": { "disposition": { "const": "explicit_waiver" } },

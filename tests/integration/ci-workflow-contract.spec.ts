@@ -564,6 +564,8 @@ describe("GitHub workflow contract", () => {
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
       "run: pnpm quality:static",
+      "name: Pre-release assurance trigger",
+      "node scripts/release/repository-assurance.mjs repository-static-quality --trigger pre-release --json",
       "name: Verify generated pm changelog",
       "pnpm changelog:pm:check",
       "pnpm changelog:pm",
@@ -626,6 +628,11 @@ describe("GitHub workflow contract", () => {
     ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
     expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
       releaseWorkflow.indexOf("run: pnpm quality:static"),
+    );
+    expect(releaseWorkflow.indexOf("run: pnpm quality:static")).toBeLessThan(
+      releaseWorkflow.indexOf(
+        "node scripts/release/repository-assurance.mjs repository-static-quality --trigger pre-release --json",
+      ),
     );
     expect(
       releaseWorkflow.match(

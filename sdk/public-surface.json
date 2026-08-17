@@ -695,6 +695,14 @@
       ],
       "package_version": "2026.8.16",
       "reason": "Expand defect evidence and recovery contracts while exposing semantic runtime field schemas without unreachable null coercion"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_RECOVERY_REFERENCE_FIELDS",
+        "signature ./sdk:PmRecoveryProducerCensusFinding"
+      ],
+      "package_version": "2026.8.16",
+      "reason": "Canonicalize recovery producer fields and expose fail-closed source parse findings"
     }
   ],
   "entrypoints": {
@@ -9225,7 +9233,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_RECOVERY_REFERENCE_FIELDS",
-          "signature": "readonly [\"suggested_retry\", \"retry_command\", \"candidate_command\", \"candidate_commands\", \"fallback_candidates\", \"next_best_command\", \"example\", \"examples\", \"next_step\", \"next_steps\", \"suggested_next_steps\", \"migration_hint\", \"migration_hints\", \"restore_with\"]"
+          "signature": "readonly (\"candidate_command\" | \"candidate_commands\" | \"example\" | \"examples\" | \"fallback_candidates\" | \"migration_hint\" | \"migration_hints\" | \"next_best_command\" | \"next_step\" | \"next_steps\" | \"restore_with\" | \"retry_command\" | \"suggested_next_steps\" | \"suggested_retry\")[]"
         },
         {
           "classification": "advanced_export",
@@ -9819,7 +9827,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmRecoveryProducerCensusFinding",
-          "signature": "export interface PmRecoveryProducerCensusFinding { kind: \"missing_kind_producer\" | \"unknown_recovery_field\"; subject: string; detail: string; }"
+          "signature": "export interface PmRecoveryProducerCensusFinding { kind: \"invalid_source\" | \"missing_kind_producer\" | \"unknown_recovery_field\"; subject: string; detail: string; }"
         },
         {
           "classification": "advanced_export",

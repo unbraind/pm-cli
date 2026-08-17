@@ -143,6 +143,16 @@ describe("defect recurrence SDK", () => {
       }).risk_detected,
     ).toBe(false);
     expect(analyzeDefectChangeRisk(sparse, {}).risk_detected).toBe(false);
+    expect(
+      buildDefectRecurrenceIndex(policy([sparseFamily]), [
+        {
+          id: "pm-non-array-files",
+          status: "open",
+          type: "Task",
+          files: "src/not-an-array.ts",
+        } as never,
+      ]).item_families,
+    ).toEqual({});
 
     const absentMappings = buildDefectRecurrenceIndex(policy(), [], {
       previous_index: {
@@ -440,7 +450,7 @@ describe("defect recurrence SDK", () => {
     ]);
   });
 
-  it("uses closed_at for legacy completion records and excludes undated pre-epoch history", () => {
+  it("uses closed_at for legacy records and governs fully undated terminal defects", () => {
     const completeEvidence = {
       escape_class: "production_defect" as const,
       gate_evidence: {
@@ -475,10 +485,14 @@ describe("defect recurrence SDK", () => {
       new Date("2026-08-16T13:00:00.000Z"),
     );
     expect(report).toMatchObject({
-      ok: true,
-      governed_item_count: 1,
+      ok: false,
+      governed_item_count: 2,
       classified_item_count: 2,
-      findings: [],
+      findings: [
+        { item_id: "pm-undated-legacy", kind: "invalid_completion_timestamp" },
+        { item_id: "pm-undated-legacy", kind: "missing_escape_class" },
+        { item_id: "pm-undated-legacy", kind: "missing_gate_evidence" },
+      ],
     });
   });
 

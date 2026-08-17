@@ -177,6 +177,9 @@ jobs:
       - name: Static quality gate
         run: pnpm quality:static
 
+      - name: Pre-release assurance trigger
+        run: node scripts/release/repository-assurance.mjs repository-static-quality --trigger pre-release --json
+
       - name: Context quality and token-entitlement gate
         run: pnpm quality:context-eval
 

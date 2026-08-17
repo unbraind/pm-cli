@@ -52712,7 +52712,8 @@
               "presets",
               "apply",
               "derive",
-              "promote"
+              "promote",
+              "risk"
             ],
             "examples": [
               "list",

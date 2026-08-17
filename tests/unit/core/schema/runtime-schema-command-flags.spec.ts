@@ -130,6 +130,86 @@ describe("runtime schema command flag registration", () => {
     expect(registry.alias_to_id.get("todo")).toBe("open");
   });
 
+  it("normalizes complete value schemas and drops every malformed recursive shape", () => {
+    const recursiveSchema: Record<string, unknown> = {};
+    recursiveSchema.properties = { nested: recursiveSchema };
+    const recursiveConst: Record<string, unknown> = {};
+    recursiveConst.self = recursiveConst;
+    let deepSchema: Record<string, unknown> = {};
+    for (let depth = 0; depth < 18; depth += 1) {
+      deepSchema = { properties: { nested: deepSchema } };
+    }
+    const invalidSchemas: unknown[] = [
+      null,
+      [],
+      { type: "unknown" },
+      { const: undefined },
+      { const: Number.NaN },
+      { const: recursiveConst },
+      { enum: null },
+      { enum: [undefined] },
+      { min_length: -1 },
+      { min_items: 1.5 },
+      { format: "email" },
+      { required: "owner" },
+      { required: [""] },
+      { additional_properties: "no" },
+      { properties: null },
+      { properties: { nested: null } },
+      { items: null },
+      { one_of: "bad" },
+      { one_of: [] },
+      { one_of: [null] },
+      recursiveSchema,
+      deepSchema,
+    ];
+    const normalized = normalizeRuntimeSchemaSettings({
+      fields: [
+        {
+          key: "evidence",
+          type: "object",
+          value_schema: {
+            type: "object",
+            const: { stable: [null, true, 1, "value"] },
+            enum: [null, false, 2, "other", { nested: ["value"] }],
+            min_length: 0,
+            min_items: 0,
+            format: "date-time",
+            properties: {
+              owner: { type: "string", min_length: 1 },
+            },
+            required: ["owner", "owner"],
+            additional_properties: false,
+            items: { type: "boolean" },
+            one_of: [{ const: true }, { const: false }],
+          },
+        },
+        ...invalidSchemas.map((value_schema) => ({
+          key: "malformed",
+          value_schema,
+        })),
+      ] as never,
+    });
+
+    expect(normalized.fields).toHaveLength(1);
+    expect(normalized.fields[0]).toMatchObject({
+      key: "evidence",
+      value_schema: {
+        type: "object",
+        const: { stable: [null, true, 1, "value"] },
+        enum: [null, false, 2, "other", { nested: ["value"] }],
+        min_length: 0,
+        min_items: 0,
+        format: "date-time",
+        properties: { owner: { type: "string", min_length: 1 } },
+        required: ["owner"],
+        additional_properties: false,
+        items: { type: "boolean" },
+        one_of: [{ const: true }, { const: false }],
+      },
+    });
+  });
+
   it("normalizes type workflows, status roles, and runtime field defaults", () => {
     const normalized = normalizeRuntimeSchemaSettings({
       version: 2.8,

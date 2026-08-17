@@ -61,7 +61,13 @@ import {
   type DefectChangeRiskReport,
 } from "./defect-recurrence.js";
 
-/** One bounded process-local recurrence index and its invalidation evidence. */
+/**
+ * One bounded process-local recurrence index and its invalidation evidence.
+ *
+ * The cache intentionally retains one tracker root. Alternating roots rebuilds
+ * the evicted root on its next request; callers needing multi-root locality
+ * should isolate runtimes by process.
+ */
 interface RiskIndexCacheEntry {
   /** Absolute tracker root owning this cache entry. */
   pm_root: string;

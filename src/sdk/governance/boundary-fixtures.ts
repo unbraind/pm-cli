@@ -190,12 +190,13 @@ function evaluateBoundaryRecord(
     !nonEmpty(boundary.consumer) ||
     !nonEmpty(boundary.format)
   ) {
+    const boundaryId = nonEmpty(boundary.id) ? boundary.id : "unknown";
     return {
       captured: 0,
       waived: 0,
       findings: [
         {
-          boundary_id: boundary.id || "unknown",
+          boundary_id: boundaryId,
           kind: "invalid_boundary",
           detail:
             "Each boundary requires non-empty id, producer, consumer, and format.",
@@ -293,15 +294,16 @@ export function evaluateBoundaryFixtures(
       continue;
     }
     const boundary = candidate as BoundaryInventoryRecord;
-    if (ids.has(boundary.id)) {
+    const boundaryId = nonEmpty(boundary.id) ? boundary.id : undefined;
+    if (boundaryId !== undefined && ids.has(boundaryId)) {
       findings.push({
-        boundary_id: boundary.id,
+        boundary_id: boundaryId,
         kind: "duplicate_boundary",
-        detail: `Boundary ${boundary.id} is inventoried more than once.`,
+        detail: `Boundary ${boundaryId} is inventoried more than once.`,
       });
       continue;
     }
-    ids.add(boundary.id);
+    if (boundaryId !== undefined) ids.add(boundaryId);
     const evaluated = evaluateBoundaryRecord(boundary, fixtures, now.getTime());
     capturedCount += evaluated.captured;
     waivedCount += evaluated.waived;

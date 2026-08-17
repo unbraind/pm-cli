@@ -239,6 +239,12 @@ describe("coerceRuntimeFieldValue semantic schema paths", () => {
         "not-a-date",
       ),
     ).toThrow("must be an ISO date-time");
+    expect(
+      coerceRuntimeFieldValue(
+        makeField({ value_schema: { type: "string", format: "date-time" } }),
+        "2026-08-18T00:00:00.000Z",
+      ),
+    ).toBe("2026-08-18T00:00:00.000Z");
   });
 
   it("enforces object properties, required fields, arrays, and exact variants", () => {
@@ -299,6 +305,12 @@ describe("coerceRuntimeFieldValue semantic schema paths", () => {
         unexpected: true,
       }),
     ).toThrow("is not allowed");
+    expect(
+      coerceRuntimeFieldValue(evidence, {
+        disposition: "explicit_waiver",
+        owner: "pm-owner",
+      }),
+    ).toEqual({ disposition: "explicit_waiver", owner: "pm-owner" });
   });
 
   it("rejects a mismatched type and excessively recursive schemas", () => {

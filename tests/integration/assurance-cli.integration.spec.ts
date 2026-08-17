@@ -72,6 +72,22 @@ describe("assurance CLI integration", () => {
     });
   });
 
+  it("returns a typed usage refusal for malformed change-risk JSON", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await context.runCliInProcess(
+        ["assurance", "risk", "--definition", "{", "--json"],
+        { expectJson: true },
+      );
+
+      expect(result.code).toBe(2);
+      expect(JSON.parse(result.stderr)).toMatchObject({
+        code: "invalid_argument_value",
+        exit_code: 2,
+        detail: "assurance risk definition must be valid JSON",
+      });
+    });
+  });
+
   it("uses one SDK path for registry CRUD, dry runs, and durable verdicts", async () => {
     await withTempPmPath(async (context) => {
       for (const [kind, definition] of [

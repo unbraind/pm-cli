@@ -347,6 +347,37 @@ describe("recovery-reference reachability", () => {
       example: 0,
       next_step: 1,
     });
+
+    const malformed = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/unterminated-comment.ts",
+        content: "const before = 1; /* suggested_retry: never",
+      },
+      {
+        path: "src/invalid-syntax.ts",
+        content: "const value: = 1",
+      },
+    ]);
+    expect(malformed.producers).toEqual([]);
+    expect(malformed.findings).toContainEqual(
+      expect.objectContaining({
+        kind: "invalid_source",
+        subject: "src/invalid-syntax.ts",
+      }),
+    );
+    expect(
+      censusPmRecoveryReferenceProducers([
+        {
+          path: "src/closed-comment.ts",
+          content: "/* closed comment */ ({ next_steps: ['Run it'] })",
+        },
+      ]).producers,
+    ).toEqual([
+      expect.objectContaining({
+        path: "src/closed-comment.ts",
+        field: "next_steps",
+      }),
+    ]);
   });
 
   it("keeps raw slash-bearing keys distinct from nested source paths", () => {
@@ -356,6 +387,17 @@ describe("recovery-reference reachability", () => {
     });
     expect(derived).toHaveLength(2);
     expect(new Set(derived.map(({ id }) => id)).size).toBe(2);
+  });
+
+  it("ignores prototype-inherited recovery contract names", () => {
+    expect(
+      derivePmRecoveryReferenceObligations(
+        "prototype",
+        JSON.parse(
+          '{"constructor":"pm list","__proto__":"pm search","prototype":"pm context"}',
+        ),
+      ),
+    ).toEqual([]);
   });
 
   it("ignores empty recovery references and rejects mismatched semantics", () => {

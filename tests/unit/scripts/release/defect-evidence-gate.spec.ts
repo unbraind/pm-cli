@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -121,6 +121,42 @@ describe("defect evidence repository gate", () => {
       await expect(
         main(["--boundary-only"], { repositoryRoot: tempRoot }),
       ).rejects.toThrow("must stay inside the repository root");
+    });
+  });
+
+  it("rejects in-tree fixture symlinks that resolve outside the repository root", async () => {
+    await withTempDir("pm-boundary-symlink-repo-", async (tempRoot) => {
+      await withTempDir("pm-boundary-symlink-outside-", async (outsideRoot) => {
+        await mkdir(path.join(tempRoot, "config"));
+        const outsideFixture = path.join(outsideRoot, "fixture.json");
+        await Promise.all([
+          writeFile(outsideFixture, JSON.stringify({ captured: true })),
+          writeFile(
+            path.join(tempRoot, "config/boundary-fixtures.json"),
+            JSON.stringify({
+              version: 1,
+              inventory_scope: "Symlink escape negative control",
+              boundaries: [
+                {
+                  id: "escape",
+                  producer: "external",
+                  consumer: "gate",
+                  format: "JSON",
+                  fixture_path: "config/fixture.json",
+                },
+              ],
+            }),
+          ),
+          writeFile(
+            path.join(tempRoot, "config/defect-recurrence-policy.json"),
+            JSON.stringify(policy),
+          ),
+        ]);
+        await symlink(outsideFixture, path.join(tempRoot, "config/fixture.json"));
+        await expect(
+          main(["--boundary-only"], { repositoryRoot: tempRoot }),
+        ).rejects.toThrow("must stay inside the repository root");
+      });
     });
   });
 

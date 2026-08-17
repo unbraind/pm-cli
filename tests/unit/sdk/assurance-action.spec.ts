@@ -830,6 +830,7 @@ describe("assurance action transport", () => {
         exitCode: EXIT_CODE.USAGE,
         context: { reason: "invalid_json" },
       });
+      expect(JSON.parse("{}")).toEqual({});
       await expect(
         runAssuranceAction(
           { action: "risk", definition: {} },

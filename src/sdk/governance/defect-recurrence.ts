@@ -497,7 +497,7 @@ function pathMatches(pattern: string, value: string): boolean {
 }
 
 function itemSignals(item: AssuranceItemRecord): DefectChangeRiskInput {
-  const files = (item.files ?? []).flatMap((entry) => {
+  const files = (Array.isArray(item.files) ? item.files : []).flatMap((entry) => {
     if (typeof entry !== "object" || entry === null || Array.isArray(entry))
       return [];
     const value = (entry as { path?: unknown }).path;
@@ -909,7 +909,7 @@ export function evaluateDefectGateEvidence(
     const createdAt = Date.parse(
       typeof item.created_at === "string" ? item.created_at : "",
     );
-    return Number.isFinite(createdAt) && createdAt >= epochMs;
+    return !Number.isFinite(createdAt) || createdAt >= epochMs;
   });
   const classCounts = Object.fromEntries(
     DEFECT_ESCAPE_CLASSES.map((escapeClass) => [escapeClass, 0]),

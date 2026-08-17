@@ -94,6 +94,53 @@ describe("boundary fixture SDK", () => {
         expect.objectContaining({ kind: "invalid_boundary" }),
       ],
     });
+    expect(
+      evaluateBoundaryFixtures(
+        {
+          ...registry,
+          boundaries: [
+            {
+              id: 7,
+              producer: "producer",
+              consumer: "consumer",
+              format: "JSON",
+              fixture_path: "fixture.json",
+            },
+          ] as never,
+        },
+        {},
+      ),
+    ).toMatchObject({
+      ok: false,
+      findings: [
+        expect.objectContaining({
+          boundary_id: "unknown",
+          kind: "invalid_boundary",
+        }),
+      ],
+    });
+    expect(
+      evaluateBoundaryFixtures(
+        {
+          ...registry,
+          boundaries: [
+            {
+              id: "invalid-producer",
+              producer: "",
+              consumer: "consumer",
+              format: "JSON",
+              fixture_path: "fixture.json",
+            },
+          ],
+        },
+        {},
+      ).findings,
+    ).toEqual([
+      expect.objectContaining({
+        boundary_id: "invalid-producer",
+        kind: "invalid_boundary",
+      }),
+    ]);
   });
 
   it("rejects mismatched, self-generated, malformed, or unsafe samples", () => {

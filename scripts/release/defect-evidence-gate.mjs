@@ -5,7 +5,7 @@
  * Enforces captured boundary evidence, versioned recurrence-family negative
  * controls, historical PM lineage, and structured evidence on new defects.
  */
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,8 +29,22 @@ function readScope(argv) {
   };
 }
 
+function assertContainedFixturePath(repositoryRoot, fixturePath, label) {
+  const relativeFixturePath = path.relative(repositoryRoot, fixturePath);
+  if (
+    relativeFixturePath === "" ||
+    relativeFixturePath.startsWith(`..${path.sep}`) ||
+    relativeFixturePath === ".." ||
+    path.isAbsolute(relativeFixturePath)
+  ) {
+    throw new TypeError(
+      `Boundary fixture ${label} must stay inside the repository root.`,
+    );
+  }
+}
+
 async function readGateCorpus(repositoryRoot, providedPolicy) {
-  const resolvedRepositoryRoot = path.resolve(repositoryRoot);
+  const resolvedRepositoryRoot = await realpath(path.resolve(repositoryRoot));
   const [boundaryRegistry, storedRecurrencePolicy] = await Promise.all([
     readFile(path.join(resolvedRepositoryRoot, "config/boundary-fixtures.json"), "utf8").then(JSON.parse),
     readFile(path.join(resolvedRepositoryRoot, "config/defect-recurrence-policy.json"), "utf8")
@@ -41,24 +55,21 @@ async function readGateCorpus(repositoryRoot, providedPolicy) {
     boundaryRegistry.boundaries
       .filter((boundary) => typeof boundary.fixture_path === "string")
       .map(async (boundary) => {
-        const resolvedFixturePath = path.resolve(
+        const requestedFixturePath = path.resolve(
           resolvedRepositoryRoot,
           boundary.fixture_path,
         );
-        const relativeFixturePath = path.relative(
+        assertContainedFixturePath(
+          resolvedRepositoryRoot,
+          requestedFixturePath,
+          boundary.fixture_path,
+        );
+        const resolvedFixturePath = await realpath(requestedFixturePath);
+        assertContainedFixturePath(
           resolvedRepositoryRoot,
           resolvedFixturePath,
+          boundary.fixture_path,
         );
-        if (
-          relativeFixturePath === "" ||
-          relativeFixturePath.startsWith(`..${path.sep}`) ||
-          relativeFixturePath === ".." ||
-          path.isAbsolute(relativeFixturePath)
-        ) {
-          throw new TypeError(
-            `Boundary fixture ${boundary.fixture_path} must stay inside the repository root.`,
-          );
-        }
         return [
           boundary.fixture_path,
           JSON.parse(await readFile(resolvedFixturePath, "utf8")),
