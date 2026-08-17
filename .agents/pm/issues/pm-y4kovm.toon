@@ -1,0 +1,55 @@
+id: pm-y4kovm
+title: "GH-1048: Windows Node 24 numeric EDQUOT fixtures construct NaN on platforms that do not declare that errno"
+description: "Nightly run 31995604146 passed 7,450 tests but failed the two numeric host-errno cases because node:os.constants.errno is platform-specific and EDQUOT is absent on Windows. The runtime map also admitted missing constants as undefined keys. Preserve Linux EDQUOT coverage, select a declared capacity errno per host, and filter missing numeric constants before map construction."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:ci","area:sdk",error-taxonomy,nightly,portability,windows
+created_at: "2026-08-17T05:20:21.101Z"
+updated_at: "2026-08-17T05:22:38.276Z"
+closed_at: "2026-08-17T05:22:04.820Z"
+completed_at: "2026-08-17T05:22:04.820Z"
+author: "harness:codex"
+acceptance_criteria: The runtime numeric errno map contains only integral constants declared by the executing platform; Linux continues to exercise EDQUOT while Windows exercises an equivalent declared capacity errno; Focused and full exact coverage pass and the hosted Windows Node 24 leg is green
+parent: pm-3lhth4
+risk: medium
+confidence: high
+reporter: github-actions
+severity: high
+environment: "windows-latest, Node 24, Nightly Validation run 31995604146"
+repro_steps: Run pnpm test on windows-latest Node 24 at v2026.8.17; observe host-environment-errors.spec.ts and test-command.spec.ts construct errno NaN from absent EDQUOT.
+resolution: "Resolved: numeric host-error lookup now admits only integral errno constants declared by the active platform, and capacity-error tests prefer EDQUOT where available with ENOSPC as the portable fallback."
+expected_result: Numeric host-errno classification tests use values declared by the executing platform and preserve typed capacity refusals.
+actual_result: "Both fixtures constructed Unknown system error -undefined with errno NaN, so classification returned null and the Windows nightly failed after 7,450 passing tests."
+affected_version: 2026.8.17
+fixed_version: 2026.8.18
+component: SDK host-environment boundary and linked-test sandbox
+regression: true
+customer_impact: No published CLI runtime regression; the nightly portability gate was red and could not validate subsequent releases.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3lhth4,incident_from,"2026-08-17T05:20:21.101Z","harness:codex","cli:create:dep",detected
+  pm-j668gl,recurs_from,"2026-08-17T05:20:21.101Z","harness:codex","cli:create:dep",detected
+  pm-rtn5h6,implements,"2026-08-17T05:20:21.101Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-17T05:20:21.101Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1048, Windows Node 24, EDQUOT, Unknown system error, numeric errno, and host environment. pm-3lhth4 is the open defect-family umbrella and pm-j668gl is the prior broad Windows errno-test family; neither is the concrete GH-1048 incident."
+  "2026-08-17T05:22:04.127Z","harness:codex","Verification evidence: portable numeric errno fixtures pass 74/74 focused tests; full repository coverage passed 7,459 tests at exact 100% statements, branches, functions, and lines; typecheck, security scan, repository quality gates, SDK entrypoint performance, and CLI transport floor passed locally. Runtime lookup now excludes missing/non-integral platform constants while Linux retains EDQUOT coverage and Windows selects declared ENOSPC. Hosted Windows Node 24 is required on the delivery PR."
+files[3]{path,scope,note}:
+  src/sdk/environment/host-environment-errors.ts,project,Exclude platform-missing errno constants from numeric lookup
+  tests/unit/commands/test-command.spec.ts,project,Portable linked-test sandbox numeric capacity-fault negative control
+  tests/unit/sdk/host-environment-errors.spec.ts,project,Portable SDK numeric capacity-fault negative control
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mswscw7u-b0hemh,test,passed,"2026-08-17T05:20:41.409Z","2026-08-17T05:21:04.026Z","2026-08-17T05:21:04.026Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated GH-1048 fixed entry
+close_reason: "Fixed the GH-1048 nightly regression by filtering platform-missing numeric errno constants and making both SDK and linked-test capacity fixtures select a declared host errno; focused and full exact-coverage evidence is green, with hosted Windows Node 24 retained as the merge gate."
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: numeric-host-errno-cross-platform
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts
+  local_checks[4]: pm test pm-y4kovm --run --progress,node scripts/run-tests.mjs coverage,pnpm lint,"pnpm security:scan"
+  hosted_checks[3]: CI / Windows regression (Node 24),CI / Gates (coverage),Security / actionlint
+  owner: pm-y4kovm
+body: ""
