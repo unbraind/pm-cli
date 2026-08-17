@@ -54,6 +54,19 @@ function assertContainedExecutable(installRoot, executable) {
   return resolvedExecutable;
 }
 
+/** Fail unless an installed SDK proved an exact full-corpus read. */
+function assertCompleteSdkRead(manager, sdkRead) {
+  if (
+    sdkRead?.item_count !== 1 ||
+    sdkRead?.source_complete !== true ||
+    sdkRead?.full_projection !== true
+  ) {
+    fail(
+      `Installed-agent acceptance SDK read was not complete for ${manager}.`,
+    );
+  }
+}
+
 function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
   const workspace = path.join(installRoot, "agent-workspace");
   const pmRoot = path.join(workspace, ".agents", "pm");
@@ -67,9 +80,9 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
   };
   const steps = [];
   let outputCharacters = 0;
-  const runStep = (label, args) => {
-    const result = runCommand(executable, args, {
-      cwd: workspace,
+  const runStep = (label, args, command = executable, cwd = workspace) => {
+    const result = runCommand(command, args, {
+      cwd,
       capture: true,
       allowFailure: true,
       env,
@@ -105,8 +118,24 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
     return parsed;
   };
 
-  runStep("init", ["--json", "--no-extensions", "init", "--yes", "--prefix", "accept", "--no-merge-fence"]);
-  runStep("orient", ["--json", "--no-extensions", "context", "--limit", "1", "--token-budget", "512"]);
+  runStep("init", [
+    "--json",
+    "--no-extensions",
+    "init",
+    "--yes",
+    "--prefix",
+    "accept",
+    "--no-merge-fence",
+  ]);
+  runStep("orient", [
+    "--json",
+    "--no-extensions",
+    "context",
+    "--limit",
+    "1",
+    "--token-budget",
+    "512",
+  ]);
   const created = runStep("create", [
     "--json",
     "--no-extensions",
@@ -122,10 +151,18 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
   ]);
   const itemId = created?.id ?? created?.item?.id;
   if (typeof itemId !== "string" || itemId.length === 0) {
-    fail(`Installed-agent acceptance create step did not return an item id for ${manager}.`);
+    fail(
+      `Installed-agent acceptance create step did not return an item id for ${manager}.`,
+    );
   }
   runStep("claim", ["--json", "--no-extensions", "claim", itemId]);
-  runStep("annotate", ["--json", "--no-extensions", "comments", itemId, "Acceptance annotation from the installed package"]);
+  runStep("annotate", [
+    "--json",
+    "--no-extensions",
+    "comments",
+    itemId,
+    "Acceptance annotation from the installed package",
+  ]);
   runStep("link-evidence", [
     "--json",
     "--no-extensions",
@@ -149,12 +186,44 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
     "--validate-close",
     "warn",
   ]);
-  runStep("validate", ["--json", "--no-extensions", "validate", "--check-resolution", "--check-history-drift"]);
-  const readBack = runStep("read-back", ["--json", "--no-extensions", "get", itemId, "--full"]);
+  runStep("validate", [
+    "--json",
+    "--no-extensions",
+    "validate",
+    "--check-resolution",
+    "--check-history-drift",
+  ]);
+  const readBack = runStep("read-back", [
+    "--json",
+    "--no-extensions",
+    "get",
+    itemId,
+    "--full",
+  ]);
   if (readBack?.item?.status !== "closed") {
-    fail(`Installed-agent acceptance read-back did not observe closed state for ${manager}.`);
+    fail(
+      `Installed-agent acceptance read-back did not observe closed state for ${manager}.`,
+    );
   }
-  runStep("context-read-back", ["--json", "--no-extensions", "context", "--limit", "1", "--token-budget", "512"]);
+  runStep("context-read-back", [
+    "--json",
+    "--no-extensions",
+    "context",
+    "--limit",
+    "1",
+    "--token-budget",
+    "512",
+  ]);
+  const sdkProgram = `import { PmClient } from ${JSON.stringify(packageName)}; const result = await new PmClient({ pmRoot: ${JSON.stringify(pmRoot)}, noExtensions: true }).listAllComplete(); console.log(JSON.stringify({ item_count: result.complete_list.item_count, source_complete: result.complete_list.source_complete, full_projection: result.complete_list.full_projection }));`;
+  const sdkRead = runStep(
+    "sdk-complete-list",
+    manager === "bun"
+      ? ["--eval", sdkProgram]
+      : ["--input-type=module", "--eval", sdkProgram],
+    commandFor(manager === "bun" ? "bun" : "node"),
+    installRoot,
+  );
+  assertCompleteSdkRead(manager, sdkRead);
 
   return {
     manager,
@@ -183,7 +252,15 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv) {
       manager === "npm"
         ? runCommand(
             commandFor("npm"),
-            ["install", "--prefix", installRoot, "--ignore-scripts", "--no-audit", "--no-fund", packageSpec],
+            [
+              "install",
+              "--prefix",
+              installRoot,
+              "--ignore-scripts",
+              "--no-audit",
+              "--no-fund",
+              packageSpec,
+            ],
             { capture: true, allowFailure: true, env: publicRegistryEnv },
           )
         : runCommand(
@@ -256,13 +333,20 @@ function main() {
     };
     const managers = manager === "both" ? ["npm", "bun"] : [manager];
     const sessions = managers.map((selected) =>
-      installAndRun(selected, `${packageName}@${version}`, root, publicRegistryEnv),
+      installAndRun(
+        selected,
+        `${packageName}@${version}`,
+        root,
+        publicRegistryEnv,
+      ),
     );
     const result = { ok: true, version, package: packageName, sessions };
     if (flagBool(flags, "json", false)) {
       process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     } else {
-      console.log(`Installed-agent acceptance passed for ${packageName}@${version}.`);
+      console.log(
+        `Installed-agent acceptance passed for ${packageName}@${version}.`,
+      );
     }
   } finally {
     rmSync(root, { recursive: true, force: true });

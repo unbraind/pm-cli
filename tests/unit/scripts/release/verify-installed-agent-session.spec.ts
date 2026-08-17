@@ -35,7 +35,10 @@ async function runAcceptance(options: RunOptions) {
     (options.runCommand ?? successfulCommand)(command, args),
   );
   vi.doMock(UTILS_SPECIFIER, async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(UTILS_SPECIFIER);
+    const actual =
+      await vi.importActual<
+        typeof import("../../../../scripts/release/utils.mjs")
+      >(UTILS_SPECIFIER);
     return {
       ...actual,
       commandFor: (binary: string) => binary,
@@ -84,12 +87,27 @@ function successfulCommand(command: string, args: string[]): CommandResult {
     return { status: 0, stdout: "installed", stderr: "" };
   }
   if (args.includes("create")) {
-    return { status: 0, stdout: JSON.stringify({ id: "accept-test" }), stderr: "" };
+    return {
+      status: 0,
+      stdout: JSON.stringify({ id: "accept-test" }),
+      stderr: "",
+    };
   }
   if (args.includes("get")) {
     return {
       status: 0,
       stdout: JSON.stringify({ item: { id: "accept-test", status: "closed" } }),
+      stderr: "",
+    };
+  }
+  if (args.some((arg) => arg.includes("listAllComplete"))) {
+    return {
+      status: 0,
+      stdout: JSON.stringify({
+        item_count: 1,
+        source_complete: true,
+        full_projection: true,
+      }),
       stderr: "",
     };
   }
@@ -99,7 +117,9 @@ function successfulCommand(command: string, args: string[]): CommandResult {
 describe("verify-installed-agent-session", () => {
   it("prints usage without installing", async () => {
     const result = await runAcceptance({ argv: ["--help"] });
-    expect(result.logs.join("\n")).toContain("verify-installed-agent-session.mjs");
+    expect(result.logs.join("\n")).toContain(
+      "verify-installed-agent-session.mjs",
+    );
     expect(result.runCommand).not.toHaveBeenCalled();
   });
 
@@ -122,14 +142,17 @@ describe("verify-installed-agent-session", () => {
       version: "2026.7.31",
       package: "@unbrained/pm-cli",
     });
-    expect(result.json.sessions.map((session: { manager: string }) => session.manager)).toEqual([
-      "npm",
-      "bun",
-    ]);
+    expect(
+      result.json.sessions.map(
+        (session: { manager: string }) => session.manager,
+      ),
+    ).toEqual(["npm", "bun"]);
     for (const session of result.json.sessions) {
-      expect(session.step_count).toBe(10);
+      expect(session.step_count).toBe(11);
       expect(session.item_id).toBe("accept-test");
-      expect(session.steps.every((step: { ok: boolean }) => step.ok)).toBe(true);
+      expect(session.steps.every((step: { ok: boolean }) => step.ok)).toBe(
+        true,
+      );
       expect(session.estimated_output_tokens).toBeGreaterThan(0);
     }
     expect(result.fsMocks.rmSync).toHaveBeenCalledWith(
@@ -142,6 +165,13 @@ describe("verify-installed-agent-session", () => {
           command === "bun" && args.includes("--ignore-scripts"),
       ),
     ).toBe(true);
+    expect(
+      result.runCommand.mock.calls.filter(
+        ([command, args]) =>
+          ["bun", "node"].includes(command) &&
+          args.some((arg) => arg.includes("listAllComplete")),
+      ),
+    ).toHaveLength(2);
   });
 
   it("uses an explicit package override and prints the text success form", async () => {
@@ -217,10 +247,16 @@ describe("verify-installed-agent-session", () => {
       argv: ["--version", "2026.7.31", "--manager", "npm"],
       runCommand: (command, args) =>
         args.includes("comments")
-          ? { status: 0, stdout: JSON.stringify({ value: "x".repeat(5_000) }), stderr: "" }
+          ? {
+              status: 0,
+              stdout: JSON.stringify({ value: "x".repeat(5_000) }),
+              stderr: "",
+            }
           : successfulCommand(command, args),
     });
-    expect(String(oversized.failure)).toContain("exceeded the annotate output budget");
+    expect(String(oversized.failure)).toContain(
+      "exceeded the annotate output budget",
+    );
   });
 
   it("uses the empty installer failure fallback", async () => {
@@ -249,11 +285,25 @@ describe("verify-installed-agent-session", () => {
       argv: ["--version", "2026.7.31", "--manager", "npm"],
       runCommand: (command, args) =>
         args.includes("get")
-          ? { status: 0, stdout: JSON.stringify({ item: { status: "open" } }), stderr: "" }
+          ? {
+              status: 0,
+              stdout: JSON.stringify({ item: { status: "open" } }),
+              stderr: "",
+            }
           : successfulCommand(command, args),
     });
     expect(String(openReadBack.failure)).toContain(
       "read-back did not observe closed state",
+    );
+    const incompleteSdkRead = await runAcceptance({
+      argv: ["--version", "2026.7.31", "--manager", "bun"],
+      runCommand: (command, args) =>
+        args.some((arg) => arg.includes("listAllComplete"))
+          ? { status: 0, stdout: JSON.stringify({ item_count: 1 }), stderr: "" }
+          : successfulCommand(command, args),
+    });
+    expect(String(incompleteSdkRead.failure)).toContain(
+      "SDK read was not complete for bun",
     );
   });
 });

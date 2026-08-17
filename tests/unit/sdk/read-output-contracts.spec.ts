@@ -6,6 +6,7 @@ import {
   PM_READ_OUTPUT_DIMENSIONS,
   PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
   PM_READ_OUTPUT_OPTION_FLAGS,
+  PM_READ_OUTPUT_SURFACES,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   applyReadOutputDimensions,
   decodeReadOutputContinuationCursor,
@@ -42,7 +43,10 @@ describe("read output contracts", () => {
       "cost",
       "encoding",
     ]);
-    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(22);
+    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(
+      PM_READ_OUTPUT_SURFACES.length,
+    );
+    expect(PM_READ_OUTPUT_SURFACES).toContain("package-catalog");
     expect(PM_READ_OUTPUT_OPTION_FLAGS).toEqual([
       "--output-include",
       "--output-limit",

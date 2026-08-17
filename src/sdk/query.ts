@@ -4,6 +4,7 @@
  * Provides focused read, search, pagination, and context-ranking primitives.
  */
 export * from "./query/list.js";
+export * from "./query/complete-list.js";
 export * from "./query/search.js";
 export {
   runActivity,

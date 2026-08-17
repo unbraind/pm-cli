@@ -55,6 +55,8 @@ import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { ItemMetadata } from "../types/index.js";
 import { listClientItemMetadataLight } from "./query/light-metadata.js";
+import { certifyCompleteListResult, createCompleteListOptions, type PmCompleteListOptions, type PmCompleteListResult } from "./query/complete-list.js";
+export { PmCompleteListValidationError, assertCompleteListResult, certifyCompleteListResult, createCompleteListOptions, inspectCompleteListResult, type PmCompleteListCertificate, type PmCompleteListFailureReceipt, type PmCompleteListFinding, type PmCompleteListFindingCode, type PmCompleteListInspection, type PmCompleteListOptions, type PmCompleteListResult } from "./query/complete-list.js";
 import {
   buildWorkspaceExtensionCommandContracts,
   buildWorkspaceFieldContracts,
@@ -767,6 +769,9 @@ export class PmClient {
   ): ReadPromise<ListResult, Options> {
     return this.runTyped("list", { options });
   }
+
+  /** Return every status and full item row only after fail-closed corpus certification. */
+  async listAllComplete(options: PmCompleteListOptions = {}): Promise<PmCompleteListResult> { return certifyCompleteListResult(await this.list(createCompleteListOptions(options))); }
 
   /** Search items with the MCP/agent compact defaults. */
   search<Options extends ReadOptions<SearchOptions> = SearchOptions>(
@@ -1611,11 +1616,7 @@ export class PmClient {
   }
 
   /** Read bundled package catalog metadata using the same action as `pm package catalog`. */
-  packageCatalog(
-    options: PackageCommandOptions = {},
-  ): Promise<PackageCommandResult> {
-    return this.runTyped("package-catalog", { options });
-  }
+  packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options: Options = {} as Options): ReadPromise<PackageCommandResult, Options> { return this.runTyped("package-catalog", { options }); }
 
   /** Enable an installed package using the same action as `pm package activate`. */
   packageActivate(
@@ -1669,6 +1670,9 @@ export function list<Options extends ReadOptions<ListOptions> = ListOptions>(
 ): ReadPromise<ListResult, Options> {
   return new PmClient(clientOptions).list(options);
 }
+
+/** Return every status and full item row with fail-closed corpus proof. */
+export function listAllComplete(options: PmCompleteListOptions = {}, clientOptions: PmClientOptions = {}): Promise<PmCompleteListResult> { return new PmClient(clientOptions).listAllComplete(options); }
 
 /** Search items with the MCP/agent compact defaults without constructing a reusable client. */
 export function search<
@@ -2360,12 +2364,7 @@ export function packageReload(
 }
 
 /** Read bundled package catalog metadata without constructing a reusable client. */
-export function packageCatalog(
-  options: PackageCommandOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<PackageCommandResult> {
-  return new PmClient(clientOptions).packageCatalog(options);
-}
+export function packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options: Options = {} as Options, clientOptions: PmClientOptions = {}): ReadPromise<PackageCommandResult, Options> { return new PmClient(clientOptions).packageCatalog(options); }
 
 /** Enable a package without constructing a reusable client. */
 export function packageActivate(
@@ -2906,6 +2905,7 @@ async function runMcpListAction(
   if (
     listOptions.compact === undefined &&
     listOptions.brief === undefined &&
+    listOptions.full === undefined &&
     listOptions.fields === undefined &&
     listOptions.includeBody === undefined
   ) {

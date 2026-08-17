@@ -6,6 +6,10 @@ import { describe, expect, it } from "vitest";
 import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
 import { PM_READ_OUTPUT_SURFACE_CONTRACTS } from "../../src/sdk/read-output-contracts.js";
 import {
+  PmCompleteListValidationError,
+  certifyCompleteListResult,
+} from "../../src/sdk/query/complete-list.js";
+import {
   censusPmRecoveryReferenceProducers,
   derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
@@ -258,6 +262,18 @@ describe("real-entrypoint refusal reachability", () => {
       )!.dimensions.amount.legacy_aliases.filter(({ flag }) =>
         ["--limit", "--no-truncate"].includes(flag),
       );
+      let completeListFailure: PmCompleteListValidationError | undefined;
+      try {
+        certifyCompleteListResult({ items: [] });
+      } catch (error: unknown) {
+        if (error instanceof PmCompleteListValidationError) {
+          completeListFailure = error;
+        }
+      }
+      expect(completeListFailure).toBeDefined();
+      const completeListRetry =
+        completeListFailure!.receipt.recovery.suggested_retry;
+      expect(context.runCli(completeListRetry.split(" ").slice(1)).code).toBe(0);
       const obligations: PmRecoveryReferenceObligation[] = [
         ...derivePmRecoveryReferenceObligations(
           "schema-split-action",
@@ -275,13 +291,19 @@ describe("real-entrypoint refusal reachability", () => {
           "legacy-read-control",
           listAmountAliases,
         ),
+        ...derivePmRecoveryReferenceObligations(
+          "complete-list-certification",
+          completeListFailure!.receipt,
+        ),
       ];
       const observations: PmRecoveryReferenceObservation[] = obligations.map(
         (obligation) => {
           if (obligation.kind === "suggested_retry") {
             return {
               id: obligation.id,
-              reachable: true,
+              reachable:
+                obligation.value === suggestedRetry ||
+                obligation.value === completeListRetry,
               proof: "executed",
               semantics: obligation.semantics,
             };
