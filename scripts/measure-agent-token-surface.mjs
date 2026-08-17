@@ -87,11 +87,7 @@ export function compareBaseline(report, baseline) {
     surfaces.mcp_tools_list,
   );
   for (const [name, measurement] of Object.entries(report.contracts)) {
-    compare(
-      `contracts.${name}`,
-      measurement.bytes,
-      surfaces.contracts?.[name],
-    );
+    compare(`contracts.${name}`, measurement.bytes, surfaces.contracts?.[name]);
   }
   violations.push(
     ...Object.keys(surfaces.contracts ?? {})
@@ -103,6 +99,12 @@ export function compareBaseline(report, baseline) {
   );
   const requiredCommandNames = new Set(surfaces.required_commands ?? []);
   for (const measurement of report.commands) {
+    if (
+      !requiredCommandNames.has(measurement.name) &&
+      !Object.hasOwn(surfaces.commands ?? {}, measurement.name)
+    ) {
+      continue;
+    }
     compare(
       `commands.${measurement.name}`,
       measurement.bytes,

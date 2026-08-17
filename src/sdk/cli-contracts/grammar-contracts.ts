@@ -99,178 +99,213 @@ function destinationRows(
   }));
 }
 
-/** Checked-in exhaustive destination census for the core runtime contract. */
-export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationContract[] = [
-  ...destinationRows("item", "item", "target_noun", "pm-pbyu", [
-    "item",
-    "item complete",
-    "item mutate",
-  ]),
-  ...destinationRows("item", "item", "consolidation", "pm-yql1", [
-    "append",
-    "claim",
-    "close",
-    "close-many",
-    "close-task",
-    "comments",
-    "copy",
-    "create",
-    "delete",
-    "docs",
-    "files",
-    "get",
-    "learnings",
-    "notes",
-    "pause-task",
-    "release",
-    "start-task",
-    "test",
-    "update",
-    "update-many",
-  ]),
-  ...destinationRows("list", "list", "target_noun", "pm-pfqi", ["list"]),
-  ...destinationRows("list", "list --group-by", "consolidation", "pm-xkgq", [
-    "aggregate",
-  ]),
-  ...destinationRows("context", "context", "target_noun", "pm-pbyu", [
-    "context",
-  ]),
-  ...destinationRows("context", "context", "consolidation", "pm-kcs4", [
-    "ctx",
-    "focus",
-    "next",
-  ]),
-  ...destinationRows("search", "search", "target_noun", "pm-pbyu", [
-    "search",
-  ]),
-  ...destinationRows("search", "search duplicates", "consolidation", "pm-3i9q8g", [
-    "duplicates",
-  ]),
-  ...destinationRows("graph", "graph", "target_noun", "pm-pbyu", ["graph"]),
-  ...destinationRows("graph", "graph show", "consolidation", "pm-yql1", [
-    "deps",
-  ]),
-  ...destinationRows("history", "history", "target_noun", "pm-pbyu", [
-    "history",
-  ]),
-  ...destinationRows("history", "history", "consolidation", "pm-tqel", [
-    "activity",
-    "events",
-    "history-author-acknowledge",
-    "history-compact",
-    "history-redact",
-    "history-repair",
-    "merge",
-    "restore",
-    "vcs abandon",
-    "vcs create",
-    "vcs log",
-    "vcs merge",
-    "vcs propose",
-    "vcs ref-create",
-    "vcs show",
-  ]),
-  ...destinationRows("workspace", "workspace", "target_noun", "pm-pbyu", [
-    "workspace",
-    "workspace snapshot",
-    "workspace snapshot create",
-    "workspace snapshot delete",
-    "workspace snapshot inspect",
-    "workspace snapshot list",
-    "workspace snapshot restore",
-  ]),
-  ...destinationRows("workspace", "workspace init", "consolidation", "pm-n7rr", [
-    "init",
-  ]),
-  ...destinationRows("package", "package", "target_noun", "pm-pbyu", [
-    "package",
-    "package activate",
-    "package adopt",
-    "package adopt-all",
-    "package catalog",
-    "package deactivate",
-    "package describe",
-    "package doctor",
-    "package explore",
-    "package init",
-    "package install",
-    "package manage",
-    "package migrate",
-    "package reload",
-    "package uninstall",
-  ]),
-  ...destinationRows("package", "package", "consolidation", "pm-tnud", [
-    "extension",
-    "extension activate",
-    "extension adopt",
-    "extension adopt-all",
-    "extension catalog",
-    "extension deactivate",
-    "extension describe",
-    "extension doctor",
-    "extension explore",
-    "extension init",
-    "extension install",
-    "extension manage",
-    "extension migrate",
-    "extension reload",
-    "extension uninstall",
-    "install",
-    "packages",
-    "packages activate",
-    "packages adopt",
-    "packages adopt-all",
-    "packages catalog",
-    "packages deactivate",
-    "packages describe",
-    "packages doctor",
-    "packages explore",
-    "packages init",
-    "packages install",
-    "packages manage",
-    "packages migrate",
-    "packages reload",
-    "packages uninstall",
-    "upgrade",
-  ]),
-  ...destinationRows("package", "package", "package_owned", "package:beads", [
-    "beads import",
-  ]),
-  ...destinationRows("package", "package", "package_owned", "package:pm-changelog", [
-    "changelog export",
-    "changelog generate",
-  ]),
-  ...destinationRows("package", "package calendar", "package_owned", "pm-o3fh", [
-    "event",
-    "meet",
-    "remind",
-  ]),
-  ...destinationRows("ops", "ops", "consolidation", "pm-6apl", [
-    "assurance",
-    "config",
-    "eval",
-    "gc",
-    "health",
-    "profile",
-    "schema",
-    "stats",
-    "telemetry",
-    "test-all",
-    "validate",
-  ]),
-  ...destinationRows("plan", "plan", "target_noun", "pm-pbyu", ["plan"]),
-  ...destinationRows("contracts", "contracts", "target_noun", "pm-pbyu", [
-    "contracts",
-  ]),
-  ...destinationRows("help", "help", "target_noun", "pm-pbyu", ["help"]),
-  ...destinationRows("help", "help", "consolidation", "pm-szdc", [
-    "completion",
-    "completion-statuses",
-    "completion-tags",
-    "completion-types",
-    "guide",
-  ]),
-];
+/** Checked-in exhaustive destination census for core and known package commands. */
+export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationContract[] =
+  [
+    ...destinationRows("item", "item", "target_noun", "pm-pbyu", [
+      "item",
+      "item complete",
+      "item mutate",
+    ]),
+    ...destinationRows("item", "item", "consolidation", "pm-yql1", [
+      "append",
+      "claim",
+      "close",
+      "close-many",
+      "close-task",
+      "comments",
+      "copy",
+      "create",
+      "delete",
+      "docs",
+      "files",
+      "get",
+      "learnings",
+      "notes",
+      "pause-task",
+      "release",
+      "start-task",
+      "test",
+      "update",
+      "update-many",
+    ]),
+    ...destinationRows("list", "list", "target_noun", "pm-pfqi", ["list"]),
+    ...destinationRows("list", "list --group-by", "consolidation", "pm-xkgq", [
+      "aggregate",
+    ]),
+    ...destinationRows("context", "context", "target_noun", "pm-pbyu", [
+      "context",
+    ]),
+    ...destinationRows("context", "context", "consolidation", "pm-kcs4", [
+      "ctx",
+      "focus",
+      "next",
+    ]),
+    ...destinationRows("search", "search", "target_noun", "pm-pbyu", [
+      "search",
+    ]),
+    ...destinationRows(
+      "search",
+      "search",
+      "package_owned",
+      "package:search-advanced",
+      ["reindex", "search-advanced"],
+    ),
+    ...destinationRows(
+      "search",
+      "search duplicates",
+      "consolidation",
+      "pm-3i9q8g",
+      ["duplicates"],
+    ),
+    ...destinationRows("graph", "graph", "target_noun", "pm-pbyu", ["graph"]),
+    ...destinationRows("graph", "graph show", "consolidation", "pm-yql1", [
+      "deps",
+    ]),
+    ...destinationRows("history", "history", "target_noun", "pm-pbyu", [
+      "history",
+    ]),
+    ...destinationRows("history", "history", "consolidation", "pm-tqel", [
+      "activity",
+      "events",
+      "history-author-acknowledge",
+      "history-compact",
+      "history-redact",
+      "history-repair",
+      "merge",
+      "restore",
+    ]),
+    ...destinationRows(
+      "history",
+      "history",
+      "package_owned",
+      "package:builtin-vcs-exemplar",
+      [
+        "vcs abandon",
+        "vcs create",
+        "vcs log",
+        "vcs merge",
+        "vcs propose",
+        "vcs ref-create",
+        "vcs show",
+      ],
+    ),
+    ...destinationRows("workspace", "workspace", "target_noun", "pm-pbyu", [
+      "workspace",
+      "workspace snapshot",
+      "workspace snapshot create",
+      "workspace snapshot delete",
+      "workspace snapshot inspect",
+      "workspace snapshot list",
+      "workspace snapshot restore",
+    ]),
+    ...destinationRows(
+      "workspace",
+      "workspace init",
+      "consolidation",
+      "pm-n7rr",
+      ["init"],
+    ),
+    ...destinationRows("package", "package", "target_noun", "pm-pbyu", [
+      "package",
+      "package activate",
+      "package adopt",
+      "package adopt-all",
+      "package catalog",
+      "package deactivate",
+      "package describe",
+      "package doctor",
+      "package explore",
+      "package init",
+      "package install",
+      "package manage",
+      "package migrate",
+      "package reload",
+      "package uninstall",
+    ]),
+    ...destinationRows("package", "package", "consolidation", "pm-tnud", [
+      "extension",
+      "extension activate",
+      "extension adopt",
+      "extension adopt-all",
+      "extension catalog",
+      "extension deactivate",
+      "extension describe",
+      "extension doctor",
+      "extension explore",
+      "extension init",
+      "extension install",
+      "extension manage",
+      "extension migrate",
+      "extension reload",
+      "extension uninstall",
+      "install",
+      "packages",
+      "packages activate",
+      "packages adopt",
+      "packages adopt-all",
+      "packages catalog",
+      "packages deactivate",
+      "packages describe",
+      "packages doctor",
+      "packages explore",
+      "packages init",
+      "packages install",
+      "packages manage",
+      "packages migrate",
+      "packages reload",
+      "packages uninstall",
+      "upgrade",
+    ]),
+    ...destinationRows("package", "package", "package_owned", "package:beads", [
+      "beads import",
+    ]),
+    ...destinationRows(
+      "package",
+      "package",
+      "package_owned",
+      "package:pm-changelog",
+      ["changelog export", "changelog generate"],
+    ),
+    ...destinationRows(
+      "package",
+      "package calendar",
+      "package_owned",
+      "pm-o3fh",
+      ["event", "meet", "remind"],
+    ),
+    ...destinationRows("ops", "ops", "consolidation", "pm-6apl", [
+      "assurance",
+      "config",
+      "eval",
+      "gc",
+      "health",
+      "profile",
+      "schema",
+      "stats",
+      "telemetry",
+      "test-all",
+      "validate",
+    ]),
+    ...destinationRows("plan", "plan", "target_noun", "pm-pbyu", ["plan"]),
+    ...destinationRows("contracts", "contracts", "target_noun", "pm-pbyu", [
+      "contracts",
+    ]),
+    ...destinationRows("help", "help", "target_noun", "pm-pbyu", ["help"]),
+    ...destinationRows(
+      "help",
+      "help",
+      "package_owned",
+      "package:builtin-guide-shell",
+      [
+        "completion",
+        "completion-statuses",
+        "completion-tags",
+        "completion-types",
+        "guide",
+      ],
+    ),
+  ];
 
 /** Immutable grammar policy used by contracts and the CI gate. */
 export const PM_CLI_GRAMMAR_CONTRACT = {
@@ -309,7 +344,7 @@ export interface PmCliGrammarReport {
   destination_count: number;
   /** Number of declared aliases omitted from default discovery. */
   hidden_alias_count: number;
-  /** Number of distinct visible single-token command paths. */
+  /** Number of distinct visible non-package single-token command paths. */
   visible_top_level_count: number;
   /** Maximum visible single-token command paths permitted by the ADR. */
   visible_top_level_ceiling: number;
@@ -366,7 +401,9 @@ function validateDestinationCensus(
   commandSet: ReadonlySet<string>,
 ): PmCliGrammarFinding[] {
   return PM_COMMAND_DESTINATION_CONTRACTS.filter(
-    (destination) => !commandSet.has(destination.command),
+    (destination) =>
+      destination.disposition !== "package_owned" &&
+      !commandSet.has(destination.command),
   ).map((destination) => ({
     code: "stale_destination" as const,
     spelling: destination.command,
@@ -394,12 +431,17 @@ export function verifyPmCliGrammar(
   commands: readonly string[],
   aliases: readonly PmCommandAliasContract[] = [],
 ): PmCliGrammarReport {
-  const normalizedCommands = [...new Set(commands.map((command) => command.trim()))]
+  const normalizedCommands = [
+    ...new Set(commands.map((command) => command.trim())),
+  ]
     .filter((command) => command.length > 0)
     .sort((left, right) => left.localeCompare(right));
   const commandSet = new Set(normalizedCommands);
   const nounSet = new Set<string>(PM_CLI_GRAMMAR_NOUNS);
-  const destinationsByCommand = new Map<string, PmCommandDestinationContract[]>();
+  const destinationsByCommand = new Map<
+    string,
+    PmCommandDestinationContract[]
+  >();
   for (const destination of PM_COMMAND_DESTINATION_CONTRACTS) {
     const entries = destinationsByCommand.get(destination.command) ?? [];
     entries.push(destination);
@@ -416,15 +458,24 @@ export function verifyPmCliGrammar(
   ];
   const visibleTopLevelCount = new Set(
     normalizedCommands
-      .filter((command) => !command.includes(" "))
+      .filter(
+        (command) =>
+          !command.includes(" ") &&
+          !(destinationsByCommand.get(command) ?? []).some(
+            (destination) => destination.disposition === "package_owned",
+          ),
+      )
       .map((command) => command.split(" ")[0]!),
   ).size;
-  if (visibleTopLevelCount > PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling) {
+  if (
+    visibleTopLevelCount > PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling
+  ) {
     findings.push({
       code: "visible_surface_ceiling_exceeded",
       spelling: String(visibleTopLevelCount),
-      message: `Visible top-level command count ${visibleTopLevelCount} exceeds ceiling ${PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling}.`,
-      nearest_target: "Declare the noun placement and tracked waiver before raising the ceiling.",
+      message: `Visible non-package top-level command count ${visibleTopLevelCount} exceeds ceiling ${PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling}.`,
+      nearest_target:
+        "Declare the noun placement and tracked waiver before raising the ceiling.",
     });
   }
   return {
@@ -433,7 +484,8 @@ export function verifyPmCliGrammar(
     destination_count: PM_COMMAND_DESTINATION_CONTRACTS.length,
     hidden_alias_count: aliases.filter((alias) => alias.hidden).length,
     visible_top_level_count: visibleTopLevelCount,
-    visible_top_level_ceiling: PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
+    visible_top_level_ceiling:
+      PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
     findings,
   };
 }

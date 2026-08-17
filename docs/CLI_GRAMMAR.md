@@ -16,7 +16,7 @@ pm list --status blocked       # status- or dependency-blocked semantics
 pm list --all                  # every lifecycle status
 ```
 
-`list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, and `list-canceled` remain byte-compatible aliases of those canonical forms.
+`list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, and `list-canceled` preserve command results and stdout behavior. Their documented migration hint may add one stderr line.
 
 ## Status
 
@@ -94,7 +94,7 @@ This setting changes presentation only. It does not disable aliases or change co
 
 ## Enforcement
 
-`pnpm quality:command-grammar` builds the SDK, reads the live runtime command contracts, and compares them with the checked-in destination and alias tables. The same gate runs inside `quality:static`, alongside contract drift checks. Its negative controls prove that unknown commands, stale rows, broken alias targets, and surface-ceiling growth fail upward.
+`pnpm quality:command-grammar` builds the SDK, reads the live runtime command contracts, and compares them with the checked-in destination and alias tables. Package-owned destination rows are conditional because installed packages vary by workspace; every activated package command still requires a declared row, while an inactive package does not make its row stale. The gate also proves parity between discoverable SDK actions, the MCP `pm_run` action enum, and narrow MCP tools. The same gate runs inside `quality:static`, alongside contract drift checks. Its negative controls prove that unknown commands, stale core rows, broken alias targets, MCP drift, and surface-ceiling growth fail upward.
 
 ## Consequences
 

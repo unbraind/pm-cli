@@ -51,13 +51,6 @@ describe("generateBashScript", () => {
       "get",
       "update",
       "list",
-      "list-all",
-      "list-open",
-      "list-in-progress",
-      "list-blocked",
-      "list-closed",
-      "list-canceled",
-      "list-draft",
       "calendar",
       "cal",
       "context",
@@ -97,6 +90,17 @@ describe("generateBashScript", () => {
       "config",
     ]) {
       expect(script).toContain(cmd);
+    }
+    for (const hiddenAlias of [
+      "list-all",
+      "list-open",
+      "list-in-progress",
+      "list-blocked",
+      "list-closed",
+      "list-canceled",
+      "list-draft",
+    ]) {
+      expect(script).not.toContain(hiddenAlias);
     }
   });
 
@@ -572,7 +576,7 @@ describe("generateBashScript", () => {
       expect(zsh, `zsh should contain --${flag}`).toContain(`--${flag}`);
       expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
     }
-    const zshListBlockStart = zsh.indexOf("list|list-all|list-draft");
+    const zshListBlockStart = zsh.indexOf("        list)");
     const zshListBlock = zsh.slice(
       zshListBlockStart,
       zsh.indexOf("aggregate)", zshListBlockStart),

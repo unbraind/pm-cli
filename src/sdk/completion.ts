@@ -745,7 +745,7 @@ export function generateBashScript(
     '  local cmd="${COMP_WORDS[1]}"',
     "",
     '  case "$cmd" in',
-    "    list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)",
+    "    list)",
     `      COMPREPLY=(${compgen(listFlags)})`,
     "      ;;",
     "    aggregate)",
@@ -1022,7 +1022,7 @@ _pm() {
   case $state in
     args)
       case $line[1] in
-        list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)
+        list)
           _arguments \\
             '--status[Filter by status; repeatable, comma-separated, or all]:(${statusChoices})' \\
             '--all[Include every lifecycle status]' \\

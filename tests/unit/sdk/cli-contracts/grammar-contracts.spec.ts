@@ -62,9 +62,35 @@ describe("CLI noun-verb grammar contracts", () => {
     );
     expect(stale.findings).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ code: "stale_destination", spelling: "list" }),
-        expect.objectContaining({ code: "alias_target_missing", spelling: "list-all" }),
+        expect.objectContaining({
+          code: "stale_destination",
+          spelling: "list",
+        }),
+        expect.objectContaining({
+          code: "alias_target_missing",
+          spelling: "list-all",
+        }),
       ]),
+    );
+  });
+
+  it("allows inactive package rows while rejecting undeclared active commands", () => {
+    const coreCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
+      ({ disposition }) => disposition !== "package_owned",
+    ).map(({ command }) => command);
+    expect(
+      verifyPmCliGrammar(coreCommands, PM_COMMAND_ALIAS_CONTRACTS),
+    ).toMatchObject({ ok: true, command_count: coreCommands.length });
+
+    const report = verifyPmCliGrammar(
+      [...coreCommands, "package-provided-unknown"],
+      PM_COMMAND_ALIAS_CONTRACTS,
+    );
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({
+        code: "missing_destination",
+        spelling: "package-provided-unknown",
+      }),
     );
   });
 

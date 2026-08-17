@@ -873,7 +873,12 @@ describe("public sdk entrypoint", () => {
     const contractsFor = (command: string | undefined) => resolveSubcommandFlagContractsForCommand(command);
     const flagsFor = (command: string | undefined) => contractsFor(command).map((contract) => contract.flag);
     expect(flagsFor(undefined)).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
-    expect(flagsFor(" LIST-OPEN ")).toEqual(expect.arrayContaining(["--status", "--ids"]));
+    expect(flagsFor("list")).toEqual(expect.arrayContaining(["--status", "--all", "--ids"]));
+    expect(flagsFor("list-all")).toEqual(expect.arrayContaining(["--all", "--ids"]));
+    expect(flagsFor("list-all")).not.toContain("--status");
+    expect(flagsFor(" LIST-OPEN ")).toEqual(expect.arrayContaining(["--ids"]));
+    expect(flagsFor(" LIST-OPEN ")).not.toContain("--status");
+    expect(flagsFor(" LIST-OPEN ")).not.toContain("--all");
     expect(flagsFor("reindex")).not.toContain("--mode");
     expect(flagsFor("help")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor("templates")).toEqual(expect.arrayContaining(["--title", "--description"]));

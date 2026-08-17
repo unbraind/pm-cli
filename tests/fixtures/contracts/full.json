@@ -18173,6 +18173,20 @@
         "target": "search"
       },
       {
+        "command": "reindex",
+        "disposition": "package_owned",
+        "noun": "search",
+        "owner": "package:search-advanced",
+        "target": "search"
+      },
+      {
+        "command": "search-advanced",
+        "disposition": "package_owned",
+        "noun": "search",
+        "owner": "package:search-advanced",
+        "target": "search"
+      },
+      {
         "command": "duplicates",
         "disposition": "consolidation",
         "noun": "search",
@@ -18258,51 +18272,51 @@
       },
       {
         "command": "vcs abandon",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
         "command": "vcs create",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
         "command": "vcs log",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
         "command": "vcs merge",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
         "command": "vcs propose",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
         "command": "vcs ref-create",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
         "command": "vcs show",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "history",
-        "owner": "pm-tqel",
+        "owner": "package:builtin-vcs-exemplar",
         "target": "history"
       },
       {
@@ -18832,37 +18846,37 @@
       },
       {
         "command": "completion",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "help",
-        "owner": "pm-szdc",
+        "owner": "package:builtin-guide-shell",
         "target": "help"
       },
       {
         "command": "completion-statuses",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "help",
-        "owner": "pm-szdc",
+        "owner": "package:builtin-guide-shell",
         "target": "help"
       },
       {
         "command": "completion-tags",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "help",
-        "owner": "pm-szdc",
+        "owner": "package:builtin-guide-shell",
         "target": "help"
       },
       {
         "command": "completion-types",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "help",
-        "owner": "pm-szdc",
+        "owner": "package:builtin-guide-shell",
         "target": "help"
       },
       {
         "command": "guide",
-        "disposition": "consolidation",
+        "disposition": "package_owned",
         "noun": "help",
-        "owner": "pm-szdc",
+        "owner": "package:builtin-guide-shell",
         "target": "help"
       }
     ],

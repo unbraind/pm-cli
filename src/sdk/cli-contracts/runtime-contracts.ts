@@ -1889,7 +1889,11 @@ function buildCommandFlagSurface(
     .sort((left, right) => left.command.localeCompare(right.command));
 }
 
-function buildCommandAliasSurface(commands: string[]): CommandAliasSurface[] {
+/** Build the executable alias projection from a command catalog and alias table. */
+export function buildCommandAliasSurface(
+  commands: string[],
+  aliasContracts: readonly PmCommandAliasContract[] = PM_COMMAND_ALIAS_CONTRACTS,
+): CommandAliasSurface[] {
   const commandSet = new Set(commands);
   const grouped = new Map<
     string,
@@ -1903,7 +1907,7 @@ function buildCommandAliasSurface(commands: string[]): CommandAliasSurface[] {
       contracts: [],
     });
   }
-  for (const contract of PM_COMMAND_ALIAS_CONTRACTS) {
+  for (const contract of aliasContracts) {
     if (!commandSet.has(contract.canonical)) {
       continue;
     }
@@ -3058,9 +3062,7 @@ export async function runContracts(
   if (selection.summary) {
     return result;
   }
-  const commandAliases = buildCommandAliasSurface(
-    actionContext.commandCatalog,
-  );
+  const commandAliases = buildCommandAliasSurface(actionContext.commandCatalog);
   if (!(selection.flagsOnly && !selection.fullOutput)) {
     attachRuntimeContractsResult(result, runtime, selection);
   }
