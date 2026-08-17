@@ -25,6 +25,7 @@ describe("Sentry CLI control-flow classification", () => {
   it("suppresses explicit user interrupts without hiding unrelated aborts", () => {
     for (const message of [
       "Aborted with Ctrl+C",
+      "Aborted with Ctrl+D",
       "SIGINT received",
       "user-initiated cancellation",
     ]) {

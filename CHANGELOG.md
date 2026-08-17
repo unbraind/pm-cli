@@ -990,10 +990,10 @@
 
 ### Fixed
 
+- Sentry no longer captures deliberate Ctrl+C/Ctrl+D interrupts as error-level events (AbortError, PM-CLI-27) ([pm-ksv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksv2.toon))
 - pm get --full omits children for Plan parents while pm list --parent returns them ([pm-y4z5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4z5.toon))
 - Intentional package CommandError outcomes create high-severity Sentry issues (PM-CLI-16) ([pm-7071](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7071.toon))
 - Extension install self-copy guard: reject source-inside-destination layouts before fs.cp EINVAL (PM-CLI-28) ([pm-8myl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8myl.toon))
-- Sentry captures deliberate Ctrl+C interrupts as error-level events (AbortError, PM-CLI-27) ([pm-ksv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksv2.toon))
 - Torn-install bundle transients block scheduled releases: boot-time chunk-integrity self-check + distinct error code for gate classification ([pm-wfvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wfvq.toon))
 - GH-446: pm get omits schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder ([pm-x1g5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x1g5.toon))
 - GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string ([pm-7je0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7je0.toon))
