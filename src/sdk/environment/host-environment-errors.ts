@@ -86,16 +86,20 @@ const HOST_ENVIRONMENT_FAULTS: ReadonlyMap<
   ],
 ]);
 const OPERATION_PATTERN = /^[a-z][a-z0-9_]{0,63}$/u;
-const HOST_ENVIRONMENT_ERRNO_NAMES: ReadonlyMap<number, string> = new Map([
-  [osConstants.errno.EACCES, "EACCES"],
-  [osConstants.errno.EDQUOT, "EDQUOT"],
-  [osConstants.errno.EMFILE, "EMFILE"],
-  [osConstants.errno.ENFILE, "ENFILE"],
-  [osConstants.errno.ENOMEM, "ENOMEM"],
-  [osConstants.errno.ENOSPC, "ENOSPC"],
-  [osConstants.errno.EPERM, "EPERM"],
-  [osConstants.errno.EROFS, "EROFS"],
-]);
+const HOST_ENVIRONMENT_ERRNO_NAMES: ReadonlyMap<number, string> = new Map(
+  (
+    [
+      [osConstants.errno.EACCES, "EACCES"],
+      [osConstants.errno.EDQUOT, "EDQUOT"],
+      [osConstants.errno.EMFILE, "EMFILE"],
+      [osConstants.errno.ENFILE, "ENFILE"],
+      [osConstants.errno.ENOMEM, "ENOMEM"],
+      [osConstants.errno.ENOSPC, "ENOSPC"],
+      [osConstants.errno.EPERM, "EPERM"],
+      [osConstants.errno.EROFS, "EROFS"],
+    ] as const
+  ).filter(([errno]) => Number.isInteger(errno)),
+);
 const HOST_ENVIRONMENT_FAULT_CODES = {
   capacity: { code: "host_environment_capacity_fault" },
   permission: { code: "host_environment_permission_fault" },

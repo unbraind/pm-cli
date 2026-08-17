@@ -47,18 +47,26 @@ describe("host environment errors", () => {
     ).rejects.toBe(defect);
   });
 
-  it("normalizes numeric host errno values when Node cannot name the code", () => {
-    const error = Object.assign(new Error("Unknown system error -122"), {
-      code: "Unknown system error -122",
-      errno: -osConstants.errno.EDQUOT,
-      syscall: "copyfile",
-    });
+  it("normalizes a platform-declared numeric host errno when Node cannot name the code", () => {
+    const numericCapacityErrno =
+      osConstants.errno.EDQUOT ?? osConstants.errno.ENOSPC;
+    const numericCapacityReason =
+      osConstants.errno.EDQUOT === undefined ? "ENOSPC" : "EDQUOT";
+    expect(Number.isInteger(numericCapacityErrno)).toBe(true);
+    const error = Object.assign(
+      new Error(`Unknown system error -${numericCapacityErrno}`),
+      {
+        code: `Unknown system error -${numericCapacityErrno}`,
+        errno: -numericCapacityErrno,
+        syscall: "copyfile",
+      },
+    );
 
-    expect(classifyHostEnvironmentFault(error)).toBe("EDQUOT");
+    expect(classifyHostEnvironmentFault(error)).toBe(numericCapacityReason);
     expect(translateHostEnvironmentFault(error, "seed_linked_test")).toMatchObject(
       {
         code: "host_environment_capacity_fault",
-        context: expect.objectContaining({ reason: "EDQUOT" }),
+        context: expect.objectContaining({ reason: numericCapacityReason }),
       },
     );
   });

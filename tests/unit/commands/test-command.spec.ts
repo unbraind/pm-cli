@@ -1160,11 +1160,16 @@ describe("runTest", () => {
   });
 
   it("types numeric quota failures from linked-test destination creation", async () => {
+    const numericCapacityErrno =
+      os.constants.errno.EDQUOT ?? os.constants.errno.ENOSPC;
+    const numericCapacityReason =
+      os.constants.errno.EDQUOT === undefined ? "ENOSPC" : "EDQUOT";
+    expect(Number.isInteger(numericCapacityErrno)).toBe(true);
     const numericQuotaError = Object.assign(
-      new Error(`Unknown system error -${os.constants.errno.EDQUOT}`),
+      new Error(`Unknown system error -${numericCapacityErrno}`),
       {
-        code: `Unknown system error -${os.constants.errno.EDQUOT}`,
-        errno: -os.constants.errno.EDQUOT,
+        code: `Unknown system error -${numericCapacityErrno}`,
+        errno: -numericCapacityErrno,
         syscall: "mkdir",
       },
     );
@@ -1180,7 +1185,7 @@ describe("runTest", () => {
       ),
     ).rejects.toMatchObject({
       code: "host_environment_capacity_fault",
-      context: expect.objectContaining({ reason: "EDQUOT" }),
+      context: expect.objectContaining({ reason: numericCapacityReason }),
     });
   });
 
