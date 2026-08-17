@@ -270,9 +270,11 @@ describe("real-entrypoint refusal reachability", () => {
           completeListFailure = error;
         }
       }
-      expect(completeListFailure).toBeDefined();
+      if (!(completeListFailure instanceof PmCompleteListValidationError)) {
+        throw new TypeError("Expected complete-list certification to fail.");
+      }
       const completeListRetry =
-        completeListFailure!.receipt.recovery.suggested_retry;
+        completeListFailure.receipt.recovery.suggested_retry;
       expect(context.runCli(completeListRetry.split(" ").slice(1)).code).toBe(0);
       const obligations: PmRecoveryReferenceObligation[] = [
         ...derivePmRecoveryReferenceObligations(
@@ -293,7 +295,7 @@ describe("real-entrypoint refusal reachability", () => {
         ),
         ...derivePmRecoveryReferenceObligations(
           "complete-list-certification",
-          completeListFailure!.receipt,
+          completeListFailure.receipt,
         ),
       ];
       const observations: PmRecoveryReferenceObservation[] = obligations.map(
