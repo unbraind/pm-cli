@@ -884,6 +884,36 @@ export interface ImportExportRegistrationOptions {
   flags?: FlagDefinition[];
 }
 
+/**
+ * Declares where an exporter writes its artifact and whether the host may
+ * render the returned structured receipt after the exporter completes.
+ */
+export interface ExporterArtifactOutputContract {
+  /** Destination carrying the artifact bytes. */
+  channel: "stdout" | "file";
+  /** Host receipt policy; stdout defaults to suppress and file to render. */
+  receipt?: "suppress" | "render";
+  /** Optional IANA media type describing the emitted artifact. */
+  media_type?: string;
+}
+
+/** Exporter command metadata plus its optional artifact-delivery contract. */
+export interface ExporterRegistrationOptions
+  extends ImportExportRegistrationOptions {
+  /** Declaration for artifact bytes and the host receipt. */
+  output?: ExporterArtifactOutputContract;
+}
+
+/** Fully normalized exporter artifact contract stored in inventories. */
+export interface RegisteredExporterArtifactOutputContract {
+  /** Destination carrying the artifact bytes. */
+  channel: "stdout" | "file";
+  /** Explicit host receipt policy after normalization. */
+  receipt: "suppress" | "render";
+  /** Optional IANA media type describing the emitted artifact. */
+  media_type?: string;
+}
+
 /** Restricts flag value type values accepted by command, SDK, and storage contracts. */
 export type FlagValueType = "string" | "number" | "boolean";
 
@@ -1539,6 +1569,8 @@ export interface RegisteredExtensionExporter {
   name: string;
   /** Value that configures or reports exporter for this contract. */
   exporter: string;
+  /** Declared artifact channel and normalized receipt policy. */
+  output?: RegisteredExporterArtifactOutputContract;
 }
 
 /** Documents the registered extension search provider payload exchanged by command, SDK, and package integrations. */
@@ -1722,7 +1754,7 @@ export interface ExtensionApi {
   registerExporter(
     name: string,
     exporter: Exporter,
-    options?: ImportExportRegistrationOptions,
+    options?: ExporterRegistrationOptions,
   ): void;
   /** Value that configures or reports register search provider for this contract. */
   registerSearchProvider(provider: SearchProviderDefinition): void;

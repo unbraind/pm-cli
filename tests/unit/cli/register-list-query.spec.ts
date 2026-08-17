@@ -24,6 +24,7 @@ vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
 vi.mock("../../../src/cli/commands/graph.js", () => ({ runGraph: vi.fn() }));
 vi.mock("../../../src/sdk/mutation-events.js", () => ({
   listMutationEvents: vi.fn(),
+  subscribeMutationEventBatches: vi.fn(),
   subscribeMutationEvents: vi.fn(),
 }));
 
@@ -52,6 +53,7 @@ import { runList } from "../../../src/cli/commands/list.js";
 import { runGraph } from "../../../src/cli/commands/graph.js";
 import {
   listMutationEvents,
+  subscribeMutationEventBatches,
   subscribeMutationEvents,
 } from "../../../src/sdk/mutation-events.js";
 import { printActivityJsonStream, printError, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
@@ -126,11 +128,24 @@ beforeEach(() => {
     events: [{ item_id: "pm-event", type: "update" }],
     count: 1,
     has_more: false,
+    cursor_mode: "batch",
     source: "derived_index",
   } as never);
   vi.mocked(subscribeMutationEvents).mockImplementation(async function* () {
     yield { item_id: "pm-follow", type: "claim" } as never;
   });
+  vi.mocked(subscribeMutationEventBatches).mockImplementation(
+    async function* () {
+      yield {
+        events: [{ item_id: "pm-follow", type: "claim" }],
+        count: 1,
+        has_more: false,
+        next_cursor: "follow-cursor",
+        cursor_mode: "batch",
+        source: "derived_index",
+      } as never;
+    },
+  );
   vi.mocked(runList).mockResolvedValue({
     items: [
       { id: "pm-1", status: "open", type: "Task", title: "First" },
@@ -518,6 +533,7 @@ describe("register-list-query mutation events", () => {
       item: ["pm-event"],
       limit: 2,
       full: true,
+      cursorMode: undefined,
     });
     expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
     expect(vi.mocked(printError)).toHaveBeenCalledWith(
@@ -526,11 +542,12 @@ describe("register-list-query mutation events", () => {
     expect(getActiveCommandResult()).toMatchObject({ count: 1 });
   });
 
-  it("suppresses empty pages and preserves undefined omitted options", async () => {
+  it("emits an empty recovery trailer and preserves undefined omitted options", async () => {
     vi.mocked(listMutationEvents).mockResolvedValueOnce({
       events: [],
       count: 0,
       has_more: false,
+      cursor_mode: "batch",
       source: "derived_index",
     });
     await runRaw("events");
@@ -542,14 +559,50 @@ describe("register-list-query mutation events", () => {
       item: undefined,
       limit: undefined,
       full: false,
+      cursorMode: undefined,
     });
-    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+    expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
+      '{"record_type":"pm.stream.trailer","count":0,"has_more":false,"next_cursor":null,"source":"derived_index"}\n',
+    );
   });
 
   it("writes a non-empty event page when output is enabled", async () => {
     await runRaw("events");
     expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
-      '{"item_id":"pm-event","type":"update"}\n',
+      '{"item_id":"pm-event","type":"update"}\n{"record_type":"pm.stream.trailer","count":1,"has_more":false,"next_cursor":null,"source":"derived_index"}\n',
+    );
+  });
+
+  it("renders one JSON page envelope under global --json", async () => {
+    await runRaw("events", "--json");
+    expect(vi.mocked(printResult)).toHaveBeenCalledWith(
+      expect.objectContaining({ count: 1, cursor_mode: "batch" }),
+      expect.objectContaining({ json: true }),
+    );
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+
+  it("profiles JSON pages, preserves row framing, and rejects invalid cursor modes", async () => {
+    await runProfiled("events", "--json", "--cursor-mode", "batch");
+    expect(vi.mocked(printError)).toHaveBeenCalledWith(
+      expect.stringMatching(/^profile:command=events took_ms=\d+$/),
+    );
+
+    vi.mocked(listMutationEvents).mockResolvedValueOnce({
+      events: [{ item_id: "pm-event", type: "update", cursor: "row-cursor" }],
+      count: 1,
+      has_more: false,
+      next_cursor: "row-cursor",
+      cursor_mode: "row",
+      source: "derived_index",
+    } as never);
+    await runRaw("events", "--cursor-mode", "row");
+    expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith(
+      '{"item_id":"pm-event","type":"update","cursor":"row-cursor"}\n',
+    );
+
+    await expect(runRaw("events", "--cursor-mode", "invalid")).rejects.toThrow(
+      /must be batch or row/u,
     );
   });
 
@@ -558,6 +611,7 @@ describe("register-list-query mutation events", () => {
       events: [],
       count: 0,
       has_more: false,
+      cursor_mode: "batch",
       source: "derived_index",
       provenance_summary: {
         entries: 0,
@@ -596,6 +650,7 @@ describe("register-list-query mutation events", () => {
       harness: ["codex", "claude-code"],
       agentInstance: ["instance-a", "instance-b"],
       provenanceFilter: ["model=gpt-5.6-sol", "effort=xhigh"],
+      cursorMode: undefined,
     });
   });
 
@@ -607,18 +662,43 @@ describe("register-list-query mutation events", () => {
 
   it("follows events with explicit and default intervals while respecting quiet output", async () => {
     await runRaw("events", "--follow", "--interval-ms", "25");
-    expect(vi.mocked(subscribeMutationEvents)).toHaveBeenLastCalledWith(
+    expect(vi.mocked(subscribeMutationEventBatches)).toHaveBeenLastCalledWith(
       expect.objectContaining({ intervalMs: 25 }),
     );
     expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
-      '{"item_id":"pm-follow","type":"claim"}\n',
+      '{"item_id":"pm-follow","type":"claim"}\n{"record_type":"pm.stream.trailer","count":1,"has_more":false,"next_cursor":"follow-cursor","source":"derived_index","heartbeat":false}\n',
     );
 
     vi.mocked(writeStdout).mockClear();
     await runRaw("events", "--follow", "--quiet");
-    expect(vi.mocked(subscribeMutationEvents)).toHaveBeenLastCalledWith(
+    expect(vi.mocked(subscribeMutationEventBatches)).toHaveBeenLastCalledWith(
       expect.objectContaining({ intervalMs: undefined }),
     );
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+
+    vi.mocked(subscribeMutationEventBatches).mockImplementationOnce(
+      async function* () {
+        yield {
+          events: [],
+          count: 0,
+          has_more: false,
+          cursor_mode: "batch",
+          source: "derived_index",
+        } as never;
+      },
+    );
+    await runRaw("events", "--follow");
+    expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith(
+      '{"record_type":"pm.stream.trailer","count":0,"has_more":false,"next_cursor":null,"source":"derived_index","heartbeat":true}\n',
+    );
+
+    await runRaw("events", "--follow", "--cursor-mode", "row");
+    expect(vi.mocked(subscribeMutationEvents)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ cursorMode: "row" }),
+    );
+
+    vi.mocked(writeStdout).mockClear();
+    await runRaw("events", "--follow", "--cursor-mode", "row", "--quiet");
     expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
   });
 });

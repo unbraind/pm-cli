@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SUPPRESS_HOST_OUTPUT_MARKER,
   isHostOutputSuppressed,
+  serializeNdjsonStream,
   serializeNdjsonRows,
   suppressHostOutput,
   type SuppressedHostOutput,
@@ -59,6 +60,29 @@ describe("SDK host-output control", () => {
     );
     expect(() => serializeNdjsonRows([{ toJSON: () => [] }])).toThrow(
       "NDJSON row 0 must serialize to a non-null object",
+    );
+  });
+
+  it("frames resumable streams with one typed terminal trailer", () => {
+    expect(
+      serializeNdjsonStream([{ id: "pm-1" }, { id: "pm-2" }], {
+        count: 2,
+        has_more: true,
+        next_cursor: "cursor-2",
+        source: "derived_index",
+      }),
+    ).toBe(
+      '{"id":"pm-1"}\n{"id":"pm-2"}\n{"record_type":"pm.stream.trailer","count":2,"has_more":true,"next_cursor":"cursor-2","source":"derived_index"}',
+    );
+    expect(
+      serializeNdjsonStream([], {
+        count: 0,
+        has_more: false,
+        next_cursor: null,
+        source: "derived_index",
+      }),
+    ).toBe(
+      '{"record_type":"pm.stream.trailer","count":0,"has_more":false,"next_cursor":null,"source":"derived_index"}',
     );
   });
 });

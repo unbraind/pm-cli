@@ -1379,6 +1379,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "invalid_event_cursor_mode",
+    meaning: "Invalid event cursor mode condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/mutation-events.ts", "sdk/runtime-extended-actions.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "invalid_event_cursor_mode",
+    aliases: [],
+  },
+  {
     code: "invalid_event_follow_interval",
     meaning: "Invalid event follow interval condition.",
     stability: "stable",
@@ -1793,18 +1806,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     emitting_commands: ["*"],
     canonical_code: "manifest_unknown_key",
     aliases: [],
-  },
-  {
-    code: "merge_conflict_markers_detected",
-    meaning: "Merge conflict markers detected condition.",
-    stability: "stable",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/item/item-format.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_conflict_markers_detected",
-    aliases: ["history_merge_conflict_markers_detected"],
   },
 ];

@@ -112,6 +112,12 @@ describe("runtime extended action adapters", () => {
       limit: 12,
       full: true,
     });
+
+    expect(() =>
+      runRuntimeEventsAction(
+        context("events", {}, { cursorMode: "invalid" }),
+      ),
+    ).toThrow(expect.objectContaining({ code: "invalid_event_cursor_mode" }));
   });
 
   it("dispatches every merge subcommand and rejects unknown or incomplete input", async () => {

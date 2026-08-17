@@ -1,0 +1,17 @@
+id: pm-2firut
+title: "GH-1051: package catalog rejects universal output-budget controls"
+description: "GitHub issue #1051 reports that the read-only package --catalog mode is rejected when a generic caller supplies the universal output-budget recovery controls, even though the catalog is a complete read surface. Make command intent mode-sensitive so catalog accepts bounded/unbounded read controls while mutating package modes remain protected and discoverable through CLI/SDK contracts."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:cli","area:sdk","github:1051",output-contract
+created_at: "2026-08-17T07:44:11.138Z"
+updated_at: "2026-08-17T07:44:11.138Z"
+author: "harness:codex"
+parent: pm-5t33or
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-479ggz,discovered_from,"2026-08-17T07:44:11.138Z","harness:codex","cli:create:dep",detected
+  pm-tnud,related,"2026-08-17T07:44:11.138Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-17T07:44:11.138Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for GH-1051, package catalog output budget, and mode-sensitive package reads. No item owns this exact failure; pm-479ggz is the closed prior diagnostic-mode analogue, pm-5t33or owns universal budget contracts, and pm-tnud owns package grammar. Source: https://github.com/unbraind/pm-cli/issues/1051"
+body: ""

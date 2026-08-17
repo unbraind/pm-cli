@@ -272,7 +272,7 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_events",
     description:
-      "Read a bounded, cursor-resumable page of committed mutation events across item history streams.",
+      "Read a bounded, cursor-resumable page of committed mutation events across item history streams. Batch cursors are the token-efficient default; pass cursorMode=row for per-event checkpoints.",
     inputSchema: objectSchema({
       since: {
         type: "string",
@@ -298,6 +298,12 @@ const RAW_TOOLS: ToolDefinition[] = [
       },
       limit: { type: "integer", minimum: 0, maximum: 1000 },
       full: { type: "boolean" },
+      cursorMode: {
+        type: "string",
+        enum: ["batch", "row"],
+        description:
+          "Cursor framing: batch returns one next_cursor (default); row also adds a cursor to every event.",
+      },
     }),
   },
   {

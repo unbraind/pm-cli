@@ -408,11 +408,11 @@
     },
     {
       "path": "src/cli/register-list-query.ts",
-      "expected_count": 14,
+      "expected_count": 15,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
-      "reason": "Human query syntax, output destinations, and stream conflicts are CLI transport contracts."
+      "reason": "Human query syntax, output destinations, cursor-mode spellings, and stream conflicts are CLI transport contracts."
     },
     {
       "path": "src/cli/register-operations.ts",

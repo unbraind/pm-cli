@@ -33,6 +33,14 @@ const DEFAULT_EVENT_LIMIT = 100;
 const MAX_EVENT_LIMIT = 1_000;
 const DEFAULT_FOLLOW_INTERVAL_MS = 250;
 
+/** Regression budgets for the canonical 200-event wire-cost fixture. */
+export const MUTATION_EVENT_WIRE_BUDGET = Object.freeze({
+  /** Maximum default batch bytes divided by legacy row-cursor bytes. */
+  batch_to_row_ratio: 0.6,
+  /** Fixture size used to keep the ratio representative of fleet catch-up. */
+  fixture_events: 200,
+});
+
 interface MutationEventCursorEnvelope {
   version: number;
   fingerprint: string;
@@ -69,12 +77,14 @@ export interface ListMutationEventsOptions {
   agentInstance?: string | readonly string[];
   /** Exact provenance dimension predicates (`dimension=value`). */
   provenanceFilter?: string | readonly string[];
+  /** Cursor framing mode; batch is the token-efficient default. */
+  cursorMode?: "batch" | "row";
 }
 
 /** One ordered cross-item mutation event. */
 export interface MutationEvent {
   /** Cursor that resumes strictly after this event. */
-  cursor: string;
+  cursor?: string;
   /** Item id or `_workspace` stream subject. */
   item_id: string;
   /** One-based version within the subject's stream. */
@@ -103,6 +113,8 @@ export interface MutationEventPage {
   count: number;
   /** Whether another matching event is immediately available. */
   has_more: boolean;
+  /** Cursor framing used by this page. */
+  cursor_mode: "batch" | "row";
   /** Cursor that resumes after the final returned event. */
   next_cursor?: string;
   /** Persistent derived projection used for the read. */
@@ -280,6 +292,21 @@ async function resolveIndexedMutationEvents(
   return indexed;
 }
 
+/** Resolves the event cursor emission mode and rejects unsupported transport spellings. */
+function resolveMutationEventCursorMode(
+  value: ListMutationEventsOptions["cursorMode"],
+): "batch" | "row" {
+  const cursorMode = value ?? "batch";
+  if (cursorMode !== "batch" && cursorMode !== "row") {
+    throw new PmCliError(
+      "Mutation event cursor mode must be batch or row.",
+      EXIT_CODE.USAGE,
+      { code: "invalid_event_cursor_mode" },
+    );
+  }
+  return cursorMode;
+}
+
 /** Read one bounded page of mutation events from the persistent projection. */
 export async function listMutationEvents(
   options: ListMutationEventsOptions = {},
@@ -292,6 +319,7 @@ export async function listMutationEvents(
     );
   }
   const requestedLimit = parseMutationEventLimit(options.limit);
+  const cursorMode = resolveMutationEventCursorMode(options.cursorMode);
   if (options.full === true && options.provenance === true) {
     throw new PmCliError(
       "Mutation event projections are mutually exclusive. Use --provenance or --full.",
@@ -341,7 +369,9 @@ export async function listMutationEvents(
   };
   const indexed = await resolveIndexedMutationEvents(pmRoot, query);
   const events = indexed.events.map((event) => ({
-    cursor: encodeMutationEventCursor(event, fingerprint),
+    ...(cursorMode === "row"
+      ? { cursor: encodeMutationEventCursor(event, fingerprint) }
+      : {}),
     item_id: event.stream_id,
     version: event.stream_offset + 1,
     ts: event.entry.ts,
@@ -365,9 +395,15 @@ export async function listMutationEvents(
     events,
     count: events.length,
     has_more: indexed.has_more,
-    ...(events.length === 0
+    cursor_mode: cursorMode,
+    ...(indexed.events.length === 0
       ? {}
-      : { next_cursor: events[events.length - 1].cursor }),
+      : {
+          next_cursor: encodeMutationEventCursor(
+            indexed.events[indexed.events.length - 1],
+            fingerprint,
+          ),
+        }),
     source: "derived_index",
     ...(options.provenanceSummary === true
       ? {
@@ -382,12 +418,12 @@ export async function listMutationEvents(
 }
 
 /**
- * Subscribe to committed mutation facts as an async iterable. The iterator
- * performs cursor catch-up reads and waits only when no new event is available.
+ * Subscribe to complete event batches. Every yield is a recoverable boundary;
+ * an empty batch is an idle heartbeat carrying the last known cursor.
  */
-export async function* subscribeMutationEvents(
+export async function* subscribeMutationEventBatches(
   options: SubscribeMutationEventsOptions = {},
-): AsyncGenerator<MutationEvent, void, void> {
+): AsyncGenerator<MutationEventPage, void, void> {
   const intervalMs = options.intervalMs ?? DEFAULT_FOLLOW_INTERVAL_MS;
   if (!Number.isSafeInteger(intervalMs) || intervalMs < 10) {
     throw new PmCliError(
@@ -398,11 +434,17 @@ export async function* subscribeMutationEvents(
   }
   let cursor = options.since;
   while (options.signal?.aborted !== true) {
-    const page = await listMutationEvents({ ...options, since: cursor });
+    const page = await listMutationEvents({
+      ...options,
+      cursorMode: options.cursorMode ?? "batch",
+      since: cursor,
+    });
+    const boundary =
+      page.next_cursor === undefined && cursor !== undefined
+        ? { ...page, next_cursor: cursor }
+        : page;
+    yield boundary;
     if (page.events.length > 0) {
-      for (const event of page.events) {
-        yield event;
-      }
       cursor = page.next_cursor;
       continue;
     }
@@ -411,6 +453,23 @@ export async function* subscribeMutationEvents(
     } catch (error: unknown) {
       if (isAbortError(error)) return;
       throw error;
+    }
+  }
+}
+
+/**
+ * Subscribe to committed mutation facts as an async iterable. The iterator
+ * performs cursor catch-up reads and waits only when no new event is available.
+ */
+export async function* subscribeMutationEvents(
+  options: SubscribeMutationEventsOptions = {},
+): AsyncGenerator<MutationEvent, void, void> {
+  for await (const page of subscribeMutationEventBatches({
+    ...options,
+    cursorMode: options.cursorMode ?? "row",
+  })) {
+    for (const event of page.events) {
+      yield event;
     }
   }
 }

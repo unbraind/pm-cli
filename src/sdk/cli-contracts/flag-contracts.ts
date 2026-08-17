@@ -1550,6 +1550,7 @@ export const EVENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author", repeatable: true },
   { flag: "--item", repeatable: true },
   { flag: "--limit", value_type: "number" },
+  { flag: "--cursor-mode", value_name: "batch|row" },
   { flag: "--full" },
   { flag: "--provenance" },
   { flag: "--provenance-summary" },

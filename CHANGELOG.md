@@ -4,12 +4,17 @@
 
 ### Fixed
 
+- Exporter artifact-channel contract: clean stdout, bounded receipts, and binary-safe streaming ([pm-dilou2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dilou2.toon))
 - GH-1048: Windows Node 24 numeric EDQUOT fixtures construct NaN on platforms that do not declare that errno ([pm-y4kovm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4kovm.toon))
 - Queued daily releases recognize an already-published same-day release before analyzer provenance ([pm-dm2vfz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dm2vfz.toon))
 
 ### Security
 
 - Adopt Dependabot PR \#1046 pinned CodeQL 4.37.7 and TruffleHog 3.97.0 refresh ([pm-pp6al9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pp6al9.toon))
+
+### Other
+
+- Half of the pm events payload is per-row resume cursors an agent never reads: 48 percent of stream bytes buy a capability consumed once per batch ([pm-ez1dfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ez1dfg.toon))
 
 ## 2026.8.17 - 2026-08-17
 

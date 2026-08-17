@@ -48,3 +48,43 @@ export function serializeNdjsonRows(rows: readonly unknown[]): string {
     })
     .join("\n");
 }
+
+/** Terminal metadata that makes an NDJSON batch independently resumable. */
+export interface PmNdjsonStreamTrailer {
+  /** Producer-owned constant-size fields may extend the shared trailer. */
+  readonly [key: string]: unknown;
+  /** Stable discriminator that cannot be confused with a domain row. */
+  record_type: "pm.stream.trailer";
+  /** Number of domain rows preceding this trailer in the batch. */
+  count: number;
+  /** Whether another row was available when the batch was read. */
+  has_more: boolean;
+  /** Opaque cursor that resumes strictly after this batch. */
+  next_cursor: string | null;
+  /** Name of the authoritative or derived source that produced the batch. */
+  source: string;
+  /** Optional constant-size metadata owned by the stream producer. */
+  metadata?: Readonly<Record<string, unknown>>;
+}
+
+/** Metadata accepted by {@link serializeNdjsonStream}. */
+export type PmNdjsonStreamTrailerInput = Omit<
+  PmNdjsonStreamTrailer,
+  "record_type"
+>;
+
+/**
+ * Serialize a bounded NDJSON batch followed by exactly one typed terminal
+ * trailer. The result has no trailing newline so callers retain framing
+ * control while consumers always receive count and recovery metadata, even
+ * for an empty batch.
+ */
+export function serializeNdjsonStream(
+  rows: readonly unknown[],
+  trailer: PmNdjsonStreamTrailerInput,
+): string {
+  return serializeNdjsonRows([
+    ...rows,
+    { record_type: "pm.stream.trailer", ...trailer },
+  ]);
+}
