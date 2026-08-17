@@ -1590,11 +1590,11 @@ async function copyIntoSandboxIfPresent(
   if (!(await pathExists(sourcePath))) {
     return;
   }
-  await mkdir(path.dirname(targetPath), { recursive: true });
   try {
     await withHostEnvironmentBoundary(
       "seed_linked_test",
       async () => {
+        await mkdir(path.dirname(targetPath), { recursive: true });
         if (recursive) {
           await cp(sourcePath, targetPath, { recursive: true, force: true });
           return;

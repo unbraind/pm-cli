@@ -407,10 +407,12 @@ When a linked command is a PM tracker-read such as `pm validate`, the default mi
 through seeded tracker data.
 
 The runner resolves every selected command's effective context before it
-creates temporary sandboxes. Schema and non-PM runs initialize only their
-schema roots; tracker roots and item data are materialized only when at least
-one selected command requires tracker context. This preserves source isolation
-without copying an unrelated tracker into constrained temporary storage.
+creates temporary sandboxes. Runs whose effective context is schema initialize
+only their schema roots; a non-PM command explicitly configured with
+`pm_context_mode: "tracker"` still requires tracker data. Tracker roots and item
+data are materialized only when at least one selected command requires tracker
+context. This preserves source isolation without copying an unrelated tracker
+into constrained temporary storage.
 Capacity, permission, and resource failures while seeding a required tracker
 surface as typed, path-redacted host-environment refusals with recovery steps.
 
