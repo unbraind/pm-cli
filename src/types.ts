@@ -1361,9 +1361,9 @@ export interface PmSettings {
     default_format: "toon" | "json";
   };
   /** Agent and human interaction preferences that do not change command semantics. */
-  ux: {
+  ux?: {
     /** Emit one stderr migration hint when a deprecated command alias is invoked. */
-    deprecation_hints: boolean;
+    deprecation_hints?: boolean;
   };
   /** Value that configures or reports history for this contract. */
   history: {

@@ -86,7 +86,7 @@ export interface PmCommandDestinationContract {
 function destinationRows(
   noun: PmCommandDestinationContract["noun"],
   target: string,
-  disposition: PmCommandDestinationDisposition,
+  disposition: Exclude<PmCommandDestinationDisposition, "keep_as_is">,
   owner: string,
   commands: readonly string[],
 ): PmCommandDestinationContract[] {
@@ -384,6 +384,17 @@ function validateCommandDestinations(
       });
     }
     for (const destination of destinations) {
+      if (
+        destination.disposition === "keep_as_is" &&
+        (destination.reason?.trim().length ?? 0) === 0
+      ) {
+        findings.push({
+          code: "missing_destination",
+          spelling: command,
+          message: `Command \`${command}\` is kept as-is without a documented reason.`,
+          nearest_target: destination.target,
+        });
+      }
       if (!nounSet.has(destination.noun)) {
         findings.push({
           code: "unknown_noun",
@@ -399,17 +410,20 @@ function validateCommandDestinations(
 
 function validateDestinationCensus(
   commandSet: ReadonlySet<string>,
+  destinations: readonly PmCommandDestinationContract[],
 ): PmCliGrammarFinding[] {
-  return PM_COMMAND_DESTINATION_CONTRACTS.filter(
-    (destination) =>
-      destination.disposition !== "package_owned" &&
-      !commandSet.has(destination.command),
-  ).map((destination) => ({
-    code: "stale_destination" as const,
-    spelling: destination.command,
-    message: `Destination row \`${destination.command}\` is absent from live contracts.`,
-    nearest_target: destination.target,
-  }));
+  return destinations
+    .filter(
+      (destination) =>
+        destination.disposition !== "package_owned" &&
+        !commandSet.has(destination.command),
+    )
+    .map((destination) => ({
+      code: "stale_destination" as const,
+      spelling: destination.command,
+      message: `Destination row \`${destination.command}\` is absent from live contracts.`,
+      nearest_target: destination.target,
+    }));
 }
 
 function validateAliasTargets(
@@ -429,7 +443,13 @@ function validateAliasTargets(
 /** Verify exhaustive census parity, noun ownership, alias targets, and growth. */
 export function verifyPmCliGrammar(
   commands: readonly string[],
+  aliases?: readonly PmCommandAliasContract[],
+): PmCliGrammarReport;
+/** Implementation seam accepts an injected census for isolated conformance tests. */
+export function verifyPmCliGrammar(
+  commands: readonly string[],
   aliases: readonly PmCommandAliasContract[] = [],
+  destinations: readonly PmCommandDestinationContract[] = PM_COMMAND_DESTINATION_CONTRACTS,
 ): PmCliGrammarReport {
   const normalizedCommands = [
     ...new Set(commands.map((command) => command.trim())),
@@ -442,7 +462,7 @@ export function verifyPmCliGrammar(
     string,
     PmCommandDestinationContract[]
   >();
-  for (const destination of PM_COMMAND_DESTINATION_CONTRACTS) {
+  for (const destination of destinations) {
     const entries = destinationsByCommand.get(destination.command) ?? [];
     entries.push(destination);
     destinationsByCommand.set(destination.command, entries);
@@ -453,19 +473,21 @@ export function verifyPmCliGrammar(
       destinationsByCommand,
       nounSet,
     ),
-    ...validateDestinationCensus(commandSet),
+    ...validateDestinationCensus(commandSet, destinations),
     ...validateAliasTargets(aliases, commandSet),
   ];
+  const hiddenAliasNames = new Set(
+    aliases.filter((alias) => alias.hidden).map((alias) => alias.alias),
+  );
   const visibleTopLevelCount = new Set(
-    normalizedCommands
-      .filter(
-        (command) =>
-          !command.includes(" ") &&
-          !(destinationsByCommand.get(command) ?? []).some(
-            (destination) => destination.disposition === "package_owned",
-          ),
-      )
-      .map((command) => command.split(" ")[0]!),
+    normalizedCommands.filter(
+      (command) =>
+        !command.includes(" ") &&
+        !hiddenAliasNames.has(command) &&
+        !(destinationsByCommand.get(command) ?? []).some(
+          (destination) => destination.disposition === "package_owned",
+        ),
+    ),
   ).size;
   if (
     visibleTopLevelCount > PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling
@@ -481,7 +503,7 @@ export function verifyPmCliGrammar(
   return {
     ok: findings.length === 0,
     command_count: normalizedCommands.length,
-    destination_count: PM_COMMAND_DESTINATION_CONTRACTS.length,
+    destination_count: destinations.length,
     hidden_alias_count: aliases.filter((alias) => alias.hidden).length,
     visible_top_level_count: visibleTopLevelCount,
     visible_top_level_ceiling:

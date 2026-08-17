@@ -1,8 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PM_COMMAND_DESTINATION_CONTRACTS } from "../../../../src/sdk/cli-contracts/grammar-contracts.js";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
 
 const harness = createScriptHarness();
+const initialExitCode = process.exitCode;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  process.exitCode = initialExitCode;
+});
 
 async function runGrammarGate(commandSummaries: unknown): Promise<{
   report: {
@@ -68,7 +74,7 @@ describe("command grammar gate", () => {
       command_count: PM_COMMAND_DESTINATION_CONTRACTS.length,
       mcp: { ok: true, findings: [] },
     });
-    expect(result.exitCode).not.toBe(1);
+    expect(result.exitCode ?? 0).toBe(0);
   });
 
   it("fails closed for MCP action and narrow-tool drift", async () => {

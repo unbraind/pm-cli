@@ -23,9 +23,14 @@ describe("CLI noun-verb grammar contracts", () => {
       command_count: commands.length,
       destination_count: commands.length,
       hidden_alias_count: 7,
+      visible_top_level_count: 61,
       visible_top_level_ceiling:
         PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
     });
+    expect(
+      verifyPmCliGrammar([...commands, "list-open"], PM_COMMAND_ALIAS_CONTRACTS)
+        .visible_top_level_count,
+    ).toBe(61);
     expect(new Set(PM_CLI_GRAMMAR_NOUNS).size).toBe(12);
   });
 
@@ -95,38 +100,46 @@ describe("CLI noun-verb grammar contracts", () => {
   });
 
   it("detects duplicate destinations and nouns outside the grammar", () => {
-    const mutableDestinations = PM_COMMAND_DESTINATION_CONTRACTS as Array<
-      (typeof PM_COMMAND_DESTINATION_CONTRACTS)[number]
-    >;
-    const originalLength = mutableDestinations.length;
-    mutableDestinations.push({
-      command: "list",
-      noun: "unregistered-noun" as never,
-      target: "list",
-      disposition: "keep_as_is",
-      owner: "pm-wt43zj",
-    });
-    try {
-      const report = verifyPmCliGrammar(
-        PM_COMMAND_DESTINATION_CONTRACTS.map(
-          (destination) => destination.command,
-        ),
-      );
-      expect(report.findings).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            code: "duplicate_destination",
-            spelling: "list",
-          }),
-          expect.objectContaining({
-            code: "unknown_noun",
-            spelling: "list",
-          }),
-        ]),
-      );
-    } finally {
-      mutableDestinations.splice(originalLength);
-    }
+    const destinations = [
+      ...PM_COMMAND_DESTINATION_CONTRACTS,
+      {
+        command: "list",
+        noun: "unregistered-noun" as never,
+        target: "list",
+        disposition: "keep_as_is" as const,
+        owner: "pm-wt43zj",
+      },
+    ];
+    const report = (
+      verifyPmCliGrammar as unknown as (
+        commands: readonly string[],
+        aliases: Parameters<typeof verifyPmCliGrammar>[1],
+        census: readonly (typeof PM_COMMAND_DESTINATION_CONTRACTS)[number][],
+      ) => ReturnType<typeof verifyPmCliGrammar>
+    )(
+      PM_COMMAND_DESTINATION_CONTRACTS.map(
+        (destination) => destination.command,
+      ),
+      [],
+      destinations,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "duplicate_destination",
+          spelling: "list",
+        }),
+        expect.objectContaining({
+          code: "missing_destination",
+          spelling: "list",
+          message: expect.stringContaining("without a documented reason"),
+        }),
+        expect.objectContaining({
+          code: "unknown_noun",
+          spelling: "list",
+        }),
+      ]),
+    );
   });
 
   it("resolves deprecated list aliases with stable canonical hints", () => {

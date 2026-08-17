@@ -202,13 +202,13 @@ describe("register-list-query list output formats", () => {
 
   it("suppresses only the deprecated-alias stderr hint through UX settings", async () => {
     const settings = structuredClone(SETTINGS_DEFAULTS);
-    settings.ux.deprecation_hints = false;
+    settings.ux = { deprecation_hints: false };
     await writeSettings(tmpRoot, settings);
     await runRaw("list-closed");
     expect(printError).not.toHaveBeenCalled();
     expect(runList).toHaveBeenCalledTimes(1);
 
-    settings.ux.deprecation_hints = true;
+    settings.ux = { deprecation_hints: true };
     await writeSettings(tmpRoot, settings);
   });
 

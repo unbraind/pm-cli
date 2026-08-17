@@ -189,7 +189,7 @@ pm list --all --updated-after 2026-06-04T15:18:32Z --brief
 pm list --status open --updated-after=-2h --brief
 pm list --status open --created-after=-7d
 
-# Common list windows avoid date math (`list-open` keeps the view open-only).
+# Common list windows avoid date math (`pm list --status open` keeps the view open-only).
 pm list --status open --today --brief
 pm list --all --recent --brief
 

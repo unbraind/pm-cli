@@ -25,7 +25,7 @@
 
 ### Deprecated
 
-- ADR: noun-verb CLI grammar — consolidation principles and alias-preserving deprecation policy (proposed) ([pm-pbyu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-pbyu.toon))
+- ADR: noun-verb CLI grammar — accepted consolidation principles and alias-preserving deprecation policy ([pm-pbyu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-pbyu.toon))
 
 ### Other
 

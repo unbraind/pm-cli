@@ -317,7 +317,7 @@ async function runRegisteredListCommand(params: {
   if (params.aliasContract?.lifecycle === "deprecated") {
     const deprecationHints = await readSettings(
       resolvePmRoot(process.cwd(), globalOptions.path),
-    ).then((settings) => settings.ux.deprecation_hints);
+    ).then((settings) => settings.ux!.deprecation_hints!);
     if (deprecationHints) {
       printError(renderPmCommandAliasMigrationHint(params.aliasContract));
     }
