@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",package-assurance,regression,"runtime:bun"
 created_at: "2026-08-17T12:47:48.472Z"
-updated_at: "2026-08-17T13:12:17.205Z"
-closed_at: "2026-08-17T13:09:03.955Z"
-completed_at: "2026-08-17T13:09:03.955Z"
+updated_at: "2026-08-17T13:33:06.821Z"
+closed_at: "2026-08-17T13:33:05.376Z"
+completed_at: "2026-08-17T13:33:05.376Z"
 author: "harness:codex"
 parent: pm-usfg
 resolution: "The recovery analyzer uses a node:module namespace binding and the installed-artifact gate executes listAllComplete under Node and Bun."
@@ -34,5 +34,13 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msx90jhz-al9gde,test,passed,"2026-08-17T13:07:14.272Z","2026-08-17T13:07:21.143Z","2026-08-17T13:07:21.143Z",1,0,0
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for Bun SDK package assurance
-close_reason: Restored Bun-compatible public SDK imports and expanded exact-package npm/Bun SDK acceptance.
+close_reason: Recorded review-caught Bun runtime escape classification and executable packed-package gate evidence.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ikj8ve
+  gate_id: installed-package-runtime-compatibility
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/sdk/refusal-reachability.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/sdk/refusal-reachability.spec.ts,node scripts/release/verify-installed-agent-session.mjs --help
+  hosted_checks[2]: CI / Gates (smokes),"CI / Runtime smoke (ubuntu-latest, Node 24)"
 body: ""

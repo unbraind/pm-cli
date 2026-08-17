@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",context-management,"github:1052",output-contract,package-ecosystem
 created_at: "2026-08-17T07:44:20.811Z"
-updated_at: "2026-08-17T13:24:35.637Z"
-closed_at: "2026-08-17T13:19:20.164Z"
-completed_at: "2026-08-17T13:19:20.164Z"
+updated_at: "2026-08-17T13:33:12.764Z"
+closed_at: "2026-08-17T13:33:11.792Z"
+completed_at: "2026-08-17T13:33:11.792Z"
 author: "harness:codex"
 parent: pm-usfg
 resolution: Complete-list recovery integration now proves PmCompleteListValidationError before reading its receipt.
@@ -47,5 +47,13 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for complete-list SDK delivery
   docs/SDK.md,project,Complete-list consumer contract and recovery guidance
-close_reason: Resolved the DeepScan review finding with explicit typed runtime narrowing.
+close_reason: Recorded review-caught analyzer escape classification and executable complete-list recovery gate evidence.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-y4aaol
+  gate_id: complete-list-recovery-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/refusal-reachability.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/query/complete-list.spec.ts tests/integration/refusal-reachability.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),DeepScan
 body: ""

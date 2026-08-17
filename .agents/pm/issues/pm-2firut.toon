@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:sdk","github:1051",output-contract
 created_at: "2026-08-17T07:44:11.138Z"
-updated_at: "2026-08-17T13:12:16.515Z"
-closed_at: "2026-08-17T13:09:02.654Z"
-completed_at: "2026-08-17T13:09:02.654Z"
+updated_at: "2026-08-17T13:33:01.318Z"
+closed_at: "2026-08-17T13:33:00.300Z"
+completed_at: "2026-08-17T13:33:00.300Z"
 author: "harness:codex"
 parent: pm-5t33or
 resolution: "CLI and SDK package catalog contracts accept output budget, limit, format, include, session, cursor, and row controls only in catalog mode."
@@ -39,5 +39,13 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for package catalog read-output delivery
   docs/SDK.md,project,Package catalog read-output guidance
-close_reason: Made package catalog a mode-sensitive universal read-output surface while preserving mutation isolation.
+close_reason: Recorded production-defect classification and executable package-catalog contract gate evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-2firut
+  gate_id: package-catalog-output-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/package-catalog-output-contract.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-package-manage.spec.ts tests/integration/package-catalog-output-contract.integration.spec.ts
+  hosted_checks[2]: CI / Gates (compat),CI / Gates (smokes)
 body: ""
