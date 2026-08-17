@@ -1,14 +1,14 @@
 id: pm-ksv2
-title: "Sentry captures deliberate Ctrl+C/Ctrl+D interrupts as error-level events (AbortError, PM-CLI-27)"
+title: "Sentry no longer captures deliberate Ctrl+C/Ctrl+D interrupts as error-level events (AbortError, PM-CLI-27)"
 description: Classify deliberate SIGINT and readline cancellations as handled control flow so user aborts do not create error-level Sentry issues or block release telemetry gates.
 type: Issue
 status: closed
 priority: 2
 tags[3]: agent-ux,sentry,telemetry
 created_at: "2026-07-12T08:08:23.019Z"
-updated_at: "2026-08-17T16:10:52.588Z"
-closed_at: "2026-08-17T16:09:52.233Z"
-completed_at: "2026-08-17T16:09:52.233Z"
+updated_at: "2026-08-17T16:30:39.396Z"
+closed_at: "2026-08-17T16:30:38.514Z"
+completed_at: "2026-08-17T16:30:38.514Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "user-initiated SIGINT/Ctrl+C/Ctrl+D aborts are classified as handled non-error telemetry (breadcrumb or info event, or not captured at all); AbortError from readline/prompt cancellation no longer creates unresolved error-level Sentry issues; the sentry-telemetry gate cannot be blocked by an explicit user terminal cancellation; regression coverage preserves observability for unrelated AbortError failures"
@@ -25,13 +25,15 @@ regression: true
 dependencies[2]{id,kind,created_at}:
   pm-5oj5,implements,"2026-07-26T17:18:51.005Z"
   pm-wfvq,related,"2026-07-26T17:18:51.005Z"
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-12T15:41:03.486Z",maintainer-agent,"Recurrence evidence 2026-07-12T15:36Z: this performance run interrupted an unintended interactive pm init prompt with Ctrl+C after pm test used schema context. Sentry correctly received PM-CLI-27 as handled=true but still reopened it at error/high; the linked runner was rerun successfully with --pm-context tracker. This is the same deliberate-abort class already owned here, not a new defect. Resolving the event group again pending the capture-time class fix."
   "2026-07-13T19:42:45.175Z",codex-root,"Live recurrence evidence 2026-07-13: release gate reports PM-CLI-27 unresolved high with count=5 and last seen 2026-07-13T16:46Z. During this lane, two linked-test attempts with an unintended interactive TTY reached the pm init wizard and were deliberately cancelled with Ctrl+C, reproducing the already-owned handled AbortError class; the non-TTY tracker-context rerun completed. No duplicate item created or claimed."
   "2026-07-14T00:09:48.869Z",codex-gpt5,"Implementation evidence: Sentry capture now recognizes user-initiated AbortError Ctrl+C/SIGINT control flow without suppressing unrelated abort failures. Dedicated regressions and all exact-tree strict gates pass at 100/100/100/100 coverage."
   "2026-07-14T00:29:12.745Z",codex-root,"Final verification: pm linked Sentry control-flow suite passes with sandbox parity; live PM-CLI-27 is resolved and the reliability gate reports zero blocking high/critical issues with healthy telemetry."
   "2026-08-17T15:42:16.208Z","harness:codex","Live recurrence evidence: Sentry PM-CLI-27 regressed at 2026-08-17T11:28:33Z on pm-cli@2026.8.17 with AbortError 'Aborted with Ctrl+D', handled=yes, system-only readline frames, but pm.error_code=unclassified_runtime_error. The 14-day sentry-telemetry gate reports critical=0 high=1 and blocks. This is the same deliberate terminal-abort class as the closed Ctrl+C fix, so no duplicate item was created. Extend capture-time intent classification to explicit Ctrl+D only; unrelated AbortError remains observable."
   "2026-08-17T16:09:16.947Z","harness:codex","Verification evidence 2026-08-17: TDD reproduced the exact Sentry event message before the policy change, then the PM-linked control-flow suite passed (3 tests). A solo full coverage run passed 515 files / 7,508 tests at statements 54,687/54,687, branches 40,815/40,815, functions 11,245/11,245, lines 52,784/52,784. Repository lint passed ESLint, zero jscpd clones, static assurance, package boundary/parity, surface replication, SDK import costs, and all graph/record assertions; the aggregate run's loaded transport benchmark exceeded its 362 ms get ceiling by 2 ms, and an immediate isolated no-load rerun passed all 6 operations. Manual PTY test in /tmp/pm-ctrl-d-manual.OHiASS reached the init wizard, Ctrl+D produced 'Aborted with Ctrl+D' and exit 1, and the built classifier returned sentry_capture=false for the corresponding named AbortError. Dependabot and code-scanning report zero open alerts. GitHub secret-scanning is currently returning provider HTTP 503, so no result is claimed. PM-CLI-27 is intentionally not resolved yet because public 2026.8.17 remains affected; resolve only after merged/published verification."
+  "2026-08-17T16:30:03.301Z","harness:codex","Exact-head CodeRabbit review 048774cd-43ce-40f1-82f8-df8f7b1b0d60 found two valid closeout gaps: CHANGELOG.md was generated but not linked as item documentation, and the generated entry retained issue-symptom wording rather than stating the corrected behavior. Apply both through pm and pm-changelog; do not edit derived tracker files directly."
+  "2026-08-17T16:30:33.399Z","harness:codex","Review remediation evidence: linked CHANGELOG.md through pm docs and changed the canonical item title so the pm-changelog-generated entry states the corrected behavior. No derived tracker file or changelog line was edited by hand. pm-changelog 2026.8.17 regenerated deterministically; focused validation follows on the closed projection."
 files[2]{path,scope,note}:
   src/core/sentry/helpers.ts,project,Explicit Ctrl+C Ctrl+D and SIGINT capture policy
   tests/unit/core/sentry/sentry-control-flow.spec.ts,project,Terminal cancellation capture regression coverage
@@ -40,7 +42,9 @@ tests[1]{command,scope,timeout_seconds}:
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrjwxnhl-l2nz4p,test,passed,"2026-07-14T00:28:21.658Z","2026-07-14T00:28:28.329Z","2026-07-14T00:28:28.329Z",1,0,0
   test-local-msxfhif6-5tsc72,test,passed,"2026-08-17T16:08:17.600Z","2026-08-17T16:08:30.594Z","2026-08-17T16:08:30.594Z",1,0,0
-close_reason: "Extended deliberate terminal-abort classification to Ctrl+D with exact regression coverage, 100% full-suite coverage, strict quality gates, and real PTY verification; live Sentry resolution is deferred until the fix is merged and published."
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated corrected-behavior release entry for Ctrl+D recurrence
+close_reason: "Addressed both exact-head CodeRabbit findings through PM: linked generated changelog documentation and corrected the release-entry wording to describe suppressed terminal interrupts."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
