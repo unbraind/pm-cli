@@ -171,6 +171,22 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 - Use `--force` only for explicit override paths.
 - Release when pausing, handing off, or after close.
 
+## Reviewed Delivery Closeout
+
+Treat PM evidence, item closure, and the generated changelog as part of the
+reviewed change. Add all evidence known before merge to the active branch,
+close and release the item there, regenerate `CHANGELOG.md`, and include those
+artifacts in the same pull request.
+
+If evidence depends on the merge commit SHA or a post-merge hosted result, use
+a normal `main`-based follow-up pull request for the repository mutation. Never
+push tracker-only or changelog-only closeout directly to `main`: that direct
+commit becomes the release candidate but has no reviewed analyzer provenance,
+so `Release analyzer readiness (main)` must refuse it. Record external
+post-merge observations on GitHub without changing repository state when no
+tracked closeout update is required. See [Releasing](RELEASING.md#reviewed-delivery-closeout)
+for the release contract.
+
 ## Documentation Rules for Agents
 
 - Keep [README](../README.md) short.
