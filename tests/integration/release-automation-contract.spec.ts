@@ -338,7 +338,7 @@ case "$1 $2" in
   "issue view") printf '%s' "\${ISSUE_COMMENTS}" ;;
   "issue comment") ;;
   "run list") printf '%s' "\${RELEASE_RUNS_JSON}" ;;
-  "release view") printf '%s' "\${RELEASE_TAG_OUTPUT}" ;;
+  "release view") printf '%s' "\${RELEASE_TAG_OUTPUT}"; exit "\${GH_RELEASE_STATUS}" ;;
   *) printf 'Unexpected gh invocation: %s\\n' "$*" >&2; exit 97 ;;
 esac
 `,
@@ -348,7 +348,7 @@ esac
         path.join(tempRoot, "npm"),
         `#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "\${NPM_FAKE_LOG}"
-printf '"%s"\\n' "\${RELEASE_VERSION}"
+printf '"%s"\\n' "\${NPM_VIEW_VERSION:-\${RELEASE_VERSION}}"
 exit "\${NPM_STATUS}"
 `,
         "utf8",
@@ -390,6 +390,7 @@ exit "\${NPM_STATUS}"
               GH_FAKE_LOG: ghLog,
               NPM_FAKE_LOG: npmLog,
               NPM_STATUS: "0",
+              GH_RELEASE_STATUS: "0",
               GITHUB_EVENT_NAME: "issues",
               ISSUE_CREATED_AT: `${currentDay}T08:00:00Z`,
               ISSUE_NUMBER: "1017",
@@ -455,6 +456,36 @@ exit "\${NPM_STATUS}"
         NPM_STATUS: "1",
       });
       expect(missingPublicPackage.status).not.toBe(0);
+      expect(missingPublicPackage.stdout).toContain(
+        "could not be verified through the public npm registry",
+      );
+      expect(await readFile(githubOutput, "utf8")).toBe("");
+
+      await writeFile(ghLog, "", "utf8");
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(githubOutput, "", "utf8");
+      const mismatchedPublicPackage = runScenario("", {
+        GITHUB_EVENT_NAME: "schedule",
+        NPM_VIEW_VERSION: "0.0.0",
+      });
+      expect(mismatchedPublicPackage.status).not.toBe(0);
+      expect(mismatchedPublicPackage.stdout).toContain(
+        "is not publicly available from npm at the exact version",
+      );
+      expect(await readFile(githubOutput, "utf8")).toBe("");
+
+      await writeFile(ghLog, "", "utf8");
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(githubOutput, "", "utf8");
+      const unavailableGithubRelease = runScenario("", {
+        GITHUB_EVENT_NAME: "schedule",
+        GH_RELEASE_STATUS: "1",
+      });
+      expect(unavailableGithubRelease.status).not.toBe(0);
+      expect(unavailableGithubRelease.stdout).toContain(
+        "could not be verified through public GitHub Release metadata",
+      );
+      expect(await readFile(npmLog, "utf8")).toBe("");
       expect(await readFile(githubOutput, "utf8")).toBe("");
 
       await writeFile(ghLog, "", "utf8");

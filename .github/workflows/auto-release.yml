@@ -258,7 +258,10 @@ jobs:
               gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
             fi
 
-            verified_release_tag="$(gh release view "${EXISTING_RELEASE_TAG}" --json tagName,isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false) | .tagName')"
+            if ! verified_release_tag="$(gh release view "${EXISTING_RELEASE_TAG}" --json tagName,isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false) | .tagName')"; then
+              echo "Existing release ${EXISTING_RELEASE_TAG} could not be verified through public GitHub Release metadata."
+              exit 1
+            fi
             if [[ "${verified_release_tag}" != "${EXISTING_RELEASE_TAG}" ]]; then
               echo "Existing release ${EXISTING_RELEASE_TAG} lacks public non-draft GitHub Release metadata."
               exit 1
@@ -267,7 +270,10 @@ jobs:
             npm_package="$(node -p 'require("./package.json").name')"
             public_npmrc="${RUNNER_TEMP}/same-day-public-npmrc"
             : > "${public_npmrc}"
-            verified_npm_version="$(env -u NODE_AUTH_TOKEN -u NPM_TOKEN npm_config_userconfig="${public_npmrc}" npm_config_cache="${RUNNER_TEMP}/same-day-npm-cache" npm view "${npm_package}@${release_version}" version --json | node -e 'let input=""; process.stdin.on("data", (chunk) => { input += chunk; }); process.stdin.on("end", () => { const parsed=JSON.parse(input); process.stdout.write(typeof parsed === "string" ? parsed : ""); });')"
+            if ! verified_npm_version="$(env -u NODE_AUTH_TOKEN -u NPM_TOKEN npm_config_userconfig="${public_npmrc}" npm_config_cache="${RUNNER_TEMP}/same-day-npm-cache" npm view "${npm_package}@${release_version}" version --json | node -e 'let input=""; process.stdin.on("data", (chunk) => { input += chunk; }); process.stdin.on("end", () => { const parsed=JSON.parse(input); process.stdout.write(typeof parsed === "string" ? parsed : ""); });')"; then
+              echo "Existing release ${EXISTING_RELEASE_TAG} could not be verified through the public npm registry."
+              exit 1
+            fi
             if [[ "${verified_npm_version}" != "${release_version}" ]]; then
               echo "Existing release ${EXISTING_RELEASE_TAG} is not publicly available from npm at the exact version."
               exit 1

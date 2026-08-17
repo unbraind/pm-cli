@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Queued daily releases recognize an already-published same-day release before analyzer provenance ([pm-dm2vfz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dm2vfz.toon))
+
+## 2026.8.17 - 2026-08-17
+
 ### Added
 
 - History-derived defect recurrence gate: turn resolved incident patterns into targeted local and hosted CI protections ([pm-1qkivy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1qkivy.toon))
@@ -9,7 +15,6 @@
 
 ### Fixed
 
-- Queued daily releases recognize an already-published same-day release before analyzer provenance ([pm-dm2vfz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dm2vfz.toon))
 - Linked tests retain high-volume Vitest output without aborting ([pm-giks4s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-giks4s.toon))
 - A declared context intent returns no context when combined with the narrowing flag, and its refusal receipt reports 122 tokens against a 2400 budget as the reason it does not fit ([pm-3crymx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3crymx.toon))
 - The relationship lexicon cannot express recurrence, so a defect family fixed thirty times is thirty unrelated nodes to every graph algorithm ([pm-ouyq3n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ouyq3n.toon))
