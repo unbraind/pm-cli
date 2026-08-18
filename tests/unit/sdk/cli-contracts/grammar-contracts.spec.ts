@@ -185,8 +185,7 @@ describe("CLI noun-verb grammar contracts", () => {
       ok: true,
       declared_command_count: PM_COMMAND_POSITIONAL_CONTRACTS.length,
       observed_command_count: PM_COMMAND_POSITIONAL_CONTRACTS.length,
-      positional_shape_budget:
-        PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
+      positional_shape_budget: PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
       findings: [],
     });
     expect(report.positional_shape_count).toBeLessThanOrEqual(
@@ -229,6 +228,11 @@ describe("CLI noun-verb grammar contracts", () => {
       slots: [],
       accepted_flags: expect.arrayContaining(["--definition"]),
     });
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.find(
+        ({ command }) => command === "assurance apply",
+      )?.example,
+    ).toBe("pm assurance apply software-delivery --owner pm-a1b2");
   });
 
   it("fails closed for missing, stale, arity, and shape-budget drift", () => {
@@ -265,15 +269,29 @@ describe("CLI noun-verb grammar contracts", () => {
       ]),
     );
 
-    const duplicateMissing = verifyPmCommandPositionalContracts([], {
-      declared: [
-        PM_COMMAND_POSITIONAL_CONTRACTS[0]!,
-        PM_COMMAND_POSITIONAL_CONTRACTS[0]!,
-      ],
-    });
-    expect(duplicateMissing.findings).toHaveLength(2);
-    expect(duplicateMissing.findings[0]?.command).toBe(
-      duplicateMissing.findings[1]?.command,
+    const duplicate = PM_COMMAND_POSITIONAL_CONTRACTS[0]!;
+    const duplicateReport = verifyPmCommandPositionalContracts(
+      [duplicate, duplicate],
+      {
+        declared: [duplicate, duplicate],
+      },
     );
+    expect(duplicateReport).toMatchObject({
+      ok: false,
+      declared_command_count: 2,
+      observed_command_count: 2,
+    });
+    expect(duplicateReport.findings).toEqual([
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        command: duplicate.command,
+        detail: expect.stringContaining("declared positional signatures"),
+      }),
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        command: duplicate.command,
+        detail: expect.stringContaining("observed positional signatures"),
+      }),
+    ]);
   });
 });

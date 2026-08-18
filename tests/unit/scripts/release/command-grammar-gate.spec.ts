@@ -1,3 +1,5 @@
+import type * as childProcess from "node:child_process";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PM_COMMAND_DESTINATION_CONTRACTS,
@@ -13,11 +15,18 @@ afterEach(() => {
   process.exitCode = initialExitCode;
 });
 
-async function runGrammarGate(commandSummaries: unknown): Promise<{
+async function runGrammarGate(
+  commandSummaries: unknown,
+  options: { positionalSignatures?: unknown } = {},
+): Promise<{
   report: {
     ok: boolean;
     command_count: number;
-    positionals: { ok: boolean; findings: Array<{ code: string }> };
+    positionals: {
+      ok: boolean;
+      findings: Array<{ code: string; command: string }>;
+      inactive_package_commands: string[];
+    };
     mcp: {
       ok: boolean;
       findings: Array<{ code: string }>;
@@ -36,28 +45,31 @@ async function runGrammarGate(commandSummaries: unknown): Promise<{
     ) => { ok: boolean; findings: Array<{ code: string }> };
   };
 }> {
+  const derivedPositionalSignatures = Array.isArray(commandSummaries)
+    ? commandSummaries
+        .filter(
+          (summary): summary is { command: string; positionals?: unknown[] } =>
+            typeof summary === "object" &&
+            summary !== null &&
+            typeof (summary as { command?: unknown }).command === "string",
+        )
+        .map(({ command, positionals }) => ({
+          command,
+          slots: Array.isArray(positionals) ? positionals : [],
+        }))
+    : undefined;
   const execFileSync = vi.fn(() =>
     JSON.stringify({
       command_summaries: commandSummaries,
       grammar_contracts: {
-        positional_signatures: Array.isArray(commandSummaries)
-          ? commandSummaries
-              .filter(
-                (summary): summary is { command: string; positionals?: unknown[] } =>
-                  typeof summary === "object" &&
-                  summary !== null &&
-                  typeof (summary as { command?: unknown }).command === "string",
-              )
-              .map(({ command, positionals }) => ({
-                command,
-                slots: Array.isArray(positionals) ? positionals : [],
-              }))
-          : undefined,
+        positional_signatures: Object.hasOwn(options, "positionalSignatures")
+          ? options.positionalSignatures
+          : derivedPositionalSignatures,
       },
     }),
   );
   vi.doMock("node:child_process", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("node:child_process")>()),
+    ...(await importOriginal<typeof childProcess>()),
     execFileSync,
   }));
   let output = "";
@@ -86,7 +98,11 @@ async function runGrammarGate(commandSummaries: unknown): Promise<{
     report: JSON.parse(output) as {
       ok: boolean;
       command_count: number;
-      positionals: { ok: boolean; findings: Array<{ code: string }> };
+      positionals: {
+        ok: boolean;
+        findings: Array<{ code: string; command: string }>;
+        inactive_package_commands: string[];
+      };
       mcp: {
         ok: boolean;
         findings: Array<{ code: string }>;
@@ -130,9 +146,7 @@ describe("command grammar gate", () => {
   });
 
   it("fails closed for MCP action and narrow-tool drift", async () => {
-    const { module } = await runGrammarGate(
-      liveCommandSummaries,
-    );
+    const { module } = await runGrammarGate(liveCommandSummaries);
     const result = module.verifyMcpGrammar(
       ["create"],
       [
@@ -161,9 +175,7 @@ describe("command grammar gate", () => {
   });
 
   it("rejects a missing or untyped pm_run dispatcher", async () => {
-    const { module } = await runGrammarGate(
-      liveCommandSummaries,
-    );
+    const { module } = await runGrammarGate(liveCommandSummaries);
     expect(module.verifyMcpGrammar([], [], {}).findings).toContainEqual(
       expect.objectContaining({ code: "missing_pm_run_tool" }),
     );
@@ -208,5 +220,48 @@ describe("command grammar gate", () => {
       },
     });
     expect(result.exitCode).toBe(1);
+  });
+
+  it("fails closed when an active package command omits its positional signature", async () => {
+    const omittedCommand = "changelog generate";
+    const result = await runGrammarGate(liveCommandSummaries, {
+      positionalSignatures: PM_COMMAND_POSITIONAL_CONTRACTS.filter(
+        ({ command }) => command !== omittedCommand,
+      ).map(({ command, slots }) => ({ command, slots })),
+    });
+    expect(result.report).toMatchObject({
+      ok: false,
+      positionals: {
+        ok: false,
+        findings: [
+          expect.objectContaining({
+            code: "missing_observed_signature",
+            command: omittedCommand,
+          }),
+        ],
+      },
+    });
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("does not duplicate a declared signature for an inactive package command", async () => {
+    const inactiveCommand = "search-advanced";
+    const result = await runGrammarGate(
+      liveCommandSummaries.filter(({ command }) => command !== inactiveCommand),
+      {
+        positionalSignatures: PM_COMMAND_POSITIONAL_CONTRACTS.map(
+          ({ command, slots }) => ({ command, slots }),
+        ),
+      },
+    );
+    expect(result.report).toMatchObject({
+      ok: true,
+      positionals: {
+        ok: true,
+        inactive_package_commands: [inactiveCommand],
+        findings: [],
+      },
+    });
+    expect(result.exitCode ?? 0).toBe(0);
   });
 });

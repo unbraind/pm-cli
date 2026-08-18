@@ -362,7 +362,10 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
         slots: [positionalSlot("preset", "string", action === "apply")],
         accepted_flags: ["--author", "--message", "--owner"],
         description: `${action} assurance adoption presets.`,
-        example: `pm assurance ${action}`,
+        example:
+          action === "apply"
+            ? "pm assurance apply software-delivery --owner pm-a1b2"
+            : "pm assurance presets",
       }),
     ),
     {
@@ -390,7 +393,7 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       slots: [],
       accepted_flags: ["--definition"],
       description: "Analyze bounded defect-recurrence risk for a proposed change.",
-      example: "pm assurance risk --definition '{\"change\":{\"files\":[]}}'",
+      example: 'pm assurance risk --definition \'{"change":{"files":[]}}\'',
     },
   ];
 
@@ -802,6 +805,24 @@ function positionalSignatureKey(
     .join("|");
 }
 
+/** Return one deterministic finding for every repeated command path. */
+function duplicatePositionalSignatureFindings(
+  contracts: readonly PmCommandPositionalContract[],
+  surface: "declared" | "observed",
+): PmCommandPositionalFinding[] {
+  const counts = new Map<string, number>();
+  for (const { command } of contracts) {
+    counts.set(command, (counts.get(command) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([command, count]) => ({
+      code: "positional_signature_mismatch",
+      command,
+      detail: `${count} ${surface} positional signatures exist for ${command}; exactly one is required.`,
+    }));
+}
+
 /** Compare independently observed Commander signatures with the SDK declaration. */
 export function verifyPmCommandPositionalContracts(
   observed: readonly PmCommandPositionalContract[],
@@ -820,8 +841,17 @@ export function verifyPmCommandPositionalContracts(
   const observedByCommand = new Map(
     observed.map((contract) => [contract.command, contract] as const),
   );
-  const findings: PmCommandPositionalFinding[] = [];
-  for (const contract of declared) {
+  const findings: PmCommandPositionalFinding[] = [
+    ...duplicatePositionalSignatureFindings(
+      declared,
+      "declared",
+    ),
+    ...duplicatePositionalSignatureFindings(
+      observed,
+      "observed",
+    ),
+  ];
+  for (const contract of declaredByCommand.values()) {
     const actual = observedByCommand.get(contract.command);
     if (!actual) {
       findings.push({
@@ -839,7 +869,7 @@ export function verifyPmCommandPositionalContracts(
       });
     }
   }
-  for (const contract of observed) {
+  for (const contract of observedByCommand.values()) {
     if (!declaredByCommand.has(contract.command)) {
       findings.push({
         code: "stale_observed_signature",

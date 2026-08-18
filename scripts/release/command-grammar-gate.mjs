@@ -198,18 +198,20 @@ const observedPositionalContracts = Array.isArray(
 )
   ? contracts.grammar_contracts.positional_signatures
   : [];
-const observedCommandSet = new Set(
+const activeCommandSet = new Set(commands);
+const observedSignatureCommandSet = new Set(
   observedPositionalContracts.map(({ command }) => command),
 );
 const inactivePackageCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
   ({ command, disposition }) =>
-    disposition === "package_owned" && !observedCommandSet.has(command),
+    disposition === "package_owned" && !activeCommandSet.has(command),
 ).map(({ command }) => command);
 const inactivePackageCommandSet = new Set(inactivePackageCommands);
 const positionalReport = verifyPmCommandPositionalContracts([
   ...observedPositionalContracts,
   ...PM_COMMAND_POSITIONAL_CONTRACTS.filter(({ command }) =>
-    inactivePackageCommandSet.has(command),
+    inactivePackageCommandSet.has(command) &&
+    !observedSignatureCommandSet.has(command),
   ),
 ]);
 const mcpReport = verifyMcpGrammar(
