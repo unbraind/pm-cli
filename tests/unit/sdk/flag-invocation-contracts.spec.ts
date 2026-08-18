@@ -108,6 +108,12 @@ describe("CLI flag invocation contracts", () => {
       enrichCliFlagInvocationContract("test", { flag: "--only-index" }),
     ).toMatchObject({ takes_value: true, value_required: true });
     expect(
+      enrichCliFlagInvocationContract("test", { flag: "--only" }),
+    ).toMatchObject({ takes_value: false, value_required: false });
+    expect(
+      enrichCliFlagInvocationContract("test", { flag: "--only-scope" }),
+    ).toMatchObject({ takes_value: true, value_required: true });
+    expect(
       enrichCliFlagInvocationContract("comments", {
         flag: "--stdin",
       }),
@@ -147,6 +153,7 @@ describe("CLI flag invocation contracts", () => {
       },
     ]);
     expect(report.ok).toBe(false);
+    expect(report.observed_count).toBe(4);
     expect(report.findings.map(({ code }) => code)).toEqual([
       "duplicate_observation",
       "undeclared_observation",

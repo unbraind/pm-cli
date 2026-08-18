@@ -422,7 +422,11 @@ async function validateAutomationInventory(inventory, root, violations) {
   }
   const discoveredScripts = new Set(
     (await readdir(path.join(root, "scripts", "release")))
-      .filter((file) => /(?:-gate|gate-registry)\.(?:[cm]?[jt]s)$/u.test(file))
+      .filter((file) =>
+        /(?:-gate|flag-invocation-parity|gate-registry)\.(?:[cm]?[jt]s)$/u.test(
+          file,
+        ),
+      )
       .map((file) => `scripts/release/${file}`),
   );
   const providers = new Set();

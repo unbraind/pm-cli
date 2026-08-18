@@ -18,9 +18,16 @@ describe("flag lexicon contracts", () => {
     });
     expect(lexicon.length).toBeGreaterThan(3_000);
     expect(budgets.length).toBeGreaterThan(60);
-    expect(renderPmFlagLexiconMarkdown()).toContain(
-      "| `context` | context |",
+    expect(budgets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: "context",
+          current: lexicon.filter(({ command }) => command === "context")
+            .length,
+        }),
+      ]),
     );
+    expect(renderPmFlagLexiconMarkdown()).toContain("| `context` | context |");
   });
 
   it("fails closed on duplicate concepts, alias collisions, and growth", () => {

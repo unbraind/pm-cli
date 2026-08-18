@@ -192,16 +192,23 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   "test-runs-worker": 25,
 } satisfies Readonly<Record<string, number>>);
 
-/** Return persisted no-growth ratchets for the canonical command vocabulary. */
+/** Return persisted no-growth ratchets with current counts derived from the canonical vocabulary. */
 export function listPmCommandFlagBudgets(): readonly PmCommandFlagBudget[] {
+  const currentByCommand = new Map<string, number>(
+    Object.keys(PM_COMMAND_FLAG_BUDGET_MAXIMUMS).map(
+      (command) => [command, 0] as const,
+    ),
+  );
+  for (const { command } of listPmFlagLexicon()) {
+    currentByCommand.set(command, Number(currentByCommand.get(command)) + 1);
+  }
   return Object.freeze(
-    Object.entries(PM_COMMAND_FLAG_BUDGET_MAXIMUMS).map(
-      ([command, maximum]) =>
-        Object.freeze({
-          command,
-          current: maximum,
-          maximum,
-        }),
+    Object.entries(PM_COMMAND_FLAG_BUDGET_MAXIMUMS).map(([command, maximum]) =>
+      Object.freeze({
+        command,
+        current: Number(currentByCommand.get(command)),
+        maximum,
+      }),
     ),
   );
 }
@@ -300,17 +307,19 @@ export function verifyPmFlagLexicon(
   };
 }
 
-/** Render a compact, generated family and command budget reference. */
+/** Render a compact, generated family and command budget reference. Persisted budget rows are initialized to an explicit fallback so stale rows remain renderable. */
 export function renderPmFlagLexiconMarkdown(): string {
   const lexicon = listPmFlagLexicon();
-  const rows = listPmCommandFlagBudgets().map(
-    ({ command, current, maximum }) => {
-      const family = lexicon.find(
-        (entry) => entry.command === command,
-      )!.family;
-      return `| \`${command}\` | ${family} | ${current} | ${maximum} |`;
-    },
+  const budgets = listPmCommandFlagBudgets();
+  const familyByCommand = new Map<string, string>(
+    budgets.map(({ command }) => [command, "unknown"] as const),
   );
+  for (const { command, family } of lexicon)
+    familyByCommand.set(command, family);
+  const rows = budgets.map(({ command, current, maximum }) => {
+    const family = familyByCommand.get(command);
+    return `| \`${command}\` | ${family} | ${current} | ${maximum} |`;
+  });
   return [
     "# Generated flag lexicon budgets",
     "",

@@ -289,14 +289,15 @@ describe("workspace snapshots", () => {
           pid: lock.pid,
           ttl_seconds: lock.ttl_seconds,
         });
+        heartbeat.start();
+        await heartbeat.refreshNow();
         await writeFile(
           lockPath,
           `${JSON.stringify({ ...renewedLock, created_at: expiredCreatedAt }, null, 2)}\n`,
           "utf8",
         );
-        heartbeat.start();
         await vi.advanceTimersByTimeAsync(10);
-        await heartbeat.refreshNow();
+        await heartbeat.stop();
         const scheduledRenewal = JSON.parse(
           await readFile(lockPath, "utf8"),
         ) as Record<string, unknown>;

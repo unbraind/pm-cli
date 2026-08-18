@@ -1799,17 +1799,28 @@ function withSubcommandGlobalFlags(
 ): CliFlagContract[] {
   const byCanonicalFlag = new Map<string, CliFlagContract>();
   for (const contract of [...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]) {
-    const prior = byCanonicalFlag.get(contract.flag);
+    const canonicalFlag = normalizeFlagAliasKey(contract.flag);
+    const prior = byCanonicalFlag.get(canonicalFlag);
+    const { aliases: declaredAliases, ...contractWithoutAliases } = contract;
+    const aliases = normalizeUniqueStringList([
+      ...(declaredAliases ?? []),
+      ...(contract.flag === canonicalFlag ? [] : [contract.flag]),
+    ]).filter((alias) => alias !== canonicalFlag);
+    const normalizedContract: CliFlagContract = {
+      ...contractWithoutAliases,
+      flag: canonicalFlag,
+      ...(aliases.length > 0 ? { aliases } : {}),
+    };
     byCanonicalFlag.set(
-      contract.flag,
+      canonicalFlag,
       prior === undefined
-        ? contract
+        ? normalizedContract
         : {
             ...prior,
-            ...contract,
+            ...normalizedContract,
             aliases: normalizeUniqueStringList([
               ...(prior.aliases ?? []),
-              ...(contract.aliases ?? []),
+              ...(normalizedContract.aliases ?? []),
             ]),
           },
     );
@@ -1858,8 +1869,7 @@ const POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT = new Map([
 
 /** Resolve every positional action's accepted flags against one parent contract. */
 export function resolvePmPositionalActionFlagContracts(
-  actions: readonly PmPositionalActionContract[] =
-    PM_POSITIONAL_ACTION_CONTRACTS,
+  actions: readonly PmPositionalActionContract[] = PM_POSITIONAL_ACTION_CONTRACTS,
 ): Array<readonly [string, CliFlagContract[]]> {
   return actions.map(({ command, parent, accepted_flags: acceptedFlags }) => {
     const parentFlagIndex = POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT.get(parent);

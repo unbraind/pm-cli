@@ -59,6 +59,15 @@
         }
       },
       {
+        "path": "scripts/release/flag-invocation-parity.mjs",
+        "disposition": "retained",
+        "reason": "Compares generated SDK flag arity with independently observed Commander registrations.",
+        "negative_control": {
+          "test": "tests/unit/scripts/flag-invocation-parity.spec.ts",
+          "assertion": "blocks a seeded arity mismatch"
+        }
+      },
+      {
         "path": "scripts/release/refusal-closure-gate.mjs",
         "disposition": "retained",
         "reason": "Executes real closed-domain refusals and their advertised recovery commands in an isolated tracker.",

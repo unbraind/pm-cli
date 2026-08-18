@@ -120,7 +120,6 @@ const BOOLEAN_FLAG_PREFIXES = [
   "--include-",
   "--json",
   "--no-",
-  "--only",
   "--prune-",
   "--quiet",
   "--refresh-",
@@ -206,6 +205,8 @@ const BOOLEAN_FLAG_NAMES = new Set([
   "--metadata-coverage",
   "--next",
   "--normalize-provenance",
+  "--only",
+  "--only-last",
   "--output-row-contract",
   "--override-linked-pm-context",
   "--packages-only",
@@ -355,8 +356,11 @@ export function verifyCliFlagInvocationParity(
   const normalizedCommand = command.trim().toLowerCase();
   const findings: CliFlagInvocationParityFinding[] = [];
   const observedByFlag = new Map<string, CliFlagArityObservation>();
+  let matchingObservationCount = 0;
   for (const observation of observations) {
-    if (observation.command.trim().toLowerCase() !== normalizedCommand) continue;
+    if (observation.command.trim().toLowerCase() !== normalizedCommand)
+      continue;
+    matchingObservationCount += 1;
     if (observedByFlag.has(observation.flag)) {
       findings.push({
         code: "duplicate_observation",
@@ -405,12 +409,13 @@ export function verifyCliFlagInvocationParity(
   }
   findings.sort(
     (left, right) =>
-      left.flag.localeCompare(right.flag) || left.code.localeCompare(right.code),
+      left.flag.localeCompare(right.flag) ||
+      left.code.localeCompare(right.code),
   );
   return {
     ok: findings.length === 0,
     declared_count: declarations.length,
-    observed_count: observedByFlag.size,
+    observed_count: matchingObservationCount,
     findings,
   };
 }
