@@ -1660,6 +1660,10 @@
       "command": "assurance derive",
       "flags": [
         {
+          "flag": "--apply",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author",
           "value_name": "value"
         },
@@ -1670,10 +1674,6 @@
         {
           "flag": "--owner",
           "value_name": "item-id"
-        },
-        {
-          "flag": "--apply",
-          "value_type": "boolean"
         }
       ],
       "provider": "core"
@@ -1709,12 +1709,12 @@
           "value_name": "value"
         },
         {
-          "flag": "--message",
-          "value_name": "value"
-        },
-        {
           "flag": "--enforcement",
           "value_name": "level"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
         }
       ],
       "provider": "core"
@@ -1723,12 +1723,12 @@
       "command": "assurance put",
       "flags": [
         {
-          "flag": "--definition",
-          "value_name": "json"
-        },
-        {
           "flag": "--author",
           "value_name": "value"
+        },
+        {
+          "flag": "--definition",
+          "value_name": "json"
         },
         {
           "flag": "--message",
@@ -1765,15 +1765,15 @@
       "command": "assurance run",
       "flags": [
         {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--trigger",
           "value_name": "value"
         },
         {
           "flag": "--tree",
           "value_name": "value"
-        },
-        {
-          "flag": "--dry-run"
         }
       ],
       "provider": "core"
@@ -5616,15 +5616,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -5640,39 +5667,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -5682,15 +5682,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -5706,39 +5733,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -5748,15 +5748,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -5772,39 +5799,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -5814,15 +5814,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -5838,39 +5865,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -5879,166 +5879,12 @@
       "command": "plan create",
       "flags": [
         {
-          "flag": "--title"
-        },
-        {
-          "flag": "--description"
-        },
-        {
-          "flag": "--scope"
-        },
-        {
-          "flag": "--parent"
-        },
-        {
-          "flag": "--related"
-        },
-        {
-          "flag": "--blocks"
-        },
-        {
-          "aliases": [
-            "--blocked_by"
-          ],
-          "flag": "--blocked-by"
-        },
-        {
-          "flag": "--harness"
-        },
-        {
-          "flag": "--mode"
-        },
-        {
-          "aliases": [
-            "--resume_context"
-          ],
-          "flag": "--resume-context"
-        },
-        {
-          "aliases": [
-            "--tag"
-          ],
-          "flag": "--tags",
-          "list": true
-        },
-        {
-          "flag": "--priority"
-        },
-        {
-          "flag": "--status",
-          "short": "-s"
-        },
-        {
-          "aliases": [
-            "--create_mode"
-          ],
-          "flag": "--create-mode"
-        },
-        {
-          "flag": "--deadline"
-        },
-        {
-          "aliases": [
-            "--estimated-minutes",
-            "--estimated_minutes"
-          ],
-          "flag": "--estimate"
-        },
-        {
           "aliases": [
             "--acceptance_criteria",
             "--ac"
           ],
           "flag": "--acceptance-criteria",
           "repeatable": true
-        },
-        {
-          "aliases": [
-            "--definition_of_ready"
-          ],
-          "flag": "--definition-of-ready"
-        },
-        {
-          "flag": "--order"
-        },
-        {
-          "flag": "--rank"
-        },
-        {
-          "flag": "--goal"
-        },
-        {
-          "flag": "--objective"
-        },
-        {
-          "flag": "--value"
-        },
-        {
-          "flag": "--impact"
-        },
-        {
-          "flag": "--outcome"
-        },
-        {
-          "aliases": [
-            "--why_now"
-          ],
-          "flag": "--why-now"
-        },
-        {
-          "flag": "--assignee"
-        },
-        {
-          "flag": "--reviewer"
-        },
-        {
-          "flag": "--risk"
-        },
-        {
-          "flag": "--confidence"
-        },
-        {
-          "flag": "--sprint"
-        },
-        {
-          "flag": "--release"
-        },
-        {
-          "aliases": [
-            "--blocked_reason"
-          ],
-          "flag": "--blocked-reason"
-        },
-        {
-          "aliases": [
-            "--unblock_note"
-          ],
-          "flag": "--unblock-note"
-        },
-        {
-          "flag": "--reporter"
-        },
-        {
-          "flag": "--severity"
-        },
-        {
-          "flag": "--environment"
-        },
-        {
-          "aliases": [
-            "--repro_steps"
-          ],
-          "flag": "--repro-steps"
-        },
-        {
-          "flag": "--resolution"
-        },
-        {
-          "aliases": [
-            "--expected_result",
-            "--expected"
-          ],
-          "flag": "--expected-result"
         },
         {
           "aliases": [
@@ -6054,13 +5900,44 @@
           "flag": "--affected-version"
         },
         {
+          "flag": "--assignee"
+        },
+        {
           "aliases": [
-            "--fixed_version"
+            "--blocked_by"
           ],
-          "flag": "--fixed-version"
+          "flag": "--blocked-by"
+        },
+        {
+          "aliases": [
+            "--blocked_reason"
+          ],
+          "flag": "--blocked-reason"
+        },
+        {
+          "flag": "--blocks"
+        },
+        {
+          "flag": "--body"
+        },
+        {
+          "flag": "--claim"
+        },
+        {
+          "flag": "--comment",
+          "repeatable": true
         },
         {
           "flag": "--component"
+        },
+        {
+          "flag": "--confidence"
+        },
+        {
+          "aliases": [
+            "--create_mode"
+          ],
+          "flag": "--create-mode"
         },
         {
           "aliases": [
@@ -6069,24 +5946,204 @@
           "flag": "--customer-impact"
         },
         {
-          "flag": "--comment",
+          "flag": "--deadline"
+        },
+        {
+          "aliases": [
+            "--definition_of_ready"
+          ],
+          "flag": "--definition-of-ready"
+        },
+        {
+          "flag": "--description"
+        },
+        {
+          "flag": "--doc"
+        },
+        {
+          "flag": "--environment"
+        },
+        {
+          "aliases": [
+            "--estimated-minutes",
+            "--estimated_minutes"
+          ],
+          "flag": "--estimate"
+        },
+        {
+          "flag": "--event",
           "repeatable": true
         },
         {
-          "flag": "--note",
-          "repeatable": true
+          "aliases": [
+            "--expected_result",
+            "--expected"
+          ],
+          "flag": "--expected-result"
+        },
+        {
+          "aliases": [
+            "--fixed_version"
+          ],
+          "flag": "--fixed-version"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "aliases": [
+            "--from_search"
+          ],
+          "flag": "--from-search"
+        },
+        {
+          "flag": "--goal"
+        },
+        {
+          "flag": "--harness"
+        },
+        {
+          "flag": "--impact"
         },
         {
           "flag": "--learning",
           "repeatable": true
         },
         {
+          "flag": "--message"
+        },
+        {
+          "flag": "--mode"
+        },
+        {
+          "flag": "--note",
+          "repeatable": true
+        },
+        {
+          "flag": "--objective"
+        },
+        {
+          "flag": "--order"
+        },
+        {
+          "flag": "--outcome"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "flag": "--priority"
+        },
+        {
+          "flag": "--rank"
+        },
+        {
+          "flag": "--related"
+        },
+        {
+          "flag": "--release"
+        },
+        {
           "flag": "--reminder",
           "repeatable": true
         },
         {
-          "flag": "--event",
-          "repeatable": true
+          "flag": "--reporter"
+        },
+        {
+          "aliases": [
+            "--repro_steps"
+          ],
+          "flag": "--repro-steps"
+        },
+        {
+          "flag": "--resolution"
+        },
+        {
+          "aliases": [
+            "--resume_context"
+          ],
+          "flag": "--resume-context"
+        },
+        {
+          "flag": "--reviewer"
+        },
+        {
+          "flag": "--risk"
+        },
+        {
+          "flag": "--scope"
+        },
+        {
+          "flag": "--severity"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--status",
+          "short": "-s"
+        },
+        {
+          "flag": "--step"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_replacement"
+          ],
+          "flag": "--step-replacement"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "aliases": [
+            "--tag"
+          ],
+          "flag": "--tags",
+          "list": true
+        },
+        {
+          "flag": "--template"
+        },
+        {
+          "flag": "--test"
+        },
+        {
+          "flag": "--title"
         },
         {
           "aliases": [
@@ -6096,76 +6153,19 @@
           "repeatable": true
         },
         {
-          "flag": "--body"
+          "aliases": [
+            "--unblock_note"
+          ],
+          "flag": "--unblock-note"
         },
         {
-          "flag": "--claim"
+          "flag": "--value"
         },
         {
           "aliases": [
-            "--from_search"
+            "--why_now"
           ],
-          "flag": "--from-search"
-        },
-        {
-          "flag": "--template"
-        },
-        {
-          "aliases": [
-            "--step_title"
-          ],
-          "flag": "--step-title"
-        },
-        {
-          "flag": "--step"
-        },
-        {
-          "aliases": [
-            "--step_body"
-          ],
-          "flag": "--step-body"
-        },
-        {
-          "aliases": [
-            "--step_owner"
-          ],
-          "flag": "--step-owner"
-        },
-        {
-          "aliases": [
-            "--step_status"
-          ],
-          "flag": "--step-status"
-        },
-        {
-          "aliases": [
-            "--step_evidence"
-          ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--step_replacement"
-          ],
-          "flag": "--step-replacement"
-        },
-        {
-          "flag": "--file"
-        },
-        {
-          "flag": "--test"
-        },
-        {
-          "flag": "--doc"
-        },
-        {
-          "flag": "--message"
+          "flag": "--why-now"
         }
       ],
       "provider": "core"
@@ -6175,15 +6175,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6199,39 +6226,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6241,15 +6241,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6265,39 +6292,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6307,15 +6307,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6331,39 +6358,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6373,15 +6373,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6397,39 +6424,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6439,15 +6439,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6463,39 +6490,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6504,10 +6504,10 @@
       "command": "plan reorder-step",
       "flags": [
         {
-          "flag": "--message"
+          "flag": "--force"
         },
         {
-          "flag": "--force"
+          "flag": "--message"
         }
       ],
       "provider": "core"
@@ -6517,15 +6517,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6541,39 +6568,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6596,15 +6596,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6620,39 +6647,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6662,15 +6662,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6686,39 +6713,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6728,15 +6728,42 @@
       "flags": [
         {
           "aliases": [
-            "--step_title"
+            "--allow_multiple_active"
           ],
-          "flag": "--step-title"
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
         },
         {
           "aliases": [
             "--step_body"
           ],
           "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
         },
         {
           "aliases": [
@@ -6752,39 +6779,12 @@
         },
         {
           "aliases": [
-            "--step_evidence"
+            "--step_title"
           ],
-          "flag": "--step-evidence"
-        },
-        {
-          "aliases": [
-            "--step_blocked_reason"
-          ],
-          "flag": "--step-blocked-reason"
-        },
-        {
-          "aliases": [
-            "--depends_on"
-          ],
-          "flag": "--depends-on"
-        },
-        {
-          "aliases": [
-            "--allow_multiple_active"
-          ],
-          "flag": "--allow-multiple-active"
-        },
-        {
-          "flag": "--file"
+          "flag": "--step-title"
         },
         {
           "flag": "--test"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"

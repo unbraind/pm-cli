@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1701,
+    "covered_symbols": 1705,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1702
+    "required_symbols": 1706
   },
   "breaking_acknowledgements": [
     {
@@ -10305,6 +10305,18 @@
           "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "positionalShapeKey",
+          "signature": "(slots: readonly PmCommandPositionalSlotContract[]) => string | calls: (slots: readonly PmCommandPositionalSlotContract[]) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "positionalSignatureKey",
+          "signature": "(slots: readonly PmCommandPositionalSlotContract[]) => string | calls: (slots: readonly PmCommandPositionalSlotContract[]) => string"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "preflightExtension",
@@ -12445,6 +12457,12 @@
           "kind": "function",
           "name": "resolvePmPositionalActionContract",
           "signature": "(command: string) => PmPositionalActionContract | undefined | calls: (command: string) => PmPositionalActionContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmPositionalActionFlagContracts",
+          "signature": "(actions?: readonly PmPositionalActionContract[]) => Array<readonly [string, CliFlagContract[]]> | calls: (actions?: readonly PmPositionalActionContract[]) => Array<readonly [string, CliFlagContract[]]>"
         },
         {
           "classification": "advanced_export",
@@ -15607,6 +15625,12 @@
           "kind": "interface",
           "name": "VectorStoreUpsertPoint",
           "signature": "export interface VectorStoreUpsertPoint { id: string; vector: number[]; payload?: Record<string, unknown>; [key: string]: unknown; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "verifyExplicitPositionalSlotCensus",
+          "signature": "(explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[] | calls: (explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[]"
         },
         {
           "classification": "supported",
@@ -18850,6 +18874,18 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "positionalShapeKey",
+          "signature": "(slots: readonly PmCommandPositionalSlotContract[]) => string | calls: (slots: readonly PmCommandPositionalSlotContract[]) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "positionalSignatureKey",
+          "signature": "(slots: readonly PmCommandPositionalSlotContract[]) => string | calls: (slots: readonly PmCommandPositionalSlotContract[]) => string"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "PROFILE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -18955,6 +18991,12 @@
           "kind": "function",
           "name": "resolvePmPositionalActionContract",
           "signature": "(command: string) => PmPositionalActionContract | undefined | calls: (command: string) => PmPositionalActionContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmPositionalActionFlagContracts",
+          "signature": "(actions?: readonly PmPositionalActionContract[]) => Array<readonly [string, CliFlagContract[]]> | calls: (actions?: readonly PmPositionalActionContract[]) => Array<readonly [string, CliFlagContract[]]>"
         },
         {
           "classification": "contract_data",
@@ -19261,6 +19303,12 @@
           "kind": "function",
           "name": "validateReadOutputOptions",
           "signature": "(command: string, options: Record<string, unknown>) => void | calls: (command: string, options: Record<string, unknown>) => void"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "verifyExplicitPositionalSlotCensus",
+          "signature": "(explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[] | calls: (explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[]"
         },
         {
           "classification": "contract_data",

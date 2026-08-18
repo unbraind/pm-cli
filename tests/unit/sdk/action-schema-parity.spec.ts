@@ -6,6 +6,7 @@ import {
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   analyzePmToolActionParity,
   analyzeSdkCliParameterCompleteness,
+  resolvePmPositionalActionFlagContracts,
 } from "../../../src/sdk/cli-contracts.js";
 import {
   _testOnlyCliContracts,
@@ -205,6 +206,14 @@ describe("action-scoped MCP schema parity", () => {
         action.command,
       ).toEqual([]);
     }
+    expect(() =>
+      resolvePmPositionalActionFlagContracts([
+        {
+          ...PM_POSITIONAL_ACTION_CONTRACTS[0]!,
+          accepted_flags: ["--not-a-declared-parent-flag"],
+        },
+      ]),
+    ).toThrow(/does not resolve to exactly one/);
   });
 
   it("fails closed when an action has no strict SDK parameter contract", () => {

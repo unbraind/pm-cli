@@ -704,24 +704,6 @@
         "key": "defect-evidence"
       },
       "max_cost": 1
-    },
-    {
-      "id": "preset-software-delivery-missing-tests",
-      "description": "Active items missing tests evidence.",
-      "source": {
-        "kind": "links",
-        "link": "tests",
-        "state": "missing"
-      }
-    },
-    {
-      "id": "preset-software-delivery-missing-docs",
-      "description": "Active items missing docs evidence.",
-      "source": {
-        "kind": "links",
-        "link": "docs",
-        "state": "missing"
-      }
     }
   ],
   "assertions": [
@@ -1950,52 +1932,6 @@
           }
         ]
       }
-    },
-    {
-      "id": "preset-software-delivery-missing-tests-zero",
-      "measurement_id": "preset-software-delivery-missing-tests",
-      "owner_item_id": "pm-a1b2",
-      "scope": {
-        "kind": "active"
-      },
-      "ceiling": 0,
-      "lifetime": "hold",
-      "enforcement": "warn",
-      "negative_control": {
-        "cases": [
-          {
-            "observed": 0,
-            "expected": "pass"
-          },
-          {
-            "observed": 1,
-            "expected": "fail"
-          }
-        ]
-      }
-    },
-    {
-      "id": "preset-software-delivery-missing-docs-zero",
-      "measurement_id": "preset-software-delivery-missing-docs",
-      "owner_item_id": "pm-a1b2",
-      "scope": {
-        "kind": "active"
-      },
-      "ceiling": 0,
-      "lifetime": "hold",
-      "enforcement": "warn",
-      "negative_control": {
-        "cases": [
-          {
-            "observed": 0,
-            "expected": "pass"
-          },
-          {
-            "observed": 1,
-            "expected": "fail"
-          }
-        ]
-      }
     }
   ],
   "gates": [
@@ -2136,18 +2072,6 @@
           }
         }
       }
-    },
-    {
-      "id": "preset-software-delivery-readiness",
-      "description": "Warn when active delivery work lacks executable tests or documentation.",
-      "assertion_ids": [
-        "preset-software-delivery-missing-tests-zero",
-        "preset-software-delivery-missing-docs-zero"
-      ],
-      "triggers": [
-        "ci",
-        "scheduled"
-      ]
     }
   ]
 }

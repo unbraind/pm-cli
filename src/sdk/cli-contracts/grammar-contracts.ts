@@ -142,6 +142,12 @@ function positionalSlot(
   };
 }
 
+/** Convert a kebab-case positional action into a sentence-leading verb phrase. */
+function positionalActionVerb(action: string): string {
+  const phrase = action.replaceAll("-", " ");
+  return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`;
+}
+
 const ITEM_ID = positionalSlot("id", "item_id", true);
 const OPTIONAL_ITEM_ID = positionalSlot("id", "item_id", false);
 const OPTIONAL_TEXT = positionalSlot("text", "string", false);
@@ -279,7 +285,7 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
         action,
         slots: [PLAN_ITEM_ID, PLAN_STEP],
         accepted_flags: PLAN_STEP_FLAGS,
-        description: `${action.replaceAll("-", " ")} for one declared Plan step.`,
+        description: `${positionalActionVerb(action)} for one declared Plan step.`,
         example: `pm plan ${action} pm-a1b2 plan-step-001`,
       }),
     ),
@@ -310,7 +316,7 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
         action,
         slots: [PLAN_ITEM_ID],
         accepted_flags: PLAN_STEP_FLAGS,
-        description: `${action.replaceAll("-", " ")} for one Plan item.`,
+        description: `${positionalActionVerb(action)} for one Plan item.`,
         example: `pm plan ${action} pm-a1b2`,
       }),
     ),
@@ -329,7 +335,7 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
             : action === "remove"
               ? ["--author", "--message"]
               : [],
-        description: `${action} assurance declarations by kind.`,
+        description: `${positionalActionVerb(action)} assurance declarations by kind.`,
         example:
           action === "list"
             ? "pm assurance list measurement"
@@ -361,10 +367,13 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
         action,
         slots: [positionalSlot("preset", "string", action === "apply")],
         accepted_flags: ["--author", "--message", "--owner"],
-        description: `${action} assurance adoption presets.`,
+        description:
+          action === "apply"
+            ? "Apply one assurance adoption preset."
+            : "List available assurance adoption presets.",
         example:
           action === "apply"
-            ? "pm assurance apply software-delivery --owner pm-a1b2"
+            ? "pm assurance apply software-delivery --owner <pm-item-id>"
             : "pm assurance presets",
       }),
     ),
@@ -746,7 +755,9 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
 
 /** Exhaustive current command and positional-action signature table. */
 export const PM_COMMAND_POSITIONAL_CONTRACTS: readonly PmCommandPositionalContract[] =
-  PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => ({
+  [
+    ...new Set(PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command)),
+  ].map((command) => ({
     command,
     slots:
       resolvePmPositionalActionContract(command)?.slots ??
@@ -794,13 +805,41 @@ export interface PmCommandPositionalReport {
   findings: PmCommandPositionalFinding[];
 }
 
-function positionalSignatureKey(
+/** Report explicit positional entries that no destination command declares. */
+export function verifyExplicitPositionalSlotCensus(
+  explicitCommands: Iterable<string>,
+  destinationCommands: Iterable<string>,
+): PmCommandPositionalFinding[] {
+  const destinations = new Set(destinationCommands);
+  return [...new Set(explicitCommands)]
+    .filter((command) => !destinations.has(command))
+    .map((command) => ({
+      code: "positional_signature_mismatch",
+      command,
+      detail: `Explicit positional signature ${command} has no destination declaration.`,
+    }));
+}
+
+/** Return the semantic shape identity used by the positional-shape budget. */
+export function positionalShapeKey(
   slots: readonly PmCommandPositionalSlotContract[],
 ): string {
   return slots
     .map(
       ({ required, variadic, value_kind: valueKind, polymorphic }) =>
         `${required ? "r" : "o"}:${variadic ? "v" : "s"}:${valueKind}:${polymorphic ? "p" : "m"}`,
+    )
+    .join("|");
+}
+
+/** Return the exact canonical identity of an ordered positional signature. */
+export function positionalSignatureKey(
+  slots: readonly PmCommandPositionalSlotContract[],
+): string {
+  return slots
+    .map(
+      ({ name, required, variadic, value_kind: valueKind, polymorphic }) =>
+        `${name}:${required ? "r" : "o"}:${variadic ? "v" : "s"}:${valueKind}:${polymorphic ? "p" : "m"}`,
     )
     .join("|");
 }
@@ -850,6 +889,10 @@ export function verifyPmCommandPositionalContracts(
       observed,
       "observed",
     ),
+    ...verifyExplicitPositionalSlotCensus(
+      EXPLICIT_POSITIONAL_SLOTS.keys(),
+      PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
+    ),
   ];
   for (const contract of declaredByCommand.values()) {
     const actual = observedByCommand.get(contract.command);
@@ -860,7 +903,8 @@ export function verifyPmCommandPositionalContracts(
         detail: `No observed positional signature exists for ${contract.command}.`,
       });
     } else if (
-      JSON.stringify(actual.slots) !== JSON.stringify(contract.slots)
+      positionalSignatureKey(actual.slots) !==
+      positionalSignatureKey(contract.slots)
     ) {
       findings.push({
         code: "positional_signature_mismatch",
@@ -879,7 +923,7 @@ export function verifyPmCommandPositionalContracts(
     }
   }
   const positionalShapeCount = new Set(
-    declared.map(({ slots }) => positionalSignatureKey(slots)),
+    declared.map(({ slots }) => positionalShapeKey(slots)),
   ).size;
   if (positionalShapeCount > positionalShapeBudget) {
     findings.push({

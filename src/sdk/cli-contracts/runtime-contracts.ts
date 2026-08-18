@@ -138,6 +138,7 @@ import {
   type PmCommandOutputBudgetContract,
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
+import { PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
   GOVERNANCE_CREATE_MODE_DEFAULT_VALUES,
@@ -189,8 +190,8 @@ import {
   PM_COMMAND_DESTINATION_CONTRACTS,
   PM_COMMAND_POSITIONAL_CONTRACTS,
   PM_POSITIONAL_ACTION_CONTRACTS,
+  positionalShapeKey,
   resolvePmCommandPositionalContract,
-  resolvePmPositionalActionContract,
   type PmCommandPositionalContract,
   type PmCommandDestinationContract,
 } from "./grammar-contracts.js";
@@ -883,19 +884,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["validate", VALIDATE_FLAG_CONTRACTS],
   ["health", HEALTH_FLAG_CONTRACTS],
   ["assurance", ASSURANCE_FLAG_CONTRACTS],
-  ...PM_POSITIONAL_ACTION_CONTRACTS.map(
-    ({ command, parent, accepted_flags }): readonly [
-      string,
-      CliFlagContract[],
-    ] => {
-      const accepted = new Set(accepted_flags);
-      return [
-        command,
-        (parent === "plan" ? PLAN_FLAG_CONTRACTS : ASSURANCE_FLAG_CONTRACTS)
-          .filter(({ flag }) => accepted.has(flag)),
-      ];
-    },
-  ),
+  ...PM_POSITIONAL_ACTION_FLAG_CONTRACTS,
   ["contracts", CONTRACTS_FLAG_CONTRACTS],
   ["completion", COMPLETION_FLAG_CONTRACTS],
   ["activity", ACTIVITY_FLAG_CONTRACTS],
@@ -2736,15 +2725,9 @@ function summarizeCommandIntent(
 function buildCommandSummarySurface(
   commands: readonly string[],
   extensionContracts: readonly ExtensionCommandContract[] = [],
-  includePositionalActions = true,
 ): CommandSummarySurface[] {
   return [...new Set(commands.map(normalizeCommandPath))]
     .filter((command) => command.length > 0)
-    .filter(
-      (command) =>
-        includePositionalActions ||
-        resolvePmPositionalActionContract(command) === undefined,
-    )
     .sort((left, right) => left.localeCompare(right))
     .map((command) => {
       const budget = resolvePmCommandOutputBudget(command, {
@@ -3045,7 +3028,6 @@ function attachAgentCommandContractsResult(
   result.command_summaries = buildCommandSummarySurface(
     outputCommands,
     extensionCommandContracts,
-    includePositionalSignatures,
   );
   result.output_policy = {
     token_estimate: "ceil(utf8_bytes / 4)",
@@ -3064,16 +3046,13 @@ function attachAgentCommandContractsResult(
       PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
     positional_shape_count: new Set(
       PM_COMMAND_POSITIONAL_CONTRACTS.map(({ slots }) =>
-        slots
-          .map(
-            ({ required, variadic, value_kind: valueKind, polymorphic }) =>
-              `${required}:${variadic}:${valueKind}:${polymorphic}`,
-          )
-          .join("|"),
+        positionalShapeKey(slots),
       ),
     ).size,
     positional_action_count: PM_POSITIONAL_ACTION_CONTRACTS.length,
-    positional_action_parents: ["assurance", "plan"],
+    positional_action_parents: [
+      ...new Set(PM_POSITIONAL_ACTION_CONTRACTS.map(({ parent }) => parent)),
+    ].sort((left, right) => left.localeCompare(right)),
     ...(includePositionalSignatures
       ? { positional_signatures: PM_COMMAND_POSITIONAL_CONTRACTS }
       : {}),

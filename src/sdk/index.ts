@@ -514,6 +514,7 @@ export {
   readFirstStringFromCommanderOptions,
   readFirstValueFromCommanderOptions,
   readStringArrayFromCommanderOptions,
+  resolvePmPositionalActionFlagContracts,
   resolveSubcommandFlagContractsForCommand,
   resolvePmCommandOutputBudget,
   resolvePmToolCustomFieldCollision,

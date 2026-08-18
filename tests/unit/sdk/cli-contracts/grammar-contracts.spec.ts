@@ -5,6 +5,7 @@ import {
   PM_COMMAND_DESTINATION_CONTRACTS,
   PM_COMMAND_POSITIONAL_CONTRACTS,
   PM_POSITIONAL_ACTION_CONTRACTS,
+  verifyExplicitPositionalSlotCensus,
   verifyPmCliGrammar,
   verifyPmCommandPositionalContracts,
 } from "../../../../src/sdk/cli-contracts/grammar-contracts.js";
@@ -232,7 +233,24 @@ describe("CLI noun-verb grammar contracts", () => {
       PM_POSITIONAL_ACTION_CONTRACTS.find(
         ({ command }) => command === "assurance apply",
       )?.example,
-    ).toBe("pm assurance apply software-delivery --owner pm-a1b2");
+    ).toBe(
+      "pm assurance apply software-delivery --owner <pm-item-id>",
+    );
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.find(
+        ({ command }) => command === "plan complete-step",
+      )?.description,
+    ).toBe("Complete step for one declared Plan step.");
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.find(
+        ({ command }) => command === "assurance presets",
+      )?.description,
+    ).toBe("List available assurance adoption presets.");
+    expect(
+      new Set(
+        PM_COMMAND_POSITIONAL_CONTRACTS.map(({ command }) => command),
+      ).size,
+    ).toBe(PM_COMMAND_POSITIONAL_CONTRACTS.length);
   });
 
   it("fails closed for missing, stale, arity, and shape-budget drift", () => {
@@ -293,5 +311,35 @@ describe("CLI noun-verb grammar contracts", () => {
         detail: expect.stringContaining("observed positional signatures"),
       }),
     ]);
+
+    const declared = [PM_COMMAND_POSITIONAL_CONTRACTS[0]!];
+    const reorderedSlots = declared[0]!.slots.map(
+      ({ name, required, variadic, value_kind: valueKind, polymorphic }) => ({
+        polymorphic,
+        value_kind: valueKind,
+        variadic,
+        required,
+        name,
+      }),
+    );
+    expect(
+      verifyPmCommandPositionalContracts(
+        [{ command: declared[0]!.command, slots: reorderedSlots }],
+        { declared },
+      ),
+    ).toMatchObject({ ok: true, findings: [] });
+
+    expect(
+      verifyExplicitPositionalSlotCensus(
+        ["orphan-explicit-command"],
+        [declared[0]!.command],
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        command: "orphan-explicit-command",
+        detail: expect.stringContaining("no destination declaration"),
+      }),
+    );
   });
 });

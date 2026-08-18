@@ -7,9 +7,9 @@
     "per_command_total": 165613,
     "full_help_surface": 179392,
     "contracts": {
-      "summary_toon": 12142,
-      "summary_json": 25449,
-      "json": 25310,
+      "summary_toon": 13855,
+      "summary_json": 17352,
+      "json": 17213,
       "full": 1262026,
       "bounded_full": 559
     },

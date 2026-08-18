@@ -116,6 +116,7 @@ export type {
 export {
   withFlagAliasMetadata,
   compactFlagAliasContracts,
+  resolvePmPositionalActionFlagContracts,
   SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,

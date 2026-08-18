@@ -8,7 +8,10 @@
  */
 import { normalizeUniqueStringList } from "./string-lists.js";
 import { RESERVED_EXTENSION_HOST_FLAGS } from "../../core/extensions/reserved-host-flags.js";
-import { PM_POSITIONAL_ACTION_CONTRACTS } from "./grammar-contracts.js";
+import {
+  PM_POSITIONAL_ACTION_CONTRACTS,
+  type PmPositionalActionContract,
+} from "./grammar-contracts.js";
 
 /** A single CLI flag's contract: its canonical `--flag`, optional short form, aliases, value metadata, and repeat/list semantics. One source of truth shared by Commander registration, argv normalization, shell completion, and the `pm contracts` command so every surface agrees on the flag vocabulary. */
 export interface CliFlagContract {
@@ -1814,6 +1817,52 @@ const ALL_STATUS_LIST_FLAG_CONTRACTS = LIST_FILTER_FLAG_CONTRACTS.filter(
   (contract) => contract.flag !== "--status",
 );
 
+function indexCliFlagContracts(
+  contracts: readonly CliFlagContract[],
+): Map<string, CliFlagContract[]> {
+  const index = new Map<string, CliFlagContract[]>();
+  for (const contract of contracts) {
+    for (const spelling of [contract.flag, ...(contract.aliases ?? [])]) {
+      const matches = index.get(spelling) ?? [];
+      matches.push(contract);
+      index.set(spelling, matches);
+    }
+  }
+  return index;
+}
+
+const PLAN_FLAG_CONTRACT_INDEX = indexCliFlagContracts(PLAN_FLAG_CONTRACTS);
+const ASSURANCE_FLAG_CONTRACT_INDEX = indexCliFlagContracts(
+  ASSURANCE_FLAG_CONTRACTS,
+);
+
+/** Resolve every positional action's accepted flags against one parent contract. */
+export function resolvePmPositionalActionFlagContracts(
+  actions: readonly PmPositionalActionContract[] =
+    PM_POSITIONAL_ACTION_CONTRACTS,
+): Array<readonly [string, CliFlagContract[]]> {
+  return actions.map(({ command, parent, accepted_flags: acceptedFlags }) => {
+    const parentFlagIndex =
+      parent === "plan"
+        ? PLAN_FLAG_CONTRACT_INDEX
+        : ASSURANCE_FLAG_CONTRACT_INDEX;
+    const selected = acceptedFlags.map((acceptedFlag) => {
+      const matches = parentFlagIndex.get(acceptedFlag) ?? [];
+      if (matches.length !== 1) {
+        throw new Error(
+          `Positional action ${command} accepted flag ${acceptedFlag} does not resolve to exactly one ${parent} flag contract.`,
+        );
+      }
+      return matches[0]!;
+    });
+    return [command, selected] as const;
+  });
+}
+
+/** Validated positional action flag entries shared by registration and contracts. */
+export const PM_POSITIONAL_ACTION_FLAG_CONTRACTS =
+  resolvePmPositionalActionFlagContracts();
+
 // Single-token command (plus the `list`/`cal`/`ctx`/`templates` aliases) → its
 // dedicated flag-contract table. Lookups fall back to the subcommand-global set,
 // so tokens absent here (`reindex`, `help`, or any unknown command) degrade to
@@ -1892,17 +1941,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["telemetry", TELEMETRY_FLAG_CONTRACTS],
     ["health", HEALTH_FLAG_CONTRACTS],
     ["assurance", ASSURANCE_FLAG_CONTRACTS],
-    ...PM_POSITIONAL_ACTION_CONTRACTS.map(
-      ({ command, parent, accepted_flags }): [string, CliFlagContract[]] => {
-        const accepted = new Set(accepted_flags);
-        const parentFlags =
-          parent === "plan" ? PLAN_FLAG_CONTRACTS : ASSURANCE_FLAG_CONTRACTS;
-        return [
-          command,
-          parentFlags.filter(({ flag }) => accepted.has(flag)),
-        ];
-      },
-    ),
+    ...PM_POSITIONAL_ACTION_FLAG_CONTRACTS,
     ["validate", VALIDATE_FLAG_CONTRACTS],
     ["gc", GC_FLAG_CONTRACTS],
     ["stats", STATS_FLAG_CONTRACTS],

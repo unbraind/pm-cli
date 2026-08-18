@@ -16,8 +16,14 @@ describe("full contracts projection monotonicity", () => {
     expect(full.command_summaries).toEqual(
       expect.arrayContaining(summary.command_summaries ?? []),
     );
-    expect(full.command_summaries?.length).toBeGreaterThan(
+    expect(full.command_summaries).toHaveLength(
       summary.command_summaries?.length ?? 0,
+    );
+    expect(summary.command_summaries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: "plan create" }),
+        expect.objectContaining({ command: "assurance run" }),
+      ]),
     );
     expect(full.output_policy).toEqual(summary.output_policy);
     expect(full.commands.length).toBeGreaterThan(0);
