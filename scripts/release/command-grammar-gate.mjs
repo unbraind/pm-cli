@@ -126,7 +126,7 @@ function collectRegisteredCliCommands(loadHelp) {
   return { registered, parents, aliases };
 }
 
-/** Expand direct and chained Commander aliases across every descendant path. */
+/** Expand equal-arity Commander aliases transitively across descendant paths. */
 function expandRegisteredCommandAliases(registered, aliases) {
   for (const command of registered) {
     for (const [canonical, aliasPaths] of aliases) {
@@ -134,6 +134,7 @@ function expandRegisteredCommandAliases(registered, aliases) {
         continue;
       }
       for (const alias of aliasPaths) {
+        if (alias.split(" ").length !== canonical.split(" ").length) continue;
         registered.add(`${alias}${command.slice(canonical.length)}`);
       }
     }

@@ -263,6 +263,23 @@ describe("command grammar gate", () => {
     expect(result.exitCode).toBe(1);
   });
 
+  it("ignores longer Commander aliases while preserving termination", async () => {
+    const result = await runGrammarGate(liveCommandSummaries, {
+      rootHelpRows: [{ name: "loop", aliases: ["loop loop"] }],
+    });
+    expect(result.report).toMatchObject({
+      ok: false,
+      findings: expect.arrayContaining([
+        expect.objectContaining({
+          code: "missing_destination",
+          spelling: "loop",
+        }),
+      ]),
+    });
+    expect(result.report.findings).toHaveLength(1);
+    expect(result.exitCode).toBe(1);
+  });
+
   it("fails closed when an observed positional slot changes arity", async () => {
     const result = await runGrammarGate(
       liveCommandSummaries.map((summary) =>
