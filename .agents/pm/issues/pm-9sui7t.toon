@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:contracts",ci,negative-control,output-contract,token-efficiency
 created_at: "2026-07-28T09:56:44.723Z"
-updated_at: "2026-08-18T10:02:34.079Z"
-closed_at: "2026-08-18T10:02:33.040Z"
-completed_at: "2026-08-18T10:02:33.040Z"
+updated_at: "2026-08-18T10:26:11.327Z"
+closed_at: "2026-08-18T10:26:10.721Z"
+completed_at: "2026-08-18T10:26:10.721Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The output-budget gate compares measured command output against the contract-declared default_max_estimated_tokens, not against a self-recorded byte snapshot; The gate corpus is measured against a workspace large enough that an unbounded surface exceeds its ceiling, and it includes activity, deps, graph, duplicates, events and bare health; A negative control proves the gate fails when a command is deliberately made unbounded, so a passing run carries information; The output-budget gate runs on every pull request, not only in nightly and release; The help and contracts payload baseline stays a separate declared measurement so discovery cost and answer cost are never conflated; Documentation states which gate owns discovery cost and which owns answer cost, and neither claims the other's coverage"
@@ -27,12 +27,14 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-07-28T09:56:44.723Z","harness:claude-code","cli:create:dep",detected
   pm-lpqln4,related,"2026-07-28T09:56:44.723Z","harness:claude-code","cli:create:dep",detected
   pm-z2j1qt,related,"2026-07-28T09:56:44.723Z","harness:claude-code","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-28T11:53:09.807Z","harness:codex","Evidence: replaced the self-recorded micro-fixture gate with a PR-required, contract-owned answer-cost gate covering 23 surfaces on a 24-item scaled corpus. The full unbounded activity negative control measures 18,864 tokens against the 4,000-token default, and 18 focused gate tests prove contract lookup, coverage, malformed-baseline, over-budget, and negative-control failures. Final lint, contracts, SDK surface, static quality, and token gate all pass."
   "2026-07-28T11:57:03.635Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
   "2026-08-18T09:31:15.483Z","harness:codex","Recurrence evidence: node scripts/release/token-budget-gate.mjs --update --manifest /tmp/pm-token-budget-fresh.json exits without creating the requested manifest, while explicit imported main() performs the update. The nominal pnpm quality:token-budget path therefore cannot be trusted until direct execution is proven."
   "2026-08-18T09:32:01.937Z","harness:codex","Correction after negative control: the direct entrypoint is executable and fails invalid --headroom as required. The missing custom file came from passing the minimal parser a spaced --manifest value rather than its supported value form; this was a diagnostic error, not a gate no-op. Added a spawned direct-entrypoint test so future regressions are explicit."
   "2026-08-18T10:02:31.730Z","harness:codex","Verification evidence: focused token-budget suite passes 26/26; the real 32-surface gate passes with a 10,465-token unbounded negative control and truthful infeasible-intent receipt; full aggregate coverage passes 7,545/7,545 at 100/100/100/100."
+  "2026-08-18T10:18:36.142Z","harness:codex","Exact-head CI evidence: run 32125441195 correctly blocked static quality because this post-epoch terminal defect lacked escape_class and structured gate_evidence. Added production_defect classification and linked the direct token-budget gate, focused negative control, local defect-evidence check, and hosted static/coverage owners."
+  "2026-08-18T10:26:05.597Z","harness:codex","Hosted coverage repair evidence: downloaded aggregate artifact 9320259545 from run 32125441195 and localized the only miss to the primitive-input branch at token-budget-gate.mjs:691. The null manifest-budget negative control now exercises that fail-closed path; the full local aggregate passes 519 files / 7,545 tests at exact 100/100/100/100 (55,028 statements, 41,064 branches, 11,365 functions, 53,117 lines)."
 learnings[1]{created_at,author,text}:
   "2026-07-28T10:09:25.121Z","harness:claude-code","A gate that has never failed is a hypothesis, not a guarantee, and the cheapest way to test it is to ask what workspace it measures.\n\nBoth gates this project named after token cost pass on every run and always have. Neither can fail. One measures a three-item fixture, where no surface can exceed a budget derived from that same fixture; the other measures help text, which does not vary with workspace size at all. The property both were built to protect -- that command output stays bounded as a workspace grows -- is precisely the property neither observes, because both were built at a scale where it cannot be violated.\n\nThe generalizable test: for any gate, name the input that would make it fail, then check that the input is reachable in the corpus the gate actually runs against. If it is not, the gate is measuring something else. This is the same shape as pm-lpqln4, where the only Bun coverage passes with an arbitrary token in the executable position, and the same shape as pm-ki67py, where a same-day release guard is correct only because no out-of-order tag happens to exist yet. Three instances in one project is a pattern, and the shared remedy is a negative control: a gate should ship with a proof that it fails when its property is violated.\n\nThe corollary for measurement generally: fixtures are for correctness, not for cost. Anything whose value scales with the data must be measured against data that has scale, or the number is about the fixture."
 files[5]{path,scope,note}:
@@ -46,5 +48,13 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/SDK.md,project,Discovery versus answer gate contract
   docs/TESTING.md,project,Discovery versus answer gate contract
-close_reason: Strengthened the failure-capable token gate with exact byte/token formula validation and a direct-entrypoint negative control.
+close_reason: "Strengthened the failure-capable token gate, governed its production-defect evidence, and covered malformed primitive manifest entries at exact 100/100/100/100."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-9sui7t
+  gate_id: agent-output-token-budget
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/token-budget-gate.spec.ts
+  local_checks[2]: node scripts/release/token-budget-gate.mjs,"pnpm quality:defect-evidence"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

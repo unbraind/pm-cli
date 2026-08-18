@@ -991,6 +991,7 @@ describe("scripts/release/token-budget-gate", () => {
       max_estimated_tokens: 125,
     };
     for (const budget of [
+      null,
       { ...baseBudget, max_lines: 0 },
       { ...baseBudget, max_bytes: undefined },
       { ...baseBudget, max_bytes: -1 },
