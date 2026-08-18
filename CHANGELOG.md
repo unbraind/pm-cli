@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- The writer-lease renewal test decides from wall-clock progress instead of the lease record, so correct behaviour is reported as a failure whenever the restore finishes first ([pm-15qgul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-15qgul.toon))
 - Core command flag_invocations misclassify valueless booleans as required string values ([pm-pcy92t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pcy92t.toon))
 - A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
