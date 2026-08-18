@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:ci","area:sdk",assurance,contracts,recovery
 created_at: "2026-08-13T21:18:07.562Z"
-updated_at: "2026-08-18T21:13:55.584Z"
+updated_at: "2026-08-18T22:04:55.813Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "The corpus of emitted forward references is derived from the contract tables that generate them, never hand written, and reports its own size and coverage per reference kind; Every reference asserting a replacement spelling is executed and proven to produce the same result as the spelling it replaces, excluding the receipt that records which spelling was used; Every reference asserting a recovery is executed and proven to recover, and every reference naming a command path is proven against the declared path set; The obligation set is declared as assurance data with a ratcheted pass fraction and a negative control that fails when a known-good reference is broken; Behaviour-preserving references, which explicitly retain different semantics, are separated from replacement references in the contract table and carry the weaker obligation by declaration rather than by inference"
@@ -22,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-1qkivy,implements,"2026-08-16T18:35:04.320Z","harness:codex","cli:update:dep",detected
   pm-c3uru0,recurs_from,"2026-08-16T18:35:04.320Z","harness:codex","cli:update:dep",detected
-comments[33]{created_at,author,text}:
+comments[35]{created_at,author,text}:
   "2026-08-13T22:07:15.361Z","harness:codex","Progress evidence: the contract now declares replacement versus behavior_preserving semantics instead of inferring strength from prose. An executable temporary-tracker corpus derives and runs all 22 exact projection-mode replacements, comparing both spellings after only receipt/volatile metadata removal. The corpus caught --collapse <value> and health --check-only as independent execution semantics; both are excluded from false replacement mapping and --collapse now emits truthful weaker guidance. Remaining scope before this general feature can close: derive and execute the other forward-reference kinds, declare the full obligation set as assurance data, and add the cross-kind negative-control gate."
   "2026-08-13T22:27:26.637Z","harness:codex","Assurance evidence: tracker-context-quality initially blocked because the new executable migration spec was test-command linked but not file-owned. Added explicit project file ownership; preserved the pre-existing one-path orphan ceiling rather than weakening the ratchet."
   "2026-08-13T23:17:37.958Z","harness:codex","Verification evidence for this PR tranche: derived and executed all 22 replacement promises across list/search/get/health/deps/graph/history/activity/validate/events/contracts in a real temporary tracker; exact legacy-versus-canonical projections match after removing only invocation receipts and volatile run metadata. Linked PM tests passed 20/20. Full repository coverage passed 7,280 tests at exact 100/100/100/100. Packed npm acceptance exercised canonical CLI normalization and the public SDK, with independent npx and bunx dispatch succeeding. The broader feature remains open for the other forward-reference kinds and its cross-kind assurance negative control."
@@ -56,11 +56,14 @@ comments[33]{created_at,author,text}:
   "2026-08-18T07:33:27.346Z","harness:codex","Review correction: removed package.json, the calibration gate/script test, and docs/TESTING.md ownership duplicated from pm-xa3t0o. The feature relationship and broader recovery files remain; exhaustive runtime execution across every producer is still honest residual scope, so this feature returns open/unclaimed."
   "2026-08-18T19:18:14.536Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:37.605Z","harness:codex","Tranche evidence: recovery closure now executes emitted suggested retries for context intents and field domains in a real temporary tracker and reports source probe counts; the existing derived replacement/reachability corpus and full repository coverage remain green. Remaining acceptance: derive and execute every forward-reference producer kind rather than this four-probe increment, then publish one exhaustive per-kind assurance receipt and ratchet. Returning open and releasing ownership."
+  "2026-08-18T21:59:20.006Z","harness:codex","Hosted CI evidence: PR #1061 exact head ed1d56f3bca594cdc60ba03c4f73a8d2109fa359 passed every completed matrix job except Gates (static); the failure is tests/fixtures/contracts/full.json first differing at line 15390 with the explicit recovery command pnpm contracts:update. This is the next generator dependency after error-catalog synchronization."
+  "2026-08-18T22:04:54.458Z","harness:codex","Hosted-gate correction evidence: pnpm contracts:update synchronized tests/fixtures/contracts/full.json with the new command capability and error contracts. pnpm contracts:check now passes. The local quality:static command was strengthened to run the same three generated-contract checks as hosted Gates (static), preventing this CI-only drift class; the strengthened local command then passed end to end. Exhaustive execution of every forward-reference producer remains residual, so returning open and releasing ownership."
 learnings[3]{created_at,author,text}:
   "2026-08-13T22:07:15.884Z","harness:codex","A migration flag can belong to a universal output dimension without being replaceable by the universal option. Promise strength must be explicit contract data: parsing a well-formed hint or checking that its target flag exists cannot distinguish projection equivalence from preserved traversal, grouping, side-effect, cursor, or streaming semantics."
   "2026-08-15T18:45:11.542Z","harness:codex",Stable recursive obligation identifiers must encode each path segment before concatenation. Delimiter joining raw producer keys is not injective and can let one proof discharge a structurally different reference.
   "2026-08-16T19:27:30.614Z","harness:codex","A source census proves vocabulary coverage and detects untyped producer drift, but it is not execution evidence; keep producer discovery separate from per-value reachability and semantic-equivalence proof."
-files[17]{path,scope,note}:
+files[19]{path,scope,note}:
+  package.json,project,Local static-quality command now reproduces hosted generated-contract checks
   scripts/release/gate-registry.json,project,Recovery corpus provider declaration
   scripts/release/refusal-closure-gate.mjs,project,Active command contract and recovery conformance implementation
   scripts/release/repository-assurance.mjs,project,Assurance execution of recovery corpus
@@ -71,6 +74,7 @@ files[17]{path,scope,note}:
   src/sdk/query/complete-list.ts,project,New typed executable recovery producer
   src/sdk/read-output-contracts.ts,project,Typed replacement versus behavior-preserving migration promises
   src/sdk/runtime.ts,project,SDK and MCP projection-mode forwarding
+  tests/fixtures/contracts/full.json,project,Canonical command contract snapshot synchronized after hosted drift detection
   tests/integration/closed-domain-recovery.integration.spec.ts,project,Active command contract and recovery conformance implementation
   tests/integration/refusal-reachability.integration.spec.ts,project,Real retry execution and command-path corpus
   tests/unit/sdk/read-contract-integrity.spec.ts,project,Replicated consumer contract for explicit migration semantics
