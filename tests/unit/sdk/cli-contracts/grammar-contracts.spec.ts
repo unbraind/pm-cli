@@ -233,9 +233,7 @@ describe("CLI noun-verb grammar contracts", () => {
       PM_POSITIONAL_ACTION_CONTRACTS.find(
         ({ command }) => command === "assurance apply",
       )?.example,
-    ).toBe(
-      "pm assurance apply software-delivery --owner <pm-item-id>",
-    );
+    ).toBe("pm assurance apply software-delivery --owner <pm-item-id>");
     expect(
       PM_POSITIONAL_ACTION_CONTRACTS.find(
         ({ command }) => command === "plan complete-step",
@@ -247,9 +245,8 @@ describe("CLI noun-verb grammar contracts", () => {
       )?.description,
     ).toBe("List available assurance adoption presets.");
     expect(
-      new Set(
-        PM_COMMAND_POSITIONAL_CONTRACTS.map(({ command }) => command),
-      ).size,
+      new Set(PM_COMMAND_POSITIONAL_CONTRACTS.map(({ command }) => command))
+        .size,
     ).toBe(PM_COMMAND_POSITIONAL_CONTRACTS.length);
   });
 
@@ -300,6 +297,27 @@ describe("CLI noun-verb grammar contracts", () => {
       observed_command_count: 2,
     });
     expect(duplicateReport.findings).toEqual([
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        command: duplicate.command,
+        detail: expect.stringContaining("declared positional signatures"),
+      }),
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        command: duplicate.command,
+        detail: expect.stringContaining("observed positional signatures"),
+      }),
+    ]);
+
+    const spellingVariant = {
+      ...duplicate,
+      command: `  ${duplicate.command.toUpperCase().replaceAll(" ", "   ")}  `,
+    };
+    const normalizedDuplicateReport = verifyPmCommandPositionalContracts(
+      [duplicate, spellingVariant],
+      { declared: [duplicate, spellingVariant] },
+    );
+    expect(normalizedDuplicateReport.findings).toEqual([
       expect.objectContaining({
         code: "positional_signature_mismatch",
         command: duplicate.command,

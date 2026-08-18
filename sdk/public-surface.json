@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1705,
+    "covered_symbols": 1706,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1706
+    "required_symbols": 1707
   },
   "breaking_acknowledgements": [
     {
@@ -5887,6 +5887,12 @@
           "kind": "function",
           "name": "formatOrderingStorageContradiction",
           "signature": "(contradiction: Pick<OrderingStorageContradiction, \"dependency_kind\" | \"holder_id\" | \"target_id\">) => string | calls: (contradiction: Pick<OrderingStorageContradiction, \"holder_id\" | \"target_id\" | \"dependency_kind\">) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "formatPmPositionalActionFlagTip",
+          "signature": "(acceptedFlags: readonly string[]) => string | calls: (acceptedFlags: readonly string[]) => string"
         },
         {
           "classification": "advanced_export",
@@ -17887,6 +17893,12 @@
           "kind": "value",
           "name": "FOCUS_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "formatPmPositionalActionFlagTip",
+          "signature": "(acceptedFlags: readonly string[]) => string | calls: (acceptedFlags: readonly string[]) => string"
         },
         {
           "classification": "contract_data",

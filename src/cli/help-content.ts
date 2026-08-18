@@ -6,6 +6,7 @@
 import { Command } from "commander";
 import { parseBootstrapHelpRequest } from "./bootstrap-args.js";
 import {
+  formatPmPositionalActionFlagTip,
   PM_POSITIONAL_ACTION_CONTRACTS,
   resolvePmPositionalActionContract,
 } from "../sdk/cli-contracts/grammar-contracts.js";
@@ -652,9 +653,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   delete: {
     why: "Removes an item while preserving history evidence and lock/ownership checks.",
-    examples: [
-      'pm delete pm-a1b2 --message "Remove duplicate item"',
-    ],
+    examples: ['pm delete pm-a1b2 --message "Remove duplicate item"'],
   },
   append: {
     why: "Adds implementation notes to body without replacing existing content.",
@@ -697,7 +696,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm learnings pm-a1b2 --add "Avoid direct test-runner commands in linked tests; use sandbox runner."',
       'pm learnings pm-a1b2 --add "text: lesson with commas, key-like words, and punctuation-safe context"',
-      'pm learnings pm-a1b2 --edit 1 --file docs/corrected-learning.md',
+      "pm learnings pm-a1b2 --edit 1 --file docs/corrected-learning.md",
       "pm learnings pm-a1b2 --delete 2",
       "pm learnings pm-a1b2 --limit 10",
     ],
@@ -809,15 +808,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",
-    examples: [
-      'pm release pm-a1b2 --message "Release after closure"',
-    ],
+    examples: ['pm release pm-a1b2 --message "Release after closure"'],
   },
   "start-task": {
     why: "Lifecycle alias that claims an item and sets status to in_progress.",
-    examples: [
-      'pm start-task pm-a1b2 --message "Start implementation"',
-    ],
+    examples: ['pm start-task pm-a1b2 --message "Start implementation"'],
   },
   "pause-task": {
     why: "Lifecycle alias that sets status to open and releases active assignment.",
@@ -967,7 +962,7 @@ export function attachRichHelpText(
         examples: [positionalAction.example],
         tips: [
           `Action path: pm ${positionalAction.command}`,
-          `Applicable flags: ${positionalAction.accepted_flags.length > 0 ? positionalAction.accepted_flags.join(", ") : "none"}.`,
+          formatPmPositionalActionFlagTip(positionalAction.accepted_flags),
         ],
       },
       detailMode,

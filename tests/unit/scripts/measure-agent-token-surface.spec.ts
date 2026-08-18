@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, it, vi } from "vitest";
+import { PM_POSITIONAL_ACTION_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness();
@@ -23,6 +24,10 @@ const ROOT_HELP = [
 const LS_HELP =
   "Usage: pm ls [options] — a deliberately longer help payload for sorting";
 const GET_HELP_STDOUT = "GET HELP VIA STDOUT";
+const ACTION_HELP = "POSITIONAL ACTION HELP";
+const ACTION_COMMAND_NAMES = PM_POSITIONAL_ACTION_CONTRACTS.map(
+  ({ command }) => command,
+);
 const CONTRACTS = {
   summary_toon: "SUMMARY-TOON",
   summary_json: "SUMMARY-JSON-PAYLOAD",
@@ -53,6 +58,13 @@ function createExecFileSync(overrides: ExecOverrides = {}) {
     }
     if (key === "get --help --no-pager") {
       throw Object.assign(new Error("exit 2"), { stdout: GET_HELP_STDOUT });
+    }
+    if (
+      ACTION_COMMAND_NAMES.some(
+        (command) => key === `${command} --help --no-pager`,
+      )
+    ) {
+      return ACTION_HELP;
     }
     if (key === "contracts --summary --no-pager") return CONTRACTS.summary_toon;
     if (key === "contracts --summary --json --no-pager")
@@ -125,8 +137,12 @@ function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
         full: 1_000_000,
         bounded_full: 1_000_000,
       },
-      commands: { ls: 1_000_000, get: 1_000_000 },
-      required_commands: ["get", "ls"],
+      commands: Object.fromEntries(
+        ["ls", "get", ...ACTION_COMMAND_NAMES].map((name) => [name, 1_000_000]),
+      ),
+      required_commands: ["get", "ls", ...ACTION_COMMAND_NAMES].sort(
+        (left, right) => left.localeCompare(right),
+      ),
     },
     ...overrides,
   });
@@ -220,11 +236,20 @@ describe("measure-agent-token-surface", () => {
     });
     // "help" is filtered, the alias line contributes only its primary name, and
     // the deeper-indented continuation line is skipped without ending the scan.
-    expect(report.command_count).toBe(2);
-    expect(report.commands.map((entry) => entry.name)).toEqual(["ls", "get"]);
-    expect(report.commands[1]?.bytes).toBe(Buffer.byteLength(GET_HELP_STDOUT));
+    expect(report.command_count).toBe(2 + ACTION_COMMAND_NAMES.length);
+    expect(report.commands.map((entry) => entry.name)).toEqual(
+      expect.arrayContaining(["ls", "get"]),
+    );
+    expect(report.commands.map((entry) => entry.name)).toEqual(
+      expect.arrayContaining(ACTION_COMMAND_NAMES),
+    );
+    expect(report.commands.find(({ name }) => name === "get")?.bytes).toBe(
+      Buffer.byteLength(GET_HELP_STDOUT),
+    );
     const perCommand =
-      Buffer.byteLength(LS_HELP) + Buffer.byteLength(GET_HELP_STDOUT);
+      Buffer.byteLength(LS_HELP) +
+      Buffer.byteLength(GET_HELP_STDOUT) +
+      ACTION_COMMAND_NAMES.length * Buffer.byteLength(ACTION_HELP);
     expect(report.per_command_total.bytes).toBe(perCommand);
     expect(report.full_help_surface).toEqual({
       bytes: rootBytes + perCommand,
@@ -296,7 +321,11 @@ describe("measure-agent-token-surface", () => {
       },
       1,
     );
-    expect(coreBaseline.surfaces.required_commands).toEqual(["get", "list"]);
+    expect(coreBaseline.surfaces.required_commands).toEqual(
+      ["get", "list", ...ACTION_COMMAND_NAMES].sort((left, right) =>
+        left.localeCompare(right),
+      ),
+    );
     expect(module.compareBaseline(report, baseline)).toEqual([]);
 
     const reportWithOptionalExtension = {
@@ -344,7 +373,7 @@ describe("measure-agent-token-surface", () => {
       report,
       incompleteBaseline,
     );
-    expect(incompleteViolations).toHaveLength(6);
+    expect(incompleteViolations).toHaveLength(6 + ACTION_COMMAND_NAMES.length);
     expect(incompleteViolations).toEqual(
       expect.arrayContaining([
         "contracts.summary_toon: missing baseline",
@@ -355,7 +384,9 @@ describe("measure-agent-token-surface", () => {
       ...cleanBaseline,
       surfaces: undefined,
     } as unknown as TokenSurfaceBaseline);
-    expect(missingSurfaceViolations).toHaveLength(10);
+    expect(missingSurfaceViolations).toHaveLength(
+      10 + ACTION_COMMAND_NAMES.length,
+    );
     expect(missingSurfaceViolations).toContain(
       "commands.get: missing baseline",
     );
@@ -418,7 +449,7 @@ describe("measure-agent-token-surface", () => {
         "utf8",
       );
       expect(stdoutWrite).toHaveBeenCalledWith(
-        "Agent token-surface gate passed (11 surfaces).\n",
+        `Agent token-surface gate passed (${11 + ACTION_COMMAND_NAMES.length} surfaces).\n`,
       );
     } finally {
       stdoutWrite.mockRestore();

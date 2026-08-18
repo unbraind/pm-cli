@@ -46,6 +46,7 @@ import {
 } from "./commander-usage.js";
 import { resolveCreateExplicitEmptyFlag } from "../sdk/agent/create-option-policy.js";
 import {
+  formatPmPositionalActionFlagTip,
   PM_POSITIONAL_ACTION_CONTRACTS,
   resolvePmCommandPositionalContract,
   resolvePmPositionalActionContract,
@@ -467,11 +468,11 @@ function buildJsonHelpPayload(
     description: positionalAction?.description ?? targetCommand.description(),
     usage: projection.usage,
     intent: positionalAction?.description ?? narrative.intent,
-    examples: positionalAction ? [positionalAction.example] : narrative.examples,
+    examples: positionalAction
+      ? [positionalAction.example]
+      : narrative.examples,
     tips: positionalAction
-      ? [
-          `Applicable flags: ${positionalAction.accepted_flags.length > 0 ? positionalAction.accepted_flags.join(", ") : "none"}.`,
-        ]
+      ? [formatPmPositionalActionFlagTip(positionalAction.accepted_flags)]
       : narrative.tips,
     arguments: projection.arguments,
     options: projection.options,

@@ -537,7 +537,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       aliasOptions: [
         {
           option: "--linked-file <value>",
-          description: "Cross-surface alias for --file",
+          description: "Alias for --file (cross-surface name)",
         },
       ],
     },
@@ -551,7 +551,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       aliasOptions: [
         {
           option: "--linked-test <value>",
-          description: "Cross-surface alias for --test",
+          description: "Alias for --test (cross-surface name)",
         },
       ],
     },
@@ -1068,7 +1068,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       aliasOptions: [
         {
           option: "--linked-file <value>",
-          description: "Cross-surface alias for --file",
+          description: "Alias for --file (cross-surface name)",
         },
       ],
     },
@@ -1082,7 +1082,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       aliasOptions: [
         {
           option: "--linked-test <value>",
-          description: "Cross-surface alias for --test",
+          description: "Alias for --test (cross-surface name)",
         },
       ],
     },

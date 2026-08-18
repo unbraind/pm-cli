@@ -10,7 +10,10 @@ import { execFileSync, spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PM_CORE_COMMAND_NAMES } from "../dist/sdk/cli-contracts.js";
+import {
+  PM_CORE_COMMAND_NAMES,
+  PM_POSITIONAL_ACTION_CONTRACTS,
+} from "../dist/sdk/cli-contracts.js";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIGURED_PM_BIN = process.env.PM_BIN;
@@ -24,7 +27,13 @@ const DEFAULT_BASELINE = join(
   "scripts",
   "agent-token-surface-baseline.json",
 );
-const CORE_COMMAND_NAMES = new Set(PM_CORE_COMMAND_NAMES);
+const POSITIONAL_ACTION_COMMAND_NAMES = PM_POSITIONAL_ACTION_CONTRACTS.map(
+  ({ command }) => command,
+);
+const REQUIRED_COMMAND_NAMES = new Set([
+  ...PM_CORE_COMMAND_NAMES,
+  ...POSITIONAL_ACTION_COMMAND_NAMES,
+]);
 
 function tokens(bytes) {
   return Math.ceil(bytes / 4);
@@ -50,7 +59,7 @@ export function buildBaseline(report, headroom = 1.1) {
       mcp_tools_list: budget(report.mcp_tools_list),
       required_commands: report.commands
         .map((entry) => entry.name)
-        .filter((name) => CORE_COMMAND_NAMES.has(name))
+        .filter((name) => REQUIRED_COMMAND_NAMES.has(name))
         .sort((left, right) => left.localeCompare(right)),
       commands: Object.fromEntries(
         report.commands.map((entry) => [entry.name, budget(entry)]),
@@ -100,7 +109,7 @@ export function compareBaseline(report, baseline) {
   const requiredCommandNames = new Set(surfaces.required_commands ?? []);
   for (const measurement of report.commands) {
     if (
-      !CORE_COMMAND_NAMES.has(measurement.name) &&
+      !REQUIRED_COMMAND_NAMES.has(measurement.name) &&
       !requiredCommandNames.has(measurement.name) &&
       !Object.hasOwn(surfaces.commands ?? {}, measurement.name)
     ) {
@@ -160,7 +169,15 @@ function listCommands() {
     const name = match[1].split("|")[0];
     if (name !== "help") names.push(name);
   }
-  return { rootHelpBytes: Buffer.byteLength(help), names };
+  return {
+    rootHelpBytes: Buffer.byteLength(help),
+    names: [
+      ...names,
+      ...POSITIONAL_ACTION_COMMAND_NAMES.filter(
+        (name) => !names.includes(name),
+      ),
+    ],
+  };
 }
 
 function measureMcpToolsList() {
@@ -211,7 +228,7 @@ const { rootHelpBytes, names } = listCommands();
 
 const commands = names
   .map((name) => {
-    const bytes = measure([name, "--help"]);
+    const bytes = measure([...name.split(" "), "--help"]);
     return { name, bytes, tokens: tokens(bytes) };
   })
   .sort((a, b) => b.bytes - a.bytes);

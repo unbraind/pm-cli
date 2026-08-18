@@ -113,8 +113,7 @@ export interface PmCommandPositionalContract {
 }
 
 /** Discoverable positional action projected through help, contracts, and completion. */
-export interface PmPositionalActionContract
-  extends PmCommandPositionalContract {
+export interface PmPositionalActionContract extends PmCommandPositionalContract {
   /** Commander command that dispatches the action positionally. */
   parent: "assurance" | "plan";
   /** Literal action token accepted in the parent's first positional slot. */
@@ -246,9 +245,7 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       command: "plan create",
       parent: "plan",
       action: "create",
-      slots: [
-        positionalSlot("title", "string", false, { polymorphic: true }),
-      ],
+      slots: [positionalSlot("title", "string", false, { polymorphic: true })],
       accepted_flags: PLAN_CREATE_FLAGS,
       description: "Create a Plan item and optionally seed its ordered steps.",
       example: 'pm plan create --title "Refactor lock retry"',
@@ -349,7 +346,8 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       slots: [positionalSlot("gate-id", "string", true)],
       accepted_flags: ["--dry-run", "--trigger", "--tree"],
       description: "Evaluate one assurance gate for a lifecycle trigger.",
-      example: "pm assurance run tracker-context-quality --trigger ci --dry-run",
+      example:
+        "pm assurance run tracker-context-quality --trigger ci --dry-run",
     },
     {
       command: "assurance verdicts",
@@ -401,7 +399,8 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       action: "risk",
       slots: [],
       accepted_flags: ["--definition"],
-      description: "Analyze bounded defect-recurrence risk for a proposed change.",
+      description:
+        "Analyze bounded defect-recurrence risk for a proposed change.",
       example: 'pm assurance risk --definition \'{"change":{"files":[]}}\'',
     },
   ];
@@ -411,7 +410,14 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   readonly PmCommandPositionalSlotContract[]
 >([
   ["append", [ITEM_ID, OPTIONAL_TEXT]],
-  ["assurance", [positionalSlot("action", "action", true), positionalSlot("kind", "string", false), positionalSlot("id", "string", false)]],
+  [
+    "assurance",
+    [
+      positionalSlot("action", "action", true),
+      positionalSlot("kind", "string", false),
+      positionalSlot("id", "string", false),
+    ],
+  ],
   ["beads import", [positionalSlot("file", "string", false)]],
   ["changelog export", [positionalSlot("file", "string", false)]],
   ["claim", [OPTIONAL_ITEM_ID]],
@@ -419,53 +425,130 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ["close-task", [ITEM_ID, positionalSlot("reason", "string", false)]],
   ["comments", [ITEM_ID, OPTIONAL_TEXT]],
   ["completion", [positionalSlot("shell", "string", false)]],
-  ["config", [positionalSlot("scope", "string", false, { polymorphic: true }), positionalSlot("action", "action", false), positionalSlot("key", "string", false), positionalSlot("value", "string", false, { polymorphic: true })]],
+  [
+    "config",
+    [
+      positionalSlot("scope", "string", false, { polymorphic: true }),
+      positionalSlot("action", "action", false),
+      positionalSlot("key", "string", false),
+      positionalSlot("value", "string", false, { polymorphic: true }),
+    ],
+  ],
   ["copy", [ITEM_ID]],
-  ["create", [positionalSlot("type-or-title", "string", false, { polymorphic: true }), positionalSlot("title", "string", false)]],
+  [
+    "create",
+    [
+      positionalSlot("type-or-title", "string", false, { polymorphic: true }),
+      positionalSlot("title", "string", false),
+    ],
+  ],
   ["delete", [ITEM_ID]],
   ["deps", [ITEM_ID]],
   ["docs", [ITEM_ID]],
   ["event", [positionalSlot("title", "string", true)]],
-  ["extension", [positionalSlot("target", "string", false, { polymorphic: true })]],
+  [
+    "extension",
+    [positionalSlot("target", "string", false, { polymorphic: true })],
+  ],
   ["files", [ITEM_ID]],
   ["focus", [OPTIONAL_ITEM_ID]],
   ["get", [ITEM_ID]],
-  ["graph", [positionalSlot("subcommand", "action", true), OPTIONAL_ITEM_ID, positionalSlot("target", "item_id", false)]],
+  [
+    "graph",
+    [
+      positionalSlot("subcommand", "action", true),
+      OPTIONAL_ITEM_ID,
+      positionalSlot("target", "item_id", false),
+    ],
+  ],
   ["guide", [positionalSlot("topic", "string", false)]],
   ["history", [ITEM_ID]],
   ["history-compact", [OPTIONAL_ITEM_ID]],
   ["history-redact", [ITEM_ID]],
   ["history-repair", [OPTIONAL_ITEM_ID]],
-  ["init", [positionalSlot("prefix-or-path", "string", false, { polymorphic: true })]],
+  [
+    "init",
+    [positionalSlot("prefix-or-path", "string", false, { polymorphic: true })],
+  ],
   ["install", [positionalSlot("targets", "string", false, { variadic: true })]],
   ["item complete", [ITEM_ID, positionalSlot("reason", "string", false)]],
   ["learnings", [ITEM_ID, OPTIONAL_TEXT]],
   ["meet", [positionalSlot("title", "string", true)]],
-  ["merge", [positionalSlot("subcommand", "action", true), positionalSlot("artifact", "string", false), positionalSlot("base", "string", false), positionalSlot("ours", "string", false), positionalSlot("theirs", "string", false)]],
+  [
+    "merge",
+    [
+      positionalSlot("subcommand", "action", true),
+      positionalSlot("artifact", "string", false),
+      positionalSlot("base", "string", false),
+      positionalSlot("ours", "string", false),
+      positionalSlot("theirs", "string", false),
+    ],
+  ],
   ["notes", [ITEM_ID, OPTIONAL_TEXT]],
-  ["package", [positionalSlot("target", "string", false, { polymorphic: true })]],
-  ["packages", [positionalSlot("target", "string", false, { polymorphic: true })]],
+  [
+    "package",
+    [positionalSlot("target", "string", false, { polymorphic: true })],
+  ],
+  [
+    "packages",
+    [positionalSlot("target", "string", false, { polymorphic: true })],
+  ],
   ["pause-task", [ITEM_ID]],
-  ["plan", [positionalSlot("subcommand", "action", true), positionalSlot("id", "item_id", false, { polymorphic: true }), positionalSlot("step", "string", false), positionalSlot("new-order", "integer", false)]],
-  ["profile", [positionalSlot("subcommand", "action", true), positionalSlot("name", "string", false)]],
+  [
+    "plan",
+    [
+      positionalSlot("subcommand", "action", true),
+      positionalSlot("id", "item_id", false, { polymorphic: true }),
+      positionalSlot("step", "string", false),
+      positionalSlot("new-order", "integer", false),
+    ],
+  ],
+  [
+    "profile",
+    [
+      positionalSlot("subcommand", "action", true),
+      positionalSlot("name", "string", false),
+    ],
+  ],
   ["release", [ITEM_ID]],
   ["remind", [positionalSlot("title", "string", true)]],
   ["restore", [ITEM_ID, positionalSlot("target", "string", true)]],
-  ["schema", [positionalSlot("subcommand", "action", true), positionalSlot("name", "string", false)]],
+  [
+    "schema",
+    [
+      positionalSlot("subcommand", "action", true),
+      positionalSlot("name", "string", false),
+    ],
+  ],
   ["search", [positionalSlot("keywords", "string", true, { variadic: true })]],
   ["start-task", [ITEM_ID]],
-  ["telemetry", [positionalSlot("namespace-or-subcommand", "action", false, { polymorphic: true }), positionalSlot("subcommand", "action", false)]],
+  [
+    "telemetry",
+    [
+      positionalSlot("namespace-or-subcommand", "action", false, {
+        polymorphic: true,
+      }),
+      positionalSlot("subcommand", "action", false),
+    ],
+  ],
   ["test", [ITEM_ID]],
   ["update", [ITEM_ID]],
   ["upgrade", [positionalSlot("target", "string", false)]],
-  ["workspace snapshot", [positionalSlot("action", "action", true), positionalSlot("target", "string", false)]],
-  ...["activate", "adopt", "deactivate", "init", "uninstall"].flatMap((action) =>
-    ["extension", "package", "packages"].map(
-      (root): [string, readonly PmCommandPositionalSlotContract[]] => [
-        `${root} ${action}`,
-        [positionalSlot("target", "string", true)],
-      ],
-    ),
+  [
+    "workspace snapshot",
+    [
+      positionalSlot("action", "action", true),
+      positionalSlot("target", "string", false),
+    ],
+  ],
+  ...["activate", "adopt", "deactivate", "init", "uninstall"].flatMap(
+    (action) =>
+      ["extension", "package", "packages"].map(
+        (root): [string, readonly PmCommandPositionalSlotContract[]] => [
+          `${root} ${action}`,
+          [positionalSlot("target", "string", true)],
+        ],
+      ),
   ),
   ...["describe"].flatMap((action) =>
     ["extension", "package", "packages"].map(
@@ -491,11 +574,16 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ["vcs show", [ITEM_ID]],
 ]);
 
+/** Normalize a command path for every positional-contract lookup and identity check. */
+function normalizePositionalCommandPath(command: string): string {
+  return command.trim().toLowerCase().replace(/\s+/gu, " ");
+}
+
 /** Resolve one declared signature without treating arbitrary object keys as commands. */
 export function resolvePmCommandPositionalContract(
   command: string,
 ): PmCommandPositionalContract | undefined {
-  const normalized = command.trim().toLowerCase().replace(/\s+/gu, " ");
+  const normalized = normalizePositionalCommandPath(command);
   return PM_COMMAND_POSITIONAL_CONTRACTS.find(
     (contract) => contract.command === normalized,
   );
@@ -505,10 +593,17 @@ export function resolvePmCommandPositionalContract(
 export function resolvePmPositionalActionContract(
   command: string,
 ): PmPositionalActionContract | undefined {
-  const normalized = command.trim().toLowerCase().replace(/\s+/gu, " ");
+  const normalized = normalizePositionalCommandPath(command);
   return PM_POSITIONAL_ACTION_CONTRACTS.find(
     (contract) => contract.command === normalized,
   );
+}
+
+/** Format the shared action-flag tip rendered by text and structured help. */
+export function formatPmPositionalActionFlagTip(
+  acceptedFlags: readonly string[],
+): string {
+  return `Applicable flags: ${acceptedFlags.length > 0 ? acceptedFlags.join(", ") : "none"}.`;
 }
 
 function destinationRows(
@@ -851,7 +946,8 @@ function duplicatePositionalSignatureFindings(
 ): PmCommandPositionalFinding[] {
   const counts = new Map<string, number>();
   for (const { command } of contracts) {
-    counts.set(command, (counts.get(command) ?? 0) + 1);
+    const normalized = normalizePositionalCommandPath(command);
+    counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
   }
   return [...counts.entries()]
     .filter(([, count]) => count > 1)
@@ -875,27 +971,28 @@ export function verifyPmCommandPositionalContracts(
     options.positionalShapeBudget ??
     PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget;
   const declaredByCommand = new Map(
-    declared.map((contract) => [contract.command, contract] as const),
+    declared.map(
+      (contract) =>
+        [normalizePositionalCommandPath(contract.command), contract] as const,
+    ),
   );
   const observedByCommand = new Map(
-    observed.map((contract) => [contract.command, contract] as const),
+    observed.map(
+      (contract) =>
+        [normalizePositionalCommandPath(contract.command), contract] as const,
+    ),
   );
   const findings: PmCommandPositionalFinding[] = [
-    ...duplicatePositionalSignatureFindings(
-      declared,
-      "declared",
-    ),
-    ...duplicatePositionalSignatureFindings(
-      observed,
-      "observed",
-    ),
+    ...duplicatePositionalSignatureFindings(declared, "declared"),
+    ...duplicatePositionalSignatureFindings(observed, "observed"),
     ...verifyExplicitPositionalSlotCensus(
       EXPLICIT_POSITIONAL_SLOTS.keys(),
       PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
     ),
   ];
   for (const contract of declaredByCommand.values()) {
-    const actual = observedByCommand.get(contract.command);
+    const normalizedCommand = normalizePositionalCommandPath(contract.command);
+    const actual = observedByCommand.get(normalizedCommand);
     if (!actual) {
       findings.push({
         code: "missing_observed_signature",
@@ -914,7 +1011,9 @@ export function verifyPmCommandPositionalContracts(
     }
   }
   for (const contract of observedByCommand.values()) {
-    if (!declaredByCommand.has(contract.command)) {
+    if (
+      !declaredByCommand.has(normalizePositionalCommandPath(contract.command))
+    ) {
       findings.push({
         code: "stale_observed_signature",
         command: contract.command,

@@ -1197,13 +1197,14 @@ Project-governance setters use the separate `governance_contracts` value
 domains; in particular, workflow enforcement is `off|warn|strict`, not the
 extension policy token `enforce`.
 Use `pm contracts --summary --json` first when bootstrapping in a tight context
-window. `command_summaries` contains one row per executable command path,
-including aliases and registered namespace children, with a meaningful intent
-plus `default_max_estimated_tokens` and the format-specific TOON/JSON ceilings.
-The low-token summary does not repeat every positional plan/assurance action;
+window. `command_summaries` contains one row per registered command path,
+including aliases and namespace children, with a meaningful intent plus
+`default_max_estimated_tokens`. The low-token summary intentionally does not
+repeat the 27 virtual positional plan/assurance action rows;
 `grammar_contracts.positional_action_count` and `positional_action_parents`
-route callers to root help, while command-scoped contracts expose each action's
-typed positional signature and exact flags.
+retain their complete discoverability and route callers to root help. A
+command-scoped contract for an exact action restores its typed positional
+signature, exact flags, provenance, and format-specific TOON/JSON ceilings.
 Package commands contribute their intent through command registration (falling
 back to the registered description), so agents never need a generic
 `Inspect flags.` placeholder. Request heavier command-specific flags or schemas

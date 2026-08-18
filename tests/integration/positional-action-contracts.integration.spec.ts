@@ -17,12 +17,12 @@ describe("positional action contracts", () => {
         arguments: [{ name: "title", required: false }],
         subcommands: [],
       });
-      expect(direct.options.some(({ flags }) => flags.includes("--title"))).toBe(
-        true,
-      );
-      expect(direct.options.some(({ flags }) => flags.includes("--depth"))).toBe(
-        false,
-      );
+      expect(
+        direct.options.some(({ flags }) => flags.includes("--title")),
+      ).toBe(true);
+      expect(
+        direct.options.some(({ flags }) => flags.includes("--depth")),
+      ).toBe(false);
 
       const generic = context.runCli(["help", "plan", "create", "--json"], {
         expectJson: true,
@@ -94,6 +94,26 @@ describe("positional action contracts", () => {
 
   it("executes structured linked-resource names as create and update aliases", async () => {
     await withTempPmPath(async (context) => {
+      for (const command of ["create", "update"]) {
+        const help = context.runCli([command, "--help", "--json"], {
+          expectJson: true,
+        }).json as {
+          options: Array<{ long: string | null; aliases: string[] }>;
+        };
+        expect(help.options).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              long: "--file",
+              aliases: expect.arrayContaining(["--linked-file"]),
+            }),
+            expect.objectContaining({
+              long: "--test",
+              aliases: expect.arrayContaining(["--linked-test"]),
+            }),
+          ]),
+        );
+      }
+
       const created = context.runCli(
         [
           "create",
@@ -158,7 +178,12 @@ describe("positional action contracts", () => {
         "--json",
       ]);
       expect(rejected.code).toBe(2);
-      expect(rejected.stderr).toContain("--linked-file");
+      expect(JSON.parse(rejected.stderr)).toMatchObject({
+        code: "unknown_option",
+        detail: expect.stringContaining(
+          "does not recognize option --linked-files",
+        ),
+      });
     });
   });
 });

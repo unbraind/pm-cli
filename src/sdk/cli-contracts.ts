@@ -114,6 +114,10 @@ export type {
   ToolOptionFlagContract,
 } from "./cli-contracts/flag-contracts.js";
 export {
+  PM_POSITIONAL_ACTION_CONTRACTS,
+  type PmPositionalActionContract,
+} from "./cli-contracts/grammar-contracts.js";
+export {
   withFlagAliasMetadata,
   compactFlagAliasContracts,
   resolvePmPositionalActionFlagContracts,
