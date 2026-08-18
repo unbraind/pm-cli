@@ -4,9 +4,9 @@
 
 ### Fixed
 
+- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - MCP update keys and CLI update flags diverge in name (linkedFile/linkedTest vs --file/--test), so an agent that reads the MCP contract and writes a CLI command produces a guaranteed unknown-option refusal ([pm-y0htkd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y0htkd.toon))
 - Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command ([pm-2tan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2tan.toon))
-- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
 - Context calibration recovery names a nonexistent package script ([pm-xa3t0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xa3t0o.toon))
 
