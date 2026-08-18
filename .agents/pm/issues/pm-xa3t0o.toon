@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[4]: agent-ux,context,quality-gate,recovery
 created_at: "2026-08-16T12:30:22.924Z"
-updated_at: "2026-08-18T06:50:14.394Z"
-closed_at: "2026-08-18T06:45:51.710Z"
-completed_at: "2026-08-18T06:45:51.710Z"
+updated_at: "2026-08-18T10:02:30.277Z"
+closed_at: "2026-08-18T10:02:29.462Z"
+completed_at: "2026-08-18T10:02:29.462Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: The package manifest exposes the exact recovery command named by the calibration gate and it forwards update arguments correctly; A negative control removes or renames the script and proves gate recovery conformance fails; Testing documentation and the gate error use one executable spelling
@@ -20,11 +20,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3crymx,discovered_from,"2026-08-16T12:30:22.924Z","harness:codex","cli:create:dep",detected
   pm-k6t4yb,implements,"2026-08-16T12:30:22.924Z","harness:codex","cli:create:dep",detected
   pm-hid9g1,verifies,"2026-08-16T12:35:13.508Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-16T12:30:22.924Z","harness:codex","text=Duplicate-check evidence: searched the complete 2509-item all-status corpus through pm search for context intent calibration update package script and recovery command, then checked exact tracker text for context:intent:calibrate. Existing pm-3crymx owns truthful context results, pm-hid9g1 owns calibration, and pm-k6t4yb owns gate inventory; none owns the missing executable recovery spelling. Created as open follow-up and deliberately left unclaimed because this tranche does not edit that surface."
   "2026-08-18T04:52:04.418Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
   "2026-08-18T06:29:33.443Z","harness:codex","Verification evidence: package.json exposes the exact context:intent:calibrate recovery command, the gate rejects missing or renamed script declarations, the real update flow is unchanged, and full literal coverage passed 100/100/100/100."
   "2026-08-18T06:45:43.856Z","harness:codex","Closeout evidence: context:intent:calibrate is now a manifest-backed executable recovery command, repository assurance rejects a missing or renamed reference, and operator documentation names the recovery route. PM-linked focused execution passed 11/11 tests twice across the direct and parent assurance owners; aggregate static assurance and exact full coverage passed."
+  "2026-08-18T10:02:28.687Z","harness:codex","Closure-sequence repair evidence: resolution, expected_result, and actual_result were present before this reopened close; the next pm close uses --validate-close warn and is followed by release, preserving the earlier immutable sequence."
 files[3]{path,scope,note}:
   package.json,project,Manifest-backed calibration recovery command
   scripts/release/context-intent-calibration-gate.mjs,project,Calibration command contract verifier
@@ -36,7 +37,7 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msyasgqx-i4ao7e,test,passed,"2026-08-18T06:44:20.140Z","2026-08-18T06:44:49.736Z","2026-08-18T06:44:49.736Z",1,0,0
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Exact calibration recovery workflow
-close_reason: "Delivered a manifest-backed executable context calibration recovery command, missing-reference negative control, repository assurance integration, documentation, and exact 100% coverage."
+close_reason: "Revalidated the completed recovery contract after structured resolution evidence was present, preserving append-only history."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -450,10 +450,12 @@ interface CommandSummarySurface {
   command: string;
   aliases?: string[];
   intent: string;
-  intent_source: "command" | "description" | "generated";
+  /** Non-default provenance in compact output; exhaustive provenance in full output. */
+  intent_source?: "command" | "description" | "generated";
   flags?: string[];
   default_max_estimated_tokens: number;
-  default_max_estimated_tokens_by_format: {
+  /** Full-projection format detail; compact summaries retain the canonical default only. */
+  default_max_estimated_tokens_by_format?: {
     toon: number;
     json: number;
   };
@@ -2680,7 +2682,7 @@ const COMMAND_INTENT_SUBJECT_OVERRIDES = new Map<string, string>([
 function summarizeCommandIntent(
   command: string,
   extensionContracts: readonly ExtensionCommandContract[],
-): Pick<CommandSummarySurface, "intent" | "intent_source"> {
+): Required<Pick<CommandSummarySurface, "intent" | "intent_source">> {
   const declared =
     COMMAND_INTENTS.get(command) ??
     (command.includes(" ")
@@ -2725,6 +2727,7 @@ function summarizeCommandIntent(
 function buildCommandSummarySurface(
   commands: readonly string[],
   extensionContracts: readonly ExtensionCommandContract[] = [],
+  includeFormatBudgets = true,
 ): CommandSummarySurface[] {
   return [...new Set(commands.map(normalizeCommandPath))]
     .filter((command) => command.length > 0)
@@ -2757,12 +2760,19 @@ function buildCommandSummarySurface(
       const intent = summarizeCommandIntent(command, extensionContracts);
       return {
         command,
-        ...intent,
+        intent: intent.intent,
+        ...(includeFormatBudgets || intent.intent_source !== "command"
+          ? { intent_source: intent.intent_source }
+          : {}),
         ...(flags.length > 0 ? { flags } : {}),
         default_max_estimated_tokens: budget.default_max_estimated_tokens,
-        default_max_estimated_tokens_by_format: {
-          ...budget.default_max_estimated_tokens_by_format,
-        },
+        ...(includeFormatBudgets
+          ? {
+              default_max_estimated_tokens_by_format: {
+                ...budget.default_max_estimated_tokens_by_format,
+              },
+            }
+          : {}),
       };
     });
 }
@@ -3028,6 +3038,7 @@ function attachAgentCommandContractsResult(
   result.command_summaries = buildCommandSummarySurface(
     outputCommands,
     extensionCommandContracts,
+    includePositionalSignatures,
   );
   result.output_policy = {
     token_estimate: "ceil(utf8_bytes / 4)",
@@ -3093,7 +3104,7 @@ export async function runContracts(
       result,
       outputCommands,
       extensionCommandContracts,
-      selection.fullOutput,
+      selection.fullOutput || selection.selectedCommand !== undefined,
     );
   }
   if (selection.summary) {

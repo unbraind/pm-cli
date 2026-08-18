@@ -14,7 +14,11 @@ describe("full contracts projection monotonicity", () => {
     const full = await runContracts({ full: true }, GLOBAL);
 
     expect(full.command_summaries).toEqual(
-      expect.arrayContaining(summary.command_summaries ?? []),
+      expect.arrayContaining(
+        (summary.command_summaries ?? []).map((entry) =>
+          expect.objectContaining(entry),
+        ),
+      ),
     );
     expect(full.command_summaries).toHaveLength(
       summary.command_summaries?.length ?? 0,
@@ -25,6 +29,21 @@ describe("full contracts projection monotonicity", () => {
         expect.objectContaining({ command: "assurance run" }),
       ]),
     );
+    expect(
+      summary.command_summaries?.every(
+        (entry) => entry.default_max_estimated_tokens_by_format === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      full.command_summaries?.every(
+        (entry) => entry.default_max_estimated_tokens_by_format !== undefined,
+      ),
+    ).toBe(true);
+    expect(
+      full.command_summaries?.every(
+        (entry) => entry.intent_source !== undefined,
+      ),
+    ).toBe(true);
     expect(full.output_policy).toEqual(summary.output_policy);
     expect(full.commands.length).toBeGreaterThan(0);
     expect(full.schema).toBeDefined();

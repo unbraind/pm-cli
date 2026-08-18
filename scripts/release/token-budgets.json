@@ -69,11 +69,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 25001,
-      "baseline_estimated_tokens": 6251,
-      "baseline_lines": 1016,
-      "max_bytes": 27502,
-      "max_estimated_tokens": 6877
+      "baseline_bytes": 16127,
+      "baseline_estimated_tokens": 4032,
+      "baseline_lines": 683,
+      "max_bytes": 17740,
+      "max_estimated_tokens": 4435
     },
     {
       "id": "contracts-flags-json",
@@ -116,7 +116,7 @@
       "baseline_estimated_tokens": 426,
       "baseline_lines": 47,
       "max_bytes": 1872,
-      "max_estimated_tokens": 469,
+      "max_estimated_tokens": 468,
       "command": "list",
       "contract_max_estimated_tokens": 4000
     },
@@ -132,7 +132,7 @@
       "baseline_estimated_tokens": 1115,
       "baseline_lines": 203,
       "max_bytes": 4904,
-      "max_estimated_tokens": 1227,
+      "max_estimated_tokens": 1226,
       "command": "list",
       "contract_max_estimated_tokens": 6000
     },
@@ -149,7 +149,7 @@
       "baseline_estimated_tokens": 6631,
       "baseline_lines": 690,
       "max_bytes": 29174,
-      "max_estimated_tokens": 7295,
+      "max_estimated_tokens": 7294,
       "command": "comments-audit",
       "contract_max_estimated_tokens": 6000
     },
@@ -166,7 +166,7 @@
       "baseline_estimated_tokens": 1444,
       "baseline_lines": 86,
       "max_bytes": 6351,
-      "max_estimated_tokens": 1589,
+      "max_estimated_tokens": 1588,
       "command": "notes",
       "contract_max_estimated_tokens": 3000
     },
@@ -222,7 +222,7 @@
       "baseline_estimated_tokens": 212,
       "baseline_lines": 40,
       "max_bytes": 931,
-      "max_estimated_tokens": 234,
+      "max_estimated_tokens": 233,
       "command": "get",
       "contract_max_estimated_tokens": 6000
     },
@@ -252,7 +252,7 @@
       "baseline_estimated_tokens": 745,
       "baseline_lines": 127,
       "max_bytes": 3275,
-      "max_estimated_tokens": 820,
+      "max_estimated_tokens": 819,
       "command": "next",
       "contract_max_estimated_tokens": 4000
     },
@@ -316,7 +316,7 @@
       "baseline_estimated_tokens": 178,
       "baseline_lines": 35,
       "max_bytes": 780,
-      "max_estimated_tokens": 196,
+      "max_estimated_tokens": 195,
       "command": "deps",
       "contract_max_estimated_tokens": 6000
     },
@@ -334,7 +334,7 @@
       "baseline_estimated_tokens": 662,
       "baseline_lines": 104,
       "max_bytes": 2911,
-      "max_estimated_tokens": 729,
+      "max_estimated_tokens": 728,
       "command": "graph",
       "contract_max_estimated_tokens": 6000
     },
@@ -352,7 +352,7 @@
       "baseline_estimated_tokens": 94,
       "baseline_lines": 19,
       "max_bytes": 412,
-      "max_estimated_tokens": 104,
+      "max_estimated_tokens": 103,
       "command": "duplicates",
       "contract_max_estimated_tokens": 6000
     },
@@ -434,7 +434,7 @@
       "baseline_estimated_tokens": 223,
       "baseline_lines": 45,
       "max_bytes": 978,
-      "max_estimated_tokens": 246,
+      "max_estimated_tokens": 245,
       "command": "search",
       "contract_max_estimated_tokens": 6000
     },
@@ -526,7 +526,7 @@
       "baseline_estimated_tokens": 386,
       "baseline_lines": 68,
       "max_bytes": 1696,
-      "max_estimated_tokens": 425,
+      "max_estimated_tokens": 424,
       "command": "search",
       "contract_max_estimated_tokens": 6000
     }

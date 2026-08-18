@@ -95,6 +95,7 @@ describe("structured help command-path resolution", () => {
 
     expect(payload).toMatchObject({
       resolved_path: "plan create",
+      usage: "plan create [title]",
       arguments: [
         expect.objectContaining({ name: "title", required: false }),
       ],
@@ -141,6 +142,21 @@ describe("structured help command-path resolution", () => {
       new Map(),
     );
     expect(flaglessActionPayload.tips).toEqual(["Applicable flags: none."]);
+  });
+
+  it("prefixes concrete command usage with its resolved path", () => {
+    const root = new Command("pm");
+    const get = root.command("get").argument("<id>");
+
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        get,
+        ["get", "--help", "--json"],
+        ["get"],
+        new Map(),
+      ).usage,
+    ).toBe("get [options] <id>");
   });
 
   it("filters action options through aliases and renders every slot shape", () => {

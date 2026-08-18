@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
@@ -395,7 +396,7 @@ describe("scripts/release/token-budget-gate", () => {
       baseline_bytes: 101,
       baseline_estimated_tokens: 26,
       max_bytes: 112,
-      max_estimated_tokens: 29,
+      max_estimated_tokens: 28,
     });
 
     expect(
@@ -419,7 +420,7 @@ describe("scripts/release/token-budget-gate", () => {
       command: "context",
       contract_max_estimated_tokens: 4_000,
       max_bytes: 112,
-      max_estimated_tokens: 29,
+      max_estimated_tokens: 28,
     });
   });
 
@@ -866,6 +867,23 @@ describe("scripts/release/token-budget-gate", () => {
     );
   });
 
+  it("executes its direct entrypoint and fails a malformed invocation", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(process.cwd(), "scripts/release/token-budget-gate.mjs"),
+        "--headroom",
+        "0",
+      ],
+      { encoding: "utf8" },
+    );
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      "--headroom must be a finite number >= 1",
+    );
+  });
+
   it("fails when the built CLI is missing", async () => {
     mockRuntime({
       exists: (targetPath) => path.basename(targetPath) !== "cli.js",
@@ -978,6 +996,7 @@ describe("scripts/release/token-budget-gate", () => {
       { ...baseBudget, max_bytes: -1 },
       { ...baseBudget, max_estimated_tokens: undefined },
       { ...baseBudget, max_estimated_tokens: -1 },
+      { ...baseBudget, max_estimated_tokens: 126 },
     ]) {
       expect(() =>
         mod.compareBudgets([], {

@@ -1137,10 +1137,6 @@ describe("contracts command runtime", () => {
             "--full",
           ],
           default_max_estimated_tokens: 3000,
-          default_max_estimated_tokens_by_format: {
-            toon: 3000,
-            json: 4500,
-          },
         }),
         expect.objectContaining({
           command: "list",
@@ -1188,6 +1184,15 @@ describe("contracts command runtime", () => {
         }),
       ]),
     );
+    expect(
+      result.command_summaries?.every(
+        (summary) => summary.default_max_estimated_tokens_by_format === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      result.command_summaries?.find((summary) => summary.command === "contracts")
+        ?.intent_source,
+    ).toBeUndefined();
     expect(result.output_policy).toEqual({
       token_estimate: "ceil(utf8_bytes / 4)",
       degradation_ladder: ["full", "compact", "brief", "summary", "counts"],
@@ -1195,6 +1200,21 @@ describe("contracts command runtime", () => {
     });
     expect(result.commands).toEqual([]);
     expect(JSON.stringify(result).length).toBeLessThan(40_000);
+
+    const scoped = await runContracts(
+      { command: "contracts", summary: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(scoped.command_summaries).toEqual([
+      expect.objectContaining({
+        command: "contracts",
+        intent_source: "command",
+        default_max_estimated_tokens_by_format: {
+          toon: 3000,
+          json: 4500,
+        },
+      }),
+    ]);
   });
 
   it("publishes one meaningful intent and budget for every exact command path", async () => {

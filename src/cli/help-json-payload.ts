@@ -386,7 +386,9 @@ function buildPositionalActionHelpProjection(
           description,
         })),
       ].sort((left, right) => left.name.localeCompare(right.name)),
-      usage: targetCommand.usage(),
+      usage: [resolvedPath, targetCommand.usage()]
+        .filter((token) => token.length > 0)
+        .join(" "),
     };
   }
   const acceptedFlags = new Set(action.accepted_flags);
