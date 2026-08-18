@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",grammar,simplification
 created_at: "2026-08-02T15:03:08.302Z"
-updated_at: "2026-08-18T14:49:56.159Z"
-closed_at: "2026-08-18T14:49:54.769Z"
-completed_at: "2026-08-18T14:49:54.769Z"
+updated_at: "2026-08-18T15:07:14.148Z"
+closed_at: "2026-08-18T15:07:13.148Z"
+completed_at: "2026-08-18T15:07:13.148Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "The contracts table declares each command's positional signature as data - slot name, required or optional, value kind, and whether the slot is polymorphic - alongside the flag and exit-code declarations it already carries; A conformance gate fails when a command's declared positional arity disagrees with its enforced arity, with pm schema, pm profile, and pm plan as the negative-control fixtures that fail before the fix; One concept has one positional spelling and one arity across the surface: the item id is required or optional by a declared rule, not per command, and a violation fails the gate; Omitting a required positional produces the missing-required-argument refusal on every command, never the invalid-value refusal, asserted across the full command inventory; The count of distinct positional shapes is measured, recorded as evidence on this item, declared as a budget in the contracts table, and cannot increase without the gate failing; Subcommand dispatch converges on one declared shape, with every current spelling preserved as a hidden alias proven by a test over the pre-change inventory"
@@ -31,7 +31,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-wt43zj,blocked_by,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
   pm-pbyu,implements,"2026-08-02T15:05:57.381Z","harness:claude-code","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-08-02T15:03:08.302Z","harness:claude-code","Duplicate check before create: read pm-fs8q9x (flags), pm-wt43zj (nouns/verbs), pm-hqa8g1 (exit codes), pm-x4nn3z (error codes), pm-pbyu (noun-verb ADR), pm-7i97c3 (command intent), pm-gy885b (closed value domains) in full. All four grammar-governance items scope explicitly to flags, nouns/verbs, exit codes, and error codes respectively; none mentions positional arguments in title, description, or AC. pm-gy885b covers value domains a refusal fails to name, which is adjacent but concerns flag VALUES, not slot arity - recorded as discovered_from. No existing n7rr child covers argument placement; the existing children all consolidate which commands exist, not how their arguments are shaped."
   "2026-08-07T17:13:34.757Z","harness:claude-code","Another instance of the subcommand-scoped positional requirement, found while measuring graph analytics 2026-08-07. `pm graph dominators --json` exits 2 with \"graph dominators requires an item id\" under code invalid_argument_value. It is a correct refusal and it is invisible from the declared arity: `pm graph --help` renders the id positional as \"Root item id (traversals, paths, impact, and dominators)\", so the requirement is carried in prose inside an argument description rather than in the grammar. Of the sixteen graph subcommands, four require the id positional, one requires a second target positional, and eleven take none, all under a single declared `[id] [target]` shape. This is the same class as the schema/profile/plan versus graph/merge divergence already recorded here: one command, several arities, and the arity a caller must satisfy is discoverable only by being refused."
   "2026-08-18T04:51:46.250Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
@@ -46,11 +46,13 @@ comments[14]{created_at,author,text}:
   "2026-08-18T10:56:53.765Z","harness:codex","Final verification evidence: the late-review normalization and help-formatting changes passed ESLint, zero-clone duplicate detection, the focused 89-test contract suite, contracts:check, sdk:surface:check, the 158-destination positional grammar gate, the 43-create/48-update MCP parity gate, the 32-surface token budget gate, the isolated search-active 99-surface agent token ratchet, defect-evidence validation, graph and record assurance, and full repository coverage at exactly 53,124/53,124 lines, 55,035/55,035 statements, 11,369/11,369 functions, and 41,062/41,062 branches. The hosted exact-head run for 4281343f3 also passed all required static, smoke, compatibility, shard, aggregate coverage, benchmark, security, Codecov, Windows, and CodeQL gates."
   "2026-08-18T12:13:59.674Z","harness:codex","Evidence: injected positional declaration verification is now isolated from the repository-global explicit-slot census, while the default governed verification still executes that census. Regression coverage now selects plan reorder-step so whitespace normalization and slot reorder checks exercise a multi-token, multi-slot signature rather than a vacuous item command. Focused grammar suite and command-grammar gate passed with 158 declared/observed commands and zero findings."
   "2026-08-18T14:49:46.350Z","harness:codex","Terminal local evidence: the independent structured-help/runtime census reports 166 observed of 166 declared destinations, 32 typed positional actions, 20/21 shapes, 61 visible top-level commands under the 69 ceiling, zero findings, and MCP parity at 43 create / 48 update parameters. Focused regression coverage passes; full repository execution passes 521 files / 7,557 tests at exact 55,127/55,127 statements, 41,148/41,148 branches, 11,394/11,394 functions, and 53,208/53,208 lines. A packed 2026.8.18 tarball passed isolated npx, Bun, and bunx help/initialization acceptance."
+  "2026-08-18T15:07:12.068Z","harness:codex","Hosted smoke diagnosis: run 32151583809 proved context assurance passed but correctly failed discovery governance because the five newly executable workspace snapshot action paths lacked committed token-surface rows. Regenerated the baseline from the built CLI; the independent surface now covers 112 ratchets and pnpm quality:token-surface passes. This is generated contract evidence, not a relaxed ceiling."
 learnings[2]{created_at,author,text}:
   "2026-08-18T08:53:09.987Z","harness:codex","Exact positional identity and shape budgeting are separate invariants: exact comparison must include slot names, while the bounded shape key intentionally excludes names so semantic arity vocabulary remains stable."
   "2026-08-18T10:02:39.030Z","harness:codex","Default compact discovery and targeted recovery should be asymmetric: omit repeated detail across the whole command catalog, but preserve exact detail when a command is explicitly selected so gates and agents do not infer the wrong format contract."
-files[20]{path,scope,note}:
+files[21]{path,scope,note}:
   CHANGELOG.md,project,Generated positional grammar changelog entry
+  scripts/agent-token-surface-baseline.json,project,Generated discovery ratchets for the five newly governed workspace snapshot paths
   scripts/release/command-grammar-gate.mjs,project,Executable positional grammar assurance
   sdk/public-surface.json,project,Governed public SDK surface snapshot
   src/cli/commands/contracts.ts,project,Renders the contract surface agents read for exact argument shapes
@@ -70,16 +72,17 @@ files[20]{path,scope,note}:
   tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Grammar gate negative-control coverage
   tests/unit/sdk/action-schema-parity.spec.ts,project,Runtime action vocabulary parity with positional contracts
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Positive and negative positional contract coverage
-tests[5]{command,scope,timeout_seconds}:
+tests[6]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- contracts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,240
   node scripts/run-tests.mjs coverage,project,600
   node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,300
+  "pnpm quality:token-surface",project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msyarhlx-y05tsx,test,passed,"2026-08-18T06:43:48.539Z","2026-08-18T06:44:04.196Z","2026-08-18T06:44:04.196Z",1,0,0
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Command reference rendering the positional shapes this task normalizes
   docs/SDK.md,project,Positional grammar SDK reference
-close_reason: "Delivered independent live registration and runtime-action census at 166/166 destinations, 32 typed positional actions, precise per-action flags, visible aliases, fail-closed negative controls, packed npm/Bun acceptance, and exact 100/100/100/100 coverage across 7,557 tests."
+close_reason: "Delivered and measured all 166 executable destinations, including five workspace snapshot action paths now present in the 112-surface discovery token baseline; grammar, exact coverage, packed consumers, and token-surface checks pass."
 body: ""

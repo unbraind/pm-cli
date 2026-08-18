@@ -4,13 +4,13 @@
   "headroom": 1.1,
   "surfaces": {
     "root_help": 14074,
-    "per_command_total": 346745,
-    "full_help_surface": 360818,
+    "per_command_total": 351504,
+    "full_help_surface": 365578,
     "contracts": {
-      "summary_toon": 15547,
-      "summary_json": 19370,
-      "json": 19232,
-      "full": 1293759,
+      "summary_toon": 15577,
+      "summary_json": 19401,
+      "json": 19263,
+      "full": 1295192,
       "bounded_full": 559
     },
     "mcp_tools_list": 48783,
@@ -102,7 +102,12 @@
       "update-many",
       "upgrade",
       "validate",
-      "workspace"
+      "workspace",
+      "workspace snapshot create",
+      "workspace snapshot delete",
+      "workspace snapshot inspect",
+      "workspace snapshot list",
+      "workspace snapshot restore"
     ],
     "commands": {
       "update-many": 12631,
@@ -177,7 +182,12 @@
       "remind": 1063,
       "install": 1030,
       "reindex": 1010,
+      "workspace snapshot restore": 987,
+      "workspace snapshot create": 963,
       "history-repair": 942,
+      "workspace snapshot inspect": 939,
+      "workspace snapshot list": 937,
+      "workspace snapshot delete": 937,
       "history-redact": 850,
       "append": 832,
       "close-task": 831,
