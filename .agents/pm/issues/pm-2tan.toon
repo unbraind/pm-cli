@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,help,plan
 created_at: "2026-07-15T20:00:17.934Z"
-updated_at: "2026-08-18T10:57:05.184Z"
-closed_at: "2026-08-18T10:57:04.461Z"
-completed_at: "2026-08-18T10:57:04.461Z"
+updated_at: "2026-08-18T11:14:26.459Z"
+closed_at: "2026-08-18T11:12:20.200Z"
+completed_at: "2026-08-18T11:12:20.200Z"
 author: codex-audit-20260715
 estimated_minutes: 120
 acceptance_criteria: "pm plan create --help and --help --json resolve to action-specific help or an equally precise positional-action help view; pm help plan create and command-scoped contracts expose the same effective flags; shell completion advertises plan actions; pm plan --help no longer reports an empty subcommands array while describing subcommands only in a positional argument; documented pm plan create examples remain valid; regression tests cover help JSON, contracts, completion, and unknown-command recovery"
@@ -66,7 +66,7 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[12]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-15T20:00:17.934Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for plan create help unknown command positional action contracts found only broad roadmap and historical audit entries with no focused active or terminal owner."
   "2026-08-04T09:18:06.510Z","harness:codex","Fresh agent-recovery evidence 2026-08-04: following the apparent plan-link contract as pm plan link <plan> --link <item> produced a recovery error requiring an undocumented positional step reference. The generic plan help reports usage [subcommand] [id] [stepRef] but its sole example is pm init, so it does not demonstrate link syntax. After discovering the hidden positional requirement, pm plan link pm-gzyt2j plan-step-002 --link ... succeeded. This remains a live avoidable agent stall."
   "2026-08-04T09:34:37.917Z","harness:codex","Fresh contract/runtime parity evidence 2026-08-04: pm contracts --command update --flags-only --json advertises extension-provided --allow-audit-update and --allow-audit-dep-update as supported update flags, but invoking pm update pm-gzyt2j ... --allow-audit-update is rejected by Commander as Unknown option. Retrying the same update without the advertised flag succeeds. Action-specific help/contracts must describe the actually registered command path, including extension-injected flags, or agents cannot trust the prescribed runtime contract discovery workflow."
@@ -79,6 +79,9 @@ comments[12]{created_at,author,text}:
   "2026-08-18T10:02:35.558Z","harness:codex","Verification evidence: fresh search-advanced project contracts pass the 72-surface token ratchet at 16,107/15,981 bytes; structured get help returns usage get [options] <id>; focused suites, exact contracts/SDK snapshots, and 7,545-test 100/100/100/100 coverage pass. Local timing-only checks missed unchanged budgets by 2-48 ms under load average >8; hosted exact-head performance gates remain the admission authority."
   "2026-08-18T10:45:42.808Z","harness:codex","Late review implementation: default command_summaries are documented as registered paths rather than every virtual action row; all 27 plan/assurance paths remain discoverable through grammar contracts and command-scoped help. The token-surface ratchet now executes every virtual action help path and passes 99 measured surfaces in an isolated search-active tracker."
   "2026-08-18T10:56:55.213Z","harness:codex","Final verification evidence: the search-active ratchet now measures all 27 virtual positional-action help paths alongside registered command paths, for 99 total surfaces and 88 required baselines. It passed in an isolated temporary PM root, plus the command-scoped token budget and full 100/100/100/100 repository coverage (53,124 lines; 55,035 statements; 11,369 functions; 41,062 branches)."
+  "2026-08-18T11:07:49.640Z","harness:codex","Exact-head failure evidence: PR #1059 run 32129475219 job 95687467015 failed only quality:token-surface because commands.context measured 2,967 bytes against 2,886. Local pnpm quality:token-surface reproduces exactly at 2,967 bytes; aggregate coverage, static, benchmark, Windows, CodeQL, Semgrep, and security gates pass on the same head."
+  "2026-08-18T11:12:19.579Z","harness:codex","Fix verification: regenerated the governed discovery baseline against the same final package topology as hosted smokes (pm-changelog plus search-advanced). The ratchet now covers 107 surfaces, measures context at 2,967 bytes with a 3,264-byte ceiling, and retains all 27 virtual action paths. Local pnpm quality:token-surface passes; the broader baseline differences reflect previously unrecorded active package commands and exact contracts/MCP payloads rather than deleted coverage."
+  "2026-08-18T11:14:26.459Z","harness:codex","Complete-chain evidence: pnpm quality:context-eval passes after build; repository-context-quality returns pass for all four required assertions with negative controls proven, and the final agent token-surface gate passes all 107 surfaces."
 learnings[1]{created_at,author,text}:
   "2026-08-18T08:53:13.746Z","harness:codex","Compact discovery and heavy detail are independent contracts: summary output must retain action paths, while positional signature arrays remain a recoverable full-output field governed by token budgets and omission receipts."
 files[17]{path,scope,note}:
@@ -109,7 +112,7 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Current documented plan create workflow
   docs/COMMANDS.md,project,Plan grammar and examples
-close_reason: "Delivered discoverable help for all 27 virtual positional actions, a 99-surface isolated token ratchet, compact default contracts, and full gate/coverage evidence."
+close_reason: Calibrated the governed 107-surface discovery ratchet against the exact final package topology and reproduced the hosted context measurement with bounded headroom.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
