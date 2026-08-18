@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
   _testOnly,
+  assertCalibrationRecoveryScript,
   assertCalibrationWithinApprovedCeilings,
   main,
   measureContextIntentCalibration,
@@ -15,6 +16,25 @@ const harness = createScriptHarness();
 const SCRIPT = "scripts/release/context-intent-calibration-gate.mjs";
 
 describe("context intent calibration gate", () => {
+  it("fails closed when the advertised calibration recovery script is missing or renamed", () => {
+    expect(() =>
+      assertCalibrationRecoveryScript({
+        scripts: {
+          "context:intent:calibrate":
+            "node scripts/release/context-intent-calibration-gate.mjs",
+        },
+      }),
+    ).not.toThrow();
+    expect(() => assertCalibrationRecoveryScript({ scripts: {} })).toThrow(
+      "must declare context:intent:calibrate",
+    );
+    expect(() =>
+      assertCalibrationRecoveryScript({
+        scripts: { "context:intent:calibrate": "node renamed.mjs" },
+      }),
+    ).toThrow("must declare context:intent:calibrate");
+  });
+
   it("rejects a declared intent when its enforcement receipt is removed", () => {
     expect(
       structuralEnforcementNegativeControl("list", {

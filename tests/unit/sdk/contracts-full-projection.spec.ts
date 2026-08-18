@@ -13,7 +13,12 @@ describe("full contracts projection monotonicity", () => {
     const summary = await runContracts({ summary: true }, GLOBAL);
     const full = await runContracts({ full: true }, GLOBAL);
 
-    expect(full.command_summaries).toEqual(summary.command_summaries);
+    expect(full.command_summaries).toEqual(
+      expect.arrayContaining(summary.command_summaries ?? []),
+    );
+    expect(full.command_summaries?.length).toBeGreaterThan(
+      summary.command_summaries?.length ?? 0,
+    );
     expect(full.output_policy).toEqual(summary.output_policy);
     expect(full.commands.length).toBeGreaterThan(0);
     expect(full.schema).toBeDefined();

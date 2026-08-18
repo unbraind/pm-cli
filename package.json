@@ -126,6 +126,7 @@
     "quality:token-surface": "node scripts/measure-agent-token-surface.mjs --check",
     "quality:token-surface:update": "pnpm build && node scripts/measure-agent-token-surface.mjs --update",
     "quality:context-eval": "pnpm build && node scripts/release/repository-assurance.mjs repository-context-quality --trigger ci --json && pnpm quality:token-surface",
+    "context:intent:calibrate": "node scripts/release/context-intent-calibration-gate.mjs",
     "quality:agent-task-token": "pnpm build && node scripts/release/agent-task-token-gate.mjs",
     "quality:agent-task-token:update": "pnpm build && node scripts/release/agent-task-token-gate.mjs --update",
     "quality:retrieval-eval": "pnpm build && node scripts/release/retrieval-eval-gate.mjs",

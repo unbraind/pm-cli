@@ -529,19 +529,31 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     },
     {
       target: "file",
-      keys: ["file"],
+      keys: ["file", "linkedFile"],
       option: "--file <value>",
       description:
         "Seed linked file entry (CSV/markdown pairs or - for stdin; repeatable)",
       repeatable: true,
+      aliasOptions: [
+        {
+          option: "--linked-file <value>",
+          description: "Cross-surface alias for --file",
+        },
+      ],
     },
     {
       target: "test",
-      keys: ["test"],
+      keys: ["test", "linkedTest"],
       option: "--test <value>",
       description:
         "Seed linked test entry (CSV/markdown pairs or - for stdin; repeatable)",
       repeatable: true,
+      aliasOptions: [
+        {
+          option: "--linked-test <value>",
+          description: "Cross-surface alias for --test",
+        },
+      ],
     },
     {
       target: "doc",
@@ -1048,19 +1060,31 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     },
     {
       target: "file",
-      keys: ["file"],
+      keys: ["file", "linkedFile"],
       option: "--file <value>",
       description:
         "Append linked file path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable)",
       repeatable: true,
+      aliasOptions: [
+        {
+          option: "--linked-file <value>",
+          description: "Cross-surface alias for --file",
+        },
+      ],
     },
     {
       target: "test",
-      keys: ["test"],
+      keys: ["test", "linkedTest"],
       option: "--test <value>",
       description:
         "Append linked test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto> (also accepts markdown pairs and - for stdin; repeatable)",
       repeatable: true,
+      aliasOptions: [
+        {
+          option: "--linked-test <value>",
+          description: "Cross-surface alias for --test",
+        },
+      ],
     },
     {
       target: "doc",

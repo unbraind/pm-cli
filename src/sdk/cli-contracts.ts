@@ -93,6 +93,9 @@ export {
   TOOL_CREATE_OPTION_CONTRACT_SOURCE,
   TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE,
   TOOL_UPDATE_OPTION_CONTRACT_SOURCE,
+  verifyToolOptionCliParity,
+  type ToolOptionCliParityFinding,
+  type ToolOptionCliParityReport,
 } from "./cli-contracts/tool-option-contracts.js";
 export type {
   OptionsFromContracts,

@@ -8,6 +8,7 @@
  */
 import { normalizeUniqueStringList } from "./string-lists.js";
 import { RESERVED_EXTENSION_HOST_FLAGS } from "../../core/extensions/reserved-host-flags.js";
+import { PM_POSITIONAL_ACTION_CONTRACTS } from "./grammar-contracts.js";
 
 /** A single CLI flag's contract: its canonical `--flag`, optional short form, aliases, value metadata, and repeat/list semantics. One source of truth shared by Commander registration, argv normalization, shell completion, and the `pm contracts` command so every surface agrees on the flag vocabulary. */
 export interface CliFlagContract {
@@ -1264,8 +1265,8 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--comment" },
   { flag: "--note" },
   { flag: "--learning" },
-  { flag: "--file" },
-  { flag: "--test" },
+  { flag: "--file", aliases: ["--linked-file"] },
+  { flag: "--test", aliases: ["--linked-test"] },
   { flag: "--doc" },
   { flag: "--unset" },
   { flag: "--clear-deps" },
@@ -1370,8 +1371,8 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--comment" },
   { flag: "--note" },
   { flag: "--learning" },
-  { flag: "--file" },
-  { flag: "--test" },
+  { flag: "--file", aliases: ["--linked-file"] },
+  { flag: "--test", aliases: ["--linked-test"] },
   { flag: "--doc" },
   { flag: "--reminder" },
   { flag: "--event" },
@@ -1891,6 +1892,17 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["telemetry", TELEMETRY_FLAG_CONTRACTS],
     ["health", HEALTH_FLAG_CONTRACTS],
     ["assurance", ASSURANCE_FLAG_CONTRACTS],
+    ...PM_POSITIONAL_ACTION_CONTRACTS.map(
+      ({ command, parent, accepted_flags }): [string, CliFlagContract[]] => {
+        const accepted = new Set(accepted_flags);
+        const parentFlags =
+          parent === "plan" ? PLAN_FLAG_CONTRACTS : ASSURANCE_FLAG_CONTRACTS;
+        return [
+          command,
+          parentFlags.filter(({ flag }) => accepted.has(flag)),
+        ];
+      },
+    ),
     ["validate", VALIDATE_FLAG_CONTRACTS],
     ["gc", GC_FLAG_CONTRACTS],
     ["stats", STATS_FLAG_CONTRACTS],

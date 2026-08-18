@@ -2,17 +2,22 @@ id: pm-2tan
 title: "Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command"
 description: Make the documented plan action grammar self-describing so agents can inspect exact create and step flags without falling into generic unknown-command recovery.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,help,plan
 created_at: "2026-07-15T20:00:17.934Z"
-updated_at: "2026-08-16T19:24:32.738Z"
+updated_at: "2026-08-18T06:50:12.886Z"
+closed_at: "2026-08-18T06:45:44.987Z"
+completed_at: "2026-08-18T06:45:44.987Z"
 author: codex-audit-20260715
 estimated_minutes: 120
 acceptance_criteria: "pm plan create --help and --help --json resolve to action-specific help or an equally precise positional-action help view; pm help plan create and command-scoped contracts expose the same effective flags; shell completion advertises plan actions; pm plan --help no longer reports an empty subcommands array while describing subcommands only in a positional argument; documented pm plan create examples remain valid; regression tests cover help JSON, contracts, completion, and unknown-command recovery"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "Positional plan and assurance actions are now first-class declared help/contract paths with action-specific flags, positionals, examples, completion, and bounded compact/full projections."
+expected_result: "Agents can inspect every positional plan/assurance action before execution through direct help, generic help, completion, or command contracts without an unknown-command detour."
+actual_result: "All 27 plan/assurance actions resolve through action-specific JSON/text help and full contracts; compact output remains bounded; focused, packed npm/Bun, grammar, and exact-coverage checks pass."
 dependencies[9]:
   - id: pm-gdi7
     kind: related
@@ -61,20 +66,44 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-15T20:00:17.934Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for plan create help unknown command positional action contracts found only broad roadmap and historical audit entries with no focused active or terminal owner."
   "2026-08-04T09:18:06.510Z","harness:codex","Fresh agent-recovery evidence 2026-08-04: following the apparent plan-link contract as pm plan link <plan> --link <item> produced a recovery error requiring an undocumented positional step reference. The generic plan help reports usage [subcommand] [id] [stepRef] but its sole example is pm init, so it does not demonstrate link syntax. After discovering the hidden positional requirement, pm plan link pm-gzyt2j plan-step-002 --link ... succeeded. This remains a live avoidable agent stall."
   "2026-08-04T09:34:37.917Z","harness:codex","Fresh contract/runtime parity evidence 2026-08-04: pm contracts --command update --flags-only --json advertises extension-provided --allow-audit-update and --allow-audit-dep-update as supported update flags, but invoking pm update pm-gzyt2j ... --allow-audit-update is rejected by Commander as Unknown option. Retrying the same update without the advertised flag succeeds. Action-specific help/contracts must describe the actually registered command path, including extension-injected flags, or agents cannot trust the prescribed runtime contract discovery workflow."
   "2026-08-16T19:24:32.738Z","harness:codex","Fresh recurrence evidence 2026-08-16: the newly added, fully executable `pm assurance risk --definition <json> --json` action succeeds through the direct CLI, SDK transport, and packed npx/bunx installation, but `pm assurance risk --help --json` exits 2 with unknown_command. Generic `pm assurance --help --json` exposes an empty subcommands array, labels --definition only as Put declaration JSON, and redirects action discovery to contracts. This is the same positional-action help defect already owned here; no duplicate item was created."
-files[5]{path,scope,note}:
+  "2026-08-18T04:51:56.149Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
+  "2026-08-18T06:29:31.138Z","harness:codex","Verification evidence: full literal all-source coverage passed 519 files and 7,540 tests at exact 100/100/100/100 after compatibility checks preserved the richer plan/schema/profile missing-subcommand recovery. Compact contracts retain parent command summaries while full contracts add all 27 plan/assurance action summaries."
+  "2026-08-18T06:45:40.614Z","harness:codex","Closeout evidence: positional plan and assurance action help now resolves through both direct and generic help paths; parent JSON help lists actions; full contracts expose all 27 action summaries/signatures while compact output stays bounded; completion derives from the same contract. PM-linked focused execution passed 8/8 tests, aggregate literal coverage passed 7,540 tests at exact 100/100/100/100, and packed npm/npx/bunx acceptance passed."
+files[13]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Intentional action-discovery token baseline
   src/cli/commands/plan.ts,project,Positional plan action parser and runtime behavior
   src/cli/help-content.ts,project,Help bundle and path narrative resolution
   src/cli/help-json-payload.ts,project,Structured help path payload and subcommand projection
+  src/cli/register-mutation.ts,project,Required positional command registration
+  src/sdk/cli-contracts/flag-contracts.ts,project,Action-specific executable flag contracts
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Token-efficient compact and complete full action summaries
+  tests/integration/positional-action-contracts.integration.spec.ts,project,Real CLI action help and contract acceptance
+  tests/unit/cli/help-command-path-resolution.spec.ts,project,Action help path coverage
+  tests/unit/cli/help-content.spec.ts,project,Text positional action help branch coverage
   tests/unit/commands/completion-command.spec.ts,project,Plan action completion coverage
   tests/unit/commands/plan-command.spec.ts,project,Plan action and help regression coverage
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Compact summary subset and full action-detail monotonicity
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts tests/integration/positional-action-contracts.integration.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msyar51m-qeshhw,test,passed,"2026-08-18T06:43:34.454Z","2026-08-18T06:43:47.914Z","2026-08-18T06:43:47.914Z",1,0,0
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Current documented plan create workflow
   docs/COMMANDS.md,project,Plan grammar and examples
+close_reason: "Delivered action-specific positional help, JSON subcommand discovery, full runtime contracts, completion parity, docs, focused integration proof, packed npm/Bun acceptance, and exact 100% coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-2tan
+  gate_id: positional-action-help-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts tests/integration/positional-action-contracts.integration.spec.ts
+  local_checks[2]: node scripts/release/command-grammar-gate.mjs,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: "Live reproduction on pm 2026.7.15: pm plan create --help --json exits 2 with unknown_command and says the plan create path is not exposed. The same runtime documents create in the positional subcommand argument of pm plan --help while returning subcommands as an empty array. This violates the repository rule that agents should inspect exact runtime help before mutation. Fix the model coherently: either register real nested subcommands or teach help, contracts, and completion that positional plan actions are command paths. Preserve all plan features and aliases."

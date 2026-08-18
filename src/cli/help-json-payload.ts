@@ -45,6 +45,12 @@ import {
   buildUnknownCommandGuidanceFromRuntime,
 } from "./commander-usage.js";
 import { resolveCreateExplicitEmptyFlag } from "../sdk/agent/create-option-policy.js";
+import {
+  PM_POSITIONAL_ACTION_CONTRACTS,
+  resolvePmCommandPositionalContract,
+  resolvePmPositionalActionContract,
+  type PmPositionalActionContract,
+} from "../sdk/cli-contracts/grammar-contracts.js";
 
 /** Documents the help argument summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpArgumentSummary {
@@ -342,6 +348,75 @@ function buildJsonHelpNarrative(
   };
 }
 
+interface PositionalActionHelpProjection {
+  arguments: HelpArgumentSummary[];
+  options: HelpOptionSummary[];
+  subcommands: HelpSubcommandSummary[];
+  usage: string;
+}
+
+/** Build the command/action structural view shared by every JSON help field. */
+function buildPositionalActionHelpProjection(
+  action: PmPositionalActionContract | undefined,
+  targetCommand: Command,
+  resolvedPath: string,
+  allOptions: HelpOptionSummary[],
+): PositionalActionHelpProjection {
+  if (!action) {
+    const commandContract = resolvePmCommandPositionalContract(resolvedPath);
+    const argumentsList = buildHelpArgumentSummaries(targetCommand);
+    return {
+      arguments: commandContract
+        ? argumentsList.map((argument, index) => ({
+            ...argument,
+            required:
+              commandContract.slots[index]?.required ?? argument.required,
+            variadic:
+              commandContract.slots[index]?.variadic ?? argument.variadic,
+          }))
+        : argumentsList,
+      options: allOptions,
+      subcommands: [
+        ...buildHelpSubcommandSummaries(targetCommand),
+        ...PM_POSITIONAL_ACTION_CONTRACTS.filter(
+          ({ parent }) => parent === resolvedPath,
+        ).map(({ action: name, description }) => ({
+          name,
+          aliases: [],
+          description,
+        })),
+      ].sort((left, right) => left.name.localeCompare(right.name)),
+      usage: targetCommand.usage(),
+    };
+  }
+  const acceptedFlags = new Set(action.accepted_flags);
+  return {
+    arguments: action.slots.map(
+      ({ name, required, variadic, value_kind: valueKind, polymorphic }) => ({
+        name,
+        required,
+        variadic,
+        description: polymorphic
+          ? `Polymorphic ${valueKind} value; inspect the action contract before mutation.`
+          : `${valueKind.replaceAll("_", " ")} value.`,
+      }),
+    ),
+    options: allOptions.filter(
+      ({ long, aliases }) =>
+        (long !== null && acceptedFlags.has(long)) ||
+        aliases.some((alias) => acceptedFlags.has(alias)),
+    ),
+    subcommands: [],
+    usage: [
+      action.command,
+      ...action.slots.map(({ name, required, variadic }) => {
+        const token = variadic ? `${name}...` : name;
+        return required ? `<${token}>` : `[${token}]`;
+      }),
+    ].join(" "),
+  };
+}
+
 function buildJsonHelpPayload(
   rootProgram: Command,
   targetCommand: Command,
@@ -368,28 +443,38 @@ function buildJsonHelpPayload(
     fallbackNarrative,
     extensionDescriptor,
   );
-  const optionSummaries = compactHelpOptionAliases(
+  const positionalAction = resolvePmPositionalActionContract(resolvedPath);
+  const allOptionSummaries = compactHelpOptionAliases(
     mergeHelpOptionSummaries(
       buildHelpOptionSummaries(targetCommand),
       buildDynamicExtensionHelpOptionSummaries(extensionDescriptor),
     ),
   );
-  const subcommands = buildHelpSubcommandSummaries(targetCommand);
+  const projection = buildPositionalActionHelpProjection(
+    positionalAction,
+    targetCommand,
+    resolvedPath,
+    allOptionSummaries,
+  );
   return {
     format: "pm_help_v1",
     detail_mode: detailMode,
     root_command: rootProgram.name(),
     requested_path: requestedPath,
     resolved_path: resolvedPath.length > 0 ? resolvedPath : rootProgram.name(),
-    description: targetCommand.description(),
-    usage: targetCommand.usage(),
-    intent: narrative.intent,
-    examples: narrative.examples,
-    tips: narrative.tips,
-    arguments: buildHelpArgumentSummaries(targetCommand),
-    options: optionSummaries,
-    subcommands,
-    has_subcommands: subcommands.length > 0,
+    description: positionalAction?.description ?? targetCommand.description(),
+    usage: projection.usage,
+    intent: positionalAction?.description ?? narrative.intent,
+    examples: positionalAction ? [positionalAction.example] : narrative.examples,
+    tips: positionalAction
+      ? [
+          `Applicable flags: ${positionalAction.accepted_flags.length > 0 ? positionalAction.accepted_flags.join(", ") : "none"}.`,
+        ]
+      : narrative.tips,
+    arguments: projection.arguments,
+    options: projection.options,
+    subcommands: projection.subcommands,
+    has_subcommands: projection.subcommands.length > 0,
   };
 }
 
@@ -651,6 +736,7 @@ export const _testOnly = {
   attachCreateUpdatePolicyHelpText,
   buildCreateUpdatePolicyHelpText,
   buildJsonHelpPayload,
+  buildPositionalActionHelpProjection,
   buildHelpArgumentSummaries,
   buildHelpOptionSummaries,
   buildHelpSubcommandSummaries,

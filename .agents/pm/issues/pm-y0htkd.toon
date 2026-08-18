@@ -2,11 +2,13 @@ id: pm-y0htkd
 title: "MCP update keys and CLI update flags diverge in name (linkedFile/linkedTest vs --file/--test), so an agent that reads the MCP contract and writes a CLI command produces a guaranteed unknown-option refusal"
 description: Unify MCP update keys and CLI update flags through the shared contract vocabulary so linkedFile and linkedTest resolve to accepted CLI spellings or registered aliases. Add cross-surface parity enforcement and actionable unknown-option recovery without removing either capability.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:contracts","area:mcp",cross-surface-parity,defect-recurrence
 created_at: "2026-08-10T05:53:35.894Z"
-updated_at: "2026-08-14T10:14:36.309Z"
+updated_at: "2026-08-18T06:50:13.536Z"
+closed_at: "2026-08-18T06:45:49.414Z"
+completed_at: "2026-08-18T06:45:49.414Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every MCP declared key resolves to a CLI flag, via a shared name or a registered alias; A parity gate fails when an MCP declared key has no CLI flag or alias that accepts it; The unknown-option recovery names the accepted flag for a known cross-surface synonym"
@@ -15,6 +17,7 @@ risk: low
 confidence: high
 severity: medium
 repro_steps: "1. Read the pm_update declared keys, which list linkedFile and linkedTest  2. Run pm update <id> --linked-file path=a.ts  3. Refusal: Unknown option --linked-file"
+resolution: "The SDK exports a deterministic MCP-to-CLI parity verifier, and create/update accept the contract-derived --linked-file and --linked-test aliases with zero current parity findings."
 expected_result: "One name per concept across MCP and CLI, or an alias so a contract-derived name always parses."
 actual_result: "The MCP contract advertises linkedFile/linkedTest; the CLI accepts only --file/--test. The refusal is well-formed but the agent had no way to know from the contract it just read, and the recovery does not name the correct flag."
 component: "mcp/server, sdk/cli-contracts, commands/update"
@@ -25,4 +28,31 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,related,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,implements,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-18T04:52:00.566Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
+  "2026-08-18T06:29:32.670Z","harness:codex","Verification evidence: command grammar assurance proves MCP-to-CLI option parity for all 43 create and 48 update parameters with zero findings; packed npm/npx and Bun/bunx consumers executed --linked-file and --linked-test mutations, Node and Bun narrow SDK imports, action help, and scoped contracts successfully."
+  "2026-08-18T06:45:42.746Z","harness:codex","Closeout evidence: create/update linkedFile and linkedTest now map to executable --linked-file/--linked-test aliases and the exported SDK verifier reports zero parity findings across 43 create and 48 update parameters. PM-linked focused execution passed 21/21 tests; packed npx/bunx mutation acceptance and exact full coverage passed. The separate boolean flag_invocations residual is preserved under pm-pcy92t with precise discovered_from provenance."
+files[6]{path,scope,note}:
+  src/sdk/cli-contracts.ts,project,Public contract export
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,Executable linked file and test aliases
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Public MCP-to-CLI option parity verifier
+  src/sdk/index.ts,project,Root SDK export
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Executable alias and action parity coverage
+  tests/unit/sdk/tool-option-contracts.spec.ts,project,Parity verifier positive and negative coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/integration/positional-action-contracts.integration.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msyartdk-7oc6df,test,passed,"2026-08-18T06:44:04.816Z","2026-08-18T06:44:19.448Z","2026-08-18T06:44:19.448Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,MCP-to-CLI parity SDK reference
+close_reason: "Delivered SDK-exported MCP/CLI option parity verification and executable linked-file/linked-test aliases for create/update, with zero parity findings, packed npm/Bun acceptance, and exact 100% coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-y0htkd
+  gate_id: mcp-cli-option-parity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts
+  local_checks[2]: node scripts/release/command-grammar-gate.mjs,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

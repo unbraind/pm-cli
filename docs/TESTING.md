@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon), [pm-xa3t0o](../.agents/pm/issues/pm-xa3t0o.toon).
 
 ## Agent Quick Context
 
@@ -258,6 +258,19 @@ pnpm quality:context-eval
 Do not update the baseline merely to make CI green. Change judgments and
 rationales in the corpus when product intent changes, and commit the corpus,
 baseline, scorer tests, and SDK documentation together.
+
+Context-intent classification has a separate calibration receipt and one
+manifest-backed recovery spelling:
+
+```bash
+pnpm context:intent:calibrate
+pnpm context:intent:calibrate --update
+```
+
+The gate verifies that `package.json` exposes that exact script before it reads
+or refreshes `scripts/release/context-intent-calibration.json`. A missing or
+renamed script therefore fails with the same command contributors are told to
+run, and pnpm forwards `--update` to the calibration gate.
 
 ## Hosted Gate Registry
 

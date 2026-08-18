@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Context calibration recovery names a nonexistent package script ([pm-xa3t0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xa3t0o.toon))
+- MCP update keys and CLI update flags diverge in name (linkedFile/linkedTest vs --file/--test), so an agent that reads the MCP contract and writes a CLI command produces a guaranteed unknown-option refusal ([pm-y0htkd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y0htkd.toon))
+- Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command ([pm-2tan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2tan.toon))
+
+### Other
+
+- The positional-argument layer of the command grammar has no lexicon and no gate: 21 distinct positional shapes across 76 commands, and three commands declare an optional subcommand they refuse to run without ([pm-ya7x55](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ya7x55.toon))
+
 ## 2026.8.18 - 2026-08-18
 
 ### Added

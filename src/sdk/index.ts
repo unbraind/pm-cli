@@ -488,6 +488,7 @@ export {
   TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
   TOOL_UPDATE_OPTION_CONTRACTS,
   TOOL_UPDATE_OPTION_CONTRACT_SOURCE,
+  verifyToolOptionCliParity,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -549,6 +550,8 @@ export type {
   SdkCliParameterCoverageEntry,
   SdkCliParameterDisposition,
   ToolOptionFlagContract,
+  ToolOptionCliParityFinding,
+  ToolOptionCliParityReport,
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./governance/assurance.js";

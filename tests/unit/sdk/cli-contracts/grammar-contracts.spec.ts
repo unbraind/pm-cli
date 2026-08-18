@@ -3,7 +3,10 @@ import {
   PM_CLI_GRAMMAR_CONTRACT,
   PM_CLI_GRAMMAR_NOUNS,
   PM_COMMAND_DESTINATION_CONTRACTS,
+  PM_COMMAND_POSITIONAL_CONTRACTS,
+  PM_POSITIONAL_ACTION_CONTRACTS,
   verifyPmCliGrammar,
+  verifyPmCommandPositionalContracts,
 } from "../../../../src/sdk/cli-contracts/grammar-contracts.js";
 import {
   PM_COMMAND_ALIAS_CONTRACTS,
@@ -168,6 +171,109 @@ describe("CLI noun-verb grammar contracts", () => {
     const report = verifyPmCliGrammar([...liveCommands, ...overflow]);
     expect(report.findings).toContainEqual(
       expect.objectContaining({ code: "visible_surface_ceiling_exceeded" }),
+    );
+  });
+
+  it("declares and gates every core and positional-action signature", () => {
+    const report = verifyPmCommandPositionalContracts(
+      PM_COMMAND_POSITIONAL_CONTRACTS.map(({ command, slots }) => ({
+        command,
+        slots,
+      })),
+    );
+    expect(report).toMatchObject({
+      ok: true,
+      declared_command_count: PM_COMMAND_POSITIONAL_CONTRACTS.length,
+      observed_command_count: PM_COMMAND_POSITIONAL_CONTRACTS.length,
+      positional_shape_budget:
+        PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
+      findings: [],
+    });
+    expect(report.positional_shape_count).toBeLessThanOrEqual(
+      PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
+    );
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.find(
+        ({ command }) => command === "plan create",
+      ),
+    ).toMatchObject({
+      parent: "plan",
+      action: "create",
+      slots: [
+        expect.objectContaining({
+          name: "title",
+          required: false,
+          polymorphic: true,
+        }),
+      ],
+      accepted_flags: expect.arrayContaining([
+        "--create-mode",
+        "--status",
+        "--deadline",
+        "--acceptance-criteria",
+        "--reviewer",
+        "--risk",
+        "--reminder",
+        "--event",
+        "--doc",
+        "--type-option",
+      ]),
+    });
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.find(
+        ({ command }) => command === "assurance risk",
+      ),
+    ).toMatchObject({
+      parent: "assurance",
+      action: "risk",
+      slots: [],
+      accepted_flags: expect.arrayContaining(["--definition"]),
+    });
+  });
+
+  it("fails closed for missing, stale, arity, and shape-budget drift", () => {
+    const observed = PM_COMMAND_POSITIONAL_CONTRACTS.map(
+      ({ command, slots }) => ({ command, slots }),
+    ).filter(({ command }) => command !== "schema");
+    const plan = observed.find(({ command }) => command === "plan");
+    expect(plan).toBeDefined();
+    plan!.slots = plan!.slots.map((slot) => ({
+      ...slot,
+      required: false,
+    }));
+    observed.push({
+      command: "synthetic",
+      slots: [
+        {
+          name: "value",
+          required: true,
+          variadic: false,
+          value_kind: "string",
+          polymorphic: false,
+        },
+      ],
+    });
+    const report = verifyPmCommandPositionalContracts(observed, {
+      positionalShapeBudget: 0,
+    });
+    expect(report.findings.map(({ code }) => code)).toEqual(
+      expect.arrayContaining([
+        "missing_observed_signature",
+        "stale_observed_signature",
+        "positional_signature_mismatch",
+        "positional_shape_budget_exceeded",
+      ]),
+    );
+
+    const duplicateMissing = verifyPmCommandPositionalContracts([], {
+      declared: [
+        PM_COMMAND_POSITIONAL_CONTRACTS[0]!,
+        PM_COMMAND_POSITIONAL_CONTRACTS[0]!,
+      ],
+    });
+    expect(duplicateMissing.findings).toHaveLength(2);
+    expect(duplicateMissing.findings[0]?.command).toBe(
+      duplicateMissing.findings[1]?.command,
     );
   });
 });

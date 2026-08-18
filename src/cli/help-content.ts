@@ -4,6 +4,11 @@
  * Provides CLI runtime support for Help Content.
  */
 import { Command } from "commander";
+import { parseBootstrapHelpRequest } from "./bootstrap-args.js";
+import {
+  PM_POSITIONAL_ACTION_CONTRACTS,
+  resolvePmPositionalActionContract,
+} from "../sdk/cli-contracts/grammar-contracts.js";
 
 /** Documents the help bundle payload exchanged by command, SDK, and package integrations. */
 export interface HelpBundle {
@@ -948,6 +953,43 @@ export function attachRichHelpText(
   program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE, detailMode));
   for (const [commandPath, bundle] of Object.entries(HELP_BY_COMMAND_PATH)) {
     attachBundleByPath(program, commandPath, bundle, detailMode);
+  }
+  const requestedPath = normalizeHelpCommandPath(
+    parseBootstrapHelpRequest(argv).commandPathTokens.join(" "),
+  );
+  const positionalAction = resolvePmPositionalActionContract(requestedPath);
+  if (positionalAction) {
+    attachBundleByPath(
+      program,
+      positionalAction.parent,
+      {
+        why: positionalAction.description,
+        examples: [positionalAction.example],
+        tips: [
+          `Action path: pm ${positionalAction.command}`,
+          `Applicable flags: ${positionalAction.accepted_flags.length > 0 ? positionalAction.accepted_flags.join(", ") : "none"}.`,
+        ],
+      },
+      detailMode,
+    );
+    return;
+  }
+  const positionalActions = PM_POSITIONAL_ACTION_CONTRACTS.filter(
+    ({ parent }) => parent === requestedPath,
+  );
+  if (positionalActions.length > 0) {
+    attachBundleByPath(
+      program,
+      requestedPath,
+      {
+        why: `Dispatches one declared positional action: ${positionalActions.map(({ action }) => action).join("|")}.`,
+        examples: positionalActions.map(({ example }) => example),
+        tips: [
+          `Inspect one action directly with pm ${requestedPath} <action> --help --json.`,
+        ],
+      },
+      detailMode,
+    );
   }
 }
 

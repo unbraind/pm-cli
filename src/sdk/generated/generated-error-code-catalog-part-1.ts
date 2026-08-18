@@ -1850,4 +1850,43 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     canonical_code: "merge_decisions_unreviewed",
     aliases: [],
   },
+  {
+    code: "merge_git_config_unwritable",
+    meaning: "Merge git config unwritable condition.",
+    stability: "stable",
+    exit_code: 5,
+    class: "dependency_failed",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/install.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_git_config_unwritable",
+    aliases: [],
+  },
+  {
+    code: "merge_reconcile_discards_require_acceptance",
+    meaning: "Merge reconcile discards require acceptance condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/reconcile.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_reconcile_discards_require_acceptance",
+    aliases: [],
+  },
+  {
+    code: "merge_root_not_found",
+    meaning: "Merge root not found condition.",
+    stability: "stable",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/install.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_root_not_found",
+    aliases: [],
+  },
 ];

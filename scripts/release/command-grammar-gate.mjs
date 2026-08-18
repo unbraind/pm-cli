@@ -8,9 +8,17 @@
  */
 import { execFileSync } from "node:child_process";
 import {
+  CREATE_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
+  PM_COMMAND_DESTINATION_CONTRACTS,
+  PM_COMMAND_POSITIONAL_CONTRACTS,
   PM_DISCOVERABLE_TOOL_ACTIONS,
+  TOOL_CREATE_OPTION_CONTRACTS,
+  TOOL_UPDATE_OPTION_CONTRACTS,
+  UPDATE_FLAG_CONTRACTS,
   verifyPmCliGrammar,
+  verifyPmCommandPositionalContracts,
+  verifyToolOptionCliParity,
 } from "../../dist/sdk/index.js";
 import { NARROW_TOOL_ACTIONS, TOOLS } from "../../dist/mcp/tool-definitions.js";
 import { repoRoot } from "./utils.mjs";
@@ -164,7 +172,7 @@ const raw = execFileSync(
   [
     "dist/cli.js",
     "contracts",
-    "--summary",
+    "--full",
     "--json",
     "--output-budget",
     "unbounded",
@@ -185,15 +193,53 @@ const commands = Array.isArray(contracts.command_summaries)
       .filter((command) => typeof command === "string")
   : [];
 const grammarReport = verifyPmCliGrammar(commands, PM_COMMAND_ALIAS_CONTRACTS);
+const observedPositionalContracts = Array.isArray(
+  contracts.grammar_contracts?.positional_signatures,
+)
+  ? contracts.grammar_contracts.positional_signatures
+  : [];
+const observedCommandSet = new Set(
+  observedPositionalContracts.map(({ command }) => command),
+);
+const inactivePackageCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
+  ({ command, disposition }) =>
+    disposition === "package_owned" && !observedCommandSet.has(command),
+).map(({ command }) => command);
+const inactivePackageCommandSet = new Set(inactivePackageCommands);
+const positionalReport = verifyPmCommandPositionalContracts([
+  ...observedPositionalContracts,
+  ...PM_COMMAND_POSITIONAL_CONTRACTS.filter(({ command }) =>
+    inactivePackageCommandSet.has(command),
+  ),
+]);
 const mcpReport = verifyMcpGrammar(
   PM_DISCOVERABLE_TOOL_ACTIONS,
   TOOLS,
   NARROW_TOOL_ACTIONS,
 );
+const optionParity = {
+  create: verifyToolOptionCliParity(
+    TOOL_CREATE_OPTION_CONTRACTS,
+    CREATE_FLAG_CONTRACTS,
+  ),
+  update: verifyToolOptionCliParity(
+    TOOL_UPDATE_OPTION_CONTRACTS,
+    UPDATE_FLAG_CONTRACTS,
+  ),
+};
 const report = {
   ...grammarReport,
-  ok: grammarReport.ok && mcpReport.ok,
-  mcp: mcpReport,
+  ok:
+    grammarReport.ok &&
+    positionalReport.ok &&
+    mcpReport.ok &&
+    optionParity.create.ok &&
+    optionParity.update.ok,
+  mcp: { ...mcpReport, option_parity: optionParity },
+  positionals: {
+    ...positionalReport,
+    inactive_package_commands: inactivePackageCommands,
+  },
 };
 process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 if (!report.ok) {

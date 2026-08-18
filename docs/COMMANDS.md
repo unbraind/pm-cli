@@ -2,7 +2,7 @@
 
 This is a task-oriented command guide. For exact flags, use runtime help because extensions and settings can change the active surface:
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon), the lossless mutation contracts [pm-x3dq0l](../.agents/pm/issues/pm-x3dq0l.toon), [pm-lppm6y](../.agents/pm/issues/pm-lppm6y.toon), and [pm-embm6t](../.agents/pm/issues/pm-embm6t.toon), and the SDK-first agent grammar tranche [pm-p316vn](../.agents/pm/issues/pm-p316vn.toon), [pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon), [pm-mkinft](../.agents/pm/issues/pm-mkinft.toon), [pm-ulqu](../.agents/pm/issues/pm-ulqu.toon), [pm-qmjx](../.agents/pm/issues/pm-qmjx.toon), [pm-4bzq](../.agents/pm/features/pm-4bzq.toon), [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon), and [pm-g543](../.agents/pm/issues/pm-g543.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon), the lossless mutation contracts [pm-x3dq0l](../.agents/pm/issues/pm-x3dq0l.toon), [pm-lppm6y](../.agents/pm/issues/pm-lppm6y.toon), and [pm-embm6t](../.agents/pm/issues/pm-embm6t.toon), positional action discovery [pm-2tan](../.agents/pm/issues/pm-2tan.toon), and the SDK-first agent grammar tranche [pm-p316vn](../.agents/pm/issues/pm-p316vn.toon), [pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon), [pm-mkinft](../.agents/pm/issues/pm-mkinft.toon), [pm-ulqu](../.agents/pm/issues/pm-ulqu.toon), [pm-qmjx](../.agents/pm/issues/pm-qmjx.toon), [pm-4bzq](../.agents/pm/features/pm-4bzq.toon), [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon), and [pm-g543](../.agents/pm/issues/pm-g543.toon).
 
 Workspace-integrity contracts are tracked by [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), and [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon).
 
@@ -1120,6 +1120,13 @@ Profiles are extensible: a package can ship its own archetype with `api.register
 
 Plan creation shares the normal create contract. Governance fields such as `--status`, `--deadline`, `--estimate`, `--acceptance-criteria`, `--assignee`, review/risk fields, comments, notes, learnings, reminders, events, and linked resources are accepted directly and pass through the same strict/progressive schema validation as `pm create`.
 
+Every positional plan action is also a discoverable virtual command path. Use
+`pm plan create --help --json` or `pm help plan create --json` for its exact
+arguments and effective flags, and use `pm contracts --command "plan create"
+--flags-only --json` for the matching machine contract. Root `pm plan --help
+--json` publishes the same action inventory under `subcommands`; omitting the
+required action fails as `missing_required_argument` before mutation dispatch.
+
 ```bash
 pm plan create --title "Refactor lock retry" --scope "Improve retry semantics" --harness claude-code --parent pm-epic1 --related pm-rel1,pm-rel2 --claim
 pm plan create --title "Fix flaky retry test" --step "Read lock.ts" --step "Write the fix" --step "Run the tests"
@@ -1190,9 +1197,13 @@ Project-governance setters use the separate `governance_contracts` value
 domains; in particular, workflow enforcement is `off|warn|strict`, not the
 extension policy token `enforce`.
 Use `pm contracts --summary --json` first when bootstrapping in a tight context
-window. `command_summaries` contains exactly one row per advertised command
-path—including aliases and namespace children—with a meaningful intent plus
-`default_max_estimated_tokens` and the format-specific TOON/JSON ceilings.
+window. `command_summaries` contains one row per executable command path,
+including aliases and registered namespace children, with a meaningful intent
+plus `default_max_estimated_tokens` and the format-specific TOON/JSON ceilings.
+The low-token summary does not repeat every positional plan/assurance action;
+`grammar_contracts.positional_action_count` and `positional_action_parents`
+route callers to root help, while command-scoped contracts expose each action's
+typed positional signature and exact flags.
 Package commands contribute their intent through command registration (falling
 back to the registered description), so agents never need a generic
 `Inspect flags.` placeholder. Request heavier command-specific flags or schemas
