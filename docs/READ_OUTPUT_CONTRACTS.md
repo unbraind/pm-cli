@@ -15,10 +15,13 @@ Every built-in read surface uses four output dimensions: what to include, how mu
 
 The contract covers `list`, `context`, `search`, `get`, `next`, `health`, `deps`, `graph`, `history`, `activity`, `validate`, `events`, `contracts`, `comments`, `notes`, `files`, `docs`, `stats`, and `aggregate`, including list aliases and `ctx`.
 
-Row shaping follows each envelope's `row_contract.row_keys`, including
-dot-delimited nested arrays and object maps such as `graph.nodes`. Include,
-amount, repeat suppression, and cost compaction therefore operate on the same
-machine-declared rows; they do not rely on command-specific top-level keys.
+Primary row shaping follows each envelope's `row_contract.row_keys`, including
+dot-delimited arrays and object maps such as `graph.nodes`. Include, amount, and
+repeat suppression therefore remain bound to the rows the command says it
+returns. A result may additionally declare `continuation_row_keys` when a
+nested evidence collection must resume independently without redefining the
+primary rows that `--output-limit` bounds. Cost compaction may inspect both
+primary and nested collections; it does not rely on command-specific keys.
 The runtime uses that declaration internally on every read but omits the
 repeated metadata from results by default. Request
 `--output-row-contract` / `outputRowContract: true` when a consumer needs the
@@ -153,8 +156,9 @@ producer cursor, a universal output cursor, and a terminal page;
 `next_cursor` mirrors the first universal entry for ordinary one-path
 consumers. Replay the same query and budget
 with `--output-cursor <cursor>` / `outputCursor`. The cursor validates the
-command, declared row path, total, and stable row identities before slicing, so
-a mismatched or stale replay fails closed instead of skipping evidence. A
+command, declared continuation path, total, and canonical content fingerprint
+before slicing, so same-cardinality content changes and other stale replays
+fail closed instead of skipping evidence. A
 bounded recovery therefore does not require replacing a 600-token request with
 an unbounded multi-megabyte response;
 `recovery_budget_multiplier: 1` declares that each next page retains the same

@@ -630,6 +630,7 @@ function measureCorpus(cliPath) {
 }
 
 export function budgetForMeasurement(measurement, multiplier) {
+  const maxBytes = Math.ceil(measurement.bytes * multiplier);
   return {
     id: measurement.id,
     args: measurement.args.map((argument) =>
@@ -645,8 +646,8 @@ export function budgetForMeasurement(measurement, multiplier) {
     ...(Number.isInteger(measurement.max_lines)
       ? { max_lines: measurement.max_lines }
       : {}),
-    max_bytes: Math.ceil(measurement.bytes * multiplier),
-    max_estimated_tokens: Math.ceil(measurement.estimated_tokens * multiplier),
+    max_bytes: maxBytes,
+    max_estimated_tokens: Math.ceil(maxBytes / 4),
     ...(measurement.kind === "answer"
       ? {
           command: measurement.command,
@@ -686,12 +687,15 @@ function isNonNegativeFinite(value) {
 }
 
 function isMalformedBudget(budget, requireAnswerRatchet) {
+  if (Object(budget) !== budget) {
+    return true;
+  }
   if (
-    typeof budget !== "object" ||
-    budget === null ||
-    typeof budget.id !== "string" ||
-    budget.id.trim().length === 0 ||
-    !["discovery", "answer"].includes(budget.kind)
+    [
+      typeof budget.id !== "string",
+      typeof budget.id === "string" && budget.id.trim().length === 0,
+      !["discovery", "answer"].includes(budget.kind),
+    ].includes(true)
   ) {
     return true;
   }
@@ -701,12 +705,19 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
   ) {
     return true;
   }
+  if (
+    requireAnswerRatchet &&
+    budget.kind === "answer" &&
+    (!isNonNegativeFinite(budget.max_bytes) ||
+      !isNonNegativeFinite(budget.max_estimated_tokens) ||
+      budget.max_estimated_tokens !== Math.ceil(budget.max_bytes / 4))
+  ) {
+    return true;
+  }
   if (budget.kind === "discovery") {
-    if (!isNonNegativeFinite(budget.max_bytes)) {
-      return true;
-    }
     return (
-      requireAnswerRatchet && !isNonNegativeFinite(budget.max_estimated_tokens)
+      !isNonNegativeFinite(budget.max_bytes) ||
+      !isNonNegativeFinite(budget.max_estimated_tokens)
     );
   }
   if (
@@ -715,11 +726,7 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
   ) {
     return true;
   }
-  return (
-    requireAnswerRatchet &&
-    (!isNonNegativeFinite(budget.max_bytes) ||
-      !isNonNegativeFinite(budget.max_estimated_tokens))
-  );
+  return false;
 }
 
 function measurementViolation(measurement, budget) {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { runContracts } from "../../../src/sdk/cli-contracts/runtime-contracts.js";
+import {
+  _testOnlyContractsCommand,
+  runContracts,
+} from "../../../src/sdk/cli-contracts/runtime-contracts.js";
 
 const GLOBAL = {
   json: true,
@@ -13,7 +16,37 @@ describe("full contracts projection monotonicity", () => {
     const summary = await runContracts({ summary: true }, GLOBAL);
     const full = await runContracts({ full: true }, GLOBAL);
 
-    expect(full.command_summaries).toEqual(summary.command_summaries);
+    expect(full.command_summaries).toEqual(
+      expect.arrayContaining(
+        (summary.command_summaries ?? []).map((entry) =>
+          expect.objectContaining(entry),
+        ),
+      ),
+    );
+    expect(full.command_summaries).toHaveLength(
+      summary.command_summaries?.length ?? 0,
+    );
+    expect(summary.command_summaries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: "plan create" }),
+        expect.objectContaining({ command: "assurance run" }),
+      ]),
+    );
+    expect(
+      summary.command_summaries?.every(
+        (entry) => entry.default_max_estimated_tokens_by_format === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      full.command_summaries?.every(
+        (entry) => entry.default_max_estimated_tokens_by_format !== undefined,
+      ),
+    ).toBe(true);
+    expect(
+      full.command_summaries?.every(
+        (entry) => entry.intent_source !== undefined,
+      ),
+    ).toBe(true);
     expect(full.output_policy).toEqual(summary.output_policy);
     expect(full.commands.length).toBeGreaterThan(0);
     expect(full.schema).toBeDefined();
@@ -44,8 +77,26 @@ describe("full contracts projection monotonicity", () => {
       '"description":"Maximum number of newest assurance verdicts returned.","examples":[10,25]',
     );
     expect(schema).toContain('"required":["lifetime","retire_reason"]');
-    expect(schema).toContain(
-      '"retire_reason":{"type":"string","minLength":1}',
-    );
+    expect(schema).toContain('"retire_reason":{"type":"string","minLength":1}');
+  });
+
+  it("controls summary format budgets and intent provenance independently", () => {
+    const formatOnly = _testOnlyContractsCommand.buildCommandSummarySurface(
+      ["contracts"],
+      [],
+      { includeFormatBudgets: true, includeIntentProvenance: false },
+    )[0]!;
+    expect(formatOnly.default_max_estimated_tokens_by_format).toBeDefined();
+    expect(formatOnly.intent_source).toBeUndefined();
+
+    const provenanceOnly = _testOnlyContractsCommand.buildCommandSummarySurface(
+      ["contracts"],
+      [],
+      { includeFormatBudgets: false, includeIntentProvenance: true },
+    )[0]!;
+    expect(
+      provenanceOnly.default_max_estimated_tokens_by_format,
+    ).toBeUndefined();
+    expect(provenanceOnly.intent_source).toBe("command");
   });
 });

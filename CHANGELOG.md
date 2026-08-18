@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
+- Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
+- Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command ([pm-2tan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2tan.toon))
+- MCP update keys and CLI update flags diverge in name (linkedFile/linkedTest vs --file/--test), so an agent that reads the MCP contract and writes a CLI command produces a guaranteed unknown-option refusal ([pm-y0htkd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y0htkd.toon))
+- Context calibration recovery names a nonexistent package script ([pm-xa3t0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xa3t0o.toon))
+
+### Other
+
+- Every executable command and positional action publishes a typed, validated argument contract ([pm-ya7x55](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ya7x55.toon))
+
 ## 2026.8.18 - 2026-08-18
 
 ### Added
@@ -88,7 +102,6 @@
 - Make every failing health verdict self-indexing and attach gate severity to findings ([pm-larv4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-larv4r.toon))
 - GH-1004: history-repair remains writer-version-specific across 2026.8.7 and 2026.8.13 ([pm-igdvfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-igdvfq.toon))
 - Assurance gates preserve zero-valued counts and report actionable source failures ([pm-xmmafu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xmmafu.toon))
-- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely ([pm-okgxwa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-okgxwa.toon))
 - The unknown-option refusal asserts the option belongs on another command path without checking, so a spelling that exists nowhere sends the reader on an unbounded search ([pm-in23qu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-in23qu.toon))
 - The gate verdict withholds its evidence as a declaration-order prefix, so the assertion that produced a blocking verdict can be the row the default read drops ([pm-e5gl05](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e5gl05.toon))
@@ -551,7 +564,6 @@
 - GH-790/GH-791: pm merge install reports workspace_root in a different canonical form depending on which channel resolved it, so the same repository has two non-equal spellings on macOS and Windows ([pm-ihmfs6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ihmfs6.toon))
 - The dependency token budget is enforced against a different representation than the one emitted, so a command that reports staying inside 16k tokens delivers about 45k ([pm-t2t709](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t2t709.toon))
 - pm activity has no default bound: a bare invocation returns all 40,446 history entries at 1.59M tokens, 397x the ceiling its own contract declares ([pm-z2j1qt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z2j1qt.toon))
-- Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
 - Sentry PM-CLI-2N: malformed missing tags crash normalizeItemMetadata before search can report the item ([pm-89neyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-89neyq.toon))
 - pm-governance-audit comments-audit limit contract contradicts runtime alias semantics ([pm-v657](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v657.toon))
 - pm-governance-audit dedupe-audit rejects --status all, breaking explicit all-lifecycle duplicate sweeps ([pm-mp49](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mp49.toon))

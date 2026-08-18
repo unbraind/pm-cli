@@ -1224,6 +1224,17 @@
           "aggregate",
           "append",
           "assurance",
+          "assurance apply",
+          "assurance derive",
+          "assurance list",
+          "assurance presets",
+          "assurance promote",
+          "assurance put",
+          "assurance remove",
+          "assurance risk",
+          "assurance run",
+          "assurance show",
+          "assurance verdicts",
           "claim",
           "close",
           "close-task",
@@ -1311,6 +1322,22 @@
           "packages uninstall",
           "pause-task",
           "plan",
+          "plan add-step",
+          "plan approve",
+          "plan block-step",
+          "plan complete-step",
+          "plan create",
+          "plan decision",
+          "plan discovery",
+          "plan link",
+          "plan materialize",
+          "plan remove-step",
+          "plan reorder-step",
+          "plan resume",
+          "plan show",
+          "plan unlink",
+          "plan update-step",
+          "plan validation",
           "profile",
           "release",
           "remind",
@@ -1607,6 +1634,165 @@
         {
           "flag": "--enforcement",
           "value_name": "level"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance apply",
+      "flags": [
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--owner",
+          "value_name": "item-id"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance derive",
+      "flags": [
+        {
+          "flag": "--apply",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--owner",
+          "value_name": "item-id"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance list",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "assurance presets",
+      "flags": [
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--owner",
+          "value_name": "item-id"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance promote",
+      "flags": [
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--enforcement",
+          "value_name": "level"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance put",
+      "flags": [
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--definition",
+          "value_name": "json"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance remove",
+      "flags": [
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance risk",
+      "flags": [
+        {
+          "flag": "--definition",
+          "value_name": "json"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance run",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--trigger",
+          "value_name": "value"
+        },
+        {
+          "flag": "--tree",
+          "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance show",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "assurance verdicts",
+      "flags": [
+        {
+          "flag": "--gate",
+          "value_name": "id"
+        },
+        {
+          "flag": "--limit",
+          "value_name": "number"
         }
       ],
       "provider": "core"
@@ -2471,9 +2657,15 @@
           "flag": "--learning"
         },
         {
+          "aliases": [
+            "--linked-file"
+          ],
           "flag": "--file"
         },
         {
+          "aliases": [
+            "--linked-test"
+          ],
           "flag": "--test"
         },
         {
@@ -5420,6 +5612,1184 @@
       "provider": "core"
     },
     {
+      "command": "plan add-step",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan approve",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan block-step",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan complete-step",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan create",
+      "flags": [
+        {
+          "aliases": [
+            "--acceptance_criteria",
+            "--ac"
+          ],
+          "flag": "--acceptance-criteria",
+          "repeatable": true
+        },
+        {
+          "aliases": [
+            "--actual_result",
+            "--actual"
+          ],
+          "flag": "--actual-result"
+        },
+        {
+          "aliases": [
+            "--affected_version"
+          ],
+          "flag": "--affected-version"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "aliases": [
+            "--blocked_by"
+          ],
+          "flag": "--blocked-by"
+        },
+        {
+          "aliases": [
+            "--blocked_reason"
+          ],
+          "flag": "--blocked-reason"
+        },
+        {
+          "flag": "--blocks"
+        },
+        {
+          "flag": "--body"
+        },
+        {
+          "flag": "--claim"
+        },
+        {
+          "flag": "--comment",
+          "repeatable": true
+        },
+        {
+          "flag": "--component"
+        },
+        {
+          "flag": "--confidence"
+        },
+        {
+          "aliases": [
+            "--create_mode"
+          ],
+          "flag": "--create-mode"
+        },
+        {
+          "aliases": [
+            "--customer_impact"
+          ],
+          "flag": "--customer-impact"
+        },
+        {
+          "flag": "--deadline"
+        },
+        {
+          "aliases": [
+            "--definition_of_ready"
+          ],
+          "flag": "--definition-of-ready"
+        },
+        {
+          "flag": "--description"
+        },
+        {
+          "flag": "--doc"
+        },
+        {
+          "flag": "--environment"
+        },
+        {
+          "aliases": [
+            "--estimated-minutes",
+            "--estimated_minutes"
+          ],
+          "flag": "--estimate"
+        },
+        {
+          "flag": "--event",
+          "repeatable": true
+        },
+        {
+          "aliases": [
+            "--expected_result",
+            "--expected"
+          ],
+          "flag": "--expected-result"
+        },
+        {
+          "aliases": [
+            "--fixed_version"
+          ],
+          "flag": "--fixed-version"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "aliases": [
+            "--from_search"
+          ],
+          "flag": "--from-search"
+        },
+        {
+          "flag": "--goal"
+        },
+        {
+          "flag": "--harness"
+        },
+        {
+          "flag": "--impact"
+        },
+        {
+          "flag": "--learning",
+          "repeatable": true
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--mode"
+        },
+        {
+          "flag": "--note",
+          "repeatable": true
+        },
+        {
+          "flag": "--objective"
+        },
+        {
+          "flag": "--order"
+        },
+        {
+          "flag": "--outcome"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "flag": "--priority"
+        },
+        {
+          "flag": "--rank"
+        },
+        {
+          "flag": "--related"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "flag": "--reminder",
+          "repeatable": true
+        },
+        {
+          "flag": "--reporter"
+        },
+        {
+          "aliases": [
+            "--repro_steps"
+          ],
+          "flag": "--repro-steps"
+        },
+        {
+          "flag": "--resolution"
+        },
+        {
+          "aliases": [
+            "--resume_context"
+          ],
+          "flag": "--resume-context"
+        },
+        {
+          "flag": "--reviewer"
+        },
+        {
+          "flag": "--risk"
+        },
+        {
+          "flag": "--scope"
+        },
+        {
+          "flag": "--severity"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--status",
+          "short": "-s"
+        },
+        {
+          "flag": "--step"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_replacement"
+          ],
+          "flag": "--step-replacement"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "aliases": [
+            "--tag"
+          ],
+          "flag": "--tags",
+          "list": true
+        },
+        {
+          "flag": "--template"
+        },
+        {
+          "flag": "--test"
+        },
+        {
+          "flag": "--title"
+        },
+        {
+          "aliases": [
+            "--type_option"
+          ],
+          "flag": "--type-option",
+          "repeatable": true
+        },
+        {
+          "aliases": [
+            "--unblock_note"
+          ],
+          "flag": "--unblock-note"
+        },
+        {
+          "flag": "--value"
+        },
+        {
+          "aliases": [
+            "--why_now"
+          ],
+          "flag": "--why-now"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan decision",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan discovery",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan link",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan materialize",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan remove-step",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan reorder-step",
+      "flags": [
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan resume",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan show",
+      "flags": [
+        {
+          "flag": "--depth"
+        },
+        {
+          "flag": "--fields",
+          "list": true
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan unlink",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan update-step",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "plan validation",
+      "flags": [
+        {
+          "aliases": [
+            "--allow_multiple_active"
+          ],
+          "flag": "--allow-multiple-active"
+        },
+        {
+          "aliases": [
+            "--depends_on"
+          ],
+          "flag": "--depends-on"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--step_blocked_reason"
+          ],
+          "flag": "--step-blocked-reason"
+        },
+        {
+          "aliases": [
+            "--step_body"
+          ],
+          "flag": "--step-body"
+        },
+        {
+          "aliases": [
+            "--step_evidence"
+          ],
+          "flag": "--step-evidence"
+        },
+        {
+          "aliases": [
+            "--step_owner"
+          ],
+          "flag": "--step-owner"
+        },
+        {
+          "aliases": [
+            "--step_status"
+          ],
+          "flag": "--step-status"
+        },
+        {
+          "aliases": [
+            "--step_title"
+          ],
+          "flag": "--step-title"
+        },
+        {
+          "flag": "--test"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "profile",
       "flags": [
         {
@@ -6248,9 +7618,15 @@
           "flag": "--learning"
         },
         {
+          "aliases": [
+            "--linked-file"
+          ],
           "flag": "--file"
         },
         {
+          "aliases": [
+            "--linked-test"
+          ],
           "flag": "--test"
         },
         {
@@ -6901,87 +8277,35 @@
     },
     {
       "command": "workspace snapshot create",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot delete",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot inspect",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot list",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot restore",
       "flags": [
         {
+          "flag": "--author"
+        },
+        {
           "flag": "--dry-run"
         },
         {
           "flag": "--force"
-        },
-        {
-          "flag": "--author"
         },
         {
           "flag": "--message"
@@ -7094,6 +8418,303 @@
       "envelope": {
         "cardinality": "none",
         "command": "assurance",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance apply",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance apply",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance derive",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance derive",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance list",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance list",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance presets",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance presets",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance promote",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance promote",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance put",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance put",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance remove",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance remove",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance risk",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance risk",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance run",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance run",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance show",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance show",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance verdicts",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance verdicts",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9478,6 +11099,438 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan add-step",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan add-step",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan approve",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan approve",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan block-step",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan block-step",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan complete-step",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan complete-step",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan create",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan create",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan decision",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan decision",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan discovery",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan discovery",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan link",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan link",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan materialize",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan materialize",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan remove-step",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan remove-step",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan reorder-step",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan reorder-step",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan resume",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan resume",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan show",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan show",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan unlink",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan unlink",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan update-step",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan update-step",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan validation",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan validation",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
         "command": "profile",
         "default_max_estimated_tokens": 3000,
@@ -10118,6 +12171,119 @@
       ],
       "intent": "Evaluate assurance.",
       "intent_source": "command"
+    },
+    {
+      "command": "assurance apply",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance apply.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance derive",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance derive.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance list",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "List assurance.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance presets",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance presets.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance promote",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance promote.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance put",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance put.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance remove",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance remove.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance risk",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance risk.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance run",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance show",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run assurance show.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "assurance verdicts",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Run assurance verdicts.",
+      "intent_source": "generated"
     },
     {
       "command": "claim",
@@ -11141,6 +13307,169 @@
       "intent_source": "command"
     },
     {
+      "command": "plan add-step",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan add-step.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan approve",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan approve.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan block-step",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan block-step.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan complete-step",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan complete-step.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan create",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Create plan.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan decision",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan decision.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan discovery",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan discovery.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan link",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan link.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan materialize",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan materialize.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan remove-step",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan remove-step.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan reorder-step",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan reorder-step.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan resume",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan resume.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan show",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Run plan show.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan unlink",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan unlink.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan update-step",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan update-step.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "plan validation",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run plan validation.",
+      "intent_source": "generated"
+    },
+    {
       "command": "profile",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -11744,13 +14073,15 @@
       },
       {
         "keys": [
-          "file"
+          "file",
+          "linkedFile"
         ],
         "target": "file"
       },
       {
         "keys": [
-          "test"
+          "test",
+          "linkedTest"
         ],
         "target": "test"
       },
@@ -12429,13 +14760,15 @@
       },
       {
         "keys": [
-          "file"
+          "file",
+          "linkedFile"
         ],
         "target": "file"
       },
       {
         "keys": [
-          "test"
+          "test",
+          "linkedTest"
         ],
         "target": "test"
       },
@@ -12780,6 +15113,17 @@
     "aggregate",
     "append",
     "assurance",
+    "assurance apply",
+    "assurance derive",
+    "assurance list",
+    "assurance presets",
+    "assurance promote",
+    "assurance put",
+    "assurance remove",
+    "assurance risk",
+    "assurance run",
+    "assurance show",
+    "assurance verdicts",
     "claim",
     "close",
     "close-many",
@@ -12868,6 +15212,22 @@
     "packages uninstall",
     "pause-task",
     "plan",
+    "plan add-step",
+    "plan approve",
+    "plan block-step",
+    "plan complete-step",
+    "plan create",
+    "plan decision",
+    "plan discovery",
+    "plan link",
+    "plan materialize",
+    "plan remove-step",
+    "plan reorder-step",
+    "plan resume",
+    "plan show",
+    "plan unlink",
+    "plan update-step",
+    "plan validation",
     "profile",
     "release",
     "remind",
@@ -15455,6 +17815,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "missing_cli_flag",
+      "class": "generic_failure",
+      "code": "missing_cli_flag",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing cli flag condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/tool-option-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "missing_destination",
       "class": "generic_failure",
       "code": "missing_destination",
@@ -15503,6 +17880,40 @@
         "sdk/extension.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_observed_signature",
+      "class": "generic_failure",
+      "code": "missing_observed_signature",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing observed signature condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_parameter_alias",
+      "class": "generic_failure",
+      "code": "missing_parameter_alias",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing parameter alias condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/tool-option-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -15806,6 +18217,40 @@
         "core/profile/profile-lint.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "positional_shape_budget_exceeded",
+      "class": "generic_failure",
+      "code": "positional_shape_budget_exceeded",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Positional shape budget exceeded condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "positional_signature_mismatch",
+      "class": "generic_failure",
+      "code": "positional_signature_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Positional signature mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -16123,6 +18568,23 @@
       ],
       "exit_code": 1,
       "meaning": "Stale destination condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "stale_observed_signature",
+      "class": "generic_failure",
+      "code": "stale_observed_signature",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Stale observed signature condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -18124,6 +20586,20 @@
         "target": "item"
       },
       {
+        "command": "files discover",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-ya7x55",
+        "target": "item files"
+      },
+      {
+        "command": "files lookup",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-ya7x55",
+        "target": "item files"
+      },
+      {
         "command": "list",
         "disposition": "target_noun",
         "noun": "list",
@@ -18453,6 +20929,13 @@
         "target": "package"
       },
       {
+        "command": "package list",
+        "disposition": "target_noun",
+        "noun": "package",
+        "owner": "pm-pbyu",
+        "target": "package"
+      },
+      {
         "command": "package manage",
         "disposition": "target_noun",
         "noun": "package",
@@ -18468,6 +20951,13 @@
       },
       {
         "command": "package reload",
+        "disposition": "target_noun",
+        "noun": "package",
+        "owner": "pm-pbyu",
+        "target": "package"
+      },
+      {
+        "command": "package scaffold",
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
@@ -18558,6 +21048,13 @@
         "target": "package"
       },
       {
+        "command": "extension list",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
         "command": "extension manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -18573,6 +21070,13 @@
       },
       {
         "command": "extension reload",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
+        "command": "extension scaffold",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -18670,6 +21174,13 @@
         "target": "package"
       },
       {
+        "command": "packages list",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
         "command": "packages manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -18685,6 +21196,13 @@
       },
       {
         "command": "packages reload",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
+        "command": "packages scaffold",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -18824,10 +21342,199 @@
         "target": "ops"
       },
       {
+        "command": "assurance list",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance show",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance put",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance remove",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance run",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance verdicts",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance presets",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance apply",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance derive",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance promote",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
+        "command": "assurance risk",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
         "command": "plan",
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-pbyu",
+        "target": "plan"
+      },
+      {
+        "command": "plan create",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan show",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan add-step",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan update-step",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan complete-step",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan block-step",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan remove-step",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan link",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan unlink",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan reorder-step",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan decision",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan discovery",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan validation",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan resume",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan approve",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
+        "target": "plan"
+      },
+      {
+        "command": "plan materialize",
+        "disposition": "target_noun",
+        "noun": "plan",
+        "owner": "pm-2tan",
         "target": "plan"
       },
       {
@@ -18893,6 +21600,1834 @@
       "plan",
       "contracts",
       "help"
+    ],
+    "positional_action_count": 32,
+    "positional_action_parents": [
+      "assurance",
+      "plan",
+      "workspace snapshot"
+    ],
+    "positional_shape_budget": 21,
+    "positional_shape_count": 20,
+    "positional_signatures": [
+      {
+        "command": "item",
+        "slots": []
+      },
+      {
+        "command": "item complete",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "reason",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item mutate",
+        "slots": []
+      },
+      {
+        "command": "append",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "claim",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "close",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "close-many",
+        "slots": []
+      },
+      {
+        "command": "close-task",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "reason",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "comments",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "copy",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "create",
+        "slots": [
+          {
+            "name": "type-or-title",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "delete",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "docs",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "files",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "get",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "learnings",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "notes",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "pause-task",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "release",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "start-task",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "test",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "update",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "update-many",
+        "slots": []
+      },
+      {
+        "command": "files discover",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "files lookup",
+        "slots": [
+          {
+            "name": "paths",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "list",
+        "slots": []
+      },
+      {
+        "command": "aggregate",
+        "slots": []
+      },
+      {
+        "command": "context",
+        "slots": []
+      },
+      {
+        "command": "ctx",
+        "slots": []
+      },
+      {
+        "command": "focus",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "next",
+        "slots": []
+      },
+      {
+        "command": "search",
+        "slots": [
+          {
+            "name": "keywords",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "reindex",
+        "slots": []
+      },
+      {
+        "command": "search-advanced",
+        "slots": [
+          {
+            "name": "keywords",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "duplicates",
+        "slots": []
+      },
+      {
+        "command": "graph",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "deps",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "history",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "activity",
+        "slots": []
+      },
+      {
+        "command": "events",
+        "slots": []
+      },
+      {
+        "command": "history-author-acknowledge",
+        "slots": []
+      },
+      {
+        "command": "history-compact",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "history-redact",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "history-repair",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "merge",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "artifact",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "base",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "ours",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "theirs",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "restore",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "vcs abandon",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "vcs create",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "vcs log",
+        "slots": []
+      },
+      {
+        "command": "vcs merge",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "vcs propose",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "vcs ref-create",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "vcs show",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace",
+        "slots": []
+      },
+      {
+        "command": "workspace snapshot",
+        "slots": [
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace snapshot create",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace snapshot delete",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace snapshot inspect",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace snapshot list",
+        "slots": []
+      },
+      {
+        "command": "workspace snapshot restore",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "init",
+        "slots": [
+          {
+            "name": "prefix-or-path",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package activate",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package adopt",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package adopt-all",
+        "slots": []
+      },
+      {
+        "command": "package catalog",
+        "slots": []
+      },
+      {
+        "command": "package deactivate",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package describe",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package doctor",
+        "slots": []
+      },
+      {
+        "command": "package explore",
+        "slots": []
+      },
+      {
+        "command": "package init",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package install",
+        "slots": [
+          {
+            "name": "targets",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "package list",
+        "slots": []
+      },
+      {
+        "command": "package manage",
+        "slots": []
+      },
+      {
+        "command": "package migrate",
+        "slots": []
+      },
+      {
+        "command": "package reload",
+        "slots": []
+      },
+      {
+        "command": "package scaffold",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "package uninstall",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension activate",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension adopt",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension adopt-all",
+        "slots": []
+      },
+      {
+        "command": "extension catalog",
+        "slots": []
+      },
+      {
+        "command": "extension deactivate",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension describe",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension doctor",
+        "slots": []
+      },
+      {
+        "command": "extension explore",
+        "slots": []
+      },
+      {
+        "command": "extension init",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension install",
+        "slots": [
+          {
+            "name": "targets",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "extension list",
+        "slots": []
+      },
+      {
+        "command": "extension manage",
+        "slots": []
+      },
+      {
+        "command": "extension migrate",
+        "slots": []
+      },
+      {
+        "command": "extension reload",
+        "slots": []
+      },
+      {
+        "command": "extension scaffold",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "extension uninstall",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "install",
+        "slots": [
+          {
+            "name": "targets",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "packages",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages activate",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages adopt",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages adopt-all",
+        "slots": []
+      },
+      {
+        "command": "packages catalog",
+        "slots": []
+      },
+      {
+        "command": "packages deactivate",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages describe",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages doctor",
+        "slots": []
+      },
+      {
+        "command": "packages explore",
+        "slots": []
+      },
+      {
+        "command": "packages init",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages install",
+        "slots": [
+          {
+            "name": "targets",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "packages list",
+        "slots": []
+      },
+      {
+        "command": "packages manage",
+        "slots": []
+      },
+      {
+        "command": "packages migrate",
+        "slots": []
+      },
+      {
+        "command": "packages reload",
+        "slots": []
+      },
+      {
+        "command": "packages scaffold",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "packages uninstall",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "upgrade",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "beads import",
+        "slots": [
+          {
+            "name": "file",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "changelog export",
+        "slots": [
+          {
+            "name": "file",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "changelog generate",
+        "slots": []
+      },
+      {
+        "command": "event",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "meet",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "remind",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance",
+        "slots": [
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "kind",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "config",
+        "slots": [
+          {
+            "name": "scope",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "key",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "value",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "eval",
+        "slots": []
+      },
+      {
+        "command": "gc",
+        "slots": []
+      },
+      {
+        "command": "health",
+        "slots": []
+      },
+      {
+        "command": "profile",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "schema",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "stats",
+        "slots": []
+      },
+      {
+        "command": "telemetry",
+        "slots": [
+          {
+            "name": "namespace-or-subcommand",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "test-all",
+        "slots": []
+      },
+      {
+        "command": "validate",
+        "slots": []
+      },
+      {
+        "command": "assurance list",
+        "slots": [
+          {
+            "name": "kind",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance show",
+        "slots": [
+          {
+            "name": "kind",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance put",
+        "slots": [
+          {
+            "name": "kind",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance remove",
+        "slots": [
+          {
+            "name": "kind",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance run",
+        "slots": [
+          {
+            "name": "gate-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance verdicts",
+        "slots": [
+          {
+            "name": "gate-id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance presets",
+        "slots": [
+          {
+            "name": "preset",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance apply",
+        "slots": [
+          {
+            "name": "preset",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance derive",
+        "slots": []
+      },
+      {
+        "command": "assurance promote",
+        "slots": [
+          {
+            "name": "assertion-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance risk",
+        "slots": []
+      },
+      {
+        "command": "plan",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "new-order",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "integer",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan create",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan show",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan add-step",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan update-step",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan complete-step",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan block-step",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan remove-step",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan link",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan unlink",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan reorder-step",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "step",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "new-order",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "integer",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan decision",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan discovery",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan validation",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan resume",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan approve",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "plan materialize",
+        "slots": [
+          {
+            "name": "plan-id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "contracts",
+        "slots": []
+      },
+      {
+        "command": "help",
+        "slots": []
+      },
+      {
+        "command": "completion",
+        "slots": [
+          {
+            "name": "shell",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "completion-statuses",
+        "slots": []
+      },
+      {
+        "command": "completion-tags",
+        "slots": []
+      },
+      {
+        "command": "completion-types",
+        "slots": []
+      },
+      {
+        "command": "guide",
+        "slots": [
+          {
+            "name": "topic",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      }
     ],
     "scope_before_verb": true,
     "shared_verbs": [

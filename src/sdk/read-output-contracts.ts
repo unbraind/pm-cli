@@ -16,7 +16,8 @@ import {
   boundReadOutputRows,
   countReadOutputRows,
   mapReadOutputRows,
-  readOutputRowCollections,
+  readOutputBudgetCollections,
+  readOutputContinuationRowCollections,
   readOutputRowPaths,
 } from "./read-output-rows.js";
 import {
@@ -1271,6 +1272,74 @@ export function stabilizeReadOutputReceiptEstimates(
   return attachReadOutputSessionContracts(result, session, receipt);
 }
 
+/** Declare independently resumable validate diagnostic arrays on rich results. */
+function attachValidateDiagnosticRowContract(
+  command: PmReadOutputSurface,
+  result: Record<string, unknown>,
+): Record<string, unknown> {
+  if (command !== "validate") return result;
+  const projection = isRecord(result.projection)
+    ? result.projection
+    : undefined;
+  const declaredFieldGroups = Array.isArray(projection?.declared_field_groups)
+    ? projection.declared_field_groups
+    : [];
+  if (
+    !declaredFieldGroups.some(
+      (group) => isRecord(group) && group.name === "diagnostic_rows",
+    )
+  ) {
+    return result;
+  }
+  const diagnosticCollectionPaths = [
+    ...new Set(
+      readOutputBudgetCollections(result)
+        .map(({ path }) => path)
+        .filter((path) => /^checks\.\d+\.details\./u.test(path)),
+    ),
+  ];
+  const diagnosticRowKeys = diagnosticCollectionPaths.filter(
+    (path) =>
+      !diagnosticCollectionPaths.some(
+        (candidate) => candidate !== path && path.startsWith(`${candidate}.`),
+      ),
+  );
+  if (diagnosticRowKeys.length === 0) return result;
+  const existingContract = isRecord(result.row_contract)
+    ? result.row_contract
+    : {};
+  const existingRowKeys = Array.isArray(existingContract.row_keys)
+    ? existingContract.row_keys.filter(
+        (entry): entry is string => typeof entry === "string",
+      )
+    : [];
+  const existingContinuationRowKeys = Array.isArray(
+    existingContract.continuation_row_keys,
+  )
+    ? existingContract.continuation_row_keys.filter(
+        (entry): entry is string => typeof entry === "string",
+      )
+    : [];
+  const rowKeys = existingRowKeys.length > 0 ? existingRowKeys : diagnosticRowKeys;
+  const continuationRowKeys = [...new Set(diagnosticRowKeys)];
+  return JSON.stringify(rowKeys) === JSON.stringify(existingRowKeys) &&
+    JSON.stringify(continuationRowKeys) ===
+      JSON.stringify(existingContinuationRowKeys)
+    ? result
+    : {
+        ...result,
+        row_contract: {
+          ...existingContract,
+          row_keys: rowKeys,
+          continuation_row_keys: continuationRowKeys,
+          jq_selector:
+            typeof existingContract.jq_selector === "string"
+              ? existingContract.jq_selector
+              : ".checks[].details",
+        },
+      };
+}
+
 /** Apply field, amount, and repeat projections to every declared row path. */
 function projectReadOutputRows(
   result: Record<string, unknown>,
@@ -1446,7 +1515,7 @@ function attachReadOutputTruncationDisclosure(
   const overridden =
     resolved.amount?.value === "unbounded" ? (["amount"] as const) : [];
   const afterByPath = new Map(
-    readOutputRowCollections(projected).map((collection) => [
+    readOutputContinuationRowCollections(projected).map((collection) => [
       collection.path,
       Array.isArray(collection.value)
         ? collection.value.length
@@ -1574,7 +1643,7 @@ function captureReadOutputContinuationState(
   options: Record<string, unknown>,
 ): ReadOutputContinuationState {
   const collectionsBeforeBudget = new Map(
-    readOutputRowCollections(projected).map((collection) => {
+    readOutputContinuationRowCollections(projected).map((collection) => {
       const rows = Array.isArray(collection.value)
         ? collection.value.length
         : Object.keys(collection.value).length;
@@ -1678,8 +1747,17 @@ export function applyReadOutputDimensions<
   ) {
     return result;
   }
+  const continuationReadyResult = attachValidateDiagnosticRowContract(
+    resolved.command,
+    result,
+  );
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
-  let projected = projectReadOutputRows(result, resolved, session, cursor);
+  let projected = projectReadOutputRows(
+    continuationReadyResult,
+    resolved,
+    session,
+    cursor,
+  );
   const continuationState = captureReadOutputContinuationState(
     projected,
     cursor,

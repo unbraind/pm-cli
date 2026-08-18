@@ -1,7 +1,9 @@
+import { Command } from "commander";
 import { describe, expect, it } from "vitest";
 
 import {
   _testOnly,
+  attachRichHelpText,
   firstExampleOrEmpty,
   resolveHelpNarrative,
 } from "../../../src/cli/help-content.js";
@@ -63,5 +65,62 @@ describe("help-content rendering helpers", () => {
       false,
     );
     expect(examples.some((example) => example.includes("author="))).toBe(false);
+  });
+
+  it("attaches action-specific and parent positional help bundles", () => {
+    const actionProgram = new Command("pm");
+    const actionPlan = actionProgram.command("plan");
+    attachRichHelpText(actionProgram, [
+      "plan",
+      "create",
+      "--help",
+      "--explain",
+    ]);
+    let actionHelp = "";
+    actionPlan.configureOutput({ writeOut: (text) => (actionHelp += text) });
+    actionPlan.outputHelp();
+    expect(actionHelp).toContain("Action path: pm plan create");
+    expect(actionHelp).toContain("Applicable flags: --acceptance-criteria");
+    expect(actionHelp).toContain("pm plan create --title");
+
+    const actionWithOperandProgram = new Command("pm");
+    const actionWithOperandPlan = actionWithOperandProgram.command("plan");
+    attachRichHelpText(actionWithOperandProgram, [
+      "plan",
+      "add-step",
+      "pm-a1b2",
+      "--help",
+      "--explain",
+    ]);
+    let actionWithOperandHelp = "";
+    actionWithOperandPlan.configureOutput({
+      writeOut: (text) => (actionWithOperandHelp += text),
+    });
+    actionWithOperandPlan.outputHelp();
+    expect(actionWithOperandHelp).toContain("Action path: pm plan add-step");
+    expect(actionWithOperandHelp).toContain(
+      "Applicable flags: --allow-multiple-active",
+    );
+
+    const parentProgram = new Command("pm");
+    const parentPlan = parentProgram.command("plan");
+    attachRichHelpText(parentProgram, ["plan", "--help"]);
+    let parentHelp = "";
+    parentPlan.configureOutput({ writeOut: (text) => (parentHelp += text) });
+    parentPlan.outputHelp();
+    expect(parentHelp).toContain("Dispatches one declared positional action");
+
+    const flaglessProgram = new Command("pm");
+    const assurance = flaglessProgram.command("assurance");
+    attachRichHelpText(flaglessProgram, [
+      "assurance",
+      "list",
+      "--help",
+      "--explain",
+    ]);
+    let flaglessHelp = "";
+    assurance.configureOutput({ writeOut: (text) => (flaglessHelp += text) });
+    assurance.outputHelp();
+    expect(flaglessHelp).toContain("Applicable flags: none.");
   });
 });

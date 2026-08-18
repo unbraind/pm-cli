@@ -41,8 +41,13 @@ function valueAtPath(
 ): unknown {
   let value: unknown = result;
   for (const segment of rowPath.split(".")) {
-    if (!isRecord(value)) return undefined;
-    value = value[segment];
+    if (Array.isArray(value)) {
+      if (!/^\d+$/u.test(segment)) return undefined;
+      value = value[Number(segment)];
+    } else {
+      if (!isRecord(value)) return undefined;
+      value = value[segment];
+    }
   }
   return value;
 }
@@ -54,18 +59,22 @@ function replaceValueAtPath(
   replacement: unknown,
 ): Record<string, unknown> {
   const segments = rowPath.split(".");
-  const root = { ...result };
-  let source: Record<string, unknown> = result;
-  let target: Record<string, unknown> = root;
-  for (const segment of segments.slice(0, -1)) {
-    const sourceChild = source[segment] as Record<string, unknown>;
-    const targetChild = { ...sourceChild };
-    target[segment] = targetChild;
-    source = sourceChild;
-    target = targetChild;
-  }
-  target[segments.at(-1)!] = replacement;
-  return root;
+  const replace = (value: unknown, offset: number): unknown => {
+    if (offset === segments.length) return replacement;
+    const segment = segments[offset]!;
+    if (Array.isArray(value)) {
+      const index = Number(segment);
+      const cloned = [...value];
+      cloned[index] = replace(value[index], offset + 1);
+      return cloned;
+    }
+    const record = value as Record<string, unknown>;
+    return {
+      ...record,
+      [segment]: replace(record[segment], offset + 1),
+    };
+  };
+  return replace(result, 0) as Record<string, unknown>;
 }
 
 /** Replace one declared row collection with a suffix beginning at an offset. */
@@ -74,7 +83,7 @@ export function sliceReadOutputRowCollection(
   rowPath: string,
   offset: number,
 ): Record<string, unknown> {
-  const collection = readOutputRowCollections(result).find(
+  const collection = readOutputContinuationRowCollections(result).find(
     (entry) => entry.path === rowPath,
   );
   if (!collection) return result;
@@ -98,11 +107,37 @@ export function readOutputRowPaths(result: Record<string, unknown>): string[] {
     .map(([key]) => key);
 }
 
+/** Resolve collections that may be resumed independently from primary result rows. */
+export function readOutputContinuationRowPaths(
+  result: Record<string, unknown>,
+): string[] {
+  const contract = result.row_contract;
+  if (isRecord(contract) && Array.isArray(contract.continuation_row_keys)) {
+    return contract.continuation_row_keys.filter(
+      (entry): entry is string =>
+        typeof entry === "string" && entry.trim().length > 0,
+    );
+  }
+  return readOutputRowPaths(result);
+}
+
 /** Resolve every declared row path that currently contains iterable rows. */
 export function readOutputRowCollections(
   result: Record<string, unknown>,
 ): PmReadOutputRowCollection[] {
   return readOutputRowPaths(result).flatMap((rowPath) => {
+    const value = valueAtPath(result, rowPath);
+    return Array.isArray(value) || isRecord(value)
+      ? [{ path: rowPath, value }]
+      : [];
+  });
+}
+
+/** Resolve every declared continuation path that currently contains iterable rows. */
+export function readOutputContinuationRowCollections(
+  result: Record<string, unknown>,
+): PmReadOutputRowCollection[] {
+  return readOutputContinuationRowPaths(result).flatMap((rowPath) => {
     const value = valueAtPath(result, rowPath);
     return Array.isArray(value) || isRecord(value)
       ? [{ path: rowPath, value }]

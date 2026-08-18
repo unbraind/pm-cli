@@ -15,7 +15,8 @@ selectors are tracked by
 [pm-x710qm](../.agents/pm/issues/pm-x710qm.toon). Default contract suppression
 and canonical TOON tables are tracked by
 [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon) and
-[pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon).
+[pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon). Nested evidence continuation
+is tracked by [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon).
 
 ## Agent Quick Context
 
@@ -73,6 +74,7 @@ or not the current page has rows:
     "command": "list",
     "row_kind": "collection",
     "row_keys": ["items"],
+    "continuation_row_keys": ["items"],
     "fields": "supported",
     "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end",
     "toon_encoding": "tabular_when_uniform"
@@ -89,6 +91,12 @@ nested dependency graph and relationship-context rows addressable as
 `graph.nodes`, `graph.edges`, `context.nodes`, and `context.edges` without
 duplicating them at the envelope root. Array collections produce their
 elements; object maps produce jq `to_entries` rows.
+`continuation_row_keys` is optional and defaults to `row_keys`. A command uses
+it only when independently resumable nested evidence differs from its primary
+amount-bounded rows. Validate, for example, keeps `checks` and `warnings` as
+primary rows while a rich result can name
+`checks.0.details.missing_resolution_rows` as a continuation row. This prevents
+an inner diagnostic array from disabling `--output-limit` on the outer checks.
 `toon_encoding: "tabular_when_uniform"` declares that an array of flat objects
 with one shared key set renders as a length-marked TOON table; mixed, nested,
 or heterogeneous arrays retain the expanded representation. Quoted,
@@ -107,7 +115,8 @@ publish a row contract.
 SDK and package authors can import `PM_READ_ROW_CONTRACTS`,
 `PM_READ_ROW_JQ_SELECTOR`, and `resolveReadRowContract` from
 `@unbrained/pm-cli/sdk`. Existing package declarations are preserved only
-when `command`, `row_kind`, `row_keys`, `fields`, the conditional
+when `command`, `row_kind`, `row_keys`, optional unique non-empty
+`continuation_row_keys`, `fields`, the conditional
 `jq_selector`, and any supplied `toon_encoding` form a structurally valid row contract; malformed declarations
 are replaced by the canonical built-in contract when one applies.
 

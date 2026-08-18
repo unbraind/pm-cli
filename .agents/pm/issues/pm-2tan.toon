@@ -2,17 +2,22 @@ id: pm-2tan
 title: "Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command"
 description: Make the documented plan action grammar self-describing so agents can inspect exact create and step flags without falling into generic unknown-command recovery.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,help,plan
 created_at: "2026-07-15T20:00:17.934Z"
-updated_at: "2026-08-16T19:24:32.738Z"
+updated_at: "2026-08-18T13:14:45.715Z"
+closed_at: "2026-08-18T13:14:43.960Z"
+completed_at: "2026-08-18T13:14:43.960Z"
 author: codex-audit-20260715
 estimated_minutes: 120
 acceptance_criteria: "pm plan create --help and --help --json resolve to action-specific help or an equally precise positional-action help view; pm help plan create and command-scoped contracts expose the same effective flags; shell completion advertises plan actions; pm plan --help no longer reports an empty subcommands array while describing subcommands only in a positional argument; documented pm plan create examples remain valid; regression tests cover help JSON, contracts, completion, and unknown-command recovery"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: All positional plan/assurance actions and standard commands expose consistent full-path structured help; compact contracts retain action discovery while targeted/full projections restore exact format budgets.
+expected_result: "Agents can inspect every positional plan/assurance action before execution through direct help, generic help, completion, or command contracts without an unknown-command detour."
+actual_result: "Bounded default contracts retain all 27 action paths while omitting repeated detail; command-scoped/full output restores it, standard help includes resolved paths, and independently named format-budget, intent-provenance, and positional-signature switches prevent projection coupling."
 dependencies[9]:
   - id: pm-gdi7
     kind: related
@@ -61,20 +66,63 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[4]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-07-15T20:00:17.934Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for plan create help unknown command positional action contracts found only broad roadmap and historical audit entries with no focused active or terminal owner."
   "2026-08-04T09:18:06.510Z","harness:codex","Fresh agent-recovery evidence 2026-08-04: following the apparent plan-link contract as pm plan link <plan> --link <item> produced a recovery error requiring an undocumented positional step reference. The generic plan help reports usage [subcommand] [id] [stepRef] but its sole example is pm init, so it does not demonstrate link syntax. After discovering the hidden positional requirement, pm plan link pm-gzyt2j plan-step-002 --link ... succeeded. This remains a live avoidable agent stall."
   "2026-08-04T09:34:37.917Z","harness:codex","Fresh contract/runtime parity evidence 2026-08-04: pm contracts --command update --flags-only --json advertises extension-provided --allow-audit-update and --allow-audit-dep-update as supported update flags, but invoking pm update pm-gzyt2j ... --allow-audit-update is rejected by Commander as Unknown option. Retrying the same update without the advertised flag succeeds. Action-specific help/contracts must describe the actually registered command path, including extension-injected flags, or agents cannot trust the prescribed runtime contract discovery workflow."
   "2026-08-16T19:24:32.738Z","harness:codex","Fresh recurrence evidence 2026-08-16: the newly added, fully executable `pm assurance risk --definition <json> --json` action succeeds through the direct CLI, SDK transport, and packed npx/bunx installation, but `pm assurance risk --help --json` exits 2 with unknown_command. Generic `pm assurance --help --json` exposes an empty subcommands array, labels --definition only as Put declaration JSON, and redirects action discovery to contracts. This is the same positional-action help defect already owned here; no duplicate item was created."
-files[5]{path,scope,note}:
+  "2026-08-18T04:51:56.149Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
+  "2026-08-18T06:29:31.138Z","harness:codex","Verification evidence: full literal all-source coverage passed 519 files and 7,540 tests at exact 100/100/100/100 after compatibility checks preserved the richer plan/schema/profile missing-subcommand recovery. Compact contracts retain parent command summaries while full contracts add all 27 plan/assurance action summaries."
+  "2026-08-18T06:45:40.614Z","harness:codex","Closeout evidence: positional plan and assurance action help now resolves through both direct and generic help paths; parent JSON help lists actions; full contracts expose all 27 action summaries/signatures while compact output stays bounded; completion derives from the same contract. PM-linked focused execution passed 8/8 tests, aggregate literal coverage passed 7,540 tests at exact 100/100/100/100, and packed npm/npx/bunx acceptance passed."
+  "2026-08-18T08:04:18.993Z","harness:codex","Independent review start: compact command summaries must retain all positional action paths, with focused multi-token action and availability/schema projections."
+  "2026-08-18T08:53:14.416Z","harness:codex","Final independent-review evidence: bundled compact contracts expose plan create and assurance run with 27 actions/two parents while omitting only positional_signatures; full output restores signatures, and item/workspace/plan multi-token projections retain exact actions, availability, and schemas. Exact coverage passed 519 files / 7,543 tests at 100/100/100/100; token surfaces, contracts, lint, grammar, and manual acceptance pass."
+  "2026-08-18T10:02:35.558Z","harness:codex","Verification evidence: fresh search-advanced project contracts pass the 72-surface token ratchet at 16,107/15,981 bytes; structured get help returns usage get [options] <id>; focused suites, exact contracts/SDK snapshots, and 7,545-test 100/100/100/100 coverage pass. Local timing-only checks missed unchanged budgets by 2-48 ms under load average >8; hosted exact-head performance gates remain the admission authority."
+  "2026-08-18T10:45:42.808Z","harness:codex","Late review implementation: default command_summaries are documented as registered paths rather than every virtual action row; all 27 plan/assurance paths remain discoverable through grammar contracts and command-scoped help. The token-surface ratchet now executes every virtual action help path and passes 99 measured surfaces in an isolated search-active tracker."
+  "2026-08-18T10:56:55.213Z","harness:codex","Final verification evidence: the search-active ratchet now measures all 27 virtual positional-action help paths alongside registered command paths, for 99 total surfaces and 88 required baselines. It passed in an isolated temporary PM root, plus the command-scoped token budget and full 100/100/100/100 repository coverage (53,124 lines; 55,035 statements; 11,369 functions; 41,062 branches)."
+  "2026-08-18T11:07:49.640Z","harness:codex","Exact-head failure evidence: PR #1059 run 32129475219 job 95687467015 failed only quality:token-surface because commands.context measured 2,967 bytes against 2,886. Local pnpm quality:token-surface reproduces exactly at 2,967 bytes; aggregate coverage, static, benchmark, Windows, CodeQL, Semgrep, and security gates pass on the same head."
+  "2026-08-18T11:12:19.579Z","harness:codex","Fix verification: regenerated the governed discovery baseline against the same final package topology as hosted smokes (pm-changelog plus search-advanced). The ratchet now covers 107 surfaces, measures context at 2,967 bytes with a 3,264-byte ceiling, and retains all 27 virtual action paths. Local pnpm quality:token-surface passes; the broader baseline differences reflect previously unrecorded active package commands and exact contracts/MCP payloads rather than deleted coverage."
+  "2026-08-18T11:14:26.459Z","harness:codex","Complete-chain evidence: pnpm quality:context-eval passes after build; repository-context-quality returns pass for all four required assertions with negative controls proven, and the final agent token-surface gate passes all 107 surfaces."
+  "2026-08-18T12:13:58.237Z","harness:codex","Evidence: structured parent help now publishes each concrete/virtual subcommand name once, preserving the registered command description on collisions. Text help assertions require the exact --acceptance-criteria flag and executable pm plan create --title example. Focused help suites passed and repository command grammar/context/token gates passed with 158 destinations, 27 positional actions, and 107 measured discovery surfaces."
+  "2026-08-18T12:52:40.319Z","harness:codex","Final review evidence: command-summary projection now uses named independent switches for format budgets, intent provenance, and positional signatures instead of one boolean with coupled semantics. A focused regression proves format budgets and intent provenance can be toggled independently. Full lint and 521-file/7,555-test coverage passed at exact 100/100/100/100; contracts, SDK surface, context-quality, 107-surface token ratchet, and defect-evidence gates pass."
+  "2026-08-18T13:14:42.646Z","harness:codex","Exact-head CI correction evidence: PR #1059 run 32139467499 job 95718632048 failed only because runContracts reached ESLint complexity 17 versus ceiling 16 after the three independent projection switches repeated one shared predicate. The correction computes that predicate once and reuses it without changing output. No-cache ESLint passes; duplicate, static assurance, package boundary, SDK parity, graph/record integrity, contracts, and 521-file/7,555-test exact 100/100/100/100 coverage pass. The unchanged local wall-clock transport sentinel missed its ceiling by 3-33 ms under load; the prior exact-head hosted benchmark passed and the next hosted run remains authoritative."
+learnings[1]{created_at,author,text}:
+  "2026-08-18T08:53:13.746Z","harness:codex","Compact discovery and heavy detail are independent contracts: summary output must retain action paths, while positional signature arrays remain a recoverable full-output field governed by token budgets and omission receipts."
+files[17]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Intentional action-discovery token baseline
+  scripts/measure-agent-token-surface.mjs,project,Required virtual action help token measurement
+  scripts/release/token-budgets.json,project,Intentional positional action summary budget
   src/cli/commands/plan.ts,project,Positional plan action parser and runtime behavior
   src/cli/help-content.ts,project,Help bundle and path narrative resolution
   src/cli/help-json-payload.ts,project,Structured help path payload and subcommand projection
+  src/cli/register-mutation.ts,project,Required positional command registration
+  src/sdk/cli-contracts/flag-contracts.ts,project,Action-specific executable flag contracts
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Token-efficient compact and complete full action summaries
+  tests/integration/positional-action-contracts.integration.spec.ts,project,Real CLI action help and contract acceptance
+  tests/unit/cli/help-command-path-resolution.spec.ts,project,Action help path coverage
+  tests/unit/cli/help-content.spec.ts,project,Text positional action help branch coverage
   tests/unit/commands/completion-command.spec.ts,project,Plan action completion coverage
+  tests/unit/commands/contracts-command.spec.ts,project,Compact and multi-token action projection regressions
   tests/unit/commands/plan-command.spec.ts,project,Plan action and help regression coverage
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/scripts/measure-agent-token-surface.spec.ts,project,Virtual action measurement and ratchet coverage
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Compact summary subset and full action-detail monotonicity
+tests[5]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts tests/integration/positional-action-contracts.integration.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/cli/help-content.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msyar51m-qeshhw,test,passed,"2026-08-18T06:43:34.454Z","2026-08-18T06:43:47.914Z","2026-08-18T06:43:47.914Z",1,0,0
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Current documented plan create workflow
   docs/COMMANDS.md,project,Plan grammar and examples
+close_reason: Deduplicated the shared command-detail projection predicate; no-cache ESLint and exact 100/100/100/100 coverage pass with behavior unchanged.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-2tan
+  gate_id: positional-action-help-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts tests/integration/positional-action-contracts.integration.spec.ts
+  local_checks[2]: node scripts/release/command-grammar-gate.mjs,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: "Live reproduction on pm 2026.7.15: pm plan create --help --json exits 2 with unknown_command and says the plan create path is not exposed. The same runtime documents create in the positional subcommand argument of pm plan --help while returning subcommands as an empty array. This violates the repository rule that agents should inspect exact runtime help before mutation. Fix the model coherently: either register real nested subcommands or teach help, contracts, and completion that positional plan actions are command paths. Preserve all plan features and aliases."

@@ -93,6 +93,9 @@ export {
   TOOL_CREATE_OPTION_CONTRACT_SOURCE,
   TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE,
   TOOL_UPDATE_OPTION_CONTRACT_SOURCE,
+  verifyToolOptionCliParity,
+  type ToolOptionCliParityFinding,
+  type ToolOptionCliParityReport,
 } from "./cli-contracts/tool-option-contracts.js";
 export type {
   OptionsFromContracts,
@@ -111,8 +114,13 @@ export type {
   ToolOptionFlagContract,
 } from "./cli-contracts/flag-contracts.js";
 export {
+  PM_POSITIONAL_ACTION_CONTRACTS,
+  type PmPositionalActionContract,
+} from "./cli-contracts/grammar-contracts.js";
+export {
   withFlagAliasMetadata,
   compactFlagAliasContracts,
+  resolvePmPositionalActionFlagContracts,
   SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,

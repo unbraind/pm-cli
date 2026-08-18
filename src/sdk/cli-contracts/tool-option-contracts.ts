@@ -3,9 +3,77 @@
  *
  * Defines SDK command-contract metadata for Tool Option Contracts.
  */
-import type { ToolOptionFlagContract } from "./flag-contracts.js";
+import type {
+  CliFlagContract,
+  ToolOptionFlagContract,
+} from "./flag-contracts.js";
 
 type SharedToolOptionFlagContract = Readonly<ToolOptionFlagContract>;
+
+/** One SDK/MCP parameter spelling that cannot be executed by the matching CLI. */
+export interface ToolOptionCliParityFinding {
+  /** Stable remediation category. */
+  code: "missing_cli_flag" | "missing_parameter_alias";
+  /** SDK/MCP parameter key. */
+  parameter: string;
+  /** Canonical CLI flag selected by the tool transport. */
+  flag: string;
+  /** Executable parameter-shaped flag expected by cross-surface callers. */
+  parameter_flag: string;
+}
+
+/** Fail-closed receipt for one tool option table and executable CLI flag table. */
+export interface ToolOptionCliParityReport {
+  /** Whether every mapping and cross-surface spelling is executable. */
+  ok: boolean;
+  /** Number of tool parameter mappings inspected. */
+  parameter_count: number;
+  /** Number of executable CLI flag contracts inspected. */
+  cli_flag_count: number;
+  /** Missing canonical flags or direct parameter aliases. */
+  findings: ToolOptionCliParityFinding[];
+}
+
+/**
+ * Verify that every declared tool parameter maps to a real CLI flag and that
+ * its kebab-case spelling is accepted either canonically or as an alias.
+ */
+export function verifyToolOptionCliParity(
+  toolOptions: readonly ToolOptionFlagContract[],
+  cliFlags: readonly CliFlagContract[],
+): ToolOptionCliParityReport {
+  const findings: ToolOptionCliParityFinding[] = [];
+  for (const { param, flag } of toolOptions) {
+    const parameterFlag = `--${param.replace(/([a-z\d])([A-Z])/gu, "$1-$2").toLowerCase()}`;
+    const cliFlag = cliFlags.find((candidate) => candidate.flag === flag);
+    if (!cliFlag) {
+      findings.push({
+        code: "missing_cli_flag",
+        parameter: param,
+        flag,
+        parameter_flag: parameterFlag,
+      });
+      continue;
+    }
+    if (
+      cliFlag.flag !== parameterFlag &&
+      !cliFlag.aliases?.includes(parameterFlag)
+    ) {
+      findings.push({
+        code: "missing_parameter_alias",
+        parameter: param,
+        flag,
+        parameter_flag: parameterFlag,
+      });
+    }
+  }
+  return {
+    ok: findings.length === 0,
+    parameter_count: toolOptions.length,
+    cli_flag_count: cliFlags.length,
+    findings,
+  };
+}
 
 /** Returns fresh option contract objects so exported arrays cannot share mutable entries. */
 function cloneOptionContracts(

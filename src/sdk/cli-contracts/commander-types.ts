@@ -198,11 +198,14 @@ export function readStringArrayFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
 ): string[] | undefined {
+  const values: string[] = [];
   for (const key of contract.keys) {
     const candidate = options[key];
     if (Array.isArray(candidate)) {
-      return candidate as string[];
+      values.push(
+        ...candidate.filter((value): value is string => typeof value === "string"),
+      );
     }
   }
-  return undefined;
+  return values.length > 0 ? values : undefined;
 }

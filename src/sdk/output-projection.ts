@@ -52,6 +52,8 @@ export interface ReadRowContract {
   row_kind: "collection" | "none";
   /** Dot-delimited paths to array or object-map collections containing iterable result rows. */
   row_keys: string[];
+  /** Optional nested collections that are independently resumable without redefining primary result rows. */
+  continuation_row_keys?: string[];
   /** Whether the command accepts an explicit row-field projection. */
   fields: "supported" | "unsupported";
   /** Universal jq expression that iterates every declared collection path. */
@@ -258,6 +260,21 @@ const READ_ROW_TOON_ENCODINGS = new Set<unknown>([
 const READ_ROW_KINDS = new Set<unknown>(["collection", "none"]);
 const READ_ROW_FIELD_MODES = new Set<unknown>(["supported", "unsupported"]);
 
+function isUniqueNonEmptyStringArray(
+  value: unknown,
+  allowEmpty: boolean,
+): value is string[] {
+  return (
+    Array.isArray(value) &&
+    (allowEmpty || value.length > 0) &&
+    value.every(
+      (entry): entry is string =>
+        typeof entry === "string" && entry.length > 0,
+    ) &&
+    new Set(value).size === value.length
+  );
+}
+
 /** Return whether an unknown value is a structurally valid row declaration. */
 export function isReadRowContract(value: unknown): value is ReadRowContract {
   return (
@@ -265,11 +282,9 @@ export function isReadRowContract(value: unknown): value is ReadRowContract {
     typeof value.command === "string" &&
     value.command.trim().length > 0 &&
     READ_ROW_KINDS.has(value.row_kind) &&
-    Array.isArray(value.row_keys) &&
-    value.row_keys.every(
-      (key): key is string => typeof key === "string" && key.length > 0,
-    ) &&
-    new Set(value.row_keys).size === value.row_keys.length &&
+    isUniqueNonEmptyStringArray(value.row_keys, true) &&
+    (value.continuation_row_keys === undefined ||
+      isUniqueNonEmptyStringArray(value.continuation_row_keys, false)) &&
     READ_ROW_FIELD_MODES.has(value.fields) &&
     READ_ROW_TOON_ENCODINGS.has(value.toon_encoding) &&
     (value.row_kind === "collection"

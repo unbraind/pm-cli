@@ -1137,10 +1137,6 @@ describe("contracts command runtime", () => {
             "--full",
           ],
           default_max_estimated_tokens: 3000,
-          default_max_estimated_tokens_by_format: {
-            toon: 3000,
-            json: 4500,
-          },
         }),
         expect.objectContaining({
           command: "list",
@@ -1178,8 +1174,25 @@ describe("contracts command runtime", () => {
           command: "workspace",
           intent: "Manage portable workspace primitives.",
         }),
+        expect.objectContaining({
+          command: "plan create",
+          intent: "Create plan.",
+        }),
+        expect.objectContaining({
+          command: "assurance run",
+          intent: "Run assurance.",
+        }),
       ]),
     );
+    expect(
+      result.command_summaries?.every(
+        (summary) => summary.default_max_estimated_tokens_by_format === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      result.command_summaries?.find((summary) => summary.command === "contracts")
+        ?.intent_source,
+    ).toBeUndefined();
     expect(result.output_policy).toEqual({
       token_estimate: "ceil(utf8_bytes / 4)",
       degradation_ladder: ["full", "compact", "brief", "summary", "counts"],
@@ -1187,6 +1200,21 @@ describe("contracts command runtime", () => {
     });
     expect(result.commands).toEqual([]);
     expect(JSON.stringify(result).length).toBeLessThan(40_000);
+
+    const scoped = await runContracts(
+      { command: "contracts", summary: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(scoped.command_summaries).toEqual([
+      expect.objectContaining({
+        command: "contracts",
+        intent_source: "command",
+        default_max_estimated_tokens_by_format: {
+          toon: 3000,
+          json: 4500,
+        },
+      }),
+    ]);
   });
 
   it("publishes one meaningful intent and budget for every exact command path", async () => {
@@ -1213,15 +1241,27 @@ describe("contracts command runtime", () => {
   });
 
   it("contracts every workspace snapshot command path", async () => {
-    for (const command of [
-      "workspace",
-      "workspace snapshot",
-      "workspace snapshot create",
-      "workspace snapshot list",
-      "workspace snapshot inspect",
-      "workspace snapshot restore",
-      "workspace snapshot delete",
-    ]) {
+    const inheritedFlags = [
+      { flag: "--dry-run" },
+      { flag: "--force" },
+      { flag: "--author" },
+      { flag: "--message" },
+    ];
+    const restoreFlags = [
+      { flag: "--author" },
+      { flag: "--dry-run" },
+      { flag: "--force" },
+      { flag: "--message" },
+    ];
+    for (const [command, flags] of [
+      ["workspace", inheritedFlags],
+      ["workspace snapshot", inheritedFlags],
+      ["workspace snapshot create", []],
+      ["workspace snapshot list", []],
+      ["workspace snapshot inspect", []],
+      ["workspace snapshot restore", restoreFlags],
+      ["workspace snapshot delete", []],
+    ] as const) {
       const result = await runContracts(
         { command, flagsOnly: true },
         GLOBAL_OPTIONS,
@@ -1231,12 +1271,7 @@ describe("contracts command runtime", () => {
         expect.objectContaining({
           command,
           provider: "core",
-          flags: [
-            { flag: "--dry-run" },
-            { flag: "--force" },
-            { flag: "--author" },
-            { flag: "--message" },
-          ],
+          flags,
         }),
       ]);
     }
@@ -1674,6 +1709,32 @@ describe("contracts command runtime", () => {
     }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("list");
+  });
+
+  it("keeps multi-token command action, availability, and schema projections exact", async () => {
+    const itemComplete = await runContracts(
+      { command: "item complete" },
+      GLOBAL_OPTIONS,
+    );
+    expect(itemComplete.actions).toEqual([]);
+    expect(itemComplete.action_availability).toEqual([]);
+    expect(itemComplete.schema?.oneOf).toEqual([]);
+
+    for (const [command, action] of [
+      ["workspace snapshot create", "workspace"],
+      ["plan create", "plan"],
+    ] as const) {
+      const result = await runContracts({ command }, GLOBAL_OPTIONS);
+      expect(result.actions).toEqual([action]);
+      expect(result.action_availability).toEqual([
+        expect.objectContaining({ action, invocable: true }),
+      ]);
+      expect(
+        ((result.schema?.oneOf ?? []) as Array<{
+          properties?: { action?: { const?: string } };
+        }>).map((branch) => branch.properties?.action?.const),
+      ).toEqual([action]);
+    }
   });
 
   it("publishes the authoritative assurance source and trigger vocabularies", async () => {

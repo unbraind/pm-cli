@@ -391,6 +391,30 @@ describe("registration helpers", () => {
         ac: sharedAliases,
       }).acceptanceCriteria,
     ).toBe("second; first");
+
+    expect(
+      normalizeCreateOptions({
+        type: "Task",
+        file: ["canonical-create-file"],
+        linkedFile: ["alias-create-file"],
+        test: ["canonical-create-test"],
+        linkedTest: ["alias-create-test"],
+      }),
+    ).toMatchObject({
+      file: ["canonical-create-file", "alias-create-file"],
+      test: ["canonical-create-test", "alias-create-test"],
+    });
+    expect(
+      normalizeUpdateOptions({
+        file: ["canonical-update-file"],
+        linkedFile: ["alias-update-file"],
+        test: ["canonical-update-test"],
+        linkedTest: ["alias-update-test"],
+      }),
+    ).toMatchObject({
+      file: ["canonical-update-file", "alias-update-file"],
+      test: ["canonical-update-test", "alias-update-test"],
+    });
   });
 
   it("skips unsafe prototype keys while preserving unknown extension options", () => {

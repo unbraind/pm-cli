@@ -6,12 +6,14 @@ import {
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   analyzePmToolActionParity,
   analyzeSdkCliParameterCompleteness,
+  resolvePmPositionalActionFlagContracts,
 } from "../../../src/sdk/cli-contracts.js";
 import {
   _testOnlyCliContracts,
   resolveSubcommandFlagContractsForCommand,
 } from "../../../src/sdk/cli-contracts.js";
 import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
+import { PM_POSITIONAL_ACTION_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
 import { analyzeSdkActionCoverage } from "../../../src/sdk/runtime.js";
 
 type SchemaWithProperties = {
@@ -167,6 +169,51 @@ describe("action-scoped MCP schema parity", () => {
         disposition: "unclassified",
       }),
     );
+  });
+
+  it("publishes executable CLI aliases for structured linked-resource names", () => {
+    const updateFlags = resolveSubcommandFlagContractsForCommand("update");
+    expect(updateFlags).toContainEqual(
+      expect.objectContaining({
+        flag: "--file",
+        aliases: expect.arrayContaining(["--linked-file"]),
+      }),
+    );
+    expect(updateFlags).toContainEqual(
+      expect.objectContaining({
+        flag: "--test",
+        aliases: expect.arrayContaining(["--linked-test"]),
+      }),
+    );
+    expect(
+      resolveSubcommandFlagContractsForCommand("plan create").map(
+        ({ flag }) => flag,
+      ),
+    ).toEqual(expect.arrayContaining(["--title", "--template"]));
+    expect(
+      resolveSubcommandFlagContractsForCommand("assurance risk").map(
+        ({ flag }) => flag,
+      ),
+    ).toContain("--definition");
+    for (const action of PM_POSITIONAL_ACTION_CONTRACTS) {
+      const executable = new Set(
+        resolveSubcommandFlagContractsForCommand(action.command).flatMap(
+          ({ flag, aliases }) => [flag, ...(aliases ?? [])],
+        ),
+      );
+      expect(
+        action.accepted_flags.filter((flag) => !executable.has(flag)),
+        action.command,
+      ).toEqual([]);
+    }
+    expect(() =>
+      resolvePmPositionalActionFlagContracts([
+        {
+          ...PM_POSITIONAL_ACTION_CONTRACTS[0]!,
+          accepted_flags: ["--not-a-declared-parent-flag"],
+        },
+      ]),
+    ).toThrow(/does not resolve to exactly one/);
   });
 
   it("fails closed when an action has no strict SDK parameter contract", () => {

@@ -31,6 +31,8 @@ const REPORT_PATH = path.join(
   "context-intent-calibration.json",
 );
 const CALIBRATION_REGRESSION_MARGIN = 1.15;
+const CALIBRATION_RECOVERY_SCRIPT =
+  "node scripts/release/context-intent-calibration-gate.mjs";
 const IMMUTABLE_SESSION_STATE_FIELDS = Object.freeze([
   "id",
   "version",
@@ -588,6 +590,16 @@ export function assertCalibrationWithinApprovedCeilings(
   }
 }
 
+/** Fail closed when the recovery command printed by this gate is absent or redirects elsewhere. */
+export function assertCalibrationRecoveryScript(packageManifest) {
+  const actual = packageManifest?.scripts?.["context:intent:calibrate"];
+  if (actual !== CALIBRATION_RECOVERY_SCRIPT) {
+    throw new Error(
+      `package.json must declare context:intent:calibrate as "${CALIBRATION_RECOVERY_SCRIPT}" so the gate recovery command is executable`,
+    );
+  }
+}
+
 /** Exposes deterministic validation seams for exhaustive gate testing. */
 export const _testOnly = {
   assertCursorRowParity,
@@ -605,6 +617,8 @@ export async function main(
   {
     measure = measureContextIntentCalibration,
     reportPath = REPORT_PATH,
+    manifestPath = path.join(repoRoot, "package.json"),
+    readManifest = readFile,
     readReport = readFile,
     writeReport = writeFile,
     assertReport = assertCalibrationWithinApprovedCeilings,
@@ -612,6 +626,9 @@ export async function main(
   } = {},
 ) {
   const { flags } = parseFlags(args);
+  assertCalibrationRecoveryScript(
+    JSON.parse(await readManifest(manifestPath, "utf8")),
+  );
   const report = await measure();
   if (flags.has("update")) {
     await writeReport(
