@@ -54,6 +54,24 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
     registration: "bootstrap" as const,
     owner: "pm-pbyu",
   })),
+  ...(
+    [
+      ["extension list", "extension catalog"],
+      ["extension scaffold", "extension init"],
+      ["package list", "package catalog"],
+      ["package scaffold", "package init"],
+      ["packages list", "packages catalog"],
+      ["packages scaffold", "packages init"],
+    ] as const
+  ).map(([alias, canonical]) => ({
+    alias,
+    canonical,
+    canonical_argv: canonical.split(" "),
+    lifecycle: "permanent" as const,
+    hidden: false,
+    registration: "commander" as const,
+    owner: "pm-ya7x55",
+  })),
   {
     alias: "list-all",
     canonical: "list",

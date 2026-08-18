@@ -8277,87 +8277,35 @@
     },
     {
       "command": "workspace snapshot create",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot delete",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot inspect",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot list",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--force"
-        },
-        {
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        }
-      ],
+      "flags": [],
       "provider": "core"
     },
     {
       "command": "workspace snapshot restore",
       "flags": [
         {
+          "flag": "--author"
+        },
+        {
           "flag": "--dry-run"
         },
         {
           "flag": "--force"
-        },
-        {
-          "flag": "--author"
         },
         {
           "flag": "--message"
@@ -20638,6 +20586,20 @@
         "target": "item"
       },
       {
+        "command": "files discover",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-ya7x55",
+        "target": "item files"
+      },
+      {
+        "command": "files lookup",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-ya7x55",
+        "target": "item files"
+      },
+      {
         "command": "list",
         "disposition": "target_noun",
         "noun": "list",
@@ -20967,6 +20929,13 @@
         "target": "package"
       },
       {
+        "command": "package list",
+        "disposition": "target_noun",
+        "noun": "package",
+        "owner": "pm-pbyu",
+        "target": "package"
+      },
+      {
         "command": "package manage",
         "disposition": "target_noun",
         "noun": "package",
@@ -20982,6 +20951,13 @@
       },
       {
         "command": "package reload",
+        "disposition": "target_noun",
+        "noun": "package",
+        "owner": "pm-pbyu",
+        "target": "package"
+      },
+      {
+        "command": "package scaffold",
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
@@ -21072,6 +21048,13 @@
         "target": "package"
       },
       {
+        "command": "extension list",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
         "command": "extension manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -21087,6 +21070,13 @@
       },
       {
         "command": "extension reload",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
+        "command": "extension scaffold",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -21184,6 +21174,13 @@
         "target": "package"
       },
       {
+        "command": "packages list",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
         "command": "packages manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -21199,6 +21196,13 @@
       },
       {
         "command": "packages reload",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "target": "package"
+      },
+      {
+        "command": "packages scaffold",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -21597,10 +21601,11 @@
       "contracts",
       "help"
     ],
-    "positional_action_count": 27,
+    "positional_action_count": 32,
     "positional_action_parents": [
       "assurance",
-      "plan"
+      "plan",
+      "workspace snapshot"
     ],
     "positional_shape_budget": 21,
     "positional_shape_count": 20,
@@ -21904,6 +21909,30 @@
       {
         "command": "update-many",
         "slots": []
+      },
+      {
+        "command": "files discover",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "files lookup",
+        "slots": [
+          {
+            "name": "paths",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
       },
       {
         "command": "list",
@@ -22219,15 +22248,39 @@
       },
       {
         "command": "workspace snapshot create",
-        "slots": []
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "workspace snapshot delete",
-        "slots": []
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "workspace snapshot inspect",
-        "slots": []
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "workspace snapshot list",
@@ -22235,7 +22288,15 @@
       },
       {
         "command": "workspace snapshot restore",
-        "slots": []
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "init",
@@ -22350,6 +22411,10 @@
         ]
       },
       {
+        "command": "package list",
+        "slots": []
+      },
+      {
         "command": "package manage",
         "slots": []
       },
@@ -22360,6 +22425,18 @@
       {
         "command": "package reload",
         "slots": []
+      },
+      {
+        "command": "package scaffold",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "package uninstall",
@@ -22474,6 +22551,10 @@
         ]
       },
       {
+        "command": "extension list",
+        "slots": []
+      },
+      {
         "command": "extension manage",
         "slots": []
       },
@@ -22484,6 +22565,18 @@
       {
         "command": "extension reload",
         "slots": []
+      },
+      {
+        "command": "extension scaffold",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "extension uninstall",
@@ -22610,6 +22703,10 @@
         ]
       },
       {
+        "command": "packages list",
+        "slots": []
+      },
+      {
         "command": "packages manage",
         "slots": []
       },
@@ -22620,6 +22717,18 @@
       {
         "command": "packages reload",
         "slots": []
+      },
+      {
+        "command": "packages scaffold",
+        "slots": [
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "packages uninstall",

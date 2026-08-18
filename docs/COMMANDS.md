@@ -1200,7 +1200,7 @@ Use `pm contracts --summary --json` first when bootstrapping in a tight context
 window. `command_summaries` contains one row per registered command path,
 including aliases and namespace children, with a meaningful intent plus
 `default_max_estimated_tokens`. The low-token summary intentionally does not
-repeat the 27 virtual positional plan/assurance action rows;
+repeat the 32 virtual positional Plan, Assurance, and workspace-snapshot action rows;
 `grammar_contracts.positional_action_count` and `positional_action_parents`
 retain their complete discoverability and route callers to root help. A
 command-scoped contract for an exact action restores its typed positional

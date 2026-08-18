@@ -7,6 +7,9 @@
  * Tracker: pm-wt43zj, pm-yy8rmx.
  */
 import { execFileSync } from "node:child_process";
+import { ASSURANCE_ACTIONS } from "../../dist/sdk/governance/assurance-action.js";
+import { PLAN_SUBCOMMANDS } from "../../dist/sdk/lifecycle/plan.js";
+import { WORKSPACE_SNAPSHOT_ACTIONS } from "../../dist/sdk/workspace-snapshot.js";
 import {
   CREATE_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
@@ -27,6 +30,141 @@ const COMPOSITE_MCP_TOOL_WAIVERS = {
   pm_mutate:
     "Structured mutation dispatcher spanning multiple canonical mutation actions.",
 };
+
+const RUNTIME_POSITIONAL_ACTIONS = new Map([
+  ["assurance", ASSURANCE_ACTIONS],
+  ["plan", PLAN_SUBCOMMANDS],
+  ["workspace snapshot", WORKSPACE_SNAPSHOT_ACTIONS],
+]);
+
+/** Read structured help from the live Commander registration surface. */
+function readLiveCliHelp(commandPath, noExtensions = false) {
+  return JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        "dist/cli.js",
+        ...(noExtensions ? ["--no-extensions"] : []),
+        "--json",
+        "help",
+        ...commandPath,
+        "--output-budget",
+        "unbounded",
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          NO_COLOR: "1",
+          PM_NO_TELEMETRY: "1",
+          PM_TELEMETRY_DISABLED: "1",
+        },
+        maxBuffer: 64 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "inherit"],
+        timeout: 120_000,
+      },
+    ),
+  );
+}
+
+/** Normalize the visible structured-help child rows used by both traversals. */
+function normalizeLiveHelpSubcommands(help) {
+  if (!Array.isArray(help?.subcommands)) return [];
+  return help.subcommands.flatMap((subcommand) => {
+    if (
+      Object(subcommand) !== subcommand ||
+      typeof subcommand.name !== "string" ||
+      subcommand.name.trim().length === 0
+    ) {
+      return [];
+    }
+    return [
+      {
+        name: subcommand.name.trim(),
+        aliases: Array.isArray(subcommand.aliases)
+          ? subcommand.aliases.flatMap((alias) =>
+              typeof alias === "string" && alias.trim().length > 0
+                ? [alias.trim()]
+                : [],
+            )
+          : [],
+      },
+    ];
+  });
+}
+
+/** Walk canonical Commander paths and retain alias edges and namespace parents. */
+function collectRegisteredCliCommands(loadHelp) {
+  const registered = new Set();
+  const parents = new Set();
+  const aliases = new Map();
+  const queue = [[]];
+  while (queue.length > 0) {
+    const parentPath = queue.shift();
+    const parent = parentPath.join(" ");
+    const runtimeActions = RUNTIME_POSITIONAL_ACTIONS.get(parent);
+    if (runtimeActions) {
+      for (const action of runtimeActions) registered.add(`${parent} ${action}`);
+      continue;
+    }
+    for (const subcommand of normalizeLiveHelpSubcommands(loadHelp(parentPath))) {
+      const childPath = [...parentPath, subcommand.name];
+      const child = childPath.join(" ");
+      registered.add(child);
+      parents.add(parent);
+      const childAliases = aliases.get(child) ?? new Set();
+      for (const alias of subcommand.aliases) {
+        childAliases.add([...parentPath, alias].join(" "));
+      }
+      aliases.set(child, childAliases);
+      if (!(parentPath.length === 0 && subcommand.name === "help")) {
+        queue.push(childPath);
+      }
+    }
+  }
+  return { registered, parents, aliases };
+}
+
+/** Expand direct and chained Commander aliases across every descendant path. */
+function expandRegisteredCommandAliases(registered, aliases) {
+  for (const command of registered) {
+    for (const [canonical, aliasPaths] of aliases) {
+      if (command !== canonical && !command.startsWith(`${canonical} `)) {
+        continue;
+      }
+      for (const alias of aliasPaths) {
+        registered.add(`${alias}${command.slice(canonical.length)}`);
+      }
+    }
+  }
+}
+
+/**
+ * Traverse live Commander registrations without using the declared destination
+ * or positional-contract catalogs. Positional dispatchers are added from the
+ * runtime validators that actually accept their action tokens.
+ */
+export function collectLiveCliCommandPaths(
+  loadHelp = readLiveCliHelp,
+  activePackageCommands = [],
+) {
+  const coreTopLevelCommands = new Set(
+    normalizeLiveHelpSubcommands(loadHelp([], true)).map(({ name }) => name),
+  );
+  const { registered, parents, aliases } = collectRegisteredCliCommands(loadHelp);
+  expandRegisteredCommandAliases(registered, aliases);
+  const observed = new Set(activePackageCommands);
+  for (const command of registered) {
+    if (
+      coreTopLevelCommands.has(command.split(" ")[0]) ||
+      !parents.has(command)
+    ) {
+      observed.add(command);
+    }
+  }
+  return [...observed].sort((left, right) => left.localeCompare(right));
+}
 
 /** Report duplicate names because MCP clients address tools by unique name. */
 function findDuplicateMcpTools(toolNames) {
@@ -187,11 +325,24 @@ const raw = execFileSync(
   },
 );
 const contracts = JSON.parse(raw);
-const commands = Array.isArray(contracts.command_summaries)
-  ? contracts.command_summaries
-      .map((summary) => summary?.command)
-      .filter((command) => typeof command === "string")
+const packageOwnedCommandSet = new Set(
+  PM_COMMAND_DESTINATION_CONTRACTS.filter(
+    ({ disposition }) => disposition === "package_owned",
+  ).map(({ command }) => command),
+);
+const activePackageCommands = Array.isArray(contracts.command_summaries)
+  ? contracts.command_summaries.flatMap((summary) =>
+      Object(summary) === summary &&
+      typeof summary.command === "string" &&
+      packageOwnedCommandSet.has(summary.command)
+        ? [summary.command]
+        : [],
+    )
   : [];
+const commands = collectLiveCliCommandPaths(
+  readLiveCliHelp,
+  activePackageCommands,
+);
 const grammarReport = verifyPmCliGrammar(commands, PM_COMMAND_ALIAS_CONTRACTS);
 const observedPositionalContracts = Array.isArray(
   contracts.grammar_contracts?.positional_signatures,

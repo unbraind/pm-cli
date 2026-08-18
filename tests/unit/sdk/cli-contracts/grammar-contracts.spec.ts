@@ -12,8 +12,10 @@ import {
 import {
   PM_COMMAND_ALIAS_CONTRACTS,
   renderPmCommandAliasMigrationHint,
+  resolvePmPositionalActionFlagContracts,
   resolvePmCommandAlias,
 } from "../../../../src/sdk/cli-contracts.js";
+import { WORKSPACE_SNAPSHOT_ACTIONS } from "../../../../src/sdk/workspace-snapshot.js";
 
 describe("CLI noun-verb grammar contracts", () => {
   it("maps every checked-in command exactly once and keeps alias targets live", () => {
@@ -159,6 +161,13 @@ describe("CLI noun-verb grammar contracts", () => {
       "Deprecated command `list-open`; use `pm list --status open`.",
     );
     expect(resolvePmCommandAlias("unknown")).toBeUndefined();
+    expect(resolvePmCommandAlias(" packages scaffold ")).toMatchObject({
+      canonical: "packages init",
+      canonical_argv: ["packages", "init"],
+      lifecycle: "permanent",
+      hidden: false,
+      registration: "commander",
+    });
   });
 
   it("fails when visible top-level growth exceeds the committed ceiling", () => {
@@ -235,6 +244,32 @@ describe("CLI noun-verb grammar contracts", () => {
       )?.example,
     ).toBe("pm assurance apply software-delivery --owner <pm-item-id>");
     expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.filter(
+        ({ parent }) => parent === "workspace snapshot",
+      ).map(({ action }) => action),
+    ).toEqual(WORKSPACE_SNAPSHOT_ACTIONS);
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.find(
+        ({ command }) => command === "workspace snapshot restore",
+      ),
+    ).toMatchObject({
+      slots: [expect.objectContaining({ name: "target", required: true })],
+      accepted_flags: ["--author", "--dry-run", "--force", "--message"],
+    });
+    expect(
+      PM_COMMAND_POSITIONAL_CONTRACTS.find(
+        ({ command }) => command === "files lookup",
+      ),
+    ).toMatchObject({
+      slots: [
+        expect.objectContaining({
+          name: "paths",
+          required: true,
+          variadic: true,
+        }),
+      ],
+    });
+    expect(
       PM_POSITIONAL_ACTION_CONTRACTS.find(
         ({ command }) => command === "plan complete-step",
       )?.description,
@@ -248,6 +283,19 @@ describe("CLI noun-verb grammar contracts", () => {
       new Set(PM_COMMAND_POSITIONAL_CONTRACTS.map(({ command }) => command))
         .size,
     ).toBe(PM_COMMAND_POSITIONAL_CONTRACTS.length);
+    expect(() =>
+      resolvePmPositionalActionFlagContracts([
+        {
+          command: "synthetic action",
+          parent: "synthetic" as never,
+          action: "action",
+          slots: [],
+          accepted_flags: [],
+          description: "Synthetic action",
+          example: "pm synthetic action",
+        },
+      ]),
+    ).toThrow("has no flag-contract index for synthetic");
   });
 
   it("fails closed for missing, stale, arity, and shape-budget drift", () => {

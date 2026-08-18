@@ -705,11 +705,9 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
   ) {
     return true;
   }
-  if (budget.kind === "discovery" && !isNonNegativeFinite(budget.max_bytes)) {
-    return true;
-  }
   if (
     requireAnswerRatchet &&
+    budget.kind === "answer" &&
     (!isNonNegativeFinite(budget.max_bytes) ||
       !isNonNegativeFinite(budget.max_estimated_tokens) ||
       budget.max_estimated_tokens !== Math.ceil(budget.max_bytes / 4))
@@ -717,7 +715,10 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
     return true;
   }
   if (budget.kind === "discovery") {
-    return false;
+    return (
+      !isNonNegativeFinite(budget.max_bytes) ||
+      !isNonNegativeFinite(budget.max_estimated_tokens)
+    );
   }
   if (
     typeof budget.command !== "string" ||

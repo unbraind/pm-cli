@@ -800,6 +800,14 @@
       ],
       "package_version": "2026.8.18",
       "reason": "Extend public contract receipts with additive positional grammar metadata while preserving all existing fields and runtime behavior."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmPositionalActionContract",
+        "signature ./sdk/contracts:PmPositionalActionContract"
+      ],
+      "package_version": "2026.8.18",
+      "reason": "Widen positional-action parent union for governed workspace snapshot actions; existing values and behavior remain compatible"
     }
   ],
   "entrypoints": {
@@ -10062,7 +10070,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmPositionalActionContract",
-          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
+          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\" | \"workspace snapshot\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
         },
         {
           "classification": "supported",
@@ -15724,6 +15732,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "WORKSPACE_SNAPSHOT_ACTIONS",
+          "signature": "readonly [\"create\", \"list\", \"inspect\", \"restore\", \"delete\"]"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceAuditEventOptions",
           "signature": "export interface WorkspaceAuditEventOptions { pmRoot: string; op: string; author: string; context: Record<string, unknown>; message: string; lockTtlSeconds: number; lockWaitMs: number; }"
@@ -18738,7 +18752,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmPositionalActionContract",
-          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
+          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\" | \"workspace snapshot\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
         },
         {
           "classification": "contract_data",

@@ -115,7 +115,7 @@ export interface PmCommandPositionalContract {
 /** Discoverable positional action projected through help, contracts, and completion. */
 export interface PmPositionalActionContract extends PmCommandPositionalContract {
   /** Commander command that dispatches the action positionally. */
-  parent: "assurance" | "plan";
+  parent: "assurance" | "plan" | "workspace snapshot";
   /** Literal action token accepted in the parent's first positional slot. */
   action: string;
   /** Canonical flags applicable to this action-specific view. */
@@ -403,6 +403,51 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
         "Analyze bounded defect-recurrence risk for a proposed change.",
       example: 'pm assurance risk --definition \'{"change":{"files":[]}}\'',
     },
+    {
+      command: "workspace snapshot create",
+      parent: "workspace snapshot",
+      action: "create",
+      slots: [positionalSlot("name", "string", false)],
+      accepted_flags: [],
+      description: "Capture authoritative tracker state as an immutable snapshot.",
+      example: "pm workspace snapshot create before-migration",
+    },
+    {
+      command: "workspace snapshot list",
+      parent: "workspace snapshot",
+      action: "list",
+      slots: [],
+      accepted_flags: [],
+      description: "List immutable workspace snapshots and named references.",
+      example: "pm workspace snapshot list",
+    },
+    {
+      command: "workspace snapshot inspect",
+      parent: "workspace snapshot",
+      action: "inspect",
+      slots: [positionalSlot("target", "string", true)],
+      accepted_flags: [],
+      description: "Inspect one workspace snapshot target.",
+      example: "pm workspace snapshot inspect before-migration",
+    },
+    {
+      command: "workspace snapshot restore",
+      parent: "workspace snapshot",
+      action: "restore",
+      slots: [positionalSlot("target", "string", true)],
+      accepted_flags: ["--author", "--dry-run", "--force", "--message"],
+      description: "Restore an immutable workspace snapshot with explicit recovery controls.",
+      example: "pm workspace snapshot restore before-migration --dry-run",
+    },
+    {
+      command: "workspace snapshot delete",
+      parent: "workspace snapshot",
+      action: "delete",
+      slots: [positionalSlot("target", "string", true)],
+      accepted_flags: [],
+      description: "Delete one workspace snapshot target.",
+      example: "pm workspace snapshot delete before-migration",
+    },
   ];
 
 const EXPLICIT_POSITIONAL_SLOTS = new Map<
@@ -450,7 +495,14 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
     "extension",
     [positionalSlot("target", "string", false, { polymorphic: true })],
   ],
+  ["extension list", []],
+  ["extension scaffold", [positionalSlot("target", "string", true)]],
   ["files", [ITEM_ID]],
+  ["files discover", [ITEM_ID]],
+  [
+    "files lookup",
+    [positionalSlot("paths", "string", true, { variadic: true })],
+  ],
   ["focus", [OPTIONAL_ITEM_ID]],
   ["get", [ITEM_ID]],
   [
@@ -489,10 +541,14 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
     "package",
     [positionalSlot("target", "string", false, { polymorphic: true })],
   ],
+  ["package list", []],
+  ["package scaffold", [positionalSlot("target", "string", true)]],
   [
     "packages",
     [positionalSlot("target", "string", false, { polymorphic: true })],
   ],
+  ["packages list", []],
+  ["packages scaffold", [positionalSlot("target", "string", true)]],
   ["pause-task", [ITEM_ID]],
   [
     "plan",
@@ -652,6 +708,10 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "update",
       "update-many",
     ]),
+    ...destinationRows("item", "item files", "consolidation", "pm-ya7x55", [
+      "files discover",
+      "files lookup",
+    ]),
     ...destinationRows("list", "list", "target_noun", "pm-pfqi", ["list"]),
     ...destinationRows("list", "list --group-by", "consolidation", "pm-xkgq", [
       "aggregate",
@@ -741,9 +801,11 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "package explore",
       "package init",
       "package install",
+      "package list",
       "package manage",
       "package migrate",
       "package reload",
+      "package scaffold",
       "package uninstall",
     ]),
     ...destinationRows("package", "package", "consolidation", "pm-tnud", [
@@ -758,9 +820,11 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "extension explore",
       "extension init",
       "extension install",
+      "extension list",
       "extension manage",
       "extension migrate",
       "extension reload",
+      "extension scaffold",
       "extension uninstall",
       "install",
       "packages",
@@ -774,9 +838,11 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "packages explore",
       "packages init",
       "packages install",
+      "packages list",
       "packages manage",
       "packages migrate",
       "packages reload",
+      "packages scaffold",
       "packages uninstall",
       "upgrade",
     ]),

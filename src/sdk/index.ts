@@ -89,6 +89,7 @@ export {
 } from "./workspace-recipe.js";
 export {
   SNAPSHOT_SCHEMA,
+  WORKSPACE_SNAPSHOT_ACTIONS,
   createWorkspaceSnapshot,
   deleteWorkspaceSnapshot,
   inspectWorkspaceSnapshot,

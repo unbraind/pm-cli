@@ -27,6 +27,14 @@ import { withHostEnvironmentBoundary } from "./environment/host-environment-erro
 /** Current content-addressed workspace snapshot manifest schema identifier. */
 export const SNAPSHOT_SCHEMA =
   "https://schema.unbrained.dev/pm/workspace-snapshot/v1";
+/** Workspace snapshot action tokens accepted by the SDK and CLI dispatcher. */
+export const WORKSPACE_SNAPSHOT_ACTIONS = [
+  "create",
+  "list",
+  "inspect",
+  "restore",
+  "delete",
+] as const;
 const SNAPSHOT_RUNTIME_PATH = path.join("runtime", "workspace-snapshots");
 const EXCLUDED_ROOT_NAMES = new Set([
   "checkpoints",

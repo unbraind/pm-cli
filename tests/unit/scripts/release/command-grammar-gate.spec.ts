@@ -17,11 +17,16 @@ afterEach(() => {
 
 async function runGrammarGate(
   commandSummaries: unknown,
-  options: { positionalSignatures?: unknown } = {},
+  options: {
+    rootHelpRows?: readonly unknown[];
+    positionalSignatures?: unknown;
+    runtimeCommands?: readonly string[];
+  } = {},
 ): Promise<{
   report: {
     ok: boolean;
     command_count: number;
+    findings: Array<{ code: string; spelling: string }>;
     positionals: {
       ok: boolean;
       findings: Array<{ code: string; command: string }>;
@@ -58,16 +63,48 @@ async function runGrammarGate(
           slots: Array.isArray(positionals) ? positionals : [],
         }))
     : undefined;
-  const execFileSync = vi.fn(() =>
-    JSON.stringify({
-      command_summaries: commandSummaries,
-      grammar_contracts: {
-        positional_signatures: Object.hasOwn(options, "positionalSignatures")
-          ? options.positionalSignatures
-          : derivedPositionalSignatures,
-      },
-    }),
-  );
+  const runtimeCommands =
+    options.runtimeCommands ??
+    PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command);
+  const coreRuntimeCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
+    ({ disposition }) => disposition !== "package_owned",
+  ).map(({ command }) => command);
+  const execFileSync = vi.fn((_executable: string, args: string[]) => {
+    if (args.includes("contracts")) {
+      return JSON.stringify({
+        command_summaries: commandSummaries,
+        grammar_contracts: {
+          positional_signatures: Object.hasOwn(options, "positionalSignatures")
+            ? options.positionalSignatures
+            : derivedPositionalSignatures,
+        },
+      });
+    }
+    const helpIndex = args.indexOf("help");
+    const budgetIndex = args.indexOf("--output-budget");
+    const parentPath = args.slice(helpIndex + 1, budgetIndex);
+    const parent = parentPath.join(" ");
+    const prefix = parent.length > 0 ? `${parent} ` : "";
+    const helpCommands = args.includes("--no-extensions")
+      ? coreRuntimeCommands
+      : runtimeCommands;
+    const subcommands: unknown[] = [
+      ...new Set(
+        helpCommands.flatMap((command) => {
+          if (!command.startsWith(prefix)) return [];
+          const remainder = command.slice(prefix.length);
+          const name = remainder.split(" ")[0];
+          return typeof name === "string" && name.length > 0 ? [name] : [];
+        }),
+      ),
+    ].map((name) => ({
+      name,
+      aliases:
+        name === "context" ? ["ctx"] : name === "package" ? ["packages"] : [],
+    }));
+    if (parent.length === 0) subcommands.push(...(options.rootHelpRows ?? []));
+    return JSON.stringify({ subcommands });
+  });
   vi.doMock("node:child_process", async (importOriginal) => ({
     ...(await importOriginal<typeof childProcess>()),
     execFileSync,
@@ -98,6 +135,7 @@ async function runGrammarGate(
     report: JSON.parse(output) as {
       ok: boolean;
       command_count: number;
+      findings: Array<{ code: string; spelling: string }>;
       positionals: {
         ok: boolean;
         findings: Array<{ code: string; command: string }>;
@@ -128,7 +166,16 @@ describe("command grammar gate", () => {
       null,
       { command: 42 },
       {},
-    ]);
+    ], {
+      rootHelpRows: [
+        null,
+        {},
+        { name: 42 },
+        { name: " " },
+        { name: "context", aliases: "ctx" },
+        { name: "context", aliases: [null, "", "ctx"] },
+      ],
+    });
     expect(result.report).toMatchObject({
       ok: true,
       command_count: PM_COMMAND_DESTINATION_CONTRACTS.length,
@@ -190,7 +237,29 @@ describe("command grammar gate", () => {
   it("fails closed when the contracts response omits its summary array", async () => {
     const result = await runGrammarGate(undefined);
     expect(result.report.ok).toBe(false);
-    expect(result.report.command_count).toBe(0);
+    expect(result.report.command_count).toBe(
+      PM_COMMAND_DESTINATION_CONTRACTS.length,
+    );
+    expect(result.report.positionals.ok).toBe(false);
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("fails closed when a declared contract has no live CLI registration", async () => {
+    const result = await runGrammarGate(liveCommandSummaries, {
+      runtimeCommands: PM_COMMAND_DESTINATION_CONTRACTS.map(
+        ({ command }) => command,
+      ).filter((command) => command !== "create"),
+    });
+    expect(result.report).toMatchObject({
+      ok: false,
+      command_count: PM_COMMAND_DESTINATION_CONTRACTS.length - 1,
+      findings: [
+        expect.objectContaining({
+          code: "stale_destination",
+          spelling: "create",
+        }),
+      ],
+    });
     expect(result.exitCode).toBe(1);
   });
 
@@ -249,6 +318,9 @@ describe("command grammar gate", () => {
     const result = await runGrammarGate(
       liveCommandSummaries.filter(({ command }) => command !== inactiveCommand),
       {
+        runtimeCommands: PM_COMMAND_DESTINATION_CONTRACTS.map(
+          ({ command }) => command,
+        ).filter((command) => command !== inactiveCommand),
         positionalSignatures: PM_COMMAND_POSITIONAL_CONTRACTS.map(
           ({ command, slots }) => ({ command, slots }),
         ),

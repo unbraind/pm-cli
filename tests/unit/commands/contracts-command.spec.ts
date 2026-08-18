@@ -1241,15 +1241,27 @@ describe("contracts command runtime", () => {
   });
 
   it("contracts every workspace snapshot command path", async () => {
-    for (const command of [
-      "workspace",
-      "workspace snapshot",
-      "workspace snapshot create",
-      "workspace snapshot list",
-      "workspace snapshot inspect",
-      "workspace snapshot restore",
-      "workspace snapshot delete",
-    ]) {
+    const inheritedFlags = [
+      { flag: "--dry-run" },
+      { flag: "--force" },
+      { flag: "--author" },
+      { flag: "--message" },
+    ];
+    const restoreFlags = [
+      { flag: "--author" },
+      { flag: "--dry-run" },
+      { flag: "--force" },
+      { flag: "--message" },
+    ];
+    for (const [command, flags] of [
+      ["workspace", inheritedFlags],
+      ["workspace snapshot", inheritedFlags],
+      ["workspace snapshot create", []],
+      ["workspace snapshot list", []],
+      ["workspace snapshot inspect", []],
+      ["workspace snapshot restore", restoreFlags],
+      ["workspace snapshot delete", []],
+    ] as const) {
       const result = await runContracts(
         { command, flagsOnly: true },
         GLOBAL_OPTIONS,
@@ -1259,12 +1271,7 @@ describe("contracts command runtime", () => {
         expect.objectContaining({
           command,
           provider: "core",
-          flags: [
-            { flag: "--dry-run" },
-            { flag: "--force" },
-            { flag: "--author" },
-            { flag: "--message" },
-          ],
+          flags,
         }),
       ]);
     }

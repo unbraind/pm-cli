@@ -1835,6 +1835,11 @@ const PLAN_FLAG_CONTRACT_INDEX = indexCliFlagContracts(PLAN_FLAG_CONTRACTS);
 const ASSURANCE_FLAG_CONTRACT_INDEX = indexCliFlagContracts(
   ASSURANCE_FLAG_CONTRACTS,
 );
+const POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT = new Map([
+  ["assurance", ASSURANCE_FLAG_CONTRACT_INDEX],
+  ["plan", PLAN_FLAG_CONTRACT_INDEX],
+  ["workspace snapshot", indexCliFlagContracts(WORKSPACE_FLAG_CONTRACTS)],
+]);
 
 /** Resolve every positional action's accepted flags against one parent contract. */
 export function resolvePmPositionalActionFlagContracts(
@@ -1842,10 +1847,12 @@ export function resolvePmPositionalActionFlagContracts(
     PM_POSITIONAL_ACTION_CONTRACTS,
 ): Array<readonly [string, CliFlagContract[]]> {
   return actions.map(({ command, parent, accepted_flags: acceptedFlags }) => {
-    const parentFlagIndex =
-      parent === "plan"
-        ? PLAN_FLAG_CONTRACT_INDEX
-        : ASSURANCE_FLAG_CONTRACT_INDEX;
+    const parentFlagIndex = POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT.get(parent);
+    if (!parentFlagIndex) {
+      throw new Error(
+        `Positional action ${command} has no flag-contract index for ${parent}.`,
+      );
+    }
     const selected = acceptedFlags.map((acceptedFlag) => {
       const matches = parentFlagIndex.get(acceptedFlag) ?? [];
       if (matches.length !== 1) {
@@ -1975,6 +1982,7 @@ const EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND = new Map<
   ["reload", EXTENSION_RELOAD_FLAG_CONTRACTS],
   ["doctor", EXTENSION_DOCTOR_FLAG_CONTRACTS],
   ["catalog", EXTENSION_CATALOG_FLAG_CONTRACTS],
+  ["list", EXTENSION_CATALOG_FLAG_CONTRACTS],
   ["adopt", EXTENSION_ADOPT_FLAG_CONTRACTS],
   ["adopt-all", EXTENSION_ADOPT_ALL_FLAG_CONTRACTS],
   ["activate", EXTENSION_ACTIVATE_FLAG_CONTRACTS],
@@ -2008,6 +2016,7 @@ export function hasSubcommandFlagContractsForCommand(
     lifecycleSubcommand !== undefined &&
     extraParts.length === 0 &&
     (lifecycleSubcommand === "init" ||
+      lifecycleSubcommand === "scaffold" ||
       EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND.has(lifecycleSubcommand))
   );
 }
@@ -2017,7 +2026,7 @@ function resolveExtensionLifecycleFlagContracts(
   rootCommand: string,
   lifecycleSubcommand: string,
 ): CliFlagContract[] {
-  if (lifecycleSubcommand === "init") {
+  if (lifecycleSubcommand === "init" || lifecycleSubcommand === "scaffold") {
     // `--declarative` is package-only, so `package init` / `packages init` carry it.
     return rootCommand === "extension"
       ? EXTENSION_INIT_FLAG_CONTRACTS

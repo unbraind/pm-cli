@@ -5522,6 +5522,7 @@ describe("CLI rich help content", () => {
       expect(rootPayload.subcommands).toEqual([
         { name: "alpha", aliases: [], description: "Alpha command" },
         { name: "beta", aliases: ["b"], description: "Beta command" },
+        { name: "help", aliases: [], description: "display help for command" },
         { name: "legacy", aliases: [], description: "Legacy args" },
       ]);
 

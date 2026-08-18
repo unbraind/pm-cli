@@ -307,7 +307,10 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
 function buildHelpSubcommandSummaries(
   command: Command,
 ): HelpSubcommandSummary[] {
-  return command.commands
+  return command
+    .createHelp()
+    .visibleCommands(command)
+    .filter((entry) => entry.name() !== "help" || command.parent === null)
     .map((entry) => ({
       name: entry.name().trim(),
       aliases: commandAliases(entry),

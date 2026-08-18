@@ -1054,6 +1054,55 @@ describe("scripts/release/token-budget-gate", () => {
     ).toThrow(
       "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
     );
+
+    const independentDiscoveryRatchet = {
+      version: 3,
+      metric: "utf8_bytes",
+      token_estimate: "ceil(bytes / 4)",
+      fixture: "test",
+      budgets: [
+        {
+          id: "discovery",
+          args: ["--help"],
+          kind: "discovery" as const,
+          scale_tier: "static",
+          baseline_bytes: 10,
+          baseline_estimated_tokens: 3,
+          max_bytes: 10,
+          max_estimated_tokens: 4,
+        },
+      ],
+    };
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "discovery",
+            args: ["--help"],
+            kind: "discovery",
+            bytes: 10,
+            estimated_tokens: 4,
+          },
+        ],
+        independentDiscoveryRatchet,
+      ),
+    ).toEqual([]);
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "discovery",
+            args: ["--help"],
+            kind: "discovery",
+            bytes: 10,
+            estimated_tokens: 5,
+          },
+        ],
+        independentDiscoveryRatchet,
+      ),
+    ).toEqual([
+      "discovery: 5 estimated tokens exceeds budget 4 tokens (--help)",
+    ]);
   });
 
   it("fails when the unbounded negative control no longer exceeds the default contract", async () => {

@@ -180,6 +180,17 @@ describe("structured help command-path resolution", () => {
     ]);
   });
 
+  it("lists only visible Commander commands and includes built-in help", () => {
+    const root = new Command("pm");
+    root.command("visible").description("Visible command");
+    root.command("internal", { hidden: true }).description("Internal command");
+
+    expect(_testOnly.buildHelpSubcommandSummaries(root)).toEqual([
+      expect.objectContaining({ name: "help" }),
+      expect.objectContaining({ name: "visible" }),
+    ]);
+  });
+
   it("filters action options through aliases and renders every slot shape", () => {
     const projection = _testOnly.buildPositionalActionHelpProjection(
       {

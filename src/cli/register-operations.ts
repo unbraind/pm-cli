@@ -23,6 +23,7 @@ import {
   listWorkspaceSnapshots,
   planWorkspaceSnapshotRestore,
   restoreWorkspaceSnapshotWithRecovery,
+  WORKSPACE_SNAPSHOT_ACTIONS,
 } from "../sdk/workspace-snapshot.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";
@@ -556,15 +557,11 @@ async function runWorkspaceSnapshotAction(
   const globalOptions = getGlobalOptions(command);
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
   const normalizedAction = action.trim().toLowerCase();
-  if (
-    !["create", "list", "inspect", "restore", "delete"].includes(
-      normalizedAction,
-    )
-  ) {
+  if (!WORKSPACE_SNAPSHOT_ACTIONS.some((entry) => entry === normalizedAction)) {
     throw createUnknownSubcommandError({
       command_path: "workspace snapshot",
       token: action,
-      allowed: ["create", "list", "inspect", "restore", "delete"],
+      allowed: WORKSPACE_SNAPSHOT_ACTIONS,
       display_name: "workspace snapshot",
       token_kind: "action",
       examples: [
