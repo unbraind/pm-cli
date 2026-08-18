@@ -144,6 +144,28 @@ describe("validate read-output continuation", () => {
     });
   });
 
+  it("declares only non-overlapping diagnostic paths when rows contain arrays", () => {
+    const result = diagnosticResult("missing_resolution_rows");
+    const diagnosticRows = (
+      result.checks as Array<{
+        details: { missing_resolution_rows: Array<Record<string, unknown>> };
+      }>
+    )[0]!.details.missing_resolution_rows;
+    diagnosticRows[0]!.related_ids = ["pm-related-a", "pm-related-b"];
+
+    expect(
+      applyReadOutputDimensions(
+        "validate",
+        { outputLimit: 40, outputBudget: "unbounded" },
+        result,
+      ),
+    ).toMatchObject({
+      row_contract: {
+        row_keys: ["warnings", "checks.0.details.missing_resolution_rows"],
+      },
+    });
+  });
+
   it("rejects non-numeric array segments while resolving declared rows", () => {
     expect(
       readOutputRowCollections({

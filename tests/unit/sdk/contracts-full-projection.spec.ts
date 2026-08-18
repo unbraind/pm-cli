@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { runContracts } from "../../../src/sdk/cli-contracts/runtime-contracts.js";
+import {
+  _testOnlyContractsCommand,
+  runContracts,
+} from "../../../src/sdk/cli-contracts/runtime-contracts.js";
 
 const GLOBAL = {
   json: true,
@@ -74,8 +77,26 @@ describe("full contracts projection monotonicity", () => {
       '"description":"Maximum number of newest assurance verdicts returned.","examples":[10,25]',
     );
     expect(schema).toContain('"required":["lifetime","retire_reason"]');
-    expect(schema).toContain(
-      '"retire_reason":{"type":"string","minLength":1}',
-    );
+    expect(schema).toContain('"retire_reason":{"type":"string","minLength":1}');
+  });
+
+  it("controls summary format budgets and intent provenance independently", () => {
+    const formatOnly = _testOnlyContractsCommand.buildCommandSummarySurface(
+      ["contracts"],
+      [],
+      { includeFormatBudgets: true, includeIntentProvenance: false },
+    )[0]!;
+    expect(formatOnly.default_max_estimated_tokens_by_format).toBeDefined();
+    expect(formatOnly.intent_source).toBeUndefined();
+
+    const provenanceOnly = _testOnlyContractsCommand.buildCommandSummarySurface(
+      ["contracts"],
+      [],
+      { includeFormatBudgets: false, includeIntentProvenance: true },
+    )[0]!;
+    expect(
+      provenanceOnly.default_max_estimated_tokens_by_format,
+    ).toBeUndefined();
+    expect(provenanceOnly.intent_source).toBe("command");
   });
 });

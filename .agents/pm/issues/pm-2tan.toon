@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,help,plan
 created_at: "2026-07-15T20:00:17.934Z"
-updated_at: "2026-08-18T12:14:05.886Z"
-closed_at: "2026-08-18T12:14:04.677Z"
-completed_at: "2026-08-18T12:14:04.677Z"
+updated_at: "2026-08-18T12:52:51.524Z"
+closed_at: "2026-08-18T12:52:50.642Z"
+completed_at: "2026-08-18T12:52:50.642Z"
 author: codex-audit-20260715
 estimated_minutes: 120
 acceptance_criteria: "pm plan create --help and --help --json resolve to action-specific help or an equally precise positional-action help view; pm help plan create and command-scoped contracts expose the same effective flags; shell completion advertises plan actions; pm plan --help no longer reports an empty subcommands array while describing subcommands only in a positional argument; documented pm plan create examples remain valid; regression tests cover help JSON, contracts, completion, and unknown-command recovery"
@@ -17,7 +17,7 @@ risk: low
 confidence: high
 resolution: All positional plan/assurance actions and standard commands expose consistent full-path structured help; compact contracts retain action discovery while targeted/full projections restore exact format budgets.
 expected_result: "Agents can inspect every positional plan/assurance action before execution through direct help, generic help, completion, or command contracts without an unknown-command detour."
-actual_result: "Bounded default contracts retain all 27 action paths while omitting repeated detail; command-scoped/full output restores it, standard help includes resolved paths, and the search-active discovery ratchet now measures all 27 virtual action help paths across 99 surfaces."
+actual_result: "Bounded default contracts retain all 27 action paths while omitting repeated detail; command-scoped/full output restores it, standard help includes resolved paths, and independently named format-budget, intent-provenance, and positional-signature switches prevent projection coupling."
 dependencies[9]:
   - id: pm-gdi7
     kind: related
@@ -66,7 +66,7 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-07-15T20:00:17.934Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for plan create help unknown command positional action contracts found only broad roadmap and historical audit entries with no focused active or terminal owner."
   "2026-08-04T09:18:06.510Z","harness:codex","Fresh agent-recovery evidence 2026-08-04: following the apparent plan-link contract as pm plan link <plan> --link <item> produced a recovery error requiring an undocumented positional step reference. The generic plan help reports usage [subcommand] [id] [stepRef] but its sole example is pm init, so it does not demonstrate link syntax. After discovering the hidden positional requirement, pm plan link pm-gzyt2j plan-step-002 --link ... succeeded. This remains a live avoidable agent stall."
   "2026-08-04T09:34:37.917Z","harness:codex","Fresh contract/runtime parity evidence 2026-08-04: pm contracts --command update --flags-only --json advertises extension-provided --allow-audit-update and --allow-audit-dep-update as supported update flags, but invoking pm update pm-gzyt2j ... --allow-audit-update is rejected by Commander as Unknown option. Retrying the same update without the advertised flag succeeds. Action-specific help/contracts must describe the actually registered command path, including extension-injected flags, or agents cannot trust the prescribed runtime contract discovery workflow."
@@ -83,6 +83,7 @@ comments[16]{created_at,author,text}:
   "2026-08-18T11:12:19.579Z","harness:codex","Fix verification: regenerated the governed discovery baseline against the same final package topology as hosted smokes (pm-changelog plus search-advanced). The ratchet now covers 107 surfaces, measures context at 2,967 bytes with a 3,264-byte ceiling, and retains all 27 virtual action paths. Local pnpm quality:token-surface passes; the broader baseline differences reflect previously unrecorded active package commands and exact contracts/MCP payloads rather than deleted coverage."
   "2026-08-18T11:14:26.459Z","harness:codex","Complete-chain evidence: pnpm quality:context-eval passes after build; repository-context-quality returns pass for all four required assertions with negative controls proven, and the final agent token-surface gate passes all 107 surfaces."
   "2026-08-18T12:13:58.237Z","harness:codex","Evidence: structured parent help now publishes each concrete/virtual subcommand name once, preserving the registered command description on collisions. Text help assertions require the exact --acceptance-criteria flag and executable pm plan create --title example. Focused help suites passed and repository command grammar/context/token gates passed with 158 destinations, 27 positional actions, and 107 measured discovery surfaces."
+  "2026-08-18T12:52:40.319Z","harness:codex","Final review evidence: command-summary projection now uses named independent switches for format budgets, intent provenance, and positional signatures instead of one boolean with coupled semantics. A focused regression proves format budgets and intent provenance can be toggled independently. Full lint and 521-file/7,555-test coverage passed at exact 100/100/100/100; contracts, SDK surface, context-quality, 107-surface token ratchet, and defect-evidence gates pass."
 learnings[1]{created_at,author,text}:
   "2026-08-18T08:53:13.746Z","harness:codex","Compact discovery and heavy detail are independent contracts: summary output must retain action paths, while positional signature arrays remain a recoverable full-output field governed by token budgets and omission receipts."
 files[17]{path,scope,note}:
@@ -114,7 +115,7 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Current documented plan create workflow
   docs/COMMANDS.md,project,Plan grammar and examples
-close_reason: "Parent and action help now remain precise, executable, and duplicate-free across registered and virtual positional actions."
+close_reason: "Implemented independently controllable, contract-tested action-summary projections; complete lint, exact coverage, generated contracts, SDK surface, context-quality, and token gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

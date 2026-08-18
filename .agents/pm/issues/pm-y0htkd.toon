@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:contracts","area:mcp",cross-surface-parity,defect-recurrence
 created_at: "2026-08-10T05:53:35.894Z"
-updated_at: "2026-08-18T12:14:09.394Z"
-closed_at: "2026-08-18T12:14:08.496Z"
-completed_at: "2026-08-18T12:14:08.496Z"
+updated_at: "2026-08-18T12:52:55.246Z"
+closed_at: "2026-08-18T12:52:54.450Z"
+completed_at: "2026-08-18T12:52:54.450Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every MCP declared key resolves to a CLI flag, via a shared name or a registered alias; A parity gate fails when an MCP declared key has no CLI flag or alias that accepts it; The unknown-option recovery names the accepted flag for a known cross-surface synonym"
@@ -19,7 +19,7 @@ severity: medium
 repro_steps: "1. Read the pm_update declared keys, which list linkedFile and linkedTest  2. Run pm update <id> --linked-file path=a.ts  3. Refusal: Unknown option --linked-file"
 resolution: "The SDK exports deterministic MCP-to-CLI and positional-action flag parity; all 43 create parameters and all 48 update parameters remain executable with zero findings, and structured help folds linked-resource aliases into their canonical options."
 expected_result: "One name per concept across MCP and CLI, or an alias so a contract-derived name always parses."
-actual_result: Mixed --file/--linked-file and --test/--linked-test values survive create and update losslessly; JSON help publishes the alias spellings; exact unknown-option acceptance proves malformed --linked-files is rejected.
+actual_result: Mixed --file/--linked-file and --test/--linked-test values survive create and update losslessly; JSON help publishes the alias spellings; the exact unknown-option rejection test proves malformed --linked-files is rejected.
 component: "mcp/server, sdk/cli-contracts, commands/update"
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-6xlyss,discovered_from,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
@@ -28,7 +28,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,related,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,implements,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-18T04:52:00.566Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
   "2026-08-18T06:29:32.670Z","harness:codex","Verification evidence: command grammar assurance proves MCP-to-CLI option parity for all 43 create and 48 update parameters with zero findings; packed npm/npx and Bun/bunx consumers executed --linked-file and --linked-test mutations, Node and Bun narrow SDK imports, action help, and scoped contracts successfully."
   "2026-08-18T06:45:42.746Z","harness:codex","Closeout evidence: create/update linkedFile and linkedTest now map to executable --linked-file/--linked-test aliases and the exported SDK verifier reports zero parity findings across 43 create and 48 update parameters. PM-linked focused execution passed 21/21 tests; packed npx/bunx mutation acceptance and exact full coverage passed. The separate boolean flag_invocations residual is preserved under pm-pcy92t with precise discovered_from provenance."
@@ -38,6 +38,7 @@ comments[9]{created_at,author,text}:
   "2026-08-18T10:45:43.545Z","harness:codex","Late review implementation: alias descriptions now use the structured-help folding prefix; create/update JSON help expose --linked-file and --linked-test under the canonical options; the malformed plural negative control asserts code unknown_option plus exact rejected spelling. Focused verification passes 89/89."
   "2026-08-18T10:56:54.399Z","harness:codex","Final verification evidence: create/update structured help now proves canonical --file/--test flags publish --linked-file/--linked-test aliases; malformed --linked-files is parsed as code=unknown_option with the exact rejected spelling. The same full gate set passed, including 43 create and 48 update parameter parity and exact 100/100/100/100 repository coverage (53,124 lines; 55,035 statements; 11,369 functions; 41,062 branches)."
   "2026-08-18T12:14:00.631Z","harness:codex","Evidence: focused acceptance proves alias-only linkedFile/linkedTest arrays normalize to canonical file/test for both create and update, while empty canonical/alias arrays remain undefined. A disposable initialized project manually accepted --linked-file and --linked-test, and pm get --full returned the canonical file and test records. SDK/MCP parity remains green at 43 create and 48 update parameters."
+  "2026-08-18T12:52:42.839Z","harness:codex","Final review evidence: corrected the acceptance wording through append-only PM history so the malformed plural case is explicitly an unknown-option rejection, not acceptance. The implemented positive contract remains mixed canonical/alias preservation for create and update, with JSON help alias discovery and zero MCP/CLI parity findings across 43 create and 48 update parameters. Full lint and exact repository coverage pass."
 learnings[1]{created_at,author,text}:
   "2026-08-18T08:53:11.802Z","harness:codex",Repeatable aliases are independent Commander option buckets and must be concatenated rather than first-match selected; shared validated contract tables should use direct internal imports so public aggregate routing does not add cold-start work.
 files[11]{path,scope,note}:
@@ -61,7 +62,7 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msyartdk-7oc6df,test,passed,"2026-08-18T06:44:04.816Z","2026-08-18T06:44:19.448Z","2026-08-18T06:44:19.448Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,MCP-to-CLI parity SDK reference
-close_reason: Linked resource aliases now have explicit create/update normalization acceptance for alias-only and empty-array inputs.
+close_reason: Verified executable linked-resource aliases and corrected malformed-option evidence wording through append-only tracker history; parity and complete gates pass.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

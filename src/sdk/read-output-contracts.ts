@@ -1291,9 +1291,19 @@ function attachValidateDiagnosticRowContract(
   ) {
     return result;
   }
-  const diagnosticRowKeys = readOutputBudgetCollections(result)
-    .map(({ path }) => path)
-    .filter((path) => /^checks\.\d+\.details\./u.test(path));
+  const diagnosticCollectionPaths = [
+    ...new Set(
+      readOutputBudgetCollections(result)
+        .map(({ path }) => path)
+        .filter((path) => /^checks\.\d+\.details\./u.test(path)),
+    ),
+  ];
+  const diagnosticRowKeys = diagnosticCollectionPaths.filter(
+    (path) =>
+      !diagnosticCollectionPaths.some(
+        (candidate) => candidate !== path && path.startsWith(`${candidate}.`),
+      ),
+  );
   if (diagnosticRowKeys.length === 0) return result;
   const existingContract = isRecord(result.row_contract)
     ? result.row_contract
@@ -1303,8 +1313,22 @@ function attachValidateDiagnosticRowContract(
         (entry): entry is string => typeof entry === "string",
       )
     : [];
-  const rowKeys = [...new Set([...existingRowKeys, ...diagnosticRowKeys])];
-  return rowKeys.length === existingRowKeys.length
+  const rowKeys = [
+    ...new Set([
+      ...existingRowKeys.filter(
+        (existingPath) =>
+          !diagnosticRowKeys.some(
+            (diagnosticPath) =>
+              diagnosticPath !== existingPath &&
+              (diagnosticPath.startsWith(`${existingPath}.`) ||
+                existingPath.startsWith(`${diagnosticPath}.`)),
+          ),
+      ),
+      ...diagnosticRowKeys,
+    ]),
+  ];
+  return rowKeys.length === existingRowKeys.length &&
+    rowKeys.every((path, index) => path === existingRowKeys[index])
     ? result
     : {
         ...result,

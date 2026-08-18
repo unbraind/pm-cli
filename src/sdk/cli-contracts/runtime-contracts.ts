@@ -2727,8 +2727,13 @@ function summarizeCommandIntent(
 function buildCommandSummarySurface(
   commands: readonly string[],
   extensionContracts: readonly ExtensionCommandContract[] = [],
-  includeFormatBudgets = true,
+  options: {
+    includeFormatBudgets?: boolean;
+    includeIntentProvenance?: boolean;
+  } = {},
 ): CommandSummarySurface[] {
+  const includeFormatBudgets = options.includeFormatBudgets ?? true;
+  const includeIntentProvenance = options.includeIntentProvenance ?? true;
   return [...new Set(commands.map(normalizeCommandPath))]
     .filter((command) => command.length > 0)
     .sort((left, right) => left.localeCompare(right))
@@ -2761,7 +2766,7 @@ function buildCommandSummarySurface(
       return {
         command,
         intent: intent.intent,
-        ...(includeFormatBudgets || intent.intent_source !== "command"
+        ...(includeIntentProvenance || intent.intent_source !== "command"
           ? { intent_source: intent.intent_source }
           : {}),
         ...(flags.length > 0 ? { flags } : {}),
@@ -3033,12 +3038,19 @@ function attachAgentCommandContractsResult(
   result: ContractsResult,
   outputCommands: string[],
   extensionCommandContracts: ExtensionCommandContract[],
-  includePositionalSignatures: boolean,
+  options: {
+    includeFormatBudgets: boolean;
+    includeIntentProvenance: boolean;
+    includePositionalSignatures: boolean;
+  },
 ): void {
   result.command_summaries = buildCommandSummarySurface(
     outputCommands,
     extensionCommandContracts,
-    includePositionalSignatures,
+    {
+      includeFormatBudgets: options.includeFormatBudgets,
+      includeIntentProvenance: options.includeIntentProvenance,
+    },
   );
   result.output_policy = {
     token_estimate: "ceil(utf8_bytes / 4)",
@@ -3053,8 +3065,7 @@ function attachAgentCommandContractsResult(
       PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
     ceiling_raise_requires_pm_item:
       PM_CLI_GRAMMAR_CONTRACT.ceiling_raise_requires_pm_item,
-    positional_shape_budget:
-      PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
+    positional_shape_budget: PM_CLI_GRAMMAR_CONTRACT.positional_shape_budget,
     positional_shape_count: new Set(
       PM_COMMAND_POSITIONAL_CONTRACTS.map(({ slots }) =>
         positionalShapeKey(slots),
@@ -3064,7 +3075,7 @@ function attachAgentCommandContractsResult(
     positional_action_parents: [
       ...new Set(PM_POSITIONAL_ACTION_CONTRACTS.map(({ parent }) => parent)),
     ].sort((left, right) => left.localeCompare(right)),
-    ...(includePositionalSignatures
+    ...(options.includePositionalSignatures
       ? { positional_signatures: PM_COMMAND_POSITIONAL_CONTRACTS }
       : {}),
   };
@@ -3104,7 +3115,14 @@ export async function runContracts(
       result,
       outputCommands,
       extensionCommandContracts,
-      selection.fullOutput || selection.selectedCommand !== undefined,
+      {
+        includeFormatBudgets:
+          selection.fullOutput || selection.selectedCommand !== undefined,
+        includeIntentProvenance:
+          selection.fullOutput || selection.selectedCommand !== undefined,
+        includePositionalSignatures:
+          selection.fullOutput || selection.selectedCommand !== undefined,
+      },
     );
   }
   if (selection.summary) {

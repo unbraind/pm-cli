@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: context,output-budget,pagination,scale
 created_at: "2026-08-14T05:11:18.919Z"
-updated_at: "2026-08-18T12:25:47.510Z"
-closed_at: "2026-08-18T12:25:46.204Z"
-completed_at: "2026-08-18T12:25:46.204Z"
+updated_at: "2026-08-18T12:52:53.546Z"
+closed_at: "2026-08-18T12:52:52.576Z"
+completed_at: "2026-08-18T12:52:52.576Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A read truncated by the output budget emits a continuation cursor that resumes the same query at the first withheld row, on every row-producing surface that emits has_more; The envelope distinguishes limit truncation from budget truncation in the pagination contract itself, so a caller reading only the declared pagination keys can tell a resumable page from a terminal one; No recovery instruction for a budget truncation names an unbounded re-read as the sole path, and the declared recovery cost is bounded by a stated multiple of the budget rather than by the corpus; A regression test walks pm list-closed to completion on a workspace larger than the default budget using only cursors, and asserts total rows delivered equals total, with peak response size bounded; The assurance verdict surface is covered by the same contract, so a gate reading its own evidence rows under a budget either receives every assertion or receives a cursor to the rest"
@@ -17,13 +17,13 @@ risk: high
 confidence: 92
 resolution: fixed
 expected_result: Every budget-truncated read remains resumable within the same bounded cost and discloses why and how continuation works.
-actual_result: "Universal command-bound output cursors now cover every declared row path, including assurance evidence, with stable replay, stale/mismatch refusals, compact cross-transport recovery, and bounded full-walk acceptance."
+actual_result: "Universal command-bound output cursors cover every declared row path, including assurance evidence; overlapping diagnostic roots now remove both ancestor row declarations and nested descendant arrays so each emitted row belongs to exactly one continuation stream."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,blocked_by,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-jt8aa2,discovered_from,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-08-14T06:51:28.004Z","harness:codex","Implementation evidence: list-all and --no-truncate now imply unbounded cost unless an explicit canonical budget overrides them; budget-compacted producer pages rebase next_cursor to the last retained item and disclose structured CLI/SDK/MCP recovery, preventing skipped hidden rows. MCP outputBudget now accepts the same unbounded escape hatch as CLI and SDK."
   "2026-08-14T07:55:44.180Z","harness:codex","Tranche evidence: top-level item producer pages now rebase a continuation cursor to the last retained row and disclose structured CLI/SDK/MCP recovery; list-all and --no-truncate returned 45/45 rows in a packed temporary project; linked tests and exact coverage pass. Residual acceptance remains for cursor-native continuation across every nested row-producing and assurance-verdict surface, so this item returns open."
   "2026-08-14T09:31:37.946Z","harness:codex","Final verification evidence for the delivered tranche: the exact uncommitted head passed 493 test files / 7,288 tests with exact coverage 52,942/52,942 statements, 38,963/38,963 branches, 10,875/10,875 functions, and 51,131/51,131 lines. Lint, zero-clone jscpd over 991 files, 100% docstrings, SDK parity, surface replication, bounded-output/token, graph, record-integrity, and contract snapshot gates passed. The item remains open and unclaimed because recursive continuation across every row-producing and assurance surface is intentionally not claimed complete by this tranche."
@@ -37,6 +37,7 @@ comments[13]{created_at,author,text}:
   "2026-08-18T08:55:32.913Z","harness:codex","Fresh recurrence evidence 2026-08-18: pm validate --check-resolution --check-history-drift --json used a 9,000-token default budget, then reported has_more/truncated with continuation_kind=none and prescribed --output-budget 1200, a lower budget than the failed read. The compacted diagnostic rows were non-resumable despite output_budget_truncation naming them. Core health and history drift were clean; this is a recovery-envelope residual in the canonical closed lineage, so no duplicate item was created or reopened."
   "2026-08-18T12:13:57.414Z","harness:codex","Evidence: implemented validate diagnostic row contracts atop the universal read-output SDK and extended nested row traversal across numeric array segments. Real repository acceptance with --output-budget 1200 now returns continuation_kind=output_cursor for checks.0.details.missing_resolution_rows, retains 9 of 295 rows, reports 286 remaining, and a same-budget cursor retry begins at the next disjoint row. Focused governance continuation tests cover resolution/history rows, pre-existing/absent/already-declared contracts, and invalid array paths. Exact coverage passed 55061/55061 statements, 41094/41094 branches, 11376/11376 functions, 53146/53146 lines; the cold-read performance sentinel passed independently in 5.17s under its unchanged 10s ceiling."
   "2026-08-18T12:25:37.771Z","harness:codex","Hosted governance correction: exact-head run 32136048605 correctly blocked because the 2026-08-18 recurrence closure lacked post-epoch defect evidence. Classified it as production_defect and linked the validate-read-output-continuation negative control, focused local test, exact coverage, defect-evidence gate, and hosted static/coverage owners. This strengthens the gate record; it does not waive or bypass the failure."
+  "2026-08-18T12:52:42.116Z","harness:codex","Final review evidence: diagnostic continuation discovery now removes any existing row path that is an ancestor or descendant of a chosen diagnostic root, then suppresses descendant diagnostic arrays. The nested-array regression proves checks is not retained beside checks.0.details.missing_resolution_rows and related_ids is not exposed as a competing descendant stream, while unrelated warnings remain. Focused tests and exact 100/100/100/100 repository coverage pass; defect-evidence gate reports zero findings."
 learnings[1]{created_at,author,text}:
   "2026-08-14T07:55:47.229Z","harness:codex",Budget compaction must rebase a producer cursor to the last row actually emitted. Returning the producer's original page-end cursor after dropping rows creates a silent data-loss gap even when has_more remains true.
 files[29]{path,scope,note}:
@@ -79,7 +80,7 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mssvbvcq-ooedbu,test,passed,"2026-08-14T11:32:25.928Z","2026-08-14T11:33:10.394Z","2026-08-14T11:33:10.394Z",3,0,0
 docs[1]{path,scope,note}:
   docs/READ_OUTPUT_CONTRACTS.md,project,complete read recovery semantics
-close_reason: Validate diagnostic continuation remains fixed and now carries complete production-defect gate evidence for the post-epoch recurrence.
+close_reason: Implemented single-owner diagnostic row continuation with ancestor/descendant overlap elimination and nested-array regression coverage; complete gates pass.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
