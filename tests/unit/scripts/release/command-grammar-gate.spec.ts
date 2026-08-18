@@ -19,6 +19,7 @@ async function runGrammarGate(
   commandSummaries: unknown,
   options: {
     argumentOverrides?: Readonly<Record<string, readonly unknown[]>>;
+    helpFailures?: readonly string[];
     rootHelpRows?: readonly unknown[];
     positionalSignatures?: unknown;
     runtimeCommands?: readonly string[];
@@ -92,6 +93,9 @@ async function runGrammarGate(
     const budgetIndex = args.indexOf("--output-budget");
     const parentPath = args.slice(helpIndex + 1, budgetIndex);
     const parent = parentPath.join(" ");
+    if (options.helpFailures?.includes(parent) === true) {
+      throw new Error(`Synthetic help failure for ${parent}`);
+    }
     const prefix = parent.length > 0 ? `${parent} ` : "";
     const helpCommands = args.includes("--no-extensions")
       ? coreRuntimeCommands
@@ -189,21 +193,19 @@ describe("command grammar gate", () => {
   );
 
   it("accepts the exhaustive live destination census and ignores malformed rows", async () => {
-    const result = await runGrammarGate([
-      ...liveCommandSummaries,
-      null,
-      { command: 42 },
-      {},
-    ], {
-      rootHelpRows: [
-        null,
-        {},
-        { name: 42 },
-        { name: " " },
-        { name: "context", aliases: "ctx" },
-        { name: "context", aliases: [null, "", "ctx"] },
-      ],
-    });
+    const result = await runGrammarGate(
+      [...liveCommandSummaries, null, { command: 42 }, {}],
+      {
+        rootHelpRows: [
+          null,
+          {},
+          { name: 42 },
+          { name: " " },
+          { name: "context", aliases: "ctx" },
+          { name: "context", aliases: [null, "", "ctx"] },
+        ],
+      },
+    );
     expect(result.report).toMatchObject({
       ok: true,
       command_count: PM_COMMAND_DESTINATION_CONTRACTS.length,
@@ -295,7 +297,10 @@ describe("command grammar gate", () => {
       PM_COMMAND_DESTINATION_CONTRACTS.length,
     );
     expect(result.report.findings).toContainEqual(
-      expect.objectContaining({ spelling: "contracts.command_summaries" }),
+      expect.objectContaining({
+        spelling: "contracts.command_summaries",
+        nearest_target: "pm contracts --full --json",
+      }),
     );
     expect(result.exitCode).toBe(1);
   });
@@ -380,6 +385,27 @@ describe("command grammar gate", () => {
           }),
         ],
       },
+    });
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("reports an active package command whose live help cannot be read", async () => {
+    const unreadableCommand = "changelog export";
+    const result = await runGrammarGate(liveCommandSummaries, {
+      helpFailures: [unreadableCommand],
+      runtimeCommands: PM_COMMAND_DESTINATION_CONTRACTS.map(
+        ({ command }) => command,
+      ).filter((command) => command !== unreadableCommand),
+    });
+    expect(result.report).toMatchObject({
+      ok: false,
+      findings: expect.arrayContaining([
+        expect.objectContaining({
+          code: "missing_destination",
+          spelling: unreadableCommand,
+          nearest_target: `pm ${unreadableCommand} --help --json`,
+        }),
+      ]),
     });
     expect(result.exitCode).toBe(1);
   });

@@ -238,6 +238,15 @@ const PLAN_STEP_FLAGS = [
   "--test",
 ] as const;
 
+const PLAN_STEP_ACTION_DESCRIPTIONS = {
+  "update-step": "Update one declared Plan step.",
+  "complete-step": "Complete one declared Plan step.",
+  "block-step": "Block one declared Plan step.",
+  "remove-step": "Remove one declared Plan step.",
+  link: "Link one dependency to a declared Plan step.",
+  unlink: "Unlink one dependency from a declared Plan step.",
+} as const;
+
 /** Virtual action paths dispatched by positional parent commands. */
 export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract[] =
   [
@@ -268,21 +277,14 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       description: "Append one ordered step to a Plan item.",
       example: 'pm plan add-step pm-a1b2 --step-title "Run tests"',
     },
-    ...[
-      "update-step",
-      "complete-step",
-      "block-step",
-      "remove-step",
-      "link",
-      "unlink",
-    ].map(
-      (action): PmPositionalActionContract => ({
+    ...Object.entries(PLAN_STEP_ACTION_DESCRIPTIONS).map(
+      ([action, description]): PmPositionalActionContract => ({
         command: `plan ${action}`,
         parent: "plan",
         action,
         slots: [PLAN_ITEM_ID, PLAN_STEP],
         accepted_flags: PLAN_STEP_FLAGS,
-        description: `${positionalActionVerb(action)} for one declared Plan step.`,
+        description,
         example: `pm plan ${action} pm-a1b2 plan-step-001`,
       }),
     ),
@@ -409,7 +411,8 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       action: "create",
       slots: [positionalSlot("name", "string", false)],
       accepted_flags: [],
-      description: "Capture authoritative tracker state as an immutable snapshot.",
+      description:
+        "Capture authoritative tracker state as an immutable snapshot.",
       example: "pm workspace snapshot create before-migration",
     },
     {
@@ -436,7 +439,8 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       action: "restore",
       slots: [positionalSlot("target", "string", true)],
       accepted_flags: ["--author", "--dry-run", "--force", "--message"],
-      description: "Restore an immutable workspace snapshot with explicit recovery controls.",
+      description:
+        "Restore an immutable workspace snapshot with explicit recovery controls.",
       example: "pm workspace snapshot restore before-migration --dry-run",
     },
     {
@@ -449,6 +453,10 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       example: "pm workspace snapshot delete before-migration",
     },
   ];
+
+const POSITIONAL_ACTION_CONTRACTS_BY_SPECIFICITY = [
+  ...PM_POSITIONAL_ACTION_CONTRACTS,
+].sort((left, right) => right.command.length - left.command.length);
 
 const EXPLICIT_POSITIONAL_SLOTS = new Map<
   string,
@@ -654,8 +662,10 @@ export function resolvePmPositionalActionContract(
   command: string,
 ): PmPositionalActionContract | undefined {
   const normalized = normalizePositionalCommandPath(command);
-  return PM_POSITIONAL_ACTION_CONTRACTS.find(
-    (contract) => contract.command === normalized,
+  return POSITIONAL_ACTION_CONTRACTS_BY_SPECIFICITY.find(
+    (contract) =>
+      contract.command === normalized ||
+      normalized.startsWith(`${contract.command} `),
   );
 }
 
@@ -981,7 +991,7 @@ export function verifyExplicitPositionalSlotCensus(
     .map((command) => ({
       code: "positional_signature_mismatch",
       command,
-      detail: `Explicit positional signature ${command} has no destination declaration.`,
+      detail: `Positional signature ${command} has no destination declaration.`,
     }));
 }
 
@@ -1056,10 +1066,16 @@ export function verifyPmCommandPositionalContracts(
     ...duplicatePositionalSignatureFindings(declared, "declared"),
     ...duplicatePositionalSignatureFindings(observed, "observed"),
     ...(options.declared === undefined
-      ? verifyExplicitPositionalSlotCensus(
-          EXPLICIT_POSITIONAL_SLOTS.keys(),
-          PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
-        )
+      ? [
+          ...verifyExplicitPositionalSlotCensus(
+            EXPLICIT_POSITIONAL_SLOTS.keys(),
+            PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
+          ),
+          ...verifyExplicitPositionalSlotCensus(
+            PM_POSITIONAL_ACTION_CONTRACTS.map(({ command }) => command),
+            PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
+          ),
+        ]
       : []),
   ];
   for (const contract of declaredByCommand.values()) {

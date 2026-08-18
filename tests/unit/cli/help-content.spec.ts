@@ -83,6 +83,25 @@ describe("help-content rendering helpers", () => {
     expect(actionHelp).toContain("Applicable flags: --acceptance-criteria");
     expect(actionHelp).toContain("pm plan create --title");
 
+    const actionWithOperandProgram = new Command("pm");
+    const actionWithOperandPlan = actionWithOperandProgram.command("plan");
+    attachRichHelpText(actionWithOperandProgram, [
+      "plan",
+      "add-step",
+      "pm-a1b2",
+      "--help",
+      "--explain",
+    ]);
+    let actionWithOperandHelp = "";
+    actionWithOperandPlan.configureOutput({
+      writeOut: (text) => (actionWithOperandHelp += text),
+    });
+    actionWithOperandPlan.outputHelp();
+    expect(actionWithOperandHelp).toContain("Action path: pm plan add-step");
+    expect(actionWithOperandHelp).toContain(
+      "Applicable flags: --allow-multiple-active",
+    );
+
     const parentProgram = new Command("pm");
     const parentPlan = parentProgram.command("plan");
     attachRichHelpText(parentProgram, ["plan", "--help"]);

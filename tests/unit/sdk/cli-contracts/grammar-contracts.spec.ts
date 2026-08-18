@@ -273,7 +273,19 @@ describe("CLI noun-verb grammar contracts", () => {
       PM_POSITIONAL_ACTION_CONTRACTS.find(
         ({ command }) => command === "plan complete-step",
       )?.description,
-    ).toBe("Complete step for one declared Plan step.");
+    ).toBe("Complete one declared Plan step.");
+    expect(
+      PM_POSITIONAL_ACTION_CONTRACTS.filter(({ parent }) => parent === "plan")
+        .filter(({ slots }) => slots.length === 2)
+        .map(({ action, description }) => [action, description]),
+    ).toEqual([
+      ["update-step", "Update one declared Plan step."],
+      ["complete-step", "Complete one declared Plan step."],
+      ["block-step", "Block one declared Plan step."],
+      ["remove-step", "Remove one declared Plan step."],
+      ["link", "Link one dependency to a declared Plan step."],
+      ["unlink", "Unlink one dependency from a declared Plan step."],
+    ]);
     expect(
       PM_POSITIONAL_ACTION_CONTRACTS.find(
         ({ command }) => command === "assurance presets",

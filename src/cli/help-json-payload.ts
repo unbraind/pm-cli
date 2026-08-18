@@ -90,7 +90,8 @@ function resolveCommandFromPathTokens(
     !PM_CORE_COMMAND_NAMES.some(
       (commandName) => commandName === requestedPath,
     ) &&
-    !hasSubcommandFlagContractsForCommand(requestedPath)
+    !hasSubcommandFlagContractsForCommand(requestedPath) &&
+    !resolvePmPositionalActionContract(requestedPath)
   ) {
     return null;
   }
@@ -448,7 +449,9 @@ function buildJsonHelpPayload(
     requestedCommandPath.length > commanderPath.length
       ? requestedCommandPath
       : commanderPath;
-  const commandPath = resolvedPath.length > 0 ? resolvedPath : undefined;
+  const positionalAction = resolvePmPositionalActionContract(resolvedPath);
+  const projectedPath = positionalAction?.command ?? resolvedPath;
+  const commandPath = projectedPath.length > 0 ? projectedPath : undefined;
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
   const extensionDescriptor = commandPath
     ? extensionDescriptors.get(commandPath)
@@ -458,7 +461,6 @@ function buildJsonHelpPayload(
     fallbackNarrative,
     extensionDescriptor,
   );
-  const positionalAction = resolvePmPositionalActionContract(resolvedPath);
   const allOptionSummaries = compactHelpOptionAliases(
     mergeHelpOptionSummaries(
       buildHelpOptionSummaries(targetCommand),
@@ -468,7 +470,7 @@ function buildJsonHelpPayload(
   const projection = buildPositionalActionHelpProjection(
     positionalAction,
     targetCommand,
-    resolvedPath,
+    projectedPath,
     allOptionSummaries,
   );
   return {
@@ -476,7 +478,8 @@ function buildJsonHelpPayload(
     detail_mode: detailMode,
     root_command: rootProgram.name(),
     requested_path: requestedPath,
-    resolved_path: resolvedPath.length > 0 ? resolvedPath : rootProgram.name(),
+    resolved_path:
+      projectedPath.length > 0 ? projectedPath : rootProgram.name(),
     description: positionalAction?.description ?? targetCommand.description(),
     usage: projection.usage,
     intent: positionalAction?.description ?? narrative.intent,

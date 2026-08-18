@@ -96,17 +96,13 @@ describe("structured help command-path resolution", () => {
     expect(payload).toMatchObject({
       resolved_path: "plan create",
       usage: "plan create [title]",
-      arguments: [
-        expect.objectContaining({ name: "title", required: false }),
-      ],
+      arguments: [expect.objectContaining({ name: "title", required: false })],
       intent: expect.stringContaining("Create a Plan item"),
       subcommands: [],
       has_subcommands: false,
     });
     expect(payload.options).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ long: "--title" }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ long: "--title" })]),
     );
 
     const parentPayload = _testOnly.buildJsonHelpPayload(
@@ -142,6 +138,27 @@ describe("structured help command-path resolution", () => {
       new Map(),
     );
     expect(flaglessActionPayload.tips).toEqual(["Applicable flags: none."]);
+
+    const actionWithOperand = _testOnly.buildJsonHelpPayload(
+      root,
+      plan,
+      ["plan", "add-step", "pm-a1b2", "--help", "--json"],
+      ["plan", "add-step", "pm-a1b2"],
+      new Map(),
+    );
+    expect(actionWithOperand).toMatchObject({
+      requested_path: ["plan", "add-step", "pm-a1b2"],
+      resolved_path: "plan add-step",
+      usage: "plan add-step <plan-id>",
+      arguments: [expect.objectContaining({ name: "plan-id", required: true })],
+    });
+    expect(
+      _testOnly.resolveCommandFromPathTokens(root, [
+        "plan",
+        "add-step",
+        "pm-a1b2",
+      ]),
+    ).toBe(plan);
   });
 
   it("prefixes concrete command usage with its resolved path", () => {

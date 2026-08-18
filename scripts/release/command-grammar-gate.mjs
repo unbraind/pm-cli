@@ -241,12 +241,17 @@ function collectLiveCliCommandSurface(
   const { registered, parents, aliases, positionals } =
     collectRegisteredCliCommands(loadHelp);
   expandRegisteredCommandAliases(registered, aliases, positionals);
+  const helpFailures = [];
   for (const command of activePackageCommands) {
     if (!positionals.has(command)) {
-      positionals.set(
-        command,
-        normalizeLiveHelpArguments(loadHelp(command.split(" "))),
-      );
+      try {
+        positionals.set(
+          command,
+          normalizeLiveHelpArguments(loadHelp(command.split(" "))),
+        );
+      } catch {
+        helpFailures.push(command);
+      }
     }
   }
   const observed = new Set(activePackageCommands);
@@ -263,6 +268,7 @@ function collectLiveCliCommandSurface(
   );
   return {
     commands,
+    helpFailures,
     positionals: commands.map((command) => {
       const declared = PM_COMMAND_POSITIONAL_CONTRACTS.find(
         (contract) => contract.command === command,
@@ -465,6 +471,16 @@ if (!hasCommandSummaries) {
     code: "missing_destination",
     spelling: "contracts.command_summaries",
     message: "The live contracts response omitted its command summary census.",
+    nearest_target: "pm contracts --full --json",
+  });
+}
+for (const command of liveCliSurface.helpFailures) {
+  grammarReport.ok = false;
+  grammarReport.findings.push({
+    code: "missing_destination",
+    spelling: command,
+    message: `Active package command \`${command}\` could not be read from live structured help.`,
+    nearest_target: `pm ${command} --help --json`,
   });
 }
 const observedPositionalContracts = liveCliSurface.positionals;
@@ -479,9 +495,10 @@ const inactivePackageCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
 const inactivePackageCommandSet = new Set(inactivePackageCommands);
 const positionalReport = verifyPmCommandPositionalContracts([
   ...observedPositionalContracts,
-  ...PM_COMMAND_POSITIONAL_CONTRACTS.filter(({ command }) =>
-    inactivePackageCommandSet.has(command) &&
-    !observedSignatureCommandSet.has(command),
+  ...PM_COMMAND_POSITIONAL_CONTRACTS.filter(
+    ({ command }) =>
+      inactivePackageCommandSet.has(command) &&
+      !observedSignatureCommandSet.has(command),
   ),
 ]);
 const mcpReport = verifyMcpGrammar(
