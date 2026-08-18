@@ -8,6 +8,32 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "missing_allowed_values",
+    meaning: "Missing allowed values condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_allowed_values",
+    aliases: [],
+  },
+  {
+    code: "missing_budget",
+    meaning: "Missing budget condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_budget",
+    aliases: [],
+  },
+  {
     code: "missing_cli_flag",
     meaning: "Missing cli flag condition.",
     stability: "provisional",
@@ -57,6 +83,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/extension.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_lifecycle_target",
+    aliases: [],
+  },
+  {
+    code: "missing_observation",
+    meaning: "Missing observation condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/flag-invocation-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_observation",
     aliases: [],
   },
   {
@@ -122,6 +161,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     ],
     emitting_commands: ["*", "create", "plan"],
     canonical_code: "missing_required_option",
+    aliases: [],
+  },
+  {
+    code: "missing_suggested_retry",
+    meaning: "Missing suggested retry condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_suggested_retry",
     aliases: [],
   },
   {
@@ -252,6 +304,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
     canonical_code: "no_version_bounds_declared",
+    aliases: [],
+  },
+  {
+    code: "non_refusal_exit",
+    meaning: "Non refusal exit condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "non_refusal_exit",
     aliases: [],
   },
   {
@@ -515,6 +580,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "retry_failed",
+    meaning: "Retry failed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "retry_failed",
+    aliases: [],
+  },
+  {
     code: "schema_migration_input_required",
     meaning: "Schema migration input required condition.",
     stability: "stable",
@@ -577,6 +655,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "settings_read_merge_failed",
+    aliases: [],
+  },
+  {
+    code: "stale_budget",
+    meaning: "Stale budget condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "stale_budget",
     aliases: [],
   },
   {
@@ -957,6 +1048,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
     canonical_code: "type_invalid",
+    aliases: [],
+  },
+  {
+    code: "undeclared_observation",
+    meaning: "Undeclared observation condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/flag-invocation-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "undeclared_observation",
     aliases: [],
   },
   {

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ergonomics,ci-gates,discoverability,long-horizon
 created_at: "2026-08-01T13:09:26.104Z"
-updated_at: "2026-08-18T21:13:53.740Z"
+updated_at: "2026-08-18T21:54:00.756Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A replay corpus of wrong invocations is generated from the contract tables and covers every flag with a closed domain, every subcommand family, every required-argument omission and every mutually exclusive flag pair; Every declared error code is reachable from at least one corpus input, and a code with no reachable input is reported as such; A scorer reports the recovery-closure fraction and the list of unrecoverable refusals, scoring a lone nearest-match suggestion as not recoverable; The closure fraction is a ratchet in the gate registry that may not fall, with a negative control proving the gate can fail; The refusal envelope has a declared shape carrying the failing surface, the rejected value, the legal domain when known, and the exit code"
@@ -27,13 +27,17 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-rnl3sa,discovered_from,"2026-08-01T13:10:33.176Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,verifies,"2026-08-01T20:22:16.901Z","harness:codex","cli:update:dep",detected
   pm-h8tpeh,implements,"2026-08-18T19:49:27.449Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-18T19:18:11.981Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:36.921Z","harness:codex","Tranche evidence: the SDK now provides a typed recovery-closure scorer and findings, the gate registry runs a real temporary-tracker corpus, four current closed-domain probes score 4/4 (fraction 1.0), empty corpora fail closed, and omission/malformed-retry negative controls fail. Remaining acceptance: generate the exhaustive corpus from all contract tables, cover every subcommand family/required omission/mutual exclusion/error code, and persist a historical ratchet. Returning open and releasing ownership."
-files[5]{path,scope,note}:
+  "2026-08-18T21:49:08.769Z","harness:codex","Hosted CI evidence: PR #1061 exact head b953e36c22804ba26974a2c81307e91f1094f3ca passed the broad matrix except Gates (static), which correctly failed at generate-error-code-catalog.mjs --check because the recovery additions changed the reachable catalog. Treating this as gate-positive drift detection and regenerating through the repository-owned command."
+  "2026-08-18T21:53:59.056Z","harness:codex","Hosted-gate correction evidence: pnpm contracts:errors:update synchronized both generated catalog partitions with 16 newly reachable recovery/lexicon/parity codes; pnpm contracts:errors:check passed; pnpm quality:static passed end to end, including 3043 lexicon entries, 2904/2904 observed flag parity, recovery closure 4/4 at 1.0, SDK snapshot/import-cost/transport checks, graph composition, and record integrity. The exhaustive-corpus remainder is unchanged, so returning this item to open and releasing ownership."
+files[7]{path,scope,note}:
   scripts/release/gate-registry.json,project,Active command contract and recovery conformance implementation
   scripts/release/refusal-closure-gate.mjs,project,Active command contract and recovery conformance implementation
   src/sdk/agent/refusal-closure.ts,project,Active command contract and recovery conformance implementation
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated error-code catalog synchronized after hosted static drift detection
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated error-code catalog synchronized after hosted static drift detection
   tests/unit/scripts/refusal-closure-gate.spec.ts,project,Active command contract and recovery conformance implementation
   tests/unit/sdk/agent/refusal-closure.spec.ts,project,Recovery closure scorer negative controls
 tests[1]{command,scope,timeout_seconds}:
