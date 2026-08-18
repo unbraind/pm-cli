@@ -3109,6 +3109,8 @@ export async function runContracts(
     runtime,
     outputCommands,
   );
+  const includeCommandDetails =
+    selection.fullOutput || selection.selectedCommand !== undefined;
 
   if (selection.summary || selection.fullOutput) {
     attachAgentCommandContractsResult(
@@ -3116,12 +3118,9 @@ export async function runContracts(
       outputCommands,
       extensionCommandContracts,
       {
-        includeFormatBudgets:
-          selection.fullOutput || selection.selectedCommand !== undefined,
-        includeIntentProvenance:
-          selection.fullOutput || selection.selectedCommand !== undefined,
-        includePositionalSignatures:
-          selection.fullOutput || selection.selectedCommand !== undefined,
+        includeFormatBudgets: includeCommandDetails,
+        includeIntentProvenance: includeCommandDetails,
+        includePositionalSignatures: includeCommandDetails,
       },
     );
   }
