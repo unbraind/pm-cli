@@ -21984,7 +21984,15 @@
       },
       {
         "command": "search-advanced",
-        "slots": []
+        "slots": [
+          {
+            "name": "keywords",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
       },
       {
         "command": "duplicates",

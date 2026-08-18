@@ -9,13 +9,14 @@ import { createHash } from "node:crypto";
 
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { stableStringify } from "../../core/shared/serialization.js";
 import type {
   PmReadOutputCursorEnvelope,
   PmReadOutputSurface,
 } from "../read-output-contracts.js";
 import { resolveReadOutputSurface } from "../read-output-contracts.js";
 import {
-  readOutputRowCollections,
+  readOutputContinuationRowCollections,
   sliceReadOutputRowCollection,
 } from "../read-output-rows.js";
 
@@ -25,30 +26,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Fingerprint stable row identities without including volatile observation fields. */
+/** Fingerprint the complete canonical row snapshot so changed evidence fails closed. */
 export function readOutputCollectionFingerprint(
   path: string,
   value: unknown[] | Record<string, unknown>,
 ): string {
-  const identities = Array.isArray(value)
-    ? value.map((row, index) => {
-        if (!isRecord(row)) return `index:${String(index)}`;
-        for (const key of [
-          "id",
-          "assertion_id",
-          "measurement_id",
-          "event_id",
-        ]) {
-          const candidate = row[key];
-          if (typeof candidate === "string" && candidate.length > 0) {
-            return `${key}:${candidate}`;
-          }
-        }
-        return `index:${String(index)}`;
-      })
-    : Object.keys(value);
   return createHash("sha256")
-    .update(JSON.stringify({ path, identities }))
+    .update(stableStringify({ path, value }))
     .digest("base64url")
     .slice(0, 16);
 }
@@ -153,7 +137,7 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_command_mismatch" },
     );
   }
-  const collection = readOutputRowCollections(result).find(
+  const collection = readOutputContinuationRowCollections(result).find(
     (entry) => entry.path === cursor.path,
   );
   const totalRows = collection

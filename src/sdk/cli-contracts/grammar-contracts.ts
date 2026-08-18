@@ -576,6 +576,10 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
       positionalSlot("name", "string", false),
     ],
   ],
+  [
+    "search-advanced",
+    [positionalSlot("keywords", "string", true, { variadic: true })],
+  ],
   ["search", [positionalSlot("keywords", "string", true, { variadic: true })]],
   ["start-task", [ITEM_ID]],
   [
@@ -1074,7 +1078,7 @@ export function verifyPmCommandPositionalContracts(
       findings.push({
         code: "positional_signature_mismatch",
         command: contract.command,
-        detail: `Observed positional signature for ${contract.command} differs from its declared SDK contract.`,
+        detail: `Observed positional signature for ${contract.command} differs from its declared SDK contract: observed=${positionalSignatureKey(actual.slots) || "<none>"}; declared=${positionalSignatureKey(contract.slots) || "<none>"}.`,
       });
     }
   }

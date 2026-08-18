@@ -6,24 +6,24 @@ status: closed
 priority: 1
 tags[4]: context,output-budget,pagination,scale
 created_at: "2026-08-14T05:11:18.919Z"
-updated_at: "2026-08-18T12:52:53.546Z"
-closed_at: "2026-08-18T12:52:52.576Z"
-completed_at: "2026-08-18T12:52:52.576Z"
+updated_at: "2026-08-18T16:34:56.394Z"
+closed_at: "2026-08-18T16:34:55.711Z"
+completed_at: "2026-08-18T16:34:55.711Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A read truncated by the output budget emits a continuation cursor that resumes the same query at the first withheld row, on every row-producing surface that emits has_more; The envelope distinguishes limit truncation from budget truncation in the pagination contract itself, so a caller reading only the declared pagination keys can tell a resumable page from a terminal one; No recovery instruction for a budget truncation names an unbounded re-read as the sole path, and the declared recovery cost is bounded by a stated multiple of the budget rather than by the corpus; A regression test walks pm list-closed to completion on a workspace larger than the default budget using only cursors, and asserts total rows delivered equals total, with peak response size bounded; The assurance verdict surface is covered by the same contract, so a gate reading its own evidence rows under a budget either receives every assertion or receives a cursor to the rest"
 parent: pm-9rxu
 risk: high
 confidence: 92
-resolution: fixed
+resolution: "Universal bounded continuation now preserves top-level amount limits, independently resumes nested validate diagnostics, and invalidates cursors whenever canonical row content changes."
 expected_result: Every budget-truncated read remains resumable within the same bounded cost and discloses why and how continuation works.
-actual_result: "Universal command-bound output cursors cover every declared row path, including assurance evidence; overlapping diagnostic roots now remove both ancestor row declarations and nested descendant arrays so each emitted row belongs to exactly one continuation stream."
+actual_result: "Validate keeps checks and warnings as amount-bound rows while declaring nested diagnostic continuation paths separately. Budget cursors resume the first withheld diagnostic row without overlap, bind full row content, and reject stale same-cardinality inputs."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,blocked_by,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-jt8aa2,discovered_from,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
-comments[14]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-08-14T06:51:28.004Z","harness:codex","Implementation evidence: list-all and --no-truncate now imply unbounded cost unless an explicit canonical budget overrides them; budget-compacted producer pages rebase next_cursor to the last retained item and disclose structured CLI/SDK/MCP recovery, preventing skipped hidden rows. MCP outputBudget now accepts the same unbounded escape hatch as CLI and SDK."
   "2026-08-14T07:55:44.180Z","harness:codex","Tranche evidence: top-level item producer pages now rebase a continuation cursor to the last retained row and disclose structured CLI/SDK/MCP recovery; list-all and --no-truncate returned 45/45 rows in a packed temporary project; linked tests and exact coverage pass. Residual acceptance remains for cursor-native continuation across every nested row-producing and assurance-verdict surface, so this item returns open."
   "2026-08-14T09:31:37.946Z","harness:codex","Final verification evidence for the delivered tranche: the exact uncommitted head passed 493 test files / 7,288 tests with exact coverage 52,942/52,942 statements, 38,963/38,963 branches, 10,875/10,875 functions, and 51,131/51,131 lines. Lint, zero-clone jscpd over 991 files, 100% docstrings, SDK parity, surface replication, bounded-output/token, graph, record-integrity, and contract snapshot gates passed. The item remains open and unclaimed because recursive continuation across every row-producing and assurance surface is intentionally not claimed complete by this tranche."
@@ -38,9 +38,11 @@ comments[14]{created_at,author,text}:
   "2026-08-18T12:13:57.414Z","harness:codex","Evidence: implemented validate diagnostic row contracts atop the universal read-output SDK and extended nested row traversal across numeric array segments. Real repository acceptance with --output-budget 1200 now returns continuation_kind=output_cursor for checks.0.details.missing_resolution_rows, retains 9 of 295 rows, reports 286 remaining, and a same-budget cursor retry begins at the next disjoint row. Focused governance continuation tests cover resolution/history rows, pre-existing/absent/already-declared contracts, and invalid array paths. Exact coverage passed 55061/55061 statements, 41094/41094 branches, 11376/11376 functions, 53146/53146 lines; the cold-read performance sentinel passed independently in 5.17s under its unchanged 10s ceiling."
   "2026-08-18T12:25:37.771Z","harness:codex","Hosted governance correction: exact-head run 32136048605 correctly blocked because the 2026-08-18 recurrence closure lacked post-epoch defect evidence. Classified it as production_defect and linked the validate-read-output-continuation negative control, focused local test, exact coverage, defect-evidence gate, and hosted static/coverage owners. This strengthens the gate record; it does not waive or bypass the failure."
   "2026-08-18T12:52:42.116Z","harness:codex","Final review evidence: diagnostic continuation discovery now removes any existing row path that is an ancestor or descendant of a chosen diagnostic root, then suppresses descendant diagnostic arrays. The nested-array regression proves checks is not retained beside checks.0.details.missing_resolution_rows and related_ids is not exposed as a competing descendant stream, while unrelated warnings remain. Focused tests and exact 100/100/100/100 repository coverage pass; defect-evidence gate reports zero findings."
+  "2026-08-18T15:33:40.448Z","harness:codex","Review recurrence 2026-08-18 at PR #1059 head bec9a1b3b: validate diagnostic discovery replaced the top-level checks amount row with nested rows, so --output-limit 1 can retain all checks; nested cursor identity also used path/cardinality rather than row content, so a same-cardinality mutation can replay an obsolete cursor. Both findings contradict the universal bounded-resume acceptance and will be fixed with fail-closed negative controls."
+  "2026-08-18T16:34:52.234Z","harness:codex","Final recurrence repair evidence: TDD negative controls proved output-limit 1 must still bind top-level validate checks and that a same-cardinality diagnostic content mutation must reject the old cursor as read_output_cursor_stale. The public ReadRowContract now separates amount-bound row_keys from nested continuation_row_keys; cursor fingerprints bind canonical row content, and docs define the two collection domains. Focused tests pass, packed npm/npx and Bun/bunx acceptance pass, and full repository coverage passes 521 files / 7,561 tests at exact 55,159/55,159 statements, 41,185/41,185 branches, 11,405/11,405 functions, and 53,241/53,241 lines."
 learnings[1]{created_at,author,text}:
   "2026-08-14T07:55:47.229Z","harness:codex",Budget compaction must rebase a producer cursor to the last row actually emitted. Returning the producer's original page-end cursor after dropping rows creates a silent data-loss gap even when has_more remains true.
-files[29]{path,scope,note}:
+files[31]{path,scope,note}:
   sdk/public-surface.json,project,Generated supported SDK cursor decoder surface snapshot
   src/cli/main.ts,project,Global cursor validation forwarding
   src/core/extensions/reserved-host-flags.ts,project,Host-owned cursor flag reservation
@@ -57,6 +59,7 @@ files[29]{path,scope,note}:
   src/sdk/core.ts,project,Public cursor primitive exports
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated cursor refusal catalog
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated cursor refusal catalog
+  src/sdk/output-projection.ts,project,Public row-contract continuation path schema and validation
   src/sdk/pagination.ts,project,Shared cursor envelope validation for budget-compacted continuation recovery
   src/sdk/read-output-budget.ts,project,Retention floors for proof-bearing rows
   src/sdk/read-output-contracts.ts,project,complete list intent and cost precedence
@@ -70,17 +73,20 @@ files[29]{path,scope,note}:
   tests/unit/sdk/pagination.spec.ts,project,Shared cursor-envelope decoder regression coverage
   tests/unit/sdk/read-output-contracts.spec.ts,project,list-all and no-truncate completeness tests
   tests/unit/sdk/read-output-transport.spec.ts,project,SDK and MCP output-budget schema parity coverage
-tests[4]{command,scope,timeout_seconds}:
+  tests/unit/sdk/read-row-contracts.spec.ts,project,Continuation row-key validation and compatibility coverage
+tests[5]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/validate-read-output-continuation.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/validate-read-output-continuation.spec.ts tests/unit/sdk/read-row-contracts.spec.ts,project,240
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssni2fy-tk155k,test,passed,"2026-08-14T07:53:54.235Z","2026-08-14T07:54:02.590Z","2026-08-14T07:54:02.590Z",1,0,0
   test-local-mssvbvcq-ooedbu,test,passed,"2026-08-14T11:32:25.928Z","2026-08-14T11:33:10.394Z","2026-08-14T11:33:10.394Z",3,0,0
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Nested continuation versus amount-bound row semantics
   docs/READ_OUTPUT_CONTRACTS.md,project,complete read recovery semantics
-close_reason: Implemented single-owner diagnostic row continuation with ancestor/descendant overlap elimination and nested-array regression coverage; complete gates pass.
+close_reason: "Closed after review recurrence repair: amount and continuation rows are separate, cursors bind full canonical content, exact coverage and packed npm/Bun acceptance pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

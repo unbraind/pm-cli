@@ -58,7 +58,11 @@ describe("validate read-output continuation", () => {
         continuation_kind: "output_cursor",
         truncated: true,
         row_contract: {
-          jq_selector: ".row_contract.row_keys[]",
+          continuation_row_keys: [
+            `checks.0.details.${detailKey}`,
+          ],
+        row_keys: ["checks", "warnings"],
+        jq_selector: ".row_contract.row_keys[]",
         },
       });
       expect(truncation).toMatchObject({
@@ -106,6 +110,9 @@ describe("validate read-output continuation", () => {
       continuation_kind: "output_cursor",
       row_contract: {
         row_keys: ["checks.0.details.missing_resolution_rows"],
+        continuation_row_keys: [
+          "checks.0.details.missing_resolution_rows",
+        ],
         jq_selector: ".checks[].details",
       },
     });
@@ -140,6 +147,34 @@ describe("validate read-output continuation", () => {
     ).toMatchObject({
       row_contract: {
         row_keys: ["checks.0.details.history_drift_rows"],
+        continuation_row_keys: [
+          "checks.0.details.history_drift_rows",
+        ],
+      },
+    });
+
+    alreadyDeclared.row_contract = {
+      row_keys: ["checks.0.details.history_drift_rows"],
+      continuation_row_keys: [
+        "checks.0.details.history_drift_rows",
+        42,
+      ],
+      jq_selector: ".checks[].details",
+    };
+    expect(
+      applyReadOutputDimensions(
+        "validate",
+        { outputLimit: 40, outputBudget: "unbounded" },
+        alreadyDeclared,
+      ),
+    ).toMatchObject({
+      row_contract: {
+        row_keys: ["checks.0.details.history_drift_rows"],
+        continuation_row_keys: [
+          "checks.0.details.history_drift_rows",
+          42,
+        ],
+        jq_selector: ".checks[].details",
       },
     });
   });
@@ -161,9 +196,69 @@ describe("validate read-output continuation", () => {
       ),
     ).toMatchObject({
       row_contract: {
-        row_keys: ["warnings", "checks.0.details.missing_resolution_rows"],
+        row_keys: ["checks", "warnings"],
+        continuation_row_keys: [
+          "checks.0.details.missing_resolution_rows",
+        ],
       },
     });
+  });
+
+  it("keeps top-level validate checks bound by the explicit amount limit", () => {
+    const result = diagnosticResult("missing_resolution_rows");
+    result.checks = Array.from({ length: 3 }, (_, checkIndex) => ({
+      name: `diagnostics-${checkIndex}`,
+      details: {
+        missing_resolution_rows: Array.from({ length: 4 }, (_, rowIndex) => ({
+          id: `pm-${checkIndex}-${rowIndex}`,
+        })),
+      },
+    }));
+
+    expect(
+      applyReadOutputDimensions(
+        "validate",
+        { outputLimit: 1, outputBudget: "unbounded" },
+        result,
+      ),
+    ).toMatchObject({
+      checks: [{ name: "diagnostics-0" }],
+      has_more: true,
+      truncated: true,
+      row_contract: {
+        row_keys: ["checks", "warnings"],
+        continuation_row_keys: [
+          "checks.0.details.missing_resolution_rows",
+          "checks.1.details.missing_resolution_rows",
+          "checks.2.details.missing_resolution_rows",
+        ],
+      },
+    });
+  });
+
+  it("refuses a continuation when diagnostic content changes at the same cardinality", () => {
+    const first = applyReadOutputDimensions(
+      "validate",
+      { outputBudget: 1_200 },
+      diagnosticResult("missing_resolution_rows"),
+    );
+    const changed = diagnosticResult("missing_resolution_rows");
+    const changedRows = (
+      changed.checks as Array<{
+        details: { missing_resolution_rows: Array<Record<string, unknown>> };
+      }>
+    )[0]!.details.missing_resolution_rows;
+    changedRows[20] = { ...changedRows[20], detail: "new diagnostic" };
+
+    expect(() =>
+      applyReadOutputDimensions(
+        "validate",
+        { outputBudget: 1_200, outputCursor: first.next_cursor },
+        changed,
+      ),
+    ).toThrow(
+      expect.objectContaining({ code: "read_output_cursor_stale" }),
+    );
   });
 
   it("rejects non-numeric array segments while resolving declared rows", () => {

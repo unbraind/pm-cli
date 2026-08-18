@@ -398,6 +398,32 @@ describe("CLI noun-verb grammar contracts", () => {
       ),
     ).toMatchObject({ ok: true, findings: [] });
 
+    const requiredSlot = duplicate.slots[0]!;
+    expect(
+      verifyPmCommandPositionalContracts(
+        [{ command: "synthetic", slots: [] }],
+        {
+          declared: [{ command: "synthetic", slots: [requiredSlot] }],
+        },
+      ).findings,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        detail: expect.stringContaining("observed=<none>"),
+      }),
+    );
+    expect(
+      verifyPmCommandPositionalContracts(
+        [{ command: "synthetic", slots: [requiredSlot] }],
+        { declared: [{ command: "synthetic", slots: [] }] },
+      ).findings,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "positional_signature_mismatch",
+        detail: expect.stringContaining("declared=<none>"),
+      }),
+    );
+
     expect(
       verifyExplicitPositionalSlotCensus(
         ["orphan-explicit-command"],

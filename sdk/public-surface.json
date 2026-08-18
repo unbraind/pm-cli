@@ -808,6 +808,13 @@
       ],
       "package_version": "2026.8.18",
       "reason": "Widen positional-action parent union for governed workspace snapshot actions; existing values and behavior remain compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ReadRowContract"
+      ],
+      "package_version": "2026.8.18",
+      "reason": "ReadRowContract adds an optional continuation_row_keys field; existing consumers remain source-compatible while nested resumability becomes explicit."
     }
   ],
   "entrypoints": {
@@ -10961,6 +10968,18 @@
           "signature": "(result: Record<string, unknown>) => PmReadOutputRowCollection[] | calls: (result: Record<string, unknown>) => PmReadOutputRowCollection[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readOutputContinuationRowCollections",
+          "signature": "(result: Record<string, unknown>) => PmReadOutputRowCollection[] | calls: (result: Record<string, unknown>) => PmReadOutputRowCollection[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readOutputContinuationRowPaths",
+          "signature": "(result: Record<string, unknown>) => string[] | calls: (result: Record<string, unknown>) => string[]"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "readOutputIncludeModeOptions",
@@ -11000,7 +11019,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ReadRowContract",
-          "signature": "export interface ReadRowContract { command: string; row_kind: \"collection\" | \"none\"; row_keys: string[]; fields: \"supported\" | \"unsupported\"; jq_selector?: string; toon_encoding?: \"tabular_when_uniform\"; }"
+          "signature": "export interface ReadRowContract { command: string; row_kind: \"collection\" | \"none\"; row_keys: string[]; continuation_row_keys?: string[]; fields: \"supported\" | \"unsupported\"; jq_selector?: string; toon_encoding?: \"tabular_when_uniform\"; }"
         },
         {
           "classification": "advanced_export",

@@ -94,48 +94,125 @@ function normalizeLiveHelpSubcommands(help) {
   });
 }
 
+/** Normalize positional slots emitted by the live structured-help adapter. */
+function normalizeLiveHelpArguments(help) {
+  if (!Array.isArray(help?.arguments)) return [];
+  return help.arguments.flatMap((argument) =>
+    Object(argument) === argument &&
+    typeof argument.name === "string" &&
+    argument.name.trim().length > 0 &&
+    typeof argument.required === "boolean" &&
+    typeof argument.variadic === "boolean"
+      ? [
+          {
+            name: argument.name.trim(),
+            required: argument.required,
+            variadic: argument.variadic,
+          },
+        ]
+      : [],
+  );
+}
+
+/** Record one positional dispatcher family through its action-specific help views. */
+function recordRuntimeActions(
+  loadHelp,
+  parentPath,
+  parent,
+  runtimeActions,
+  registered,
+  positionals,
+) {
+  for (const action of runtimeActions) {
+    const command = `${parent} ${action}`;
+    registered.add(command);
+    positionals.set(
+      command,
+      normalizeLiveHelpArguments(loadHelp([...parentPath, action])),
+    );
+  }
+}
+
+/** Record visible child registrations, alias edges, and traversal work. */
+function recordHelpSubcommands(
+  help,
+  parentPath,
+  parent,
+  registered,
+  parents,
+  aliases,
+  queue,
+) {
+  for (const subcommand of normalizeLiveHelpSubcommands(help)) {
+    const childPath = [...parentPath, subcommand.name];
+    const child = childPath.join(" ");
+    registered.add(child);
+    parents.add(parent);
+    const childAliases = aliases.get(child) ?? new Set();
+    for (const alias of subcommand.aliases) {
+      childAliases.add([...parentPath, alias].join(" "));
+    }
+    aliases.set(child, childAliases);
+    if (!(parentPath.length === 0 && subcommand.name === "help")) {
+      queue.push(childPath);
+    }
+  }
+}
+
 /** Walk canonical Commander paths and retain alias edges and namespace parents. */
 function collectRegisteredCliCommands(loadHelp) {
   const registered = new Set();
   const parents = new Set();
   const aliases = new Map();
+  const positionals = new Map();
   const queue = [[]];
   while (queue.length > 0) {
     const parentPath = queue.shift();
     const parent = parentPath.join(" ");
+    const help = loadHelp(parentPath);
+    if (parent.length > 0) {
+      positionals.set(parent, normalizeLiveHelpArguments(help));
+    }
     const runtimeActions = RUNTIME_POSITIONAL_ACTIONS.get(parent);
     if (runtimeActions) {
-      for (const action of runtimeActions) registered.add(`${parent} ${action}`);
+      recordRuntimeActions(
+        loadHelp,
+        parentPath,
+        parent,
+        runtimeActions,
+        registered,
+        positionals,
+      );
       continue;
     }
-    for (const subcommand of normalizeLiveHelpSubcommands(loadHelp(parentPath))) {
-      const childPath = [...parentPath, subcommand.name];
-      const child = childPath.join(" ");
-      registered.add(child);
-      parents.add(parent);
-      const childAliases = aliases.get(child) ?? new Set();
-      for (const alias of subcommand.aliases) {
-        childAliases.add([...parentPath, alias].join(" "));
-      }
-      aliases.set(child, childAliases);
-      if (!(parentPath.length === 0 && subcommand.name === "help")) {
-        queue.push(childPath);
-      }
-    }
+    recordHelpSubcommands(
+      help,
+      parentPath,
+      parent,
+      registered,
+      parents,
+      aliases,
+      queue,
+    );
   }
-  return { registered, parents, aliases };
+  return { registered, parents, aliases, positionals };
 }
 
 /** Expand equal-arity Commander aliases transitively across descendant paths. */
-function expandRegisteredCommandAliases(registered, aliases) {
+function expandRegisteredCommandAliases(registered, aliases, positionals) {
   for (const command of registered) {
     for (const [canonical, aliasPaths] of aliases) {
       if (command !== canonical && !command.startsWith(`${canonical} `)) {
         continue;
       }
-      for (const alias of aliasPaths) {
-        if (alias.split(" ").length !== canonical.split(" ").length) continue;
-        registered.add(`${alias}${command.slice(canonical.length)}`);
+      const canonicalArity = canonical.split(" ").length;
+      const slots = positionals.get(command);
+      for (const alias of [...aliasPaths].filter(
+        (path) => path.split(" ").length === canonicalArity,
+      )) {
+        const aliasCommand = `${alias}${command.slice(canonical.length)}`;
+        registered.add(aliasCommand);
+        if (slots) positionals.set(aliasCommand, slots);
       }
     }
   }
@@ -150,11 +227,28 @@ export function collectLiveCliCommandPaths(
   loadHelp = readLiveCliHelp,
   activePackageCommands = [],
 ) {
+  return collectLiveCliCommandSurface(loadHelp, activePackageCommands).commands;
+}
+
+/** Collect independently observed destinations and live positional structures. */
+function collectLiveCliCommandSurface(
+  loadHelp = readLiveCliHelp,
+  activePackageCommands = [],
+) {
   const coreTopLevelCommands = new Set(
     normalizeLiveHelpSubcommands(loadHelp([], true)).map(({ name }) => name),
   );
-  const { registered, parents, aliases } = collectRegisteredCliCommands(loadHelp);
-  expandRegisteredCommandAliases(registered, aliases);
+  const { registered, parents, aliases, positionals } =
+    collectRegisteredCliCommands(loadHelp);
+  expandRegisteredCommandAliases(registered, aliases, positionals);
+  for (const command of activePackageCommands) {
+    if (!positionals.has(command)) {
+      positionals.set(
+        command,
+        normalizeLiveHelpArguments(loadHelp(command.split(" "))),
+      );
+    }
+  }
   const observed = new Set(activePackageCommands);
   for (const command of registered) {
     if (
@@ -164,7 +258,25 @@ export function collectLiveCliCommandPaths(
       observed.add(command);
     }
   }
-  return [...observed].sort((left, right) => left.localeCompare(right));
+  const commands = [...observed].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  return {
+    commands,
+    positionals: commands.map((command) => {
+      const declared = PM_COMMAND_POSITIONAL_CONTRACTS.find(
+        (contract) => contract.command === command,
+      );
+      return {
+        command,
+        slots: (positionals.get(command) ?? []).map((slot, index) => ({
+          ...slot,
+          value_kind: declared?.slots[index]?.value_kind ?? "string",
+          polymorphic: declared?.slots[index]?.polymorphic ?? false,
+        })),
+      };
+    }),
+  };
 }
 
 /** Report duplicate names because MCP clients address tools by unique name. */
@@ -331,7 +443,8 @@ const packageOwnedCommandSet = new Set(
     ({ disposition }) => disposition === "package_owned",
   ).map(({ command }) => command),
 );
-const activePackageCommands = Array.isArray(contracts.command_summaries)
+const hasCommandSummaries = Array.isArray(contracts.command_summaries);
+const activePackageCommands = hasCommandSummaries
   ? contracts.command_summaries.flatMap((summary) =>
       Object(summary) === summary &&
       typeof summary.command === "string" &&
@@ -340,16 +453,21 @@ const activePackageCommands = Array.isArray(contracts.command_summaries)
         : [],
     )
   : [];
-const commands = collectLiveCliCommandPaths(
+const liveCliSurface = collectLiveCliCommandSurface(
   readLiveCliHelp,
   activePackageCommands,
 );
+const commands = liveCliSurface.commands;
 const grammarReport = verifyPmCliGrammar(commands, PM_COMMAND_ALIAS_CONTRACTS);
-const observedPositionalContracts = Array.isArray(
-  contracts.grammar_contracts?.positional_signatures,
-)
-  ? contracts.grammar_contracts.positional_signatures
-  : [];
+if (!hasCommandSummaries) {
+  grammarReport.ok = false;
+  grammarReport.findings.push({
+    code: "missing_destination",
+    spelling: "contracts.command_summaries",
+    message: "The live contracts response omitted its command summary census.",
+  });
+}
+const observedPositionalContracts = liveCliSurface.positionals;
 const activeCommandSet = new Set(commands);
 const observedSignatureCommandSet = new Set(
   observedPositionalContracts.map(({ command }) => command),

@@ -1962,7 +1962,7 @@ export function registerMutationCommands(
   const createCommand = program
     .command("create")
     .argument(
-      "[typeOrTitle]",
+      "[type-or-title]",
       'Item title, or item type when a title follows (e.g. `pm create task "Fix bug"`)',
     )
     .argument("[title]", "Item title when the first argument is an item type")
@@ -2580,17 +2580,17 @@ export function registerMutationCommands(
     )
     .argument(
       "[subcommand]",
-      "Plan subcommand: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize",
+      "Required; Plan subcommand: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize",
     )
     .argument(
       "[id]",
       "Plan id (required for non-create subcommands); for create this may be the positional title",
     )
     .argument(
-      "[stepRef]",
+      "[step]",
       "Step reference: stable id (plan-step-001) or order integer",
     )
-    .argument("[reorderTo]", "New order integer for reorder-step")
+    .argument("[new-order]", "New order integer for reorder-step")
     .option("--title <value>", "Plan title")
     .option("--description <value>", "Plan description")
     .option(
@@ -3025,7 +3025,7 @@ export function registerMutationCommands(
     .command("schema")
     .argument(
       "[subcommand]",
-      "Schema subcommand: list, show, show-status, add/remove type/status/field, rename-type, rename-field, remap-status, or a custom item type name shorthand",
+      "Required; Schema subcommand: list, show, show-status, add/remove type/status/field, rename-type, rename-field, remap-status, or a custom item type name shorthand",
     )
     .argument(
       "[name]",
@@ -3121,7 +3121,10 @@ export function registerMutationCommands(
 
   const profileCommand = program
     .command("profile")
-    .argument("[subcommand]", "Profile subcommand: list, show, apply, or lint")
+    .argument(
+      "[subcommand]",
+      "Required; Profile subcommand: list, show, apply, or lint",
+    )
     .argument(
       "[name]",
       "Profile name for show/apply/lint: agile, ops, or research",

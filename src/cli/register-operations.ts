@@ -977,7 +977,7 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("telemetry")
     .argument(
-      "[namespaceOrSubcommand]",
+      "[namespace-or-subcommand]",
       "Telemetry subcommand: status, flush, stats, clear (default: status)",
     )
     .argument(

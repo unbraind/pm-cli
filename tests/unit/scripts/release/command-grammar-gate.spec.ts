@@ -18,6 +18,7 @@ afterEach(() => {
 async function runGrammarGate(
   commandSummaries: unknown,
   options: {
+    argumentOverrides?: Readonly<Record<string, readonly unknown[]>>;
     rootHelpRows?: readonly unknown[];
     positionalSignatures?: unknown;
     runtimeCommands?: readonly string[];
@@ -43,6 +44,13 @@ async function runGrammarGate(
   };
   exitCode: number | string | null | undefined;
   module: {
+    collectLiveCliCommandPaths: (
+      loadHelp?: (
+        commandPath?: string[],
+        disableExtensions?: boolean,
+      ) => unknown,
+      activePackageCommands?: string[],
+    ) => string[];
     verifyMcpGrammar: (
       actions: string[],
       tools: Array<Record<string, unknown>>,
@@ -103,7 +111,20 @@ async function runGrammarGate(
         name === "context" ? ["ctx"] : name === "package" ? ["packages"] : [],
     }));
     if (parent.length === 0) subcommands.push(...(options.rootHelpRows ?? []));
-    return JSON.stringify({ subcommands });
+    const contract = PM_COMMAND_POSITIONAL_CONTRACTS.find(
+      ({ command }) => command === parent,
+    );
+    return JSON.stringify({
+      arguments:
+        options.argumentOverrides?.[parent] ??
+        contract?.slots.map(({ name, required, variadic }) => ({
+          name,
+          required,
+          variadic,
+        })) ??
+        [],
+      subcommands,
+    });
   });
   vi.doMock("node:child_process", async (importOriginal) => ({
     ...(await importOriginal<typeof childProcess>()),
@@ -116,6 +137,13 @@ async function runGrammarGate(
   });
 
   const module = await harness.importModule<{
+    collectLiveCliCommandPaths: (
+      loadHelp?: (
+        commandPath?: string[],
+        disableExtensions?: boolean,
+      ) => unknown,
+      activePackageCommands?: string[],
+    ) => string[];
     verifyMcpGrammar: (
       actions: string[],
       tools: Array<Record<string, unknown>>,
@@ -190,6 +218,32 @@ describe("command grammar gate", () => {
       },
     });
     expect(result.exitCode ?? 0).toBe(0);
+    expect(result.module.collectLiveCliCommandPaths()).toEqual(
+      PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command).sort(
+        (left, right) => left.localeCompare(right),
+      ),
+    );
+  });
+
+  it("loads positional help for an active package command absent from root help", async () => {
+    const { module } = await runGrammarGate(liveCommandSummaries);
+    const loadHelp = vi.fn((commandPath: string[] = []) =>
+      commandPath.length === 0
+        ? { subcommands: [{ name: "help", aliases: ["h"] }] }
+        : {
+            arguments: [
+              null,
+              { name: "", required: true, variadic: false },
+              { name: "query", required: false, variadic: true },
+            ],
+            subcommands: [],
+          },
+    );
+
+    expect(
+      module.collectLiveCliCommandPaths(loadHelp, ["package search"]),
+    ).toEqual(["h", "help", "package search"]);
+    expect(loadHelp).toHaveBeenCalledWith(["package", "search"]);
   });
 
   it("fails closed for MCP action and narrow-tool drift", async () => {
@@ -240,7 +294,9 @@ describe("command grammar gate", () => {
     expect(result.report.command_count).toBe(
       PM_COMMAND_DESTINATION_CONTRACTS.length,
     );
-    expect(result.report.positionals.ok).toBe(false);
+    expect(result.report.findings).toContainEqual(
+      expect.objectContaining({ spelling: "contracts.command_summaries" }),
+    );
     expect(result.exitCode).toBe(1);
   });
 
@@ -281,18 +337,18 @@ describe("command grammar gate", () => {
   });
 
   it("fails closed when an observed positional slot changes arity", async () => {
-    const result = await runGrammarGate(
-      liveCommandSummaries.map((summary) =>
-        summary.command === "schema"
-          ? {
-              ...summary,
-              positionals: summary.positionals.map((slot, index) =>
-                index === 0 ? { ...slot, required: false } : slot,
-              ),
-            }
-          : summary,
-      ),
-    );
+    const schemaSlots = PM_COMMAND_POSITIONAL_CONTRACTS.find(
+      ({ command }) => command === "schema",
+    )!.slots;
+    const result = await runGrammarGate(liveCommandSummaries, {
+      argumentOverrides: {
+        schema: schemaSlots.map(({ name, required, variadic }, index) => ({
+          name,
+          required: index === 0 ? !required : required,
+          variadic,
+        })),
+      },
+    });
     expect(result.report).toMatchObject({
       ok: false,
       positionals: {
@@ -308,12 +364,10 @@ describe("command grammar gate", () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it("fails closed when an active package command omits its positional signature", async () => {
-    const omittedCommand = "changelog generate";
+  it("fails closed when active package help omits its positional slots", async () => {
+    const omittedCommand = "changelog export";
     const result = await runGrammarGate(liveCommandSummaries, {
-      positionalSignatures: PM_COMMAND_POSITIONAL_CONTRACTS.filter(
-        ({ command }) => command !== omittedCommand,
-      ).map(({ command, slots }) => ({ command, slots })),
+      argumentOverrides: { [omittedCommand]: [] },
     });
     expect(result.report).toMatchObject({
       ok: false,
@@ -321,7 +375,7 @@ describe("command grammar gate", () => {
         ok: false,
         findings: [
           expect.objectContaining({
-            code: "missing_observed_signature",
+            code: "positional_signature_mismatch",
             command: omittedCommand,
           }),
         ],
@@ -338,9 +392,6 @@ describe("command grammar gate", () => {
         runtimeCommands: PM_COMMAND_DESTINATION_CONTRACTS.map(
           ({ command }) => command,
         ).filter((command) => command !== inactiveCommand),
-        positionalSignatures: PM_COMMAND_POSITIONAL_CONTRACTS.map(
-          ({ command, slots }) => ({ command, slots }),
-        ),
       },
     );
     expect(result.report).toMatchObject({

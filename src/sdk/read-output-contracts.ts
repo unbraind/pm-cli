@@ -17,7 +17,7 @@ import {
   countReadOutputRows,
   mapReadOutputRows,
   readOutputBudgetCollections,
-  readOutputRowCollections,
+  readOutputContinuationRowCollections,
   readOutputRowPaths,
 } from "./read-output-rows.js";
 import {
@@ -1313,28 +1313,25 @@ function attachValidateDiagnosticRowContract(
         (entry): entry is string => typeof entry === "string",
       )
     : [];
-  const rowKeys = [
-    ...new Set([
-      ...existingRowKeys.filter(
-        (existingPath) =>
-          !diagnosticRowKeys.some(
-            (diagnosticPath) =>
-              diagnosticPath !== existingPath &&
-              (diagnosticPath.startsWith(`${existingPath}.`) ||
-                existingPath.startsWith(`${diagnosticPath}.`)),
-          ),
-      ),
-      ...diagnosticRowKeys,
-    ]),
-  ];
-  return rowKeys.length === existingRowKeys.length &&
-    rowKeys.every((path, index) => path === existingRowKeys[index])
+  const existingContinuationRowKeys = Array.isArray(
+    existingContract.continuation_row_keys,
+  )
+    ? existingContract.continuation_row_keys.filter(
+        (entry): entry is string => typeof entry === "string",
+      )
+    : [];
+  const rowKeys = existingRowKeys.length > 0 ? existingRowKeys : diagnosticRowKeys;
+  const continuationRowKeys = [...new Set(diagnosticRowKeys)];
+  return JSON.stringify(rowKeys) === JSON.stringify(existingRowKeys) &&
+    JSON.stringify(continuationRowKeys) ===
+      JSON.stringify(existingContinuationRowKeys)
     ? result
     : {
         ...result,
         row_contract: {
           ...existingContract,
           row_keys: rowKeys,
+          continuation_row_keys: continuationRowKeys,
           jq_selector:
             typeof existingContract.jq_selector === "string"
               ? existingContract.jq_selector
@@ -1518,7 +1515,7 @@ function attachReadOutputTruncationDisclosure(
   const overridden =
     resolved.amount?.value === "unbounded" ? (["amount"] as const) : [];
   const afterByPath = new Map(
-    readOutputRowCollections(projected).map((collection) => [
+    readOutputContinuationRowCollections(projected).map((collection) => [
       collection.path,
       Array.isArray(collection.value)
         ? collection.value.length
@@ -1646,7 +1643,7 @@ function captureReadOutputContinuationState(
   options: Record<string, unknown>,
 ): ReadOutputContinuationState {
   const collectionsBeforeBudget = new Map(
-    readOutputRowCollections(projected).map((collection) => {
+    readOutputContinuationRowCollections(projected).map((collection) => {
       const rows = Array.isArray(collection.value)
         ? collection.value.length
         : Object.keys(collection.value).length;

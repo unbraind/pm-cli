@@ -83,7 +83,7 @@ export function sliceReadOutputRowCollection(
   rowPath: string,
   offset: number,
 ): Record<string, unknown> {
-  const collection = readOutputRowCollections(result).find(
+  const collection = readOutputContinuationRowCollections(result).find(
     (entry) => entry.path === rowPath,
   );
   if (!collection) return result;
@@ -107,11 +107,37 @@ export function readOutputRowPaths(result: Record<string, unknown>): string[] {
     .map(([key]) => key);
 }
 
+/** Resolve collections that may be resumed independently from primary result rows. */
+export function readOutputContinuationRowPaths(
+  result: Record<string, unknown>,
+): string[] {
+  const contract = result.row_contract;
+  if (isRecord(contract) && Array.isArray(contract.continuation_row_keys)) {
+    return contract.continuation_row_keys.filter(
+      (entry): entry is string =>
+        typeof entry === "string" && entry.trim().length > 0,
+    );
+  }
+  return readOutputRowPaths(result);
+}
+
 /** Resolve every declared row path that currently contains iterable rows. */
 export function readOutputRowCollections(
   result: Record<string, unknown>,
 ): PmReadOutputRowCollection[] {
   return readOutputRowPaths(result).flatMap((rowPath) => {
+    const value = valueAtPath(result, rowPath);
+    return Array.isArray(value) || isRecord(value)
+      ? [{ path: rowPath, value }]
+      : [];
+  });
+}
+
+/** Resolve every declared continuation path that currently contains iterable rows. */
+export function readOutputContinuationRowCollections(
+  result: Record<string, unknown>,
+): PmReadOutputRowCollection[] {
+  return readOutputContinuationRowPaths(result).flatMap((rowPath) => {
     const value = valueAtPath(result, rowPath);
     return Array.isArray(value) || isRecord(value)
       ? [{ path: rowPath, value }]

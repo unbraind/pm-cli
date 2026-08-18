@@ -48,7 +48,6 @@ import { resolveCreateExplicitEmptyFlag } from "../sdk/agent/create-option-polic
 import {
   formatPmPositionalActionFlagTip,
   PM_POSITIONAL_ACTION_CONTRACTS,
-  resolvePmCommandPositionalContract,
   resolvePmPositionalActionContract,
   type PmPositionalActionContract,
 } from "../sdk/cli-contracts/grammar-contracts.js";
@@ -297,7 +296,9 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
         : null;
     return {
       name: rawName.trim(),
-      required: argument.required === true,
+      required:
+        argument.required === true ||
+        description?.toLowerCase().startsWith("required;") === true,
       variadic: argument.variadic === true,
       description,
     };
@@ -367,22 +368,13 @@ function buildPositionalActionHelpProjection(
   allOptions: HelpOptionSummary[],
 ): PositionalActionHelpProjection {
   if (!action) {
-    const commandContract = resolvePmCommandPositionalContract(resolvedPath);
     const argumentsList = buildHelpArgumentSummaries(targetCommand);
     const registeredSubcommands = buildHelpSubcommandSummaries(targetCommand);
     const registeredSubcommandNames = new Set(
       registeredSubcommands.map(({ name }) => name),
     );
     return {
-      arguments: commandContract
-        ? argumentsList.map((argument, index) => ({
-            ...argument,
-            required:
-              commandContract.slots[index]?.required ?? argument.required,
-            variadic:
-              commandContract.slots[index]?.variadic ?? argument.variadic,
-          }))
-        : argumentsList,
+      arguments: argumentsList,
       options: allOptions,
       subcommands: [
         ...registeredSubcommands,
@@ -395,7 +387,19 @@ function buildPositionalActionHelpProjection(
           description,
         })),
       ].sort((left, right) => left.name.localeCompare(right.name)),
-      usage: [resolvedPath, targetCommand.usage()]
+      usage: [
+        resolvedPath,
+        argumentsList.reduce(
+          (usage, argument) =>
+            argument.required
+              ? usage.replace(
+                  `[${argument.name}${argument.variadic ? "..." : ""}]`,
+                  `<${argument.name}${argument.variadic ? "..." : ""}>`,
+                )
+              : usage,
+          targetCommand.usage(),
+        ),
+      ]
         .filter((token) => token.length > 0)
         .join(" "),
     };
