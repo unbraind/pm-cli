@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:contracts","area:mcp",cross-surface-parity,defect-recurrence
 created_at: "2026-08-10T05:53:35.894Z"
-updated_at: "2026-08-18T10:57:03.626Z"
-closed_at: "2026-08-18T10:57:02.833Z"
-completed_at: "2026-08-18T10:57:02.833Z"
+updated_at: "2026-08-18T12:14:09.394Z"
+closed_at: "2026-08-18T12:14:08.496Z"
+completed_at: "2026-08-18T12:14:08.496Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every MCP declared key resolves to a CLI flag, via a shared name or a registered alias; A parity gate fails when an MCP declared key has no CLI flag or alias that accepts it; The unknown-option recovery names the accepted flag for a known cross-surface synonym"
@@ -28,7 +28,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,related,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,implements,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-18T04:52:00.566Z","harness:codex","Implementation start 2026-08-18: one coupled SDK/CLI/MCP tranche will make positional actions and recovery references contract-declared, executable, parity-gated, and discoverable. Scope includes generated contracts, public SDK types, CLI help and recovery, MCP aliases, assurance negative controls, documentation, temporary-workspace acceptance, and packed npm/Bun consumers. Duplicate check used the complete 2,521-item all-status corpus with zero omissions or truncation."
   "2026-08-18T06:29:32.670Z","harness:codex","Verification evidence: command grammar assurance proves MCP-to-CLI option parity for all 43 create and 48 update parameters with zero findings; packed npm/npx and Bun/bunx consumers executed --linked-file and --linked-test mutations, Node and Bun narrow SDK imports, action help, and scoped contracts successfully."
   "2026-08-18T06:45:42.746Z","harness:codex","Closeout evidence: create/update linkedFile and linkedTest now map to executable --linked-file/--linked-test aliases and the exported SDK verifier reports zero parity findings across 43 create and 48 update parameters. PM-linked focused execution passed 21/21 tests; packed npx/bunx mutation acceptance and exact full coverage passed. The separate boolean flag_invocations residual is preserved under pm-pcy92t with precise discovered_from provenance."
@@ -37,9 +37,10 @@ comments[8]{created_at,author,text}:
   "2026-08-18T08:53:12.438Z","harness:codex","Final independent-review evidence: a fresh isolated tracker retained four files and four tests across mixed canonical/alias create+update invocations. Synthetic unknown accepted flags fail closed; MCP/CLI parity remains zero findings for 43 create and 48 update parameters. Exact 7,543-test coverage, pnpm lint, SDK surface, contracts, token gates, and transport floor pass."
   "2026-08-18T10:45:43.545Z","harness:codex","Late review implementation: alias descriptions now use the structured-help folding prefix; create/update JSON help expose --linked-file and --linked-test under the canonical options; the malformed plural negative control asserts code unknown_option plus exact rejected spelling. Focused verification passes 89/89."
   "2026-08-18T10:56:54.399Z","harness:codex","Final verification evidence: create/update structured help now proves canonical --file/--test flags publish --linked-file/--linked-test aliases; malformed --linked-files is parsed as code=unknown_option with the exact rejected spelling. The same full gate set passed, including 43 create and 48 update parameter parity and exact 100/100/100/100 repository coverage (53,124 lines; 55,035 statements; 11,369 functions; 41,062 branches)."
+  "2026-08-18T12:14:00.631Z","harness:codex","Evidence: focused acceptance proves alias-only linkedFile/linkedTest arrays normalize to canonical file/test for both create and update, while empty canonical/alias arrays remain undefined. A disposable initialized project manually accepted --linked-file and --linked-test, and pm get --full returned the canonical file and test records. SDK/MCP parity remains green at 43 create and 48 update parameters."
 learnings[1]{created_at,author,text}:
   "2026-08-18T08:53:11.802Z","harness:codex",Repeatable aliases are independent Commander option buckets and must be concatenated rather than first-match selected; shared validated contract tables should use direct internal imports so public aggregate routing does not add cold-start work.
-files[10]{path,scope,note}:
+files[11]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,Public contract export
   src/sdk/cli-contracts/commander-mutation-options.ts,project,Executable linked file and test aliases
   src/sdk/cli-contracts/commander-types.ts,project,Lossless mixed repeatable alias values
@@ -47,18 +48,20 @@ files[10]{path,scope,note}:
   src/sdk/cli-contracts/tool-option-contracts.ts,project,Public MCP-to-CLI option parity verifier
   src/sdk/index.ts,project,Root SDK export
   tests/integration/positional-action-contracts.integration.spec.ts,project,Structured alias discovery and exact refusal acceptance
+  tests/unit/cli/linked-resource-alias-normalization.spec.ts,project,Cover alias-only and empty-array normalization
   tests/unit/cli/registration-helpers.spec.ts,project,Mixed canonical and alias spelling regression
   tests/unit/sdk/action-schema-parity.spec.ts,project,Executable alias and action parity coverage
   tests/unit/sdk/tool-option-contracts.spec.ts,project,Parity verifier positive and negative coverage
-tests[3]{command,scope,timeout_seconds}:
+tests[4]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/integration/positional-action-contracts.integration.spec.ts,project,240
   node scripts/run-tests.mjs coverage,project,600
   node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-alias-normalization.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msyartdk-7oc6df,test,passed,"2026-08-18T06:44:04.816Z","2026-08-18T06:44:19.448Z","2026-08-18T06:44:19.448Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,MCP-to-CLI parity SDK reference
-close_reason: "Delivered complete 43-create/48-update CLI-MCP option parity with canonical aliases, machine-readable alias discovery, exact malformed-plural refusal verification, and full gate/coverage evidence."
+close_reason: Linked resource aliases now have explicit create/update normalization acceptance for alias-only and empty-array inputs.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -4,8 +4,9 @@
 
 ### Fixed
 
-- Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command ([pm-2tan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2tan.toon))
 - MCP update keys and CLI update flags diverge in name (linkedFile/linkedTest vs --file/--test), so an agent that reads the MCP contract and writes a CLI command produces a guaranteed unknown-option refusal ([pm-y0htkd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y0htkd.toon))
+- Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command ([pm-2tan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2tan.toon))
+- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
 - Context calibration recovery names a nonexistent package script ([pm-xa3t0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xa3t0o.toon))
 
@@ -101,7 +102,6 @@
 - Make every failing health verdict self-indexing and attach gate severity to findings ([pm-larv4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-larv4r.toon))
 - GH-1004: history-repair remains writer-version-specific across 2026.8.7 and 2026.8.13 ([pm-igdvfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-igdvfq.toon))
 - Assurance gates preserve zero-valued counts and report actionable source failures ([pm-xmmafu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xmmafu.toon))
-- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely ([pm-okgxwa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-okgxwa.toon))
 - The unknown-option refusal asserts the option belongs on another command path without checking, so a spelling that exists nowhere sends the reader on an unbounded search ([pm-in23qu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-in23qu.toon))
 - The gate verdict withholds its evidence as a declaration-order prefix, so the assertion that produced a blocking verdict can be the row the default read drops ([pm-e5gl05](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e5gl05.toon))

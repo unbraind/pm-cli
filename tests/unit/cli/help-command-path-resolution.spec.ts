@@ -159,6 +159,27 @@ describe("structured help command-path resolution", () => {
     ).toBe("get [options] <id>");
   });
 
+  it("does not duplicate a positional action registered as a subcommand", () => {
+    const root = new Command("pm");
+    const plan = root.command("plan");
+    plan.command("create").description("Registered create command");
+
+    const projection = _testOnly.buildPositionalActionHelpProjection(
+      undefined,
+      plan,
+      "plan",
+      [],
+    );
+    expect(
+      projection.subcommands.filter(({ name }) => name === "create"),
+    ).toEqual([
+      expect.objectContaining({
+        name: "create",
+        description: "Registered create command",
+      }),
+    ]);
+  });
+
   it("filters action options through aliases and renders every slot shape", () => {
     const projection = _testOnly.buildPositionalActionHelpProjection(
       {

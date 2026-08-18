@@ -284,7 +284,10 @@ describe("CLI noun-verb grammar contracts", () => {
       ]),
     );
 
-    const duplicate = PM_COMMAND_POSITIONAL_CONTRACTS[0]!;
+    const duplicate = PM_COMMAND_POSITIONAL_CONTRACTS.find(
+      ({ command }) => command === "plan reorder-step",
+    )!;
+    expect(duplicate.slots.length).toBeGreaterThan(1);
     const duplicateReport = verifyPmCommandPositionalContracts(
       [duplicate, duplicate],
       {
@@ -330,7 +333,7 @@ describe("CLI noun-verb grammar contracts", () => {
       }),
     ]);
 
-    const declared = [PM_COMMAND_POSITIONAL_CONTRACTS[0]!];
+    const declared = [duplicate];
     const reorderedSlots = declared[0]!.slots.map(
       ({ name, required, variadic, value_kind: valueKind, polymorphic }) => ({
         polymorphic,

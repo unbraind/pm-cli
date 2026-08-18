@@ -16,6 +16,7 @@ import {
   boundReadOutputRows,
   countReadOutputRows,
   mapReadOutputRows,
+  readOutputBudgetCollections,
   readOutputRowCollections,
   readOutputRowPaths,
 } from "./read-output-rows.js";
@@ -1271,6 +1272,53 @@ export function stabilizeReadOutputReceiptEstimates(
   return attachReadOutputSessionContracts(result, session, receipt);
 }
 
+/** Declare independently resumable validate diagnostic arrays on rich results. */
+function attachValidateDiagnosticRowContract(
+  command: PmReadOutputSurface,
+  result: Record<string, unknown>,
+): Record<string, unknown> {
+  if (command !== "validate") return result;
+  const projection = isRecord(result.projection)
+    ? result.projection
+    : undefined;
+  const declaredFieldGroups = Array.isArray(projection?.declared_field_groups)
+    ? projection.declared_field_groups
+    : [];
+  if (
+    !declaredFieldGroups.some(
+      (group) => isRecord(group) && group.name === "diagnostic_rows",
+    )
+  ) {
+    return result;
+  }
+  const diagnosticRowKeys = readOutputBudgetCollections(result)
+    .map(({ path }) => path)
+    .filter((path) => /^checks\.\d+\.details\./u.test(path));
+  if (diagnosticRowKeys.length === 0) return result;
+  const existingContract = isRecord(result.row_contract)
+    ? result.row_contract
+    : {};
+  const existingRowKeys = Array.isArray(existingContract.row_keys)
+    ? existingContract.row_keys.filter(
+        (entry): entry is string => typeof entry === "string",
+      )
+    : [];
+  const rowKeys = [...new Set([...existingRowKeys, ...diagnosticRowKeys])];
+  return rowKeys.length === existingRowKeys.length
+    ? result
+    : {
+        ...result,
+        row_contract: {
+          ...existingContract,
+          row_keys: rowKeys,
+          jq_selector:
+            typeof existingContract.jq_selector === "string"
+              ? existingContract.jq_selector
+              : ".checks[].details",
+        },
+      };
+}
+
 /** Apply field, amount, and repeat projections to every declared row path. */
 function projectReadOutputRows(
   result: Record<string, unknown>,
@@ -1678,8 +1726,17 @@ export function applyReadOutputDimensions<
   ) {
     return result;
   }
+  const continuationReadyResult = attachValidateDiagnosticRowContract(
+    resolved.command,
+    result,
+  );
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
-  let projected = projectReadOutputRows(result, resolved, session, cursor);
+  let projected = projectReadOutputRows(
+    continuationReadyResult,
+    resolved,
+    session,
+    cursor,
+  );
   const continuationState = captureReadOutputContinuationState(
     projected,
     cursor,

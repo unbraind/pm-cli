@@ -366,6 +366,10 @@ function buildPositionalActionHelpProjection(
   if (!action) {
     const commandContract = resolvePmCommandPositionalContract(resolvedPath);
     const argumentsList = buildHelpArgumentSummaries(targetCommand);
+    const registeredSubcommands = buildHelpSubcommandSummaries(targetCommand);
+    const registeredSubcommandNames = new Set(
+      registeredSubcommands.map(({ name }) => name),
+    );
     return {
       arguments: commandContract
         ? argumentsList.map((argument, index) => ({
@@ -378,9 +382,10 @@ function buildPositionalActionHelpProjection(
         : argumentsList,
       options: allOptions,
       subcommands: [
-        ...buildHelpSubcommandSummaries(targetCommand),
+        ...registeredSubcommands,
         ...PM_POSITIONAL_ACTION_CONTRACTS.filter(
-          ({ parent }) => parent === resolvedPath,
+          ({ parent, action: name }) =>
+            parent === resolvedPath && !registeredSubcommandNames.has(name),
         ).map(({ action: name, description }) => ({
           name,
           aliases: [],

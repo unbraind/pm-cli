@@ -80,7 +80,8 @@ describe("help-content rendering helpers", () => {
     actionPlan.configureOutput({ writeOut: (text) => (actionHelp += text) });
     actionPlan.outputHelp();
     expect(actionHelp).toContain("Action path: pm plan create");
-    expect(actionHelp).toContain("Applicable flags: --");
+    expect(actionHelp).toContain("Applicable flags: --acceptance-criteria");
+    expect(actionHelp).toContain("pm plan create --title");
 
     const parentProgram = new Command("pm");
     const parentPlan = parentProgram.command("plan");

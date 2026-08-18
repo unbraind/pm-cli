@@ -41,8 +41,13 @@ function valueAtPath(
 ): unknown {
   let value: unknown = result;
   for (const segment of rowPath.split(".")) {
-    if (!isRecord(value)) return undefined;
-    value = value[segment];
+    if (Array.isArray(value)) {
+      if (!/^\d+$/u.test(segment)) return undefined;
+      value = value[Number(segment)];
+    } else {
+      if (!isRecord(value)) return undefined;
+      value = value[segment];
+    }
   }
   return value;
 }
@@ -54,18 +59,22 @@ function replaceValueAtPath(
   replacement: unknown,
 ): Record<string, unknown> {
   const segments = rowPath.split(".");
-  const root = { ...result };
-  let source: Record<string, unknown> = result;
-  let target: Record<string, unknown> = root;
-  for (const segment of segments.slice(0, -1)) {
-    const sourceChild = source[segment] as Record<string, unknown>;
-    const targetChild = { ...sourceChild };
-    target[segment] = targetChild;
-    source = sourceChild;
-    target = targetChild;
-  }
-  target[segments.at(-1)!] = replacement;
-  return root;
+  const replace = (value: unknown, offset: number): unknown => {
+    if (offset === segments.length) return replacement;
+    const segment = segments[offset]!;
+    if (Array.isArray(value)) {
+      const index = Number(segment);
+      const cloned = [...value];
+      cloned[index] = replace(value[index], offset + 1);
+      return cloned;
+    }
+    const record = value as Record<string, unknown>;
+    return {
+      ...record,
+      [segment]: replace(record[segment], offset + 1),
+    };
+  };
+  return replace(result, 0) as Record<string, unknown>;
 }
 
 /** Replace one declared row collection with a suffix beginning at an offset. */

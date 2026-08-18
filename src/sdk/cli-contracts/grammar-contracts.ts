@@ -985,10 +985,12 @@ export function verifyPmCommandPositionalContracts(
   const findings: PmCommandPositionalFinding[] = [
     ...duplicatePositionalSignatureFindings(declared, "declared"),
     ...duplicatePositionalSignatureFindings(observed, "observed"),
-    ...verifyExplicitPositionalSlotCensus(
-      EXPLICIT_POSITIONAL_SLOTS.keys(),
-      PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
-    ),
+    ...(options.declared === undefined
+      ? verifyExplicitPositionalSlotCensus(
+          EXPLICIT_POSITIONAL_SLOTS.keys(),
+          PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command),
+        )
+      : []),
   ];
   for (const contract of declaredByCommand.values()) {
     const normalizedCommand = normalizePositionalCommandPath(contract.command);
