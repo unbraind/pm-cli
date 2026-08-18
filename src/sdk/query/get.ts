@@ -351,6 +351,13 @@ function validateGetFields(
     "schedule.reminders",
     "schedule.events",
   ]);
+  const allowedValues = [
+    ...[...itemFields].flatMap((field) => [field, `item.${field}`]),
+    ...allowedRootFields,
+    ...allowedLinkedFields,
+    ...allowedClaimStateFields,
+    ...allowedScheduleFields,
+  ].sort();
   const unknown = fields.filter((field) => {
     const normalized = normalizeGetField(field);
     return (
@@ -372,6 +379,10 @@ function validateGetFields(
           "pm get <id> --fields id,title,claim_state",
           "pm get <id> --fields id,title,body,linked.files",
         ],
+        recovery: {
+          allowed_values: allowedValues,
+          suggested_retry: "pm get <id> --fields id,title,status",
+        },
       },
     );
   }

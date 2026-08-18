@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1706,
+    "covered_symbols": 1723,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1707
+    "required_symbols": 1724
   },
   "breaking_acknowledgements": [
     {
@@ -815,6 +815,32 @@
       ],
       "package_version": "2026.8.18",
       "reason": "ReadRowContract adds an optional continuation_row_keys field; existing consumers remain source-compatible while nested resumability becomes explicit."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmFlagLexiconFinding",
+        "signature ./sdk:PmRefusalClosureFinding",
+        "signature ./sdk/contracts:PmFlagLexiconFinding",
+        "signature ./sdk/contracts:PmRefusalClosureFinding"
+      ],
+      "package_version": "2026.8.18",
+      "reason": "Finalize unpublished recovery and lexicon finding unions before first release"
+    },
+    {
+      "changes": [
+        "symbol ./sdk:PM_FLAG_LEXICON removed",
+        "symbol ./sdk/contracts:PM_FLAG_LEXICON removed"
+      ],
+      "package_version": "2026.8.18",
+      "reason": "Finalize unpublished flag lexicon as a lazy SDK function to preserve import budgets"
+    },
+    {
+      "changes": [
+        "symbol ./sdk:PM_COMMAND_FLAG_BUDGETS removed",
+        "symbol ./sdk/contracts:PM_COMMAND_FLAG_BUDGETS removed"
+      ],
+      "package_version": "2026.8.18",
+      "reason": "Finalize unpublished flag budget surface as a lazy SDK function to preserve import ratchets"
     }
   ],
   "entrypoints": {
@@ -2708,6 +2734,12 @@
         {
           "classification": "contract_data",
           "kind": "interface",
+          "name": "CliFlagArityObservation",
+          "signature": "export interface CliFlagArityObservation { command: string; flag: string; takes_value: boolean; value_required: boolean; repeatable: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
           "name": "CliFlagContract",
           "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; cursor_semantics?: \"presentation\"; }"
         },
@@ -2722,6 +2754,18 @@
           "kind": "interface",
           "name": "CliFlagInvocationContract",
           "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "CliFlagInvocationParityFinding",
+          "signature": "export interface CliFlagInvocationParityFinding { code: \"duplicate_observation\" | \"missing_observation\" | \"takes_value_mismatch\" | \"value_required_mismatch\" | \"repeatable_mismatch\" | \"undeclared_observation\"; command: string; flag: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "CliFlagInvocationParityReport",
+          "signature": "export interface CliFlagInvocationParityReport { ok: boolean; declared_count: number; observed_count: number; findings: CliFlagInvocationParityFinding[]; }"
         },
         {
           "classification": "supported",
@@ -7662,10 +7706,28 @@
           "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listPmCommandFlagBudgets",
+          "signature": "() => readonly PmCommandFlagBudget[] | calls: () => readonly PmCommandFlagBudget[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listPmCommandsForFamily",
+          "signature": "(family: PmCommandCapabilityFamily) => string[] | calls: (family: PmCommandCapabilityFamily) => string[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "listPmCommandsForTier",
           "signature": "(tier: Exclude<PmCommandVisibilityTier, \"internal\">) => string[] | calls: (tier: Exclude<PmCommandVisibilityTier, \"internal\">) => string[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listPmFlagLexicon",
+          "signature": "() => readonly PmFlagLexiconEntry[] | calls: () => readonly PmFlagLexiconEntry[]"
         },
         {
           "classification": "advanced_export",
@@ -9144,6 +9206,12 @@
           "signature": "readonly PmCommandAliasContract[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_COMMAND_CAPABILITY_CONTRACTS",
+          "signature": "readonly PmCommandCapabilityContract[]"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_COMMAND_DESTINATION_CONTRACTS",
@@ -9672,6 +9740,18 @@
           "signature": "export type PmCommandAliasRegistration = \"bootstrap\" | \"commander\";"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmCommandCapabilityContract",
+          "signature": "export interface PmCommandCapabilityContract extends PmCommandVisibilityContract { family: PmCommandCapabilityFamily; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmCommandCapabilityFamily",
+          "signature": "export type PmCommandCapabilityFamily = \"workspace\" | \"intake\" | \"context\" | \"lifecycle\" | \"evidence\" | \"graph\" | \"quality\" | \"automation\" | \"extensions\" | \"internal\";"
+        },
+        {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmCommandDestinationContract",
@@ -9730,6 +9810,12 @@
           "kind": "interface",
           "name": "PmCommandExitOutcomeContract",
           "signature": "export interface PmCommandExitOutcomeContract { exit_code: PmCommandExitCode; outcome: PmCommandExitOutcome; success: boolean; meaning: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandFlagBudget",
+          "signature": "export interface PmCommandFlagBudget { command: string; current: number; maximum: number; }"
         },
         {
           "classification": "contract_data",
@@ -9946,6 +10032,30 @@
           "kind": "type",
           "name": "PmExtensionTrustModeContract",
           "signature": "export type PmExtensionTrustModeContract = (typeof PM_EXTENSION_TRUST_MODE_CONTRACTS)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagLexiconEntry",
+          "signature": "export interface PmFlagLexiconEntry { command: string; family: PmCommandCapabilityFamily; concept: string; flag: string; aliases: readonly string[]; value_kind: PmFlagValueKind; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagLexiconFinding",
+          "signature": "export interface PmFlagLexiconFinding { code: \"alias_collision\" | \"budget_exceeded\" | \"duplicate_canonical_flag\" | \"inconsistent_concept_kind\" | \"missing_budget\" | \"stale_budget\"; command: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagLexiconReport",
+          "signature": "export interface PmFlagLexiconReport { ok: boolean; entry_count: number; budget_count: number; findings: readonly PmFlagLexiconFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmFlagValueKind",
+          "signature": "export type PmFlagValueKind = \"boolean\" | \"string\" | \"number\" | \"list\";"
         },
         {
           "classification": "advanced_export",
@@ -10252,6 +10362,24 @@
           "kind": "type",
           "name": "PmRecoveryReferenceSemantics",
           "signature": "export type PmRecoveryReferenceSemantics = \"recovery\" | \"replacement\" | \"behavior_preserving\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalClosureFinding",
+          "signature": "export interface PmRefusalClosureFinding { code: \"accepted_rejected_value\" | \"duplicate_probe\" | \"empty_corpus\" | \"missing_allowed_values\" | \"missing_suggested_retry\" | \"non_refusal_exit\" | \"retry_failed\"; probe_id: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalClosureObservation",
+          "signature": "export interface PmRefusalClosureObservation { probe_id: string; entrypoint: string; exit_code: number; rejected_value: string; allowed_values: readonly string[]; suggested_retry: string; retry_succeeded: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalClosureReport",
+          "signature": "export interface PmRefusalClosureReport { ok: boolean; probe_count: number; closed_probe_count: number; closure_fraction: number; findings: readonly PmRefusalClosureFinding[]; }"
         },
         {
           "classification": "advanced_export",
@@ -12060,6 +12188,12 @@
           "signature": "() => string | calls: () => string"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "renderPmFlagLexiconMarkdown",
+          "signature": "() => string | calls: () => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "renderRowsAsCsv",
@@ -12442,6 +12576,12 @@
           "kind": "function",
           "name": "resolvePmCommandAlias",
           "signature": "(alias: string) => PmCommandAliasContract | undefined | calls: (alias: string) => PmCommandAliasContract | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolvePmCommandCapabilityFamily",
+          "signature": "(command: string) => PmCommandCapabilityFamily | calls: (command: string) => PmCommandCapabilityFamily"
         },
         {
           "classification": "contract_data",
@@ -14014,6 +14154,12 @@
           "kind": "function",
           "name": "scoreItemSimilarity",
           "signature": "(leftTitle: string, rightTitle: string) => ItemSimilarityScore | calls: (leftTitle: string, rightTitle: string) => ItemSimilarityScore"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "scorePmRefusalClosure",
+          "signature": "(observations: readonly PmRefusalClosureObservation[]) => PmRefusalClosureReport | calls: (observations: readonly PmRefusalClosureObservation[]) => PmRefusalClosureReport"
         },
         {
           "classification": "supported",
@@ -15662,6 +15808,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "verifyCliFlagInvocationParity",
+          "signature": "(command: string, declarations: readonly CliFlagInvocationContract[], observations: readonly CliFlagArityObservation[]) => CliFlagInvocationParityReport | calls: (command: string, declarations: readonly CliFlagInvocationContract[], observations: readonly CliFlagArityObservation[]) => CliFlagInvocationParityReport"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "verifyExplicitPositionalSlotCensus",
           "signature": "(explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[] | calls: (explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[]"
         },
@@ -15694,6 +15846,12 @@
           "kind": "function",
           "name": "verifyPmCommandPositionalContracts",
           "signature": "(observed: readonly PmCommandPositionalContract[], options?: { declared?: readonly PmCommandPositionalContract[]; positionalShapeBudget?: number; }) => PmCommandPositionalReport | calls: (observed: readonly PmCommandPositionalContract[], options?: { declared?: readonly PmCommandPositionalContract[]; positionalShapeBudget?: number; }) => PmCommandPositionalReport"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "verifyPmFlagLexicon",
+          "signature": "(entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport | calls: (entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport"
         },
         {
           "classification": "advanced_export",
@@ -17570,6 +17728,12 @@
         {
           "classification": "contract_data",
           "kind": "interface",
+          "name": "CliFlagArityObservation",
+          "signature": "export interface CliFlagArityObservation { command: string; flag: string; takes_value: boolean; value_required: boolean; repeatable: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
           "name": "CliFlagContract",
           "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; cursor_semantics?: \"presentation\"; }"
         },
@@ -17584,6 +17748,18 @@
           "kind": "interface",
           "name": "CliFlagInvocationContract",
           "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "CliFlagInvocationParityFinding",
+          "signature": "export interface CliFlagInvocationParityFinding { code: \"duplicate_observation\" | \"missing_observation\" | \"takes_value_mismatch\" | \"value_required_mismatch\" | \"repeatable_mismatch\" | \"undeclared_observation\"; command: string; flag: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "CliFlagInvocationParityReport",
+          "signature": "export interface CliFlagInvocationParityReport { ok: boolean; declared_count: number; observed_count: number; findings: CliFlagInvocationParityFinding[]; }"
         },
         {
           "classification": "contract_data",
@@ -18115,6 +18291,18 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "listPmCommandFlagBudgets",
+          "signature": "() => readonly PmCommandFlagBudget[] | calls: () => readonly PmCommandFlagBudget[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listPmFlagLexicon",
+          "signature": "() => readonly PmFlagLexiconEntry[] | calls: () => readonly PmFlagLexiconEntry[]"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "MEET_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -18584,6 +18772,12 @@
         {
           "classification": "contract_data",
           "kind": "interface",
+          "name": "PmCommandFlagBudget",
+          "signature": "export interface PmCommandFlagBudget { command: string; current: number; maximum: number; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
           "name": "PmCommandOutputBudgetContract",
           "signature": "export interface PmCommandOutputBudgetContract { command: string; budget_class: PmOutputBudgetClass; default_max_estimated_tokens: number; default_max_estimated_tokens_by_format: Readonly<{ toon: number; json: number; }>; degradation_ladder: readonly PmOutputDegradationStep[]; allows_unbounded_opt_out: boolean; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
         },
@@ -18712,6 +18906,30 @@
           "kind": "type",
           "name": "PmExtensionTrustModeContract",
           "signature": "export type PmExtensionTrustModeContract = (typeof PM_EXTENSION_TRUST_MODE_CONTRACTS)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagLexiconEntry",
+          "signature": "export interface PmFlagLexiconEntry { command: string; family: PmCommandCapabilityFamily; concept: string; flag: string; aliases: readonly string[]; value_kind: PmFlagValueKind; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagLexiconFinding",
+          "signature": "export interface PmFlagLexiconFinding { code: \"alias_collision\" | \"budget_exceeded\" | \"duplicate_canonical_flag\" | \"inconsistent_concept_kind\" | \"missing_budget\" | \"stale_budget\"; command: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagLexiconReport",
+          "signature": "export interface PmFlagLexiconReport { ok: boolean; entry_count: number; budget_count: number; findings: readonly PmFlagLexiconFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmFlagValueKind",
+          "signature": "export type PmFlagValueKind = \"boolean\" | \"string\" | \"number\" | \"list\";"
         },
         {
           "classification": "contract_data",
@@ -18872,6 +19090,24 @@
         {
           "classification": "contract_data",
           "kind": "interface",
+          "name": "PmRefusalClosureFinding",
+          "signature": "export interface PmRefusalClosureFinding { code: \"accepted_rejected_value\" | \"duplicate_probe\" | \"empty_corpus\" | \"missing_allowed_values\" | \"missing_suggested_retry\" | \"non_refusal_exit\" | \"retry_failed\"; probe_id: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalClosureObservation",
+          "signature": "export interface PmRefusalClosureObservation { probe_id: string; entrypoint: string; exit_code: number; rejected_value: string; allowed_values: readonly string[]; suggested_retry: string; retry_succeeded: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalClosureReport",
+          "signature": "export interface PmRefusalClosureReport { ok: boolean; probe_count: number; closed_probe_count: number; closure_fraction: number; findings: readonly PmRefusalClosureFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
           "name": "PmRefusalStateContract",
           "signature": "export interface PmRefusalStateContract { state: string; probe_id: string; entrypoints: string[]; expected_exit_class: PmErrorCodeClass; }"
         },
@@ -18986,6 +19222,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "renderPmFlagLexiconMarkdown",
+          "signature": "() => string | calls: () => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "resolveCanonicalPmErrorCodeContract",
           "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
         },
@@ -19090,6 +19332,12 @@
           "kind": "value",
           "name": "SCHEMA_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "scorePmRefusalClosure",
+          "signature": "(observations: readonly PmRefusalClosureObservation[]) => PmRefusalClosureReport | calls: (observations: readonly PmRefusalClosureObservation[]) => PmRefusalClosureReport"
         },
         {
           "classification": "contract_data",
@@ -19352,6 +19600,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "verifyCliFlagInvocationParity",
+          "signature": "(command: string, declarations: readonly CliFlagInvocationContract[], observations: readonly CliFlagArityObservation[]) => CliFlagInvocationParityReport | calls: (command: string, declarations: readonly CliFlagInvocationContract[], observations: readonly CliFlagArityObservation[]) => CliFlagInvocationParityReport"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "verifyExplicitPositionalSlotCensus",
           "signature": "(explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[] | calls: (explicitCommands: Iterable<string>, destinationCommands: Iterable<string>) => PmCommandPositionalFinding[]"
         },
@@ -19366,6 +19620,12 @@
           "kind": "function",
           "name": "verifyPmCommandPositionalContracts",
           "signature": "(observed: readonly PmCommandPositionalContract[], options?: { declared?: readonly PmCommandPositionalContract[]; positionalShapeBudget?: number; }) => PmCommandPositionalReport | calls: (observed: readonly PmCommandPositionalContract[], options?: { declared?: readonly PmCommandPositionalContract[]; positionalShapeBudget?: number; }) => PmCommandPositionalReport"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "verifyPmFlagLexicon",
+          "signature": "(entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport | calls: (entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport"
         },
         {
           "classification": "contract_data",
@@ -28405,6 +28665,8 @@
     "acceptance_criteria_mutation_conflict",
     "acceptance_criteria_remove_unmatched",
     "acceptance_criteria_semicolon_forbidden",
+    "accepted_rejected_value",
+    "alias_collision",
     "alias_target_missing",
     "already_claimed_by",
     "ambiguous_option_combination",
@@ -28417,6 +28679,7 @@
     "body_file_conflicts_with_body",
     "body_file_missing_path",
     "body_file_unreadable",
+    "budget_exceeded",
     "bundle_integrity_torn_install",
     "capability_undeclared",
     "capability_unused",
@@ -28442,14 +28705,18 @@
     "dependency_edge_not_allowed",
     "dependency_target_not_found",
     "dependency_temporal_order_invalid",
+    "duplicate_canonical_flag",
     "duplicate_command",
     "duplicate_destination",
     "duplicate_edge",
+    "duplicate_observation",
+    "duplicate_probe",
     "duplicate_sweep_cost_limit",
     "duplicate_target_circular",
     "duplicate_target_is_duplicate",
     "duplicate_target_missing",
     "duplicate_target_self",
+    "empty_corpus",
     "empty_surface",
     "event_cursor_query_mismatch",
     "event_index_unavailable",
@@ -28493,6 +28760,7 @@
     "host_environment_resource_fault",
     "improvement_metric_contract_conflict",
     "improvement_observation_conflict",
+    "inconsistent_concept_kind",
     "init_existing_settings_requires_force",
     "init_gitignore_unwritable",
     "init_id_prefix_conflict",
@@ -28546,14 +28814,18 @@
     "merge_git_config_unwritable",
     "merge_reconcile_discards_require_acceptance",
     "merge_root_not_found",
+    "missing_allowed_values",
+    "missing_budget",
     "missing_cli_flag",
     "missing_destination",
     "missing_directory",
     "missing_lifecycle_target",
+    "missing_observation",
     "missing_observed_signature",
     "missing_parameter_alias",
     "missing_required_argument",
     "missing_required_option",
+    "missing_suggested_retry",
     "module_import_failed",
     "multi_target_github_install_ambiguous",
     "mutation_author_required",
@@ -28564,6 +28836,7 @@
     "no_tests_found",
     "no_update_fields",
     "no_version_bounds_declared",
+    "non_refusal_exit",
     "npm_package_not_found",
     "ownership_conflict",
     "ownership_dependency_bypass_restricted_options",
@@ -28584,11 +28857,13 @@
     "redundant_edge",
     "reindex_already_running",
     "reserved_item_field",
+    "retry_failed",
     "schema_migration_input_required",
     "settings_read_fs_error",
     "settings_read_invalid_json",
     "settings_read_invalid_schema",
     "settings_read_merge_failed",
+    "stale_budget",
     "stale_destination",
     "stale_observed_signature",
     "status_duplicate",
@@ -28618,6 +28893,7 @@
     "tracker_root_unreadable",
     "type_duplicate",
     "type_invalid",
+    "undeclared_observation",
     "unknown_command",
     "unknown_context_intent",
     "unknown_error",

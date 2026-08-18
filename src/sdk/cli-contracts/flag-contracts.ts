@@ -1797,9 +1797,24 @@ export function toUniqueFlagContracts(
 function withSubcommandGlobalFlags(
   contracts: CliFlagContract[],
 ): CliFlagContract[] {
-  return withFlagAliasMetadata(
-    toUniqueFlagContracts([...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]),
-  );
+  const byCanonicalFlag = new Map<string, CliFlagContract>();
+  for (const contract of [...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]) {
+    const prior = byCanonicalFlag.get(contract.flag);
+    byCanonicalFlag.set(
+      contract.flag,
+      prior === undefined
+        ? contract
+        : {
+            ...prior,
+            ...contract,
+            aliases: normalizeUniqueStringList([
+              ...(prior.aliases ?? []),
+              ...(contract.aliases ?? []),
+            ]),
+          },
+    );
+  }
+  return withFlagAliasMetadata([...byCanonicalFlag.values()]);
 }
 
 const FIXED_STATUS_LIST_COMMAND_ALIASES = [

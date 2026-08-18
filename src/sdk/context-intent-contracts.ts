@@ -351,6 +351,7 @@ export function resolveContextIntentContract(
       recovery: {
         recovery_mode: "compact",
         attempted_command: `pm ${normalizedCommand} --for ${normalizedIntent}`,
+        allowed_values: [...candidates].sort(),
         suggested_retry: suggestedCommand,
       },
     },

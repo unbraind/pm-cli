@@ -50,6 +50,24 @@
         "reason": "Compares live runtime contracts with the noun-verb destination census, alias targets, and surface ceiling."
       },
       {
+        "path": "scripts/release/flag-lexicon-gate.mjs",
+        "disposition": "retained",
+        "reason": "Enforces canonical flag concepts, aliases, value kinds, and no-growth command budgets.",
+        "negative_control": {
+          "test": "tests/unit/scripts/flag-lexicon-gate.spec.ts",
+          "assertion": "blocks a seeded command budget breach"
+        }
+      },
+      {
+        "path": "scripts/release/refusal-closure-gate.mjs",
+        "disposition": "retained",
+        "reason": "Executes real closed-domain refusals and their advertised recovery commands in an isolated tracker.",
+        "negative_control": {
+          "test": "tests/unit/scripts/refusal-closure-gate.spec.ts",
+          "assertion": "blocks a seeded allowed-values omission"
+        }
+      },
+      {
         "path": "scripts/release/coverage-threshold-gate.mjs",
         "disposition": "reduced_to_provider",
         "provider": "repository-quality/coverage-threshold",
@@ -476,6 +494,9 @@
         "sdk_contract_drift",
         "replication_contract_drift",
         "cli_refusal_inventory_drift",
+        "flag_invocation_parity_failed",
+        "flag_lexicon_budget_exceeded",
+        "refusal_recovery_closure_failed",
         "performance_regression",
         "workflow_or_script_quality_failed"
       ],

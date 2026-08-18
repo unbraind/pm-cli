@@ -16,9 +16,11 @@ import {
 } from "../../../src/mcp/tool-definitions.js";
 import { handleRequest } from "../../../src/mcp/server.js";
 import {
+  listPmCommandsForFamily,
   listPmCommandsForTier,
   listPmMcpToolsForProfile,
   renderPmCommandVisibilityMarkdown,
+  resolvePmCommandCapabilityFamily,
   resolvePmCommandVisibilityTier,
 } from "../../../src/sdk/agent-capability-contracts.js";
 import { buildPmActionToolInputSchema } from "../../../src/sdk/cli-contracts.js";
@@ -78,8 +80,17 @@ describe("runtime MCP capabilities", () => {
     expect(resolvePmCommandVisibilityTier("extension-owned", "full")).toBe(
       "full",
     );
+    expect(resolvePmCommandCapabilityFamily(" CONTEXT ")).toBe("context");
+    expect(resolvePmCommandCapabilityFamily("extension-owned")).toBe(
+      "internal",
+    );
+    expect(listPmCommandsForFamily("graph")).toEqual([
+      "graph",
+      "deps",
+      "plan",
+    ]);
     expect(renderPmCommandVisibilityMarkdown()).toContain(
-      "| `context` | core |",
+      "| `context` | core | context |",
     );
     expect(buildPmActionToolInputSchema("get")).toMatchObject({
       additionalProperties: true,

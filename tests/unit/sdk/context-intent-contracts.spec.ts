@@ -168,6 +168,10 @@ describe("context intent contracts", () => {
         context: expect.objectContaining({
           field: "for",
           nextSteps: ["pm context --for handoff"],
+          recovery: expect.objectContaining({
+            allowed_values: ["handoff", "orient"],
+            suggested_retry: "pm context --for handoff",
+          }),
         }),
       }),
     );

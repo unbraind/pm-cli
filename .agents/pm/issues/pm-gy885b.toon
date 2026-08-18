@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: agent-ergonomics,discoverability,token-efficiency
 created_at: "2026-08-01T13:03:37.512Z"
-updated_at: "2026-08-01T13:10:32.400Z"
+updated_at: "2026-08-18T21:13:52.133Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A refusal on any flag with a contract-declared closed domain renders that domain in full, untruncated, in both the human and the json envelope; list --fields BOGUS names every projectable field for that command, and the same holds for every command in the list family plus get and search; list --for BOGUS names all declared intents for that command rather than a single nearest-match guess, and the same holds for context, get, next and search; Help text for --fields and --for renders the domain rather than an example, and the word valid never precedes a proper subset; A conformance check fails the build when a flag with a contract-declared closed domain refuses a value without naming the domain, with a negative control proving the check can fail"
@@ -22,4 +22,17 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-yqe0mo,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,blocked_by,"2026-08-01T13:10:32.187Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-18T19:18:06.247Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
+  "2026-08-18T21:13:36.187Z","harness:codex","Tranche evidence: unknown context intent and list/get/search field refusals now carry complete allowed_values plus executable suggested retries in JSON recovery envelopes; real CLI integration tests cover intent and fields, and the closure scorer executes advertised retries. Remaining acceptance: derive every list-family/get/search/context/next closed domain into both human refusal and help text and add the full contract-derived conformance corpus. Returning open and releasing ownership."
+files[5]{path,scope,note}:
+  src/sdk/context-intent-contracts.ts,project,Active command contract and recovery conformance implementation
+  src/sdk/query/get.ts,project,Active command contract and recovery conformance implementation
+  src/sdk/query/list.ts,project,Active command contract and recovery conformance implementation
+  src/sdk/query/search-contracts.ts,project,Active command contract and recovery conformance implementation
+  tests/integration/closed-domain-recovery.integration.spec.ts,project,Active command contract and recovery conformance implementation
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msz5i36u-t3k4zt,test,passed,"2026-08-18T21:04:23.570Z","2026-08-18T21:04:33.702Z","2026-08-18T21:04:33.702Z",1,0,0
 body: ""

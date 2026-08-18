@@ -943,6 +943,9 @@ function validateListProjectionFields(
     ...TREE_METADATA_FIELDS,
     ...runtimeMetadataKeys,
   ]);
+  const allowedValues = [...allowed]
+    .flatMap((field) => [field, `item.${field}`])
+    .sort();
   const unknown = projection.fields.filter(
     (field) => !allowed.has(normalizeProjectionField(field)),
   );
@@ -957,6 +960,10 @@ function validateListProjectionFields(
           "pm list --fields id,title,parent,priority --limit 10",
           "pm list-all --fields id,title,body --limit 5",
         ],
+        recovery: {
+          allowed_values: allowedValues,
+          suggested_retry: "pm list --fields id,title,status --limit 10",
+        },
       },
     );
   }

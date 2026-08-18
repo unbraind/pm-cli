@@ -51,6 +51,12 @@ import {
   resolvePmPositionalActionContract,
   type PmPositionalActionContract,
 } from "../sdk/cli-contracts/grammar-contracts.js";
+import {
+  resolvePmCommandCapabilityFamily,
+  resolvePmCommandVisibilityTier,
+  type PmCommandCapabilityFamily,
+  type PmCommandVisibilityTier,
+} from "../sdk/agent-capability-contracts.js";
 
 /** Documents the help argument summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpArgumentSummary {
@@ -72,6 +78,10 @@ export interface HelpSubcommandSummary {
   aliases: string[];
   /** Value that configures or reports description for this contract. */
   description: string;
+  /** Shared command visibility tier. */
+  tier: PmCommandVisibilityTier;
+  /** Shared command capability family. */
+  family: PmCommandCapabilityFamily;
 }
 
 function resolveCommandFromPathTokens(
@@ -313,11 +323,17 @@ function buildHelpSubcommandSummaries(
     .createHelp()
     .visibleCommands(command)
     .filter((entry) => entry.name() !== "help" || command.parent === null)
-    .map((entry) => ({
-      name: entry.name().trim(),
-      aliases: commandAliases(entry),
-      description: entry.description().trim(),
-    }))
+    .map((entry) => {
+      const rootCommand = normalizeHelpCommandPath(getCommandPath(entry))
+        .split(" ")[0]!;
+      return {
+        name: entry.name().trim(),
+        aliases: commandAliases(entry),
+        description: entry.description().trim(),
+        tier: resolvePmCommandVisibilityTier(rootCommand),
+        family: resolvePmCommandCapabilityFamily(rootCommand),
+      };
+    })
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
@@ -386,6 +402,10 @@ function buildPositionalActionHelpProjection(
           name,
           aliases: [],
           description,
+          tier: resolvePmCommandVisibilityTier(resolvedPath.split(" ")[0]!),
+          family: resolvePmCommandCapabilityFamily(
+            resolvedPath.split(" ")[0]!,
+          ),
         })),
       ].sort((left, right) => left.name.localeCompare(right.name)),
       usage: [
@@ -452,6 +472,7 @@ function buildJsonHelpPayload(
   const positionalAction = resolvePmPositionalActionContract(resolvedPath);
   const projectedPath = positionalAction?.command ?? resolvedPath;
   const commandPath = projectedPath.length > 0 ? projectedPath : undefined;
+  const rootCommandPath = commandPath?.split(" ")[0];
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
   const extensionDescriptor = commandPath
     ? extensionDescriptors.get(commandPath)
@@ -480,6 +501,14 @@ function buildJsonHelpPayload(
     requested_path: requestedPath,
     resolved_path:
       projectedPath.length > 0 ? projectedPath : rootProgram.name(),
+    visibility_tier:
+      rootCommandPath === undefined
+        ? null
+        : resolvePmCommandVisibilityTier(rootCommandPath),
+    capability_family:
+      rootCommandPath === undefined
+        ? null
+        : resolvePmCommandCapabilityFamily(rootCommandPath),
     description: positionalAction?.description ?? targetCommand.description(),
     usage: projection.usage,
     intent: positionalAction?.description ?? narrative.intent,

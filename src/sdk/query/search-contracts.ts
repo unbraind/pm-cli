@@ -262,16 +262,16 @@ export function validateSearchProjectionFields(
       field.metadata_key,
     ]),
   );
+  const allowedValues = new Set([
+    ...SEARCH_HIT_FIELD_KEYS,
+    ...SEARCH_ITEM_FIELD_KEYS,
+    ...[...SEARCH_ITEM_FIELD_KEYS].map((field) => `item.${field}`),
+    ...runtimeKeys,
+    ...[...runtimeKeys].map((field) => `item.${field}`),
+  ]);
   const unknown = projection.fields.filter((field) => {
     const normalized = field.trim();
-    const itemKey = normalized.startsWith("item.")
-      ? normalized.slice("item.".length)
-      : normalized;
-    return (
-      !SEARCH_HIT_FIELD_KEYS.has(normalized) &&
-      !SEARCH_ITEM_FIELD_KEYS.has(itemKey) &&
-      !runtimeKeys.has(itemKey)
-    );
+    return !allowedValues.has(normalized);
   });
   if (unknown.length > 0) {
     throw new PmCliError(
@@ -285,6 +285,11 @@ export function validateSearchProjectionFields(
         nextSteps: [
           "Use item.<field> for explicit item metadata fields, or run pm search --help for projection examples.",
         ],
+        recovery: {
+          allowed_values: [...allowedValues].sort(),
+          suggested_retry:
+            "pm search <query> --fields id,title,status,score",
+        },
       },
     );
   }
