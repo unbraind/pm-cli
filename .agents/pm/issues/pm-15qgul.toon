@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:tests",concurrency,flake
 created_at: "2026-08-07T06:07:37.682Z"
-updated_at: "2026-08-18T23:07:52.821Z"
+updated_at: "2026-08-18T23:58:01.842Z"
 closed_at: "2026-08-18T22:40:51.446Z"
 completed_at: "2026-08-18T22:40:51.446Z"
 author: "harness:claude-code"
@@ -34,6 +34,8 @@ files[1]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,240
   node scripts/run-tests.mjs coverage,project,600
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated changelog entry for the closed lease-renewal regression
 close_reason: "Replaced wall-clock lease renewal assertion with persisted monotonic lease evidence, deterministic scheduler coverage, and invalid-owner synchronization; 12 stress passes plus exact full coverage 100/100/100/100."
 escape_class: nightly_regression
 gate_evidence:

@@ -38,6 +38,21 @@ describe("refusal closure scoring", () => {
     });
   });
 
+  it("rejects internal failures even when recovery metadata is complete", () => {
+    expect(
+      scorePmRefusalClosure([{ ...closed, exit_code: 1 }]),
+    ).toMatchObject({
+      ok: false,
+      closed_probe_count: 0,
+      findings: [
+        expect.objectContaining({
+          code: "non_refusal_exit",
+          probe_id: closed.probe_id,
+        }),
+      ],
+    });
+  });
+
   it("fails closed for missing, contradictory, duplicated, or broken recovery", () => {
     const broken = {
       ...closed,

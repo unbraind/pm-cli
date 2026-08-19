@@ -963,6 +963,13 @@ function validateListProjectionFields(
         recovery: {
           allowed_values: allowedValues,
           suggested_retry: "pm list --fields id,title,status --limit 10",
+          suggested_retry_args: [
+            "list",
+            "--fields",
+            "id,title,status",
+            "--limit",
+            "10",
+          ],
         },
       },
     );

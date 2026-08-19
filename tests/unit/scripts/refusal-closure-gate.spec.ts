@@ -10,8 +10,8 @@ describe("executable refusal closure gate", () => {
   it("proves real retries and blocks a seeded omission", () => {
     expect(verifyExecutableRefusalClosure()).toMatchObject({
       ok: true,
-      probe_count: 4,
-      closed_probe_count: 4,
+      probe_count: 8,
+      closed_probe_count: 8,
       closure_fraction: 1,
       findings: [],
     });
@@ -39,17 +39,32 @@ describe("executable refusal closure gate", () => {
     ).toThrow("Refusal closure tracker setup failed: setup failed");
     expect(removed).toEqual(["/tmp/pm-refusal-setup-failure"]);
 
+    const itemSetupResults = [
+      { status: 0, stderr: "" },
+      { status: 1, stderr: "item setup failed" },
+    ];
+    expect(() =>
+      verifyExecutableRefusalClosure({
+        makeTemporaryDirectory: () => "/tmp/pm-refusal-item-failure",
+        removeDirectory: () => {},
+        spawn: () => itemSetupResults.shift(),
+      }),
+    ).toThrow("Refusal closure item setup failed: item setup failed");
+
     const results = [
+      { status: 0, stderr: "" },
       { status: 0, stderr: "" },
       {
         status: null,
         stderr: JSON.stringify({
-          recovery: { allowed_values: ["valid", 1], suggested_retry: 42 },
+          recovery: {
+            allowed_values: ["valid", 1],
+            suggested_retry: 42,
+            suggested_retry_args: [1],
+          },
         }),
       },
-      { status: 1, stderr: "" },
       { status: 2, stderr: JSON.stringify({}) },
-      { status: 1, stderr: "" },
     ];
     expect(
       verifyExecutableRefusalClosure({

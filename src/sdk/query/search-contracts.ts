@@ -8,6 +8,7 @@ import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
+import { renderPmCommand } from "../command-line.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import type { SearchMode } from "./search-rendering.js";
 
@@ -254,6 +255,7 @@ export function parseSearchProjection(
 export function validateSearchProjectionFields(
   projection: SearchProjectionConfig,
   runtimeFieldRegistry: RuntimeFieldRegistry,
+  query = "<query>",
 ): void {
   if (projection.mode !== "fields") return;
   const runtimeKeys = new Set(
@@ -274,6 +276,12 @@ export function validateSearchProjectionFields(
     return !allowedValues.has(normalized);
   });
   if (unknown.length > 0) {
+    const suggestedRetryArguments = [
+      "search",
+      query,
+      "--fields",
+      "id,title,status,score",
+    ];
     throw new PmCliError(
       `Unknown search --fields value(s): ${unknown.join(", ")}`,
       EXIT_CODE.USAGE,
@@ -287,8 +295,8 @@ export function validateSearchProjectionFields(
         ],
         recovery: {
           allowed_values: [...allowedValues].sort(),
-          suggested_retry:
-            "pm search <query> --fields id,title,status,score",
+          suggested_retry: renderPmCommand(suggestedRetryArguments),
+          suggested_retry_args: suggestedRetryArguments,
         },
       },
     );

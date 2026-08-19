@@ -299,6 +299,12 @@ export function verifyPmFlagLexicon(
   }
   appendAliasCollisionFindings(entries, canonicalOwners, findings);
   appendBudgetFindings(counts, budgets, findings);
+  findings.sort(
+    (left, right) =>
+      left.command.localeCompare(right.command) ||
+      left.code.localeCompare(right.code) ||
+      left.detail.localeCompare(right.detail),
+  );
   return {
     ok: findings.length === 0,
     entry_count: entries.length,

@@ -59,6 +59,49 @@ describe("flag invocation parity gate", () => {
     ]);
   });
 
+  it("preserves conflicting root and command registrations for parity validation", () => {
+    expect(
+      observeCommandOptions(
+        {
+          options: [
+            {
+              long: "--shared",
+              required: true,
+              optional: false,
+              variadic: false,
+            },
+          ],
+        },
+        {
+          name: () => "sample",
+          options: [
+            {
+              long: "--shared",
+              required: false,
+              optional: false,
+              variadic: false,
+            },
+          ],
+        },
+      ),
+    ).toEqual([
+      {
+        command: "sample",
+        flag: "--shared",
+        takes_value: true,
+        value_required: true,
+        repeatable: false,
+      },
+      {
+        command: "sample",
+        flag: "--shared",
+        takes_value: false,
+        value_required: false,
+        repeatable: false,
+      },
+    ]);
+  });
+
   it("passes the live corpus and blocks a seeded arity mismatch", () => {
     expect(verifyCoreFlagInvocationParity()).toMatchObject({
       ok: true,

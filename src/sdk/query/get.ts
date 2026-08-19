@@ -26,6 +26,7 @@ import {
   resolveAuthor,
 } from "../runtime-primitives.js";
 import { readHistoryEntries } from "../history-read.js";
+import { renderPmCommand } from "../command-line.js";
 import { recordContextUsageTouches } from "../context-usage.js";
 import {
   buildItemChildrenRollup,
@@ -314,6 +315,7 @@ function normalizeGetField(field: string): string {
 function validateGetFields(
   fields: string[] | null,
   runtimeMetadataKeys: Iterable<string>,
+  id: string,
 ): void {
   if (fields === null) {
     return;
@@ -369,6 +371,12 @@ function validateGetFields(
     );
   });
   if (unknown.length > 0) {
+    const suggestedRetryArguments = [
+      "get",
+      id,
+      "--fields",
+      "id,title,status",
+    ];
     throw new PmCliError(
       `Unknown get --fields value(s): ${unknown.join(", ")}`,
       EXIT_CODE.USAGE,
@@ -381,7 +389,8 @@ function validateGetFields(
         ],
         recovery: {
           allowed_values: allowedValues,
-          suggested_retry: "pm get <id> --fields id,title,status",
+          suggested_retry: renderPmCommand(suggestedRetryArguments),
+          suggested_retry_args: suggestedRetryArguments,
         },
       },
     );
@@ -570,11 +579,12 @@ function validateGetProjectionFields(
   fields: string[] | null,
   settings: Awaited<ReturnType<typeof readSettings>>,
   historical: boolean,
+  id: string,
 ): void {
   const runtimeMetadataKeys = resolveRuntimeFieldRegistry(
     settings.schema,
   ).definitions.map((field) => field.metadata_key);
-  validateGetFields(fields, runtimeMetadataKeys);
+  validateGetFields(fields, runtimeMetadataKeys, id);
   if (historical && fieldsIncludeRoot(fields ?? [], "children")) {
     throw new PmCliError(
       "Get --at cannot project children because workspace-level historical relationships are not yet indexed.",
@@ -733,6 +743,7 @@ export async function runGet(
     projection.fields,
     context.settings,
     context.historical !== undefined,
+    context.locatedId,
   );
   const includeBody = shouldIncludeGetField({ ...projection, field: "body" });
   const includeLinked = shouldIncludeGetField({

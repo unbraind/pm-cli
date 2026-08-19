@@ -283,6 +283,7 @@ function assignRecoveryCollection(
     | "missing"
     | "missing_required_fields"
     | "suggested_flags"
+    | "suggested_retry_args"
     | "allowed_values"
     | "candidate_commands",
   value: unknown,
@@ -375,6 +376,11 @@ function normalizeRecoveryPayload(
     normalized.option_scope = payload.option_scope;
   }
   assignRecoveryString(normalized, "suggested_retry", payload.suggested_retry);
+  assignRecoveryCollection(
+    normalized,
+    "suggested_retry_args",
+    payload.suggested_retry_args,
+  );
   if (
     typeof payload.retry_after_ms === "number" &&
     Number.isSafeInteger(payload.retry_after_ms) &&

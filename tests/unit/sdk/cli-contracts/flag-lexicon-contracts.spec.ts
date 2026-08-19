@@ -58,6 +58,10 @@ describe("flag lexicon contracts", () => {
         "inconsistent_concept_kind",
       ]),
     );
+    const findingOrder = report.findings.map(
+      ({ command, code, detail }) => `${command}\u0000${code}\u0000${detail}`,
+    );
+    expect(findingOrder).toEqual(findingOrder.toSorted());
   });
 
   it("detects alias collisions independently of row order and requires exact budget coverage", () => {
@@ -88,5 +92,25 @@ describe("flag lexicon contracts", () => {
         "stale_budget",
       ]),
     );
+  });
+
+  it("uses finding detail as the deterministic final sort key", () => {
+    const seed = listPmFlagLexicon().find(
+      ({ command, flag }) => command === "context" && flag === "--fields",
+    )!;
+    const entries = [
+      { ...seed, flag: "--alpha-string", concept: "alpha", value_kind: "string" as const },
+      { ...seed, flag: "--alpha-boolean", concept: "alpha", value_kind: "boolean" as const },
+      { ...seed, flag: "--beta-string", concept: "beta", value_kind: "string" as const },
+      { ...seed, flag: "--beta-boolean", concept: "beta", value_kind: "boolean" as const },
+    ];
+    expect(
+      verifyPmFlagLexicon(entries, [
+        { command: "context", current: entries.length, maximum: entries.length },
+      ]).findings.map(({ detail }) => detail),
+    ).toEqual([
+      "alpha uses both string and boolean.",
+      "beta uses both string and boolean.",
+    ]);
   });
 });

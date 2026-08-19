@@ -24,6 +24,15 @@ import {
   verifyCliFlagInvocationParity,
 } from "../../dist/sdk/flag-invocation-contracts.js";
 
+// Commander permits these command-local optional-value flags to shadow the
+// required root-global identity override. The per-command contract models the
+// local grammar; every other conflicting duplicate remains a parity failure.
+const COMMAND_SCOPED_OPTION_OVERRIDES = new Set([
+  "comments:--author",
+  "learnings:--author",
+  "notes:--author",
+]);
+
 /** Build the complete core Commander tree without loading project extensions. */
 export function buildCoreCommandProgram() {
   const program = createPmCliProgram("contract-parity");
@@ -45,17 +54,13 @@ export function observeCommanderOption(command, option) {
   };
 }
 
-/** Collect root-global and command-local options by canonical long spelling. */
+/** Collect every root-global and command-local option by canonical long spelling. */
 export function observeCommandOptions(program, command) {
   const commandPath = command.name();
-  const byFlag = new Map();
-  for (const option of [...program.options, ...command.options]) {
-    if (typeof option.long !== "string") continue;
-    byFlag.set(option.long, observeCommanderOption(commandPath, option));
-  }
-  return [...byFlag.values()].sort((left, right) =>
-    left.flag.localeCompare(right.flag),
-  );
+  return [...program.options, ...command.options]
+    .filter((option) => typeof option.long === "string")
+    .map((option) => observeCommanderOption(commandPath, option))
+    .sort((left, right) => left.flag.localeCompare(right.flag));
 }
 
 /** Produce the full fail-closed parity receipt. */
@@ -73,6 +78,7 @@ export function verifyCoreFlagInvocationParity({ injectMismatch = false } = {}) 
     const declarationByFlag = new Map(
       declarations.map((declaration) => [declaration.flag, declaration]),
     );
+    const observedSignatures = new Set();
     const observations = observeCommandOptions(program, command)
       .filter(({ flag }) => declaredFlags.has(flag))
       .map((observation) => ({
@@ -81,7 +87,26 @@ export function verifyCoreFlagInvocationParity({ injectMismatch = false } = {}) 
         // option parser. The established grammar gate owns repeatability;
         // this independent executable check owns value arity.
         repeatable: declarationByFlag.get(observation.flag).repeatable,
-      }));
+      }))
+      .filter((observation, index, all) => {
+        if (
+          !COMMAND_SCOPED_OPTION_OVERRIDES.has(
+            `${commandPath}:${observation.flag}`,
+          )
+        ) {
+          return true;
+        }
+        return (
+          index ===
+          all.findLastIndex(({ flag }) => flag === observation.flag)
+        );
+      })
+      .filter((observation) => {
+        const signature = JSON.stringify(observation);
+        if (observedSignatures.has(signature)) return false;
+        observedSignatures.add(signature);
+        return true;
+      });
     const observedFlags = new Set(observations.map(({ flag }) => flag));
     const comparableDeclarations = declarations.filter(({ flag }) =>
       observedFlags.has(flag),

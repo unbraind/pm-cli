@@ -4,6 +4,7 @@
  * Scores whether a structured refusal contains enough executable context for
  * an agent to recover without another discovery round trip.
  */
+import { EXIT_CODE } from "../../core/shared/constants.js";
 
 /** One real refusal and the outcome of executing its advertised retry. */
 export interface PmRefusalClosureObservation {
@@ -59,11 +60,11 @@ function listObservationFindings(
   observation: PmRefusalClosureObservation,
 ): Array<PmRefusalClosureFinding | undefined> {
   return [
-    observation.exit_code === 0
+    observation.exit_code !== EXIT_CODE.USAGE
       ? {
           code: "non_refusal_exit",
           probe_id: observation.probe_id,
-          detail: `${observation.entrypoint} returned success for the rejected value.`,
+          detail: `${observation.entrypoint} returned exit code ${observation.exit_code}; a structured usage refusal must return ${EXIT_CODE.USAGE}.`,
         }
       : undefined,
     observation.allowed_values.length === 0

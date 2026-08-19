@@ -49,21 +49,49 @@ describe("closed-domain recovery envelopes", () => {
           args: ["list", "--for", "invalid"],
           allowed: ["triage"],
           retry: "pm list --for triage",
+          retryArgs: ["list", "--for", "triage"],
         },
         {
           args: ["list", "--fields", "invalid"],
           allowed: ["id", "item.id", "title"],
           retry: "pm list --fields id,title,status --limit 10",
+          retryArgs: [
+            "list",
+            "--fields",
+            "id,title,status",
+            "--limit",
+            "10",
+          ],
+        },
+        {
+          args: ["get", "pm-domain", "--for", "invalid"],
+          allowed: ["inspect"],
+          retry: "pm get pm-domain --for inspect",
+          retryArgs: ["get", "pm-domain", "--for", "inspect"],
+        },
+        {
+          args: ["search", "Domain query", "--for", "invalid"],
+          allowed: ["discover"],
+          retry: 'pm search "Domain query" --for discover',
+          retryArgs: ["search", "Domain query", "--for", "discover"],
         },
         {
           args: ["get", "pm-domain", "--fields", "invalid"],
           allowed: ["id", "item.id", "linked.files"],
-          retry: "pm get <id> --fields id,title,status",
+          retry: 'pm get pm-domain --fields "id,title,status"',
+          retryArgs: ["get", "pm-domain", "--fields", "id,title,status"],
         },
         {
-          args: ["search", "Domain", "--fields", "invalid"],
+          args: ["search", "Domain query", "--fields", "invalid"],
           allowed: ["id", "item.id", "score"],
-          retry: "pm search <query> --fields id,title,status,score",
+          retry:
+            'pm search "Domain query" --fields "id,title,status,score"',
+          retryArgs: [
+            "search",
+            "Domain query",
+            "--fields",
+            "id,title,status,score",
+          ],
         },
       ];
       for (const probe of probes) {
@@ -73,12 +101,21 @@ describe("closed-domain recovery envelopes", () => {
           recovery: {
             allowed_values: string[];
             suggested_retry: string;
+            suggested_retry_args: string[];
           };
         };
         expect(envelope.recovery.allowed_values).toEqual(
           expect.arrayContaining(probe.allowed),
         );
         expect(envelope.recovery.suggested_retry).toBe(probe.retry);
+        expect(envelope.recovery.suggested_retry_args).toEqual(
+          probe.retryArgs,
+        );
+        const retry = context.runCli([
+          ...envelope.recovery.suggested_retry_args,
+          "--json",
+        ]);
+        expect(retry.code, envelope.recovery.suggested_retry).toBe(0);
       }
     });
   });
