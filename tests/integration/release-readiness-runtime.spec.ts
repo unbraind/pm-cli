@@ -1042,7 +1042,7 @@ describe("release readiness runtime coverage", () => {
       expect(listHelp.code).toBe(0);
       expect(listHelp.stdout).toMatch(/mutually\s+exclusive with .*--fields/);
       const listFieldsGuidance = listHelp.stdout.match(
-        /--fields <value>[\s\S]*?(?=\n  --sort <value>)/,
+        /--fields <value>[\s\S]*?(?=\n {2}--sort <value>)/,
       )?.[0];
       expect(listFieldsGuidance).toBeDefined();
       expect(listFieldsGuidance).toContain("Allowed core values:");
@@ -1061,7 +1061,7 @@ describe("release readiness runtime coverage", () => {
         /mutually\s+exclusive with --full\/--fields/,
       );
       const searchFieldsGuidance = searchHelp.stdout.match(
-        /--fields <value>[\s\S]*?(?=\n  --format <value>)/,
+        /--fields <value>[\s\S]*?(?=\n {2}--format <value>)/,
       )?.[0];
       expect(searchFieldsGuidance).toBeDefined();
       expect(searchFieldsGuidance).toContain("Allowed core values:");
