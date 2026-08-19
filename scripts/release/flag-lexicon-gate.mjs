@@ -146,28 +146,31 @@ export function main(
     verifyOptions = {},
   } = {},
 ) {
-  if (argv.includes("--update-inventory")) {
+  const updateInventory = argv.includes("--update-inventory");
+  const baseline = updateInventory
+    ? { version: 1, entries: listPmFlagSpellingInventory() }
+    : readFlagSpellingBaseline(spellingBaselinePath);
+  const helpInventory = measureCoreFlagHelpInventory();
+  const helpBaseline = updateInventory
+    ? { version: 1, entries: helpInventory }
+    : JSON.parse(readFileSync(helpBaselinePath, "utf8"));
+  if (updateInventory) {
     write(
       spellingBaselinePath,
-      `${JSON.stringify(
-        { version: 1, entries: listPmFlagSpellingInventory() },
-        null,
-        2,
-      )}\n`,
+      `${JSON.stringify(baseline, null, 2)}\n`,
       "utf8",
     );
     write(
       helpBaselinePath,
-      `${JSON.stringify(
-        { version: 1, entries: measureCoreFlagHelpInventory() },
-        null,
-        2,
-      )}\n`,
+      `${JSON.stringify(helpBaseline, null, 2)}\n`,
       "utf8",
     );
   }
   const report = verifyFlagLexiconGate({
     ...verifyOptions,
+    baseline,
+    helpBaseline,
+    helpInventory,
     injectMismatch: argv.includes("--inject-mismatch"),
   });
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

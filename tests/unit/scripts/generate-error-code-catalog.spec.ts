@@ -117,12 +117,14 @@ describe("generate error code catalog", () => {
       /code: "history_author_acknowledge_selector_conflict",[\s\S]*?exit_code: 2,[\s\S]*?class: "usage"/u,
     );
     expect(output).toContain('emitting_commands: ["*"]');
-    expect(output).toMatch(
-      /code: "projection_options_mutually_exclusive",[\s\S]*?emitting_commands: \["search"\]/u,
-    );
-    expect(output).toMatch(
-      /code: "list_query_failure",[\s\S]*?emitting_commands: \["list"\]/u,
-    );
+    const projectionRecord = output.match(
+      / {2}\{\n {4}code: "projection_options_mutually_exclusive",[\s\S]*?\n {2}\},/u,
+    )?.[0];
+    const listQueryRecord = output.match(
+      / {2}\{\n {4}code: "list_query_failure",[\s\S]*?\n {2}\},/u,
+    )?.[0];
+    expect(projectionRecord).toContain('emitting_commands: ["search"]');
+    expect(listQueryRecord).toContain('emitting_commands: ["list"]');
     expect(output).toContain('canonical_code: "item_not_found"');
     expect(output).toContain("aliases: []");
     expect(output).toContain(

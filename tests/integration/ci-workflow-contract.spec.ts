@@ -144,11 +144,14 @@ describe("GitHub workflow contract", () => {
         benchmarks?: {
           name?: unknown;
           "runs-on"?: unknown;
-          steps?: Array<{ uses?: unknown; with?: unknown }>;
+          steps?: Array<{ name?: unknown; uses?: unknown; with?: unknown }>;
         };
       };
     };
     const benchmarkJob = parsedWorkflow.jobs?.benchmarks;
+    const setupNodeStep = benchmarkJob?.steps?.find(
+      (step) => step.name === "Setup Node.js",
+    );
     const codSpeedStep = benchmarkJob?.steps?.find(
       (step) =>
         typeof step.uses === "string" &&
@@ -162,7 +165,10 @@ describe("GitHub workflow contract", () => {
       "Run benchmarks (Ubuntu 22.04, Node 24)",
     );
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
-    expect(codSpeedStep).toBeDefined();
+    expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
+    expect(codSpeedStep?.uses).toBe(
+      "CodSpeedHQ/action@4296e51e7041e24dadb86d1d6e8b9320d223dbe8",
+    );
     expect(codSpeedOptions).toMatchObject({
       mode: "simulation",
       "cache-instruments": "false",

@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { fileURLToPath } from "node:url";
 import {
@@ -123,6 +126,47 @@ describe("flag lexicon gate", () => {
       expect.stringContaining('"version": 1'),
       "utf8",
     );
+  });
+
+  it("verifies configured baseline paths instead of repository defaults", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "pm-flag-baselines-"));
+    const spellingBaselinePath = path.join(root, "spellings.json");
+    const helpBaselinePath = path.join(root, "help.json");
+    const output = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    try {
+      writeFileSync(
+        spellingBaselinePath,
+        JSON.stringify({
+          version: 1,
+          entries: [
+            {
+              command: "context",
+              canonical_flag: "--removed",
+              accepted_spellings: ["--removed"],
+            },
+          ],
+        }),
+      );
+      writeFileSync(
+        helpBaselinePath,
+        JSON.stringify({ version: 1, entries: [] }),
+      );
+      expect(
+        main([], { spellingBaselinePath, helpBaselinePath }),
+      ).toMatchObject({
+        ok: false,
+        findings: expect.arrayContaining([
+          expect.objectContaining({ code: "removed_canonical_spelling" }),
+          expect.objectContaining({ code: "missing_help_token_baseline" }),
+        ]),
+      });
+    } finally {
+      output.mockRestore();
+      process.exitCode = undefined;
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("reports standalone success and negative-control exit status", () => {
