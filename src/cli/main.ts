@@ -379,6 +379,7 @@ function projectExistingRecoveryOptionalFields(existingRecovery: PmCliErrorRecov
     "recovery_mode",
     "missing_required_fields",
     "suggested_flags",
+    "suggested_retry_args",
     "allowed_values",
     "candidate_commands",
     "candidate_commands_total",
@@ -431,6 +432,9 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
           : {}),
         ...(rawExistingRecovery.suggested_retry
           ? { suggested_retry: renderAttemptedCommand(safeInvocationArgv) }
+          : {}),
+        ...(rawExistingRecovery.suggested_retry_args
+          ? { suggested_retry_args: [...safeInvocationArgv] }
           : {}),
       }
     : rawExistingRecovery;

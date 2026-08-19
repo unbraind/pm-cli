@@ -18,7 +18,13 @@ describe("generate agent capability surfaces", () => {
         "AGENT_COMMAND_SURFACE.md",
       );
       const generated = await readFile(outputPath, "utf8");
-      expect(generated).toContain("PM_COMMAND_VISIBILITY_CONTRACTS");
+      expect(generated).toContain("PM_COMMAND_CAPABILITY_CONTRACTS");
+      expect(
+        await readFile(
+          path.join(root, "docs", "generated", "FLAG_LEXICON_BUDGETS.md"),
+          "utf8",
+        ),
+      ).toContain("listPmFlagLexicon()");
       await expect(main(root, ["--check"])).resolves.toBeUndefined();
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -31,7 +37,7 @@ describe("generate agent capability surfaces", () => {
     );
     try {
       await expect(main(root, ["--check"])).rejects.toThrow(
-        "agent command surface is stale",
+        "agent capability surface AGENT_COMMAND_SURFACE.md is stale",
       );
       const outputPath = path.join(
         root,
@@ -42,7 +48,7 @@ describe("generate agent capability surfaces", () => {
       await main(root, []);
       await writeFile(outputPath, "stale\n", "utf8");
       await expect(main(root, ["--check"])).rejects.toThrow(
-        "agent command surface is stale",
+        "agent capability surface AGENT_COMMAND_SURFACE.md is stale",
       );
     } finally {
       await rm(root, { recursive: true, force: true });

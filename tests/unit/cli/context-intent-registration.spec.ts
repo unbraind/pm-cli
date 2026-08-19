@@ -222,6 +222,12 @@ describe("read command context intent registration", () => {
         code: "unknown_context_intent",
         exit_code: 2,
         next_steps: ["pm context --for handoff"],
+        recovery: {
+          recovery_mode: "compact",
+          attempted_command: "pm context --for hierarchy",
+          allowed_values: ["handoff", "orient"],
+          suggested_retry: "pm context --for handoff",
+        },
       });
       expect(invalid.stderr).not.toContain("Context --section");
     });

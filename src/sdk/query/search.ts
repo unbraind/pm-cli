@@ -2700,7 +2700,11 @@ async function resolveSearchRuntimeContext(
     resolveSettingsWithSemanticRuntimeDefaults(storedSettings).settings;
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  validateSearchProjectionFields(prepared.projection, runtimeFieldRegistry);
+  validateSearchProjectionFields(
+    prepared.projection,
+    runtimeFieldRegistry,
+    prepared.query,
+  );
   const runtimeFieldFilters = collectRuntimeFilterValues(
     prepared.options as Record<string, unknown>,
     runtimeFieldRegistry,

@@ -36,6 +36,8 @@ export interface PmCliErrorRecoveryPayload {
     | "declared_nowhere";
   /** Value that configures or reports suggested retry for this contract. */
   suggested_retry?: string;
+  /** Tokenized retry arguments for direct execution without reparsing display text. */
+  suggested_retry_args?: string[];
   /** Elapsed time in milliseconds for retry after. */
   retry_after_ms?: number;
   /** Value that configures or reports fallback candidates for this contract. */

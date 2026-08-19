@@ -836,6 +836,13 @@ describe("collection mutation transposition guidance", () => {
         parsed_positionals: [{ role: 7, value: null }] as never,
       }),
     ).toBeUndefined();
+    expect(
+      _testOnly.normalizeRecoveryPayload({
+        suggested_retry_args: [" search ", "two word query", 7] as never,
+      }),
+    ).toEqual({
+      suggested_retry_args: ["search", "two word query"],
+    });
   });
 });
 

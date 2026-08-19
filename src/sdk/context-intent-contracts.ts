@@ -5,6 +5,7 @@
  * workspace configuration, and packages.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { renderPmCommand } from "./command-line.js";
 import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
 import {
@@ -287,6 +288,7 @@ export function resolveContextIntentContract(
   command: string,
   intent: string,
   contracts: readonly PmContextIntentContract[] = getActiveContextIntentContracts(),
+  positionalArguments: readonly string[] = [],
 ): PmContextIntentContract | undefined {
   const normalizedCommand = command.trim().toLowerCase();
   const normalizedIntent = intent.trim().toLowerCase();
@@ -337,7 +339,19 @@ export function resolveContextIntentContract(
         left.distance - right.distance ||
         left.candidate.localeCompare(right.candidate),
     )[0]!.candidate;
-  const suggestedCommand = `pm ${normalizedCommand} --for ${suggestion}`;
+  const attemptedArguments = [
+    normalizedCommand,
+    ...positionalArguments,
+    "--for",
+    normalizedIntent,
+  ];
+  const suggestedRetryArguments = [
+    normalizedCommand,
+    ...positionalArguments,
+    "--for",
+    suggestion,
+  ];
+  const suggestedCommand = renderPmCommand(suggestedRetryArguments);
   throw new PmCliError(
     `Unknown context intent "${normalizedIntent}" for ${normalizedCommand}. Did you mean "${suggestion}"?`,
     EXIT_CODE.USAGE,
@@ -350,8 +364,10 @@ export function resolveContextIntentContract(
       nextSteps: [suggestedCommand],
       recovery: {
         recovery_mode: "compact",
-        attempted_command: `pm ${normalizedCommand} --for ${normalizedIntent}`,
+        attempted_command: renderPmCommand(attemptedArguments),
+        allowed_values: [...candidates].sort(),
         suggested_retry: suggestedCommand,
+        suggested_retry_args: suggestedRetryArguments,
       },
     },
   );
@@ -477,6 +493,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
 export function applyContextIntentProjection(
   command: "context" | "get" | "list" | "next" | "search",
   options: Record<string, unknown>,
+  positionalArguments: readonly string[] = [],
 ): Record<string, unknown> {
   const tokenBudget = options.tokenBudget ?? options.token_budget;
   if (typeof options.for !== "string") {
@@ -509,7 +526,12 @@ export function applyContextIntentProjection(
     delete projected.token_budget;
     return projected;
   }
-  const contract = resolveContextIntentContract(command, options.for)!;
+  const contract = resolveContextIntentContract(
+    command,
+    options.for,
+    undefined,
+    positionalArguments,
+  )!;
   const explicitTokenBudget =
     parsePositiveIntentTokenBudget(tokenBudget) !== undefined;
   const projected = { ...options };

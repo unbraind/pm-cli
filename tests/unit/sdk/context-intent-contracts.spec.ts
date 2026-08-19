@@ -168,6 +168,11 @@ describe("context intent contracts", () => {
         context: expect.objectContaining({
           field: "for",
           nextSteps: ["pm context --for handoff"],
+          recovery: expect.objectContaining({
+            allowed_values: ["handoff", "orient"],
+            suggested_retry: "pm context --for handoff",
+            suggested_retry_args: ["context", "--for", "handoff"],
+          }),
         }),
       }),
     );
@@ -191,6 +196,30 @@ describe("context intent contracts", () => {
     ).toThrow('Did you mean "aa"?');
     expect(() => resolveContextIntentContract("next", "execut")).toThrow(
       'Unknown context intent "execut" for next. Did you mean "execute"?',
+    );
+    expect(() =>
+      applyContextIntentProjection(
+        "search",
+        { for: "discove" },
+        ["two word query"],
+      ),
+    ).toThrow(
+      expect.objectContaining<Partial<PmCliError>>({
+        context: expect.objectContaining({
+          recovery: expect.objectContaining({
+            attempted_command:
+              'pm search "two word query" --for discove',
+            suggested_retry:
+              'pm search "two word query" --for discover',
+            suggested_retry_args: [
+              "search",
+              "two word query",
+              "--for",
+              "discover",
+            ],
+          }),
+        }),
+      }),
     );
   });
 

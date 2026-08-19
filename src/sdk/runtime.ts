@@ -2925,9 +2925,11 @@ async function runMcpListAction(
 async function runMcpSearchAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
+  const query = readRequiredString(ctx.args, "query");
   const searchOptions = applyContextIntentProjection(
     "search",
     ctx.options,
+    [query],
   ) as Parameters<typeof runSearch>[1];
   if (
     searchOptions.compact === undefined &&
@@ -2938,7 +2940,7 @@ async function runMcpSearchAction(
   }
   return withQuerySummary(
     (await runSearch(
-      readRequiredString(ctx.args, "query"),
+      query,
       searchOptions,
       ctx.global,
     )) as unknown as Record<string, unknown>,
@@ -3669,12 +3671,14 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   event: runRuntimeSchedulingAction,
   remind: runRuntimeSchedulingAction,
   list: runMcpListAction,
-  get: (ctx) =>
-    runGet(
-      requireMcpItemId(ctx),
+  get: (ctx) => {
+    const id = requireMcpItemId(ctx);
+    return runGet(
+      id,
       ctx.global,
-      applyContextIntentProjection("get", ctx.options),
-    ),
+      applyContextIntentProjection("get", ctx.options, [id]),
+    );
+  },
   search: runMcpSearchAction,
   duplicates: (ctx) => {
     const status =

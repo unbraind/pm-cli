@@ -8,7 +8,7 @@ import {
 } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   SNAPSHOT_SCHEMA,
   createWorkspaceSnapshot,
@@ -255,32 +255,63 @@ describe("workspace snapshots", () => {
         "lease-holder",
         0.03,
       );
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
       try {
         const lockPath = getLockPath(pmPath, "sdk-workspace-transaction");
         const lock = JSON.parse(await readFile(lockPath, "utf8")) as Record<
           string,
           unknown
         >;
+        const expiredCreatedAt = "2000-01-01T00:00:00.000Z";
         await writeFile(
           lockPath,
-          `${JSON.stringify({ ...lock, created_at: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
+          `${JSON.stringify({ ...lock, created_at: expiredCreatedAt }, null, 2)}\n`,
           "utf8",
         );
+        const unrenewedLock = JSON.parse(
+          await readFile(lockPath, "utf8"),
+        ) as Record<string, unknown>;
+        expect(typeof unrenewedLock.created_at).toBe("string");
+        expect(
+          Date.parse(unrenewedLock.created_at as string),
+        ).not.toBeGreaterThan(Date.parse(expiredCreatedAt));
         await heartbeat.refreshNow();
-        await expect(
-          acquireLock(
-            pmPath,
-            "sdk-workspace-transaction",
-            0.03,
-            "competing-restore",
-            false,
-            false,
-            0,
-          ),
-        ).rejects.toThrow("locked");
-      } finally {
+        const renewedLock = JSON.parse(
+          await readFile(lockPath, "utf8"),
+        ) as Record<string, unknown>;
+        expect(typeof renewedLock.created_at).toBe("string");
+        expect(Date.parse(renewedLock.created_at as string)).toBeGreaterThan(
+          Date.parse(expiredCreatedAt),
+        );
+        expect(renewedLock).toMatchObject({
+          id: lock.id,
+          owner: lock.owner,
+          pid: lock.pid,
+          ttl_seconds: lock.ttl_seconds,
+        });
+        heartbeat.start();
+        await heartbeat.refreshNow();
+        await writeFile(
+          lockPath,
+          `${JSON.stringify({ ...renewedLock, created_at: expiredCreatedAt }, null, 2)}\n`,
+          "utf8",
+        );
+        await vi.advanceTimersByTimeAsync(10);
         await heartbeat.stop();
-        await release();
+        const scheduledRenewal = JSON.parse(
+          await readFile(lockPath, "utf8"),
+        ) as Record<string, unknown>;
+        expect(typeof scheduledRenewal.created_at).toBe("string");
+        expect(
+          Date.parse(scheduledRenewal.created_at as string),
+        ).toBeGreaterThan(Date.parse(expiredCreatedAt));
+      } finally {
+        try {
+          await heartbeat.stop();
+        } finally {
+          vi.useRealTimers();
+          await release();
+        }
       }
     });
 
@@ -348,7 +379,9 @@ describe("workspace snapshots", () => {
           0.03,
         );
         heartbeat.start();
-        await new Promise((resolve) => setTimeout(resolve, 25));
+        await expect(heartbeat.refreshNow()).rejects.toThrow(
+          "lost its writer lock",
+        );
         await expect(heartbeat.stop()).rejects.toThrow("lost its writer lock");
       }
 

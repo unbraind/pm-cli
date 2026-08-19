@@ -637,10 +637,13 @@ async function runSearchAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const intentOptions = applyContextIntentProjection("search", options);
+  const query = normalizeSearchKeywordsInput(keywords);
+  const intentOptions = applyContextIntentProjection("search", options, [
+    query,
+  ]);
   const searchOptions = normalizeSearchOptions(intentOptions);
   const result = await runSearch(
-    normalizeSearchKeywordsInput(keywords),
+    query,
     {
       ...searchOptions,
       mode:
@@ -715,7 +718,7 @@ async function runGetAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const intentOptions = applyContextIntentProjection("get", options);
+  const intentOptions = applyContextIntentProjection("get", options, [id]);
   const result = await runGet(id, globalOptions, {
     depth:
       typeof intentOptions.depth === "string" ? intentOptions.depth : undefined,

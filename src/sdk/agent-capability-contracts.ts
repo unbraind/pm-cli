@@ -13,12 +13,32 @@ export type PmCommandVisibilityTier =
   | "full"
   | "internal";
 
+/** Stable capability families shared by every agent-facing command surface. */
+export type PmCommandCapabilityFamily =
+  | "workspace"
+  | "intake"
+  | "context"
+  | "lifecycle"
+  | "evidence"
+  | "graph"
+  | "quality"
+  | "automation"
+  | "extensions"
+  | "internal";
+
 /** One command's canonical agent-surface visibility declaration. */
 export interface PmCommandVisibilityContract {
   /** Canonical command path. */
   command: string;
   /** Minimum surface tier that advertises the command. */
   tier: PmCommandVisibilityTier;
+}
+
+/** Complete command capability contract with visibility and family ownership. */
+export interface PmCommandCapabilityContract
+  extends PmCommandVisibilityContract {
+  /** Exactly one stable capability family used to group the command. */
+  family: PmCommandCapabilityFamily;
 }
 
 const CORE_COMMANDS = new Set([
@@ -62,6 +82,98 @@ const STANDARD_COMMANDS = new Set([
   "test",
 ]);
 
+const COMMANDS_BY_FAMILY: Readonly<
+  Record<Exclude<PmCommandCapabilityFamily, "extensions" | "internal">, ReadonlySet<string>>
+> = Object.freeze({
+  workspace: new Set([
+    "config",
+    "gc",
+    "health",
+    "init",
+    "merge",
+    "profile",
+    "schema",
+    "telemetry",
+    "workspace",
+  ]),
+  intake: new Set(["copy", "create", "focus", "item", "restore"]),
+  context: new Set([
+    "activity",
+    "aggregate",
+    "context",
+    "ctx",
+    "duplicates",
+    "eval",
+    "get",
+    "help",
+    "list",
+    "list-all",
+    "list-blocked",
+    "list-canceled",
+    "list-closed",
+    "list-draft",
+    "list-in-progress",
+    "list-open",
+    "next",
+    "search",
+    "stats",
+  ]),
+  lifecycle: new Set([
+    "claim",
+    "close",
+    "close-many",
+    "close-task",
+    "delete",
+    "pause-task",
+    "release",
+    "start-task",
+    "update",
+    "update-many",
+  ]),
+  evidence: new Set([
+    "append",
+    "comments",
+    "docs",
+    "events",
+    "files",
+    "history",
+    "history-author-acknowledge",
+    "history-compact",
+    "history-redact",
+    "history-repair",
+    "learnings",
+    "notes",
+  ]),
+  graph: new Set(["deps", "graph", "plan"]),
+  quality: new Set([
+    "assurance",
+    "contracts",
+    "test",
+    "test-all",
+    "validate",
+  ]),
+  automation: new Set(["event", "meet", "remind"]),
+});
+
+const EXTENSION_COMMANDS = new Set([
+  "extension",
+  "install",
+  "package",
+  "packages",
+  "upgrade",
+]);
+
+/** Resolve one command's stable capability family. */
+export function resolvePmCommandCapabilityFamily(
+  command: string,
+): PmCommandCapabilityFamily {
+  const normalized = command.trim().toLowerCase();
+  for (const [family, commands] of Object.entries(COMMANDS_BY_FAMILY)) {
+    if (commands.has(normalized)) return family as PmCommandCapabilityFamily;
+  }
+  return EXTENSION_COMMANDS.has(normalized) ? "extensions" : "internal";
+}
+
 /**
  * Canonical visibility contract for every built-in command.
  *
@@ -69,7 +181,7 @@ const STANDARD_COMMANDS = new Set([
  * surface. Internal worker/helper paths are appended below and never advertised
  * by normal help or completion projections.
  */
-export const PM_COMMAND_VISIBILITY_CONTRACTS: readonly PmCommandVisibilityContract[] =
+export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContract[] =
   Object.freeze([
     ...PM_CORE_COMMAND_NAMES.map((command) => ({
       command,
@@ -78,24 +190,33 @@ export const PM_COMMAND_VISIBILITY_CONTRACTS: readonly PmCommandVisibilityContra
         : STANDARD_COMMANDS.has(command)
           ? ("standard" as const)
           : ("full" as const),
+      family: resolvePmCommandCapabilityFamily(command),
     })),
     {
       command: "completion-statuses",
       tier: "internal" as const,
+      family: "internal" as const,
     },
     {
       command: "completion-tags",
       tier: "internal" as const,
+      family: "internal" as const,
     },
     {
       command: "completion-types",
       tier: "internal" as const,
+      family: "internal" as const,
     },
     {
       command: "test-runs-worker",
       tier: "internal" as const,
+      family: "internal" as const,
     },
   ]);
+
+/** Backward-compatible tier-only projection of the capability contract. */
+export const PM_COMMAND_VISIBILITY_CONTRACTS: readonly PmCommandVisibilityContract[] =
+  PM_COMMAND_CAPABILITY_CONTRACTS;
 
 const TIER_ORDER: Readonly<Record<PmCommandVisibilityTier, number>> = {
   core: 0,
@@ -124,6 +245,15 @@ export function listPmCommandsForTier(
   return PM_COMMAND_VISIBILITY_CONTRACTS.filter(
     (entry) =>
       entry.tier !== "internal" && TIER_ORDER[entry.tier] <= maximum,
+  ).map((entry) => entry.command);
+}
+
+/** Return commands in one capability family, preserving contract order. */
+export function listPmCommandsForFamily(
+  family: PmCommandCapabilityFamily,
+): string[] {
+  return PM_COMMAND_CAPABILITY_CONTRACTS.filter(
+    (entry) => entry.family === family,
   ).map((entry) => entry.command);
 }
 
@@ -304,16 +434,16 @@ export const PM_MCP_PROMPT_CONTRACTS: readonly PmMcpPromptContract[] =
 
 /** Render the generated command visibility reference used by docs drift gates. */
 export function renderPmCommandVisibilityMarkdown(): string {
-  const rows = PM_COMMAND_VISIBILITY_CONTRACTS.map(
-    ({ command, tier }) => `| \`${command}\` | ${tier} |`,
+  const rows = PM_COMMAND_CAPABILITY_CONTRACTS.map(
+    ({ command, tier, family }) => `| \`${command}\` | ${tier} | ${family} |`,
   );
   return [
     "# Generated agent command surface",
     "",
-    "This file is generated from `PM_COMMAND_VISIBILITY_CONTRACTS`. Do not edit it manually.",
+    "This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it manually.",
     "",
-    "| Command | Minimum visibility tier |",
-    "| --- | --- |",
+    "| Command | Minimum visibility tier | Capability family |",
+    "| --- | --- | --- |",
     ...rows,
     "",
   ].join("\n");

@@ -4,18 +4,23 @@
  * Defines public SDK APIs and package-author helpers for Index.
  */
 export {
+  PM_COMMAND_CAPABILITY_CONTRACTS,
   PM_COMMAND_VISIBILITY_CONTRACTS,
   PM_MCP_PROMPT_CONTRACTS,
   PM_MCP_RESOURCE_CONTRACTS,
   PM_MCP_TOOL_COMMAND_CONTRACTS,
+  listPmCommandsForFamily,
   listPmCommandsForTier,
   listPmMcpToolsForProfile,
   renderPmCommandVisibilityMarkdown,
+  resolvePmCommandCapabilityFamily,
   resolvePmCommandVisibilityTier,
 } from "./agent-capability-contracts.js";
 export * from "./cli-contracts/grammar-contracts.js";
 export * from "./agent-session-context.js";
 export type {
+  PmCommandCapabilityContract,
+  PmCommandCapabilityFamily,
   PmCommandVisibilityContract,
   PmCommandVisibilityTier,
   PmMcpPromptArgumentContract,
@@ -676,8 +681,10 @@ export * from "./error-runtime.js";
 export * from "./error-code-catalog.js";
 export * from "./generated-error-code-catalog.js";
 export * from "./agent/refusal-reachability.js";
+export * from "./agent/refusal-closure.js";
 export * from "./agent/subcommand-recovery.js";
 export * from "./flag-invocation-contracts.js";
+export * from "./cli-contracts/flag-lexicon-contracts.js";
 export * from "./relationships.js";
 export * from "./actionability.js";
 export type {

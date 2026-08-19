@@ -15387,6 +15387,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "accepted_rejected_value",
+      "class": "generic_failure",
+      "code": "accepted_rejected_value",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Accepted rejected value condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "alias_collision",
+      "class": "generic_failure",
+      "code": "alias_collision",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Alias collision condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "alias_target_missing",
       "class": "generic_failure",
       "code": "alias_target_missing",
@@ -15588,6 +15622,23 @@
         "core/io/body-file.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "budget_exceeded",
+      "class": "generic_failure",
+      "code": "budget_exceeded",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Budget exceeded condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -16018,6 +16069,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "duplicate_canonical_flag",
+      "class": "generic_failure",
+      "code": "duplicate_canonical_flag",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Duplicate canonical flag condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "duplicate_command",
       "class": "generic_failure",
       "code": "duplicate_command",
@@ -16066,6 +16134,40 @@
         "sdk/graph/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "duplicate_observation",
+      "class": "generic_failure",
+      "code": "duplicate_observation",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Duplicate observation condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/flag-invocation-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "duplicate_probe",
+      "class": "generic_failure",
+      "code": "duplicate_probe",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Duplicate probe condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -16151,6 +16253,23 @@
         "sdk/lifecycle/close.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "empty_corpus",
+      "class": "generic_failure",
+      "code": "empty_corpus",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Empty corpus condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -16890,6 +17009,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/improvement-ledger.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "inconsistent_concept_kind",
+      "class": "generic_failure",
+      "code": "inconsistent_concept_kind",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Inconsistent concept kind condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
       "stability": "provisional"
     },
@@ -17815,6 +17951,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "missing_allowed_values",
+      "class": "generic_failure",
+      "code": "missing_allowed_values",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing allowed values condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_budget",
+      "class": "generic_failure",
+      "code": "missing_budget",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing budget condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "missing_cli_flag",
       "class": "generic_failure",
       "code": "missing_cli_flag",
@@ -17880,6 +18050,23 @@
         "sdk/extension.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_observation",
+      "class": "generic_failure",
+      "code": "missing_observation",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing observation condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/flag-invocation-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -17959,6 +18146,23 @@
         "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_suggested_retry",
+      "class": "generic_failure",
+      "code": "missing_suggested_retry",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing suggested retry condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -18128,6 +18332,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "non_refusal_exit",
+      "class": "generic_failure",
+      "code": "non_refusal_exit",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Non refusal exit condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
       ],
       "stability": "provisional"
     },
@@ -18475,6 +18696,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "retry_failed",
+      "class": "generic_failure",
+      "code": "retry_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Retry failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "schema_migration_input_required",
       "class": "usage",
       "code": "schema_migration_input_required",
@@ -18557,6 +18795,23 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "stale_budget",
+      "class": "generic_failure",
+      "code": "stale_budget",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Stale budget condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -19062,6 +19317,23 @@
         "core/profile/profile-lint.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "undeclared_observation",
+      "class": "generic_failure",
+      "code": "undeclared_observation",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Undeclared observation condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/flag-invocation-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

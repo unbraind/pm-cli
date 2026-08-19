@@ -617,6 +617,11 @@ describe("CLI main error helpers", () => {
               `--literal=${canary}`,
             ],
             suggested_retry: `pm history-redact pm-example --literal=${canary}`,
+            suggested_retry_args: [
+              "history-redact",
+              "pm-example",
+              `--literal=${canary}`,
+            ],
           },
         },
         invocationArgv,
@@ -628,6 +633,9 @@ describe("CLI main error helpers", () => {
         attempted_command: expect.stringContaining("--literal=[redacted]"),
         normalized_args: expect.arrayContaining(["--literal=[redacted]"]),
         suggested_retry: expect.stringContaining("--literal=[redacted]"),
+        suggested_retry_args: expect.arrayContaining([
+          "--literal=[redacted]",
+        ]),
       });
     }
   });
@@ -5520,10 +5528,34 @@ describe("CLI rich help content", () => {
       expect(rootPayload.resolved_path).toBe("pm");
       expect(rootPayload.has_subcommands).toBe(true);
       expect(rootPayload.subcommands).toEqual([
-        { name: "alpha", aliases: [], description: "Alpha command" },
-        { name: "beta", aliases: ["b"], description: "Beta command" },
-        { name: "help", aliases: [], description: "display help for command" },
-        { name: "legacy", aliases: [], description: "Legacy args" },
+        {
+          name: "alpha",
+          aliases: [],
+          description: "Alpha command",
+          tier: "standard",
+          family: "internal",
+        },
+        {
+          name: "beta",
+          aliases: ["b"],
+          description: "Beta command",
+          tier: "standard",
+          family: "internal",
+        },
+        {
+          name: "help",
+          aliases: [],
+          description: "display help for command",
+          tier: "standard",
+          family: "internal",
+        },
+        {
+          name: "legacy",
+          aliases: [],
+          description: "Legacy args",
+          tier: "standard",
+          family: "internal",
+        },
       ]);
 
       writeSpy.mockClear();

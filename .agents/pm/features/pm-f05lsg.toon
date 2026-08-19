@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags[4]: agent-ergonomics,ci-gates,discoverability,long-horizon
 created_at: "2026-08-01T13:09:26.104Z"
-updated_at: "2026-08-01T20:25:36.030Z"
+updated_at: "2026-08-19T01:05:19.953Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A replay corpus of wrong invocations is generated from the contract tables and covers every flag with a closed domain, every subcommand family, every required-argument omission and every mutually exclusive flag pair; Every declared error code is reachable from at least one corpus input, and a code with no reachable input is reported as such; A scorer reports the recovery-closure fraction and the list of unrecoverable refusals, scoring a lone nearest-match suggestion as not recoverable; The closure fraction is a ratchet in the gate registry that may not fall, with a negative control proving the gate can fail; The refusal envelope has a declared shape carrying the failing surface, the rejected value, the legal domain when known, and the exit code"
 parent: pm-mpbb
 risk: medium
 confidence: 78
-dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-01T13:09:26.104Z","harness:claude-code","cli:create:dep",detected
   pm-8pnj,related,"2026-08-01T13:09:26.104Z","harness:claude-code","cli:create:dep",detected
   pm-gy885b,blocked_by,"2026-08-01T13:09:26.104Z","harness:claude-code","cli:create:dep",detected
@@ -26,4 +26,45 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-hqa8g1,related,"2026-08-01T13:10:33.176Z","harness:claude-code","cli:update:dep",detected
   pm-rnl3sa,discovered_from,"2026-08-01T13:10:33.176Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,verifies,"2026-08-01T20:22:16.901Z","harness:codex","cli:update:dep",detected
+  pm-h8tpeh,implements,"2026-08-18T19:49:27.449Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-18T19:18:11.981Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
+  "2026-08-18T21:13:36.921Z","harness:codex","Tranche evidence: the SDK now provides a typed recovery-closure scorer and findings, the gate registry runs a real temporary-tracker corpus, four current closed-domain probes score 4/4 (fraction 1.0), empty corpora fail closed, and omission/malformed-retry negative controls fail. Remaining acceptance: generate the exhaustive corpus from all contract tables, cover every subcommand family/required omission/mutual exclusion/error code, and persist a historical ratchet. Returning open and releasing ownership."
+  "2026-08-18T21:49:08.769Z","harness:codex","Hosted CI evidence: PR #1061 exact head b953e36c22804ba26974a2c81307e91f1094f3ca passed the broad matrix except Gates (static), which correctly failed at generate-error-code-catalog.mjs --check because the recovery additions changed the reachable catalog. Treating this as gate-positive drift detection and regenerating through the repository-owned command."
+  "2026-08-18T21:53:59.056Z","harness:codex","Hosted-gate correction evidence: pnpm contracts:errors:update synchronized both generated catalog partitions with 16 newly reachable recovery/lexicon/parity codes; pnpm contracts:errors:check passed; pnpm quality:static passed end to end, including 3043 lexicon entries, 2904/2904 observed flag parity, recovery closure 4/4 at 1.0, SDK snapshot/import-cost/transport checks, graph composition, and record integrity. The exhaustive-corpus remainder is unchanged, so returning this item to open and releasing ownership."
+  "2026-08-18T23:41:26.210Z","harness:codex","Exact-head review evidence: flag-invocation-parity is now present in the exhaustive release automation inventory with its seeded arity negative control, and the inventory discovers its independently named executable. The committed registry, parity corpus, repository static gate, and exact full coverage all pass."
+  "2026-08-19T01:01:52.369Z","harness:codex","Verification evidence 2026-08-19: review amendments make every current closed-domain get/search/list/context/next recovery preserve real positional operands through suggested_retry_args, use shell-safe display rendering, retain redaction through structured normalization, and require usage exit code. The executable corpus expanded from 4 to 8 probes and executes whitespace-bearing search retries without reparsing display text. Clean-room manual acceptance executed 6 CLI refusals/retries plus SDK get/search refusals and successful calls in an isolated tracker, then removed it. Final repository proof: 529/529 files and 7,586/7,586 tests pass; exact coverage is 55,439/55,439 statements, 41,357/41,357 branches, 11,473/11,473 functions, and 53,497/53,497 lines. quality:static passes including recovery closure 8/8, SDK surface governance, graph composition, and record integrity. Remaining feature acceptance is the generated exhaustive corpus, all error-code reachability, and historical ratchet, so this item will return open."
+files[23]{path,scope,note}:
+  scripts/release/gate-registry.json,project,Active command contract and recovery conformance implementation
+  scripts/release/gate-registry.mjs,project,Discover the independently named flag invocation parity gate in the exhaustive inventory
+  scripts/release/refusal-closure-gate.mjs,project,Active command contract and recovery conformance implementation
+  sdk/public-surface.json,project,Operand-preserving executable recovery contract and verification
+  src/cli/error-guidance.ts,project,Operand-preserving executable recovery contract and verification
+  src/cli/main.ts,project,Operand-preserving executable recovery contract and verification
+  src/cli/register-list-query.ts,project,Operand-preserving executable recovery contract and verification
+  src/core/shared/errors.ts,project,Operand-preserving executable recovery contract and verification
+  src/sdk/agent/refusal-closure.ts,project,Active command contract and recovery conformance implementation
+  src/sdk/context-intent-contracts.ts,project,Operand-preserving executable recovery contract and verification
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated error-code catalog synchronized after hosted static drift detection
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated error-code catalog synchronized after hosted static drift detection
+  src/sdk/query/get.ts,project,Operand-preserving executable recovery contract and verification
+  src/sdk/query/list.ts,project,Operand-preserving executable recovery contract and verification
+  src/sdk/query/search-contracts.ts,project,Operand-preserving executable recovery contract and verification
+  src/sdk/query/search.ts,project,Operand-preserving executable recovery contract and verification
+  src/sdk/runtime.ts,project,Operand-preserving executable recovery contract and verification
+  tests/integration/closed-domain-recovery.integration.spec.ts,project,Operand-preserving executable recovery contract and verification
+  tests/unit/cli/cli-main-errors.spec.ts,project,Operand-preserving executable recovery contract and verification
+  tests/unit/cli/error-guidance.spec.ts,project,Operand-preserving executable recovery contract and verification
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Active command contract and recovery conformance implementation
+  tests/unit/sdk/agent/refusal-closure.spec.ts,project,Recovery closure scorer negative controls
+  tests/unit/sdk/context-intent-contracts.spec.ts,project,Operand-preserving executable recovery contract and verification
+tests[4]{command,scope,timeout_seconds}:
+  "pnpm quality:recovery-closure",project,240
+  node scripts/run-tests.mjs test -- tests/unit/scripts/flag-invocation-parity.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent/refusal-closure.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts,project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msz5ibe4-fgmh3m,test,passed,"2026-08-18T21:04:34.245Z","2026-08-18T21:04:44.332Z","2026-08-18T21:04:44.332Z",1,0,0
+  test-local-mszb5wbo-e3q131,test,passed,"2026-08-18T23:42:41.300Z","2026-08-18T23:43:02.628Z","2026-08-18T23:43:02.628Z",2,0,0
+  test-local-msze3i3o-m69zew,test,passed,"2026-08-19T01:03:30.648Z","2026-08-19T01:05:09.731Z","2026-08-19T01:05:09.731Z",4,0,0
 body: ""

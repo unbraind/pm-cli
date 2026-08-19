@@ -1,81 +1,81 @@
 # Generated agent command surface
 
-This file is generated from `PM_COMMAND_VISIBILITY_CONTRACTS`. Do not edit it manually.
+This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it manually.
 
-| Command | Minimum visibility tier |
-| --- | --- |
-| `init` | full |
-| `config` | standard |
-| `extension` | full |
-| `package` | full |
-| `packages` | full |
-| `install` | full |
-| `upgrade` | full |
-| `create` | core |
-| `item` | full |
-| `copy` | full |
-| `focus` | standard |
-| `list` | core |
-| `list-all` | standard |
-| `list-draft` | full |
-| `list-open` | standard |
-| `list-in-progress` | standard |
-| `list-blocked` | standard |
-| `list-closed` | standard |
-| `list-canceled` | full |
-| `aggregate` | full |
-| `context` | core |
-| `ctx` | full |
-| `get` | core |
-| `graph` | standard |
-| `search` | core |
-| `duplicates` | full |
-| `eval` | full |
-| `next` | core |
-| `history` | standard |
-| `events` | standard |
-| `history-redact` | full |
-| `history-repair` | full |
-| `history-compact` | full |
-| `history-author-acknowledge` | full |
-| `merge` | full |
-| `schema` | standard |
-| `profile` | standard |
-| `activity` | full |
-| `restore` | full |
-| `update` | core |
-| `update-many` | full |
-| `close` | core |
-| `close-many` | full |
-| `delete` | full |
-| `append` | standard |
-| `comments` | standard |
-| `notes` | standard |
-| `learnings` | standard |
-| `files` | standard |
-| `docs` | standard |
-| `deps` | standard |
-| `plan` | core |
-| `test` | standard |
-| `test-all` | full |
-| `telemetry` | full |
-| `stats` | full |
-| `health` | standard |
-| `validate` | core |
-| `assurance` | full |
-| `gc` | full |
-| `workspace` | full |
-| `contracts` | standard |
-| `claim` | core |
-| `release` | core |
-| `start-task` | full |
-| `pause-task` | full |
-| `close-task` | full |
-| `meet` | full |
-| `event` | full |
-| `remind` | full |
-| `help` | core |
-| `completion-statuses` | internal |
-| `completion-tags` | internal |
-| `completion-types` | internal |
-| `test-runs-worker` | internal |
+| Command | Minimum visibility tier | Capability family |
+| --- | --- | --- |
+| `init` | full | workspace |
+| `config` | standard | workspace |
+| `extension` | full | extensions |
+| `package` | full | extensions |
+| `packages` | full | extensions |
+| `install` | full | extensions |
+| `upgrade` | full | extensions |
+| `create` | core | intake |
+| `item` | full | intake |
+| `copy` | full | intake |
+| `focus` | standard | intake |
+| `list` | core | context |
+| `list-all` | standard | context |
+| `list-draft` | full | context |
+| `list-open` | standard | context |
+| `list-in-progress` | standard | context |
+| `list-blocked` | standard | context |
+| `list-closed` | standard | context |
+| `list-canceled` | full | context |
+| `aggregate` | full | context |
+| `context` | core | context |
+| `ctx` | full | context |
+| `get` | core | context |
+| `graph` | standard | graph |
+| `search` | core | context |
+| `duplicates` | full | context |
+| `eval` | full | context |
+| `next` | core | context |
+| `history` | standard | evidence |
+| `events` | standard | evidence |
+| `history-redact` | full | evidence |
+| `history-repair` | full | evidence |
+| `history-compact` | full | evidence |
+| `history-author-acknowledge` | full | evidence |
+| `merge` | full | workspace |
+| `schema` | standard | workspace |
+| `profile` | standard | workspace |
+| `activity` | full | context |
+| `restore` | full | intake |
+| `update` | core | lifecycle |
+| `update-many` | full | lifecycle |
+| `close` | core | lifecycle |
+| `close-many` | full | lifecycle |
+| `delete` | full | lifecycle |
+| `append` | standard | evidence |
+| `comments` | standard | evidence |
+| `notes` | standard | evidence |
+| `learnings` | standard | evidence |
+| `files` | standard | evidence |
+| `docs` | standard | evidence |
+| `deps` | standard | graph |
+| `plan` | core | graph |
+| `test` | standard | quality |
+| `test-all` | full | quality |
+| `telemetry` | full | workspace |
+| `stats` | full | context |
+| `health` | standard | workspace |
+| `validate` | core | quality |
+| `assurance` | full | quality |
+| `gc` | full | workspace |
+| `workspace` | full | workspace |
+| `contracts` | standard | quality |
+| `claim` | core | lifecycle |
+| `release` | core | lifecycle |
+| `start-task` | full | lifecycle |
+| `pause-task` | full | lifecycle |
+| `close-task` | full | lifecycle |
+| `meet` | full | automation |
+| `event` | full | automation |
+| `remind` | full | automation |
+| `help` | core | context |
+| `completion-statuses` | internal | internal |
+| `completion-tags` | internal | internal |
+| `completion-types` | internal | internal |
+| `test-runs-worker` | internal | internal |

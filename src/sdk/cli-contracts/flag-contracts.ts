@@ -1797,9 +1797,36 @@ export function toUniqueFlagContracts(
 function withSubcommandGlobalFlags(
   contracts: CliFlagContract[],
 ): CliFlagContract[] {
-  return withFlagAliasMetadata(
-    toUniqueFlagContracts([...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]),
-  );
+  const byCanonicalFlag = new Map<string, CliFlagContract>();
+  for (const contract of [...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]) {
+    const canonicalFlag = normalizeFlagAliasKey(contract.flag);
+    const prior = byCanonicalFlag.get(canonicalFlag);
+    const { aliases: declaredAliases, ...contractWithoutAliases } = contract;
+    const aliases = normalizeUniqueStringList([
+      ...(declaredAliases ?? []),
+      ...(contract.flag === canonicalFlag ? [] : [contract.flag]),
+    ]).filter((alias) => alias !== canonicalFlag);
+    const normalizedContract: CliFlagContract = {
+      ...contractWithoutAliases,
+      flag: canonicalFlag,
+      ...(aliases.length > 0 ? { aliases } : {}),
+    };
+    const mergedAliases = normalizeUniqueStringList([
+      ...(prior?.aliases ?? []),
+      ...(normalizedContract.aliases ?? []),
+    ]);
+    byCanonicalFlag.set(
+      canonicalFlag,
+      prior === undefined
+        ? normalizedContract
+        : {
+            ...prior,
+            ...normalizedContract,
+            ...(mergedAliases.length > 0 ? { aliases: mergedAliases } : {}),
+          },
+    );
+  }
+  return withFlagAliasMetadata([...byCanonicalFlag.values()]);
 }
 
 const FIXED_STATUS_LIST_COMMAND_ALIASES = [
@@ -1843,8 +1870,7 @@ const POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT = new Map([
 
 /** Resolve every positional action's accepted flags against one parent contract. */
 export function resolvePmPositionalActionFlagContracts(
-  actions: readonly PmPositionalActionContract[] =
-    PM_POSITIONAL_ACTION_CONTRACTS,
+  actions: readonly PmPositionalActionContract[] = PM_POSITIONAL_ACTION_CONTRACTS,
 ): Array<readonly [string, CliFlagContract[]]> {
   return actions.map(({ command, parent, accepted_flags: acceptedFlags }) => {
     const parentFlagIndex = POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT.get(parent);
