@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- CodSpeed instrument cache can stall simulation setup until the hosted benchmark gate is canceled ([pm-w16muu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w16muu.toon))
 - Make context intents and low-token projection fields fully discoverable ([pm-gy885b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gy885b.toon))
 
 ### Other
