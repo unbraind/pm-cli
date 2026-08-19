@@ -91,6 +91,28 @@ export interface PmFlagLexiconReport {
 /** Memoized immutable canonical lexicon for this module instance. */
 let cachedPmFlagLexicon: readonly PmFlagLexiconEntry[] | undefined;
 
+const FULL_PROJECTION_CONCEPT_BY_COMMAND: Readonly<Record<string, string>> =
+  Object.freeze({
+    list: "list-item-projection",
+    "list-all": "list-item-projection",
+    "list-draft": "list-item-projection",
+    "list-open": "list-item-projection",
+    "list-in-progress": "list-item-projection",
+    "list-blocked": "list-item-projection",
+    "list-closed": "list-item-projection",
+    "list-canceled": "list-item-projection",
+    get: "get-item-projection",
+    graph: "graph-detail-projection",
+    search: "search-result-projection",
+    history: "history-entry-projection",
+    events: "mutation-event-projection",
+    activity: "activity-entry-projection",
+    deps: "dependency-graph-projection",
+    health: "health-diagnostic-projection",
+    validate: "validation-diagnostic-projection",
+    contracts: "contract-catalog-projection",
+  });
+
 function resolvePmFlagSemanticConcept(command: string, flag: string): string {
   if (flag === "--limit") return "result-row-limit";
   if (flag === "--node-limit") return "graph-node-limit";
@@ -98,10 +120,13 @@ function resolvePmFlagSemanticConcept(command: string, flag: string): string {
   if (flag === "--output-limit") return "rendered-output-row-limit";
   if (flag === "--output-budget") return "rendered-output-byte-budget";
   if (flag === "--token-budget") return "context-intent-token-budget";
+  if (flag === "--full")
+    return FULL_PROJECTION_CONCEPT_BY_COMMAND[command] as string;
   if (flag !== "--file") return flag.slice(2);
   if (["create", "update", "update-many"].includes(command))
     return "linked-file-path";
-  if (["comments", "notes"].includes(command)) return "entry-file-input";
+  if (["comments", "notes", "learnings"].includes(command))
+    return "entry-file-input";
   return "plan-definition-file";
 }
 

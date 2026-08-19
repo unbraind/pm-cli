@@ -10,6 +10,16 @@ import { renderPmCommand } from "../command-line.js";
 import { EXIT_CODE, PmCliError } from "../runtime-primitives.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import type { SearchMode } from "./search-rendering.js";
+import {
+  DEFAULT_COMPACT_SEARCH_FIELDS,
+  listSearchProjectionFields,
+} from "./projection-contracts.js";
+export {
+  DEFAULT_COMPACT_SEARCH_FIELDS,
+  SEARCH_HIT_FIELD_KEYS,
+  SEARCH_ITEM_FIELD_KEYS,
+  listSearchProjectionFields,
+} from "./projection-contracts.js";
 
 /** Documents the search options payload exchanged by command, SDK, and package integrations. */
 export interface SearchOptions extends SharedItemFilterOptions {
@@ -55,96 +65,6 @@ export interface SearchProjectionConfig {
   mode: SearchProjectionMode;
   /** Explicit fields for compact or fields mode. */
   fields: string[];
-}
-
-/** Stable field order for compact search results. */
-export const DEFAULT_COMPACT_SEARCH_FIELDS = [
-  "id",
-  "title",
-  "status",
-  "type",
-  "priority",
-  "updated_at",
-  "score",
-  "matched_fields",
-] as const;
-
-/** Search-result fields that live beside the nested item projection. */
-export const SEARCH_HIT_FIELD_KEYS = [
-  "score",
-  "matched_fields",
-  "highlights",
-] as const;
-/** Core item fields accepted by explicit search projections. */
-export const SEARCH_ITEM_FIELD_KEYS = [
-  "id",
-  "title",
-  "description",
-  "type",
-  "status",
-  "priority",
-  "tags",
-  "created_at",
-  "updated_at",
-  "deadline",
-  "assignee",
-  "author",
-  "estimated_minutes",
-  "acceptance_criteria",
-  "dependencies",
-  "comments",
-  "notes",
-  "learnings",
-  "reminders",
-  "events",
-  "files",
-  "tests",
-  "docs",
-  "close_reason",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blocked_by",
-  "blocked_reason",
-  "reporter",
-  "severity",
-  "environment",
-  "repro_steps",
-  "resolution",
-  "expected_result",
-  "actual_result",
-  "affected_version",
-  "fixed_version",
-  "component",
-  "regression",
-  "customer_impact",
-  "definition_of_ready",
-  "order",
-  "rank",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "why_now",
-  "plan",
-] as const;
-
-/** Return every accepted search projection selector for core and runtime metadata. */
-export function listSearchProjectionFields(
-  runtimeMetadataKeys: Iterable<string> = [],
-): string[] {
-  const runtimeKeys = [...new Set(runtimeMetadataKeys)];
-  return [
-    ...SEARCH_HIT_FIELD_KEYS,
-    ...SEARCH_ITEM_FIELD_KEYS,
-    ...SEARCH_ITEM_FIELD_KEYS.map((field) => `item.${field}`),
-    ...runtimeKeys,
-    ...runtimeKeys.map((field) => `item.${field}`),
-  ].sort();
 }
 
 /** Parse the configured search execution mode. */
@@ -245,6 +165,7 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
 /** Resolve mutually exclusive compact, full, or explicit-field projection. */
 export function parseSearchProjection(
   options: SearchOptions,
+  query = "<query>",
 ): SearchProjectionConfig {
   const compactRequested = options.compact === true;
   const fullRequested = options.full === true;
@@ -260,8 +181,8 @@ export function parseSearchProjection(
       {
         code: "projection_options_mutually_exclusive",
         recovery: {
-          suggested_retry: "pm search query --full",
-          suggested_retry_args: ["search", "query", "--full"],
+          suggested_retry: renderPmCommand(["search", query, "--full"]),
+          suggested_retry_args: ["search", query, "--full"],
         },
       },
     );

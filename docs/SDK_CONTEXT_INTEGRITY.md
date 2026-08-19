@@ -124,11 +124,15 @@ family. Each obligation declares `recovery`, `replacement`, or
 `behavior_preserving` semantics and its proof must demonstrate the same
 promise.
 
-`verifyPmRecoveryProducerRuntimeCoverage` joins the syntax-aware complete
-source census to distinct emitted values for every typed kind. Its receipt
-retains both denominators and fails when a kind has source producers but no
-runtime evidence, preventing a representative recovery example from masking
-an entirely unexecuted producer family.
+`verifyPmRecoveryKindRuntimeCoverage` joins the syntax-aware complete source
+census to distinct emitted values for every typed kind. Its receipt retains
+both denominators and fails when a kind has source producers but no runtime
+evidence, preventing a representative recovery example from masking an
+entirely unexecuted producer family. This is explicitly kind-level assurance:
+it does not claim that every individual source location or every distinct value
+was executed. The former `verifyPmRecoveryProducerRuntimeCoverage` export
+remains as a deprecated compatibility alias with those same kind-level
+semantics.
 
 The repository integration corpus drives real CLI refusals, executes the
 emitted retry in a temporary tracker, compares candidate commands with the

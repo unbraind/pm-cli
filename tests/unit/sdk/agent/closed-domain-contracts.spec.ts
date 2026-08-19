@@ -26,6 +26,21 @@ describe("closed-domain contracts", () => {
         }),
       ]),
     );
+    expect(
+      contracts
+        .filter(({ probe_id: probeId }) => probeId.endsWith("-invalid-field"))
+        .filter(({ command }) => command.startsWith("list"))
+        .every(
+          ({ command, suggested_retry_args: suggestedRetryArgs }) =>
+            suggestedRetryArgs[0] === command,
+        ),
+    ).toBe(true);
+    expect(
+      contracts.find(
+        ({ probe_id: probeId }) =>
+          probeId === "search-mutually-exclusive-projection",
+      )?.suggested_retry_args,
+    ).toEqual(["search", "Domain query", "--full"]);
   });
 
   it("renders compact complete-domain help and handles undeclared pairs", () => {

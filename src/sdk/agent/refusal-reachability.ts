@@ -236,7 +236,7 @@ export interface PmRecoveryReferenceReport {
   findings: PmRecoveryReferenceFinding[];
 }
 
-/** Runtime evidence for one source-declared recovery-reference kind. */
+/** Per-kind runtime evidence; counts do not claim one observation per source location. */
 export interface PmRecoveryProducerRuntimeCoverage {
   /** Typed recovery-reference kind. */
   kind: PmRecoveryReferenceKind;
@@ -246,7 +246,7 @@ export interface PmRecoveryProducerRuntimeCoverage {
   runtime_values: number;
 }
 
-/** Unified source-census and runtime-value coverage receipt. */
+/** Unified per-kind source-census and runtime-value coverage receipt. */
 export interface PmRecoveryProducerRuntimeReport {
   /** Whether every source-declared kind emitted at least one runtime value. */
   ok: boolean;
@@ -886,7 +886,7 @@ export function verifyPmRecoveryReferences(
   };
 }
 
-/** Join the complete source census to distinct emitted runtime values by typed kind. */
+/** Join source-census counts to distinct emitted runtime values by typed kind. */
 export function verifyPmRecoveryProducerRuntimeCoverage(
   census: PmRecoveryProducerCensusReport,
   obligations: readonly PmRecoveryReferenceObligation[],
@@ -922,3 +922,7 @@ export function verifyPmRecoveryProducerRuntimeCoverage(
     missing_runtime_kinds: missingRuntimeKinds,
   };
 }
+
+/** Honest kind-level name for the compatibility implementation above. */
+export const verifyPmRecoveryKindRuntimeCoverage =
+  verifyPmRecoveryProducerRuntimeCoverage;

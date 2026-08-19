@@ -61,6 +61,29 @@ describe("flag lexicon contracts", () => {
       )?.concept,
     ).toBe("plan-definition-file");
     expect(
+      Object.fromEntries(
+        lexicon
+          .filter(({ flag }) => flag === "--full")
+          .map(({ command, concept }) => [command, concept]),
+      ),
+    ).toMatchObject({
+      contracts: "contract-catalog-projection",
+      deps: "dependency-graph-projection",
+      graph: "graph-detail-projection",
+      health: "health-diagnostic-projection",
+      history: "history-entry-projection",
+      list: "list-item-projection",
+      search: "search-result-projection",
+      validate: "validation-diagnostic-projection",
+    });
+    expect(
+      new Set(
+        lexicon
+          .filter(({ flag }) => flag === "--full")
+          .map(({ concept }) => concept),
+      ).size,
+    ).toBe(11);
+    expect(
       inventory.find(
         ({ command, canonical_flag: canonicalFlag }) =>
           command === "context" && canonicalFlag === "--limit",

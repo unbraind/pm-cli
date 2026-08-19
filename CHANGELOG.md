@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- The only two flags that make a read cheap are the only two whose closed value domain no refusal and no help text ever names ([pm-gy885b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gy885b.toon))
+- Make context intents and low-token projection fields fully discoverable ([pm-gy885b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gy885b.toon))
 
 ### Other
 

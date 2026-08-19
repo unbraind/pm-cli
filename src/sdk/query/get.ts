@@ -11,7 +11,6 @@ import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   EXIT_CODE,
-  ITEM_METADATA_KEY_ORDER,
   TYPE_TO_FOLDER,
   type GlobalOptions,
   PmCliError,
@@ -46,6 +45,14 @@ import type {
 } from "../../types/index.js";
 import { runList } from "./list.js";
 import { registerOutputMaterialFieldGroups } from "../output-projection.js";
+import {
+  GET_DEPTH_VALUES,
+  listGetProjectionFields,
+} from "./projection-contracts.js";
+export {
+  GET_DEPTH_VALUES,
+  listGetProjectionFields,
+} from "./projection-contracts.js";
 
 interface ClaimHistoryContext {
   ts: string;
@@ -121,58 +128,6 @@ export interface GetResult {
     count: number;
     items: Record<string, unknown>[];
   };
-}
-
-/** Canonical get depth values. The CLI also accepts full as an alias for deep. */
-export const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
-
-const GET_ROOT_PROJECTION_FIELDS = [
-  "body",
-  "linked",
-  "claim_state",
-  "children",
-  "schedule",
-] as const;
-const GET_LINKED_PROJECTION_FIELDS = [
-  "linked.files",
-  "linked.tests",
-  "linked.docs",
-] as const;
-const GET_CLAIM_STATE_PROJECTION_FIELDS = [
-  "claim_state.claimed",
-  "claim_state.assignee",
-  "claim_state.last_claim",
-  "claim_state.last_release",
-] as const;
-const GET_SCHEDULE_PROJECTION_FIELDS = [
-  "schedule.deadline",
-  "schedule.start_at",
-  "schedule.end_at",
-  "schedule.location",
-  "schedule.reminders",
-  "schedule.events",
-] as const;
-
-/** Return every accepted get projection selector for core and runtime metadata. */
-export function listGetProjectionFields(
-  runtimeMetadataKeys: Iterable<string> = [],
-): string[] {
-  const itemFields = [
-    ...new Set([
-      ...ITEM_METADATA_KEY_ORDER,
-      ...runtimeMetadataKeys,
-      "notes_count",
-      "tests_count",
-      "collection_counts",
-    ]),
-  ];
-  return [
-    ...itemFields.flatMap((field) => [field, `item.${field}`]),
-    ...GET_ROOT_PROJECTION_FIELDS,
-    ...GET_LINKED_PROJECTION_FIELDS,
-    ...GET_CLAIM_STATE_PROJECTION_FIELDS,
-    ...GET_SCHEDULE_PROJECTION_FIELDS,
-  ].sort();
 }
 
 const AUTOMATIC_CHILD_ROLLUP_TYPES = new Set([

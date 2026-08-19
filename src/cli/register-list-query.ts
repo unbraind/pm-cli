@@ -348,6 +348,7 @@ async function runRegisteredListCommand(params: {
     }
   }
   applyDefaultListProjection(listOptions, effectiveName);
+  Object.assign(listOptions, { projectionCommand: effectiveName });
   if (effectiveExcludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = effectiveDependencyBlocked;
   const output = resolveRegisteredListOutputContext(

@@ -8,10 +8,10 @@
 import { PM_CONTEXT_INTENT_CONTRACTS } from "../context-intent-contracts.js";
 import {
   LIST_COMMAND_DEFAULT_PROJECTIONS,
+  listGetProjectionFields,
   listListProjectionFields,
-} from "../query/list.js";
-import { listGetProjectionFields } from "../query/get.js";
-import { listSearchProjectionFields } from "../query/search-contracts.js";
+  listSearchProjectionFields,
+} from "../query/projection-contracts.js";
 
 /** A closed-domain refusal that can be executed and recovered automatically. */
 export interface PmClosedDomainContract {
@@ -86,7 +86,7 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
       refusal_args: [command, "--fields", REJECTED_FIELD],
       allowed_values: listFields,
       suggested_retry_args: [
-        "list",
+        command,
         "--fields",
         "id,title,status",
         "--limit",
@@ -137,7 +137,7 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
       rejected_value: "--full+--fields",
       refusal_args: ["search", "Domain query", "--full", "--fields", "id"],
       allowed_values: [],
-      suggested_retry_args: ["search", "query", "--full"],
+      suggested_retry_args: ["search", "Domain query", "--full"],
       error_code: "projection_options_mutually_exclusive",
       allowed_values_required: false,
     },

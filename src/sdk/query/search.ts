@@ -2678,7 +2678,7 @@ function prepareSearchInput(
     tokens: parseSearchTokens(query),
     normalizedQuery: normalizeSearchPhrase(query),
     limit: parseLimit(options.limit),
-    projection: parseSearchProjection(options),
+    projection: parseSearchProjection(options, rawQuery),
     modeWasExplicit:
       typeof options.mode === "string" && options.mode.trim().length > 0,
   };

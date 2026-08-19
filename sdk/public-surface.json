@@ -15942,6 +15942,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "verifyPmRecoveryKindRuntimeCoverage",
+          "signature": "(census: PmRecoveryProducerCensusReport, obligations: readonly PmRecoveryReferenceObligation[]) => PmRecoveryProducerRuntimeReport | calls: (census: PmRecoveryProducerCensusReport, obligations: readonly PmRecoveryReferenceObligation[]) => PmRecoveryProducerRuntimeReport"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "verifyPmRecoveryProducerRuntimeCoverage",
           "signature": "(census: PmRecoveryProducerCensusReport, obligations: readonly PmRecoveryReferenceObligation[]) => PmRecoveryProducerRuntimeReport | calls: (census: PmRecoveryProducerCensusReport, obligations: readonly PmRecoveryReferenceObligation[]) => PmRecoveryProducerRuntimeReport"

@@ -48,10 +48,7 @@ import {
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
-import {
-  EXIT_CODE,
-  ITEM_METADATA_KEY_ORDER,
-} from "../../core/shared/constants.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
@@ -81,6 +78,21 @@ import {
   resolveQueryCursorStart,
   selectCursorSemanticOptions,
 } from "../pagination.js";
+import {
+  BRIEF_LIST_FIELDS,
+  DEFAULT_COMPACT_LIST_FIELDS,
+  listListProjectionFields,
+  type ListCommandName,
+  type ListProjectionMode,
+} from "./projection-contracts.js";
+export {
+  BRIEF_LIST_FIELDS,
+  DEFAULT_COMPACT_LIST_FIELDS,
+  LIST_COMMAND_DEFAULT_PROJECTIONS,
+  listListProjectionFields,
+  type ListCommandName,
+  type ListProjectionMode,
+} from "./projection-contracts.js";
 
 /** Documents the list options payload exchanged by command, SDK, and package integrations. */
 export interface ListOptions extends SharedItemFilterOptions {
@@ -138,6 +150,11 @@ export interface ListOptions extends SharedItemFilterOptions {
   filterResolutionMissing?: boolean;
   /** Value that configures or reports filter metadata missing for this contract. */
   filterMetadataMissing?: boolean;
+}
+
+/** Adapter-only list context that never expands the public SDK options contract. */
+interface ListRuntimeOptions extends ListOptions {
+  projectionCommand?: ListCommandName;
 }
 
 /** Extract the missing-metadata selection filters from list/update-many options. */
@@ -312,9 +329,6 @@ export type ListProjectedItem = ListProjectedItemCore & Record<string, unknown>;
 /** Honest union of item shapes returned by the list engine. */
 export type ListResultItem = ListedItem | ListTreeItem | ListProjectedItem;
 
-/** Stable projection names emitted by list envelopes and command contracts. */
-export type ListProjectionMode = "full" | "compact" | "brief" | "fields";
-
 interface ListProjectionConfig {
   mode: ListProjectionMode;
   fields: string[];
@@ -336,56 +350,6 @@ export type ListSortField = (typeof LIST_SORT_FIELDS)[number];
 export const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
 /** Restricts list sort order values accepted by command, SDK, and storage contracts. */
 export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
-
-/** Stable field order for the compact list projection. */
-export const DEFAULT_COMPACT_LIST_FIELDS = [
-  "id",
-  "title",
-  "status",
-  "type",
-  "priority",
-  "parent",
-  "updated_at",
-] as const;
-/** Stable field order for the agent-optimized brief list projection. */
-export const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
-
-/** Machine-readable default projection contract for every list command. */
-export const LIST_COMMAND_DEFAULT_PROJECTIONS = {
-  list: "brief",
-  "list-all": "full",
-  "list-draft": "full",
-  "list-open": "brief",
-  "list-in-progress": "brief",
-  "list-blocked": "brief",
-  "list-closed": "full",
-  "list-canceled": "full",
-} as const satisfies Record<string, Exclude<ListProjectionMode, "fields">>;
-
-/** Command names whose output defaults are described by the list projection contract. */
-export type ListCommandName = keyof typeof LIST_COMMAND_DEFAULT_PROJECTIONS;
-const TREE_METADATA_FIELDS = [
-  "tree_depth",
-  "tree_parent",
-  "tree_children",
-  "tree_title",
-] as const;
-
-/** Return every accepted list projection selector for core and runtime metadata. */
-export function listListProjectionFields(
-  runtimeMetadataKeys: Iterable<string> = [],
-): string[] {
-  return [
-    ...new Set([
-      ...ITEM_METADATA_KEY_ORDER,
-      "body",
-      ...TREE_METADATA_FIELDS,
-      ...runtimeMetadataKeys,
-    ]),
-  ]
-    .flatMap((field) => [field, `item.${field}`])
-    .sort();
-}
 
 // A projection that selects any heavy collection field (or `--full`, which returns
 // items verbatim) must load the full metadata; everything else takes the light path.
@@ -896,7 +860,10 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
   return [...new Set(selectors)];
 }
 
-function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
+function parseProjectionConfig(
+  options: ListRuntimeOptions,
+  invokedCommand: ListCommandName = options.projectionCommand ?? "list",
+): ListProjectionConfig {
   const compactRequested = options.compact === true;
   const briefRequested = options.brief === true;
   const fullRequested = options.full === true;
@@ -913,8 +880,8 @@ function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
       {
         code: "projection_options_mutually_exclusive",
         recovery: {
-          suggested_retry: "pm list --brief",
-          suggested_retry_args: ["list", "--brief"],
+          suggested_retry: `pm ${invokedCommand} --brief`,
+          suggested_retry_args: [invokedCommand, "--brief"],
         },
       },
     );
@@ -940,7 +907,9 @@ function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
   if (fieldSelectors) {
     return {
       mode: "fields",
-      fields: fieldSelectors,
+      fields: [
+        ...new Set(fieldSelectors.map((field) => normalizeProjectionField(field))),
+      ],
     };
   }
   return {
@@ -956,6 +925,7 @@ function normalizeProjectionField(field: string): string {
 function validateListProjectionFields(
   projection: ListProjectionConfig,
   runtimeMetadataKeys: Iterable<string>,
+  invokedCommand: ListCommandName,
 ): void {
   if (projection.mode !== "fields") {
     return;
@@ -980,9 +950,9 @@ function validateListProjectionFields(
         ],
         recovery: {
           allowed_values: allowedValues,
-          suggested_retry: "pm list --fields id,title,status --limit 10",
+          suggested_retry: `pm ${invokedCommand} --fields id,title,status --limit 10`,
           suggested_retry_args: [
-            "list",
+            invokedCommand,
             "--fields",
             "id,title,status",
             "--limit",
@@ -1620,7 +1590,7 @@ function buildListPageExtras(
 }
 
 async function resolveListRuntimeContext(
-  options: ListOptions,
+  options: ListRuntimeOptions,
   global: GlobalOptions,
 ): Promise<ListRuntimeContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -1633,10 +1603,12 @@ async function resolveListRuntimeContext(
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const projection = parseProjectionConfig(options);
+  const invokedCommand = options.projectionCommand ?? "list";
+  const projection = parseProjectionConfig(options, invokedCommand);
   validateListProjectionFields(
     projection,
     runtimeMetadataKeysForProjection(runtimeFieldRegistry.definitions),
+    invokedCommand,
   );
   return {
     pmRoot,
@@ -1980,7 +1952,10 @@ export async function runList(
   options: ListOptions,
   global: GlobalOptions,
 ): Promise<ListResult> {
-  const runtime = await resolveListRuntimeContext(options, global);
+  const runtime = await resolveListRuntimeContext(
+    options as ListRuntimeOptions,
+    global,
+  );
   const listWarnings: string[] = [];
   const ordering = resolveListOrderingOptions(options);
   const statusSelection = resolveListStatusSelection(
