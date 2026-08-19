@@ -9,7 +9,8 @@
 
 ### Other
 
-- Flag lexicon conformance: one spelling per concept across every command, machine-checked, with a declared per-command flag budget ([pm-fs8q9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fs8q9x.toon))
+- Refresh compatible Greptile 3.4.1 review tooling ([pm-obmgi3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-obmgi3.toon))
+- Consistent flag spellings across commands with preserved aliases and enforced budgets ([pm-fs8q9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fs8q9x.toon))
 
 ## 2026.8.19 - 2026-08-19
 

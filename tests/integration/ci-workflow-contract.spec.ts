@@ -139,16 +139,36 @@ describe("GitHub workflow contract", () => {
     const codSpeedWorkflow = normalizeWorkflow(
       await readFile(codSpeedPath, "utf8"),
     );
+    const parsedWorkflow = parse(codSpeedWorkflow) as {
+      jobs?: {
+        benchmarks?: {
+          name?: unknown;
+          "runs-on"?: unknown;
+          steps?: Array<{ uses?: unknown; with?: unknown }>;
+        };
+      };
+    };
+    const benchmarkJob = parsedWorkflow.jobs?.benchmarks;
+    const codSpeedStep = benchmarkJob?.steps?.find(
+      (step) =>
+        typeof step.uses === "string" &&
+        step.uses.startsWith("CodSpeedHQ/action@"),
+    );
+    const codSpeedOptions = codSpeedStep?.with as
+      | Record<string, unknown>
+      | undefined;
 
-    expectContainsAll(codSpeedWorkflow, [
-      "name: Run benchmarks (Ubuntu 22.04, Node 24)",
-      "runs-on: ubuntu-22.04",
-      "mode: simulation",
-      'cache-instruments: "false"',
-      "run: pnpm vitest bench --run --config vitest.bench.config.ts",
-    ]);
-    expect(codSpeedWorkflow).not.toContain("runs-on: ubuntu-latest");
-    expect(codSpeedWorkflow).not.toContain("mode: walltime");
+    expect(benchmarkJob?.name).toBe(
+      "Run benchmarks (Ubuntu 22.04, Node 24)",
+    );
+    expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
+    expect(codSpeedStep).toBeDefined();
+    expect(codSpeedOptions).toMatchObject({
+      mode: "simulation",
+      "cache-instruments": "false",
+      run: "pnpm vitest bench --run --config vitest.bench.config.ts",
+    });
+    expect(codSpeedOptions?.mode).not.toBe("walltime");
   });
 
   it("keeps CI matrix and quality-gate steps aligned with release requirements", async () => {

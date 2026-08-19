@@ -1148,6 +1148,7 @@ describe("runList", () => {
       );
       expect(cliIndexed.code).toBe(0);
       expect(cliIndexed.json).toMatchObject({
+        items: [{ title: "Indexed priority two" }],
         count: 1,
         total: 3,
         completeness: { status: "unchecked" },
@@ -1158,6 +1159,7 @@ describe("runList", () => {
         { path: context.pmPath },
       );
       expect(indexed).toMatchObject({
+        items: [{ title: "Indexed priority two" }],
         count: 1,
         total: 3,
         has_more: true,

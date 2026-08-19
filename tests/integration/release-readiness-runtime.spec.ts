@@ -1041,10 +1041,14 @@ describe("release readiness runtime coverage", () => {
       const listHelp = context.runCli(["list", "--help"]);
       expect(listHelp.code).toBe(0);
       expect(listHelp.stdout).toMatch(/mutually\s+exclusive with .*--fields/);
-      expect(listHelp.stdout).toContain("Allowed core values:");
-      expect(listHelp.stdout).toContain("acceptance_criteria");
-      expect(listHelp.stdout).toContain("why_now");
-      expect(listHelp.stdout).not.toMatch(/valid:\s+--fields/);
+      const listFieldsGuidance = listHelp.stdout.match(
+        /--fields <value>[\s\S]*?(?=\n  --sort <value>)/,
+      )?.[0];
+      expect(listFieldsGuidance).toBeDefined();
+      expect(listFieldsGuidance).toContain("Allowed core values:");
+      expect(listFieldsGuidance).toContain("acceptance_criteria");
+      expect(listFieldsGuidance).toContain("why_now");
+      expect(listFieldsGuidance).not.toMatch(/valid:\s+--fields/);
 
       const searchHelp = context.runCli(["search", "--help"]);
       expect(searchHelp.code).toBe(0);
@@ -1056,10 +1060,14 @@ describe("release readiness runtime coverage", () => {
       expect(searchHelp.stdout).toMatch(
         /mutually\s+exclusive with --full\/--fields/,
       );
-      expect(searchHelp.stdout).toContain("Allowed core values:");
-      expect(searchHelp.stdout).toContain("highlights");
-      expect(searchHelp.stdout).toContain("why_now");
-      expect(searchHelp.stdout).not.toMatch(/valid:\s+--fields/);
+      const searchFieldsGuidance = searchHelp.stdout.match(
+        /--fields <value>[\s\S]*?(?=\n  --format <value>)/,
+      )?.[0];
+      expect(searchFieldsGuidance).toBeDefined();
+      expect(searchFieldsGuidance).toContain("Allowed core values:");
+      expect(searchFieldsGuidance).toContain("highlights");
+      expect(searchFieldsGuidance).toContain("why_now");
+      expect(searchFieldsGuidance).not.toMatch(/valid:\s+--fields/);
     });
   });
 
