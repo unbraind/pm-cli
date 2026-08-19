@@ -131,6 +131,23 @@ describe("GitHub workflow contract", () => {
     );
   });
 
+  it("keeps CodSpeed simulation deterministic without stale instrument caches", async () => {
+    const codSpeedPath = path.resolve(
+      repoRoot,
+      ".github/workflows/codspeed.yml",
+    );
+    const codSpeedWorkflow = normalizeWorkflow(
+      await readFile(codSpeedPath, "utf8"),
+    );
+
+    expectContainsAll(codSpeedWorkflow, [
+      "mode: simulation",
+      'cache-instruments: "false"',
+      "run: pnpm vitest bench --run --config vitest.bench.config.ts",
+    ]);
+    expect(codSpeedWorkflow).not.toContain("mode: walltime");
+  });
+
   it("keeps CI matrix and quality-gate steps aligned with release requirements", async () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));

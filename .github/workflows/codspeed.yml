@@ -45,4 +45,8 @@ jobs:
         uses: CodSpeedHQ/action@4296e51e7041e24dadb86d1d6e8b9320d223dbe8 # v5.0.3
         with:
           mode: simulation
+          # The action cache key omits the hosted runner image revision. Reusing
+          # its Valgrind packages across image updates can stall installation
+          # until this job is canceled without ever starting a benchmark.
+          cache-instruments: "false"
           run: pnpm vitest bench --run --config vitest.bench.config.ts
