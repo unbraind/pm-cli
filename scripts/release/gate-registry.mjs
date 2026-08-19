@@ -67,8 +67,14 @@ function requiredStrings(value, label, violations) {
   return value;
 }
 
-async function validateNegativeControl(gate, root, violations) {
+async function validateNegativeControl(
+  gate,
+  root,
+  violations,
+  required = true,
+) {
   const negative = gate.negative_control;
+  if (negative === undefined && !required) return;
   if (
     typeof negative !== "object" ||
     negative === null ||
@@ -309,16 +315,20 @@ async function validateGateScriptInventory(
       validGateScriptDisposition(entry, disposition, discoveredScripts);
     if (!rowValid) violations.push("automation_inventory:gate_script:invalid");
     if (typeof entry?.path === "string") declaredScripts.add(entry.path);
+    await validateNegativeControl(
+      {
+        id: entry.provider ?? entry.path,
+        negative_control: entry.negative_control,
+      },
+      root,
+      violations,
+      disposition === "reduced_to_provider",
+    );
     if (disposition === "reduced_to_provider") {
       if (providers.has(entry.provider)) {
         violations.push("automation_inventory:provider:duplicate");
       }
       providers.add(entry.provider);
-      await validateNegativeControl(
-        { id: entry.provider, negative_control: entry.negative_control },
-        root,
-        violations,
-      );
     }
   }
   for (const script of discoveredScripts) {

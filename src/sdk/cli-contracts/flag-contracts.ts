@@ -1811,6 +1811,10 @@ function withSubcommandGlobalFlags(
       flag: canonicalFlag,
       ...(aliases.length > 0 ? { aliases } : {}),
     };
+    const mergedAliases = normalizeUniqueStringList([
+      ...(prior?.aliases ?? []),
+      ...(normalizedContract.aliases ?? []),
+    ]);
     byCanonicalFlag.set(
       canonicalFlag,
       prior === undefined
@@ -1818,10 +1822,7 @@ function withSubcommandGlobalFlags(
         : {
             ...prior,
             ...normalizedContract,
-            aliases: normalizeUniqueStringList([
-              ...(prior.aliases ?? []),
-              ...(normalizedContract.aliases ?? []),
-            ]),
+            ...(mergedAliases.length > 0 ? { aliases: mergedAliases } : {}),
           },
     );
   }

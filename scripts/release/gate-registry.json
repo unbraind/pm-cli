@@ -55,7 +55,7 @@
         "reason": "Enforces canonical flag concepts, aliases, value kinds, and no-growth command budgets.",
         "negative_control": {
           "test": "tests/unit/scripts/flag-lexicon-gate.spec.ts",
-          "assertion": "blocks a seeded command budget breach"
+          "assertion": "passes the generated corpus and blocks seeded command growth"
         }
       },
       {
@@ -73,7 +73,7 @@
         "reason": "Executes real closed-domain refusals and their advertised recovery commands in an isolated tracker.",
         "negative_control": {
           "test": "tests/unit/scripts/refusal-closure-gate.spec.ts",
-          "assertion": "blocks a seeded allowed-values omission"
+          "assertion": "proves real retries and blocks a seeded omission"
         }
       },
       {

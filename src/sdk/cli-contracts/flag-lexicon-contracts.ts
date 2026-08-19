@@ -71,8 +71,12 @@ export interface PmFlagLexiconReport {
   findings: readonly PmFlagLexiconFinding[];
 }
 
+/** Memoized immutable canonical lexicon for this module instance. */
+let cachedPmFlagLexicon: readonly PmFlagLexiconEntry[] | undefined;
+
 /** Build the canonical lexicon lazily from the same contracts as CLI and MCP. */
 export function listPmFlagLexicon(): readonly PmFlagLexiconEntry[] {
+  if (cachedPmFlagLexicon !== undefined) return cachedPmFlagLexicon;
   const commandContracts = PM_COMMAND_CAPABILITY_CONTRACTS.filter(
     ({ command }) => hasSubcommandFlagContractsForCommand(command),
   );
@@ -106,7 +110,7 @@ export function listPmFlagLexicon(): readonly PmFlagLexiconEntry[] {
     kinds.add(entry.value_kind);
     kindsByConcept.set(entry.concept, kinds);
   }
-  return Object.freeze(
+  cachedPmFlagLexicon = Object.freeze(
     canonicalEntries.map((entry) =>
       Object.freeze({
         ...entry,
@@ -117,6 +121,7 @@ export function listPmFlagLexicon(): readonly PmFlagLexiconEntry[] {
       }),
     ),
   );
+  return cachedPmFlagLexicon;
 }
 
 const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({

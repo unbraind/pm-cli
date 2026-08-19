@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-18T06:30:42.678Z"
-updated_at: "2026-08-18T23:07:52.141Z"
+updated_at: "2026-08-19T01:22:53.788Z"
 closed_at: "2026-08-18T21:13:48.364Z"
 completed_at: "2026-08-18T21:13:48.364Z"
 author: "harness:codex"
@@ -21,18 +21,19 @@ risk: medium
 confidence: high
 resolution: fixed
 expected_result: Core machine flag_invocations match executable Commander arity for every boolean and value-bearing option.
-actual_result: "Independent parity verifies 2,904 declared and observed flags across 68 core commands with zero findings; mismatch negative control fails and packed Node/Bun acceptance passes."
+actual_result: "The initial pre-normalization executable inventory observed 2,904 rows; after canonical dash/underscore and duplicate global/local merging, final parity verifies 2,831 declared and 2,831 executable canonical rows across 68 core commands with zero findings, and packed Node/Bun acceptance passes."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-11phn1,discovered_from,"2026-08-18T06:30:42.678Z","harness:codex","cli:create:dep",detected
   pm-fs8q9x,related,"2026-08-18T06:30:42.678Z","harness:codex","cli:create:dep",detected
   pm-y0htkd,discovered_from,"2026-08-18T06:40:30.667Z","harness:codex","cli:update:dep",detected
   pm-fs8q9x,implements,"2026-08-18T19:49:26.025Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-18T06:30:42.678Z","harness:codex","Duplicate-check evidence: searched all-status PM via semantic queries for core flag invocation boolean arity, exact --defaults/--require-assertions takes_value symptoms, and direct tracker grep. Closed pm-11phn1 delivered semantic invocation metadata; closed pm-853a fixed extension-only arity; closed pm-m7bb7r fixed assurance --apply. None owns the current generic core-command derivation regression, so this is a new issue linked as discovered_from pm-11phn1 rather than reopening or duplicating those completed outcomes."
   "2026-08-18T19:18:09.404Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:34.856Z","harness:codex","Completion evidence: command-scoped invocation contracts now derive boolean, required-value, optional-value, and repeatable arity from canonical declarations. The independent Commander parity gate observed 2,904 flags across 68 core commands with zero findings and its synthetic init --defaults mismatch failed as designed. Duplicate global/local --author rows are canonically merged. Packed npm SDK import plus npx and bunx acceptance passed; repository coverage passed 528 files / 7,581 tests at 100/100/100/100."
   "2026-08-18T21:37:26.207Z","harness:codex","Final local gate evidence after complexity hardening: pnpm lint passed ESLint, zero jscpd clones, static assurance, SDK import-cost budgets, CLI transport budgets, graph composition and record integrity; pnpm typecheck passed all project/type/package/example configs; security scan found no credential-like secrets; pnpm audit found no known vulnerabilities; final full suite passed 528 files and 7,581 tests at 100% (55,402 statements, 41,337 branches, 11,464 functions, 53,459 lines)."
   "2026-08-18T23:07:52.141Z","harness:codex","Review amendment evidence: exact-head review exposed prefix-based boolean inference for --only and undercounting duplicate executable observations. The contract now treats --only/--only-last as exact booleans, preserves future --only-* value flags, reports every matching observation including duplicates, and collapses dash/underscore rows before parity. Focused parity tests pass with 2,831 declared and observed canonical flags across 68 commands."
+  "2026-08-19T01:22:53.757Z","harness:codex","Review reconciliation: 2,904 names the initial raw pre-normalization executable inventory; 2,831 names the final canonical declared/executable parity after duplicate and compatibility-spelling collapse. Terminal fields now state both denominators explicitly; prior comments remain immutable historical evidence."
 files[8]{path,scope,note}:
   scripts/release/flag-invocation-parity.mjs,project,Active command contract and recovery conformance implementation
   sdk/public-surface.json,project,Published SDK invocation contract snapshot
@@ -49,7 +50,7 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msz5fxui-zvibma,test,passed,"2026-08-18T21:01:35.880Z","2026-08-18T21:02:53.466Z","2026-08-18T21:02:53.466Z",1,0,0
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated closure entry
-close_reason: "Delivered truthful core flag invocation arity with independent 68-command / 2,904-flag Commander parity, mismatch negative control, packed Node/Bun SDK acceptance, and exact 100/100/100/100 repository coverage."
+close_reason: "Delivered truthful core flag invocation arity with independent 68-command parity: 2,904 initial pre-normalization observations reduced to 2,831 declared and executable canonical rows, mismatch negative control, packed Node/Bun SDK acceptance, and exact 100/100/100/100 repository coverage."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added

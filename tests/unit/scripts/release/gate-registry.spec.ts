@@ -104,6 +104,10 @@ function automationRegistry() {
           path: "scripts/release/typed-gate.mts",
           disposition: "retained",
           reason: "This fixture remains a typed executable quality boundary.",
+          negative_control: {
+            test: "tests/quality.spec.ts",
+            assertion: "seeded regression",
+          },
         },
       ],
       provider_checks: [
@@ -184,6 +188,15 @@ describe("gate registry", () => {
     await expect(
       validateGateRegistry(declared, { repoRoot: root }),
     ).resolves.toEqual([]);
+
+    const staleRetainedNegativeControl = automationRegistry();
+    staleRetainedNegativeControl.automation_inventory.gate_scripts[2].negative_control.assertion =
+      "missing retained assertion";
+    await expect(
+      validateGateRegistry(staleRetainedNegativeControl, { repoRoot: root }),
+    ).resolves.toContain(
+      "gate:scripts/release/typed-gate.mts:negative_control_assertion_missing",
+    );
 
     const crossInventoryDuplicate = automationRegistry();
     crossInventoryDuplicate.automation_inventory.provider_checks[0].provider =

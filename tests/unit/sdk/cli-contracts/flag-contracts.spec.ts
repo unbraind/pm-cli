@@ -29,5 +29,11 @@ describe("CLI flag contract resolution", () => {
         comparable: "assigneefilter",
       },
     ]);
+
+    expect(
+      resolveSubcommandFlagContractsForCommand("comments").find(
+        ({ flag }) => flag === "--author",
+      ),
+    ).not.toHaveProperty("aliases");
   });
 });

@@ -36,6 +36,14 @@ describe("flag lexicon contracts", () => {
     const seed = lexicon.find(
       ({ command, flag }) => command === "context" && flag === "--fields",
     )!;
+    const contextCount = lexicon.filter(
+      ({ command }) => command === "context",
+    ).length;
+    const pinnedBudgets = budgets.map((budget) =>
+      budget.command === "context"
+        ? { ...budget, current: contextCount, maximum: contextCount }
+        : budget,
+    );
     const report = verifyPmFlagLexicon(
       [
         ...lexicon,
@@ -47,7 +55,7 @@ describe("flag lexicon contracts", () => {
           value_kind: "boolean",
         },
       ],
-      budgets,
+      pinnedBudgets,
     );
     expect(report.ok).toBe(false);
     expect(report.findings.map(({ code }) => code)).toEqual(
@@ -62,6 +70,10 @@ describe("flag lexicon contracts", () => {
       ({ command, code, detail }) => `${command}\u0000${code}\u0000${detail}`,
     );
     expect(findingOrder).toEqual(findingOrder.toSorted());
+  });
+
+  it("memoizes the immutable canonical corpus", () => {
+    expect(listPmFlagLexicon()).toBe(listPmFlagLexicon());
   });
 
   it("detects alias collisions independently of row order and requires exact budget coverage", () => {
@@ -99,14 +111,38 @@ describe("flag lexicon contracts", () => {
       ({ command, flag }) => command === "context" && flag === "--fields",
     )!;
     const entries = [
-      { ...seed, flag: "--alpha-string", concept: "alpha", value_kind: "string" as const },
-      { ...seed, flag: "--alpha-boolean", concept: "alpha", value_kind: "boolean" as const },
-      { ...seed, flag: "--beta-string", concept: "beta", value_kind: "string" as const },
-      { ...seed, flag: "--beta-boolean", concept: "beta", value_kind: "boolean" as const },
+      {
+        ...seed,
+        flag: "--alpha-string",
+        concept: "alpha",
+        value_kind: "string" as const,
+      },
+      {
+        ...seed,
+        flag: "--alpha-boolean",
+        concept: "alpha",
+        value_kind: "boolean" as const,
+      },
+      {
+        ...seed,
+        flag: "--beta-string",
+        concept: "beta",
+        value_kind: "string" as const,
+      },
+      {
+        ...seed,
+        flag: "--beta-boolean",
+        concept: "beta",
+        value_kind: "boolean" as const,
+      },
     ];
     expect(
       verifyPmFlagLexicon(entries, [
-        { command: "context", current: entries.length, maximum: entries.length },
+        {
+          command: "context",
+          current: entries.length,
+          maximum: entries.length,
+        },
       ]).findings.map(({ detail }) => detail),
     ).toEqual([
       "alpha uses both string and boolean.",
