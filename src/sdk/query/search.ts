@@ -459,6 +459,38 @@ function buildExplicitSemanticFallbackWarning(
   return `search_${requestedMode}_fallback:${reason}:using_keyword_mode`;
 }
 
+interface VectorIndexRecoveryRegistrations {
+  commands?: readonly { command: string }[];
+}
+
+interface VectorIndexRecovery {
+  command: string;
+  args: string[];
+  follow_up_command?: string;
+  follow_up_args?: string[];
+}
+
+/** Resolve an executable reindex path from the active extension capability surface. */
+export function resolveVectorIndexRecovery(
+  registrations: VectorIndexRecoveryRegistrations | null,
+): VectorIndexRecovery {
+  const hasReindex =
+    registrations?.commands?.some(
+      (registration) => registration.command.trim() === "reindex",
+    ) === true;
+  return hasReindex
+    ? {
+        command: "pm reindex --mode hybrid",
+        args: ["reindex", "--mode", "hybrid"],
+      }
+    : {
+        command: "pm install search-advanced --project",
+        args: ["install", "search-advanced", "--project"],
+        follow_up_command: "pm reindex --mode hybrid",
+        follow_up_args: ["reindex", "--mode", "hybrid"],
+      };
+}
+
 /** Compare the vectorization-status ledger against the filtered corpus and, when the vector index is behind, emit a one-line stderr warning plus a structured `vector_index_stale:N` entry in the JSON warnings array. Best-effort: ledger read failures fall through silently — the existing semantic/hybrid fallback paths cover backend errors. */
 async function maybeEmitVectorIndexStaleWarning(
   pmRoot: string,
@@ -480,15 +512,32 @@ async function maybeEmitVectorIndexStaleWarning(
     if (staleIds.length === 0) {
       return;
     }
-    warnings.push(`vector_index_stale:${staleIds.length}`);
+    const recovery = resolveVectorIndexRecovery(
+      getActiveExtensionRegistrations(),
+    );
+    warnings.push(...formatVectorIndexRecoveryWarnings(staleIds.length, recovery));
     /* c8 ignore start -- singular/plural warning text branches are cosmetic and validated in integration UX tests */
     process.stderr.write(
-      `[pm] warning: ${staleIds.length} item${staleIds.length === 1 ? " is" : "s are"} new or modified since the last reindex and ${staleIds.length === 1 ? "is" : "are"} NOT in the semantic index yet — they will be missing from semantic/hybrid results until you run 'pm reindex --mode hybrid'. (Write-time embedding is governed by search.mutation_refresh_policy; staleness means the embed was skipped, failed, or the backend was unreachable.)\n`,
+      `[pm] warning: ${staleIds.length} item${staleIds.length === 1 ? " is" : "s are"} new or modified since the last reindex and ${staleIds.length === 1 ? "is" : "are"} NOT in the semantic index yet — run '${recovery.command}'${recovery.follow_up_command ? `, then '${recovery.follow_up_command}'` : ""}. (Write-time embedding is governed by search.mutation_refresh_policy; staleness means the embed was skipped, failed, or the backend was unreachable.)\n`,
     );
     /* c8 ignore stop */
   } catch {
     // Best-effort: missing/unreadable ledger is not a query-blocking concern.
   }
+}
+
+/** Format token-efficient vector-index staleness and executable recovery warnings. */
+export function formatVectorIndexRecoveryWarnings(
+  staleCount: number,
+  recovery: VectorIndexRecovery,
+): string[] {
+  return [
+    `vector_index_stale:${staleCount}`,
+    `vector_index_recovery:${recovery.args.join(" ")}`,
+    ...(recovery.follow_up_args
+      ? [`vector_index_recovery_follow_up:${recovery.follow_up_args.join(" ")}`]
+      : []),
+  ];
 }
 
 /** Public contract for test only search command, shared by SDK and presentation-layer consumers. */

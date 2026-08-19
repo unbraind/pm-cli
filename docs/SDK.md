@@ -54,6 +54,11 @@ Positional command signatures, action-scoped discovery, and MCP/CLI option
 parity are tracked by [pm-ya7x55](../.agents/pm/tasks/pm-ya7x55.toon),
 [pm-2tan](../.agents/pm/issues/pm-2tan.toon), and
 [pm-y0htkd](../.agents/pm/issues/pm-y0htkd.toon).
+Terminal recurrence and executable recovery are tracked by
+[pm-83cz0o](../.agents/pm/features/pm-83cz0o.toon),
+[pm-qljv](../.agents/pm/issues/pm-qljv.toon), and
+[pm-surv](../.agents/pm/issues/pm-surv.toon); see
+[Recurrence and Executable Recovery Contracts](RECURRENCE_RECOVERY_CONTRACTS.md).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -1127,10 +1132,13 @@ filters, and bound the race-loss candidate walk with `maxAttempts` (1 through
 tools do not need to reproduce CLI concurrency policy.
 
 Lifecycle convenience methods and the matching top-level functions (`create`,
-`update`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
+`update`, `reopen`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
 `focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths
 as the CLI and MCP dispatcher. They are the baseline primitives for custom PM
-tools that need to own item state without spawning `pm`.
+tools that need to own item state without spawning `pm`. `reopen` requires a
+recurrence reason, accepts only the workspace open or in-progress target, and
+returns the terminal evidence captured atomically before the update path clears
+it from active metadata.
 
 ### Atomic workspace transactions
 

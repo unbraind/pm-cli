@@ -593,6 +593,32 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "reopen_reason_required",
+    meaning: "Reopen reason required condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/reopen.ts"],
+    emitting_commands: ["reopen"],
+    canonical_code: "reopen_reason_required",
+    aliases: [],
+  },
+  {
+    code: "reopen_target_status_invalid",
+    meaning: "Reopen target status invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/reopen.ts"],
+    emitting_commands: ["reopen"],
+    canonical_code: "reopen_target_status_invalid",
+    aliases: [],
+  },
+  {
     code: "reserved_item_field",
     meaning: "Reserved item field condition.",
     stability: "stable",

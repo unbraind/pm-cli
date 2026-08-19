@@ -491,6 +491,16 @@
       "requires_extension": false
     },
     {
+      "action": "item-reopen",
+      "available": true,
+      "cli_exposed": false,
+      "command_path": null,
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "learnings",
       "available": true,
       "cli_exposed": true,
@@ -921,6 +931,7 @@
     "history-repair",
     "init",
     "install",
+    "item-reopen",
     "learnings",
     "list",
     "meet",
@@ -17606,6 +17617,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "item_already_active",
+      "class": "conflict",
+      "code": "item_already_active",
+      "emitting_commands": [
+        "update"
+      ],
+      "exit_code": 4,
+      "meaning": "Item already active condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "item_document_invalid",
       "class": "generic_failure",
       "code": "item_document_invalid",
@@ -18780,6 +18808,40 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reopen_reason_required",
+      "class": "usage",
+      "code": "reopen_reason_required",
+      "emitting_commands": [
+        "reopen"
+      ],
+      "exit_code": 2,
+      "meaning": "Reopen reason required condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/reopen.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reopen_target_status_invalid",
+      "class": "usage",
+      "code": "reopen_target_status_invalid",
+      "emitting_commands": [
+        "reopen"
+      ],
+      "exit_code": 2,
+      "meaning": "Reopen target status invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/reopen.ts"
       ],
       "stability": "provisional"
     },
@@ -20860,6 +20922,13 @@
         "target": "item"
       },
       {
+        "command": "item reopen",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-pbyu",
+        "target": "item"
+      },
+      {
         "command": "append",
         "disposition": "consolidation",
         "noun": "item",
@@ -22050,6 +22119,25 @@
       {
         "command": "item mutate",
         "slots": []
+      },
+      {
+        "command": "item reopen",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "reason",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "append",
@@ -23871,6 +23959,7 @@
       "redact",
       "reload",
       "remove",
+      "reopen",
       "repair",
       "restore",
       "run",
@@ -30920,7 +31009,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -30955,6 +31044,7 @@
               "install",
               "upgrade",
               "create",
+              "item-reopen",
               "copy",
               "focus",
               "list",
@@ -39551,6 +39641,108 @@
           },
           "default_create_mode": "strict"
         }
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "item-reopen",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "force": {
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Item identifier for read or mutation actions.",
+            "examples": [
+              "pm-a1b2"
+            ],
+            "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "Reason.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
+            "examples": [
+              "open",
+              "in_progress"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action",
+          "id",
+          "reason"
+        ],
+        "title": "pm action \"item-reopen\" parameters",
+        "type": "object"
       },
       {
         "additionalProperties": false,

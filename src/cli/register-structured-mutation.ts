@@ -17,6 +17,7 @@ import {
   commitItemCompletion,
   commitItemMutations,
 } from "../sdk/item-transaction.js";
+import { runReopen } from "../sdk/lifecycle/reopen.js";
 import {
   parseAtomicMutationControls,
   resolveItemMutationDocument,
@@ -24,8 +25,32 @@ import {
 import {
   collect,
   getGlobalOptions,
+  invalidateSearchCachesForMutation,
   printResult,
 } from "./registration-helpers.js";
+
+async function runItemReopenAction(
+  id: string,
+  reason: string,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const result = await runReopen(
+    id,
+    reason,
+    {
+      status: typeof options.status === "string" ? options.status : undefined,
+      author: typeof options.author === "string" ? options.author : undefined,
+      message:
+        typeof options.message === "string" ? options.message : undefined,
+      force: options.force === true,
+    },
+    globalOptions,
+  );
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+}
 
 async function runItemMutateAction(
   options: Record<string, unknown>,
@@ -207,7 +232,17 @@ export function registerStructuredMutationCommands(program: Command): void {
     program.commands.find((command) => command.name() === "item") ??
     program
       .command("item")
-      .description("Run item lifecycle and mutation operations.");
+      .description("Run item lifecycle operations.");
+  itemCommand
+    .command("reopen <id> <reason>")
+    .option("--status <value>", "Active target status: open or in_progress")
+    .option("--message <value>", "Human-readable recurrence history message")
+    .option("--force", "Override ownership or stale-lock conflicts")
+    .option("--author <value>", "Mutation author")
+    .description(
+      "Reopen terminal work with recurrence evidence.",
+    )
+    .action(runItemReopenAction);
   itemCommand
     .command("mutate")
     .requiredOption(
@@ -231,7 +266,7 @@ export function registerStructuredMutationCommands(program: Command): void {
     )
     .option("--author <value>", "Mutation author")
     .description(
-      "Apply create/update/close/release mutations atomically through the public pm SDK.",
+      "Apply SDK-backed mutations atomically.",
     )
     .action(runItemMutateAction);
   itemCommand
@@ -264,7 +299,7 @@ export function registerStructuredMutationCommands(program: Command): void {
     .option("--force", "Override lifecycle and ownership conflicts")
     .option("--author <value>", "Completion author")
     .description(
-      "Record evidence, close the item, and release its claim atomically.",
+      "Close with evidence and release the claim.",
     )
     .action(runItemCompleteAction);
 }
@@ -273,4 +308,5 @@ export function registerStructuredMutationCommands(program: Command): void {
 export const structuredMutationTestOnly = {
   runItemCompleteAction,
   runItemMutateAction,
+  runItemReopenAction,
 };

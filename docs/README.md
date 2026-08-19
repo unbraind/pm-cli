@@ -57,6 +57,7 @@ pm guide release --json
 - [Improvement Ledger and History Analytics](IMPROVEMENT_ANALYTICS.md) - audited quantitative observations, live provenance coverage, and bounded observational fleet outcomes.
 - [Project Assurance Primitives](ASSURANCE.md) - SDK-owned measurements, assertions, lifecycle gates, cost receipts, and durable verdict history shared by CLI and MCP.
 - [Defect Recurrence and Boundary Evidence](DEFECT_RECURRENCE.md) - captured external samples, structured defect-escape evidence, incremental change-risk indexing, and executable recovery-producer census.
+- [Recurrence and Executable Recovery Contracts](RECURRENCE_RECOVERY_CONTRACTS.md) - terminal-item recurrence, duplicate-intake routing, capability-aware reindex recovery, and target-aware generated test guidance.
 - [Trustworthy Context and Evidence Contracts](TRUSTWORTHY_CONTEXT_EVIDENCE.md) - full-record assurance, graph composition, boolean health rows, lossless linked-test removal, and role-labelled recovery.
 - [Context Integrity Contracts](CONTEXT_INTEGRITY_CONTRACTS.md) - sparse-read identity, closed extension manifests, lossless remote docs, direction-locked graph impact, and cross-version history epochs.
 - [SDK Evidence Traceability and Integrity](SDK_EVIDENCE_TRACEABILITY.md) - reverse source-to-item lookup, atomic evidence replacement, no-op history, linked-test collision classification, and telemetry drain receipts.

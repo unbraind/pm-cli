@@ -29,7 +29,7 @@ describe("action-scoped MCP schema parity", () => {
   it("derives CLI action reachability with explicit, shrinking waivers", () => {
     expect(analyzePmToolActionParity()).toEqual({
       missing_cli_actions: [],
-      waived_cli_actions: ["packages", "item", "help"],
+      waived_cli_actions: ["packages", "help"],
       stale_waivers: [],
     });
     expect(

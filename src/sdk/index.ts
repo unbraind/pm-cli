@@ -290,6 +290,7 @@ export {
   type SimilarItemMatch,
   type SimilarItemsResult,
   type SimilarityAdvisory,
+  type SimilarityRecovery,
   type PreparedSimilarityText,
 } from "./similarity.js";
 export {
@@ -426,6 +427,7 @@ export {
   INSTALL_FLAG_CONTRACTS,
   ITEM_MUTATE_FLAG_CONTRACTS,
   ITEM_COMPLETE_FLAG_CONTRACTS,
+  ITEM_REOPEN_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
@@ -443,6 +445,7 @@ export {
   PM_CLI_ONLY_TOOL_ACTION_WAIVERS,
   PM_CORE_COMMAND_NAMES,
   PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS,
+  PM_ITEM_ACTION_SUBCOMMANDS,
   PM_DEPRECATED_TOOL_ACTIONS,
   PM_DISCOVERABLE_TOOL_ACTIONS,
   PM_EXTENSION_CAPABILITY_CONTRACTS,
@@ -588,6 +591,7 @@ export * from "./context-packing.js";
 export * from "./context-usage.js";
 export * from "./dependency-provenance.js";
 export * from "./duplicates.js";
+export * from "./lifecycle/reopen.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
 export * from "./history-provenance.js";
@@ -831,6 +835,7 @@ export {
   claim,
   claimNext,
   close,
+  reopen,
   closeTask,
   comments,
   config,
@@ -1022,6 +1027,8 @@ export {
   type ReindexOptions,
   type ReindexResult,
   type ReleaseResult,
+  type ReopenCommandOptions,
+  type ReopenResult,
   type RestoreResult,
   type RunHealthOptions,
   type SchemaAddFieldCommandOptions,

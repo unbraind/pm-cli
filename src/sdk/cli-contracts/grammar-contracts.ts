@@ -52,6 +52,7 @@ export const PM_CLI_SHARED_VERBS = [
   "redact",
   "reload",
   "remove",
+  "reopen",
   "repair",
   "restore",
   "run",
@@ -532,6 +533,7 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ],
   ["install", [positionalSlot("targets", "string", false, { variadic: true })]],
   ["item complete", [ITEM_ID, positionalSlot("reason", "string", false)]],
+  ["item reopen", [ITEM_ID, positionalSlot("reason", "string", true)]],
   ["learnings", [ITEM_ID, OPTIONAL_TEXT]],
   ["meet", [positionalSlot("title", "string", true)]],
   [
@@ -699,6 +701,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "item",
       "item complete",
       "item mutate",
+      "item reopen",
     ]),
     ...destinationRows("item", "item", "consolidation", "pm-yql1", [
       "append",

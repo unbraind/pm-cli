@@ -7,7 +7,10 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
-import { normalizeStatusInput } from "../core/item/status.js";
+import {
+  isTerminalStatus,
+  normalizeStatusInput,
+} from "../core/item/status.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
@@ -163,6 +166,20 @@ export interface SimilarityAdvisory {
   bypassed: boolean;
   /** Shared similarity query result. */
   result: SimilarItemsResult;
+  /** Executable next action selected from the strongest matching item's lifecycle state. */
+  recovery: SimilarityRecovery;
+}
+
+/** Executable duplicate-intake recovery selected from the strongest match. */
+export interface SimilarityRecovery {
+  /** Whether to continue existing active work or reopen terminal work as a recurrence. */
+  action: "reuse" | "reopen";
+  /** Strongest matching canonical item. */
+  item_id: string;
+  /** Shell-form recovery command. */
+  command: string;
+  /** Tokenized recovery command for direct execution. */
+  args: string[];
 }
 
 /** Render compact warning tokens shared by create and copy results. */
@@ -175,7 +192,33 @@ export function similarityAdvisoryWarnings(
         `likely_duplicates:${advisory.result.items
           .map((item) => item.id)
           .join(",")}`,
+        `likely_duplicate_recovery:${advisory.recovery.action}:${advisory.recovery.item_id}`,
       ];
+}
+
+async function resolveSimilarityRecovery(
+  result: SimilarItemsResult,
+  options: FindSimilarItemsOptions,
+): Promise<SimilarityRecovery> {
+  const strongest = result.items[0];
+  const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(
+    (await readSettings(pmRoot)).schema,
+  );
+  if (isTerminalStatus(strongest.status, statusRegistry)) {
+    return {
+      action: "reopen",
+      item_id: strongest.id,
+      command: `pm item reopen ${strongest.id} "<recurrence reason>"`,
+      args: ["item", "reopen", strongest.id, "<recurrence reason>"],
+    };
+  }
+  return {
+    action: "reuse",
+    item_id: strongest.id,
+    command: `pm get ${strongest.id} --full`,
+    args: ["get", strongest.id, "--full"],
+  };
 }
 
 function validateSimilarityOptions(options: FindSimilarItemsOptions): {
@@ -553,6 +596,7 @@ export async function evaluateSimilarityGovernance(
   if (options.mode === "off") return undefined;
   const result = await findSimilarItems(candidate, options);
   if (result.count === 0) return undefined;
+  const recovery = await resolveSimilarityRecovery(result, options);
   const bypassed = options.mode === "strict" && options.allowDuplicate === true;
   if (options.mode === "strict" && !bypassed) {
     const candidates = result.items
@@ -567,9 +611,11 @@ export async function evaluateSimilarityGovernance(
           "Reuse an existing item, or explicitly acknowledge the duplicate with --allow-duplicate.",
         recovery: {
           suggested_flags: ["--allow-duplicate"],
+          suggested_retry: recovery.command,
+          suggested_retry_args: recovery.args,
         },
       },
     );
   }
-  return { mode: options.mode, bypassed, result };
+  return { mode: options.mode, bypassed, result, recovery };
 }

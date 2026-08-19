@@ -635,14 +635,16 @@ async function rollbackMutatedItemWrite(params: {
   await writeFileAtomic(params.originalItemPath, params.originalRaw);
 }
 
-/** Implements mutate item for the public runtime surface of this module. */
-export async function mutateItem(params: {
+/** Mutate one item while attaching structured context to its immutable history event. */
+export async function mutateItemWithHistoryContext(params: {
   pmRoot: string;
   settings: PmSettings;
   id: string;
   op: string;
   author: string;
   message?: string;
+  /** Structured immutable context attached to the appended history entry. */
+  historyContext?: Record<string, unknown>;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
   skipNoop?: boolean;
@@ -778,6 +780,7 @@ export async function mutateItem(params: {
         before: beforeDocument,
         after: afterDocument,
         message: params.message,
+        context: params.historyContext,
       });
       try {
         await appendHistoryEntry(historyPath, entry);
@@ -860,6 +863,33 @@ export async function mutateItem(params: {
   } finally {
     await releaseLock();
   }
+}
+
+/** Implements mutate item for the public runtime surface of this module. */
+export async function mutateItem(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  id: string;
+  op: string;
+  author: string;
+  message?: string;
+  force?: boolean;
+  bypassAssigneeConflict?: boolean;
+  skipNoop?: boolean;
+  extensionFieldNames?: readonly string[];
+  typeToFolder?: Record<string, string>;
+  mutate: (
+    document: ItemDocument,
+  ) =>
+    | { changedFields: string[]; warnings?: string[] }
+    | Promise<{ changedFields: string[]; warnings?: string[] }>;
+}): Promise<{
+  item: ItemMetadata;
+  body: string;
+  changedFields: string[];
+  warnings: string[];
+}> {
+  return mutateItemWithHistoryContext(params);
 }
 
 /** Public contract for item store test only, shared by SDK and presentation-layer consumers. */

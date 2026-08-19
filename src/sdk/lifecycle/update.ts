@@ -56,7 +56,7 @@ import {
   buildItemNotFoundError,
   listAllItemMetadataLight,
   locateItem,
-  mutateItem,
+  mutateItemWithHistoryContext,
   readLocatedItem,
   getSettingsPath,
   resolvePmRoot,
@@ -197,6 +197,50 @@ export interface UpdateResult {
   changed_fields: string[];
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+}
+
+/** Terminal evidence captured atomically before a recurrence transition. */
+export interface PreviousTerminalEvidence {
+  /** Prior close reason, when recorded. */
+  close_reason?: string;
+  /** Prior structured resolution, when recorded. */
+  resolution?: string;
+  /** Prior expected result, when recorded. */
+  expected_result?: string;
+  /** Prior actual result, when recorded. */
+  actual_result?: string;
+  /** Prior fixed version, when recorded. */
+  fixed_version?: string;
+}
+
+/** Internal update-path receipt consumed by the public recurrence primitive. */
+export interface ReopenUpdateReceipt {
+  /** Recurrence reason stored in immutable history context. */
+  reason: string;
+  /** Terminal status observed while holding the item lock. */
+  from_status: string;
+  /** Active status written by the update path. */
+  to_status: string;
+  /** Terminal evidence removed from active metadata but retained in history. */
+  previous_terminal: PreviousTerminalEvidence;
+}
+
+/** Update result carrying the recurrence receipt produced by the locked transition. */
+export interface ReopenUpdateResult extends UpdateResult {
+  /** Lifecycle-specific receipt populated by the recurrence primitive. */
+  lifecycle_transition: ReopenUpdateReceipt;
+}
+
+interface UpdateExecutionContext {
+  recurrenceReason?: string;
+}
+
+interface RecurrenceHistoryContext extends Record<string, unknown> {
+  recurrence: {
+    reason: string;
+    from_status: string;
+    to_status: string;
+  };
 }
 
 interface UpdateUnsetFieldDefinition {
@@ -2037,8 +2081,8 @@ function applyStatusMutation(
     return;
   }
   if (
-    status !== context.statusRegistry.close_status &&
-    previousStatusNormalized === context.statusRegistry.close_status &&
+    !isTerminalStatus(status, context.statusRegistry) &&
+    isTerminalStatus(previousStatusNormalized, context.statusRegistry) &&
     document.metadata.closed_at !== undefined
   ) {
     delete document.metadata.closed_at;
@@ -2108,8 +2152,8 @@ function applyCloseReasonMutations(
   }
   if (
     context.options.status !== undefined &&
-    previousStatusNormalized === context.statusRegistry.close_status &&
-    document.metadata.status !== context.statusRegistry.canceled_status &&
+    isTerminalStatus(previousStatusNormalized, context.statusRegistry) &&
+    !isTerminalStatus(document.metadata.status, context.statusRegistry) &&
     document.metadata.close_reason !== undefined
   ) {
     delete document.metadata.close_reason;
@@ -2913,11 +2957,12 @@ function mutateUpdateDocument(
 }
 
 /** Implements run update for the public runtime surface of this module. */
-export async function runUpdate(
+async function runUpdateWithContext(
   id: string,
   options: UpdateCommandOptions,
   global: GlobalOptions,
-): Promise<UpdateResult> {
+  execution: UpdateExecutionContext = {},
+): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
   options = await resolveStdinUpdateOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertUpdateTrackerInitialized(pmRoot);
@@ -3100,18 +3145,20 @@ export async function runUpdate(
         )
       : undefined;
 
-  const result = await mutateItem({
+  let lifecycleTransition: ReopenUpdateReceipt | undefined;
+  const recurrenceHistoryContext = buildRecurrenceHistoryContext(
+    execution,
+    options.status,
+  );
+  const result = await mutateItemWithHistoryContext({
     pmRoot,
     settings,
     typeToFolder: typeRegistry.type_to_folder,
     id,
-    op:
-      options.ownershipMetadataBypass === true ||
-      options.ownershipDependencyBypass === true
-        ? "update_ownership_bypass"
-        : "update",
+    op: resolveUpdateHistoryOperation(options, execution),
     author,
     message: options.message,
+    historyContext: recurrenceHistoryContext,
     force: options.force,
     bypassAssigneeConflict:
       options.ownershipMetadataBypass === true ||
@@ -3119,6 +3166,13 @@ export async function runUpdate(
     extensionFieldNames,
     skipNoop: true,
     mutate(document) {
+      lifecycleTransition = prepareRecurrenceTransition({
+        document,
+        recurrenceReason: execution.recurrenceReason,
+        requestedStatus: options.status,
+        statusRegistry,
+        historyContext: recurrenceHistoryContext,
+      });
       graphBeforeUpdate = graphBeforeUpdate?.map((item) =>
         item.id === document.metadata.id
           ? structuredClone(document.metadata)
@@ -3171,7 +3225,125 @@ export async function runUpdate(
       ...orderingCycleWarnings,
       ...result.warnings,
     ],
+    ...(lifecycleTransition === undefined
+      ? {}
+      : { lifecycle_transition: lifecycleTransition }),
   };
+}
+
+/** Build structured recurrence history context before the atomic mutation starts. */
+function buildRecurrenceHistoryContext(
+  execution: UpdateExecutionContext,
+  requestedStatus: string | undefined,
+): RecurrenceHistoryContext | undefined {
+  if (execution.recurrenceReason === undefined) {
+    return undefined;
+  }
+  return {
+    recurrence: {
+      reason: execution.recurrenceReason,
+      from_status: "",
+      to_status: requestedStatus ?? "",
+    },
+  };
+}
+
+/** Resolve the immutable operation name for ordinary, bypass, and recurrence updates. */
+function resolveUpdateHistoryOperation(
+  options: UpdateCommandOptions,
+  execution: UpdateExecutionContext,
+): string {
+  if (
+    options.ownershipMetadataBypass === true ||
+    options.ownershipDependencyBypass === true
+  ) {
+    return "update_ownership_bypass";
+  }
+  return execution.recurrenceReason === undefined ? "update" : "reopen";
+}
+
+/** Validate and capture a terminal-to-active recurrence while the item lock is held. */
+function prepareRecurrenceTransition(params: {
+  document: ItemDocument;
+  recurrenceReason: string | undefined;
+  requestedStatus: string | undefined;
+  statusRegistry: RuntimeStatusRegistry;
+  historyContext: RecurrenceHistoryContext | undefined;
+}): ReopenUpdateReceipt | undefined {
+  if (params.recurrenceReason === undefined) {
+    return undefined;
+  }
+  const fromStatus =
+    normalizeStatusInput(
+      params.document.metadata.status,
+      params.statusRegistry,
+    ) ?? params.document.metadata.status;
+  if (!isTerminalStatus(fromStatus, params.statusRegistry)) {
+    throw new PmCliError(
+      `Item ${params.document.metadata.id} is already active with status ${fromStatus}; recurrence transitions require a terminal item.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "item_already_active",
+        reason: "recurrence_requires_terminal_item",
+        required:
+          "Use item reopen only for a terminal item whose work has recurred.",
+        why: "Appending a recurrence event to active work would corrupt lifecycle history.",
+        recovery: {
+          suggested_retry: `pm get ${params.document.metadata.id} --full`,
+          suggested_retry_args: ["get", params.document.metadata.id, "--full"],
+        },
+        nextSteps: [
+          `Inspect the active item with: pm get ${params.document.metadata.id} --full`,
+          `Continue the existing work with: pm update ${params.document.metadata.id} ...`,
+        ],
+      },
+    );
+  }
+  const toStatus = params.requestedStatus ?? params.statusRegistry.open_status;
+  const metadata = toItemRecord(params.document.metadata);
+  const previousTerminal = Object.fromEntries(
+    [
+      "close_reason",
+      "resolution",
+      "expected_result",
+      "actual_result",
+      "fixed_version",
+    ].flatMap((key) => {
+      const value = metadata[key];
+      return typeof value === "string" ? [[key, value]] : [];
+    }),
+  ) as PreviousTerminalEvidence;
+  if (params.historyContext) {
+    params.historyContext.recurrence.from_status = fromStatus;
+    params.historyContext.recurrence.to_status = toStatus;
+  }
+  return {
+    reason: params.recurrenceReason,
+    from_status: fromStatus,
+    to_status: toStatus,
+    previous_terminal: previousTerminal,
+  };
+}
+
+/** Implements run update for the public runtime surface of this module. */
+export async function runUpdate(
+  id: string,
+  options: UpdateCommandOptions,
+  global: GlobalOptions,
+): Promise<UpdateResult> {
+  return runUpdateWithContext(id, options, global);
+}
+
+/** Execute a recurrence transition through the exact atomic update pipeline. */
+export async function runReopenUpdate(
+  id: string,
+  options: UpdateCommandOptions,
+  global: GlobalOptions,
+  recurrenceReason: string,
+): Promise<ReopenUpdateResult> {
+  return (await runUpdateWithContext(id, options, global, {
+    recurrenceReason,
+  })) as ReopenUpdateResult;
 }
 
 /* c8 ignore stop */

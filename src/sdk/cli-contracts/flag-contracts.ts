@@ -1319,6 +1319,15 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author", value_name: "value" },
 ];
 
+/** Recurrence transition flags shared by CLI, SDK, MCP, help, and completion. */
+export const ITEM_REOPEN_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
+  { flag: "--status", value_name: "open|in_progress" },
+  { flag: "--message", value_name: "value" },
+  { flag: "--force" },
+  { flag: "--author", value_name: "value" },
+];
+
 /** Public contract for copy flag contracts, shared by SDK and presentation-layer consumers. */
 export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
@@ -1927,6 +1936,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["create", CREATE_FLAG_CONTRACTS],
     ["item mutate", ITEM_MUTATE_FLAG_CONTRACTS],
     ["item complete", ITEM_COMPLETE_FLAG_CONTRACTS],
+    ["item reopen", ITEM_REOPEN_FLAG_CONTRACTS],
     ["copy", COPY_FLAG_CONTRACTS],
     ["focus", FOCUS_FLAG_CONTRACTS],
     ["aggregate", AGGREGATE_FLAG_CONTRACTS],

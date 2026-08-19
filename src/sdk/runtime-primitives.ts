@@ -358,6 +358,7 @@ export {
   listAllItemMetadataLight,
   locateItem,
   mutateItem,
+  mutateItemWithHistoryContext,
   readLocatedItem,
 } from "../core/store/item-store.js";
 export {

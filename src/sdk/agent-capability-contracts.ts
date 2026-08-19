@@ -125,6 +125,7 @@ const COMMANDS_BY_FAMILY: Readonly<
     "close-task",
     "delete",
     "pause-task",
+    "item-reopen",
     "release",
     "start-task",
     "update",

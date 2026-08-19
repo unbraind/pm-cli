@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   stdin: "" as string | undefined,
   commitItemCompletion: vi.fn(),
   commitItemMutations: vi.fn(),
+  runReopen: vi.fn(),
   runCreate: vi.fn(),
   runUpdate: vi.fn(),
 }));
@@ -41,6 +42,9 @@ vi.mock("../../../src/cli/commands/create.js", () => ({
 vi.mock("../../../src/cli/commands/update.js", () => ({
   runUpdate: mocks.runUpdate,
 }));
+vi.mock("../../../src/sdk/lifecycle/reopen.js", () => ({
+  runReopen: mocks.runReopen,
+}));
 
 import { registerMutationCommands } from "../../../src/cli/register-mutation.js";
 import {
@@ -63,6 +67,17 @@ describe("structured mutation command registration", () => {
     vi.stubEnv("PM_AUTHOR", "");
     mocks.stdin = "";
     mocks.runCreate.mockResolvedValue({ item: { id: "pm-created" } });
+    mocks.runReopen.mockResolvedValue({
+      item: { id: "pm-reopened", status: "open" },
+      changed_fields: ["status"],
+      warnings: [],
+      recurrence: {
+        reason: "Recurrence",
+        from_status: "closed",
+        to_status: "open",
+        previous_terminal: {},
+      },
+    });
     mocks.runUpdate.mockResolvedValue({ item: { id: "pm-updated" } });
     mocks.commitItemMutations.mockResolvedValue({
       transactionId: "batch",
@@ -171,6 +186,50 @@ describe("structured mutation command registration", () => {
     expect(mocks.runUpdate).toHaveBeenLastCalledWith(
       "pm-a",
       expect.objectContaining({ description: "" }),
+      expect.any(Object),
+    );
+  });
+
+  it("routes noun-first recurrence options through the SDK adapter", async () => {
+    const command = programWithGlobals();
+    await structuredMutationTestOnly.runItemReopenAction(
+      "pm-a",
+      "Recurring failure",
+      {},
+      command,
+    );
+    expect(mocks.runReopen).toHaveBeenLastCalledWith(
+      "pm-a",
+      "Recurring failure",
+      {
+        status: undefined,
+        author: undefined,
+        message: undefined,
+        force: false,
+      },
+      expect.any(Object),
+    );
+
+    await structuredMutationTestOnly.runItemReopenAction(
+      "pm-a",
+      "Recurring failure",
+      {
+        status: "in_progress",
+        author: "incident-agent",
+        message: "Resume response",
+        force: true,
+      },
+      command,
+    );
+    expect(mocks.runReopen).toHaveBeenLastCalledWith(
+      "pm-a",
+      "Recurring failure",
+      {
+        status: "in_progress",
+        author: "incident-agent",
+        message: "Resume response",
+        force: true,
+      },
       expect.any(Object),
     );
   });

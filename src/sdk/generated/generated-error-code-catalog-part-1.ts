@@ -1734,6 +1734,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "item_already_active",
+    meaning: "Item already active condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/update.ts"],
+    emitting_commands: ["update"],
+    canonical_code: "item_already_active",
+    aliases: [],
+  },
+  {
     code: "item_document_invalid",
     meaning: "Item document invalid condition.",
     stability: "stable",

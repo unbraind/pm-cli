@@ -149,6 +149,7 @@ function projectCompactMutationEnvelope(result: unknown): unknown | null {
         ? result.item.close_reason
         : undefined;
   if (closeReason !== undefined) compact.close_reason = closeReason;
+  if (isPlainObject(result.recurrence)) compact.recurrence = result.recurrence;
   if (Array.isArray(result.warnings) && result.warnings.length > 0)
     compact.warnings = result.warnings;
   return compact;

@@ -126,6 +126,8 @@ const CLI_CONFIG_SHORTHAND_FLAGS = new Set([
 
 const SDK_TRANSPORT_PARAMETERS = new Set([
   "action",
+  "fullChangedFields",
+  "idOnly",
   "path",
   "pmExecutable",
   "timeoutMs",
@@ -154,6 +156,7 @@ const ACTION_POSITIONAL_PARAMETERS: Readonly<
   event: { title: "<title>" },
   files: { lookupPath: "lookup <path...>" },
   meet: { title: "<title>" },
+  "item-reopen": { id: "<id>", reason: "<reason>" },
   merge: { subcommand: "<subcommand>" },
   remind: { title: "<title>" },
   workspace: {
@@ -262,6 +265,9 @@ function actionCommand(action: PmToolAction): string {
   }
   if (action.startsWith("package-")) {
     return `package ${action.slice("package-".length)}`;
+  }
+  if (action.startsWith("item-")) {
+    return `item ${action.slice("item-".length)}`;
   }
   return action;
 }
