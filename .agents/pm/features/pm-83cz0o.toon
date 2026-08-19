@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: agent-ux,lifecycle
 created_at: "2026-07-28T14:56:19.121Z"
-updated_at: "2026-08-19T19:19:00.445Z"
+updated_at: "2026-08-19T19:20:08.130Z"
 closed_at: "2026-08-19T18:29:04.097Z"
 completed_at: "2026-08-19T18:29:04.097Z"
 author: "harness:claude-code"
@@ -28,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-pbyu,blocked_by,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-wenq,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-29T16:56:18.859Z","harness:claude-code","Measured behaviour of the ad-hoc reopen path, sandbox tracker, build 2026.7.29.\n\nClosing an item then running update --status in_progress succeeds with exit 0 and changed_field_count 4. Reading the item afterwards: close_reason null, closed_at null, resolution null. All three closure fields are erased in place, not superseded, so the item's own record no longer says it was ever closed or why. The prior closure survives only inside the history stream, which means the answer to \"has this recurred, and how many times\" is reachable only by replaying every stream.\n\nThis is consistent with the third criterion here - terminal fields that must not survive are cleared by the existing update path - and it sharpens the second one. The prior closure entry does remain in history, so the criterion is satisfiable, but nothing on the item points at it and no op distinguishes a reopen from an ordinary status edit, so a reader cannot tell a reopened item from one that was never closed without a replay.\n\nTwo consequences worth carrying into the implementation. A reopen wants its own op in the history vocabulary, which places it inside pm-0elqjj's enumeration rather than reusing update. And recurrence rate becomes a measurable quality signal for the first time once the transition is distinguishable, which is a downstream consumer for the flow-metrics work rather than a criterion here.\n\nRelated probe on the same path: closed to draft also succeeds, moving a terminal item into the provisional tier tracked by pm-xpzped.\n"
   "2026-08-19T16:37:14.746Z","harness:codex","Implementation start 2026-08-19: selected after a complete all-status 2,524-item inventory (2,190 closed, 320 open, 14 canceled), focused duplicate searches, full live metadata/comments/history/relationship reads, and GitHub issue lineage verification. This item is actively edited in one coupled SDK-first recurrence and executable-guidance PR spanning lifecycle primitives, CLI/MCP contracts, immutable history, capability-aware hints, generated agent guidance, recovery assurance, docs, exact coverage, and temporary installed-consumer acceptance. Unrelated backlog items remain open and unclaimed."
   "2026-08-19T16:44:23.515Z","harness:codex","TDD red evidence: focused recurrence suite fails because the SDK lifecycle/reopen module is intentionally absent before implementation."
@@ -36,6 +36,7 @@ comments[7]{created_at,author,text}:
   "2026-08-19T18:28:16.757Z","harness:codex","Correction to prior evidence entry: the public command is pm item reopen ID REASON. It requires a reason, accepts only closed or canceled targets, clears active terminal fields, preserves prior closure evidence in structured immutable history, and emits a compact recurrence receipt. Manual temporary-project acceptance and the linked 6-test suite passed; full coverage is 100/100/100/100 across 534 files and 7,618 tests."
   "2026-08-19T18:49:19.593Z","harness:codex","Token-efficiency evidence: release preflight initially measured commands.item at 670 bytes against the existing 568-byte ceiling. Compressed parent and subcommand descriptions without removing capability; the unchanged 112-surface token gate now passes under the existing baseline, so recurrence did not require a budget increase."
   "2026-08-19T19:19:00.445Z","harness:codex","Review evidence: manual adapter review removed an unnecessary never assertion from the extracted MCP close dispatcher. Typecheck and the 31-test focused CLI, action-parity, reopen unit, and reopen integration suite pass after the cleanup."
+  "2026-08-19T19:20:08.130Z","harness:codex","Pull request evidence: https://github.com/unbraind/pm-cli/pull/1063 carries the reviewed SDK, CLI, MCP, contract, documentation, test, changelog, and tracker delivery at exact head 1d85f3a0d."
 learnings[1]{created_at,author,text}:
   "2026-08-19T18:27:29.126Z","harness:codex","A recurrence primitive must be a first-class atomic transition: preserving previous terminal evidence in the reopen history context is safer and more useful than asking callers to reconstruct recurrence from separate reads and updates."
 files[11]{path,scope,note}:
