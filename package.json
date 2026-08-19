@@ -218,18 +218,18 @@
     "@sentry/cli": "^3.6.2",
     "@types/node": "^26.2.0",
     "@types/npm-package-arg": "^6.1.4",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "0.28.2",
     "eslint": "^10.8.1",
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-unicorn": "^73.0.0",
     "fast-check": "^4.9.0",
     "greptile": "^3.4.1",
-    "jscpd": "^5.0.15",
+    "jscpd": "^5.0.16",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
-    "vitest": "^4.1.10",
+    "vitest": "^4.1.11",
     "yaml": "^2.9.0"
   }
 }

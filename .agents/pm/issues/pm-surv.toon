@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,gh-issue,init
 created_at: "2026-07-13T08:57:09.402Z"
-updated_at: "2026-08-19T21:23:26.086Z"
+updated_at: "2026-08-19T22:46:22.137Z"
 closed_at: "2026-08-19T21:23:25.456Z"
 completed_at: "2026-08-19T21:23:25.456Z"
 author: maintainer-agent
@@ -21,7 +21,7 @@ actual_result: "pnpm, Bun, Yarn, npm, stale-lock, missing-script, and invalid-JS
 dependencies[2]{id,kind,created_at}:
   pm-qljv,related,"2026-07-13T08:57:09.402Z"
   pm-mpbb,implements,"2026-07-26T05:56:25.713Z"
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-19T16:37:12.879Z","harness:codex","Implementation start 2026-08-19: selected after a complete all-status 2,524-item inventory (2,190 closed, 320 open, 14 canceled), focused duplicate searches, full live metadata/comments/history/relationship reads, and GitHub issue lineage verification. This item is actively edited in one coupled SDK-first recurrence and executable-guidance PR spanning lifecycle primitives, CLI/MCP contracts, immutable history, capability-aware hints, generated agent guidance, recovery assurance, docs, exact coverage, and temporary installed-consumer acceptance. Unrelated backlog items remain open and unclaimed."
   "2026-08-19T16:44:24.695Z","harness:codex","TDD red evidence: focused recovery-guidance suite fails because generated guidance cannot yet resolve the target repository test command."
   "2026-08-19T18:28:19.789Z","harness:codex","Evidence: generated agent guidance now selects a runnable repository test command from scripts/run-tests.mjs, package-manager metadata and lockfiles, or an explicit placeholder when no runner exists. Manual npm temporary-project initialization produced npm test; the focused linked guidance suite passed 6/6 and exact repository coverage passed 100/100/100/100."
@@ -30,6 +30,7 @@ comments[8]{created_at,author,text}:
   "2026-08-19T19:20:09.614Z","harness:codex","Pull request evidence: https://github.com/unbraind/pm-cli/pull/1063 carries the reviewed SDK, CLI, MCP, contract, documentation, test, changelog, and tracker delivery at exact head 1d85f3a0d."
   "2026-08-19T20:12:33.245Z","harness:codex","Review remediation evidence: Bun target detection now emits bun run test so the declared package script executes instead of invoking Bun's built-in test runner. Temporary-project acceptance with packageManager bun verified generated AGENTS guidance, focused guidance tests pass, token budgets remain within the regenerated baseline, and exact repository coverage passes 100/100/100/100."
   "2026-08-19T21:22:30.568Z","harness:codex","Final review-remediation evidence: target guidance now treats a valid declared packageManager as authoritative over stale competing lockfiles for pnpm, Bun, Yarn, and npm, while malformed package.json fails safely to the placeholder. Focused guidance tests passed 6/6, including stale-lock and invalid-JSON negatives; full repository coverage passed 7,622/7,622 at 100/100/100/100; static assurance and manual temporary-workspace acceptance passed."
+  "2026-08-19T22:46:22.137Z","harness:codex","Post-merge evidence: PR #1063 merged to main as f4cbd5fd39a8a4caf4f0ec6b7cdbadc275a7dd75. Merged-main CI 32305957443, CodeQL 32305956812, Security 32305956810, Docs 32305956817, Scorecard 32305956983, and CodSpeed 32305956875 all passed. Existing same-day release v2026.8.19 remained unique; npm latest, npx, and bunx all resolved 2026.8.19. Required Sentry/telemetry gate passed with 0 critical and 0 high issues in 14 days, 2.38 percent finish error rate, and 0 failures missing error codes. Explicit telemetry flush drained 1 to 0 with queue_progressed true and queue_empty true."
 learnings[1]{created_at,author,text}:
   "2026-08-19T18:27:44.501Z","harness:codex","Generated instructions are operational contracts: target-aware commands prevent copied repository-specific assumptions from creating immediately broken agent workflows."
 files[3]{path,scope,note}:

@@ -15,6 +15,7 @@
 
 ### Other
 
+- Refresh compatible Vitest 4.1.11 and jscpd 5.0.16 patches ([pm-n5ysuk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-n5ysuk.toon))
 - Consistent flag spellings across commands with preserved aliases and enforced budgets ([pm-fs8q9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fs8q9x.toon))
 - Refresh compatible Greptile 3.4.1 review tooling ([pm-obmgi3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-obmgi3.toon))
 
