@@ -6,22 +6,23 @@ status: closed
 priority: 2
 tags[3]: "area:quality","area:testing",dependencies
 created_at: "2026-08-19T22:06:50.416Z"
-updated_at: "2026-08-19T22:46:42.579Z"
-closed_at: "2026-08-19T22:46:23.097Z"
-completed_at: "2026-08-19T22:46:23.097Z"
+updated_at: "2026-08-19T22:56:34.078Z"
+closed_at: "2026-08-19T22:56:33.119Z"
+completed_at: "2026-08-19T22:56:33.119Z"
 author: "harness:codex"
 acceptance_criteria: Vitest and coverage-v8 are both 4.1.11; jscpd is 5.0.16; full static quality and exact 100 percent coverage gates pass
 parent: pm-92if
 resolution: Compatible testing and duplicate-analysis patches adopted; incompatible majors retained in canonical deferral items.
 expected_result: Vitest and coverage-v8 4.1.11 plus jscpd 5.0.16 install together and preserve every mandatory quality gate.
-actual_result: "All three patches installed; typecheck, strict static quality, exact 100 percent coverage, and vulnerability audit passed."
+actual_result: "All three patches installed; typecheck, strict static quality, exact 100 percent coverage, vulnerability audit, and PM changelog linkage passed."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-87hmdw,discovered_from,"2026-08-19T22:06:50.416Z","harness:codex","cli:create:dep",detected
   pm-do5b,verifies,"2026-08-19T22:31:43.253Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,verifies,"2026-08-19T22:31:43.253Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-19T22:06:50.416Z","harness:codex",Duplicate check searched all statuses for the exact August 2026 Vitest and jscpd versions. No canonical active item exists. Major upgrades remain in pm-do5b and pm-ksr40d.
   "2026-08-19T22:46:19.837Z","harness:codex","Verification evidence: installed Vitest 4.1.11, coverage-v8 4.1.11, and jscpd 5.0.16. pnpm typecheck passed. The tracker-context static gate passed after replacing two generic related edges with typed verifies edges. Exact coverage passed at statements 55694/55694, branches 41593/41593, functions 11540/11540, and lines 53736/53736. pnpm audit reports no known vulnerabilities. Remaining outdated majors are intentionally deferred in pm-do5b and pm-ksr40d."
+  "2026-08-19T22:56:32.423Z","harness:codex","Review correction: linked the package-owned generated CHANGELOG.md through pm docs. The existing resolution, expected_result, and actual_result are present before this new close, preserving the original append-only history while establishing the required evidence-before-close-before-release sequence."
 files[2]{path,scope,note}:
   package.json,project,Compatible testing and duplicate-analysis patch ranges
   pnpm-lock.yaml,project,Resolved dependency graph for compatible patches
@@ -36,5 +37,7 @@ test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mt0nvbed-2z3kn8,test,failed,"2026-08-19T22:22:05.247Z","2026-08-19T22:26:30.133Z","2026-08-19T22:26:30.133Z",0,1,0
   test-local-mt0oau2b-qizw1p,test,passed,"2026-08-19T22:33:39.459Z","2026-08-19T22:38:34.163Z","2026-08-19T22:38:34.163Z",1,0,0
   test-local-mt0ojwd7-g89zil,test,passed,"2026-08-19T22:38:38.420Z","2026-08-19T22:45:37.051Z","2026-08-19T22:45:37.051Z",1,0,0
-close_reason: "Adopted all compatible dependency patches with exact 100/100/100/100 coverage, strict static quality, typecheck, and zero-vulnerability evidence; retained incompatible majors in their canonical typed deferral lineage."
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog generated record for the compatible dependency refresh
+close_reason: "Adopted all compatible dependency patches with exact 100/100/100/100 coverage, strict static quality, typecheck, zero-vulnerability evidence, and reviewed changelog linkage; retained incompatible majors in their canonical typed deferral lineage."
 body: ""
