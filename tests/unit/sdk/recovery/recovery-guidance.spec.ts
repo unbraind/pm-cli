@@ -25,9 +25,7 @@ describe("executable recovery guidance", () => {
         }),
         "utf8",
       );
-      expect(await resolveProjectTestCommand(projectRoot)).toBe(
-        "pnpm test",
-      );
+      expect(await resolveProjectTestCommand(projectRoot)).toBe("pnpm test");
       expect(
         agentGuidance.buildAgentGuidanceBlock("\n", "pnpm test"),
       ).toContain('pm test <id> --add command="pnpm test"');
@@ -90,10 +88,10 @@ describe("executable recovery guidance", () => {
       await rm(path.join(projectRoot, "pnpm-lock.yaml"));
 
       await writeFile(path.join(projectRoot, "bun.lock"), "");
-      expect(await resolveProjectTestCommand(projectRoot)).toBe("bun test");
+      expect(await resolveProjectTestCommand(projectRoot)).toBe("bun run test");
       await rm(path.join(projectRoot, "bun.lock"));
       await writeFile(path.join(projectRoot, "bun.lockb"), "");
-      expect(await resolveProjectTestCommand(projectRoot)).toBe("bun test");
+      expect(await resolveProjectTestCommand(projectRoot)).toBe("bun run test");
       await rm(path.join(projectRoot, "bun.lockb"));
 
       await writeFile(path.join(projectRoot, "yarn.lock"), "");
@@ -112,7 +110,7 @@ describe("executable recovery guidance", () => {
           JSON.stringify({ packageManager, scripts: { test: "vitest" } }),
         );
         expect(await resolveProjectTestCommand(projectRoot)).toBe(
-          packageManager.startsWith("bun") ? "bun test" : "yarn test",
+          packageManager.startsWith("bun") ? "bun run test" : "yarn test",
         );
       }
     } finally {
@@ -121,9 +119,7 @@ describe("executable recovery guidance", () => {
   });
 
   it("installs search-advanced before reindex when the command is unavailable", () => {
-    expect(
-      resolveVectorIndexRecovery({ commands: [] }),
-    ).toEqual({
+    expect(resolveVectorIndexRecovery({ commands: [] })).toEqual({
       command: "pm install search-advanced --project",
       args: ["install", "search-advanced", "--project"],
       follow_up_command: "pm reindex --mode hybrid",

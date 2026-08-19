@@ -3,9 +3,12 @@ import { projectMutationResult } from "../../../../src/core/output/mutation-proj
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
+import { readSettings } from "../../../../src/core/store/settings.js";
+import { mutateItemWithHistoryContext } from "../../../../src/core/store/item-store.js";
 import { runClose } from "../../../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../../../src/sdk/lifecycle/create.js";
 import { runReopen } from "../../../../src/sdk/lifecycle/reopen.js";
+import { runReopenUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import {
   runMcpCloseAction,
   runMcpReopenAction,
@@ -16,6 +19,40 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import { describe, expect, it } from "vitest";
 
 describe("runReopen", () => {
+  it("preserves the public immediate history-context mutation contract", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        {
+          title: "Immediate history context compatibility",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      await mutateItemWithHistoryContext({
+        pmRoot: context.pmPath,
+        settings: await readSettings(context.pmPath),
+        id: created.item.id,
+        op: "compatibility_context",
+        author: "sdk-compatibility-test",
+        historyContext: { contract: "immediate" },
+        mutate(document) {
+          document.metadata.description = "Mutated through the public wrapper";
+          return { changedFields: ["description"] };
+        },
+      });
+
+      const history = await readHistoryEntries(
+        getHistoryPath(context.pmPath, created.item.id),
+        created.item.id,
+      );
+      expect(history.at(-1)).toMatchObject({
+        op: "compatibility_context",
+        context: { contract: "immediate" },
+      });
+    });
+  });
+
   it("preserves recurrence receipts in compact mutation envelopes", () => {
     expect(
       projectMutationResult(
@@ -101,6 +138,12 @@ describe("runReopen", () => {
             reason: "The same failure recurred after the next deployment",
             from_status: "closed",
             to_status: "in_progress",
+            previous_terminal: {
+              close_reason: "Original incident was mitigated",
+              resolution: "Deployed the first mitigation",
+              expected_result: "The incident remains resolved",
+              actual_result: "The incident initially remained resolved",
+            },
           },
         },
       });
@@ -158,8 +201,10 @@ describe("runReopen", () => {
           { mode: "strict", pmRoot: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("Reopen the canonical item"),
         code: "likely_duplicate",
         context: {
+          required: expect.stringContaining("Reopen the canonical item"),
           recovery: {
             suggested_retry: `pm item reopen ${canonical.item.id} "<recurrence reason>"`,
             suggested_retry_args: [
@@ -220,6 +265,18 @@ describe("runReopen", () => {
           global: { path: context.pmPath },
         }),
       ).rejects.toThrow("Missing required argument: id");
+
+      await expect(
+        runReopenUpdate(
+          created.item.id,
+          {},
+          { path: context.pmPath },
+          "A missing mutation must not masquerade as recurrence",
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        code: "reopen_receipt_missing",
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+      });
     });
   });
 
@@ -263,7 +320,11 @@ describe("runReopen", () => {
       ).resolves.toMatchObject({ id: third.item.id, status: "open" });
 
       const fourth = await runCreate(
-        { title: "MCP reason option", type: "Issue", createMode: "progressive" },
+        {
+          title: "MCP reason option",
+          type: "Issue",
+          createMode: "progressive",
+        },
         { path: context.pmPath },
       );
       await runClose(fourth.item.id, "Done", {}, { path: context.pmPath });
@@ -277,7 +338,11 @@ describe("runReopen", () => {
       ).resolves.toMatchObject({ id: fourth.item.id, status: "open" });
 
       const closeTarget = await runCreate(
-        { title: "MCP close adapter", type: "Issue", createMode: "progressive" },
+        {
+          title: "MCP close adapter",
+          type: "Issue",
+          createMode: "progressive",
+        },
         { path: context.pmPath },
       );
       await expect(
@@ -288,6 +353,82 @@ describe("runReopen", () => {
           global: { path: context.pmPath },
         }),
       ).resolves.toMatchObject({ id: closeTarget.item.id, status: "closed" });
+
+      const strictConfiguration = context.runCli([
+        "config",
+        "project",
+        "set",
+        "governance-preset",
+        "--policy",
+        "strict",
+        "--json",
+      ]);
+      expect(strictConfiguration.code).toBe(0);
+
+      const forcedCloseTarget = await runCreate(
+        {
+          title: "Forced MCP close adapter",
+          type: "Issue",
+          createMode: "progressive",
+          assignee: "another-agent",
+        },
+        { path: context.pmPath },
+      );
+      await expect(
+        runMcpCloseAction({
+          args: { reason: "Transport close without force" },
+          options: { validateClose: "warn" },
+          id: forcedCloseTarget.item.id,
+          global: { path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
+      await expect(
+        runMcpCloseAction({
+          args: { reason: "Transport force closes assigned work" },
+          options: { validateClose: "warn" },
+          id: forcedCloseTarget.item.id,
+          force: true,
+          global: { path: context.pmPath },
+        }),
+      ).resolves.toMatchObject({
+        id: forcedCloseTarget.item.id,
+        status: "closed",
+      });
+
+      const forcedReopenTarget = await runCreate(
+        {
+          title: "Forced MCP reopen adapter",
+          type: "Issue",
+          status: "closed",
+          closeReason: "Imported terminal work",
+          resolution: "Imported resolution evidence",
+          expectedResult: "The imported outcome remains stable",
+          actualResult: "The imported outcome initially remained stable",
+          createMode: "progressive",
+          assignee: "another-agent",
+        },
+        { path: context.pmPath },
+      );
+      await expect(
+        runMcpReopenAction({
+          args: { reason: "Transport reopen without force" },
+          options: {},
+          id: forcedReopenTarget.item.id,
+          global: { path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
+      await expect(
+        runMcpReopenAction({
+          args: { reason: "Transport force reopens assigned work" },
+          options: {},
+          id: forcedReopenTarget.item.id,
+          force: true,
+          global: { path: context.pmPath },
+        }),
+      ).resolves.toMatchObject({
+        id: forcedReopenTarget.item.id,
+        status: "open",
+      });
     });
   });
 });

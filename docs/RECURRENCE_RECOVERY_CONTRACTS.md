@@ -105,7 +105,7 @@ unavailable command.
 `pm init --agent-guidance add` resolves the linked-test command in this order:
 
 1. `node scripts/run-tests.mjs test` when that repository script exists.
-2. The declared package manager's `test` script (`pnpm test`, `bun test`,
+2. The declared package manager's `test` script (`pnpm test`, `bun run test`,
    `yarn test`, or `npm test`).
 3. `<your project test command>` when the target does not declare an executable
    test contract.

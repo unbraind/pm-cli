@@ -280,7 +280,7 @@ export async function resolveProjectTestCommand(
     (await pathExists(path.join(projectRoot, "bun.lock"))) ||
     (await pathExists(path.join(projectRoot, "bun.lockb")))
   ) {
-    return "bun test";
+    return "bun run test";
   }
   if (
     packageManager === "yarn" ||

@@ -9,10 +9,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { runClose } from "./close.js";
 import { runReopen } from "./reopen.js";
-import {
-  readRuntimeString,
-  withMutationCompaction,
-} from "../runtime-input.js";
+import { readRuntimeString, withMutationCompaction } from "../runtime-input.js";
 
 /** Minimal generic dispatch context consumed by lifecycle mutation adapters. */
 export interface LifecycleMutationActionContext {
@@ -22,6 +19,8 @@ export interface LifecycleMutationActionContext {
   options: Record<string, unknown>;
   /** Item id resolved from flat arguments, when present. */
   id: string | undefined;
+  /** Normalized transport-level force override. */
+  force?: boolean;
   /** Presentation-neutral global command options. */
   global: GlobalOptions;
 }
@@ -61,7 +60,10 @@ export async function runMcpCloseAction(
     await runClose(
       requireLifecycleItemId(context, runnerOptions),
       readLifecycleReason(context, runnerOptions),
-      runnerOptions,
+      {
+        ...runnerOptions,
+        force: context.force === true || runnerOptions.force === true,
+      },
       context.global,
     ),
     {
@@ -84,7 +86,10 @@ export async function runMcpReopenAction(
     await runReopen(
       requireLifecycleItemId(context, runnerOptions),
       readLifecycleReason(context, runnerOptions) ?? "",
-      runnerOptions,
+      {
+        ...runnerOptions,
+        force: context.force === true || runnerOptions.force === true,
+      },
       context.global,
     ),
     {

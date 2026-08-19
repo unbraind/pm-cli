@@ -7,10 +7,7 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
-import {
-  isTerminalStatus,
-  normalizeStatusInput,
-} from "../core/item/status.js";
+import { isTerminalStatus, normalizeStatusInput } from "../core/item/status.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
@@ -602,13 +599,16 @@ export async function evaluateSimilarityGovernance(
     const candidates = result.items
       .map((item) => `${item.id} (${item.status}): ${item.title}`)
       .join("; ");
+    const recoveryInstruction =
+      recovery.action === "reopen"
+        ? "Reopen the canonical item"
+        : "Reuse the canonical item";
     throw new PmCliError(
-      `Likely duplicate item(s) found: ${candidates}. Reuse the canonical item or pass --allow-duplicate with explicit intent.`,
+      `Likely duplicate item(s) found: ${candidates}. ${recoveryInstruction} or pass --allow-duplicate with explicit intent.`,
       EXIT_CODE.CONFLICT,
       {
         code: "likely_duplicate",
-        required:
-          "Reuse an existing item, or explicitly acknowledge the duplicate with --allow-duplicate.",
+        required: `${recoveryInstruction}, or explicitly acknowledge the duplicate with --allow-duplicate.`,
         recovery: {
           suggested_flags: ["--allow-duplicate"],
           suggested_retry: recovery.command,

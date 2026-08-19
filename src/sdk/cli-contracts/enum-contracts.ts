@@ -193,7 +193,7 @@ type PmItemAction = `item-${(typeof PM_ITEM_ACTION_SUBCOMMANDS)[number]}`;
 
 /** Restricts pm tool action values accepted by command, SDK, and storage contracts. */
 export type PmToolAction =
-  | Exclude<PmCoreCommandName, PmCliOnlyToolAction>
+  | Exclude<PmCoreCommandName, PmCliOnlyToolAction | "item">
   | PmExtensionPackageAction
   | PmItemAction;
 
@@ -222,14 +222,15 @@ export const PM_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
 );
 
 /** Deprecated compatibility actions accepted by the SDK but omitted from canonical MCP discovery. */
-export const PM_DEPRECATED_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
-  PM_COMMAND_ALIAS_CONTRACTS.filter(
-    (contract) =>
-      contract.lifecycle === "deprecated" &&
-      contract.registration === "commander" &&
-      PM_TOOL_ACTIONS.includes(contract.alias as PmToolAction),
-  ).map((contract) => contract.alias as PmToolAction),
-);
+export const PM_DEPRECATED_TOOL_ACTIONS: readonly PmToolAction[] =
+  Object.freeze(
+    PM_COMMAND_ALIAS_CONTRACTS.filter(
+      (contract) =>
+        contract.lifecycle === "deprecated" &&
+        contract.registration === "commander" &&
+        PM_TOOL_ACTIONS.includes(contract.alias as PmToolAction),
+    ).map((contract) => contract.alias as PmToolAction),
+  );
 
 /** Canonical actions presented to MCP clients and unscoped contract consumers. */
 export const PM_DISCOVERABLE_TOOL_ACTIONS: readonly PmToolAction[] =

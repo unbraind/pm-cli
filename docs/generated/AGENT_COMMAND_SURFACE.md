@@ -12,7 +12,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `install` | full | extensions |
 | `upgrade` | full | extensions |
 | `create` | core | intake |
-| `item` | full | intake |
+| `item-reopen` | full | lifecycle |
 | `copy` | full | intake |
 | `focus` | standard | intake |
 | `list` | core | context |

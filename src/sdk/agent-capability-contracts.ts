@@ -7,11 +7,7 @@
 import { PM_CORE_COMMAND_NAMES } from "./cli-contracts/enum-contracts.js";
 
 /** Visibility tiers shared by CLI help, completions, docs, extensions, and MCP. */
-export type PmCommandVisibilityTier =
-  | "core"
-  | "standard"
-  | "full"
-  | "internal";
+export type PmCommandVisibilityTier = "core" | "standard" | "full" | "internal";
 
 /** Stable capability families shared by every agent-facing command surface. */
 export type PmCommandCapabilityFamily =
@@ -35,8 +31,7 @@ export interface PmCommandVisibilityContract {
 }
 
 /** Complete command capability contract with visibility and family ownership. */
-export interface PmCommandCapabilityContract
-  extends PmCommandVisibilityContract {
+export interface PmCommandCapabilityContract extends PmCommandVisibilityContract {
   /** Exactly one stable capability family used to group the command. */
   family: PmCommandCapabilityFamily;
 }
@@ -83,7 +78,10 @@ const STANDARD_COMMANDS = new Set([
 ]);
 
 const COMMANDS_BY_FAMILY: Readonly<
-  Record<Exclude<PmCommandCapabilityFamily, "extensions" | "internal">, ReadonlySet<string>>
+  Record<
+    Exclude<PmCommandCapabilityFamily, "extensions" | "internal">,
+    ReadonlySet<string>
+  >
 > = Object.freeze({
   workspace: new Set([
     "config",
@@ -146,13 +144,7 @@ const COMMANDS_BY_FAMILY: Readonly<
     "notes",
   ]),
   graph: new Set(["deps", "graph", "plan"]),
-  quality: new Set([
-    "assurance",
-    "contracts",
-    "test",
-    "test-all",
-    "validate",
-  ]),
+  quality: new Set(["assurance", "contracts", "test", "test-all", "validate"]),
   automation: new Set(["event", "meet", "remind"]),
 });
 
@@ -184,7 +176,9 @@ export function resolvePmCommandCapabilityFamily(
  */
 export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContract[] =
   Object.freeze([
-    ...PM_CORE_COMMAND_NAMES.map((command) => ({
+    ...PM_CORE_COMMAND_NAMES.flatMap((command) =>
+      command === "item" ? ["item-reopen"] : [command],
+    ).map((command) => ({
       command,
       tier: CORE_COMMANDS.has(command)
         ? ("core" as const)
@@ -235,7 +229,9 @@ export function resolvePmCommandVisibilityTier(
   command: string,
   extensionTier: PmCommandVisibilityTier = "standard",
 ): PmCommandVisibilityTier {
-  return COMMAND_TIER_BY_NAME.get(command.trim().toLowerCase()) ?? extensionTier;
+  return (
+    COMMAND_TIER_BY_NAME.get(command.trim().toLowerCase()) ?? extensionTier
+  );
 }
 
 /** Return commands visible at a requested tier, preserving contract order. */
@@ -244,8 +240,7 @@ export function listPmCommandsForTier(
 ): string[] {
   const maximum = TIER_ORDER[tier];
   return PM_COMMAND_VISIBILITY_CONTRACTS.filter(
-    (entry) =>
-      entry.tier !== "internal" && TIER_ORDER[entry.tier] <= maximum,
+    (entry) => entry.tier !== "internal" && TIER_ORDER[entry.tier] <= maximum,
   ).map((entry) => entry.command);
 }
 
@@ -262,41 +257,40 @@ export function listPmCommandsForFamily(
 export type PmMcpToolProfile = "core" | "standard" | "full" | "custom";
 
 /** Mapping from one narrow MCP tool to the command contract that tiers it. */
-export const PM_MCP_TOOL_COMMAND_CONTRACTS: Readonly<
-  Record<string, string>
-> = Object.freeze({
-  pm_append: "append",
-  pm_claim: "claim",
-  pm_close: "close",
-  pm_comments: "comments",
-  pm_config: "config",
-  pm_context: "context",
-  pm_contracts: "contracts",
-  pm_copy: "copy",
-  pm_create: "create",
-  pm_deps: "deps",
-  pm_docs: "docs",
-  pm_events: "history",
-  pm_files: "files",
-  pm_focus: "focus",
-  pm_get: "get",
-  pm_graph: "graph",
-  pm_health: "health",
-  pm_learnings: "learnings",
-  pm_list: "list",
-  pm_mutate: "update",
-  pm_next: "next",
-  pm_notes: "notes",
-  pm_plan: "plan",
-  pm_profile: "profile",
-  pm_release: "release",
-  pm_run: "package",
-  pm_schema: "schema",
-  pm_search: "search",
-  pm_test: "test",
-  pm_update: "update",
-  pm_validate: "validate",
-});
+export const PM_MCP_TOOL_COMMAND_CONTRACTS: Readonly<Record<string, string>> =
+  Object.freeze({
+    pm_append: "append",
+    pm_claim: "claim",
+    pm_close: "close",
+    pm_comments: "comments",
+    pm_config: "config",
+    pm_context: "context",
+    pm_contracts: "contracts",
+    pm_copy: "copy",
+    pm_create: "create",
+    pm_deps: "deps",
+    pm_docs: "docs",
+    pm_events: "history",
+    pm_files: "files",
+    pm_focus: "focus",
+    pm_get: "get",
+    pm_graph: "graph",
+    pm_health: "health",
+    pm_learnings: "learnings",
+    pm_list: "list",
+    pm_mutate: "update",
+    pm_next: "next",
+    pm_notes: "notes",
+    pm_plan: "plan",
+    pm_profile: "profile",
+    pm_release: "release",
+    pm_run: "package",
+    pm_schema: "schema",
+    pm_search: "search",
+    pm_test: "test",
+    pm_update: "update",
+    pm_validate: "validate",
+  });
 
 /** Resolve the tools visible in a named MCP profile from command tiers. */
 export function listPmMcpToolsForProfile(

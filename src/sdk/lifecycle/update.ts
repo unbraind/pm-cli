@@ -56,13 +56,13 @@ import {
   buildItemNotFoundError,
   listAllItemMetadataLight,
   locateItem,
-  mutateItemWithHistoryContext,
   readLocatedItem,
   getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
 } from "../runtime-primitives.js";
+import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 import { runClose } from "./close.js";
 import {
   normalizeRiskInput,
@@ -236,11 +236,7 @@ interface UpdateExecutionContext {
 }
 
 interface RecurrenceHistoryContext extends Record<string, unknown> {
-  recurrence: {
-    reason: string;
-    from_status: string;
-    to_status: string;
-  };
+  recurrence: ReopenUpdateReceipt;
 }
 
 interface UpdateUnsetFieldDefinition {
@@ -3146,11 +3142,8 @@ async function runUpdateWithContext(
       : undefined;
 
   let lifecycleTransition: ReopenUpdateReceipt | undefined;
-  const recurrenceHistoryContext = buildRecurrenceHistoryContext(
-    execution,
-    options.status,
-  );
-  const result = await mutateItemWithHistoryContext({
+  let recurrenceHistoryContext: RecurrenceHistoryContext | undefined;
+  const result = await mutateItemWithHistoryContextResolver({
     pmRoot,
     settings,
     typeToFolder: typeRegistry.type_to_folder,
@@ -3158,7 +3151,7 @@ async function runUpdateWithContext(
     op: resolveUpdateHistoryOperation(options, execution),
     author,
     message: options.message,
-    historyContext: recurrenceHistoryContext,
+    resolveHistoryContext: () => recurrenceHistoryContext,
     force: options.force,
     bypassAssigneeConflict:
       options.ownershipMetadataBypass === true ||
@@ -3171,8 +3164,10 @@ async function runUpdateWithContext(
         recurrenceReason: execution.recurrenceReason,
         requestedStatus: options.status,
         statusRegistry,
-        historyContext: recurrenceHistoryContext,
       });
+      recurrenceHistoryContext = lifecycleTransition
+        ? { recurrence: lifecycleTransition }
+        : undefined;
       graphBeforeUpdate = graphBeforeUpdate?.map((item) =>
         item.id === document.metadata.id
           ? structuredClone(document.metadata)
@@ -3231,23 +3226,6 @@ async function runUpdateWithContext(
   };
 }
 
-/** Build structured recurrence history context before the atomic mutation starts. */
-function buildRecurrenceHistoryContext(
-  execution: UpdateExecutionContext,
-  requestedStatus: string | undefined,
-): RecurrenceHistoryContext | undefined {
-  if (execution.recurrenceReason === undefined) {
-    return undefined;
-  }
-  return {
-    recurrence: {
-      reason: execution.recurrenceReason,
-      from_status: "",
-      to_status: requestedStatus ?? "",
-    },
-  };
-}
-
 /** Resolve the immutable operation name for ordinary, bypass, and recurrence updates. */
 function resolveUpdateHistoryOperation(
   options: UpdateCommandOptions,
@@ -3268,7 +3246,6 @@ function prepareRecurrenceTransition(params: {
   recurrenceReason: string | undefined;
   requestedStatus: string | undefined;
   statusRegistry: RuntimeStatusRegistry;
-  historyContext: RecurrenceHistoryContext | undefined;
 }): ReopenUpdateReceipt | undefined {
   if (params.recurrenceReason === undefined) {
     return undefined;
@@ -3313,10 +3290,6 @@ function prepareRecurrenceTransition(params: {
       return typeof value === "string" ? [[key, value]] : [];
     }),
   ) as PreviousTerminalEvidence;
-  if (params.historyContext) {
-    params.historyContext.recurrence.from_status = fromStatus;
-    params.historyContext.recurrence.to_status = toStatus;
-  }
   return {
     reason: params.recurrenceReason,
     from_status: fromStatus,
@@ -3341,9 +3314,22 @@ export async function runReopenUpdate(
   global: GlobalOptions,
   recurrenceReason: string,
 ): Promise<ReopenUpdateResult> {
-  return (await runUpdateWithContext(id, options, global, {
+  const result = await runUpdateWithContext(id, options, global, {
     recurrenceReason,
-  })) as ReopenUpdateResult;
+  });
+  if (result.lifecycle_transition === undefined) {
+    throw new PmCliError(
+      `Item ${id} did not produce the required recurrence receipt.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "reopen_receipt_missing",
+        reason: "recurrence_transition_not_recorded",
+        required:
+          "A successful reopen must return the terminal-to-active lifecycle transition recorded in immutable history.",
+      },
+    );
+  }
+  return { ...result, lifecycle_transition: result.lifecycle_transition };
 }
 
 /* c8 ignore stop */

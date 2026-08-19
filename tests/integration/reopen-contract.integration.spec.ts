@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { runClose } from "../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../src/sdk/lifecycle/create.js";
-import { PmClient, analyzeSdkActionCoverage } from "../../src/sdk/runtime.js";
+import {
+  PmClient,
+  analyzeSdkActionCoverage,
+  runAction,
+} from "../../src/sdk/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("recurrence presentation contracts", () => {
@@ -85,10 +89,39 @@ describe("recurrence presentation contracts", () => {
         to_status: "open",
       });
       expect(
-        analyzeSdkActionCoverage().find(
-          (row) => row.action === "item-reopen",
-        ),
+        analyzeSdkActionCoverage().find((row) => row.action === "item-reopen"),
       ).toMatchObject({ covered: true, route: "native" });
+
+      const genericTarget = await runCreate(
+        {
+          title: "Generic dispatch recurrence contract",
+          type: "Issue",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      await runClose(
+        genericTarget.item.id,
+        "Initially completed through the shared lifecycle",
+        {},
+        { path: context.pmPath },
+      );
+      await expect(
+        runAction({
+          action: "item-reopen",
+          id: genericTarget.item.id,
+          reason: "Generic dispatch observed a recurrence",
+          path: context.pmPath,
+        }),
+      ).resolves.toMatchObject({
+        id: genericTarget.item.id,
+        status: "open",
+        recurrence: {
+          reason: "Generic dispatch observed a recurrence",
+          from_status: "closed",
+          to_status: "open",
+        },
+      });
     });
   });
 });

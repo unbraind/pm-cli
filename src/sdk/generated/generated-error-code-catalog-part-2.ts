@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_cli_flag",
-    meaning: "Missing cli flag condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_cli_flag",
-    aliases: [],
-  },
-  {
     code: "missing_destination",
     meaning: "Missing destination condition.",
     stability: "provisional",
@@ -603,6 +590,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/lifecycle/reopen.ts"],
     emitting_commands: ["reopen"],
     canonical_code: "reopen_reason_required",
+    aliases: [],
+  },
+  {
+    code: "reopen_receipt_missing",
+    meaning: "Reopen receipt missing condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/update.ts"],
+    emitting_commands: ["update"],
+    canonical_code: "reopen_receipt_missing",
     aliases: [],
   },
   {

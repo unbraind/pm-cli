@@ -894,6 +894,14 @@
       ],
       "package_version": "2026.8.19",
       "reason": "Add noun-first recurrence lifecycle and executable recovery contracts across CLI, SDK, and MCP"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmToolAction",
+        "signature ./sdk/contracts:PmToolAction"
+      ],
+      "package_version": "2026.8.19",
+      "reason": "Replace non-executable item action with the executable item-reopen action in the typed transport contract"
     }
   ],
   "entrypoints": {
@@ -10564,7 +10572,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction> | PmExtensionPackageAction | PmItemAction;"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmItemAction;"
         },
         {
           "classification": "contract_data",
@@ -11425,7 +11433,7 @@
           "signature": "(params: { pmRoot: string; principal: string; itemId: string; }) => Promise<void> | calls: (params: { pmRoot: string; principal: string; itemId: string; }) => Promise<void>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "RecurrenceReceipt",
           "signature": "export interface RecurrenceReceipt { reason: string; from_status: string; to_status: string; previous_terminal: PreviousTerminalEvidence; }"
@@ -12349,19 +12357,19 @@
           "signature": "(rows: TabularRow[]) => string | calls: (rows: TabularRow[]) => string"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "reopen",
           "signature": "(id: string, reason: string, options?: ReopenCommandOptions, clientOptions?: PmClientOptions) => Promise<ReopenResult> | calls: (id: string, reason: string, options?: ReopenCommandOptions, clientOptions?: PmClientOptions) => Promise<ReopenResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
           "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
           "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
@@ -19366,7 +19374,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction> | PmExtensionPackageAction | PmItemAction;"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmItemAction;"
         },
         {
           "classification": "contract_data",
@@ -20840,6 +20848,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "RecurrenceReceipt",
+          "signature": "export interface RecurrenceReceipt { reason: string; from_status: string; to_status: string; previous_terminal: PreviousTerminalEvidence; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "registerHarnessSignalDescriptors",
           "signature": "(descriptors: readonly HarnessSignalDescriptor[]) => () => void | calls: (descriptors: readonly HarnessSignalDescriptor[]) => () => void"
@@ -20855,6 +20869,24 @@
           "kind": "interface",
           "name": "ReleaseResult",
           "signature": "export interface ReleaseResult { item: Record<string, unknown>; released_by: string; previous_assignee: string | null; forced: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "reopen",
+          "signature": "(id: string, reason: string, options?: ReopenCommandOptions, clientOptions?: PmClientOptions) => Promise<ReopenResult> | calls: (id: string, reason: string, options?: ReopenCommandOptions, clientOptions?: PmClientOptions) => Promise<ReopenResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReopenCommandOptions",
+          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReopenResult",
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
         },
         {
           "classification": "supported",
@@ -27343,7 +27375,7 @@
           "signature": "export interface RecentContextItem extends ContextFocusItem { created_at?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "RecurrenceReceipt",
           "signature": "export interface RecurrenceReceipt { reason: string; from_status: string; to_status: string; previous_terminal: PreviousTerminalEvidence; }"
@@ -27397,19 +27429,19 @@
           "signature": "(result: GuideResult) => string | calls: (result: GuideResult) => string"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "reopen",
           "signature": "(id: string, reason: string, options?: ReopenCommandOptions, clientOptions?: PmClientOptions) => Promise<ReopenResult> | calls: (id: string, reason: string, options?: ReopenCommandOptions, clientOptions?: PmClientOptions) => Promise<ReopenResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
           "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
           "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
@@ -29175,6 +29207,7 @@
     "removed_canonical_spelling",
     "removed_compatibility_spelling",
     "reopen_reason_required",
+    "reopen_receipt_missing",
     "reopen_target_status_invalid",
     "reserved_item_field",
     "retry_failed",

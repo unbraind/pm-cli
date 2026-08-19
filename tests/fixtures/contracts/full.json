@@ -493,8 +493,8 @@
     {
       "action": "item-reopen",
       "available": true,
-      "cli_exposed": false,
-      "command_path": null,
+      "cli_exposed": true,
+      "command_path": "item reopen",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1295,6 +1295,7 @@
           "item",
           "item complete",
           "item mutate",
+          "item reopen",
           "learnings",
           "list",
           "meet",
@@ -3992,6 +3993,31 @@
         {
           "flag": "--lock-wait-ms",
           "value_name": "n"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item reopen",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--status",
+          "value_name": "open|in_progress"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--force"
         },
         {
           "flag": "--author",
@@ -10085,6 +10111,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "item reopen",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item reopen",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "learnings",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -12906,6 +12959,16 @@
       "intent_source": "generated"
     },
     {
+      "command": "item reopen",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Run item reopen.",
+      "intent_source": "generated"
+    },
+    {
       "command": "learnings",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -15185,6 +15248,7 @@
     "item",
     "item complete",
     "item mutate",
+    "item reopen",
     "learnings",
     "list",
     "meet",
@@ -18825,6 +18889,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/reopen.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reopen_receipt_missing",
+      "class": "generic_failure",
+      "code": "reopen_receipt_missing",
+      "emitting_commands": [
+        "update"
+      ],
+      "exit_code": 1,
+      "meaning": "Reopen receipt missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update.ts"
       ],
       "stability": "provisional"
     },
