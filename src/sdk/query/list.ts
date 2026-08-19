@@ -371,6 +371,22 @@ const TREE_METADATA_FIELDS = [
   "tree_title",
 ] as const;
 
+/** Return every accepted list projection selector for core and runtime metadata. */
+export function listListProjectionFields(
+  runtimeMetadataKeys: Iterable<string> = [],
+): string[] {
+  return [
+    ...new Set([
+      ...ITEM_METADATA_KEY_ORDER,
+      "body",
+      ...TREE_METADATA_FIELDS,
+      ...runtimeMetadataKeys,
+    ]),
+  ]
+    .flatMap((field) => [field, `item.${field}`])
+    .sort();
+}
+
 // A projection that selects any heavy collection field (or `--full`, which returns
 // items verbatim) must load the full metadata; everything else takes the light path.
 // Sourced from the single HEAVY_METADATA_KEYS definition in the cache layer so the
@@ -894,6 +910,13 @@ function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
     throw new PmCliError(
       "List projection options are mutually exclusive. Use one of --compact, --brief, --full, or --fields.",
       EXIT_CODE.USAGE,
+      {
+        code: "projection_options_mutually_exclusive",
+        recovery: {
+          suggested_retry: "pm list --brief",
+          suggested_retry_args: ["list", "--brief"],
+        },
+      },
     );
   }
   if (fullRequested) {
@@ -937,15 +960,10 @@ function validateListProjectionFields(
   if (projection.mode !== "fields") {
     return;
   }
-  const allowed = new Set([
-    ...ITEM_METADATA_KEY_ORDER,
-    "body",
-    ...TREE_METADATA_FIELDS,
-    ...runtimeMetadataKeys,
-  ]);
-  const allowedValues = [...allowed]
-    .flatMap((field) => [field, `item.${field}`])
-    .sort();
+  const allowedValues = listListProjectionFields(runtimeMetadataKeys);
+  const allowed = new Set(
+    allowedValues.map((field) => normalizeProjectionField(field)),
+  );
   const unknown = projection.fields.filter(
     (field) => !allowed.has(normalizeProjectionField(field)),
   );

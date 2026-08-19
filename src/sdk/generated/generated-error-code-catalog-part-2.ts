@@ -8,32 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_allowed_values",
-    meaning: "Missing allowed values condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_allowed_values",
-    aliases: [],
-  },
-  {
-    code: "missing_budget",
-    meaning: "Missing budget condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_budget",
-    aliases: [],
-  },
-  {
     code: "missing_cli_flag",
     meaning: "Missing cli flag condition.",
     stability: "provisional",
@@ -174,6 +148,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/agent/refusal-closure.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_suggested_retry",
+    aliases: [],
+  },
+  {
+    code: "missing_suggested_retry_args",
+    meaning: "Missing suggested retry args condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_suggested_retry_args",
     aliases: [],
   },
   {
@@ -489,6 +476,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "projection_options_mutually_exclusive",
+    meaning: "Projection options mutually exclusive condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/query/get.ts", "sdk/query/list.ts", "sdk/query/search-contracts.ts"],
+    emitting_commands: ["get", "list", "search-contracts"],
+    canonical_code: "projection_options_mutually_exclusive",
+    aliases: [],
+  },
+  {
     code: "provenance_value_domain_invalid",
     meaning: "Provenance value domain invalid condition.",
     stability: "provisional",
@@ -567,6 +567,32 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "removed_canonical_spelling",
+    meaning: "Removed canonical spelling condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "removed_canonical_spelling",
+    aliases: [],
+  },
+  {
+    code: "removed_compatibility_spelling",
+    meaning: "Removed compatibility spelling condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "removed_compatibility_spelling",
+    aliases: [],
+  },
+  {
     code: "reserved_item_field",
     meaning: "Reserved item field condition.",
     stability: "stable",
@@ -603,6 +629,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["cli/migration-gates.ts"],
     emitting_commands: ["*"],
     canonical_code: "schema_migration_input_required",
+    aliases: [],
+  },
+  {
+    code: "semantic_spelling_collision",
+    meaning: "Semantic spelling collision condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "semantic_spelling_collision",
     aliases: [],
   },
   {
@@ -811,6 +850,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/notes.ts"],
     emitting_commands: ["*"],
     canonical_code: "structured_event_since_invalid",
+    aliases: [],
+  },
+  {
+    code: "suggested_retry_args_mismatch",
+    meaning: "Suggested retry args mismatch condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "suggested_retry_args_mismatch",
     aliases: [],
   },
   {
@@ -1127,8 +1179,8 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/query/get.ts", "sdk/query/list.ts"],
-    emitting_commands: ["get", "list"],
+    sources: ["sdk/query/get.ts", "sdk/query/list.ts", "sdk/query/search-contracts.ts"],
+    emitting_commands: ["get", "list", "search-contracts"],
     canonical_code: "unknown_field_projection",
     aliases: [],
   },

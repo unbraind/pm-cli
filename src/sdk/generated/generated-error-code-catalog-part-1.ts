@@ -736,6 +736,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "error_code_mismatch",
+    meaning: "Error code mismatch condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "error_code_mismatch",
+    aliases: [],
+  },
+  {
     code: "event_cursor_query_mismatch",
     meaning: "Event cursor query mismatch condition.",
     stability: "stable",
@@ -1279,6 +1292,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
     canonical_code: "improvement_observation_conflict",
+    aliases: [],
+  },
+  {
+    code: "incomplete_allowed_values",
+    meaning: "Incomplete allowed values condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "incomplete_allowed_values",
     aliases: [],
   },
   {
@@ -1991,6 +2017,32 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_root_not_found",
+    aliases: [],
+  },
+  {
+    code: "missing_allowed_values",
+    meaning: "Missing allowed values condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_allowed_values",
+    aliases: [],
+  },
+  {
+    code: "missing_budget",
+    meaning: "Missing budget condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_budget",
     aliases: [],
   },
 ];

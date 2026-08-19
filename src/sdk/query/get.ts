@@ -123,7 +123,57 @@ export interface GetResult {
   };
 }
 
-const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+/** Canonical get depth values. The CLI also accepts full as an alias for deep. */
+export const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+
+const GET_ROOT_PROJECTION_FIELDS = [
+  "body",
+  "linked",
+  "claim_state",
+  "children",
+  "schedule",
+] as const;
+const GET_LINKED_PROJECTION_FIELDS = [
+  "linked.files",
+  "linked.tests",
+  "linked.docs",
+] as const;
+const GET_CLAIM_STATE_PROJECTION_FIELDS = [
+  "claim_state.claimed",
+  "claim_state.assignee",
+  "claim_state.last_claim",
+  "claim_state.last_release",
+] as const;
+const GET_SCHEDULE_PROJECTION_FIELDS = [
+  "schedule.deadline",
+  "schedule.start_at",
+  "schedule.end_at",
+  "schedule.location",
+  "schedule.reminders",
+  "schedule.events",
+] as const;
+
+/** Return every accepted get projection selector for core and runtime metadata. */
+export function listGetProjectionFields(
+  runtimeMetadataKeys: Iterable<string> = [],
+): string[] {
+  const itemFields = [
+    ...new Set([
+      ...ITEM_METADATA_KEY_ORDER,
+      ...runtimeMetadataKeys,
+      "notes_count",
+      "tests_count",
+      "collection_counts",
+    ]),
+  ];
+  return [
+    ...itemFields.flatMap((field) => [field, `item.${field}`]),
+    ...GET_ROOT_PROJECTION_FIELDS,
+    ...GET_LINKED_PROJECTION_FIELDS,
+    ...GET_CLAIM_STATE_PROJECTION_FIELDS,
+    ...GET_SCHEDULE_PROJECTION_FIELDS,
+  ].sort();
+}
 
 const AUTOMATIC_CHILD_ROLLUP_TYPES = new Set([
   "epic",
@@ -320,54 +370,13 @@ function validateGetFields(
   if (fields === null) {
     return;
   }
-  const itemFields = new Set([
-    ...ITEM_METADATA_KEY_ORDER,
-    ...runtimeMetadataKeys,
-    "notes_count",
-    "tests_count",
-    "collection_counts",
-  ]);
-  const allowedRootFields = new Set([
-    "body",
-    "linked",
-    "claim_state",
-    "children",
-    "schedule",
-  ]);
-  const allowedLinkedFields = new Set([
-    "linked.files",
-    "linked.tests",
-    "linked.docs",
-  ]);
-  const allowedClaimStateFields = new Set([
-    "claim_state.claimed",
-    "claim_state.assignee",
-    "claim_state.last_claim",
-    "claim_state.last_release",
-  ]);
-  const allowedScheduleFields = new Set([
-    "schedule.deadline",
-    "schedule.start_at",
-    "schedule.end_at",
-    "schedule.location",
-    "schedule.reminders",
-    "schedule.events",
-  ]);
-  const allowedValues = [
-    ...[...itemFields].flatMap((field) => [field, `item.${field}`]),
-    ...allowedRootFields,
-    ...allowedLinkedFields,
-    ...allowedClaimStateFields,
-    ...allowedScheduleFields,
-  ].sort();
+  const allowedValues = listGetProjectionFields(runtimeMetadataKeys);
+  const allowed = new Set(allowedValues);
   const unknown = fields.filter((field) => {
     const normalized = normalizeGetField(field);
     return (
-      !itemFields.has(normalized) &&
-      !allowedRootFields.has(normalized) &&
-      !allowedLinkedFields.has(normalized) &&
-      !allowedClaimStateFields.has(normalized) &&
-      !allowedScheduleFields.has(normalized)
+      !allowed.has(field) &&
+      !allowed.has(normalized)
     );
   });
   if (unknown.length > 0) {
@@ -490,7 +499,10 @@ interface GetItemContext {
   historical?: GetItemAtResult;
 }
 
-function resolveGetProjection(options: GetOptions): ResolvedGetProjection {
+function resolveGetProjection(
+  options: GetOptions,
+  id: string,
+): ResolvedGetProjection {
   if (
     options.full &&
     (options.fields !== undefined || options.depth !== undefined)
@@ -498,6 +510,13 @@ function resolveGetProjection(options: GetOptions): ResolvedGetProjection {
     throw new PmCliError(
       "Get projection options are mutually exclusive; remove the extra projection flag and retry.",
       EXIT_CODE.USAGE,
+      {
+        code: "projection_options_mutually_exclusive",
+        recovery: {
+          suggested_retry: renderPmCommand(["get", id, "--full"]),
+          suggested_retry_args: ["get", id, "--full"],
+        },
+      },
     );
   }
   if (options.tree !== true && options.treeDepth !== undefined) {
@@ -737,7 +756,7 @@ export async function runGet(
   global: GlobalOptions,
   options: GetOptions = {},
 ): Promise<GetResult> {
-  const projection = resolveGetProjection(options);
+  const projection = resolveGetProjection(options, id);
   const context = await loadGetItemContext(id, global, options.at);
   validateGetProjectionFields(
     projection.fields,

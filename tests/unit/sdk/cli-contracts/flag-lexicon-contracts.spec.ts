@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   listPmCommandFlagBudgets,
   listPmFlagLexicon,
+  listPmFlagSpellingInventory,
   renderPmFlagLexiconMarkdown,
   verifyPmFlagLexicon,
 } from "../../../../src/sdk/cli-contracts/flag-lexicon-contracts.js";
@@ -14,6 +15,8 @@ describe("flag lexicon contracts", () => {
       ok: true,
       entry_count: lexicon.length,
       budget_count: budgets.length,
+      concept_count: new Set(lexicon.map(({ concept }) => concept)).size,
+      baseline_entry_count: 0,
       findings: [],
     });
     expect(lexicon.length).toBeGreaterThan(3_000);
@@ -28,6 +31,67 @@ describe("flag lexicon contracts", () => {
       ]),
     );
     expect(renderPmFlagLexiconMarkdown()).toContain("| `context` | context |");
+  });
+
+  it("classifies semantic concepts while preserving every executable spelling", () => {
+    const lexicon = listPmFlagLexicon();
+    const inventory = listPmFlagSpellingInventory();
+    expect(
+      lexicon
+        .filter(({ flag }) => flag === "--limit")
+        .map(({ concept }) => concept),
+    ).toEqual(expect.arrayContaining(["result-row-limit", "result-row-limit"]));
+    expect(
+      lexicon.find(
+        ({ command, flag }) => command === "context" && flag === "--limit",
+      ),
+    ).toMatchObject({
+      concept: "result-row-limit",
+      aliases: ["--max-items"],
+      value_kind: "number",
+    });
+    expect(
+      lexicon.find(
+        ({ command, flag }) => command === "create" && flag === "--file",
+      )?.concept,
+    ).toBe("linked-file-path");
+    expect(
+      lexicon.find(
+        ({ command, flag }) => command === "plan" && flag === "--file",
+      )?.concept,
+    ).toBe("plan-definition-file");
+    expect(
+      inventory.find(
+        ({ command, canonical_flag: canonicalFlag }) =>
+          command === "context" && canonicalFlag === "--limit",
+      )?.accepted_spellings,
+    ).toEqual(["--limit", "--max-items"]);
+  });
+
+  it("fails closed when a historical canonical or alias spelling disappears", () => {
+    const lexicon = listPmFlagLexicon();
+    const budgets = listPmCommandFlagBudgets();
+    const baseline = listPmFlagSpellingInventory();
+    const contextLimit = lexicon.find(
+      ({ command, flag }) => command === "context" && flag === "--limit",
+    )!;
+    const report = verifyPmFlagLexicon(
+      lexicon
+        .filter((entry) => entry !== contextLimit)
+        .map((entry) =>
+          entry.command === "ctx" && entry.flag === "--limit"
+            ? { ...entry, aliases: [] }
+            : entry,
+        ),
+      budgets,
+      baseline,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "removed_canonical_spelling" }),
+        expect.objectContaining({ code: "removed_compatibility_spelling" }),
+      ]),
+    );
   });
 
   it("fails closed on duplicate concepts, alias collisions, and growth", () => {
@@ -70,6 +134,20 @@ describe("flag lexicon contracts", () => {
       ({ command, code, detail }) => `${command}\u0000${code}\u0000${detail}`,
     );
     expect(findingOrder).toEqual(findingOrder.toSorted());
+
+    expect(
+      verifyPmFlagLexicon(
+        [seed, { ...seed, command: "ctx", flag: "--synthetic-fields" }],
+        [
+          { command: "context", current: 1, maximum: 1 },
+          { command: "ctx", current: 1, maximum: 1 },
+        ],
+      ).findings,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "semantic_spelling_collision" }),
+      ]),
+    );
   });
 
   it("memoizes the immutable canonical corpus", () => {
@@ -143,7 +221,9 @@ describe("flag lexicon contracts", () => {
           current: entries.length,
           maximum: entries.length,
         },
-      ]).findings.map(({ detail }) => detail),
+      ])
+        .findings.filter(({ code }) => code === "inconsistent_concept_kind")
+        .map(({ detail }) => detail),
     ).toEqual([
       "alpha uses both string and boolean.",
       "beta uses both string and boolean.",

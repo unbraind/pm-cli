@@ -39,9 +39,7 @@ describe("refusal closure scoring", () => {
   });
 
   it("rejects internal failures even when recovery metadata is complete", () => {
-    expect(
-      scorePmRefusalClosure([{ ...closed, exit_code: 1 }]),
-    ).toMatchObject({
+    expect(scorePmRefusalClosure([{ ...closed, exit_code: 1 }])).toMatchObject({
       ok: false,
       closed_probe_count: 0,
       findings: [
@@ -86,5 +84,46 @@ describe("refusal closure scoring", () => {
         { ...broken, probe_id: "second-broken-probe" },
       ]).findings,
     ).toHaveLength(8);
+  });
+
+  it("compares error codes, complete domains, and shell-free retry arguments", () => {
+    const report = scorePmRefusalClosure([
+      {
+        ...closed,
+        error_code: "command_failed",
+        expected_error_code: "unknown_context_intent",
+        expected_allowed_values: ["handoff", "orient"],
+        suggested_retry_args: ["list", "--for", "wrong"],
+        expected_suggested_retry_args: ["list", "--for", "triage"],
+      },
+    ]);
+    expect(report.findings.map(({ code }) => code)).toEqual([
+      "error_code_mismatch",
+      "incomplete_allowed_values",
+      "suggested_retry_args_mismatch",
+    ]);
+    expect(
+      scorePmRefusalClosure([
+        {
+          ...closed,
+          expected_suggested_retry_args: ["list", "--for", "triage"],
+        },
+      ]).findings,
+    ).toEqual([
+      expect.objectContaining({ code: "missing_suggested_retry_args" }),
+    ]);
+    expect(
+      scorePmRefusalClosure([
+        {
+          ...closed,
+          expected_error_code: "unknown_context_intent",
+        },
+      ]).findings,
+    ).toEqual([
+      expect.objectContaining({
+        code: "error_code_mismatch",
+        detail: expect.stringContaining("<missing>"),
+      }),
+    ]);
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listCoreClosedDomainContracts } from "../../src/sdk/agent/closed-domain-contracts.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("closed-domain recovery envelopes", () => {
@@ -44,78 +45,34 @@ describe("closed-domain recovery envelopes", () => {
       );
       expect(created.code).toBe(0);
 
-      const probes = [
-        {
-          args: ["list", "--for", "invalid"],
-          allowed: ["triage"],
-          retry: "pm list --for triage",
-          retryArgs: ["list", "--for", "triage"],
-        },
-        {
-          args: ["list", "--fields", "invalid"],
-          allowed: ["id", "item.id", "title"],
-          retry: "pm list --fields id,title,status --limit 10",
-          retryArgs: [
-            "list",
-            "--fields",
-            "id,title,status",
-            "--limit",
-            "10",
-          ],
-        },
-        {
-          args: ["get", "pm-domain", "--for", "invalid"],
-          allowed: ["inspect"],
-          retry: "pm get pm-domain --for inspect",
-          retryArgs: ["get", "pm-domain", "--for", "inspect"],
-        },
-        {
-          args: ["search", "Domain query", "--for", "invalid"],
-          allowed: ["discover"],
-          retry: 'pm search "Domain query" --for discover',
-          retryArgs: ["search", "Domain query", "--for", "discover"],
-        },
-        {
-          args: ["get", "pm-domain", "--fields", "invalid"],
-          allowed: ["id", "item.id", "linked.files"],
-          retry: 'pm get pm-domain --fields "id,title,status"',
-          retryArgs: ["get", "pm-domain", "--fields", "id,title,status"],
-        },
-        {
-          args: ["search", "Domain query", "--fields", "invalid"],
-          allowed: ["id", "item.id", "score"],
-          retry:
-            'pm search "Domain query" --fields "id,title,status,score"',
-          retryArgs: [
-            "search",
-            "Domain query",
-            "--fields",
-            "id,title,status,score",
-          ],
-        },
-      ];
-      for (const probe of probes) {
-        const result = context.runCli([...probe.args, "--json"]);
-        expect(result.code, probe.args.join(" ")).toBe(2);
-        const envelope = JSON.parse(result.stderr) as {
+      const contracts = listCoreClosedDomainContracts();
+      expect(contracts).toHaveLength(18);
+      for (const contract of contracts) {
+        const result = context.runCli([...contract.refusal_args, "--json"]);
+        expect(result.code, contract.probe_id).toBe(2);
+        const problemStart = result.stderr.indexOf("{");
+        const envelope = JSON.parse(
+          problemStart >= 0 ? result.stderr.slice(problemStart) : result.stderr,
+        ) as {
+          code: string;
           recovery: {
             allowed_values: string[];
             suggested_retry: string;
             suggested_retry_args: string[];
           };
         };
-        expect(envelope.recovery.allowed_values).toEqual(
-          expect.arrayContaining(probe.allowed),
+        expect(envelope.code).toBe(contract.error_code);
+        expect(envelope.recovery.allowed_values ?? []).toEqual(
+          contract.allowed_values,
         );
-        expect(envelope.recovery.suggested_retry).toBe(probe.retry);
         expect(envelope.recovery.suggested_retry_args).toEqual(
-          probe.retryArgs,
+          contract.suggested_retry_args,
         );
         const retry = context.runCli([
           ...envelope.recovery.suggested_retry_args,
           "--json",
         ]);
-        expect(retry.code, envelope.recovery.suggested_retry).toBe(0);
+        expect(retry.code, contract.probe_id).toBe(0);
       }
     });
   });

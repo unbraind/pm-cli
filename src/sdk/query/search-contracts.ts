@@ -5,10 +5,9 @@
  */
 import { coerceNumberInRange } from "../../core/shared/primitives.js";
 import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { renderPmCommand } from "../command-line.js";
+import { EXIT_CODE, PmCliError } from "../runtime-primitives.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import type { SearchMode } from "./search-rendering.js";
 
@@ -58,7 +57,8 @@ export interface SearchProjectionConfig {
   fields: string[];
 }
 
-const DEFAULT_COMPACT_SEARCH_FIELDS = [
+/** Stable field order for compact search results. */
+export const DEFAULT_COMPACT_SEARCH_FIELDS = [
   "id",
   "title",
   "status",
@@ -69,12 +69,14 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
   "matched_fields",
 ] as const;
 
-const SEARCH_HIT_FIELD_KEYS = new Set([
+/** Search-result fields that live beside the nested item projection. */
+export const SEARCH_HIT_FIELD_KEYS = [
   "score",
   "matched_fields",
   "highlights",
-]);
-const SEARCH_ITEM_FIELD_KEYS = new Set([
+] as const;
+/** Core item fields accepted by explicit search projections. */
+export const SEARCH_ITEM_FIELD_KEYS = [
   "id",
   "title",
   "description",
@@ -129,7 +131,21 @@ const SEARCH_ITEM_FIELD_KEYS = new Set([
   "outcome",
   "why_now",
   "plan",
-]);
+] as const;
+
+/** Return every accepted search projection selector for core and runtime metadata. */
+export function listSearchProjectionFields(
+  runtimeMetadataKeys: Iterable<string> = [],
+): string[] {
+  const runtimeKeys = [...new Set(runtimeMetadataKeys)];
+  return [
+    ...SEARCH_HIT_FIELD_KEYS,
+    ...SEARCH_ITEM_FIELD_KEYS,
+    ...SEARCH_ITEM_FIELD_KEYS.map((field) => `item.${field}`),
+    ...runtimeKeys,
+    ...runtimeKeys.map((field) => `item.${field}`),
+  ].sort();
+}
 
 /** Parse the configured search execution mode. */
 export function parseSearchMode(raw: string | undefined): SearchMode {
@@ -241,6 +257,13 @@ export function parseSearchProjection(
     throw new PmCliError(
       "Search projection options are mutually exclusive. Use one of --compact, --full, or --fields.",
       EXIT_CODE.USAGE,
+      {
+        code: "projection_options_mutually_exclusive",
+        recovery: {
+          suggested_retry: "pm search query --full",
+          suggested_retry_args: ["search", "query", "--full"],
+        },
+      },
     );
   }
   if (compactRequested) {
@@ -258,22 +281,16 @@ export function validateSearchProjectionFields(
   query = "<query>",
 ): void {
   if (projection.mode !== "fields") return;
-  const runtimeKeys = new Set(
+  const allowedValues = listSearchProjectionFields(
     runtimeFieldRegistry.definitions.flatMap((field) => [
       field.key,
       field.metadata_key,
     ]),
   );
-  const allowedValues = new Set([
-    ...SEARCH_HIT_FIELD_KEYS,
-    ...SEARCH_ITEM_FIELD_KEYS,
-    ...[...SEARCH_ITEM_FIELD_KEYS].map((field) => `item.${field}`),
-    ...runtimeKeys,
-    ...[...runtimeKeys].map((field) => `item.${field}`),
-  ]);
+  const allowed = new Set(allowedValues);
   const unknown = projection.fields.filter((field) => {
     const normalized = field.trim();
-    return !allowedValues.has(normalized);
+    return !allowed.has(normalized);
   });
   if (unknown.length > 0) {
     const suggestedRetryArguments = [
@@ -286,6 +303,7 @@ export function validateSearchProjectionFields(
       `Unknown search --fields value(s): ${unknown.join(", ")}`,
       EXIT_CODE.USAGE,
       {
+        code: "unknown_field_projection",
         examples: [
           "pm search <query> --fields id,title,status,score",
           "pm search <query> --fields id,title,item.description,matched_fields",
@@ -294,7 +312,7 @@ export function validateSearchProjectionFields(
           "Use item.<field> for explicit item metadata fields, or run pm search --help for projection examples.",
         ],
         recovery: {
-          allowed_values: [...allowedValues].sort(),
+          allowed_values: allowedValues,
           suggested_retry: renderPmCommand(suggestedRetryArguments),
           suggested_retry_args: suggestedRetryArguments,
         },

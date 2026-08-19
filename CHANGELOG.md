@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The only two flags that make a read cheap are the only two whose closed value domain no refusal and no help text ever names ([pm-gy885b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gy885b.toon))
+
+### Other
+
+- Flag lexicon conformance: one spelling per concept across every command, machine-checked, with a declared per-command flag budget ([pm-fs8q9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fs8q9x.toon))
+
 ## 2026.8.19 - 2026-08-19
 
 ### Fixed

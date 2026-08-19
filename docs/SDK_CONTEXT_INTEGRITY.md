@@ -2,6 +2,8 @@
 
 Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon), [pm-mcxk8v](../.agents/pm/issues/pm-mcxk8v.toon), and [pm-2zkvxm](../.agents/pm/issues/pm-2zkvxm.toon).
 
+Current closure tranche: [pm-fs8q9x](../.agents/pm/tasks/pm-fs8q9x.toon), [pm-gy885b](../.agents/pm/issues/pm-gy885b.toon), and [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon).
+
 ## Agent Quick Context
 
 These contracts keep project management equal to context management: reads say what they omit, writes return only newly useful context, diagnostics do not unexpectedly call remote providers, and every transport delegates domain validation to the same SDK primitive. Package authors can use the same primitives without reproducing CLI parsing rules.
@@ -74,6 +76,39 @@ The structured `option_scope` is `declared_on_path`, `declared_elsewhere`, or
 case, while the third names the nearest current-path spellings and explicitly
 terminates the otherwise-unbounded command search.
 
+## Semantic flag and spelling contracts
+
+`listPmFlagLexicon()` classifies flags by meaning rather than spelling alone.
+For example, `--limit` is the shared `result-row-limit` concept, while
+`--node-limit`, `--edge-limit`, `--output-limit`, `--output-budget`, and
+`--token-budget` retain distinct graph, serialization, and intent-budget
+semantics. Command-local overloads such as `--file` are explicitly separated
+into linked-file, annotation-input, and plan-definition concepts.
+
+`listPmFlagSpellingInventory()` publishes every canonical spelling and every
+accepted compatibility alias. The repository gate compares it with
+`scripts/release/flag-spelling-baseline.json`; removing either a canonical flag
+or an established alias fails closed. A separate generated help baseline
+records UTF-8 size, estimated tokens, and per-command deltas, so a vocabulary
+change cannot silently expand the agent discovery surface. Refreshing either
+baseline is an explicit reviewed operation through
+`node scripts/release/flag-lexicon-gate.mjs --update-inventory`.
+
+## Closed-domain refusal contracts
+
+`listCoreClosedDomainContracts()` is the SDK-owned registry for every built-in
+`--for` intent and `--fields` projection refusal. It derives projection values
+from the list, get, and search query modules and covers all eight list-family
+entrypoints. CLI help uses the same registry, representing `item.<field>` and
+runtime-schema extensions with compact generative notation instead of
+repeating every alias.
+
+The executable gate derives its refusal corpus from this registry, requires
+the exact error code, complete `allowed_values`, shell-free
+`suggested_retry_args`, and a successful retry, then compares probe identities
+with `scripts/release/refusal-closure-baseline.json`. Adding a new core domain
+without a probe or removing historical coverage therefore fails CI.
+
 ## Executable recovery-reference coverage
 
 Structured refusal guidance is a forward-reference contract, not decorative
@@ -88,6 +123,12 @@ generated read-output contracts, so tests cannot silently omit a producer
 family. Each obligation declares `recovery`, `replacement`, or
 `behavior_preserving` semantics and its proof must demonstrate the same
 promise.
+
+`verifyPmRecoveryProducerRuntimeCoverage` joins the syntax-aware complete
+source census to distinct emitted values for every typed kind. Its receipt
+retains both denominators and fails when a kind has source producers but no
+runtime evidence, preventing a representative recovery example from masking
+an entirely unexecuted producer family.
 
 The repository integration corpus drives real CLI refusals, executes the
 emitted retry in a temporary tracker, compares candidate commands with the

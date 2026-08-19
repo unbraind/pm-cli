@@ -1,0 +1,425 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "command": "init",
+      "help_bytes": 1827,
+      "estimated_tokens": 457,
+      "maximum_tokens": 457
+    },
+    {
+      "command": "config",
+      "help_bytes": 4107,
+      "estimated_tokens": 1027,
+      "maximum_tokens": 1027
+    },
+    {
+      "command": "extension",
+      "help_bytes": 5978,
+      "estimated_tokens": 1495,
+      "maximum_tokens": 1495
+    },
+    {
+      "command": "package",
+      "help_bytes": 6082,
+      "estimated_tokens": 1521,
+      "maximum_tokens": 1521
+    },
+    {
+      "command": "packages",
+      "help_bytes": 6082,
+      "estimated_tokens": 1521,
+      "maximum_tokens": 1521
+    },
+    {
+      "command": "install",
+      "help_bytes": 716,
+      "estimated_tokens": 179,
+      "maximum_tokens": 179
+    },
+    {
+      "command": "upgrade",
+      "help_bytes": 1036,
+      "estimated_tokens": 259,
+      "maximum_tokens": 259
+    },
+    {
+      "command": "create",
+      "help_bytes": 7563,
+      "estimated_tokens": 1891,
+      "maximum_tokens": 1891
+    },
+    {
+      "command": "copy",
+      "help_bytes": 461,
+      "estimated_tokens": 116,
+      "maximum_tokens": 116
+    },
+    {
+      "command": "focus",
+      "help_bytes": 266,
+      "estimated_tokens": 67,
+      "maximum_tokens": 67
+    },
+    {
+      "command": "list",
+      "help_bytes": 7811,
+      "estimated_tokens": 1953,
+      "maximum_tokens": 1953
+    },
+    {
+      "command": "list-all",
+      "help_bytes": 7721,
+      "estimated_tokens": 1931,
+      "maximum_tokens": 1931
+    },
+    {
+      "command": "list-draft",
+      "help_bytes": 7575,
+      "estimated_tokens": 1894,
+      "maximum_tokens": 1894
+    },
+    {
+      "command": "list-open",
+      "help_bytes": 7573,
+      "estimated_tokens": 1894,
+      "maximum_tokens": 1894
+    },
+    {
+      "command": "list-in-progress",
+      "help_bytes": 7587,
+      "estimated_tokens": 1897,
+      "maximum_tokens": 1897
+    },
+    {
+      "command": "list-blocked",
+      "help_bytes": 7646,
+      "estimated_tokens": 1912,
+      "maximum_tokens": 1912
+    },
+    {
+      "command": "list-closed",
+      "help_bytes": 7577,
+      "estimated_tokens": 1895,
+      "maximum_tokens": 1895
+    },
+    {
+      "command": "list-canceled",
+      "help_bytes": 7581,
+      "estimated_tokens": 1896,
+      "maximum_tokens": 1896
+    },
+    {
+      "command": "aggregate",
+      "help_bytes": 1405,
+      "estimated_tokens": 352,
+      "maximum_tokens": 352
+    },
+    {
+      "command": "context",
+      "help_bytes": 2563,
+      "estimated_tokens": 641,
+      "maximum_tokens": 641
+    },
+    {
+      "command": "ctx",
+      "help_bytes": 2563,
+      "estimated_tokens": 641,
+      "maximum_tokens": 641
+    },
+    {
+      "command": "get",
+      "help_bytes": 2577,
+      "estimated_tokens": 645,
+      "maximum_tokens": 645
+    },
+    {
+      "command": "graph",
+      "help_bytes": 2427,
+      "estimated_tokens": 607,
+      "maximum_tokens": 607
+    },
+    {
+      "command": "search",
+      "help_bytes": 6910,
+      "estimated_tokens": 1728,
+      "maximum_tokens": 1728
+    },
+    {
+      "command": "duplicates",
+      "help_bytes": 486,
+      "estimated_tokens": 122,
+      "maximum_tokens": 122
+    },
+    {
+      "command": "eval",
+      "help_bytes": 887,
+      "estimated_tokens": 222,
+      "maximum_tokens": 222
+    },
+    {
+      "command": "next",
+      "help_bytes": 1681,
+      "estimated_tokens": 421,
+      "maximum_tokens": 421
+    },
+    {
+      "command": "history",
+      "help_bytes": 1639,
+      "estimated_tokens": 410,
+      "maximum_tokens": 410
+    },
+    {
+      "command": "events",
+      "help_bytes": 1626,
+      "estimated_tokens": 407,
+      "maximum_tokens": 407
+    },
+    {
+      "command": "history-redact",
+      "help_bytes": 772,
+      "estimated_tokens": 193,
+      "maximum_tokens": 193
+    },
+    {
+      "command": "history-repair",
+      "help_bytes": 856,
+      "estimated_tokens": 214,
+      "maximum_tokens": 214
+    },
+    {
+      "command": "history-compact",
+      "help_bytes": 1188,
+      "estimated_tokens": 297,
+      "maximum_tokens": 297
+    },
+    {
+      "command": "history-author-acknowledge",
+      "help_bytes": 706,
+      "estimated_tokens": 177,
+      "maximum_tokens": 177
+    },
+    {
+      "command": "merge",
+      "help_bytes": 1444,
+      "estimated_tokens": 361,
+      "maximum_tokens": 361
+    },
+    {
+      "command": "schema",
+      "help_bytes": 3195,
+      "estimated_tokens": 799,
+      "maximum_tokens": 799
+    },
+    {
+      "command": "profile",
+      "help_bytes": 590,
+      "estimated_tokens": 148,
+      "maximum_tokens": 148
+    },
+    {
+      "command": "activity",
+      "help_bytes": 1643,
+      "estimated_tokens": 411,
+      "maximum_tokens": 411
+    },
+    {
+      "command": "restore",
+      "help_bytes": 381,
+      "estimated_tokens": 96,
+      "maximum_tokens": 96
+    },
+    {
+      "command": "update",
+      "help_bytes": 8346,
+      "estimated_tokens": 2087,
+      "maximum_tokens": 2087
+    },
+    {
+      "command": "update-many",
+      "help_bytes": 11208,
+      "estimated_tokens": 2802,
+      "maximum_tokens": 2802
+    },
+    {
+      "command": "close",
+      "help_bytes": 1647,
+      "estimated_tokens": 412,
+      "maximum_tokens": 412
+    },
+    {
+      "command": "close-many",
+      "help_bytes": 6702,
+      "estimated_tokens": 1676,
+      "maximum_tokens": 1676
+    },
+    {
+      "command": "delete",
+      "help_bytes": 402,
+      "estimated_tokens": 101,
+      "maximum_tokens": 101
+    },
+    {
+      "command": "append",
+      "help_bytes": 488,
+      "estimated_tokens": 122,
+      "maximum_tokens": 122
+    },
+    {
+      "command": "comments",
+      "help_bytes": 1196,
+      "estimated_tokens": 299,
+      "maximum_tokens": 299
+    },
+    {
+      "command": "notes",
+      "help_bytes": 1218,
+      "estimated_tokens": 305,
+      "maximum_tokens": 305
+    },
+    {
+      "command": "learnings",
+      "help_bytes": 1266,
+      "estimated_tokens": 317,
+      "maximum_tokens": 317
+    },
+    {
+      "command": "files",
+      "help_bytes": 1886,
+      "estimated_tokens": 472,
+      "maximum_tokens": 472
+    },
+    {
+      "command": "docs",
+      "help_bytes": 1127,
+      "estimated_tokens": 282,
+      "maximum_tokens": 282
+    },
+    {
+      "command": "deps",
+      "help_bytes": 1183,
+      "estimated_tokens": 296,
+      "maximum_tokens": 296
+    },
+    {
+      "command": "plan",
+      "help_bytes": 9112,
+      "estimated_tokens": 2278,
+      "maximum_tokens": 2278
+    },
+    {
+      "command": "test",
+      "help_bytes": 3474,
+      "estimated_tokens": 869,
+      "maximum_tokens": 869
+    },
+    {
+      "command": "test-all",
+      "help_bytes": 2177,
+      "estimated_tokens": 545,
+      "maximum_tokens": 545
+    },
+    {
+      "command": "telemetry",
+      "help_bytes": 530,
+      "estimated_tokens": 133,
+      "maximum_tokens": 133
+    },
+    {
+      "command": "stats",
+      "help_bytes": 1328,
+      "estimated_tokens": 332,
+      "maximum_tokens": 332
+    },
+    {
+      "command": "health",
+      "help_bytes": 1937,
+      "estimated_tokens": 485,
+      "maximum_tokens": 485
+    },
+    {
+      "command": "validate",
+      "help_bytes": 4119,
+      "estimated_tokens": 1030,
+      "maximum_tokens": 1030
+    },
+    {
+      "command": "assurance",
+      "help_bytes": 838,
+      "estimated_tokens": 210,
+      "maximum_tokens": 210
+    },
+    {
+      "command": "gc",
+      "help_bytes": 497,
+      "estimated_tokens": 125,
+      "maximum_tokens": 125
+    },
+    {
+      "command": "workspace",
+      "help_bytes": 439,
+      "estimated_tokens": 110,
+      "maximum_tokens": 110
+    },
+    {
+      "command": "contracts",
+      "help_bytes": 948,
+      "estimated_tokens": 237,
+      "maximum_tokens": 237
+    },
+    {
+      "command": "claim",
+      "help_bytes": 1444,
+      "estimated_tokens": 361,
+      "maximum_tokens": 361
+    },
+    {
+      "command": "release",
+      "help_bytes": 281,
+      "estimated_tokens": 71,
+      "maximum_tokens": 71
+    },
+    {
+      "command": "start-task",
+      "help_bytes": 339,
+      "estimated_tokens": 85,
+      "maximum_tokens": 85
+    },
+    {
+      "command": "pause-task",
+      "help_bytes": 329,
+      "estimated_tokens": 83,
+      "maximum_tokens": 83
+    },
+    {
+      "command": "close-task",
+      "help_bytes": 506,
+      "estimated_tokens": 127,
+      "maximum_tokens": 127
+    },
+    {
+      "command": "meet",
+      "help_bytes": 1054,
+      "estimated_tokens": 264,
+      "maximum_tokens": 264
+    },
+    {
+      "command": "event",
+      "help_bytes": 1054,
+      "estimated_tokens": 264,
+      "maximum_tokens": 264
+    },
+    {
+      "command": "remind",
+      "help_bytes": 752,
+      "estimated_tokens": 188,
+      "maximum_tokens": 188
+    },
+    {
+      "command": "test-runs-worker",
+      "help_bytes": 175,
+      "estimated_tokens": 44,
+      "maximum_tokens": 44
+    }
+  ]
+}

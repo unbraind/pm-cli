@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1723,
+    "covered_symbols": 1731,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1724
+    "required_symbols": 1732
   },
   "breaking_acknowledgements": [
     {
@@ -852,6 +852,22 @@
       ],
       "package_version": "2026.8.18",
       "reason": "Add optional operand-preserving recovery argv parameters and structured retry metadata while retaining existing call compatibility"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmFlagLexiconFinding",
+        "signature ./sdk:PmFlagLexiconReport",
+        "signature ./sdk:PmRefusalClosureFinding",
+        "signature ./sdk:PmRefusalClosureObservation",
+        "signature ./sdk:verifyPmFlagLexicon",
+        "signature ./sdk/contracts:PmFlagLexiconFinding",
+        "signature ./sdk/contracts:PmFlagLexiconReport",
+        "signature ./sdk/contracts:PmRefusalClosureFinding",
+        "signature ./sdk/contracts:PmRefusalClosureObservation",
+        "signature ./sdk/contracts:verifyPmFlagLexicon"
+      ],
+      "package_version": "2026.8.19",
+      "reason": "pm-fs8q9x pm-f05lsg: add semantic spelling baselines and exact recovery contract evidence"
     }
   ],
   "entrypoints": {
@@ -6049,6 +6065,12 @@
           "signature": "<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options> | calls: <Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options>"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "GET_DEPTH_VALUES",
+          "signature": "readonly [\"brief\", \"standard\", \"deep\"]"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "GET_FLAG_CONTRACTS",
@@ -7669,6 +7691,12 @@
           "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: \"compact\"; fields: string[]; }; sorting?: undefined; now?: undefined; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listCoreClosedDomainContracts",
+          "signature": "() => PmClosedDomainContract[] | calls: () => PmClosedDomainContract[]"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ListedItem",
@@ -7683,8 +7711,20 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "listGetProjectionFields",
+          "signature": "(runtimeMetadataKeys?: Iterable<string>) => string[] | calls: (runtimeMetadataKeys?: Iterable<string>) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "listInvalidProvenanceHistoryStreamIds",
           "signature": "(pmRoot: string) => Promise<string[]> | calls: (pmRoot: string) => Promise<string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "listListProjectionFields",
+          "signature": "(runtimeMetadataKeys?: Iterable<string>) => string[] | calls: (runtimeMetadataKeys?: Iterable<string>) => string[]"
         },
         {
           "classification": "supported",
@@ -7739,6 +7779,12 @@
           "kind": "function",
           "name": "listPmFlagLexicon",
           "signature": "() => readonly PmFlagLexiconEntry[] | calls: () => readonly PmFlagLexiconEntry[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listPmFlagSpellingInventory",
+          "signature": "() => readonly PmFlagSpellingInventoryEntry[] | calls: () => readonly PmFlagSpellingInventoryEntry[]"
         },
         {
           "classification": "advanced_export",
@@ -9728,6 +9774,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmClosedDomainContract",
+          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmCloseManyActionOptions",
           "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
@@ -10054,13 +10106,19 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmFlagLexiconFinding",
-          "signature": "export interface PmFlagLexiconFinding { code: \"alias_collision\" | \"budget_exceeded\" | \"duplicate_canonical_flag\" | \"inconsistent_concept_kind\" | \"missing_budget\" | \"stale_budget\"; command: string; detail: string; }"
+          "signature": "export interface PmFlagLexiconFinding { code: \"alias_collision\" | \"budget_exceeded\" | \"duplicate_canonical_flag\" | \"inconsistent_concept_kind\" | \"missing_budget\" | \"removed_canonical_spelling\" | \"removed_compatibility_spelling\" | \"semantic_spelling_collision\" | \"stale_budget\"; command: string; detail: string; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmFlagLexiconReport",
-          "signature": "export interface PmFlagLexiconReport { ok: boolean; entry_count: number; budget_count: number; findings: readonly PmFlagLexiconFinding[]; }"
+          "signature": "export interface PmFlagLexiconReport { ok: boolean; entry_count: number; budget_count: number; concept_count: number; baseline_entry_count: number; findings: readonly PmFlagLexiconFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagSpellingInventoryEntry",
+          "signature": "export interface PmFlagSpellingInventoryEntry { command: string; canonical_flag: string; accepted_spellings: readonly string[]; }"
         },
         {
           "classification": "contract_data",
@@ -10329,6 +10387,18 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "PmRecoveryProducerRuntimeCoverage",
+          "signature": "export interface PmRecoveryProducerRuntimeCoverage { kind: PmRecoveryReferenceKind; source_producers: number; runtime_values: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRecoveryProducerRuntimeReport",
+          "signature": "export interface PmRecoveryProducerRuntimeReport { ok: boolean; source_producer_count: number; runtime_value_count: number; coverage_by_kind: PmRecoveryProducerRuntimeCoverage[]; missing_runtime_kinds: PmRecoveryReferenceKind[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "PmRecoveryProducerSource",
           "signature": "export interface PmRecoveryProducerSource { path: string; content: string; }"
         },
@@ -10378,13 +10448,13 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmRefusalClosureFinding",
-          "signature": "export interface PmRefusalClosureFinding { code: \"accepted_rejected_value\" | \"duplicate_probe\" | \"empty_corpus\" | \"missing_allowed_values\" | \"missing_suggested_retry\" | \"non_refusal_exit\" | \"retry_failed\"; probe_id: string; detail: string; }"
+          "signature": "export interface PmRefusalClosureFinding { code: \"accepted_rejected_value\" | \"duplicate_probe\" | \"error_code_mismatch\" | \"empty_corpus\" | \"incomplete_allowed_values\" | \"missing_allowed_values\" | \"missing_suggested_retry_args\" | \"missing_suggested_retry\" | \"non_refusal_exit\" | \"suggested_retry_args_mismatch\" | \"retry_failed\"; probe_id: string; detail: string; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmRefusalClosureObservation",
-          "signature": "export interface PmRefusalClosureObservation { probe_id: string; entrypoint: string; exit_code: number; rejected_value: string; allowed_values: readonly string[]; suggested_retry: string; retry_succeeded: boolean; }"
+          "signature": "export interface PmRefusalClosureObservation { probe_id: string; entrypoint: string; exit_code: number; rejected_value: string; allowed_values: readonly string[]; error_code?: string; expected_error_code?: string; expected_allowed_values?: readonly string[]; allowed_values_required?: boolean; suggested_retry: string; suggested_retry_args?: readonly string[]; expected_suggested_retry_args?: readonly string[]; retry_succeeded: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -12179,6 +12249,12 @@
           "kind": "function",
           "name": "renderNextMarkdown",
           "signature": "(result: NextResult) => string | calls: (result: NextResult) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "renderPmClosedDomainHelp",
+          "signature": "(command: string, flag: \"--fields\" | \"--for\") => string | calls: (command: string, flag: \"--fields\" | \"--for\") => string"
         },
         {
           "classification": "advanced_export",
@@ -15862,7 +15938,13 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "verifyPmFlagLexicon",
-          "signature": "(entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport | calls: (entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport"
+          "signature": "(entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[], baseline?: readonly PmFlagSpellingInventoryEntry[]) => PmFlagLexiconReport | calls: (entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[], baseline?: readonly PmFlagSpellingInventoryEntry[]) => PmFlagLexiconReport"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "verifyPmRecoveryProducerRuntimeCoverage",
+          "signature": "(census: PmRecoveryProducerCensusReport, obligations: readonly PmRecoveryReferenceObligation[]) => PmRecoveryProducerRuntimeReport | calls: (census: PmRecoveryProducerCensusReport, obligations: readonly PmRecoveryReferenceObligation[]) => PmRecoveryProducerRuntimeReport"
         },
         {
           "classification": "advanced_export",
@@ -18303,6 +18385,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "listCoreClosedDomainContracts",
+          "signature": "() => PmClosedDomainContract[] | calls: () => PmClosedDomainContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "listPmCommandFlagBudgets",
           "signature": "() => readonly PmCommandFlagBudget[] | calls: () => readonly PmCommandFlagBudget[]"
         },
@@ -18311,6 +18399,12 @@
           "kind": "function",
           "name": "listPmFlagLexicon",
           "signature": "() => readonly PmFlagLexiconEntry[] | calls: () => readonly PmFlagLexiconEntry[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listPmFlagSpellingInventory",
+          "signature": "() => readonly PmFlagSpellingInventoryEntry[] | calls: () => readonly PmFlagSpellingInventoryEntry[]"
         },
         {
           "classification": "contract_data",
@@ -18698,6 +18792,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmClosedDomainContract",
+          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmCloseManyActionOptions",
           "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
@@ -18928,13 +19028,19 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmFlagLexiconFinding",
-          "signature": "export interface PmFlagLexiconFinding { code: \"alias_collision\" | \"budget_exceeded\" | \"duplicate_canonical_flag\" | \"inconsistent_concept_kind\" | \"missing_budget\" | \"stale_budget\"; command: string; detail: string; }"
+          "signature": "export interface PmFlagLexiconFinding { code: \"alias_collision\" | \"budget_exceeded\" | \"duplicate_canonical_flag\" | \"inconsistent_concept_kind\" | \"missing_budget\" | \"removed_canonical_spelling\" | \"removed_compatibility_spelling\" | \"semantic_spelling_collision\" | \"stale_budget\"; command: string; detail: string; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmFlagLexiconReport",
-          "signature": "export interface PmFlagLexiconReport { ok: boolean; entry_count: number; budget_count: number; findings: readonly PmFlagLexiconFinding[]; }"
+          "signature": "export interface PmFlagLexiconReport { ok: boolean; entry_count: number; budget_count: number; concept_count: number; baseline_entry_count: number; findings: readonly PmFlagLexiconFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmFlagSpellingInventoryEntry",
+          "signature": "export interface PmFlagSpellingInventoryEntry { command: string; canonical_flag: string; accepted_spellings: readonly string[]; }"
         },
         {
           "classification": "contract_data",
@@ -19102,13 +19208,13 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmRefusalClosureFinding",
-          "signature": "export interface PmRefusalClosureFinding { code: \"accepted_rejected_value\" | \"duplicate_probe\" | \"empty_corpus\" | \"missing_allowed_values\" | \"missing_suggested_retry\" | \"non_refusal_exit\" | \"retry_failed\"; probe_id: string; detail: string; }"
+          "signature": "export interface PmRefusalClosureFinding { code: \"accepted_rejected_value\" | \"duplicate_probe\" | \"error_code_mismatch\" | \"empty_corpus\" | \"incomplete_allowed_values\" | \"missing_allowed_values\" | \"missing_suggested_retry_args\" | \"missing_suggested_retry\" | \"non_refusal_exit\" | \"suggested_retry_args_mismatch\" | \"retry_failed\"; probe_id: string; detail: string; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmRefusalClosureObservation",
-          "signature": "export interface PmRefusalClosureObservation { probe_id: string; entrypoint: string; exit_code: number; rejected_value: string; allowed_values: readonly string[]; suggested_retry: string; retry_succeeded: boolean; }"
+          "signature": "export interface PmRefusalClosureObservation { probe_id: string; entrypoint: string; exit_code: number; rejected_value: string; allowed_values: readonly string[]; error_code?: string; expected_error_code?: string; expected_allowed_values?: readonly string[]; allowed_values_required?: boolean; suggested_retry: string; suggested_retry_args?: readonly string[]; expected_suggested_retry_args?: readonly string[]; retry_succeeded: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -19223,6 +19329,12 @@
           "kind": "value",
           "name": "REMIND_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "renderPmClosedDomainHelp",
+          "signature": "(command: string, flag: \"--fields\" | \"--for\") => string | calls: (command: string, flag: \"--fields\" | \"--for\") => string"
         },
         {
           "classification": "contract_data",
@@ -19636,7 +19748,7 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "verifyPmFlagLexicon",
-          "signature": "(entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport | calls: (entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[]) => PmFlagLexiconReport"
+          "signature": "(entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[], baseline?: readonly PmFlagSpellingInventoryEntry[]) => PmFlagLexiconReport | calls: (entries?: readonly PmFlagLexiconEntry[], budgets?: readonly PmCommandFlagBudget[], baseline?: readonly PmFlagSpellingInventoryEntry[]) => PmFlagLexiconReport"
         },
         {
           "classification": "contract_data",
@@ -24482,6 +24594,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "GET_DEPTH_VALUES",
+          "signature": "readonly [\"brief\", \"standard\", \"deep\"]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "GetOptions",
           "signature": "export interface GetOptions { depth?: string; fields?: string; full?: boolean; tree?: boolean; treeDepth?: string; at?: string; }"
@@ -24629,6 +24747,18 @@
           "kind": "interface",
           "name": "ListFullResult",
           "signature": "export interface ListFullResult extends ListVerboseResult { items: Array<ListedItem | ListTreeItem>; projection: { mode: \"full\"; fields: null; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "listGetProjectionFields",
+          "signature": "(runtimeMetadataKeys?: Iterable<string>) => string[] | calls: (runtimeMetadataKeys?: Iterable<string>) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "listListProjectionFields",
+          "signature": "(runtimeMetadataKeys?: Iterable<string>) => string[] | calls: (runtimeMetadataKeys?: Iterable<string>) => string[]"
         },
         {
           "classification": "supported",
@@ -28729,6 +28859,7 @@
     "duplicate_target_self",
     "empty_corpus",
     "empty_surface",
+    "error_code_mismatch",
     "event_cursor_query_mismatch",
     "event_index_unavailable",
     "extension_command_activation_failed",
@@ -28771,6 +28902,7 @@
     "host_environment_resource_fault",
     "improvement_metric_contract_conflict",
     "improvement_observation_conflict",
+    "incomplete_allowed_values",
     "inconsistent_concept_kind",
     "init_existing_settings_requires_force",
     "init_gitignore_unwritable",
@@ -28837,6 +28969,7 @@
     "missing_required_argument",
     "missing_required_option",
     "missing_suggested_retry",
+    "missing_suggested_retry_args",
     "module_import_failed",
     "multi_target_github_install_ambiguous",
     "mutation_author_required",
@@ -28861,15 +28994,19 @@
     "profile_title_empty",
     "project_runtime_stale_mutation",
     "project_runtime_stale_read",
+    "projection_options_mutually_exclusive",
     "provenance_value_domain_invalid",
     "read_output_cursor_command_mismatch",
     "read_output_cursor_invalid",
     "read_output_cursor_stale",
     "redundant_edge",
     "reindex_already_running",
+    "removed_canonical_spelling",
+    "removed_compatibility_spelling",
     "reserved_item_field",
     "retry_failed",
     "schema_migration_input_required",
+    "semantic_spelling_collision",
     "settings_read_fs_error",
     "settings_read_invalid_json",
     "settings_read_invalid_schema",
@@ -28886,6 +29023,7 @@
     "structured_event_json_empty",
     "structured_event_json_invalid",
     "structured_event_since_invalid",
+    "suggested_retry_args_mismatch",
     "telemetry_endpoint_probe_failed",
     "telemetry_endpoint_probe_http_status",
     "telemetry_otel_export_failing",

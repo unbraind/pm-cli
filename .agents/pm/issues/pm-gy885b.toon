@@ -2,17 +2,22 @@ id: pm-gy885b
 title: The only two flags that make a read cheap are the only two whose closed value domain no refusal and no help text ever names
 description: "Thirteen of fifteen closed value domains teach an agent the legal set at the moment it guesses wrong. The two exceptions are exactly the two flags whose entire purpose is to reduce the number of tokens a command emits, so the only two levers that make pm cheap are the only two an agent cannot learn to use without reading our source.\n\nMeasured live on 2026-08-01 at 2026.8.1 by passing a deliberately invalid value to each flag and reading the refusal:\n\nDomains that ARE enumerated in the refusal, complete and untruncated: list --type (11 types), list --priority (0..4), list --format (5 encodings), create positional type (11 plus a schema add-type hint), update --severity (4), update --confidence (integer range plus 4 names), update --priority (5 numbers and 5 names with their meanings), update --dep kind (all 15 spellings), update --risk (4), search --format (3), graph subcommand (all 16), schema add-status --role (9 roles), get --depth (4).\n\nDomains that are NOT enumerated: \n- list --fields BOGUS returns \"Unknown list --fields value(s): BOGUS\" with three worked examples and no legal set. The recovery bundle echoes provided_fields \"--fields\" and stops. The real domain is at least the 24 keys that list --full --json projects.\n- list --for BOGUS returns a single nearest-match guess (\"Did you mean triage?\") and the instruction \"Use a declared list intent\", whose own Examples block points at pm --help and pm COMMAND --help. There are exactly six declared intents across five commands (context orient, context handoff, get inspect, list triage, next execute, search discover) and no surface renders that set.\n\nThe help surface does not close either gap, and for --fields it actively misleads: pm list --help renders \"Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full; valid: --fields id,title)\". The word \"valid\" introduces what is an example, so a reader who trusts the help concludes the domain has two members. pm list --help renders --for as \"Apply a declared context intent projection\" with no domain at all.\n\nConsequence, and why this belongs to the cost programme rather than to error-message polish: an agent that cannot learn the projection vocabulary falls back to the default or to --full, which is the single most expensive form the command has. Measured on this tracker at 2026.8.1, plain list --json is 74,457 bytes; the same query under --for triage --token-budget 3000 is 15,164 bytes. The lever exists, it works, and it is undiscoverable.\n\nScope fence. This is value-domain reachability for flags whose domain is closed and known at the failure site. It is not the subcommand-token contract (pm-185870), not the unknown-option suggester or same-command flag hints (pm-gdi7), not the cross-command flag hint truncation (pm-yqe0mo), and not the projection mechanism itself (pm-cxr0jb, which works). It is the discovery half of the flag lexicon that pm-fs8q9x governs.\n\nProposed resolution: derive both domains from the contract table that already holds them, render them in the refusal envelope untruncated alongside the nearest-match suggestion, render them in the help text for the flag, and add a conformance check that fails the build when any flag with a contract-declared closed domain refuses a value without naming that domain."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ergonomics,discoverability,token-efficiency
 created_at: "2026-08-01T13:03:37.512Z"
-updated_at: "2026-08-18T21:13:52.133Z"
+updated_at: "2026-08-19T06:22:41.291Z"
+closed_at: "2026-08-19T05:47:36.710Z"
+completed_at: "2026-08-19T05:47:36.710Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A refusal on any flag with a contract-declared closed domain renders that domain in full, untruncated, in both the human and the json envelope; list --fields BOGUS names every projectable field for that command, and the same holds for every command in the list family plus get and search; list --for BOGUS names all declared intents for that command rather than a single nearest-match guess, and the same holds for context, get, next and search; Help text for --fields and --for renders the domain rather than an example, and the word valid never precedes a proper subset; A conformance check fails the build when a flag with a contract-declared closed domain refuses a value without naming the domain, with a negative control proving the check can fail"
 parent: pm-mpbb
 risk: medium
 confidence: 90
+resolution: fixed
+expected_result: "Every contract-declared field and intent domain is fully discoverable in help and refusals, with a failing conformance negative control."
+actual_result: One SDK registry drives complete domains for 18 executable context/list/get/search/next refusal-and-retry probes and their help surfaces.
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-185870,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-5t33or,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
@@ -22,17 +27,42 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-yqe0mo,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,blocked_by,"2026-08-01T13:10:32.187Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-18T19:18:06.247Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:36.187Z","harness:codex","Tranche evidence: unknown context intent and list/get/search field refusals now carry complete allowed_values plus executable suggested retries in JSON recovery envelopes; real CLI integration tests cover intent and fields, and the closure scorer executes advertised retries. Remaining acceptance: derive every list-family/get/search/context/next closed domain into both human refusal and help text and add the full contract-derived conformance corpus. Returning open and releasing ownership."
-files[5]{path,scope,note}:
+  "2026-08-19T04:10:05.658Z","harness:codex","Implementation start 2026-08-19: derive all context-intent and field-projection closed domains into human help plus structured refusal contracts across list/get/search/context/next, with executable conformance coverage. This item is actively edited in the combined recovery-contract PR."
+  "2026-08-19T05:28:36.473Z","harness:codex","Completion evidence 2026-08-19: one public SDK closed-domain registry now drives complete --for and --fields help plus executable refusals across context, next, get, search, and all eight list-family commands. List/get/search projection validators expose their stable core fields; unknown search fields now carry the missing stable error code; mutual exclusions return exact shell-free suggested_retry_args preserving positional operands. The generated 18-probe integration executes every refusal and retry, including deprecated aliases with compatibility prelude. Full suite 7,597/7,597 and exact 100/100/100/100 coverage pass; packed npm/Bun acceptance verified the SDK registry and a real unknown_field_projection envelope."
+  "2026-08-19T05:47:17.845Z","harness:codex","Final acceptance evidence 2026-08-19: list/get/search help now renders the complete stable core --fields domain and never labels a proper subset as valid; configured runtime-field extensibility remains explicit. The packed 2026.8.19 artifact returned unknown_field_projection with the complete recovery.allowed_values domain including why_now and exact suggested_retry_args, while Node and Bun imported all 18 SDK closed-domain contracts. Final exact coverage is 100/100/100/100 across 7,598 tests and all static release gates pass."
+  "2026-08-19T06:22:41.291Z","harness:codex","Defect-evidence governance 2026-08-19: classified this missing closed-domain recovery contract as a production_defect. The new closed-domain-refusal-closure gate executes 18 real refusal/retry probes; its focused unit spec contains malformed-corpus negative controls and standalone failure-status coverage. Local exact coverage and defect-evidence checks plus hosted static/coverage gates own the regression contract; no waiver is used."
+learnings[1]{created_at,author,text}:
+  "2026-08-19T05:28:37.091Z","harness:codex","Closed domains remain truthful only when help, validation, recovery envelopes, SDK consumers, and assurance probes read one registry. Compatibility notices may precede structured stderr, so automation should locate the JSON problem document rather than assuming byte zero."
+files[11]{path,scope,note}:
+  sdk/public-surface.json,project,public closed-domain SDK exports
+  src/cli/register-list-query.ts,project,registry-derived complete-domain help
+  src/sdk/agent/closed-domain-contracts.ts,project,shared closed-domain SDK registry
   src/sdk/context-intent-contracts.ts,project,Active command contract and recovery conformance implementation
   src/sdk/query/get.ts,project,Active command contract and recovery conformance implementation
   src/sdk/query/list.ts,project,Active command contract and recovery conformance implementation
   src/sdk/query/search-contracts.ts,project,Active command contract and recovery conformance implementation
+  tests/fixtures/contracts/full.json,project,generated complete-domain help and recovery contracts
   tests/integration/closed-domain-recovery.integration.spec.ts,project,Active command contract and recovery conformance implementation
-tests[1]{command,scope,timeout_seconds}:
+  tests/integration/release-readiness-runtime.spec.ts,project,Help renders complete domains without endorsing proper subsets
+  tests/unit/sdk/agent/closed-domain-contracts.spec.ts,project,registry unit coverage
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,project,240
+  node scripts/release/refusal-closure-gate.mjs,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msz5i36u-t3k4zt,test,passed,"2026-08-18T21:04:23.570Z","2026-08-18T21:04:33.702Z","2026-08-18T21:04:33.702Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.8.17 generated closed-domain delivery entry
+  docs/SDK_CONTEXT_INTEGRITY.md,project,closed-domain SDK and CLI contract
+close_reason: "Delivered the shared SDK closed-domain registry, complete help domains, structured refusal recovery, real retry execution, and exact 100% repository verification."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gy885b
+  gate_id: closed-domain-refusal-closure
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts
+  local_checks[3]: node scripts/release/refusal-closure-gate.mjs,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
