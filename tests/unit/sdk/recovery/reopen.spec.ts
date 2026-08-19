@@ -4,9 +4,13 @@ import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
-import { mutateItemWithHistoryContext } from "../../../../src/core/store/item-store.js";
+import {
+  mutateItemWithHistoryContext,
+  mutateItemWithHistoryContextResolver,
+} from "../../../../src/core/store/item-store.js";
 import { runClose } from "../../../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../../../src/sdk/lifecycle/create.js";
+import { runGet } from "../../../../src/sdk/query/get.js";
 import { runReopen } from "../../../../src/sdk/lifecycle/reopen.js";
 import { runReopenUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import {
@@ -50,6 +54,46 @@ describe("runReopen", () => {
         op: "compatibility_context",
         context: { contract: "immediate" },
       });
+    });
+  });
+
+  it("resolves deferred history context before persisting the item", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        {
+          title: "History context failure remains atomic",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      await expect(
+        mutateItemWithHistoryContextResolver({
+          pmRoot: context.pmPath,
+          settings: await readSettings(context.pmPath),
+          id: created.item.id,
+          op: "resolver_failure",
+          author: "sdk-atomicity-test",
+          resolveHistoryContext() {
+            throw new Error("history context failed");
+          },
+          mutate(document) {
+            document.metadata.title = "This must not persist";
+            return { changedFields: ["title"] };
+          },
+        }),
+      ).rejects.toThrow("history context failed");
+      const loaded = await runGet(
+        created.item.id,
+        { path: context.pmPath },
+        { full: true },
+      );
+      expect(loaded.item.title).toBe("History context failure remains atomic");
+      const history = await readHistoryEntries(
+        getHistoryPath(context.pmPath, created.item.id),
+        created.item.id,
+      );
+      expect(history.map((entry) => entry.op)).toEqual(["create"]);
     });
   });
 
@@ -175,6 +219,38 @@ describe("runReopen", () => {
           },
         },
       });
+      const loaded = await runGet(
+        created.item.id,
+        { path: context.pmPath },
+        { full: true },
+      );
+      expect(loaded.item).toMatchObject(created.item);
+      const history = await readHistoryEntries(
+        getHistoryPath(context.pmPath, created.item.id),
+        created.item.id,
+      );
+      expect(history.map((entry) => entry.op)).toEqual(["create"]);
+    });
+  });
+
+  it("normalizes direct reopen-update receipt statuses", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        { title: "Direct normalized recurrence", type: "Task", createMode: "progressive" },
+        { path: context.pmPath },
+      );
+      await runClose(created.item.id, "Done", {}, { path: context.pmPath });
+      const result = await runReopenUpdate(
+        created.item.id,
+        { status: "in-progress" },
+        { path: context.pmPath },
+        "Returned through the direct SDK seam",
+      );
+      expect(result.lifecycle_transition).toMatchObject({
+        from_status: "closed",
+        to_status: "in_progress",
+      });
+      expect(result.item.status).toBe("in_progress");
     });
   });
 
@@ -244,6 +320,11 @@ describe("runReopen", () => {
         code: "reopen_target_status_invalid",
         exitCode: EXIT_CODE.USAGE,
       });
+      let history = await readHistoryEntries(
+        getHistoryPath(context.pmPath, created.item.id),
+        created.item.id,
+      );
+      expect(history.map((entry) => entry.op)).toEqual(["create", "close"]);
 
       await expect(
         runMcpReopenAction({
@@ -277,6 +358,17 @@ describe("runReopen", () => {
         code: "reopen_receipt_missing",
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
+      history = await readHistoryEntries(
+        getHistoryPath(context.pmPath, created.item.id),
+        created.item.id,
+      );
+      expect(history.map((entry) => entry.op)).toEqual(["create", "close"]);
+      const loaded = await runGet(
+        created.item.id,
+        { path: context.pmPath },
+        { full: true },
+      );
+      expect(loaded.item.status).toBe("closed");
     });
   });
 

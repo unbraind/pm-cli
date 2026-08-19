@@ -78,6 +78,10 @@ describe("executable recovery guidance", () => {
           "<your project test command>",
         );
       }
+      await writeFile(path.join(projectRoot, "package.json"), "{");
+      expect(await resolveProjectTestCommand(projectRoot)).toBe(
+        "<your project test command>",
+      );
 
       await writeFile(
         path.join(projectRoot, "package.json"),
@@ -85,6 +89,26 @@ describe("executable recovery guidance", () => {
       );
       await writeFile(path.join(projectRoot, "pnpm-lock.yaml"), "");
       expect(await resolveProjectTestCommand(projectRoot)).toBe("pnpm test");
+      await writeFile(
+        path.join(projectRoot, "package.json"),
+        JSON.stringify({
+          packageManager: "yarn@4.5.0",
+          scripts: { test: "vitest" },
+        }),
+      );
+      expect(await resolveProjectTestCommand(projectRoot)).toBe("yarn test");
+      await writeFile(
+        path.join(projectRoot, "package.json"),
+        JSON.stringify({
+          packageManager: "npm@11.5.2",
+          scripts: { test: "vitest" },
+        }),
+      );
+      expect(await resolveProjectTestCommand(projectRoot)).toBe("npm test");
+      await writeFile(
+        path.join(projectRoot, "package.json"),
+        JSON.stringify({ scripts: { test: "vitest" } }),
+      );
       await rm(path.join(projectRoot, "pnpm-lock.yaml"));
 
       await writeFile(path.join(projectRoot, "bun.lock"), "");
@@ -148,13 +172,17 @@ describe("executable recovery guidance", () => {
       "vector_index_stale:2",
       "vector_index_recovery:reindex --mode hybrid",
     ]);
-    expect(
-      formatVectorIndexRecoveryWarnings(1, {
+    const warnings = formatVectorIndexRecoveryWarnings(1, {
         command: "pm install search-advanced --project",
         args: ["install", "search-advanced", "--project"],
         follow_up_command: "pm reindex --mode hybrid",
         follow_up_args: ["reindex", "--mode", "hybrid"],
-      }),
-    ).toContain("vector_index_recovery_follow_up:reindex --mode hybrid");
+      });
+    expect(warnings).toContain(
+      "vector_index_recovery:install search-advanced --project",
+    );
+    expect(warnings).toContain(
+      "vector_index_recovery_follow_up:reindex --mode hybrid",
+    );
   });
 });

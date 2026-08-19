@@ -173,6 +173,16 @@ describe("generate error code catalog", () => {
     expect(withBulkCaller).toMatch(
       /code: "acceptance_criteria_mutation_conflict",[\s\S]*?emitting_commands: \["update", "update-many"\]/u,
     );
+    await writeFile(
+      path.join(root, "src", "sdk", "lifecycle", "reopen.ts"),
+      'const recurrence = { code: "reopen_reason_required" };',
+      "utf8",
+    );
+    await main(root, []);
+    const withReopenCaller = await readGeneratedCatalog(root);
+    expect(withReopenCaller).toMatch(
+      /code: "reopen_reason_required",[\s\S]*?emitting_commands: \["item reopen"\]/u,
+    );
     const stabilityLedger = JSON.parse(
       await readFile(
         path.join(root, "scripts", "error-code-stability.json"),

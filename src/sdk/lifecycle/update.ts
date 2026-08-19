@@ -3276,7 +3276,11 @@ function prepareRecurrenceTransition(params: {
       },
     );
   }
-  const toStatus = params.requestedStatus ?? params.statusRegistry.open_status;
+  const requestedStatus =
+    params.requestedStatus ?? params.statusRegistry.open_status;
+  const toStatus =
+    normalizeStatusInput(requestedStatus, params.statusRegistry) ??
+    requestedStatus;
   const metadata = toItemRecord(params.document.metadata);
   const previousTerminal = Object.fromEntries(
     [

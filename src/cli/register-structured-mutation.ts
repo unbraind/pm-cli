@@ -41,7 +41,10 @@ async function runItemReopenAction(
     reason,
     {
       status: typeof options.status === "string" ? options.status : undefined,
-      author: typeof options.author === "string" ? options.author : undefined,
+      author:
+        typeof options.author === "string"
+          ? options.author
+          : globalOptions.author,
       message:
         typeof options.message === "string" ? options.message : undefined,
       force: options.force === true,

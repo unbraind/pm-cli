@@ -704,6 +704,7 @@ async function mutateItemWithDeferredHistoryContext(
         warnings: [...parseWarnings, ...(mutation.warnings ?? [])],
       };
     }
+    const historyContext = params.resolveHistoryContext?.();
     mutableDocument.metadata.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument, {
       schema: params.settings.schema,
@@ -785,7 +786,7 @@ async function mutateItemWithDeferredHistoryContext(
         before: beforeDocument,
         after: afterDocument,
         message: params.message,
-        context: params.resolveHistoryContext?.(),
+        context: historyContext,
       });
       try {
         await appendHistoryEntry(historyPath, entry);

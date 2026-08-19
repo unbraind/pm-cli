@@ -103,6 +103,7 @@ export {
   type PmActionOptions,
   type PmClientOptions,
   type ReleaseResult,
+  type PreviousTerminalEvidence,
   type RecurrenceReceipt,
   type ReopenCommandOptions,
   type ReopenResult,

@@ -232,6 +232,21 @@ describe("structured mutation command registration", () => {
       },
       expect.any(Object),
     );
+
+    const globalAuthorCommand = programWithGlobals();
+    globalAuthorCommand.parse(["--author", "global-agent"], { from: "user" });
+    await structuredMutationTestOnly.runItemReopenAction(
+      "pm-a",
+      "Recurring through a global author",
+      {},
+      globalAuthorCommand,
+    );
+    expect(mocks.runReopen).toHaveBeenLastCalledWith(
+      "pm-a",
+      "Recurring through a global author",
+      expect.objectContaining({ author: "global-agent" }),
+      expect.any(Object),
+    );
   });
 
   it("rejects mixing whole-item JSON with other stdin consumers", async () => {

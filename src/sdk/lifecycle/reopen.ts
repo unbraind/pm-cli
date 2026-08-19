@@ -17,6 +17,8 @@ import {
   type PreviousTerminalEvidence,
 } from "./update.js";
 
+export type { PreviousTerminalEvidence } from "./update.js";
+
 /** Options accepted by the SDK and `pm item reopen` recurrence primitive. */
 export interface ReopenCommandOptions {
   /** Active target status; only the workspace open or in-progress status is allowed. */

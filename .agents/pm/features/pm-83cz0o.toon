@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[2]: agent-ux,lifecycle
 created_at: "2026-07-28T14:56:19.121Z"
-updated_at: "2026-08-19T20:32:06.171Z"
-closed_at: "2026-08-19T20:32:05.250Z"
-completed_at: "2026-08-19T20:32:05.250Z"
+updated_at: "2026-08-19T21:25:49.190Z"
+closed_at: "2026-08-19T21:23:22.589Z"
+completed_at: "2026-08-19T21:23:22.589Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A terminal item can return to an active status through a lifecycle transition that requires a recurrence reason and refuses an already-active item with an actionable error; The reopen appends to the history stream and the prior closure entry, reason and resolution remain readable after the transition; Terminal lifecycle fields that must not survive are cleared by the existing update path rather than a second implementation, and a test proves the two agree; Duplicate search surfaces the reopen transition when the strongest match is terminal, so an agent is offered the canonical item before creating a new one; The spelling is whatever the noun-verb decision accepts and the top-level command count does not grow without that decision being recorded"
 parent: pm-mpbb
 risk: medium
 confidence: 90
-resolution: The recurrence storage compatibility overload retains its public signature and is fully documented.
-expected_result: Every exported recurrence storage symbol is documented and repository static quality remains mandatory.
-actual_result: Exported docstring coverage is 4204 of 4204; source and member coverage are also 100%; exact static gate and ESLint pass.
+resolution: "Terminal work now reopens atomically through pm item reopen with a required reason, normalized active status, preserved previous-terminal evidence, fail-closed receipts, author/force propagation, and token-bounded output."
+expected_result: Agents can reactivate canonical terminal work without duplicates while retaining auditable closure lineage across every public surface.
+actual_result: "Typed SDK, CLI, MCP, action dispatch, generated contracts, docs, 52 focused regressions, 7,622 full tests, 100/100/100/100 coverage, static assurance, and temporary-workspace acceptance all pass."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-4ri6,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-e9zh,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
@@ -28,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-pbyu,blocked_by,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-wenq,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-29T16:56:18.859Z","harness:claude-code","Measured behaviour of the ad-hoc reopen path, sandbox tracker, build 2026.7.29.\n\nClosing an item then running update --status in_progress succeeds with exit 0 and changed_field_count 4. Reading the item afterwards: close_reason null, closed_at null, resolution null. All three closure fields are erased in place, not superseded, so the item's own record no longer says it was ever closed or why. The prior closure survives only inside the history stream, which means the answer to \"has this recurred, and how many times\" is reachable only by replaying every stream.\n\nThis is consistent with the third criterion here - terminal fields that must not survive are cleared by the existing update path - and it sharpens the second one. The prior closure entry does remain in history, so the criterion is satisfiable, but nothing on the item points at it and no op distinguishes a reopen from an ordinary status edit, so a reader cannot tell a reopened item from one that was never closed without a replay.\n\nTwo consequences worth carrying into the implementation. A reopen wants its own op in the history vocabulary, which places it inside pm-0elqjj's enumeration rather than reusing update. And recurrence rate becomes a measurable quality signal for the first time once the transition is distinguishable, which is a downstream consumer for the flow-metrics work rather than a criterion here.\n\nRelated probe on the same path: closed to draft also succeeds, moving a terminal item into the provisional tier tracked by pm-xpzped.\n"
   "2026-08-19T16:37:14.746Z","harness:codex","Implementation start 2026-08-19: selected after a complete all-status 2,524-item inventory (2,190 closed, 320 open, 14 canceled), focused duplicate searches, full live metadata/comments/history/relationship reads, and GitHub issue lineage verification. This item is actively edited in one coupled SDK-first recurrence and executable-guidance PR spanning lifecycle primitives, CLI/MCP contracts, immutable history, capability-aware hints, generated agent guidance, recovery assurance, docs, exact coverage, and temporary installed-consumer acceptance. Unrelated backlog items remain open and unclaimed."
   "2026-08-19T16:44:23.515Z","harness:codex","TDD red evidence: focused recurrence suite fails because the SDK lifecycle/reopen module is intentionally absent before implementation."
@@ -39,17 +39,22 @@ comments[10]{created_at,author,text}:
   "2026-08-19T19:20:08.130Z","harness:codex","Pull request evidence: https://github.com/unbraind/pm-cli/pull/1063 carries the reviewed SDK, CLI, MCP, contract, documentation, test, changelog, and tracker delivery at exact head 1d85f3a0d."
   "2026-08-19T20:12:31.814Z","harness:codex","Review remediation evidence: CodeRabbit exact-head findings drove complete CLI exposure for item reopen, runtime flag registration, public core SDK exports, immutable previous-terminal history receipts, fail-closed receipt validation, and transport force propagation. Generic runAction integration now proves the same recurrence envelope as the typed SDK. Focused tests pass 15 of 15; full coverage passes 100/100/100/100 across 534 files and 7,619 tests. Manual temporary-project acceptance passed create, close, reopen, get, and history with prior resolution retained only in immutable recurrence evidence."
   "2026-08-19T20:32:04.407Z","harness:codex","Exact-head CI remediation: the public mutateItem compatibility overload now documents both its public signature and implementation entrypoint. The authoritative static-quality gate reports 100% source, exported, and member docstring coverage (4,204/4,204 exports), with zero violations; ESLint passes. The complete static chain passed repository assurance, package boundaries, SDK parity, grammar, flag, token, refusal, tracker-context, graph, record-integrity, and SDK import-cost gates. Its unrelated host-timing probe varied between get +3 ms and claim +16 ms while hosted performance checks remained green; no benchmark ceiling or runtime behavior was changed."
+  "2026-08-19T21:22:29.229Z","harness:codex","Final review-remediation evidence: resolved every actionable exact-head recurrence finding by propagating global author overrides, resolving structured history context before any item write, normalizing direct SDK receipt statuses, exporting PreviousTerminalEvidence through ./sdk, ./sdk/core, and ./sdk/runtime, bounding compact recurrence reason and prior terminal text to 256 characters, and generating the executable noun-first 'item reopen' recovery command. Rejection and resolver-failure tests prove item and history atomicity. Focused suite passed 52/52; repository static assurance passed; full coverage passed 534/534 files and 7,622/7,622 tests at exact 100/100/100/100. Manual /tmp/tmp.UQRSqSQdaN acceptance passed create, close, global-author reopen, full get, and full immutable history checks."
+  "2026-08-19T21:25:49.190Z","harness:codex","Final tracker-integrity evidence: pm validate --check-resolution --check-history-drift --check-storage-integrity --counts scanned 2,524 items and 2,539 history streams with zero hash, chain, workspace-state, storage, or merge-fence failures. The 295 resolution warnings are the unchanged pre-existing repository baseline; all three delivered items now carry complete resolution, expected-result, actual-result, and close-reason metadata. pm list --status in_progress reports zero items."
 learnings[1]{created_at,author,text}:
   "2026-08-19T18:27:29.126Z","harness:codex","A recurrence primitive must be a first-class atomic transition: preserving previous terminal evidence in the reopen history context is safer and more useful than asking callers to reconstruct recurrence from separate reads and updates."
-files[16]{path,scope,note}:
+files[21]{path,scope,note}:
+  scripts/generate-error-code-catalog.mjs,project,noun-first executable recovery command mapping
   sdk/public-surface.json,project,Public_SDK_compatibility_contract
   src/cli/register-structured-mutation.ts,project,noun-first CLI adapter
+  src/core/output/mutation-projection.ts,project,bounded token-efficient recurrence receipts
   src/core/store/item-store.ts,project,structured immutable history context
   src/sdk/agent-capability-contracts.ts,project,Capability_tier_alignment
   src/sdk/cli-contracts/enum-contracts.ts,project,flattened item action vocabulary
   src/sdk/cli-contracts/grammar-contracts.ts,project,noun-verb positional contract
   src/sdk/cli-contracts/runtime-contracts.ts,project,Executable_action_path_and_flag_registry
   src/sdk/core.ts,project,Supported_recurrence_exports
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,generated recurrence recovery catalog
   src/sdk/lifecycle/mcp-actions.ts,project,modular MCP lifecycle adapters
   src/sdk/lifecycle/reopen.ts,project,SDK recurrence primitive
   src/sdk/lifecycle/update.ts,project,atomic recurrence transition seam
@@ -57,14 +62,17 @@ files[16]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Generated_action_and_command_contract
   tests/integration/reopen-contract.integration.spec.ts,project,CLI SDK MCP presentation acceptance
   tests/unit/cli/structured-mutation-registration.spec.ts,project,"Covers CLI registration,aliases,and validation for the recurrence reopen command"
+  tests/unit/core/output/mutation-projection.spec.ts,project,oversized recurrence receipt regression
+  tests/unit/scripts/generate-error-code-catalog.spec.ts,project,generated recovery command regression
   tests/unit/sdk/recovery/reopen.spec.ts,project,unit recurrence and duplicate recovery coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/reopen.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mt0eq3q7-7nfthq,test,passed,"2026-08-19T18:10:18.329Z","2026-08-19T18:10:30.366Z","2026-08-19T18:10:30.366Z",1,0,0
+  test-local-mt0llewo-fgoljz,test,passed,"2026-08-19T21:22:35.381Z","2026-08-19T21:22:48.887Z","2026-08-19T21:22:48.887Z",1,0,0
 docs[3]{path,scope,note}:
   docs/COMMANDS.md,project,noun-first CLI usage
   docs/RECURRENCE_RECOVERY_CONTRACTS.md,project,recurrence lifecycle contract
   docs/SDK.md,project,SDK recurrence surface
-close_reason: Restored mandatory 100% exported docstring coverage for the recurrence compatibility overload; exact failure and focused gates pass.
+close_reason: "Delivered the complete recurrence lifecycle across SDK, CLI, generic actions, MCP, immutable history, compact output, executable recovery contracts, public exports, documentation, generated contracts, and exact coverage; all review findings and manual acceptance passed."
 body: ""

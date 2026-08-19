@@ -588,7 +588,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/reopen.ts"],
-    emitting_commands: ["reopen"],
+    emitting_commands: ["item reopen"],
     canonical_code: "reopen_reason_required",
     aliases: [],
   },
@@ -614,7 +614,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/reopen.ts"],
-    emitting_commands: ["reopen"],
+    emitting_commands: ["item reopen"],
     canonical_code: "reopen_target_status_invalid",
     aliases: [],
   },

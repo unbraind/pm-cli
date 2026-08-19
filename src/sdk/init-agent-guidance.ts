@@ -269,25 +269,26 @@ export async function resolveProjectTestCommand(
     return "<your project test command>";
   }
   const packageManager = manifest.packageManager?.split("@")[0];
-  if (
-    packageManager === "pnpm" ||
-    (await pathExists(path.join(projectRoot, "pnpm-lock.yaml")))
-  ) {
+  if (packageManager === "pnpm") {
+    return "pnpm test";
+  }
+  if (packageManager === "bun") {
+    return "bun run test";
+  }
+  if (packageManager === "yarn") {
+    return "yarn test";
+  }
+  if (packageManager === "npm") return "npm test";
+  if (await pathExists(path.join(projectRoot, "pnpm-lock.yaml"))) {
     return "pnpm test";
   }
   if (
-    packageManager === "bun" ||
     (await pathExists(path.join(projectRoot, "bun.lock"))) ||
     (await pathExists(path.join(projectRoot, "bun.lockb")))
   ) {
     return "bun run test";
   }
-  if (
-    packageManager === "yarn" ||
-    (await pathExists(path.join(projectRoot, "yarn.lock")))
-  ) {
-    return "yarn test";
-  }
+  if (await pathExists(path.join(projectRoot, "yarn.lock"))) return "yarn test";
   return "npm test";
 }
 

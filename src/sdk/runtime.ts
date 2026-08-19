@@ -544,7 +544,7 @@ export {
   type TerminalTransitionPolicy,
 } from "./lifecycle-policy.js";
 export { runUpdate, type UpdateCommandOptions } from "./lifecycle/update.js";
-export { runReopen, type RecurrenceReceipt, type ReopenCommandOptions, type ReopenResult } from "./lifecycle/reopen.js";
+export { runReopen, type PreviousTerminalEvidence, type RecurrenceReceipt, type ReopenCommandOptions, type ReopenResult } from "./lifecycle/reopen.js";
 export {
   NEXT_OUTPUT_VALUES,
   runNext,

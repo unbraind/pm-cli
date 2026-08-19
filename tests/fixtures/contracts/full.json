@@ -18881,7 +18881,7 @@
       "class": "usage",
       "code": "reopen_reason_required",
       "emitting_commands": [
-        "reopen"
+        "item reopen"
       ],
       "exit_code": 2,
       "meaning": "Reopen reason required condition.",
@@ -18915,7 +18915,7 @@
       "class": "usage",
       "code": "reopen_target_status_invalid",
       "emitting_commands": [
-        "reopen"
+        "item reopen"
       ],
       "exit_code": 2,
       "meaning": "Reopen target status invalid condition.",

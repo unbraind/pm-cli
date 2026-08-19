@@ -69,6 +69,40 @@ describe("projectMutationResult", () => {
     });
   });
 
+  it("bounds terminal recurrence evidence in compact mutation envelopes", () => {
+    const oversized = "x".repeat(1000);
+    const projected = projectMutationResult(
+      {
+        item: { id: "pm-a1b2", status: "open" },
+        changed_fields: ["status"],
+        recurrence: {
+          reason: oversized,
+          from_status: "closed",
+          to_status: "open",
+          previous_terminal: {
+            close_reason: oversized,
+            resolution: "Short evidence",
+            unexpected: 42,
+          },
+        },
+      },
+      { compactEnvelope: true },
+    ) as {
+      recurrence: {
+        reason: string;
+        previous_terminal: Record<string, unknown>;
+      };
+    };
+    expect(projected.recurrence.previous_terminal.close_reason).toBe(
+      `${"x".repeat(255)}…`,
+    );
+    expect(projected.recurrence.reason).toBe(`${"x".repeat(255)}…`);
+    expect(projected.recurrence.previous_terminal.resolution).toBe(
+      "Short evidence",
+    );
+    expect(projected.recurrence.previous_terminal.unexpected).toBe(42);
+  });
+
   it("does not create a compact envelope without a string item id", () => {
     const result = { item: { id: 42 }, changed_fields: ["id"] };
     expect(projectMutationResult(result, { compactEnvelope: true })).toBe(
