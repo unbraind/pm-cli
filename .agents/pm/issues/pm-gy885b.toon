@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ergonomics,discoverability,token-efficiency
 created_at: "2026-08-01T13:03:37.512Z"
-updated_at: "2026-08-19T06:22:41.291Z"
+updated_at: "2026-08-19T06:30:31.136Z"
 closed_at: "2026-08-19T05:47:36.710Z"
 completed_at: "2026-08-19T05:47:36.710Z"
 author: "harness:claude-code"
@@ -27,13 +27,14 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-yqe0mo,related,"2026-08-01T13:03:37.512Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,blocked_by,"2026-08-01T13:10:32.187Z","harness:claude-code","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-18T19:18:06.247Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:36.187Z","harness:codex","Tranche evidence: unknown context intent and list/get/search field refusals now carry complete allowed_values plus executable suggested retries in JSON recovery envelopes; real CLI integration tests cover intent and fields, and the closure scorer executes advertised retries. Remaining acceptance: derive every list-family/get/search/context/next closed domain into both human refusal and help text and add the full contract-derived conformance corpus. Returning open and releasing ownership."
   "2026-08-19T04:10:05.658Z","harness:codex","Implementation start 2026-08-19: derive all context-intent and field-projection closed domains into human help plus structured refusal contracts across list/get/search/context/next, with executable conformance coverage. This item is actively edited in the combined recovery-contract PR."
   "2026-08-19T05:28:36.473Z","harness:codex","Completion evidence 2026-08-19: one public SDK closed-domain registry now drives complete --for and --fields help plus executable refusals across context, next, get, search, and all eight list-family commands. List/get/search projection validators expose their stable core fields; unknown search fields now carry the missing stable error code; mutual exclusions return exact shell-free suggested_retry_args preserving positional operands. The generated 18-probe integration executes every refusal and retry, including deprecated aliases with compatibility prelude. Full suite 7,597/7,597 and exact 100/100/100/100 coverage pass; packed npm/Bun acceptance verified the SDK registry and a real unknown_field_projection envelope."
   "2026-08-19T05:47:17.845Z","harness:codex","Final acceptance evidence 2026-08-19: list/get/search help now renders the complete stable core --fields domain and never labels a proper subset as valid; configured runtime-field extensibility remains explicit. The packed 2026.8.19 artifact returned unknown_field_projection with the complete recovery.allowed_values domain including why_now and exact suggested_retry_args, while Node and Bun imported all 18 SDK closed-domain contracts. Final exact coverage is 100/100/100/100 across 7,598 tests and all static release gates pass."
   "2026-08-19T06:22:41.291Z","harness:codex","Defect-evidence governance 2026-08-19: classified this missing closed-domain recovery contract as a production_defect. The new closed-domain-refusal-closure gate executes 18 real refusal/retry probes; its focused unit spec contains malformed-corpus negative controls and standalone failure-status coverage. Local exact coverage and defect-evidence checks plus hosted static/coverage gates own the regression contract; no waiver is used."
+  "2026-08-19T06:30:31.136Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1062 at implementation commit a6df8f64a. Hosted checks and required bot review are running against the combined SDK/CLI recovery-contract, semantic lexicon, generated-surface, dependency, documentation, and PM-evidence tranche."
 learnings[1]{created_at,author,text}:
   "2026-08-19T05:28:37.091Z","harness:codex","Closed domains remain truthful only when help, validation, recovery envelopes, SDK consumers, and assurance probes read one registry. Compatibility notices may precede structured stderr, so automation should locate the JSON problem document rather than assuming byte zero."
 files[11]{path,scope,note}:
