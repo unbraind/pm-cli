@@ -198,6 +198,12 @@ describe("gate registry", () => {
       "gate:scripts/release/typed-gate.mts:negative_control_assertion_missing",
     );
 
+    const invalidGateScriptRow = automationRegistry();
+    invalidGateScriptRow.automation_inventory.gate_scripts[2] = null as never;
+    await expect(
+      validateGateRegistry(invalidGateScriptRow, { repoRoot: root }),
+    ).resolves.toContain("automation_inventory:gate_script:invalid");
+
     const crossInventoryDuplicate = automationRegistry();
     crossInventoryDuplicate.automation_inventory.provider_checks[0].provider =
       crossInventoryDuplicate.automation_inventory.gate_scripts[0].provider;

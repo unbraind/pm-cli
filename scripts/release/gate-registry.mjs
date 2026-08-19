@@ -306,15 +306,24 @@ async function validateGateScriptInventory(
   violations,
 ) {
   const declaredScripts = new Set();
-  for (const entry of gateScripts) {
-    const disposition = entry?.disposition;
+  const objectEntries = gateScripts.filter(
+    (entry) => typeof entry === "object" && entry !== null,
+  );
+  violations.push(
+    ...Array.from(
+      { length: gateScripts.length - objectEntries.length },
+      () => "automation_inventory:gate_script:invalid",
+    ),
+  );
+  for (const entry of objectEntries) {
+    const disposition = entry.disposition;
     const rowValid =
-      typeof entry?.path === "string" &&
+      typeof entry.path === "string" &&
       !declaredScripts.has(entry.path) &&
       ["migrated", "reduced_to_provider", "retained"].includes(disposition) &&
       validGateScriptDisposition(entry, disposition, discoveredScripts);
     if (!rowValid) violations.push("automation_inventory:gate_script:invalid");
-    if (typeof entry?.path === "string") declaredScripts.add(entry.path);
+    if (typeof entry.path === "string") declaredScripts.add(entry.path);
     await validateNegativeControl(
       {
         id: entry.provider ?? entry.path,
@@ -335,10 +344,10 @@ async function validateGateScriptInventory(
     if (!declaredScripts.has(script))
       violations.push(`automation_inventory:gate_script:${script}:undeclared`);
   }
-  const migratedOrProvider = gateScripts.filter((entry) =>
+  const migratedOrProvider = objectEntries.filter((entry) =>
     ["migrated", "reduced_to_provider"].includes(entry.disposition),
   ).length;
-  const retained = gateScripts.filter(
+  const retained = objectEntries.filter(
     (entry) => entry.disposition === "retained",
   ).length;
   if (migratedOrProvider <= retained) {
