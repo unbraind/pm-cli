@@ -18,8 +18,20 @@ export interface PmRefusalClosureObservation {
   rejected_value: string;
   /** Complete accepted domain emitted by the refusal. */
   allowed_values: readonly string[];
+  /** Stable error code emitted by the refusal. */
+  error_code?: string;
+  /** Contract-owned error code required for this refusal. */
+  expected_error_code?: string;
+  /** Contract-owned complete accepted domain. */
+  expected_allowed_values?: readonly string[];
+  /** Whether an accepted-value domain is required for this refusal class. */
+  allowed_values_required?: boolean;
   /** Exact command emitted for recovery. */
   suggested_retry: string;
+  /** Shell-free argv emitted for safe programmatic recovery. */
+  suggested_retry_args?: readonly string[];
+  /** Contract-owned argv required for deterministic recovery. */
+  expected_suggested_retry_args?: readonly string[];
   /** Whether executing the advertised retry succeeded. */
   retry_succeeded: boolean;
 }
@@ -30,10 +42,14 @@ export interface PmRefusalClosureFinding {
   code:
     | "accepted_rejected_value"
     | "duplicate_probe"
+    | "error_code_mismatch"
     | "empty_corpus"
+    | "incomplete_allowed_values"
     | "missing_allowed_values"
+    | "missing_suggested_retry_args"
     | "missing_suggested_retry"
     | "non_refusal_exit"
+    | "suggested_retry_args_mismatch"
     | "retry_failed";
   /** Stable corpus identifier. */
   probe_id: string;
@@ -55,6 +71,51 @@ export interface PmRefusalClosureReport {
   findings: readonly PmRefusalClosureFinding[];
 }
 
+/** Compare a refusal with its optional SDK-owned exact contract. */
+function listContractObservationFindings(
+  observation: PmRefusalClosureObservation,
+): Array<PmRefusalClosureFinding | undefined> {
+  return [
+    observation.expected_error_code !== undefined &&
+    observation.error_code !== observation.expected_error_code
+      ? {
+          code: "error_code_mismatch",
+          probe_id: observation.probe_id,
+          detail: `Expected error code ${observation.expected_error_code}, received ${observation.error_code ?? "<missing>"}.`,
+        }
+      : undefined,
+    observation.expected_allowed_values !== undefined &&
+    JSON.stringify([...observation.allowed_values].sort()) !==
+      JSON.stringify([...observation.expected_allowed_values].sort())
+      ? {
+          code: "incomplete_allowed_values",
+          probe_id: observation.probe_id,
+          detail:
+            "The refusal's accepted domain differs from the SDK-owned domain contract.",
+        }
+      : undefined,
+    observation.expected_suggested_retry_args !== undefined &&
+    (observation.suggested_retry_args?.length ?? 0) === 0
+      ? {
+          code: "missing_suggested_retry_args",
+          probe_id: observation.probe_id,
+          detail: "The refusal omitted shell-free suggested retry arguments.",
+        }
+      : undefined,
+    observation.expected_suggested_retry_args !== undefined &&
+    (observation.suggested_retry_args?.length ?? 0) > 0 &&
+    JSON.stringify(observation.suggested_retry_args) !==
+      JSON.stringify(observation.expected_suggested_retry_args)
+      ? {
+          code: "suggested_retry_args_mismatch",
+          probe_id: observation.probe_id,
+          detail:
+            "The refusal's suggested retry arguments differ from the SDK-owned contract.",
+        }
+      : undefined,
+  ];
+}
+
 /** Return every closure defect contributed by one unique observation. */
 function listObservationFindings(
   observation: PmRefusalClosureObservation,
@@ -67,6 +128,7 @@ function listObservationFindings(
           detail: `${observation.entrypoint} returned exit code ${observation.exit_code}; a structured usage refusal must return ${EXIT_CODE.USAGE}.`,
         }
       : undefined,
+    observation.allowed_values_required !== false &&
     observation.allowed_values.length === 0
       ? {
           code: "missing_allowed_values",
@@ -95,6 +157,7 @@ function listObservationFindings(
           detail: "The advertised suggested retry did not succeed.",
         }
       : undefined,
+    ...listContractObservationFindings(observation),
   ];
 }
 

@@ -682,6 +682,7 @@ export * from "./error-code-catalog.js";
 export * from "./generated-error-code-catalog.js";
 export * from "./agent/refusal-reachability.js";
 export * from "./agent/refusal-closure.js";
+export * from "./agent/closed-domain-contracts.js";
 export * from "./agent/subcommand-recovery.js";
 export * from "./flag-invocation-contracts.js";
 export * from "./cli-contracts/flag-lexicon-contracts.js";

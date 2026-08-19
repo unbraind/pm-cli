@@ -13,6 +13,7 @@ import {
   censusPmRecoveryReferenceProducers,
   derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
+  verifyPmRecoveryProducerRuntimeCoverage,
   verifyPmRefusalReachability,
   type PmRecoveryReferenceObligation,
   type PmRecoveryReferenceObservation,
@@ -42,6 +43,10 @@ function withoutReadInvocationReceipts(
 }
 
 describe("real-entrypoint refusal reachability", () => {
+  let completeProducerCensus: ReturnType<
+    typeof censusPmRecoveryReferenceProducers
+  >;
+
   it("censuses the complete source producer table without unknown recovery fields", async () => {
     const sourcePaths = await fg("src/**/*.ts", { cwd: process.cwd() });
     const sources = await Promise.all(
@@ -51,6 +56,7 @@ describe("real-entrypoint refusal reachability", () => {
       })),
     );
     const report = censusPmRecoveryReferenceProducers(sources);
+    completeProducerCensus = report;
 
     expect(report.ok, JSON.stringify(report.findings, null, 2)).toBe(true);
     expect(report.scanned_file_count).toBeGreaterThan(400);
@@ -393,6 +399,16 @@ describe("real-entrypoint refusal reachability", () => {
       expect(declaredByKind("example")).toBeGreaterThan(0);
       expect(declaredByKind("migration_hint")).toBeGreaterThan(0);
       expect(declaredByKind("restore_with")).toBeGreaterThan(0);
+      expect(
+        verifyPmRecoveryProducerRuntimeCoverage(
+          completeProducerCensus,
+          obligations,
+        ),
+      ).toMatchObject({
+        ok: true,
+        source_producer_count: completeProducerCensus.producer_count,
+        missing_runtime_kinds: [],
+      });
 
       const broken = observations.map((observation, index) =>
         index === 0 ? { ...observation, reachable: false } : observation,

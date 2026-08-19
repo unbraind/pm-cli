@@ -43,6 +43,10 @@ const ADDITIONAL_EMITTING_COMMANDS_BY_CODE = new Map([
   ["acceptance_criteria_mutation_conflict", ["update-many"]],
 ]);
 
+const QUERY_EMITTING_COMMAND_BY_MODULE = new Map([
+  ["search-contracts", "search"],
+]);
+
 const GENERATED_CATALOG_PART_COUNT = 2;
 
 function resolveExplicitExitCode(property) {
@@ -184,7 +188,11 @@ function inferEmittingCommands(code, sources) {
     const queryMatch = source.match(/^sdk\/query\/([^/]+)\.ts$/u);
     const matched = commandMatch ?? lifecycleMatch ?? queryMatch;
     if (matched?.[1]) {
-      commands.add(matched[1]);
+      commands.add(
+        queryMatch
+          ? (QUERY_EMITTING_COMMAND_BY_MODULE.get(matched[1]) ?? matched[1])
+          : matched[1],
+      );
     } else {
       hasCrossCuttingSource = true;
     }

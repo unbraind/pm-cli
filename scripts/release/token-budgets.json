@@ -26,11 +26,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 6316,
-      "baseline_estimated_tokens": 1579,
-      "baseline_lines": 108,
-      "max_bytes": 6948,
-      "max_estimated_tokens": 1737
+      "baseline_bytes": 7248,
+      "baseline_estimated_tokens": 1812,
+      "baseline_lines": 114,
+      "max_bytes": 7973,
+      "max_estimated_tokens": 1994
     },
     {
       "id": "create-help",
@@ -40,11 +40,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 8231,
-      "baseline_estimated_tokens": 2058,
+      "baseline_bytes": 8247,
+      "baseline_estimated_tokens": 2062,
       "baseline_lines": 106,
-      "max_bytes": 9055,
-      "max_estimated_tokens": 2264
+      "max_bytes": 9072,
+      "max_estimated_tokens": 2268
     },
     {
       "id": "update-help",
@@ -54,11 +54,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 9038,
-      "baseline_estimated_tokens": 2260,
+      "baseline_bytes": 9052,
+      "baseline_estimated_tokens": 2263,
       "baseline_lines": 113,
-      "max_bytes": 9942,
-      "max_estimated_tokens": 2486
+      "max_bytes": 9958,
+      "max_estimated_tokens": 2490
     },
     {
       "id": "contracts-summary-json",
@@ -69,11 +69,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 16127,
-      "baseline_estimated_tokens": 4032,
-      "baseline_lines": 683,
-      "max_bytes": 17740,
-      "max_estimated_tokens": 4435
+      "baseline_bytes": 16155,
+      "baseline_estimated_tokens": 4039,
+      "baseline_lines": 684,
+      "max_bytes": 17771,
+      "max_estimated_tokens": 4443
     },
     {
       "id": "contracts-flags-json",

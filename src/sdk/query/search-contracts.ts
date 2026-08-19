@@ -5,12 +5,21 @@
  */
 import { coerceNumberInRange } from "../../core/shared/primitives.js";
 import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { renderPmCommand } from "../command-line.js";
+import { EXIT_CODE, PmCliError } from "../runtime-primitives.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import type { SearchMode } from "./search-rendering.js";
+import {
+  DEFAULT_COMPACT_SEARCH_FIELDS,
+  listSearchProjectionFields,
+} from "./projection-contracts.js";
+export {
+  DEFAULT_COMPACT_SEARCH_FIELDS,
+  SEARCH_HIT_FIELD_KEYS,
+  SEARCH_ITEM_FIELD_KEYS,
+  listSearchProjectionFields,
+} from "./projection-contracts.js";
 
 /** Documents the search options payload exchanged by command, SDK, and package integrations. */
 export interface SearchOptions extends SharedItemFilterOptions {
@@ -57,79 +66,6 @@ export interface SearchProjectionConfig {
   /** Explicit fields for compact or fields mode. */
   fields: string[];
 }
-
-const DEFAULT_COMPACT_SEARCH_FIELDS = [
-  "id",
-  "title",
-  "status",
-  "type",
-  "priority",
-  "updated_at",
-  "score",
-  "matched_fields",
-] as const;
-
-const SEARCH_HIT_FIELD_KEYS = new Set([
-  "score",
-  "matched_fields",
-  "highlights",
-]);
-const SEARCH_ITEM_FIELD_KEYS = new Set([
-  "id",
-  "title",
-  "description",
-  "type",
-  "status",
-  "priority",
-  "tags",
-  "created_at",
-  "updated_at",
-  "deadline",
-  "assignee",
-  "author",
-  "estimated_minutes",
-  "acceptance_criteria",
-  "dependencies",
-  "comments",
-  "notes",
-  "learnings",
-  "reminders",
-  "events",
-  "files",
-  "tests",
-  "docs",
-  "close_reason",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blocked_by",
-  "blocked_reason",
-  "reporter",
-  "severity",
-  "environment",
-  "repro_steps",
-  "resolution",
-  "expected_result",
-  "actual_result",
-  "affected_version",
-  "fixed_version",
-  "component",
-  "regression",
-  "customer_impact",
-  "definition_of_ready",
-  "order",
-  "rank",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "why_now",
-  "plan",
-]);
 
 /** Parse the configured search execution mode. */
 export function parseSearchMode(raw: string | undefined): SearchMode {
@@ -229,6 +165,7 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
 /** Resolve mutually exclusive compact, full, or explicit-field projection. */
 export function parseSearchProjection(
   options: SearchOptions,
+  query = "<query>",
 ): SearchProjectionConfig {
   const compactRequested = options.compact === true;
   const fullRequested = options.full === true;
@@ -241,6 +178,13 @@ export function parseSearchProjection(
     throw new PmCliError(
       "Search projection options are mutually exclusive. Use one of --compact, --full, or --fields.",
       EXIT_CODE.USAGE,
+      {
+        code: "projection_options_mutually_exclusive",
+        recovery: {
+          suggested_retry: renderPmCommand(["search", query, "--full"]),
+          suggested_retry_args: ["search", query, "--full"],
+        },
+      },
     );
   }
   if (compactRequested) {
@@ -258,22 +202,16 @@ export function validateSearchProjectionFields(
   query = "<query>",
 ): void {
   if (projection.mode !== "fields") return;
-  const runtimeKeys = new Set(
+  const allowedValues = listSearchProjectionFields(
     runtimeFieldRegistry.definitions.flatMap((field) => [
       field.key,
       field.metadata_key,
     ]),
   );
-  const allowedValues = new Set([
-    ...SEARCH_HIT_FIELD_KEYS,
-    ...SEARCH_ITEM_FIELD_KEYS,
-    ...[...SEARCH_ITEM_FIELD_KEYS].map((field) => `item.${field}`),
-    ...runtimeKeys,
-    ...[...runtimeKeys].map((field) => `item.${field}`),
-  ]);
+  const allowed = new Set(allowedValues);
   const unknown = projection.fields.filter((field) => {
     const normalized = field.trim();
-    return !allowedValues.has(normalized);
+    return !allowed.has(normalized);
   });
   if (unknown.length > 0) {
     const suggestedRetryArguments = [
@@ -286,6 +224,7 @@ export function validateSearchProjectionFields(
       `Unknown search --fields value(s): ${unknown.join(", ")}`,
       EXIT_CODE.USAGE,
       {
+        code: "unknown_field_projection",
         examples: [
           "pm search <query> --fields id,title,status,score",
           "pm search <query> --fields id,title,item.description,matched_fields",
@@ -294,7 +233,7 @@ export function validateSearchProjectionFields(
           "Use item.<field> for explicit item metadata fields, or run pm search --help for projection examples.",
         ],
         recovery: {
-          allowed_values: [...allowedValues].sort(),
+          allowed_values: allowedValues,
           suggested_retry: renderPmCommand(suggestedRetryArguments),
           suggested_retry_args: suggestedRetryArguments,
         },

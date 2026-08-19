@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "minimum_probe_count": 18,
+  "required_probe_ids": [
+    "context-invalid-intent",
+    "get-invalid-field",
+    "get-invalid-intent",
+    "get-mutually-exclusive-projection",
+    "list-all-invalid-field",
+    "list-blocked-invalid-field",
+    "list-canceled-invalid-field",
+    "list-closed-invalid-field",
+    "list-draft-invalid-field",
+    "list-in-progress-invalid-field",
+    "list-invalid-field",
+    "list-invalid-intent",
+    "list-mutually-exclusive-projection",
+    "list-open-invalid-field",
+    "next-invalid-intent",
+    "search-invalid-field",
+    "search-invalid-intent",
+    "search-mutually-exclusive-projection"
+  ]
+}

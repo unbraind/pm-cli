@@ -16290,6 +16290,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "error_code_mismatch",
+      "class": "generic_failure",
+      "code": "error_code_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Error code mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "event_cursor_query_mismatch",
       "class": "usage",
       "code": "event_cursor_query_mismatch",
@@ -17009,6 +17026,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/improvement-ledger.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "incomplete_allowed_values",
+      "class": "generic_failure",
+      "code": "incomplete_allowed_values",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Incomplete allowed values condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
       ],
       "stability": "provisional"
     },
@@ -18166,6 +18200,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "missing_suggested_retry_args",
+      "class": "generic_failure",
+      "code": "missing_suggested_retry_args",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing suggested retry args condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "module_import_failed",
       "class": "generic_failure",
       "code": "module_import_failed",
@@ -18577,6 +18628,27 @@
     },
     {
       "aliases": [],
+      "canonical_code": "projection_options_mutually_exclusive",
+      "class": "usage",
+      "code": "projection_options_mutually_exclusive",
+      "emitting_commands": [
+        "get",
+        "list",
+        "search"
+      ],
+      "exit_code": 2,
+      "meaning": "Projection options mutually exclusive condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/query/get.ts",
+        "sdk/query/list.ts",
+        "sdk/query/search-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "provenance_value_domain_invalid",
       "class": "usage",
       "code": "provenance_value_domain_invalid",
@@ -18679,6 +18751,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "removed_canonical_spelling",
+      "class": "generic_failure",
+      "code": "removed_canonical_spelling",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Removed canonical spelling condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "removed_compatibility_spelling",
+      "class": "generic_failure",
+      "code": "removed_compatibility_spelling",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Removed compatibility spelling condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "reserved_item_field",
       "class": "generic_failure",
       "code": "reserved_item_field",
@@ -18727,6 +18833,23 @@
         "cli/migration-gates.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "semantic_spelling_collision",
+      "class": "generic_failure",
+      "code": "semantic_spelling_collision",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Semantic spelling collision condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/cli-contracts/flag-lexicon-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -18999,6 +19122,23 @@
         "sdk/notes.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "suggested_retry_args_mismatch",
+      "class": "generic_failure",
+      "code": "suggested_retry_args_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Suggested retry args mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -19412,7 +19552,8 @@
       "code": "unknown_field_projection",
       "emitting_commands": [
         "get",
-        "list"
+        "list",
+        "search"
       ],
       "exit_code": 2,
       "meaning": "Unknown field projection condition.",
@@ -19420,7 +19561,8 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/query/get.ts",
-        "sdk/query/list.ts"
+        "sdk/query/list.ts",
+        "sdk/query/search-contracts.ts"
       ],
       "stability": "stable"
     },

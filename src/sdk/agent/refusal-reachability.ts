@@ -236,6 +236,30 @@ export interface PmRecoveryReferenceReport {
   findings: PmRecoveryReferenceFinding[];
 }
 
+/** Per-kind runtime evidence; counts do not claim one observation per source location. */
+export interface PmRecoveryProducerRuntimeCoverage {
+  /** Typed recovery-reference kind. */
+  kind: PmRecoveryReferenceKind;
+  /** Literal source producers discovered for the kind. */
+  source_producers: number;
+  /** Distinct runtime values observed for the kind. */
+  runtime_values: number;
+}
+
+/** Unified per-kind source-census and runtime-value coverage receipt. */
+export interface PmRecoveryProducerRuntimeReport {
+  /** Whether every source-declared kind emitted at least one runtime value. */
+  ok: boolean;
+  /** Source producer denominator. */
+  source_producer_count: number;
+  /** Distinct runtime-value denominator. */
+  runtime_value_count: number;
+  /** Stable per-kind source and runtime coverage. */
+  coverage_by_kind: PmRecoveryProducerRuntimeCoverage[];
+  /** Kinds with source producers but no runtime evidence. */
+  missing_runtime_kinds: PmRecoveryReferenceKind[];
+}
+
 /** One object-literal property retained after TypeScript syntax stripping. */
 interface SourcePropertyToken {
   /** Literal identifier or quoted property name. */
@@ -861,3 +885,44 @@ export function verifyPmRecoveryReferences(
     findings,
   };
 }
+
+/** Join source-census counts to distinct emitted runtime values by typed kind. */
+export function verifyPmRecoveryProducerRuntimeCoverage(
+  census: PmRecoveryProducerCensusReport,
+  obligations: readonly PmRecoveryReferenceObligation[],
+): PmRecoveryProducerRuntimeReport {
+  const runtimeValuesByKind = new Map<
+    PmRecoveryReferenceKind,
+    Set<string>
+  >(
+    PM_RECOVERY_REFERENCE_KINDS.map((kind) => [kind, new Set<string>()]),
+  );
+  for (const obligation of obligations) {
+    runtimeValuesByKind.get(obligation.kind)!.add(obligation.value);
+  }
+  const coverageByKind = PM_RECOVERY_REFERENCE_KINDS.map((kind) => ({
+    kind,
+    source_producers: census.producer_count_by_kind[kind],
+    runtime_values: runtimeValuesByKind.get(kind)!.size,
+  }));
+  const missingRuntimeKinds = coverageByKind
+    .filter(
+      ({ source_producers: sourceProducers, runtime_values: runtimeValues }) =>
+        sourceProducers > 0 && runtimeValues === 0,
+    )
+    .map(({ kind }) => kind);
+  return {
+    ok: census.ok && missingRuntimeKinds.length === 0,
+    source_producer_count: census.producer_count,
+    runtime_value_count: coverageByKind.reduce(
+      (total, { runtime_values: runtimeValues }) => total + runtimeValues,
+      0,
+    ),
+    coverage_by_kind: coverageByKind,
+    missing_runtime_kinds: missingRuntimeKinds,
+  };
+}
+
+/** Honest kind-level name for the compatibility implementation above. */
+export const verifyPmRecoveryKindRuntimeCoverage =
+  verifyPmRecoveryProducerRuntimeCoverage;

@@ -33,6 +33,16 @@ export interface PmFlagLexiconEntry {
   value_kind: PmFlagValueKind;
 }
 
+/** Persistable compatibility inventory for one canonical command flag. */
+export interface PmFlagSpellingInventoryEntry {
+  /** Canonical command path. */
+  command: string;
+  /** Canonical long spelling generated for new callers. */
+  canonical_flag: string;
+  /** Every executable long spelling, including compatibility aliases. */
+  accepted_spellings: readonly string[];
+}
+
 /** Ratcheted canonical flag budget for one command. */
 export interface PmCommandFlagBudget {
   /** Canonical command path. */
@@ -52,6 +62,9 @@ export interface PmFlagLexiconFinding {
     | "duplicate_canonical_flag"
     | "inconsistent_concept_kind"
     | "missing_budget"
+    | "removed_canonical_spelling"
+    | "removed_compatibility_spelling"
+    | "semantic_spelling_collision"
     | "stale_budget";
   /** Canonical command path. */
   command: string;
@@ -67,12 +80,66 @@ export interface PmFlagLexiconReport {
   entry_count: number;
   /** Number of command budgets checked. */
   budget_count: number;
+  /** Number of stable semantic concepts represented. */
+  concept_count: number;
+  /** Number of historical spelling rows checked. */
+  baseline_entry_count: number;
   /** Stable ordered findings. */
   findings: readonly PmFlagLexiconFinding[];
 }
 
 /** Memoized immutable canonical lexicon for this module instance. */
 let cachedPmFlagLexicon: readonly PmFlagLexiconEntry[] | undefined;
+
+const FULL_PROJECTION_CONCEPT_BY_COMMAND: Readonly<Record<string, string>> =
+  Object.freeze({
+    list: "list-item-projection",
+    "list-all": "list-item-projection",
+    "list-draft": "list-item-projection",
+    "list-open": "list-item-projection",
+    "list-in-progress": "list-item-projection",
+    "list-blocked": "list-item-projection",
+    "list-closed": "list-item-projection",
+    "list-canceled": "list-item-projection",
+    get: "get-item-projection",
+    graph: "graph-detail-projection",
+    search: "search-result-projection",
+    history: "history-entry-projection",
+    events: "mutation-event-projection",
+    activity: "activity-entry-projection",
+    deps: "dependency-graph-projection",
+    health: "health-diagnostic-projection",
+    validate: "validation-diagnostic-projection",
+    contracts: "contract-catalog-projection",
+  });
+
+/** Resolve one executable command flag to its stable cross-command semantic concept. */
+export function resolvePmFlagSemanticConcept(
+  command: string,
+  flag: string,
+): string {
+  if (flag === "--limit") return "result-row-limit";
+  if (flag === "--node-limit") return "graph-node-limit";
+  if (flag === "--edge-limit") return "graph-edge-limit";
+  if (flag === "--output-limit") return "rendered-output-row-limit";
+  if (flag === "--output-budget") return "rendered-output-byte-budget";
+  if (flag === "--token-budget") return "context-intent-token-budget";
+  if (flag === "--full") {
+    const concept = FULL_PROJECTION_CONCEPT_BY_COMMAND[command];
+    if (concept === undefined) {
+      throw new Error(
+        `Command ${command} exposes --full without a registered projection concept.`,
+      );
+    }
+    return concept;
+  }
+  if (flag !== "--file") return flag.slice(2);
+  if (["create", "update", "update-many"].includes(command))
+    return "linked-file-path";
+  if (["comments", "notes", "learnings"].includes(command))
+    return "entry-file-input";
+  return "plan-definition-file";
+}
 
 /** Build the canonical lexicon lazily from the same contracts as CLI and MCP. */
 export function listPmFlagLexicon(): readonly PmFlagLexiconEntry[] {
@@ -87,12 +154,14 @@ export function listPmFlagLexicon(): readonly PmFlagLexiconEntry[] {
     ).map((contract) => ({
       command,
       family,
-      concept: contract.flag.slice(2),
+      concept: resolvePmFlagSemanticConcept(command, contract.flag),
       flag: contract.flag,
       aliases: Object.freeze([...(contract.aliases ?? [])]),
       value_kind: (contract.repeatable
         ? "list"
-        : contract.value_type) as PmFlagValueKind,
+        : contract.flag === "--limit"
+          ? "number"
+          : contract.value_type) as PmFlagValueKind,
     })),
   );
   const compatibilityAliasFlags = new Set(
@@ -122,6 +191,21 @@ export function listPmFlagLexicon(): readonly PmFlagLexiconEntry[] {
     ),
   );
   return cachedPmFlagLexicon;
+}
+
+/** Return the complete canonical and compatibility spelling inventory. */
+export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryEntry[] {
+  return Object.freeze(
+    listPmFlagLexicon().map((entry) =>
+      Object.freeze({
+        command: entry.command,
+        canonical_flag: entry.flag,
+        accepted_spellings: Object.freeze(
+          [...new Set([entry.flag, ...entry.aliases])].sort(),
+        ),
+      }),
+    ),
+  );
 }
 
 const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
@@ -270,14 +354,48 @@ function appendBudgetFindings(
   }
 }
 
+/** Append regressions against the persisted pre-change spelling inventory. */
+function appendSpellingCompatibilityFindings(
+  entries: readonly PmFlagLexiconEntry[],
+  baseline: readonly PmFlagSpellingInventoryEntry[],
+  findings: PmFlagLexiconFinding[],
+): void {
+  const current = new Map(
+    entries.map((entry) => [`${entry.command}:${entry.flag}`, entry]),
+  );
+  for (const historical of baseline) {
+    const key = `${historical.command}:${historical.canonical_flag}`;
+    const entry = current.get(key);
+    if (!entry) {
+      findings.push({
+        code: "removed_canonical_spelling",
+        command: historical.command,
+        detail: `${historical.canonical_flag} disappeared from the executable spelling inventory.`,
+      });
+      continue;
+    }
+    const accepted = new Set([entry.flag, ...entry.aliases]);
+    for (const spelling of historical.accepted_spellings) {
+      if (accepted.has(spelling)) continue;
+      findings.push({
+        code: "removed_compatibility_spelling",
+        command: historical.command,
+        detail: `${spelling} no longer resolves to ${historical.canonical_flag}.`,
+      });
+    }
+  }
+}
+
 /** Verify uniqueness, concept kind stability, alias safety, and flag budgets. */
 export function verifyPmFlagLexicon(
   entries: readonly PmFlagLexiconEntry[] = listPmFlagLexicon(),
   budgets: readonly PmCommandFlagBudget[] = listPmCommandFlagBudgets(),
+  baseline: readonly PmFlagSpellingInventoryEntry[] = [],
 ): PmFlagLexiconReport {
   const findings: PmFlagLexiconFinding[] = [];
   const canonicalOwners = new Map<string, PmFlagLexiconEntry>();
   const conceptKinds = new Map<string, PmFlagValueKind>();
+  const conceptSpellings = new Map<string, string>();
   const counts = new Map<string, number>();
   for (const entry of entries) {
     const commandFlag = `${entry.command}:${entry.flag}`;
@@ -301,9 +419,20 @@ export function verifyPmFlagLexicon(
     } else {
       conceptKinds.set(entry.concept, entry.value_kind);
     }
+    const priorSpelling = conceptSpellings.get(entry.concept);
+    if (priorSpelling !== undefined && priorSpelling !== entry.flag) {
+      findings.push({
+        code: "semantic_spelling_collision",
+        command: entry.command,
+        detail: `${entry.concept} is canonicalized by both ${priorSpelling} and ${entry.flag}.`,
+      });
+    } else {
+      conceptSpellings.set(entry.concept, entry.flag);
+    }
   }
   appendAliasCollisionFindings(entries, canonicalOwners, findings);
   appendBudgetFindings(counts, budgets, findings);
+  appendSpellingCompatibilityFindings(entries, baseline, findings);
   findings.sort(
     (left, right) =>
       left.command.localeCompare(right.command) ||
@@ -314,6 +443,8 @@ export function verifyPmFlagLexicon(
     ok: findings.length === 0,
     entry_count: entries.length,
     budget_count: budgets.length,
+    concept_count: new Set(entries.map(({ concept }) => concept)).size,
+    baseline_entry_count: baseline.length,
     findings,
   };
 }

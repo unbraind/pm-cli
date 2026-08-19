@@ -50,6 +50,17 @@ describe("generate error code catalog", () => {
       'const duplicate = { code: "lock_conflict" };',
       "utf8",
     );
+    await mkdir(path.join(root, "src", "sdk", "query"), { recursive: true });
+    await writeFile(
+      path.join(root, "src", "sdk", "query", "search-contracts.ts"),
+      'const projection = { code: "projection_options_mutually_exclusive" };',
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src", "sdk", "query", "list.ts"),
+      'const listQuery = { code: "list_query_failure" };',
+      "utf8",
+    );
     await mkdir(path.join(root, "scripts"), { recursive: true });
     await writeFile(
       path.join(root, "scripts", "error-code-reachability.json"),
@@ -106,6 +117,14 @@ describe("generate error code catalog", () => {
       /code: "history_author_acknowledge_selector_conflict",[\s\S]*?exit_code: 2,[\s\S]*?class: "usage"/u,
     );
     expect(output).toContain('emitting_commands: ["*"]');
+    const projectionRecord = output.match(
+      / {2}\{\n {4}code: "projection_options_mutually_exclusive",[\s\S]*?\n {2}\},/u,
+    )?.[0];
+    const listQueryRecord = output.match(
+      / {2}\{\n {4}code: "list_query_failure",[\s\S]*?\n {2}\},/u,
+    )?.[0];
+    expect(projectionRecord).toContain('emitting_commands: ["search"]');
+    expect(listQueryRecord).toContain('emitting_commands: ["list"]');
     expect(output).toContain('canonical_code: "item_not_found"');
     expect(output).toContain("aliases: []");
     expect(output).toContain(

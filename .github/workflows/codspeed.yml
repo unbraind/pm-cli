@@ -18,8 +18,11 @@ concurrency:
 
 jobs:
   benchmarks:
-    name: Run benchmarks (Ubuntu, Node 24)
-    runs-on: ubuntu-latest
+    name: Run benchmarks (Ubuntu 22.04, Node 24)
+    # CodSpeed supports Ubuntu 22.04 and 24.04, but GitHub's rolling
+    # ubuntu-latest pool can mix image revisions during a rollout. Pinning the
+    # OS family keeps Valgrind/libc6-dbg installation on one stable baseline.
+    runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -45,4 +48,7 @@ jobs:
         uses: CodSpeedHQ/action@4296e51e7041e24dadb86d1d6e8b9320d223dbe8 # v5.0.3
         with:
           mode: simulation
+          # Install instruments against this runner instead of restoring
+          # packages built for a different hosted-image revision.
+          cache-instruments: "false"
           run: pnpm vitest bench --run --config vitest.bench.config.ts

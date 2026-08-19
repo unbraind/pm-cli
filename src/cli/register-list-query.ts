@@ -19,6 +19,7 @@ import {
 } from "../sdk/cli-contracts.js";
 import { EVAL_QUERY_SET_SCHEMA_ID } from "../sdk/eval.js";
 import { applyContextIntentProjection } from "../sdk/context-intent-contracts.js";
+import { renderPmClosedDomainHelp } from "../sdk/agent/closed-domain-contracts.js";
 import {
   serializeNdjsonRows,
   serializeNdjsonStream,
@@ -347,6 +348,7 @@ async function runRegisteredListCommand(params: {
     }
   }
   applyDefaultListProjection(listOptions, effectiveName);
+  Object.assign(listOptions, { projectionCommand: effectiveName });
   if (effectiveExcludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = effectiveDependencyBlocked;
   const output = resolveRegisteredListOutputContext(
@@ -403,7 +405,10 @@ function registerListCommand(
     command.option("--all", "Include every lifecycle status");
   }
   command
-    .option("--for <intent>", "Apply a declared context intent projection")
+    .option(
+      "--for <intent>",
+      `Apply a declared context intent projection. ${renderPmClosedDomainHelp("list", "--for")}`,
+    )
     .option(
       "--token-budget <n>",
       "Override the selected intent's maximum estimated output tokens",
@@ -509,7 +514,7 @@ function registerListCommand(
     )
     .option(
       "--fields <value>",
-      "Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full; valid: --fields id,title)",
+      `Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full). ${renderPmClosedDomainHelp(name, "--fields")}`,
     )
     .option(
       "--sort <value>",
@@ -1170,7 +1175,10 @@ export function registerListQueryCommands(
       .description(
         "Show a token-efficient project context snapshot for next-work decisions.",
       )
-      .option("--for <intent>", "Apply a declared context intent projection")
+      .option(
+        "--for <intent>",
+        `Apply a declared context intent projection. ${renderPmClosedDomainHelp("context", "--for")}`,
+      )
       .option(
         "--date <value>",
         "Anchor date/time for agenda window calculations (ISO/date string or relative)",
@@ -1266,7 +1274,10 @@ export function registerListQueryCommands(
       .description(
         "Recommend the next actionable (unblocked, ready) work item with rationale + blocked companion.",
       )
-      .option("--for <intent>", "Apply a declared context intent projection")
+      .option(
+        "--for <intent>",
+        `Apply a declared context intent projection. ${renderPmClosedDomainHelp("next", "--for")}`,
+      )
       .option("--type <value>", "Filter candidate items by type")
       .option("--tag <value>", "Filter candidate items by tag")
       .option("--priority <value>", "Filter candidate items by priority")
@@ -1338,7 +1349,10 @@ export function registerListQueryCommands(
         "Search items with keyword, semantic, or hybrid retrieval. Inline field:value tokens " +
           "(tag:/status:/type:/priority:) in the query are parsed as filters, e.g. 'auth tag:area:search status:open'.",
       )
-      .option("--for <intent>", "Apply a declared context intent projection")
+      .option(
+        "--for <intent>",
+        `Apply a declared context intent projection. ${renderPmClosedDomainHelp("search", "--for")}`,
+      )
       .option(
         "--token-budget <n>",
         "Override the selected intent's maximum estimated output tokens",
@@ -1426,7 +1440,7 @@ export function registerListQueryCommands(
       )
       .option(
         "--fields <value>",
-        "Render custom comma-separated search hit fields (mutually exclusive with --compact/--full; valid: --fields id,title,score; invalid: --full --fields id,title)",
+        `Render custom comma-separated search hit fields (mutually exclusive with --compact/--full). ${renderPmClosedDomainHelp("search", "--fields")}`,
       )
       .option(
         "--format <value>",
@@ -1475,7 +1489,10 @@ export function registerListQueryCommands(
     const getCommand = program
       .command("get")
       .argument("<id>", "Item id")
-      .option("--for <intent>", "Apply a declared context intent projection")
+      .option(
+        "--for <intent>",
+        `Apply a declared context intent projection. ${renderPmClosedDomainHelp("get", "--for")}`,
+      )
       .option(
         "--token-budget <n>",
         "Override the selected intent's maximum estimated output tokens",
@@ -1490,7 +1507,7 @@ export function registerListQueryCommands(
       )
       .option(
         "--fields <value>",
-        "Render custom comma-separated item metadata fields (for example: --fields id,title,status,parent,type)",
+        `Render custom comma-separated item metadata fields. ${renderPmClosedDomainHelp("get", "--fields")}`,
       )
       .option("--tree", "Include descendants rooted at the requested item")
       .option(

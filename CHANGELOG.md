@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- CodSpeed instrument cache can stall simulation setup until the hosted benchmark gate is canceled ([pm-w16muu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w16muu.toon))
+- Make context intents and low-token projection fields fully discoverable ([pm-gy885b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gy885b.toon))
+
+### Other
+
+- Consistent flag spellings across commands with preserved aliases and enforced budgets ([pm-fs8q9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fs8q9x.toon))
+- Refresh compatible Greptile 3.4.1 review tooling ([pm-obmgi3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-obmgi3.toon))
+
 ## 2026.8.19 - 2026-08-19
 
 ### Fixed

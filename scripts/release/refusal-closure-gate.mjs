@@ -1,53 +1,27 @@
 #!/usr/bin/env node
 
 /** Execute closed-domain refusal retries and score their recovery closure. */
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { scorePmRefusalClosure } from "../../dist/sdk/agent/refusal-closure.js";
+import { listCoreClosedDomainContracts } from "../../dist/sdk/agent/closed-domain-contracts.js";
 
-const PROBES = Object.freeze([
-  {
-    probe_id: "context-invalid-intent",
-    args: ["context", "--for", "not-a-declared-intent"],
-  },
-  {
-    probe_id: "list-invalid-intent",
-    args: ["list", "--for", "not-a-declared-intent"],
-  },
-  {
-    probe_id: "next-invalid-intent",
-    args: ["next", "--for", "not-a-declared-intent"],
-  },
-  {
-    probe_id: "list-invalid-field",
-    args: ["list", "--fields", "not-a-declared-field"],
-  },
-  {
-    probe_id: "get-invalid-intent",
-    args: ["get", "pm-domain", "--for", "not-a-declared-intent"],
-  },
-  {
-    probe_id: "search-invalid-intent",
-    args: ["search", "Domain query", "--for", "not-a-declared-intent"],
-  },
-  {
-    probe_id: "get-invalid-field",
-    args: ["get", "pm-domain", "--fields", "not-a-declared-field"],
-  },
-  {
-    probe_id: "search-invalid-field",
-    args: ["search", "Domain query", "--fields", "not-a-declared-field"],
-  },
-]);
+const REFUSAL_CLOSURE_BASELINE = JSON.parse(
+  readFileSync(
+    fileURLToPath(new URL("./refusal-closure-baseline.json", import.meta.url)),
+    "utf8",
+  ),
+);
 
 /** Execute the real core CLI refusal corpus in an isolated tracker. */
 export function verifyExecutableRefusalClosure({
   injectMismatch = false,
-  probes = PROBES,
+  probes = listCoreClosedDomainContracts(),
+  baseline = REFUSAL_CLOSURE_BASELINE,
   spawn = spawnSync,
   makeTemporaryDirectory = mkdtempSync,
   removeDirectory = rmSync,
@@ -68,7 +42,9 @@ export function verifyExecutableRefusalClosure({
       { cwd: process.cwd(), env: environment, encoding: "utf8" },
     );
     if (initialized.status !== 0) {
-      throw new Error(`Refusal closure tracker setup failed: ${initialized.stderr}`);
+      throw new Error(
+        `Refusal closure tracker setup failed: ${initialized.stderr}`,
+      );
     }
     const seeded = spawn(
       process.execPath,
@@ -86,14 +62,17 @@ export function verifyExecutableRefusalClosure({
     if (seeded.status !== 0) {
       throw new Error(`Refusal closure item setup failed: ${seeded.stderr}`);
     }
-    const observations = probes.map(({ probe_id: probeId, args }) => {
-      const rejectedValue = args.at(-1);
+    const observations = probes.map((contract) => {
+      const { probe_id: probeId, refusal_args: args } = contract;
       const refusal = spawn(
         process.execPath,
         ["dist/cli.js", ...args, "--json"],
         { cwd: process.cwd(), env: environment, encoding: "utf8" },
       );
-      const envelope = JSON.parse(refusal.stderr);
+      const problemStart = refusal.stderr.indexOf("{");
+      const envelope = JSON.parse(
+        problemStart >= 0 ? refusal.stderr.slice(problemStart) : refusal.stderr,
+      );
       const recovery = envelope.recovery ?? {};
       const suggestedRetry =
         typeof recovery.suggested_retry === "string"
@@ -105,38 +84,72 @@ export function verifyExecutableRefusalClosure({
           (argument) => typeof argument === "string",
         )
           ? recovery.suggested_retry_args
-        : [];
-      const retry = retryArguments.length > 0
-        ? spawn(
-            process.execPath,
-            ["dist/cli.js", ...retryArguments, "--json"],
-            { cwd: process.cwd(), env: environment, encoding: "utf8" },
-          )
-        : { status: 1 };
+          : [];
+      const retry =
+        retryArguments.length > 0
+          ? spawn(
+              process.execPath,
+              ["dist/cli.js", ...retryArguments, "--json"],
+              { cwd: process.cwd(), env: environment, encoding: "utf8" },
+            )
+          : { status: 1 };
       return {
         probe_id: probeId,
         entrypoint: `pm ${args.join(" ")}`,
         exit_code: refusal.status ?? 1,
-        rejected_value: rejectedValue ?? "",
+        rejected_value: contract.rejected_value,
         allowed_values: Array.isArray(recovery.allowed_values)
-          ? recovery.allowed_values.filter(
-              (value) => typeof value === "string",
-            )
+          ? recovery.allowed_values.filter((value) => typeof value === "string")
           : [],
+        expected_allowed_values: contract.allowed_values,
+        allowed_values_required: contract.allowed_values_required,
+        error_code: typeof envelope.code === "string" ? envelope.code : "",
+        expected_error_code: contract.error_code,
         suggested_retry: suggestedRetry,
+        suggested_retry_args: retryArguments,
+        expected_suggested_retry_args: contract.suggested_retry_args,
         retry_succeeded: retry.status === 0,
       };
     });
     if (injectMismatch) observations[0].allowed_values = [];
-    return scorePmRefusalClosure(observations);
+    const score = scorePmRefusalClosure(observations);
+    const probeIds = new Set(probes.map(({ probe_id: probeId }) => probeId));
+    const ratchetFindings = baseline.required_probe_ids
+      .filter((probeId) => !probeIds.has(probeId))
+      .map((probeId) => ({
+        code: "required_probe_missing",
+        probe_id: probeId,
+        detail: `${probeId} is required by refusal-closure baseline v${baseline.version}.`,
+      }));
+    if (probes.length < baseline.minimum_probe_count) {
+      ratchetFindings.push({
+        code: "minimum_probe_count_regressed",
+        probe_id: "corpus",
+        detail: `${probes.length} probes are below the ratcheted minimum ${baseline.minimum_probe_count}.`,
+      });
+    }
+    const findings = [...score.findings, ...ratchetFindings].sort(
+      (left, right) =>
+        left.probe_id.localeCompare(right.probe_id) ||
+        left.code.localeCompare(right.code),
+    );
+    return {
+      ...score,
+      ok: findings.length === 0,
+      contract_count: probes.length,
+      baseline_version: baseline.version,
+      baseline_minimum_probe_count: baseline.minimum_probe_count,
+      findings,
+    };
   } finally {
     removeDirectory(root, { recursive: true, force: true });
   }
 }
 
 /** Run the standalone repository gate. */
-export function main(argv = process.argv.slice(2)) {
+export function main(argv = process.argv.slice(2), options = {}) {
   const report = verifyExecutableRefusalClosure({
+    ...options,
     injectMismatch: argv.includes("--inject-mismatch"),
   });
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
@@ -145,8 +158,10 @@ export function main(argv = process.argv.slice(2)) {
 }
 
 /** Run the gate only when this module is the invoked Node entrypoint. */
-export function runIfMain(candidate = process.argv[1]) {
-  if (candidate && pathToFileURL(candidate).href === import.meta.url) main();
+export function runIfMain(candidate = process.argv[1], options = {}) {
+  if (candidate && pathToFileURL(candidate).href === import.meta.url) {
+    main([], options);
+  }
 }
 
 runIfMain();

@@ -6,25 +6,71 @@ import {
   verifyExecutableRefusalClosure,
 } from "../../../scripts/release/refusal-closure-gate.mjs";
 
+const SAMPLE_CONTRACT = {
+  probe_id: "context-invalid-intent",
+  refusal_args: ["context", "--for", "not-a-declared-intent"],
+  rejected_value: "not-a-declared-intent",
+  allowed_values: ["resume"],
+  error_code: "unknown_context_intent",
+  suggested_retry_args: ["context", "--for", "resume"],
+};
+
+const EMPTY_BASELINE = {
+  version: 1,
+  minimum_probe_count: 0,
+  required_probe_ids: [],
+};
+
+function createSuccessfulOptions() {
+  const results = [
+    { status: 0, stderr: "" },
+    { status: 0, stderr: "" },
+    {
+      status: 2,
+      stderr: JSON.stringify({
+        code: SAMPLE_CONTRACT.error_code,
+        recovery: {
+          allowed_values: SAMPLE_CONTRACT.allowed_values,
+          suggested_retry: "pm context --for resume",
+          suggested_retry_args: SAMPLE_CONTRACT.suggested_retry_args,
+        },
+      }),
+    },
+    { status: 0, stderr: "" },
+  ];
+  return {
+    probes: [SAMPLE_CONTRACT],
+    baseline: EMPTY_BASELINE,
+    makeTemporaryDirectory: () => "/tmp/pm-refusal-unit",
+    removeDirectory: () => {},
+    spawn: () => results.shift(),
+  };
+}
+
 describe("executable refusal closure gate", () => {
   it("proves real retries and blocks a seeded omission", () => {
     expect(verifyExecutableRefusalClosure()).toMatchObject({
       ok: true,
-      probe_count: 8,
-      closed_probe_count: 8,
+      probe_count: 18,
+      closed_probe_count: 18,
       closure_fraction: 1,
+      contract_count: 18,
+      baseline_version: 1,
       findings: [],
     });
     expect(
-      verifyExecutableRefusalClosure({ injectMismatch: true }),
+      verifyExecutableRefusalClosure({
+        ...createSuccessfulOptions(),
+        injectMismatch: true,
+      }),
     ).toMatchObject({
       ok: false,
-      findings: [
+      findings: expect.arrayContaining([
         expect.objectContaining({
           code: "missing_allowed_values",
           probe_id: "context-invalid-intent",
         }),
-      ],
+      ]),
     });
   });
 
@@ -69,9 +115,28 @@ describe("executable refusal closure gate", () => {
     expect(
       verifyExecutableRefusalClosure({
         probes: [
-          { probe_id: "malformed", args: [] },
-          { probe_id: "missing-recovery", args: ["missing"] },
+          {
+            probe_id: "malformed",
+            refusal_args: [],
+            rejected_value: "invalid",
+            allowed_values: ["valid"],
+            error_code: "unknown_context_intent",
+            suggested_retry_args: ["list", "--for", "triage"],
+          },
+          {
+            probe_id: "missing-recovery",
+            refusal_args: ["missing"],
+            rejected_value: "invalid",
+            allowed_values: ["valid"],
+            error_code: "unknown_context_intent",
+            suggested_retry_args: ["list", "--for", "triage"],
+          },
         ],
+        baseline: {
+          version: 1,
+          minimum_probe_count: 0,
+          required_probe_ids: [],
+        },
         makeTemporaryDirectory: () => "/tmp/pm-refusal-malformed",
         removeDirectory: () => {},
         spawn: () => results.shift(),
@@ -83,11 +148,47 @@ describe("executable refusal closure gate", () => {
         expect.objectContaining({ code: "retry_failed" }),
       ]),
     });
+
+    const invalidJsonResults = [
+      { status: 0, stderr: "" },
+      { status: 0, stderr: "" },
+      { status: 2, stderr: "not-json" },
+    ];
+    expect(() =>
+      verifyExecutableRefusalClosure({
+        ...createSuccessfulOptions(),
+        spawn: () => invalidJsonResults.shift(),
+      }),
+    ).toThrow(SyntaxError);
+  });
+
+  it("fails closed when the historical contract corpus regresses", () => {
+    const report = verifyExecutableRefusalClosure({
+      ...createSuccessfulOptions(),
+      baseline: {
+        version: 99,
+        minimum_probe_count: 19,
+        required_probe_ids: ["removed-probe"],
+      },
+    });
+    expect(report).toMatchObject({
+      ok: false,
+      baseline_version: 99,
+      findings: expect.arrayContaining([
+        expect.objectContaining({ code: "minimum_probe_count_regressed" }),
+        expect.objectContaining({
+          code: "required_probe_missing",
+          probe_id: "removed-probe",
+        }),
+      ]),
+    });
   });
 
   it("reports standalone success and negative-control exit status", () => {
     const originalExitCode = process.exitCode;
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     try {
       process.exitCode = undefined;
       runIfMain("");
@@ -98,9 +199,12 @@ describe("executable refusal closure gate", () => {
             import.meta.url,
           ),
         ),
+        createSuccessfulOptions(),
       );
       expect(process.exitCode).toBeUndefined();
-      expect(main(["--inject-mismatch"])).toMatchObject({ ok: false });
+      expect(
+        main(["--inject-mismatch"], createSuccessfulOptions()),
+      ).toMatchObject({ ok: false });
       expect(process.exitCode).toBe(1);
     } finally {
       write.mockRestore();

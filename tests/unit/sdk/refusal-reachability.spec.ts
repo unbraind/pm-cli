@@ -4,6 +4,7 @@ import {
   censusPmRecoveryReferenceProducers,
   derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
+  verifyPmRecoveryProducerRuntimeCoverage,
   verifyPmRefusalReachability,
 } from "../../../src/sdk/agent/refusal-reachability.js";
 
@@ -150,6 +151,43 @@ describe("recovery-reference reachability", () => {
     expect(verifyPmRecoveryReferences([], [])).toMatchObject({
       ok: true,
       pass_fraction: 1,
+    });
+  });
+
+  it("joins source producers to distinct runtime values without hiding missing kinds", () => {
+    const census = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/producer.ts",
+        content: `({ suggested_retry: "pm list", candidate_commands: ["list"], examples: ["pm list"], next_steps: ["Run"], migration_hint: "Use replacement", restore_with: "Unbounded" })`,
+      },
+    ]);
+    const completeObligations = derivePmRecoveryReferenceObligations(
+      "complete",
+      {
+        suggested_retry: "pm list",
+        candidate_commands: ["list"],
+        examples: ["pm list"],
+        next_steps: ["Run"],
+        migration_hint: "Use replacement",
+        restore_with: "Unbounded",
+      },
+    );
+    expect(
+      verifyPmRecoveryProducerRuntimeCoverage(census, completeObligations),
+    ).toMatchObject({
+      ok: true,
+      source_producer_count: 6,
+      runtime_value_count: 6,
+      missing_runtime_kinds: [],
+    });
+    expect(
+      verifyPmRecoveryProducerRuntimeCoverage(
+        census,
+        completeObligations.filter(({ kind }) => kind !== "restore_with"),
+      ),
+    ).toMatchObject({
+      ok: false,
+      missing_runtime_kinds: ["restore_with"],
     });
   });
 

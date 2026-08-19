@@ -1132,12 +1132,34 @@ describe("runList", () => {
       for (const file of await readdir(taskDirectory)) {
         await writeFile(path.join(taskDirectory, file), "{invalid", "utf8");
       }
+      const cliIndexed = context.runCli(
+        [
+          "list",
+          "--status",
+          "all",
+          "--limit",
+          "1",
+          "--offset",
+          "1",
+          "--brief",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(cliIndexed.code).toBe(0);
+      expect(cliIndexed.json).toMatchObject({
+        items: [{ title: "Indexed priority two" }],
+        count: 1,
+        total: 3,
+        completeness: { status: "unchecked" },
+      });
       const indexed = await runList(
         undefined,
         { status: "all", limit: "1", offset: "1", brief: true },
         { path: context.pmPath },
       );
       expect(indexed).toMatchObject({
+        items: [{ title: "Indexed priority two" }],
         count: 1,
         total: 3,
         has_more: true,
