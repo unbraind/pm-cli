@@ -47,6 +47,10 @@ const QUERY_EMITTING_COMMAND_BY_MODULE = new Map([
   ["search-contracts", "search"],
 ]);
 
+const LIFECYCLE_EMITTING_COMMAND_BY_MODULE = new Map([
+  ["reopen", "item reopen"],
+]);
+
 const GENERATED_CATALOG_PART_COUNT = 2;
 
 function resolveExplicitExitCode(property) {
@@ -191,7 +195,10 @@ function inferEmittingCommands(code, sources) {
       commands.add(
         queryMatch
           ? (QUERY_EMITTING_COMMAND_BY_MODULE.get(matched[1]) ?? matched[1])
-          : matched[1],
+          : lifecycleMatch
+            ? (LIFECYCLE_EMITTING_COMMAND_BY_MODULE.get(matched[1]) ??
+              matched[1])
+            : matched[1],
       );
     } else {
       hasCrossCuttingSource = true;

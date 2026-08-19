@@ -41,11 +41,7 @@ import {
   listAllDocumentsCachedLight,
   refreshItemMetadataDerivedIndex,
 } from "./item-metadata-cache.js";
-import {
-  getHistoryPath,
-  getItemPath,
-  ITEM_FILE_EXTENSIONS,
-} from "./paths.js";
+import { getHistoryPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
 import { resolveClaimPrincipal } from "../shared/author.js";
 import { nowIso } from "../shared/time.js";
@@ -635,14 +631,22 @@ async function rollbackMutatedItemWrite(params: {
   await writeFileAtomic(params.originalItemPath, params.originalRaw);
 }
 
-/** Implements mutate item for the public runtime surface of this module. */
-export async function mutateItem(params: {
+interface ItemMutationResult {
+  item: ItemMetadata;
+  body: string;
+  changedFields: string[];
+  warnings: string[];
+}
+
+interface ItemMutationParams {
   pmRoot: string;
   settings: PmSettings;
   id: string;
   op: string;
   author: string;
   message?: string;
+  /** Structured immutable context attached to the appended history entry. */
+  historyContext?: Record<string, unknown>;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
   skipNoop?: boolean;
@@ -653,12 +657,15 @@ export async function mutateItem(params: {
   ) =>
     | { changedFields: string[]; warnings?: string[] }
     | Promise<{ changedFields: string[]; warnings?: string[] }>;
-}): Promise<{
-  item: ItemMetadata;
-  body: string;
-  changedFields: string[];
-  warnings: string[];
-}> {
+}
+
+type DeferredItemMutationParams = Omit<ItemMutationParams, "historyContext"> & {
+  resolveHistoryContext?: () => Record<string, unknown> | undefined;
+};
+
+async function mutateItemWithDeferredHistoryContext(
+  params: DeferredItemMutationParams,
+): Promise<ItemMutationResult> {
   const prepared = await prepareLockedItem({
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -697,6 +704,7 @@ export async function mutateItem(params: {
         warnings: [...parseWarnings, ...(mutation.warnings ?? [])],
       };
     }
+    const historyContext = params.resolveHistoryContext?.();
     mutableDocument.metadata.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument, {
       schema: params.settings.schema,
@@ -778,6 +786,7 @@ export async function mutateItem(params: {
         before: beforeDocument,
         after: afterDocument,
         message: params.message,
+        context: historyContext,
       });
       try {
         await appendHistoryEntry(historyPath, entry);
@@ -860,6 +869,82 @@ export async function mutateItem(params: {
   } finally {
     await releaseLock();
   }
+}
+
+/** Mutate one item while attaching structured context to its immutable history event. */
+export async function mutateItemWithHistoryContext(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  id: string;
+  op: string;
+  author: string;
+  message?: string;
+  /** Structured immutable context attached to the appended history entry. */
+  historyContext?: Record<string, unknown>;
+  force?: boolean;
+  bypassAssigneeConflict?: boolean;
+  skipNoop?: boolean;
+  extensionFieldNames?: readonly string[];
+  typeToFolder?: Record<string, string>;
+  mutate: (
+    document: ItemDocument,
+  ) =>
+    | { changedFields: string[]; warnings?: string[] }
+    | Promise<{ changedFields: string[]; warnings?: string[] }>;
+}): Promise<{
+  item: ItemMetadata;
+  body: string;
+  changedFields: string[];
+  warnings: string[];
+}> {
+  const { historyContext, ...mutationParams } = params;
+  return mutateItemWithDeferredHistoryContext({
+    ...mutationParams,
+    resolveHistoryContext: () => historyContext,
+  });
+}
+
+/** Mutate one item while resolving structured history context after its locked mutation. */
+export async function mutateItemWithHistoryContextResolver(
+  params: Omit<ItemMutationParams, "historyContext"> & {
+    resolveHistoryContext: () => Record<string, unknown> | undefined;
+  },
+): Promise<ItemMutationResult> {
+  return mutateItemWithDeferredHistoryContext(params);
+}
+
+/** Implements mutate item for the public runtime surface of this module. */
+export function mutateItem(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  id: string;
+  op: string;
+  author: string;
+  message?: string;
+  force?: boolean;
+  bypassAssigneeConflict?: boolean;
+  skipNoop?: boolean;
+  extensionFieldNames?: readonly string[];
+  typeToFolder?: Record<string, string>;
+  mutate: (
+    document: ItemDocument,
+  ) =>
+    | { changedFields: string[]; warnings?: string[] }
+    | Promise<{ changedFields: string[]; warnings?: string[] }>;
+}): Promise<{
+  item: ItemMetadata;
+  body: string;
+  changedFields: string[];
+  warnings: string[];
+}>;
+/** Mutate one item through the compatibility overload while preserving transactional storage and immutable history semantics. */
+export async function mutateItem(
+  params: Omit<
+    Parameters<typeof mutateItemWithHistoryContext>[0],
+    "historyContext"
+  >,
+): Promise<ItemMutationResult> {
+  return mutateItemWithDeferredHistoryContext(params);
 }
 
 /** Public contract for item store test only, shared by SDK and presentation-layer consumers. */

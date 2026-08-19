@@ -124,6 +124,7 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   create: ["fullChangedFields", "idOnly"],
   copy: ["fullChangedFields", "idOnly"],
   update: ["fullChangedFields", "idOnly"],
+  "item-reopen": ["fullChangedFields", "idOnly"],
   close: ["fullChangedFields", "idOnly"],
   restore: ["fullChangedFields", "idOnly"],
   append: ["fullChangedFields"],
@@ -1321,6 +1322,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "validateClose",
         ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
+    },
+    "item-reopen": {
+      required: ["id", "reason"],
+      optional: ["status", "author", "message", "force"],
     },
   };
 

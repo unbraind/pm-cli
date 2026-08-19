@@ -176,10 +176,12 @@ export const PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS = [
   "deactivate",
 ] as const;
 
+/** Noun-first item lifecycle verbs flattened for SDK and MCP dispatch. */
+export const PM_ITEM_ACTION_SUBCOMMANDS = ["reopen"] as const;
+
 /** CLI-only presentation commands intentionally omitted from programmatic actions. */
 export const PM_CLI_ONLY_TOOL_ACTION_WAIVERS = {
   help: "Commander help rendering has no SDK operation result.",
-  item: "The item namespace only groups lifecycle subcommands already exposed as actions.",
   packages: "The plural package alias only renders package-oriented help.",
 } as const;
 
@@ -187,11 +189,13 @@ type PmCoreCommandName = (typeof PM_CORE_COMMAND_NAMES)[number];
 type PmCliOnlyToolAction = keyof typeof PM_CLI_ONLY_TOOL_ACTION_WAIVERS;
 type PmExtensionPackageAction =
   `${"extension" | "package"}-${(typeof PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS)[number]}`;
+type PmItemAction = `item-${(typeof PM_ITEM_ACTION_SUBCOMMANDS)[number]}`;
 
 /** Restricts pm tool action values accepted by command, SDK, and storage contracts. */
 export type PmToolAction =
-  | Exclude<PmCoreCommandName, PmCliOnlyToolAction>
-  | PmExtensionPackageAction;
+  | Exclude<PmCoreCommandName, PmCliOnlyToolAction | "item">
+  | PmExtensionPackageAction
+  | PmItemAction;
 
 /**
  * Public pm tool actions derived from the CLI vocabulary. Nested extension and
@@ -208,19 +212,25 @@ export const PM_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
         command,
       ];
     }
+    if (command === "item") {
+      return PM_ITEM_ACTION_SUBCOMMANDS.map(
+        (subcommand): PmItemAction => `item-${subcommand}`,
+      );
+    }
     return [command as PmToolAction];
   }),
 );
 
 /** Deprecated compatibility actions accepted by the SDK but omitted from canonical MCP discovery. */
-export const PM_DEPRECATED_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
-  PM_COMMAND_ALIAS_CONTRACTS.filter(
-    (contract) =>
-      contract.lifecycle === "deprecated" &&
-      contract.registration === "commander" &&
-      PM_TOOL_ACTIONS.includes(contract.alias as PmToolAction),
-  ).map((contract) => contract.alias as PmToolAction),
-);
+export const PM_DEPRECATED_TOOL_ACTIONS: readonly PmToolAction[] =
+  Object.freeze(
+    PM_COMMAND_ALIAS_CONTRACTS.filter(
+      (contract) =>
+        contract.lifecycle === "deprecated" &&
+        contract.registration === "commander" &&
+        PM_TOOL_ACTIONS.includes(contract.alias as PmToolAction),
+    ).map((contract) => contract.alias as PmToolAction),
+  );
 
 /** Canonical actions presented to MCP clients and unscoped contract consumers. */
 export const PM_DISCOVERABLE_TOOL_ACTIONS: readonly PmToolAction[] =
@@ -245,14 +255,21 @@ export function analyzePmToolActionParity(
   return {
     missing_cli_actions: cliCommands.filter(
       (command) =>
-        !toolActionSet.has(command) && waivers[command] === undefined,
+        !toolActionSet.has(command) &&
+        !toolActions.some((action) => action.startsWith(`${command}-`)) &&
+        waivers[command] === undefined,
     ),
     waived_cli_actions: cliCommands.filter(
       (command) =>
-        !toolActionSet.has(command) && waivers[command] !== undefined,
+        !toolActionSet.has(command) &&
+        !toolActions.some((action) => action.startsWith(`${command}-`)) &&
+        waivers[command] !== undefined,
     ),
     stale_waivers: Object.keys(waivers).filter(
-      (command) => !cliCommandSet.has(command) || toolActionSet.has(command),
+      (command) =>
+        !cliCommandSet.has(command) ||
+        toolActionSet.has(command) ||
+        toolActions.some((action) => action.startsWith(`${command}-`)),
     ),
   };
 }

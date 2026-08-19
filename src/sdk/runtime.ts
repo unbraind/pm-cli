@@ -128,6 +128,7 @@ import {
 } from "./governance/upgrade.js";
 import { runCreate, type CreateResult } from "./lifecycle/create.js";
 import { runUpdate, type UpdateResult } from "./lifecycle/update.js";
+import type { ReopenCommandOptions, ReopenResult } from "./lifecycle/reopen.js";
 import {
   runPlan,
   type PlanCommandOptions,
@@ -208,6 +209,7 @@ import {
   runMcpHistoryCompactAction,
   runMcpHistoryRepairAction,
 } from "./history-mcp.js";
+import { runMcpCloseAction, runMcpReopenAction } from "./lifecycle/mcp-actions.js";
 import {
   actionGlobalOptions as globalOptions,
   closeManyOptionsFromFlat,
@@ -542,6 +544,7 @@ export {
   type TerminalTransitionPolicy,
 } from "./lifecycle-policy.js";
 export { runUpdate, type UpdateCommandOptions } from "./lifecycle/update.js";
+export { runReopen, type PreviousTerminalEvidence, type RecurrenceReceipt, type ReopenCommandOptions, type ReopenResult } from "./lifecycle/reopen.js";
 export {
   NEXT_OUTPUT_VALUES,
   runNext,
@@ -1387,6 +1390,20 @@ export class PmClient {
     });
   }
 
+  /** Reopen terminal work as a recurrence through the canonical update path. */
+  reopen(
+    id: string,
+    reason: string,
+    options: ReopenCommandOptions = {},
+  ): Promise<ReopenResult> {
+    return this.runTyped("item-reopen", {
+      id,
+      reason,
+      fullChangedFields: true,
+      options,
+    });
+  }
+
   /** Close an item using the same mutation path as `pm close`. Options are contract-typed (pm-x29o); the close reason is the positional parameter, so the option bag omits `reason`/`text`. */
   close(
     id: string,
@@ -2156,6 +2173,16 @@ export function update(
   clientOptions: PmClientOptions = {},
 ): Promise<UpdateResult> {
   return new PmClient(clientOptions).update(id, options);
+}
+
+/** Reopen terminal work as a recurrence without constructing a reusable client. */
+export function reopen(
+  id: string,
+  reason: string,
+  options: ReopenCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<ReopenResult> {
+  return new PmClient(clientOptions).reopen(id, reason, options);
 }
 
 /** Close an item without constructing a reusable client. */
@@ -3017,33 +3044,6 @@ async function runMcpUpdateAction(
   );
 }
 
-async function runMcpCloseAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  const closeReason =
-    readString(ctx.args, "reason") ??
-    readString(ctx.args, "text") ??
-    readString(runnerOptions, "reason") ??
-    readString(runnerOptions, "text");
-  return projectMutationResult(
-    await runClose(
-      requireMcpItemId(ctx, runnerOptions),
-      closeReason,
-      runnerOptions as never,
-      ctx.global,
-    ),
-    {
-      changedFields,
-      compactEnvelope: changedFields === "compact" && !idOnly,
-      idOnly,
-    },
-  );
-}
-
 function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const commentOptions = normalizeAnnotationTransportOptions(ctx.options);
   const isListing =
@@ -3707,6 +3707,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
       ctx.global,
     ),
   update: runMcpUpdateAction,
+  "item-reopen": runMcpReopenAction,
   restore: runMcpRestoreAction,
   claim: (ctx) =>
     ctx.options.next === true || ctx.args.next === true

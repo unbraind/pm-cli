@@ -37,6 +37,32 @@ const CHANGED_FIELD_COUNT_KEY = "changed_field_count";
 const ROWS_KEY = "rows";
 const UPDATE_MANY_MUTATION_MODES = new Set(["apply", "rollback"]);
 const DELETE_OUTCOMES = new Set(["deleted", "would_delete"]);
+const COMPACT_RECURRENCE_TEXT_LIMIT = 256;
+
+function truncateCompactRecurrenceText(value: unknown): unknown {
+  if (
+    typeof value !== "string" ||
+    value.length <= COMPACT_RECURRENCE_TEXT_LIMIT
+  ) {
+    return value;
+  }
+  return `${value.slice(0, COMPACT_RECURRENCE_TEXT_LIMIT - 1)}…`;
+}
+
+function projectCompactRecurrence(value: unknown): Record<string, unknown> | null {
+  if (!isPlainObject(value)) return null;
+  const recurrence = { ...value };
+  recurrence.reason = truncateCompactRecurrenceText(recurrence.reason);
+  if (isPlainObject(recurrence.previous_terminal)) {
+    recurrence.previous_terminal = Object.fromEntries(
+      Object.entries(recurrence.previous_terminal).map(([key, entry]) => [
+        key,
+        truncateCompactRecurrenceText(entry),
+      ]),
+    );
+  }
+  return recurrence;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -149,6 +175,8 @@ function projectCompactMutationEnvelope(result: unknown): unknown | null {
         ? result.item.close_reason
         : undefined;
   if (closeReason !== undefined) compact.close_reason = closeReason;
+  const recurrence = projectCompactRecurrence(result.recurrence);
+  if (recurrence !== null) compact.recurrence = recurrence;
   if (Array.isArray(result.warnings) && result.warnings.length > 0)
     compact.warnings = result.warnings;
   return compact;

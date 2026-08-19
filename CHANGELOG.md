@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- GH-796: no reopen transition for terminal items, so recurrence is recorded as a duplicate instead of a reopening ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
+
 ### Fixed
 
+- GH-529: init --agent-guidance emits run-tests.mjs linked-test example that may not exist in the target repo ([pm-surv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-surv.toon))
+- GH-527: semantic staleness warning recommends 'pm reindex' which is absent from the base install ([pm-qljv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qljv.toon))
 - CodSpeed instrument cache can stall simulation setup until the hosted benchmark gate is canceled ([pm-w16muu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w16muu.toon))
 - Make context intents and low-token projection fields fully discoverable ([pm-gy885b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gy885b.toon))
 

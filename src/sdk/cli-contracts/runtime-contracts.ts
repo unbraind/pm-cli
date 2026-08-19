@@ -87,6 +87,7 @@ import {
   INIT_FLAG_CONTRACTS,
   ITEM_COMPLETE_FLAG_CONTRACTS,
   ITEM_MUTATE_FLAG_CONTRACTS,
+  ITEM_REOPEN_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
@@ -827,6 +828,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["create", CREATE_FLAG_CONTRACTS],
   ["item mutate", ITEM_MUTATE_FLAG_CONTRACTS],
   ["item complete", ITEM_COMPLETE_FLAG_CONTRACTS],
+  ["item reopen", ITEM_REOPEN_FLAG_CONTRACTS],
   ["copy", COPY_FLAG_CONTRACTS],
   ["focus", FOCUS_FLAG_CONTRACTS],
   ["update", UPDATE_FLAG_CONTRACTS],
@@ -929,6 +931,9 @@ function resolveActionCommandPath(action: PmToolAction): string | null {
   }
   if (action.startsWith("package-")) {
     return normalizeCommandPath(`package ${action.slice("package-".length)}`);
+  }
+  if (action.startsWith("item-")) {
+    return normalizeCommandPath(`item ${action.slice("item-".length)}`);
   }
   if (action.startsWith("test-runs-")) {
     return normalizeCommandPath(

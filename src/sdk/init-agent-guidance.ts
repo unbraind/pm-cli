@@ -44,6 +44,13 @@ const AGENT_GUIDANCE_END_MARKER = "<!-- pm-cli:agent-guidance:end -->";
 const AGENT_GUIDANCE_ADD_LATER_HINT =
   "Add workflow guidance later: pm init --agent-guidance add";
 
+interface ProjectPackageManifest {
+  packageManager?: string;
+  scripts: {
+    test: string;
+  };
+}
+
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   toPortableRelativePath,
@@ -182,14 +189,17 @@ function hasGuidanceMarker(content: string): boolean {
   return findGuidanceBlockRange(content) !== null;
 }
 
-function buildAgentGuidanceBlock(lineEnding: "\n" | "\r\n"): string {
+function buildAgentGuidanceBlock(
+  lineEnding: "\n" | "\r\n",
+  projectTestCommand = "<your project test command>",
+): string {
   const lines = [
     AGENT_GUIDANCE_START_MARKER,
     "## pm Workflow (Agent Quickstart)",
     "",
     '- Orient before mutate: `pm context --limit 10`, `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`.',
     "- Claim and execute: `pm claim <id>` then `pm update <id> --status in_progress`.",
-    '- Link evidence while coding: `pm files <id> --add ...`, `pm docs <id> --add ...`, `pm test <id> --add command="node scripts/run-tests.mjs test -- ..."`.',
+    `- Link evidence while coding: \`pm files <id> --add ...\`, \`pm docs <id> --add ...\`, \`pm test <id> --add command="${projectTestCommand}"\`.`,
     '- Verify and close: `pm test <id> --run --progress`, `pm close <id> "<evidence>" --validate-close warn`, `pm release <id>`.',
     "- Author identity is automatic for supported agent harnesses; use `--author` only for an explicit override.",
     "",
@@ -199,12 +209,15 @@ function buildAgentGuidanceBlock(lineEnding: "\n" | "\r\n"): string {
   return lines.join(lineEnding);
 }
 
-function upsertAgentGuidanceBlock(existingContent: string): {
+function upsertAgentGuidanceBlock(
+  existingContent: string,
+  projectTestCommand = "<your project test command>",
+): {
   next_content: string;
   changed: boolean;
 } {
   const lineEnding = detectLineEnding(existingContent);
-  const nextBlock = buildAgentGuidanceBlock(lineEnding);
+  const nextBlock = buildAgentGuidanceBlock(lineEnding, projectTestCommand);
   const existingRange = findGuidanceBlockRange(existingContent);
   if (existingRange) {
     const trailingContent = existingContent.slice(existingRange.end_index);
@@ -233,6 +246,74 @@ function upsertAgentGuidanceBlock(existingContent: string): {
   return {
     next_content: nextContent,
     changed: nextContent !== existingContent,
+  };
+}
+
+/** Resolve an executable linked-test command from a target repository's own files. */
+export async function resolveProjectTestCommand(
+  projectRoot: string,
+): Promise<string> {
+  if (await pathExists(path.join(projectRoot, "scripts", "run-tests.mjs"))) {
+    return "node scripts/run-tests.mjs test";
+  }
+  let packageDocument: unknown;
+  try {
+    packageDocument = JSON.parse(
+      await fs.readFile(path.join(projectRoot, "package.json"), "utf8"),
+    );
+  } catch {
+    return "<your project test command>";
+  }
+  const manifest = normalizeProjectPackageManifest(packageDocument);
+  if (manifest === undefined) {
+    return "<your project test command>";
+  }
+  const packageManager = manifest.packageManager?.split("@")[0];
+  if (packageManager === "pnpm") {
+    return "pnpm test";
+  }
+  if (packageManager === "bun") {
+    return "bun run test";
+  }
+  if (packageManager === "yarn") {
+    return "yarn test";
+  }
+  if (packageManager === "npm") return "npm test";
+  if (await pathExists(path.join(projectRoot, "pnpm-lock.yaml"))) {
+    return "pnpm test";
+  }
+  if (
+    (await pathExists(path.join(projectRoot, "bun.lock"))) ||
+    (await pathExists(path.join(projectRoot, "bun.lockb")))
+  ) {
+    return "bun run test";
+  }
+  if (await pathExists(path.join(projectRoot, "yarn.lock"))) return "yarn test";
+  return "npm test";
+}
+
+/** Validate the minimal package manifest shape needed for executable test guidance. */
+function normalizeProjectPackageManifest(
+  value: unknown,
+): ProjectPackageManifest | undefined {
+  if (typeof value !== "object" || value === null || !("scripts" in value)) {
+    return undefined;
+  }
+  const scripts = value.scripts;
+  if (
+    typeof scripts !== "object" ||
+    scripts === null ||
+    !("test" in scripts) ||
+    typeof scripts.test !== "string" ||
+    scripts.test.trim().length === 0
+  ) {
+    return undefined;
+  }
+  return {
+    scripts: { test: scripts.test },
+    ...("packageManager" in value && typeof value.packageManager === "string"
+      ? { packageManager: value.packageManager }
+      : {}),
   };
 }
 
@@ -375,10 +456,14 @@ function applyAgentGuidanceState(
 
 async function writeGuidanceFile(
   filePath: string,
+  projectRoot = path.dirname(filePath),
 ): Promise<{ changed: boolean; warnings: string[] }> {
   const exists = await pathExists(filePath);
   const currentContent = exists ? await fs.readFile(filePath, "utf8") : "";
-  const nextContent = upsertAgentGuidanceBlock(currentContent);
+  const nextContent = upsertAgentGuidanceBlock(
+    currentContent,
+    await resolveProjectTestCommand(projectRoot),
+  );
   if (!nextContent.changed) {
     return { changed: false, warnings: [] };
   }
@@ -453,6 +538,7 @@ interface InitAgentGuidanceModeContext {
   targetRelativePath: string;
   checkedFiles: string[];
   presentBefore: boolean;
+  projectRoot: string;
 }
 
 function markAgentGuidanceRunState(
@@ -472,13 +558,16 @@ async function addAgentGuidanceBlockIfMissing(
   flow: InitAgentGuidanceFlowState,
   context: Pick<
     InitAgentGuidanceModeContext,
-    "presentBefore" | "targetPath" | "targetRelativePath"
+    "presentBefore" | "targetPath" | "targetRelativePath" | "projectRoot"
   >,
 ): Promise<void> {
   if (context.presentBefore) {
     return;
   }
-  const writeResult = await writeGuidanceFile(context.targetPath);
+  const writeResult = await writeGuidanceFile(
+    context.targetPath,
+    context.projectRoot,
+  );
   flow.warnings.push(...writeResult.warnings);
   if (writeResult.changed) {
     flow.applied = true;
@@ -635,6 +724,7 @@ export async function runInitAgentGuidance(
       targetRelativePath,
       checkedFiles,
       presentBefore,
+      projectRoot,
     },
   );
 
