@@ -1,0 +1,40 @@
+id: pm-n5ysuk
+title: Refresh compatible Vitest 4.1.11 and jscpd 5.0.16 patches
+description: Adopt the compatible Vitest and coverage-v8 4.1.11 patch pair plus jscpd 5.0.16 with lockfile refresh and full quality coverage proof. Keep TypeScript 7 and npm-package-arg 14 in their canonical upstream-gated items.
+type: Chore
+status: closed
+priority: 2
+tags[3]: "area:quality","area:testing",dependencies
+created_at: "2026-08-19T22:06:50.416Z"
+updated_at: "2026-08-19T22:46:42.579Z"
+closed_at: "2026-08-19T22:46:23.097Z"
+completed_at: "2026-08-19T22:46:23.097Z"
+author: "harness:codex"
+acceptance_criteria: Vitest and coverage-v8 are both 4.1.11; jscpd is 5.0.16; full static quality and exact 100 percent coverage gates pass
+parent: pm-92if
+resolution: Compatible testing and duplicate-analysis patches adopted; incompatible majors retained in canonical deferral items.
+expected_result: Vitest and coverage-v8 4.1.11 plus jscpd 5.0.16 install together and preserve every mandatory quality gate.
+actual_result: "All three patches installed; typecheck, strict static quality, exact 100 percent coverage, and vulnerability audit passed."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-87hmdw,discovered_from,"2026-08-19T22:06:50.416Z","harness:codex","cli:create:dep",detected
+  pm-do5b,verifies,"2026-08-19T22:31:43.253Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,verifies,"2026-08-19T22:31:43.253Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-19T22:06:50.416Z","harness:codex",Duplicate check searched all statuses for the exact August 2026 Vitest and jscpd versions. No canonical active item exists. Major upgrades remain in pm-do5b and pm-ksr40d.
+  "2026-08-19T22:46:19.837Z","harness:codex","Verification evidence: installed Vitest 4.1.11, coverage-v8 4.1.11, and jscpd 5.0.16. pnpm typecheck passed. The tracker-context static gate passed after replacing two generic related edges with typed verifies edges. Exact coverage passed at statements 55694/55694, branches 41593/41593, functions 11540/11540, and lines 53736/53736. pnpm audit reports no known vulnerabilities. Remaining outdated majors are intentionally deferred in pm-do5b and pm-ksr40d."
+files[2]{path,scope,note}:
+  package.json,project,Compatible testing and duplicate-analysis patch ranges
+  pnpm-lock.yaml,project,Resolved dependency graph for compatible patches
+tests[4]{command,scope,timeout_seconds}:
+  pnpm typecheck,project,300
+  "pnpm quality:static",project,900
+  node scripts/run-tests.mjs coverage,project,1200
+  pnpm audit --audit-level=low,project,180
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt0nifqa-xkmrs4,test,failed,"2026-08-19T22:07:45.526Z","2026-08-19T22:16:29.217Z","2026-08-19T22:16:29.217Z",2,2,0
+  test-local-mt0np4u2-muwmjs,test,failed,"2026-08-19T22:19:59.225Z","2026-08-19T22:21:41.690Z","2026-08-19T22:21:41.690Z",0,1,0
+  test-local-mt0nvbed-2z3kn8,test,failed,"2026-08-19T22:22:05.247Z","2026-08-19T22:26:30.133Z","2026-08-19T22:26:30.133Z",0,1,0
+  test-local-mt0oau2b-qizw1p,test,passed,"2026-08-19T22:33:39.459Z","2026-08-19T22:38:34.163Z","2026-08-19T22:38:34.163Z",1,0,0
+  test-local-mt0ojwd7-g89zil,test,passed,"2026-08-19T22:38:38.420Z","2026-08-19T22:45:37.051Z","2026-08-19T22:45:37.051Z",1,0,0
+close_reason: "Adopted all compatible dependency patches with exact 100/100/100/100 coverage, strict static quality, typecheck, and zero-vulnerability evidence; retained incompatible majors in their canonical typed deferral lineage."
+body: ""
