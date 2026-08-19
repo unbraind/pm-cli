@@ -936,6 +936,7 @@ export function mutateItem(params: {
   changedFields: string[];
   warnings: string[];
 }>;
+/** Mutate one item through the compatibility overload while preserving transactional storage and immutable history semantics. */
 export async function mutateItem(
   params: Omit<
     Parameters<typeof mutateItemWithHistoryContext>[0],
