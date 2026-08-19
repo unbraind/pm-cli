@@ -1799,7 +1799,18 @@ async function tryLoadIndexedListPage(params: {
     "stream",
     "includeBody",
     "excludeTerminal",
+    "dependencyBlocked",
     "noTruncate",
+    "projectionCommand",
+    "truncate",
+    "notes",
+    "learnings",
+    "files",
+    "docs",
+    "tests",
+    "comments",
+    "deps",
+    "linkedCommand",
   ]);
   const projectionNeedsHeavyData = [
     runtime.projection.mode === "full",

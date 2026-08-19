@@ -18634,7 +18634,7 @@
       "emitting_commands": [
         "get",
         "list",
-        "search-contracts"
+        "search"
       ],
       "exit_code": 2,
       "meaning": "Projection options mutually exclusive condition.",
@@ -19553,7 +19553,7 @@
       "emitting_commands": [
         "get",
         "list",
-        "search-contracts"
+        "search"
       ],
       "exit_code": 2,
       "meaning": "Unknown field projection condition.",

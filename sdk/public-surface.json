@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1731,
+    "covered_symbols": 1732,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1732
+    "required_symbols": 1733
   },
   "breaking_acknowledgements": [
     {
@@ -12707,6 +12707,12 @@
           "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmFlagSemanticConcept",
+          "signature": "(command: string, flag: string) => string | calls: (command: string, flag: string) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolvePmPackageRootFromModule",
@@ -19401,6 +19407,12 @@
           "kind": "function",
           "name": "resolvePmErrorCodeContract",
           "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmFlagSemanticConcept",
+          "signature": "(command: string, flag: string) => string | calls: (command: string, flag: string) => string"
         },
         {
           "classification": "contract_data",

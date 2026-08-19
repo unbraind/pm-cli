@@ -113,15 +113,26 @@ const FULL_PROJECTION_CONCEPT_BY_COMMAND: Readonly<Record<string, string>> =
     contracts: "contract-catalog-projection",
   });
 
-function resolvePmFlagSemanticConcept(command: string, flag: string): string {
+/** Resolve one executable command flag to its stable cross-command semantic concept. */
+export function resolvePmFlagSemanticConcept(
+  command: string,
+  flag: string,
+): string {
   if (flag === "--limit") return "result-row-limit";
   if (flag === "--node-limit") return "graph-node-limit";
   if (flag === "--edge-limit") return "graph-edge-limit";
   if (flag === "--output-limit") return "rendered-output-row-limit";
   if (flag === "--output-budget") return "rendered-output-byte-budget";
   if (flag === "--token-budget") return "context-intent-token-budget";
-  if (flag === "--full")
-    return FULL_PROJECTION_CONCEPT_BY_COMMAND[command] as string;
+  if (flag === "--full") {
+    const concept = FULL_PROJECTION_CONCEPT_BY_COMMAND[command];
+    if (concept === undefined) {
+      throw new Error(
+        `Command ${command} exposes --full without a registered projection concept.`,
+      );
+    }
+    return concept;
+  }
   if (flag !== "--file") return flag.slice(2);
   if (["create", "update", "update-many"].includes(command))
     return "linked-file-path";

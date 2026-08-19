@@ -31,8 +31,7 @@ export const ITEM_PROJECT_CONTEXT_KEYS = [
   "actual_result",
 ] as const;
 
-/** Public contract for item metadata key order, shared by SDK and presentation-layer consumers. */
-export const ITEM_METADATA_KEY_ORDER: ReadonlyArray<string> = [
+const ITEM_METADATA_KEY_ORDER_VALUES = [
   "id",
   "title",
   "description",
@@ -84,4 +83,11 @@ export const ITEM_METADATA_KEY_ORDER: ReadonlyArray<string> = [
   "plan_decisions",
   "plan_discoveries",
   "plan_steps",
-];
+] as const satisfies readonly string[];
+
+/** Literal union of every canonical built-in item metadata key. */
+export type ItemMetadataKey = (typeof ITEM_METADATA_KEY_ORDER_VALUES)[number];
+
+/** Public contract for item metadata key order, shared by SDK and presentation-layer consumers. */
+export const ITEM_METADATA_KEY_ORDER: ReadonlyArray<string> =
+  ITEM_METADATA_KEY_ORDER_VALUES;

@@ -4,6 +4,7 @@ import {
   listPmFlagLexicon,
   listPmFlagSpellingInventory,
   renderPmFlagLexiconMarkdown,
+  resolvePmFlagSemanticConcept,
   verifyPmFlagLexicon,
 } from "../../../../src/sdk/cli-contracts/flag-lexicon-contracts.js";
 
@@ -114,6 +115,14 @@ describe("flag lexicon contracts", () => {
         expect.objectContaining({ code: "removed_canonical_spelling" }),
         expect.objectContaining({ code: "removed_compatibility_spelling" }),
       ]),
+    );
+  });
+
+  it("fails closed when a command exposes full projection without a semantic concept", () => {
+    expect(() =>
+      resolvePmFlagSemanticConcept("unmapped-command", "--full"),
+    ).toThrow(
+      "Command unmapped-command exposes --full without a registered projection concept.",
     );
   });
 

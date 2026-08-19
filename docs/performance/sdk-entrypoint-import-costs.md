@@ -13,7 +13,7 @@ against the unchanged upper-bound budget and 30 ms scheduler margin. A single
 cold or descheduled process therefore cannot fail the gate, while a majority of
 over-budget samples still does; p95 remains visible as diagnostic evidence.
 
-| Package export | p50 | p95 | p50 above Node | Reduction vs aggregate |
+| Package export | p50 | p95 | p50 above Node | Reduction vs aggregate overhead |
 |---|---:|---:|---:|---:|
 | `./sdk` | 320 ms | 348 ms | 276 ms | 0% |
 | `./sdk/authoring` | 91 ms | 99 ms | 47 ms | 83% |
