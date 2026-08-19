@@ -2,13 +2,13 @@ id: pm-w16muu
 title: CodSpeed instrument cache can stall simulation setup until the hosted benchmark gate is canceled
 description: The exact-head CodSpeed workflow restores cached Valgrind instrumentation and then stalls installing /tmp/valgrind-codspeed.deb plus libc6-dbg until the 20-minute job timeout cancels the run before any benchmark starts. Make the free hosted simulation gate deterministic and fail-closed without weakening the benchmark measurement mode.
 type: Issue
-status: closed
+status: in_progress
 priority: 1
 tags[5]: ci,codspeed,github-actions,performance,regression
 created_at: "2026-08-19T09:03:37.249Z"
-updated_at: "2026-08-19T09:18:10.738Z"
-closed_at: "2026-08-19T09:18:10.011Z"
-completed_at: "2026-08-19T09:18:10.011Z"
+updated_at: "2026-08-19T09:32:44.273Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#9942201d074a99e617654488"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: CodSpeed remains in simulation mode on free GitHub-hosted runners; stale instrument cache reuse cannot hang setup; the workflow contract test prevents regression; an exact-head hosted run completes successfully and uploads benchmarks.
@@ -16,22 +16,21 @@ parent: pm-yh6t
 risk: medium
 confidence: high
 severity: high
-environment: "GitHub-hosted ubuntu-latest, CodSpeedHQ/action v5.0.3, runner 5.0.2"
+environment: "GitHub-hosted Ubuntu 24.04 rolling images 20260810.271.1 and 20260816.277.1, CodSpeedHQ/action v5.0.3, runner 5.0.2"
 repro_steps: "Run PR #1062 CodSpeed workflow; observe instrument cache hit, package restore, install start, then no benchmark output until timeout cancellation."
-resolution: Disabled CodSpeed cross-run instrument caching while retaining pinned v5.0.3 simulation mode; added a fail-closed workflow contract and proved hosted benchmark upload.
 expected_result: The CodSpeed simulation job reaches and uploads the Vitest benchmark suite within its 20-minute contract on every exact head.
-actual_result: "Exact-head CodSpeed completed in 3m42s, ran all 11 simulation benchmarks, and uploaded performance data; focused and repo-wide gates passed."
-fixed_version: 2026.8.19
+actual_result: "Disabling instrument caching allowed run 32236517929 on Ubuntu 24.04 image 20260816.277.1 to upload all 11 benchmarks in 3m42s, but closeout run 32237008674 reproduced the setup stall on the rolling ubuntu-latest pool; the OS image family must also be pinned."
 component: ci/codspeed
 regression: true
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rxu,implements,"2026-08-19T09:11:24.443Z","harness:codex","cli:update:dep",detected
   pm-wo8,implements,"2026-08-19T09:11:24.443Z","harness:codex","cli:update:dep",detected
   pm-yh6t,discovered_from,"2026-08-19T09:11:24.443Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-19T09:03:37.249Z","harness:codex","Duplicate check: searched all-status PM corpus for CodSpeed cache instruments, Valgrind/libc6-dbg, benchmark workflow timeout, and cancellation. pm-yh6t is the completed adoption lineage and explicitly remains canonical for benchmark evidence, but no item tracks this repeated hosted setup regression; this issue is its focused regression child. GitHub evidence: PR #1062 exact-head run 32233697787/job 96008873672 restored the instrument cache, began installing /tmp/valgrind-codspeed.deb and libc6-dbg, never started Vitest, and was canceled at 20m20s."
   "2026-08-19T09:13:08.931Z","harness:codex","Implementation evidence: kept CodSpeed v5.0.3 in deterministic simulation mode and disabled only instrument caching. The two exact-head failures restored cached Valgrind artifacts before stalling; CodSpeed's documented v5 input permits cache-instruments=false, and its action key includes mode, OS, architecture, kernel, and runner version but not the GitHub hosted-image revision. Focused CI workflow contract passed 13/13; typecheck, ESLint, zero-clone jscpd, package/SDK/static gates, tracker-context-quality, and audit (zero known vulnerabilities) passed after replacing the initial generic edge with typed implementation lineage."
   "2026-08-19T09:17:49.276Z","harness:codex","Hosted acceptance: PR #1062 exact head a09dc7a4847b969bea1f88671d96aca7e5fa9408, CodSpeed run 32236517929/job 96017597363 completed successfully in 3m42s. The action reached all 11 BM25, pagination, and text-normalization benchmarks, emitted the benchmark summary, and uploaded performance data for unbraind/pm-cli. This replaces two prior 20m20s cancellations that never started Vitest."
+  "2026-08-19T09:32:44.273Z","harness:codex","Recurrence evidence: failed run 32233697787 used ubuntu-24.04 image 20260810.271.1; successful run 32236517929 used image 20260816.277.1. The closeout-only run 32237008674 again remained in the CodSpeed setup step well beyond the successful 3m42s total. The next repair pins the officially supported ubuntu-22.04 runner family and keeps cache-instruments=false, while main CI continues broad Ubuntu 24.04 coverage."
 learnings[1]{created_at,author,text}:
   "2026-08-19T09:13:09.454Z","harness:codex",A third-party action cache can be less deterministic than a fresh install when its key fingerprints the kernel but not the hosted image revision; preserve the measurement instrument and disable the narrower stale cache rather than weakening the benchmark to walltime or extending a timeout around an install that never progresses.
 files[2]{path,scope,note}:
@@ -41,7 +40,6 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mszvjasf-ydmro2,test,passed,"2026-08-19T09:13:09.940Z","2026-08-19T09:13:20.223Z","2026-08-19T09:13:20.223Z",1,0,0
-close_reason: "CodSpeed setup regression fixed and proved on exact head: simulation retained, stale instrument caching disabled, contract test passing, and hosted run 32236517929 uploaded all 11 benchmarks in 3m42s."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

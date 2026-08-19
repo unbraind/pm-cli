@@ -141,10 +141,13 @@ describe("GitHub workflow contract", () => {
     );
 
     expectContainsAll(codSpeedWorkflow, [
+      "name: Run benchmarks (Ubuntu 22.04, Node 24)",
+      "runs-on: ubuntu-22.04",
       "mode: simulation",
       'cache-instruments: "false"',
       "run: pnpm vitest bench --run --config vitest.bench.config.ts",
     ]);
+    expect(codSpeedWorkflow).not.toContain("runs-on: ubuntu-latest");
     expect(codSpeedWorkflow).not.toContain("mode: walltime");
   });
 
