@@ -2,14 +2,16 @@ id: pm-c90tfh
 title: "The blocks ceiling counts fabricated and evidence-cited ordering edges identically, so the historical ordering reconstruction another item mandates cannot land"
 description: "The dependency-kind-blocks ratchet sits at ceiling 243 with zero headroom while pm-1w6scp, pm-gxs55a and pm-ye46ns all require adding blocks rows; the selector cannot distinguish a fabricated directional edge from an evidence-cited delivery-order edge, so the two properties are mutually unsatisfiable and neither item names the conflict."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: enforcement,graph,measurement-ratchet,ordering,tracker-governance
 created_at: "2026-08-10T12:11:08.571Z"
-updated_at: "2026-08-14T10:15:10.407Z"
+updated_at: "2026-08-20T21:47:15.069Z"
+closed_at: "2026-08-20T21:47:14.380Z"
+completed_at: "2026-08-20T21:47:14.380Z"
 author: "harness:claude-code"
 estimated_minutes: 480
-acceptance_criteria: "The blocks population is partitioned by provenance so an evidence-cited ordering edge and a fabricated directional edge are separately countable; The anti-fabrication property remains enforced as a ceiling over the unsourced partition, with a negative control proving it still fails; The evidence-cited partition is enforced as a floor so a later pass cannot silently delete recovered ordering; pm-1w6scp, pm-gxs55a and pm-ye46ns each carry a typed edge to this item so the dependency is readable from either side"
+acceptance_criteria: "The blocks population is partitioned by provenance so an evidence-cited ordering edge and a fabricated directional edge are separately countable; The anti-fabrication property remains enforced as a ceiling over the unsourced partition, with a negative control proving it still fails; The evidence-cited partition is enforced as a floor so a later pass cannot silently delete recovered ordering; pm-1w6scp, pm-gxs55a and pm-ye46ns each carry a typed edge to this item so the dependency is readable from either side; The historical total blocks population remains bounded by a blocking outer ceiling with adjacent pass and fail controls"
 goal: Provable history
 objective: Make delivery sequence reconstructible by graph traversal
 value: Unblocks the ordering half of the historical-spine reconstruction without giving up the anti-fabrication guarantee
@@ -24,14 +26,50 @@ sprint: 2026-w33
 reporter: maintainer-agent
 severity: high
 environment: "pm 2026.8.10, 2412 items, 29 enforced measurement declarations"
-expected_result: "A bound can name the population it governs, so evidence-cited ordering edges are floored while fabricated directional edges stay ceilinged"
-actual_result: "One unqualified count governs every blocks row, so any ordering reconstruction exceeds the ceiling regardless of its evidence"
+resolution: "Added SDK-native provenance predicates; enforced total, uncited, and evidence-cited blocks populations with independent negative controls; encoded three evidence-cited ordering edges; and centralized direction-independent prose pair identity."
+expected_result: "A bound can name the population it governs: total ordering edges stay below the historical outer ceiling, evidence-cited edges are floored, fabricated directional edges stay ceilinged, and pair identity cannot diverge between collection and lookup."
+actual_result: "The public assurance SDK supports exact, prefix, present, and missing source_kind predicates. graph-composition passes with total blocks=205 at ceiling 243, uncited=202 at ceiling 202, and evidence-cited=3 at floor 3; the shared prosePairKey regression suite and full static gate pass."
 component: scripts/release/tracker-measurement-gate.mjs
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w6scp,discovered_from,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
   pm-96h7,implements,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
   pm-g4k74y,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
-  pm-gxs55a,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
   pm-jkbqt8,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
-  pm-ye46ns,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+  pm-1w6scp,blocks,"2026-08-20T20:10:18.400Z","harness:codex","evidence:pm-c90tfh",detected
+  pm-gxs55a,blocks,"2026-08-20T20:10:18.400Z","harness:codex","evidence:pm-c90tfh",detected
+  pm-ye46ns,blocks,"2026-08-20T20:10:18.400Z","harness:codex","evidence:pm-c90tfh",detected
+comments[6]{created_at,author,text}:
+  "2026-08-20T19:59:23.004Z","harness:codex","Implementation start 2026-08-20: duplicate search and all-status graph review confirm this is the canonical owner of evidence-partitioned ordering ratchets. This branch will add typed provenance selectors and measurements with ceiling/floor negative controls, then replace only this item's weak related edges with evidence-backed scheduling semantics."
+  "2026-08-20T20:56:56.950Z","harness:codex","Verification evidence: all 540 test files and 7,653 tests pass with exact 100% statements (55,898/55,898), branches (41,738/41,738), functions (11,596/11,596), and lines (53,927/53,927). repository-static-quality, package boundary/parity/replication, command grammar, flag parity/lexicon, refusal closure, public SDK surface, graph-composition, record-integrity, ESLint, jscpd zero clones, secret scan, and pnpm audit all pass. Live graph-composition observes 202 uncited blocks at ceiling 202 and 3 evidence-cited blocks at floor 3."
+  "2026-08-20T21:14:48.750Z","harness:codex","Final linked-test evidence: tracker-context execution passed 2/2 linked commands. An earlier schema-context run exposed the expected absence of live defect evidence; a second attempt hit host /tmp inode exhaustion (UNKNOWN -122), confirmed at 99% inode usage. Routing the sandbox through a dedicated home-backed TMPDIR produced a clean terminal pass without changing test semantics."
+  "2026-08-20T21:19:04.751Z","harness:codex","Post-close gate correction: classified the unpartitioned blocks ratchet as review_caught_late and recorded structured gate_strengthened evidence. The negative control now names both protected failure directions: an uncited blocks edge above 202 and removal of an evidence-cited edge below 3."
+  "2026-08-20T21:40:02.248Z","harness:codex","PR #1069 review evidence: restored blocks-total-ceiling at the historical 243 outer bound with pass=243/fail=244 controls and added it to graph-composition and tracker-context-quality. Current measurements remain total=205, uncited=202, evidence-cited=3. The module-scope prosePairKey now supplies one canonical key implementation to link collection and gap lookup."
+  "2026-08-20T21:47:13.660Z","harness:codex","Final review-fix verification: 20/20 focused assurance and benchmark tests pass. Full quality:static passes repository assurance, contract snapshots, package/SDK parity, surface replication, grammar/flag/refusal gates, tracker-context-quality, graph-composition, record-integrity, public surface, and cost budgets; blocks receipts are total 205<=243, uncited 202<=202, evidence 3>=3."
+learnings[1]{created_at,author,text}:
+  "2026-08-20T20:56:58.124Z","harness:codex","Provenance must be a first-class filter on dependency measurements: separating evidence-cited blocks from uncited ordering edges lets historical reconstruction advance without weakening the original anti-fabrication ratchet."
+files[6]{path,scope,note}:
+  .agents/pm/assurance.json,project,Carries the authorized uncited ceiling and evidence-cited floor.
+  sdk/public-surface.json,project,Records the widened public SDK contracts.
+  src/sdk/governance/assurance.ts,project,Adds dependency-kind provenance predicates and propagates assurance result partitions.
+  tests/fixtures/contracts/full.json,project,Publishes prose_edge_gap in the generated command contract.
+  tests/unit/commands/contracts-command.spec.ts,project,Pins the authoritative CLI assurance source vocabulary.
+  tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,Covers exact prefix present and missing provenance selectors plus rejection paths.
+tests[2]{command,scope,timeout_seconds}:
+  "pnpm quality:static",project,1200
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt206ux5-thxw34,test,failed,"2026-08-20T20:57:03.582Z","2026-08-20T20:59:10.217Z","2026-08-20T20:59:10.217Z",1,1,0
+  test-local-mt20a1os-el1370,test,failed,"2026-08-20T20:59:31.565Z","2026-08-20T21:01:38.956Z","2026-08-20T21:01:38.956Z",0,2,0
+  test-local-mt20hkrv-yyr3sl,test,passed,"2026-08-20T21:02:09.472Z","2026-08-20T21:07:30.283Z","2026-08-20T21:07:30.283Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,Documents provenance-partitioned relationship assurance.
+close_reason: "Reclosed after PR review: restored the historical total blocks outer ceiling, retained both provenance-partition controls, centralized pair identity, and passed focused tests plus the complete static assurance stack."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-c90tfh
+  gate_id: provenance-partitioned-dependency-assurance
+  negative_control: "total blocks above 243, uncited blocks above 202, or evidence-cited blocks below 3 must fail graph-composition"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/governance/assurance-relationship-sources.spec.ts tests/unit/scripts/graph-adapter-scale.spec.ts,"pnpm quality:static",node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: "## What was measured\n\n`scripts/release/tracker-measurement-gate.mjs` reports every enforced bound with its observed value. On 2026-08-10 the `dependency-kind-blocks` declaration (owner pm-jkbqt8) reads ceiling 243 against an observed 243: **zero headroom**. Fourteen of the twenty-nine enforced bounds sit at zero headroom, but this one is different in kind, because another open item's acceptance criteria require the population to grow.\n\n## The conflict\n\n`blocks` and `blocked_by` are the only registered relationship kinds whose contract sets `ordering: true`. Delivery sequence is therefore inexpressible in any other kind.\n\npm-1w6scp requires, verbatim, that \"the original milestones carry their delivery order as typed edges so a traversal can reconstruct the sequence without parsing titles\". pm-gxs55a records that 1,763 of 1,991 sequenced nodes have no predecessor at all. pm-ye46ns exists to recover sequence edges for terminal work from prerequisite statements already recorded in the tracker.\n\nEvery one of those three requires adding `blocks` rows. The ceiling refuses the first one.\n\n## Why the ceiling exists, and why that is not wrong\n\nThe ceiling was filed to stop the failure mode where a relation that merely *feels* directional gets minted as `blocks`, inflating the ordering graph with edges that carry no scheduling meaning. That is a real and recurring failure mode and the ceiling is the correct instrument for it.\n\nThe defect is not the ceiling's existence. It is that the ceiling is **unqualified**: it counts every `blocks` row identically, so an evidence-cited ordering edge recovered from a recorded prerequisite statement is indistinguishable from a fabricated one. A single global count cannot separate the population the ceiling wants to suppress from the population another accepted item requires.\n\n## Consequence\n\nThe ordering half of the historical-spine reconstruction is unlandable as specified. It is not blocked by missing evidence or missing tooling; it is blocked by an enforcement mechanism that cannot express the distinction the work depends on. Neither item names the other, so the deadlock is invisible from either side: pm-1w6scp reads as ready, and the declaration reads as satisfied.\n\n## Dispositions available\n\n1. **Partition the selector.** Let a declaration scope to edges carrying a provenance marker (`source_kind`), so fabricated `blocks` stays ceilinged while evidence-cited ordering is counted separately and floored. This is the only option that keeps both properties enforced.\n2. **Re-declare with a recorded reason.** Raise the ceiling once, in the same change that lands the ordering tranche, with a note naming the evidence rule that justifies the new value. Cheap, but it spends the ceiling's whole protective value in one step.\n3. **Restate pm-1w6scp.** Drop the ordering criterion and accept that delivery sequence stays unreadable. This should be chosen only if the sequence is judged not worth recording.\n\nOption 1 is the one consistent with the polarity work in pm-g4k74y: a bound should be able to say which population it speaks for."

@@ -986,6 +986,7 @@
     "measurement_source_kinds": [
       "items",
       "dependency_kind",
+      "prose_edge_gap",
       "graph",
       "validate",
       "health",

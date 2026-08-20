@@ -704,6 +704,54 @@
         "key": "defect-evidence"
       },
       "max_cost": 1
+    },
+    {
+      "id": "blocks-evidence-cited",
+      "description": "Ordering edges backed by an explicit evidence provenance marker",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "blocks",
+        "source_kind_prefix": "evidence:"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "blocks-uncited",
+      "description": "Blocks rows not carrying an evidence provenance marker",
+      "source": {
+        "kind": "derived",
+        "expression": {
+          "operator": "subtract",
+          "operands": [
+            {
+              "measurement": "edges-blocks"
+            },
+            {
+              "measurement": "blocks-evidence-cited"
+            }
+          ]
+        }
+      },
+      "max_cost": 80000
+    },
+    {
+      "id": "prose-edge-gaps",
+      "description": "Distinct canonical item mentions without a structured relationship in either direction",
+      "source": {
+        "kind": "prose_edge_gap",
+        "sample_limit": 25,
+        "exemptions": [
+          {
+            "holder_id": "pm-doxj",
+            "reason": "The roadmap ledger inventories filed work without asserting pairwise relationships."
+          },
+          {
+            "holder_id": "pm-ob9z4y",
+            "reason": "The measurement owner documents candidate gaps as analysis subjects before remediation."
+          }
+        ]
+      },
+      "max_cost": 3000000
     }
   ],
   "assertions": [
@@ -801,7 +849,7 @@
     },
     {
       "id": "blocks-ceiling",
-      "measurement_id": "edges-blocks",
+      "measurement_id": "blocks-uncited",
       "owner_item_id": "pm-c90tfh",
       "scope": {
         "kind": "all"
@@ -811,16 +859,17 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 243,
+            "observed": 202,
             "expected": "pass"
           },
           {
-            "observed": 244,
+            "observed": 203,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 243
+      "ceiling": 202,
+      "authorization_decision": "pm-jhpby4"
     },
     {
       "id": "history-append-only",
@@ -1932,12 +1981,82 @@
           }
         ]
       }
+    },
+    {
+      "id": "blocks-evidence-cited-floor",
+      "measurement_id": "blocks-evidence-cited",
+      "owner_item_id": "pm-c90tfh",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 3,
+            "expected": "pass"
+          },
+          {
+            "observed": 2,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 3
+    },
+    {
+      "id": "prose-edge-gaps-ceiling",
+      "measurement_id": "prose-edge-gaps",
+      "owner_item_id": "pm-ob9z4y",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1343,
+            "expected": "pass"
+          },
+          {
+            "observed": 1344,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 1343
+    },
+    {
+      "id": "blocks-total-ceiling",
+      "measurement_id": "edges-blocks",
+      "owner_item_id": "pm-c90tfh",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 243,
+            "expected": "pass"
+          },
+          {
+            "observed": 244,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 243,
+      "authorization_decision": "pm-jhpby4"
     }
   ],
   "gates": [
     {
       "id": "graph-composition",
-      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, and canonical associative edges remain bounded without alias double counting.",
+      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, total and uncited ordering edges remain bounded, evidence-backed ordering cannot be removed, and unlinked prose references cannot grow.",
       "assertion_ids": [
         "semantic-edge-share-floor",
         "graph-semantic-edge-share-floor",
@@ -1945,7 +2064,10 @@
         "supersedes-floor",
         "discovered-from-floor",
         "verifies-floor",
-        "blocks-ceiling"
+        "blocks-total-ceiling",
+        "blocks-ceiling",
+        "blocks-evidence-cited-floor",
+        "prose-edge-gaps-ceiling"
       ],
       "triggers": [
         "ci",
@@ -1965,7 +2087,7 @@
     },
     {
       "id": "tracker-context-quality",
-      "description": "Native assurance replacement for the bespoke tracker census: typed relationship preservation, structural graph resilience, outcome reachability, validation debt and workspace health.",
+      "description": "Native assurance replacement for the bespoke tracker census: typed relationship preservation with total and uncited ordering-edge bounds, structural graph resilience, outcome reachability, validation debt and workspace health.",
       "assertion_ids": [
         "implements-floor",
         "discovered-from-floor",
@@ -1976,6 +2098,7 @@
         "graph-redundant-edges-ceiling",
         "graph-ordering-contradiction-edges-zero",
         "graph-finding-legacy-ordering-storage-contradiction-zero",
+        "blocks-total-ceiling",
         "blocks-ceiling",
         "related-to-ceiling",
         "graph-isolated-active-zero",

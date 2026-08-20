@@ -248,7 +248,7 @@ describe("assurance SDK", () => {
         source: { kind: "unknown" },
       } as unknown as AssuranceMeasurementDefinition),
     ).toThrow(
-      "measurement.source.kind must be one of items, dependency_kind, graph, validate, health, history, links, provider, derived",
+      "measurement.source.kind must be one of items, dependency_kind, prose_edge_gap, graph, validate, health, history, links, provider, derived",
     );
     expect(() =>
       validateMeasurementDefinition({

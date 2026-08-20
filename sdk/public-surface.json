@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1753,
+    "covered_symbols": 1755,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1754
+    "required_symbols": 1756
   },
   "breaking_acknowledgements": [
     {
@@ -941,6 +941,32 @@
       ],
       "package_version": "2026.8.20",
       "reason": "Add declarative traversal and typed outcome fields plus structured dependency-refusal context; existing runtime behavior remains backward compatible and new fields are additive."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ASSURANCE_MEASUREMENT_SOURCE_KINDS",
+        "signature ./sdk:AssuranceDependencyKindSource",
+        "signature ./sdk:AssuranceDependencyRecord",
+        "signature ./sdk:AssuranceMeasurementSource",
+        "signature ./sdk/governance:ASSURANCE_MEASUREMENT_SOURCE_KINDS",
+        "signature ./sdk/governance:AssuranceDependencyKindSource",
+        "signature ./sdk/governance:AssuranceDependencyRecord",
+        "signature ./sdk/governance:AssuranceMeasurementSource"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Add provenance filters and prose-edge-gap assurance source while preserving existing source contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AssuranceAssertionVerdict",
+        "signature ./sdk:AssuranceExternalMeasurementResult",
+        "signature ./sdk:AssuranceMeasurementResult",
+        "signature ./sdk/governance:AssuranceAssertionVerdict",
+        "signature ./sdk/governance:AssuranceExternalMeasurementResult",
+        "signature ./sdk/governance:AssuranceMeasurementResult"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Expose exact prose-gap partitions on measurement and gate receipts while keeping fields optional for existing SDK consumers"
     }
   ],
   "entrypoints": {
@@ -1887,7 +1913,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_MEASUREMENT_SOURCE_KINDS",
-          "signature": "readonly [\"items\", \"dependency_kind\", \"graph\", \"validate\", \"health\", \"history\", \"links\", \"provider\", \"derived\"]"
+          "signature": "readonly [\"items\", \"dependency_kind\", \"prose_edge_gap\", \"graph\", \"validate\", \"health\", \"history\", \"links\", \"provider\", \"derived\"]"
         },
         {
           "classification": "supported",
@@ -1941,7 +1967,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceAssertionVerdict",
-          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; }"
+          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; partitions?: Readonly<Record<string, number>>; }"
         },
         {
           "classification": "supported",
@@ -1977,13 +2003,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDependencyKindSource",
-          "signature": "export interface AssuranceDependencyKindSource { kind: \"dependency_kind\"; dependency_kind: string; }"
+          "signature": "export interface AssuranceDependencyKindSource { kind: \"dependency_kind\"; dependency_kind: string; source_kind?: string; source_kind_prefix?: string; source_kind_state?: \"present\" | \"missing\"; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDependencyRecord",
-          "signature": "export interface AssuranceDependencyRecord { id: string; kind: string; }"
+          "signature": "export interface AssuranceDependencyRecord { id: string; kind: string; source_kind?: string; }"
         },
         {
           "classification": "supported",
@@ -2037,7 +2063,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceExternalMeasurementResult",
-          "signature": "export interface AssuranceExternalMeasurementResult { value: AssuranceValue; population_size: number; cost: number; contributors?: string[]; }"
+          "signature": "export interface AssuranceExternalMeasurementResult { value: AssuranceValue; population_size: number; cost: number; contributors?: string[]; partitions?: Readonly<Record<string, number>>; }"
         },
         {
           "classification": "supported",
@@ -2133,13 +2159,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMeasurementResult",
-          "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; }"
+          "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; partitions?: Readonly<Record<string, number>>; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceMeasurementSource",
-          "signature": "export type AssuranceMeasurementSource = AssuranceItemsSource | AssuranceDependencyKindSource | AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceHistorySource | AssuranceLinksSource | AssuranceProviderSource | AssuranceDerivedSource;"
+          "signature": "export type AssuranceMeasurementSource = AssuranceItemsSource | AssuranceDependencyKindSource | AssuranceProseEdgeGapSource | AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceHistorySource | AssuranceLinksSource | AssuranceProviderSource | AssuranceDerivedSource;"
         },
         {
           "classification": "supported",
@@ -2182,6 +2208,18 @@
           "kind": "type",
           "name": "AssurancePresetId",
           "signature": "export type AssurancePresetId = (typeof ASSURANCE_PRESET_IDS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceProseEdgeExemption",
+          "signature": "export interface AssuranceProseEdgeExemption { holder_id: string; target_id?: string; text_contains?: string; reason: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceProseEdgeGapSource",
+          "signature": "export interface AssuranceProseEdgeGapSource { kind: \"prose_edge_gap\"; exemptions?: AssuranceProseEdgeExemption[]; sample_limit?: number; }"
         },
         {
           "classification": "supported",
@@ -21387,7 +21425,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_MEASUREMENT_SOURCE_KINDS",
-          "signature": "readonly [\"items\", \"dependency_kind\", \"graph\", \"validate\", \"health\", \"history\", \"links\", \"provider\", \"derived\"]"
+          "signature": "readonly [\"items\", \"dependency_kind\", \"prose_edge_gap\", \"graph\", \"validate\", \"health\", \"history\", \"links\", \"provider\", \"derived\"]"
         },
         {
           "classification": "supported",
@@ -21441,7 +21479,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceAssertionVerdict",
-          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; }"
+          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; partitions?: Readonly<Record<string, number>>; }"
         },
         {
           "classification": "supported",
@@ -21477,13 +21515,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDependencyKindSource",
-          "signature": "export interface AssuranceDependencyKindSource { kind: \"dependency_kind\"; dependency_kind: string; }"
+          "signature": "export interface AssuranceDependencyKindSource { kind: \"dependency_kind\"; dependency_kind: string; source_kind?: string; source_kind_prefix?: string; source_kind_state?: \"present\" | \"missing\"; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDependencyRecord",
-          "signature": "export interface AssuranceDependencyRecord { id: string; kind: string; }"
+          "signature": "export interface AssuranceDependencyRecord { id: string; kind: string; source_kind?: string; }"
         },
         {
           "classification": "supported",
@@ -21537,7 +21575,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceExternalMeasurementResult",
-          "signature": "export interface AssuranceExternalMeasurementResult { value: AssuranceValue; population_size: number; cost: number; contributors?: string[]; }"
+          "signature": "export interface AssuranceExternalMeasurementResult { value: AssuranceValue; population_size: number; cost: number; contributors?: string[]; partitions?: Readonly<Record<string, number>>; }"
         },
         {
           "classification": "supported",
@@ -21633,13 +21671,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMeasurementResult",
-          "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; }"
+          "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; partitions?: Readonly<Record<string, number>>; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceMeasurementSource",
-          "signature": "export type AssuranceMeasurementSource = AssuranceItemsSource | AssuranceDependencyKindSource | AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceHistorySource | AssuranceLinksSource | AssuranceProviderSource | AssuranceDerivedSource;"
+          "signature": "export type AssuranceMeasurementSource = AssuranceItemsSource | AssuranceDependencyKindSource | AssuranceProseEdgeGapSource | AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceHistorySource | AssuranceLinksSource | AssuranceProviderSource | AssuranceDerivedSource;"
         },
         {
           "classification": "supported",
@@ -21682,6 +21720,18 @@
           "kind": "type",
           "name": "AssurancePresetId",
           "signature": "export type AssurancePresetId = (typeof ASSURANCE_PRESET_IDS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceProseEdgeExemption",
+          "signature": "export interface AssuranceProseEdgeExemption { holder_id: string; target_id?: string; text_contains?: string; reason: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceProseEdgeGapSource",
+          "signature": "export interface AssuranceProseEdgeGapSource { kind: \"prose_edge_gap\"; exemptions?: AssuranceProseEdgeExemption[]; sample_limit?: number; }"
         },
         {
           "classification": "supported",

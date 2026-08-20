@@ -1186,12 +1186,14 @@ describe("contracts command runtime", () => {
     );
     expect(
       result.command_summaries?.every(
-        (summary) => summary.default_max_estimated_tokens_by_format === undefined,
+        (summary) =>
+          summary.default_max_estimated_tokens_by_format === undefined,
       ),
     ).toBe(true);
     expect(
-      result.command_summaries?.find((summary) => summary.command === "contracts")
-        ?.intent_source,
+      result.command_summaries?.find(
+        (summary) => summary.command === "contracts",
+      )?.intent_source,
     ).toBeUndefined();
     expect(result.output_policy).toEqual({
       token_estimate: "ceil(utf8_bytes / 4)",
@@ -1730,9 +1732,11 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ action, invocable: true }),
       ]);
       expect(
-        ((result.schema?.oneOf ?? []) as Array<{
-          properties?: { action?: { const?: string } };
-        }>).map((branch) => branch.properties?.action?.const),
+        (
+          (result.schema?.oneOf ?? []) as Array<{
+            properties?: { action?: { const?: string } };
+          }>
+        ).map((branch) => branch.properties?.action?.const),
       ).toEqual([action]);
     }
   });
@@ -1743,6 +1747,7 @@ describe("contracts command runtime", () => {
       measurement_source_kinds: [
         "items",
         "dependency_kind",
+        "prose_edge_gap",
         "graph",
         "validate",
         "health",

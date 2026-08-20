@@ -1,6 +1,6 @@
 # Relationship graph semantics
 
-Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon), [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon), [pm-ayg31c](../.agents/pm/issues/pm-ayg31c.toon), and [pm-3dyec2](../.agents/pm/issues/pm-3dyec2.toon).
+Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon), [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon), [pm-ayg31c](../.agents/pm/issues/pm-ayg31c.toon), [pm-3dyec2](../.agents/pm/issues/pm-3dyec2.toon), [pm-c90tfh](../.agents/pm/issues/pm-c90tfh.toon), and [pm-ob9z4y](../.agents/pm/features/pm-ob9z4y.toon).
 
 ## Decision
 
@@ -163,10 +163,9 @@ await assertRelationshipGraphAdapterConformance(adapter, {
   workspace: "isolated-conformance-workspace",
 });
 
-const portfolio = federateRelationshipGraphSnapshots(
-  [productA, productB],
-  { createdAt: new Date().toISOString() },
-);
+const portfolio = federateRelationshipGraphSnapshots([productA, productB], {
+  createdAt: new Date().toISOString(),
+});
 ```
 
 `createRelationshipGraphScaleFixture` supplies reiterable lazy `nodes` and
@@ -343,6 +342,63 @@ normalization, traversal owns semantic graph algorithms, and governance owns
 policy findings. A VCS, company operating model, digital twin, or other
 non-project domain can replace the assembly adapter while reusing the same
 registry, traversal, event, context, and audit contracts.
+
+### Relationship assurance sources
+
+Repository assurance can ratchet graph quality without baking one project's
+policy into the graph kernel. A `dependency_kind` measurement may partition a
+canonical dependency kind by exact `source_kind`, by `source_kind_prefix`, or
+by whether provenance is present or missing. These filters are mutually
+exclusive and preserve the unfiltered measurement contract. This supports
+independent evidence-backed and uncited-edge floors or ceilings while keeping
+the dependency vocabulary extensible.
+
+The `prose_edge_gap` source measures distinct holder-target pairs where item
+descriptions, bodies, comments, notes, or learnings mention another canonical
+item but no structured relationship exists in either direction. It performs one
+bounded pass over the supplied items, resolves the collected mentions after the
+canonical id set is complete, reports the exact gap count, partitions the result
+into `explicit_subject` and `implicit_subject` pairs, and caps contributor
+diagnostics with `sample_limit`. Reasoned exemptions may name a whole holder,
+one holder-target pair, or a text fragment within one holder; an exemption
+without a non-empty reason is invalid. This makes roadmap ledgers, negative
+statements, and analysis subjects explicit policy rather than hidden
+false-positive suppression.
+
+```ts
+const evidenceBlocks = {
+  kind: "dependency_kind" as const,
+  dependency_kind: "blocks",
+  source_kind_prefix: "evidence:",
+};
+
+const unlinkedMentions = {
+  kind: "prose_edge_gap" as const,
+  sample_limit: 25,
+  exemptions: [
+    {
+      holder_id: "roadmap-ledger",
+      reason: "The ledger inventories work without asserting pairwise edges.",
+    },
+  ],
+};
+```
+
+Assurance assertions should pin these measurements to observed repository
+baselines: an evidence partition uses a non-regression floor, while uncited
+edges and prose gaps use ceilings. Negative controls must prove the observed
+value passes and a one-unit regression fails before the assertions join the
+repository's graph-composition gate.
+
+The scale acceptance runs the public SDK over one million items whose 999,999
+prose mentions each have a corresponding structured edge. It verifies an exact
+zero-gap result, bounded empty diagnostics, a 2,999,998-unit cost receipt, and
+the real item scan count:
+
+```bash
+pnpm build
+node --max-old-space-size=4096 scripts/benchmarks/prose-edge-gap-scale.mjs
+```
 
 The native workspace adapter is `pm graph <subcommand>`, also available as
 `PmClient.graph`, `runAction({ action: "graph" })`, and the MCP `pm_graph`
