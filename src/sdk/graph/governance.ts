@@ -12,7 +12,10 @@
  * carries a deterministic bounded sample, and proposes a safe next action so
  * agents can plan remediation without re-deriving context.
  */
-import type { RelationshipEdge } from "../relationships.js";
+import type {
+  RelationshipEdge,
+  RelationshipOutcomeTraversal,
+} from "../relationships.js";
 import {
   findRedundantRelationshipEdges,
   isTransitiveKind,
@@ -106,6 +109,8 @@ export interface RelationshipCoverageProfile {
   bridge_edges: number;
   /** Milestone nodes whose title explicitly declares an outcome. */
   outcome_nodes: number;
+  /** Declared edge kinds and directions admitted by typed outcome reachability. */
+  outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>;
   /** Active non-outcome nodes with a typed hierarchy or implements path to an outcome. */
   active_outcome_reachable_nodes: number;
   /** Active non-outcome nodes without a typed hierarchy or implements path to an outcome. */
@@ -790,6 +795,8 @@ interface CoverageTallies {
 interface OutcomeReachabilityProfile {
   /** Explicit outcome milestone count. */
   outcome_nodes: number;
+  /** Declared edge kinds and directions admitted by typed outcome reachability. */
+  outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>;
   /** Active non-outcome nodes that reach an outcome. */
   active_outcome_reachable_nodes: number;
   /** Active non-outcome nodes that do not reach an outcome. */
@@ -816,23 +823,46 @@ interface OutcomeReachabilityProfile {
 function buildOutcomeReverseIndex(
   assembly: WorkspaceRelationshipAssembly,
   signal: AbortSignal | undefined,
-): Map<string, Set<string>> {
+): {
+  basis: Record<RelationshipOutcomeTraversal, string>;
+  reverse: Map<string, Set<string>>;
+} {
   const reverse = new Map<string, Set<string>>();
+  const basisKinds: Record<RelationshipOutcomeTraversal, string[]> = {
+    source_to_target: [],
+    target_to_source: [],
+    both: [],
+  };
+  for (const definition of assembly.graph.registry().list()) {
+    if (definition.outcomeTraversal !== undefined) {
+      basisKinds[definition.outcomeTraversal].push(definition.kind);
+    }
+  }
+  const basis: Record<RelationshipOutcomeTraversal, string> = {
+    source_to_target: basisKinds.source_to_target.join(","),
+    target_to_source: basisKinds.target_to_source.join(","),
+    both: basisKinds.both.join(","),
+  };
+  const append = (from: string, to: string): void => {
+    const sources = reverse.get(to) ?? new Set<string>();
+    sources.add(from);
+    reverse.set(to, sources);
+  };
   for (const edge of assembly.graph.edges()) {
     signal?.throwIfAborted();
     const definition = assembly.graph.registry().require(edge.kind);
-    let oriented: { from: string; to: string } | undefined;
-    if (definition.hierarchy) {
-      oriented = orientTransitiveEdge(edge, definition);
-    } else if (definition.kind === "implements") {
-      oriented = { from: edge.source, to: edge.target };
-    }
-    if (oriented === undefined) continue;
-    const sources = reverse.get(oriented.to) ?? new Set<string>();
-    sources.add(oriented.from);
-    reverse.set(oriented.to, sources);
+    if (
+      definition.outcomeTraversal === "source_to_target" ||
+      definition.outcomeTraversal === "both"
+    )
+      append(edge.source, edge.target);
+    if (
+      definition.outcomeTraversal === "target_to_source" ||
+      definition.outcomeTraversal === "both"
+    )
+      append(edge.target, edge.source);
   }
-  return reverse;
+  return { basis, reverse };
 }
 
 /** Expand outcome nodes through every deterministic reverse typed path. */
@@ -860,7 +890,10 @@ function tallyOutcomeReachability(
   outcomes: ReadonlySet<string>,
   reachable: ReadonlySet<string>,
   signal: AbortSignal | undefined,
-): Omit<OutcomeReachabilityProfile, "outcome_nodes"> {
+): Omit<
+  OutcomeReachabilityProfile,
+  "outcome_nodes" | "outcome_reachability_basis"
+> {
   let activeReachable = 0;
   let activeUnreachable = 0;
   let terminal = 0;
@@ -923,13 +956,11 @@ function profileOutcomeReachability(
       )
       .map((detail) => detail.id),
   );
-  const reachable = expandOutcomeReachability(
-    outcomes,
-    buildOutcomeReverseIndex(assembly, signal),
-    signal,
-  );
+  const { basis, reverse } = buildOutcomeReverseIndex(assembly, signal);
+  const reachable = expandOutcomeReachability(outcomes, reverse, signal);
   return {
     outcome_nodes: outcomes.size,
+    outcome_reachability_basis: basis,
     ...tallyOutcomeReachability(nodeStates, outcomes, reachable, signal),
   };
 }

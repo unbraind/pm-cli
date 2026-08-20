@@ -16,8 +16,10 @@ export {
   type RelationshipHierarchyDirection,
   type RelationshipKindDefinition,
   type RelationshipLifecycle,
+  type RelationshipOutcomeTraversal,
   type RelationshipPrecedence,
   type RelationshipTemporalOrder,
+  type RelationshipTraversalFamily,
 } from "./relationship-kinds/contract.js";
 
 /** One normalized relationship edge indexed by the graph kernel. */
@@ -207,6 +209,28 @@ function assertRelationshipKindSemantics(
     throw new TypeError(`Invalid relationship lifecycle for ${kind}`);
   if (typeof definition.allowSelf !== "boolean")
     throw new TypeError(`Invalid relationship self-edge flag for ${kind}`);
+  if (
+    definition.traversal !== undefined &&
+    !["hierarchy", "ordering", "semantic", "association"].includes(
+      definition.traversal,
+    )
+  )
+    throw new TypeError(`Invalid relationship traversal family for ${kind}`);
+  if (
+    definition.outcomeTraversal !== undefined &&
+    !["source_to_target", "target_to_source", "both"].includes(
+      definition.outcomeTraversal,
+    )
+  )
+    throw new TypeError(`Invalid outcome traversal for ${kind}`);
+  if (
+    definition.direction === "undirected" &&
+    definition.outcomeTraversal !== undefined &&
+    definition.outcomeTraversal !== "both"
+  )
+    throw new TypeError(
+      `Undirected relationship kind cannot declare directional outcome traversal: ${kind}`,
+    );
 }
 
 /** Validate application payload-schema and compatibility-alias containers. */
@@ -268,6 +292,15 @@ export class RelationshipKindRegistry {
     const normalized = Object.freeze({
       ...definition,
       kind,
+      traversal:
+        definition.traversal ??
+        (definition.hierarchy
+          ? "hierarchy"
+          : definition.ordering
+            ? "ordering"
+            : definition.direction === "undirected"
+              ? "association"
+              : "semantic"),
       hierarchy: definition.hierarchy ?? false,
       inverse,
       aliases: Object.freeze(aliases),

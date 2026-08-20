@@ -96,6 +96,12 @@ describe("relationship graph structural governance", () => {
     ] as never);
 
     expect(auditWorkspaceRelationshipGraph(assembly).profile).toMatchObject({
+      outcome_reachability_basis: {
+        source_to_target:
+          "discovered_from,implements,incident_from,parent,recurs_from,verifies",
+        target_to_source: "child",
+        both: "supersedes",
+      },
       outcome_nodes: 2,
       active_outcome_reachable_nodes: 1,
       active_outcome_unreachable_nodes: 0,
@@ -105,6 +111,54 @@ describe("relationship graph structural governance", () => {
       outcome_reachable_nodes: 2,
       outcome_unreachable_nodes: 0,
       outcome_reachability_basis_points: 10_000,
+    });
+  });
+
+  it("uses every declared semantic outcome direction while preserving a disconnected negative control", () => {
+    const assembly = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-outcome",
+        title: "Outcome milestone: semantic lineage",
+        status: "open",
+        type: "Milestone",
+      },
+      {
+        id: "pm-living",
+        title: "Living replacement",
+        status: "open",
+        type: "Feature",
+        dependencies: [
+          { id: "pm-outcome", kind: "implements" },
+          { id: "pm-archived", kind: "supersedes" },
+        ],
+      },
+      {
+        id: "pm-archived",
+        title: "Archived predecessor",
+        status: "canceled",
+        type: "Feature",
+      },
+      {
+        id: "pm-proof",
+        title: "Verification evidence",
+        status: "closed",
+        type: "Task",
+        dependencies: [{ id: "pm-living", kind: "verifies" }],
+      },
+      {
+        id: "pm-disconnected",
+        title: "Genuinely disconnected work",
+        status: "closed",
+        type: "Task",
+      },
+    ] as never);
+    expect(auditWorkspaceRelationshipGraph(assembly).profile).toMatchObject({
+      active_outcome_reachable_nodes: 1,
+      terminal_outcome_reachable_nodes: 2,
+      terminal_outcome_unreachable_nodes: 1,
+      outcome_reachable_nodes: 3,
+      outcome_unreachable_nodes: 1,
+      outcome_reachability_basis_points: 7_500,
     });
   });
 

@@ -6,6 +6,13 @@
 
 - Provide consistent tracker preflight and executable recovery across SDK, CLI, and MCP ([pm-6qiwan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6qiwan.toon))
 
+### Fixed
+
+- Typed-outcome reachability admits three of ten edge kinds, so the four semantic kinds the ontology exists to express contribute nothing to the invariant they were minted to satisfy ([pm-ayg31c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ayg31c.toon))
+- The graph audit raises duplicate dependency rows at warning severity and the only remediation available deletes every copy, so collapsing a duplicate means briefly destroying a real edge ([pm-flnefm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-flnefm.toon))
+- The dependency remove flag accepts a value its own add flag refuses and reports success on a zero-match, so a mistyped graph repair exits 0 having changed nothing ([pm-gos426](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gos426.toon))
+- All four graph traversal verbs reject the semantic edge kinds the ontology exists to express, so 'what implements this milestone' returns the ordering-kind answer with no sign a semantic one exists ([pm-3dyec2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3dyec2.toon))
+
 ## 2026.8.20 - 2026-08-20
 
 ### Added

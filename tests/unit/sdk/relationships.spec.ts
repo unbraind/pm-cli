@@ -30,6 +30,16 @@ describe("relationship kind registry", () => {
     expect(resolveCanonicalRelationshipKind(42)).toBeUndefined();
     expect(registry.require("parent").hierarchyDirection).toBe("target_parent");
     expect(registry.require("child").hierarchyDirection).toBe("source_parent");
+    expect(registry.require("implements")).toMatchObject({
+      traversal: "semantic",
+      outcomeTraversal: "source_to_target",
+    });
+    expect(registry.require("supersedes")).toMatchObject({
+      traversal: "semantic",
+      outcomeTraversal: "both",
+    });
+    expect(registry.require("related").traversal).toBe("association");
+    expect(registry.require("related").outcomeTraversal).toBeUndefined();
     expect(registry.resolve(null)).toBeUndefined();
     expect(registry.list().map(({ kind }) => kind)).toEqual(
       registry
@@ -191,6 +201,28 @@ describe("relationship kind registry", () => {
         temporalOrder: "source_after_target",
       }),
     ).toThrow("cannot declare temporal order");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_traversal",
+        traversal: "sideways" as never,
+      }),
+    ).toThrow("Invalid relationship traversal family");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_outcome_traversal",
+        outcomeTraversal: "sideways" as never,
+      }),
+    ).toThrow("Invalid outcome traversal");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "undirected_outcome",
+        direction: "undirected",
+        outcomeTraversal: "source_to_target",
+      }),
+    ).toThrow("Undirected relationship kind cannot declare directional outcome traversal");
   });
 
   it("enforces self-edge policy after alias resolution while preserving custom opt-ins", () => {

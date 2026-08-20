@@ -16110,6 +16110,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "dependency_flag_value_invalid",
+      "class": "usage",
+      "code": "dependency_flag_value_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Dependency flag value invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/dependency-flag-validation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "dependency_remove_no_match",
+      "class": "not_found",
+      "code": "dependency_remove_no_match",
+      "emitting_commands": [
+        "update"
+      ],
+      "exit_code": 3,
+      "meaning": "Dependency remove no match condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "dependency_target_not_found",
       "class": "not_found",
       "code": "dependency_target_not_found",

@@ -1,6 +1,6 @@
 # Dependency-kind contract
 
-Tracker: [pm-4020c5](../.agents/pm/issues/pm-4020c5.toon), [pm-jkbqt8](../.agents/pm/issues/pm-jkbqt8.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon)
+Tracker: [pm-4020c5](../.agents/pm/issues/pm-4020c5.toon), [pm-jkbqt8](../.agents/pm/issues/pm-jkbqt8.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon), [pm-gos426](../.agents/pm/issues/pm-gos426.toon), and [pm-flnefm](../.agents/pm/issues/pm-flnefm.toon).
 
 Dependency rows have one canonical stored spelling per relationship meaning. Command inputs remain compatibility-friendly: hyphens normalize to underscores and the aliases below are accepted, but `pm create` and `pm update` persist the canonical kind. Existing historical rows are never rewritten implicitly.
 
@@ -14,6 +14,17 @@ Dependency rows have one canonical stored spelling per relationship meaning. Com
 `epic` and `task` are compatibility aliases, not item types embedded in the relationship ontology. New integrations should use `parent` or `child` and express the work classification through the item `type` field.
 
 The SDK relationship registry is authoritative. `canonicalizeRelationshipKind()` rejects unknown spellings, while `resolveCanonicalRelationshipKind()` supports validation flows that need an undefined result. `pm contracts` publishes `relationship_kind_contracts` with canonical names, aliases, inverses, and ordering/hierarchy semantics.
+
+Dependency additions and removals share the same lossless input grammar. A
+bare value is an item id; structured input uses `id=<id>` plus an optional
+canonical `kind`/`type` and `source_kind`. Punctuation-shaped shorthand such as
+`OTHER,related` is rejected with `dependency_flag_value_invalid` on both
+`--dep` and `--dep-remove`, before prefix normalization can turn it into a
+dangling id. A removal selector that matches no stored row fails with
+`dependency_remove_no_match` and returns the unmatched selectors plus compact
+available identities. Re-adding a stored dependency identity is idempotent; if
+legacy storage contains that exact identity more than once, the same mutation
+collapses the touched copies to one without creating an edge-absence window.
 
 `recurs_from` has no alias: a later occurrence points to an earlier occurrence.
 It is persistent after both items become terminal and carries temporal identity,

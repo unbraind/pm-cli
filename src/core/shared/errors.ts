@@ -80,6 +80,10 @@ export interface PmCliErrorContext {
   check?: string;
   /** Serialization format involved in a parse failure. */
   format?: string;
+  /** CLI flag whose supplied value violated a shared mutation grammar. */
+  flag?: string;
+  /** Supplied scalar value that violated a shared mutation grammar. */
+  value?: string;
   /** Item format version involved in a compatibility failure. */
   format_version?: number;
   /** Schema type that determines the shape and validation rules for this value. */
@@ -100,6 +104,18 @@ export interface PmCliErrorContext {
   nextSteps?: string[];
   /** Exact selectors that could not be matched by a lossless removal. */
   unmatched?: string[];
+  /** Dependency selectors that matched no stored edge. */
+  unmatched_selectors?: Array<{
+    id: string;
+    kind?: string;
+    source_kind?: string;
+  }>;
+  /** Compact stored dependency identities available when a removal failed. */
+  available_dependencies?: Array<{
+    id: string;
+    kind: string;
+    source_kind?: string;
+  }>;
   /** Exact verifier findings that caused an integrity-sensitive operation to refuse. */
   verification_errors?: string[];
   /** Local dependency targets that could not be resolved before mutation. */

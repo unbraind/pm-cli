@@ -120,10 +120,22 @@ function resolveFamilyKinds(
   const resolved = new Set<string>();
   for (const kind of kinds) {
     const definition = registry.require(kind);
-    if (!definition[family])
+    // Registry registration normalizes this optional compatibility field before
+    // definitions become queryable.
+    const traversal = definition.traversal!;
+    if (traversal === "association")
       throw new TypeError(
-        `Relationship kind ${definition.kind} is not a ${family} kind`,
+        `Relationship kind ${definition.kind} uses association traversal; use graph impact --direction both`,
       );
+    if (traversal !== family && traversal !== "semantic") {
+      const redirect =
+        traversal === "hierarchy"
+          ? "graph ancestors or graph descendants"
+          : "graph predecessors or graph successors";
+      throw new TypeError(
+        `Relationship kind ${definition.kind} uses ${traversal} traversal; use ${redirect}`,
+      );
+    }
     resolved.add(definition.kind);
   }
   return resolved;
@@ -177,7 +189,7 @@ function expandSemanticNeighbors(
   const seen = new Set<string>();
   for (const row of rows.value) {
     const definition = registry.require(row.edge.kind);
-    if (!definition[family]) continue;
+    if (familyKinds === undefined && !definition[family]) continue;
     if (!matches(row, definition, nodeId)) continue;
     if (seen.has(row.id)) continue;
     seen.add(row.id);

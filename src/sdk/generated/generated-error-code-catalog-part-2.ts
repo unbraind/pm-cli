@@ -8,6 +8,19 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "missing_destination",
+    meaning: "Missing destination condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_destination",
+    aliases: [],
+  },
+  {
     code: "missing_directory",
     meaning: "Missing directory condition.",
     stability: "stable",
