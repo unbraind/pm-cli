@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci-gate,context-management,graph,measurement-ratchet,tracker-governance
 created_at: "2026-08-10T12:12:23.720Z"
-updated_at: "2026-08-20T21:47:17.964Z"
+updated_at: "2026-08-20T22:08:26.878Z"
 closed_at: "2026-08-20T21:47:17.202Z"
 completed_at: "2026-08-20T21:47:17.202Z"
 author: "harness:claude-code"
@@ -41,13 +41,14 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-cpzt82,related,"2026-08-11T13:58:01.234Z","harness:claude-code","cli:update:dep",detected
   pm-s5e04g,related,"2026-08-11T13:58:01.234Z","harness:claude-code","cli:update:dep",detected
   pm-wmf72c,related,"2026-08-11T13:58:01.234Z","harness:claude-code","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T13:58:00.698Z","harness:claude-code","Cross-reference 2026-08-11: this item owns counting the prose-named pairs that carry no edge. A promotion experiment recorded in full on pm-wmf72c establishes the precision ceiling for the obvious rule shape. At a same-sentence cue-immediately-before-identifier threshold the rule yields 8 candidates over the whole corpus and all 8 are false positives, because a cue identifies the relationship kind and object but never its subject, and in tracker prose the subject is usually a third identifier in the same sentence. So the 1,750-pair gap this item measures is not closable by a cue-and-object rule at any window size. The measurement this item owns should therefore report the pairs partitioned by whether the sentence contains an explicit subject identifier, because that partition is what decides how much of the gap is mechanically promotable at all."
   "2026-08-20T19:59:25.548Z","harness:codex","Implementation start 2026-08-20: live tracker and GitHub inventory found no duplicate implementation item. This branch will deliver a single-pass SDK census over descriptions, body, comments, notes, and learnings; reasoned exemptions; capped agent-readable samples; assurance integration; latency/token bounds; and a failing negative control."
   "2026-08-20T20:56:57.560Z","harness:codex","Verification evidence: prose-edge-gap source is contract-tested across every prose surface, scalar/structured links, canonical/self/unknown resolution, deduplication, explicit/implicit partitions, reasoned exemptions, contributor caps, validation errors, cost receipts, and verdict propagation. The million-item linked-chain benchmark passes with zero gaps in 7.013s, cost 2,999,998, and ~824 MB peak RSS. Live graph-composition observes 1,343 gaps at ceiling 1,343, partitions explicit=1,216/implicit=127, and only 25 sampled contributors."
   "2026-08-20T21:14:49.394Z","harness:codex","Final linked-test evidence: tracker-context execution passed 3/3 linked commands: million-node benchmark, full quality:static, and focused assurance suites. Latest benchmark receipt: 1,000,000 nodes, 0 gaps, exact partitions 0/0, cost 2,999,998, duration 6.412s, peak RSS 824,561,664 bytes."
   "2026-08-20T21:40:02.789Z","harness:codex","PR #1069 review evidence: linked the previously omitted assurance and benchmark tests plus CHANGELOG.md. The prose-surface fixture now gives learnings its own pm-five target, proving array-valued learnings are scanned independently of notes."
   "2026-08-20T21:47:16.485Z","harness:codex","Final review-fix verification: 20/20 focused assurance and benchmark tests pass, including independent pm-five detection from array-valued learnings. Full quality:static passes all repository, graph, integrity, package/SDK, grammar, public-surface, and cost gates; CHANGELOG.md and both omitted test files are now linked."
+  "2026-08-20T22:08:26.878Z","harness:codex","Post-merge delivery proof: PR #1069 merged as c839c4df338a51725eb54dd165ce46ef46aca8db. Published v2026.8.20 remains the sole same-day AUTO release and its npm/npx/bunx verifier passes; fresh isolated npm and Bun installations each completed all 11 agent acceptance steps. The implementation will enter the next UTC daily release rather than creating a duplicate immutable tag."
 learnings[1]{created_at,author,text}:
   "2026-08-20T20:56:59.286Z","harness:codex","A scalable prose-edge census can stay exact and token-bounded by collecting canonical identifiers, structured pairs, and prose mentions in one item pass, resolving afterward, deduplicating holder-target pairs, and capping only contributor samples—not counts or partitions."
 files[9]{path,scope,note}:
