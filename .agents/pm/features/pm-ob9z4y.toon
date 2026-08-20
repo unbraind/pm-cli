@@ -2,11 +2,13 @@ id: pm-ob9z4y
 title: "Prose-asserted relationships are unmeasured: 1,750 identifier pairs named in item text carry no edge in any direction, and nothing counts the gap"
 description: "Item descriptions, comments, notes and learnings name 8,995 resolvable identifiers; 1,750 of the distinct pairs hold no dependency edge of any kind, so the prose copy of the relationship graph is larger than the copy every graph query reads. Deliver a parity census, a reviewed exemption ledger for ledger surfaces and negative statements, and a ratcheted ceiling in quality:static so the gap can only shrink."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: ci-gate,context-management,graph,measurement-ratchet,tracker-governance
 created_at: "2026-08-10T12:12:23.720Z"
-updated_at: "2026-08-14T10:15:08.978Z"
+updated_at: "2026-08-20T21:14:52.647Z"
+closed_at: "2026-08-20T21:14:51.943Z"
+completed_at: "2026-08-20T21:14:51.943Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A census resolves prose identifier mentions to real items and reports pairs holding no edge of any kind, counts first with a capped sample; Ledger surfaces, negative-statement phrasings and analysis subjects are exemptible with a recorded reason; an exemption is data, never a silent skip; The unexempted gap is declared as a ceiling so a pass may shrink it or leave it but never grow it, with a negative control proving the ceiling fails when exceeded; The gate runs in quality:static so a new item that names work it does not depend on fails before merge, not at release; The census is bounded in tokens and latency and stays within budget at million-item scale, reading each item once"
@@ -23,6 +25,9 @@ confidence: high
 sprint: 2026-w33
 reporter: maintainer-agent
 environment: "pm 2026.8.10, 2412 items, 10042 stored edges"
+resolution: "Added a public single-pass prose_edge_gap assurance source with canonical-ID resolution, reasoned exemptions, exact explicit/implicit partitions, bounded contributor samples, cost receipts, CLI contract publication, a live monotone ceiling, and a million-item benchmark."
+expected_result: "All-status prose references are measured against structured relationships with reviewable exemptions, exact counts and partitions, bounded agent-readable output, a failing ceiling negative control, and million-item performance evidence."
+actual_result: "graph-composition passes with 1,343 unexempted gaps at ceiling 1,343, explicit_subject=1,216, implicit_subject=127, 25 sampled contributors, and cost 85,551. The million-item public-SDK benchmark reports zero gaps in 6.412s at cost 2,999,998; all linked tests and repository gates pass."
 component: "scripts/quality, graph audit"
 dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w6scp,related,"2026-08-10T12:12:23.720Z","harness:claude-code","cli:create:dep",detected
@@ -36,6 +41,28 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-cpzt82,related,"2026-08-11T13:58:01.234Z","harness:claude-code","cli:update:dep",detected
   pm-s5e04g,related,"2026-08-11T13:58:01.234Z","harness:claude-code","cli:update:dep",detected
   pm-wmf72c,related,"2026-08-11T13:58:01.234Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-11T13:58:00.698Z","harness:claude-code","Cross-reference 2026-08-11: this item owns counting the prose-named pairs that carry no edge. A promotion experiment recorded in full on pm-wmf72c establishes the precision ceiling for the obvious rule shape. At a same-sentence cue-immediately-before-identifier threshold the rule yields 8 candidates over the whole corpus and all 8 are false positives, because a cue identifies the relationship kind and object but never its subject, and in tracker prose the subject is usually a third identifier in the same sentence. So the 1,750-pair gap this item measures is not closable by a cue-and-object rule at any window size. The measurement this item owns should therefore report the pairs partitioned by whether the sentence contains an explicit subject identifier, because that partition is what decides how much of the gap is mechanically promotable at all."
+  "2026-08-20T19:59:25.548Z","harness:codex","Implementation start 2026-08-20: live tracker and GitHub inventory found no duplicate implementation item. This branch will deliver a single-pass SDK census over descriptions, body, comments, notes, and learnings; reasoned exemptions; capped agent-readable samples; assurance integration; latency/token bounds; and a failing negative control."
+  "2026-08-20T20:56:57.560Z","harness:codex","Verification evidence: prose-edge-gap source is contract-tested across every prose surface, scalar/structured links, canonical/self/unknown resolution, deduplication, explicit/implicit partitions, reasoned exemptions, contributor caps, validation errors, cost receipts, and verdict propagation. The million-item linked-chain benchmark passes with zero gaps in 7.013s, cost 2,999,998, and ~824 MB peak RSS. Live graph-composition observes 1,343 gaps at ceiling 1,343, partitions explicit=1,216/implicit=127, and only 25 sampled contributors."
+  "2026-08-20T21:14:49.394Z","harness:codex","Final linked-test evidence: tracker-context execution passed 3/3 linked commands: million-node benchmark, full quality:static, and focused assurance suites. Latest benchmark receipt: 1,000,000 nodes, 0 gaps, exact partitions 0/0, cost 2,999,998, duration 6.412s, peak RSS 824,561,664 bytes."
+learnings[1]{created_at,author,text}:
+  "2026-08-20T20:56:59.286Z","harness:codex","A scalable prose-edge census can stay exact and token-bounded by collecting canonical identifiers, structured pairs, and prose mentions in one item pass, resolving afterward, deduplicating holder-target pairs, and capping only contributor samples—not counts or partitions."
+files[7]{path,scope,note}:
+  .agents/pm/assurance.json,project,Carries the exact all-status ceiling and reasoned exemption ledger.
+  scripts/benchmarks/prose-edge-gap-scale.mjs,project,Runs the public SDK census against one million linked items.
+  sdk/public-surface.json,project,Records optional partitions on public measurement and verdict receipts.
+  src/sdk/governance/assurance.ts,project,Adds the single-pass prose-to-edge parity census and exact subject partitions.
+  tests/fixtures/contracts/full.json,project,Publishes the source kind through generated contracts.
+  tests/unit/commands/contracts-command.spec.ts,project,Pins the authoritative CLI assurance source vocabulary.
+  tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,Covers prose surfaces scalar links exemptions deduplication partitions and cost.
+tests[3]{command,scope,timeout_seconds}:
+  node --max-old-space-size=4096 scripts/benchmarks/prose-edge-gap-scale.mjs,project,120
+  "pnpm quality:static",project,1200
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt20otdq-d27bah,test,passed,"2026-08-20T21:07:35.779Z","2026-08-20T21:13:08.030Z","2026-08-20T21:13:08.030Z",3,0,0
+docs[1]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,Documents prose surfaces exemptions partitions gate semantics and scale command.
+close_reason: "Implemented and verified the public prose-edge-gap census, reasoned exemptions, exact subject partitions, bounded samples/cost, live ceiling with negative control, generated contracts/docs, and million-item benchmark; exact coverage, static quality, graph gates, packed consumers, and linked tests pass."
 body: "## The measurement\n\nThe project records its relationships twice. Once as typed dependency rows, which every graph query reads. Once as identifiers written into descriptions, comments, notes and learnings, which no graph query reads.\n\nMeasured 2026-08-10 across all 2,412 items: **8,995** identifier mentions in item prose resolve to a real item in this workspace. Of the distinct pairs those mentions name, **1,750 carry no dependency edge in either direction, of any kind** — after the strategic-ladder wave of the same day absorbed 583 of an initial 2,333.\n\nSo the prose copy of the relationship graph is materially larger than the encoded copy, and the difference is invisible to `graph analyze`, `graph audit`, `graph impact`, and every context-assembly path that walks edges.\n\n## Why this is not simply a backlog of missing edges\n\nSome prose mentions must never become edges, and the distinction is real rather than a matter of taste:\n\n- **Ledger references.** pm-doxj holds 405 of the 1,750 because its comments are a roadmap ledger naming every item filed in every pass. Those items already reach pm-doxj through their capability epic. Promoting all 405 would add a hub with no traversal meaning.\n- **Negative statements.** A pass comment reading `filed (deliberate): a seventh outcome milestone — ...` records something that was deliberately *not* filed. A naive extractor mints exactly the wrong edge.\n- **Analysis subjects.** An item that measures other items names them without depending on them.\n\nThis is precisely why an extraction sweep is the wrong instrument and a **measurement** is the right one. The census cannot be automated into edges safely, but the gap can be counted, partitioned into a reviewed exemption ledger, and ratcheted so it only shrinks.\n\n## What this item delivers\n\nA parity measurement plus a gate, in the shape the existing ratchet already uses:\n\n1. **Census.** For every item, resolve identifier mentions in prose to real items, discard self-references and unresolvable ids, and report pairs holding no edge of any kind.\n2. **Exemption ledger.** A reviewed, reasoned list of holders and pair classes that are correct to leave unencoded — ledger surfaces, negative-statement phrasings, and analysis subjects. An exemption carries its reason as data, never a silent skip.\n3. **Ratchet.** The unexempted gap is declared as a ceiling on `pm-96h7`, so a pass may reduce it or leave it alone but never grow it. A new item whose prose names work it does not depend on has to either add the edge or claim an exemption.\n4. **Gate placement.** Runs in `quality:static` so it fails before merge rather than at release, and reports counts first with a capped sample.\n\n## Why it belongs in CI rather than in a review pass\n\nEvery previous graph wave discovered this gap by hand and left it larger than it found it, because filing an item necessarily writes prose naming other items while adding at most a few edges. The gap therefore grows on every productive pass and shrinks only during a dedicated sweep. A ceiling inverts that: the pass that creates prose references pays for them at the time, and the number becomes a property of the record instead of a periodic discovery."

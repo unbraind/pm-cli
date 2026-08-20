@@ -2,16 +2,25 @@
 
 ## Unreleased
 
+### Added
+
+- Prose-asserted relationships are unmeasured: 1,750 identifier pairs named in item text carry no edge in any direction, and nothing counts the gap ([pm-ob9z4y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ob9z4y.toon))
+
 ### Changed
 
 - Provide consistent tracker preflight and executable recovery across SDK, CLI, and MCP ([pm-6qiwan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6qiwan.toon))
 
 ### Fixed
 
+- The blocks ceiling counts fabricated and evidence-cited ordering edges identically, so the historical ordering reconstruction another item mandates cannot land ([pm-c90tfh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c90tfh.toon))
 - The dependency remove flag accepts a value its own add flag refuses and reports success on a zero-match, so a mistyped graph repair exits 0 having changed nothing ([pm-gos426](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gos426.toon))
 - All four graph traversal verbs reject the semantic edge kinds the ontology exists to express, so 'what implements this milestone' returns the ordering-kind answer with no sign a semantic one exists ([pm-3dyec2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3dyec2.toon))
 - Typed-outcome reachability admits three of ten edge kinds, so the four semantic kinds the ontology exists to express contribute nothing to the invariant they were minted to satisfy ([pm-ayg31c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ayg31c.toon))
 - The graph audit raises duplicate dependency rows at warning severity and the only remediation available deletes every copy, so collapsing a duplicate means briefly destroying a real edge ([pm-flnefm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-flnefm.toon))
+
+### Other
+
+- ADR: Ordering assurance partitions evidence-cited blocks from uncited blocks ([pm-jhpby4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-jhpby4.toon))
 
 ## 2026.8.20 - 2026-08-20
 

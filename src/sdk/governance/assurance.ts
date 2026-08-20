@@ -51,6 +51,7 @@ export const ASSURANCE_GATE_TRIGGERS = [
 export const ASSURANCE_MEASUREMENT_SOURCE_KINDS = [
   "items",
   "dependency_kind",
+  "prose_edge_gap",
   "graph",
   "validate",
   "health",
@@ -81,6 +82,8 @@ export interface AssuranceDependencyRecord {
   id: string;
   /** Typed relationship kind. */
   kind: string;
+  /** Provenance channel that created or justified the edge. */
+  source_kind?: string;
 }
 
 /** Minimal item projection consumed by built-in measurement sources. */
@@ -145,6 +148,34 @@ export interface AssuranceDependencyKindSource {
   kind: "dependency_kind";
   /** Relationship kind to count. */
   dependency_kind: string;
+  /** Require an exact dependency provenance channel. */
+  source_kind?: string;
+  /** Require a dependency provenance channel with this prefix. */
+  source_kind_prefix?: string;
+  /** Require dependency provenance to be present or missing. */
+  source_kind_state?: "present" | "missing";
+}
+
+/** Evidence-backed exemption from prose-to-edge parity. */
+export interface AssuranceProseEdgeExemption {
+  /** Holder whose prose contains the reference. */
+  holder_id: string;
+  /** Optional referenced item; omission exempts every matching pair on the holder. */
+  target_id?: string;
+  /** Optional literal that must occur in the same prose segment as the reference. */
+  text_contains?: string;
+  /** Reviewable explanation for why no typed edge should exist. */
+  reason: string;
+}
+
+/** Prose-reference parity source evaluated directly over authoritative item rows. */
+export interface AssuranceProseEdgeGapSource {
+  /** Source discriminant. */
+  kind: "prose_edge_gap";
+  /** Explicit false-positive ledger; every row requires a reason. */
+  exemptions?: AssuranceProseEdgeExemption[];
+  /** Maximum diagnostic contributors retained after the counts are computed. */
+  sample_limit?: number;
 }
 
 /** Graph-analytics source delegated to a host adapter. */
@@ -253,6 +284,7 @@ export interface AssuranceDerivedSource {
 export type AssuranceMeasurementSource =
   | AssuranceItemsSource
   | AssuranceDependencyKindSource
+  | AssuranceProseEdgeGapSource
   | AssuranceGraphSource
   | AssuranceValidateSource
   | AssuranceHealthSource
@@ -405,6 +437,8 @@ export interface AssuranceExternalMeasurementResult {
   cost: number;
   /** Optional contributors that moved the value. */
   contributors?: string[];
+  /** Optional exact named sub-populations within the observed value. */
+  partitions?: Readonly<Record<string, number>>;
 }
 
 /** SDK evaluation inputs supplied by a host. */
@@ -459,6 +493,8 @@ export interface AssuranceMeasurementResult {
   cost: AssuranceMeasurementCost;
   /** Optional contributors. */
   contributors: string[];
+  /** Optional exact named sub-populations within the observed value. */
+  partitions?: Readonly<Record<string, number>>;
 }
 
 /** Structured assertion bound. */
@@ -504,6 +540,8 @@ export interface AssuranceAssertionVerdict {
   cost: AssuranceMeasurementCost;
   /** Optional contributors. */
   contributors: string[];
+  /** Optional exact named sub-populations within the observed value. */
+  partitions?: Readonly<Record<string, number>>;
 }
 
 /** Complete gate verdict shared by every presentation and execution surface. */
@@ -741,6 +779,83 @@ function validateItemsMeasurementSource(source: AssuranceItemsSource): void {
   }
 }
 
+/** Validate relationship-provenance predicates on a dependency-kind measurement. */
+function validateDependencyKindMeasurementSource(
+  source: AssuranceDependencyKindSource,
+): void {
+  if (
+    typeof source.dependency_kind !== "string" ||
+    source.dependency_kind.trim().length === 0
+  ) {
+    throw new AssuranceMutationRefusalError(
+      "dependency_kind source requires dependency_kind",
+    );
+  }
+  const provenancePredicateCount = [
+    source.source_kind,
+    source.source_kind_prefix,
+    source.source_kind_state,
+  ].filter((value) => value !== undefined).length;
+  if (provenancePredicateCount > 1) {
+    throw new AssuranceMutationRefusalError(
+      "dependency_kind source accepts at most one source_kind predicate",
+    );
+  }
+  if (
+    (source.source_kind !== undefined &&
+      source.source_kind.trim().length === 0) ||
+    (source.source_kind_prefix !== undefined &&
+      source.source_kind_prefix.trim().length === 0)
+  ) {
+    throw new AssuranceMutationRefusalError(
+      "dependency_kind source provenance values must not be empty",
+    );
+  }
+  if (
+    source.source_kind_state !== undefined &&
+    source.source_kind_state !== "present" &&
+    source.source_kind_state !== "missing"
+  ) {
+    throw new AssuranceMutationRefusalError(
+      "dependency_kind source source_kind_state must be present or missing",
+    );
+  }
+}
+
+/** Validate bounded, reasoned prose-parity exemptions. */
+function validateProseEdgeGapSource(source: AssuranceProseEdgeGapSource): void {
+  if (
+    source.sample_limit !== undefined &&
+    (!Number.isInteger(source.sample_limit) || source.sample_limit < 1)
+  ) {
+    throw new AssuranceMutationRefusalError(
+      "prose_edge_gap sample_limit must be a positive integer",
+    );
+  }
+  for (const exemption of source.exemptions ?? []) {
+    if (
+      typeof exemption.holder_id !== "string" ||
+      exemption.holder_id.trim().length === 0 ||
+      typeof exemption.reason !== "string" ||
+      exemption.reason.trim().length === 0
+    ) {
+      throw new AssuranceMutationRefusalError(
+        "prose_edge_gap exemptions require holder_id and reason",
+      );
+    }
+    if (
+      (exemption.target_id !== undefined &&
+        exemption.target_id.trim().length === 0) ||
+      (exemption.text_contains !== undefined &&
+        exemption.text_contains.trim().length === 0)
+    ) {
+      throw new AssuranceMutationRefusalError(
+        "prose_edge_gap exemption selectors must not be empty",
+      );
+    }
+  }
+}
+
 /** Validate and return one measurement declaration. */
 export function validateMeasurementDefinition(
   definition: AssuranceMeasurementDefinition,
@@ -769,15 +884,9 @@ export function validateMeasurementDefinition(
   if (source.kind === "items") {
     validateItemsMeasurementSource(source);
   }
-  if (
-    source.kind === "dependency_kind" &&
-    (typeof source.dependency_kind !== "string" ||
-      source.dependency_kind.trim().length === 0)
-  ) {
-    throw new AssuranceMutationRefusalError(
-      "dependency_kind source requires dependency_kind",
-    );
-  }
+  if (source.kind === "dependency_kind")
+    validateDependencyKindMeasurementSource(source);
+  if (source.kind === "prose_edge_gap") validateProseEdgeGapSource(source);
   if (
     (source.kind === "graph" ||
       source.kind === "validate" ||
@@ -1122,6 +1231,32 @@ function itemsSourceResult(
   };
 }
 
+/** Match one normalized dependency provenance against an optional partition. */
+function dependencyProvenanceMatches(
+  source: AssuranceDependencyKindSource,
+  sourceKind: string | undefined,
+): boolean {
+  if (source.source_kind !== undefined) {
+    return (
+      sourceKind?.toLowerCase() === source.source_kind.trim().toLowerCase()
+    );
+  }
+  if (source.source_kind_prefix !== undefined) {
+    return (
+      sourceKind
+        ?.toLowerCase()
+        .startsWith(source.source_kind_prefix.trim().toLowerCase()) === true
+    );
+  }
+  if (source.source_kind_state === "present") {
+    return sourceKind !== undefined && sourceKind.length > 0;
+  }
+  if (source.source_kind_state === "missing") {
+    return sourceKind === undefined || sourceKind.length === 0;
+  }
+  return true;
+}
+
 function dependencyKindSourceResult(
   source: AssuranceDependencyKindSource,
   context: AssuranceEvaluationContext,
@@ -1135,9 +1270,14 @@ function dependencyKindSourceResult(
       const dependencyKind =
         resolveCanonicalRelationshipKind(dependency.kind) ??
         dependency.kind.trim().toLowerCase();
-      if (dependencyKind === requestedKind) {
-        contributors.push(`${item.id}->${dependency.id}`);
-      }
+      const sourceKind = dependency.source_kind?.trim();
+      if (
+        dependencyKind === requestedKind &&
+        dependencyProvenanceMatches(source, sourceKind)
+      )
+        contributors.push(
+          `${item.id}->${dependency.id}${sourceKind ? `@${sourceKind}` : ""}`,
+        );
     }
   }
   return {
@@ -1145,6 +1285,148 @@ function dependencyKindSourceResult(
     population_size: context.items.length,
     cost: context.items.length,
     contributors,
+  };
+}
+
+/** Return every text segment whose item identifiers form the prose graph. */
+function assuranceItemProseSegments(item: AssuranceItemRecord): string[] {
+  const segments = [item.description, item.body]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  for (const key of ["comments", "notes", "learnings"] as const) {
+    const entries = item[key];
+    if (!Array.isArray(entries)) continue;
+    for (const entry of entries) {
+      if (typeof entry === "string") segments.push(entry);
+      else if (typeof entry === "object" && entry !== null) {
+        const text = Reflect.get(entry, "text");
+        if (typeof text === "string") segments.push(text);
+      }
+    }
+  }
+  return segments;
+}
+
+/** Return whether a reviewed exemption applies to one prose reference. */
+function proseReferenceIsExempt(
+  exemptions: readonly AssuranceProseEdgeExemption[],
+  holderId: string,
+  targetId: string,
+  segment: string,
+): boolean {
+  return exemptions.some(
+    (exemption) =>
+      exemption.holder_id.trim().toLowerCase() === holderId.toLowerCase() &&
+      (exemption.target_id === undefined ||
+        exemption.target_id.trim().toLowerCase() === targetId.toLowerCase()) &&
+      (exemption.text_contains === undefined ||
+        segment
+          .toLowerCase()
+          .includes(exemption.text_contains.trim().toLowerCase())),
+  );
+}
+
+interface AssuranceProseMentionRecord {
+  holder_id: string;
+  segment: string;
+  mentioned_ids: string[];
+}
+
+interface AssuranceProseEdgeCensusInputs {
+  canonical_ids: Map<string, string>;
+  linked_pairs: Set<string>;
+  prose_mentions: AssuranceProseMentionRecord[];
+  mention_count: number;
+}
+
+/** Collect canonical ids, typed links, and raw prose mentions in one item pass. */
+function collectProseEdgeCensusInputs(
+  items: readonly AssuranceItemRecord[],
+): AssuranceProseEdgeCensusInputs {
+  const canonicalIds = new Map<string, string>();
+  const linkedPairs = new Set<string>();
+  const proseMentions: AssuranceProseMentionRecord[] = [];
+  const pairKey = (left: string, right: string): string =>
+    [left.toLowerCase(), right.toLowerCase()].sort().join("\u0000");
+  const mentionPattern = /\b[a-z][a-z0-9]*-[a-z0-9]+\b/giu;
+  let mentionCount = 0;
+  for (const item of items) {
+    canonicalIds.set(item.id.toLowerCase(), item.id);
+    for (const dependency of item.dependencies ?? [])
+      linkedPairs.add(pairKey(item.id, dependency.id));
+    for (const scalar of [item.parent, item.blocked_by])
+      if (typeof scalar === "string") linkedPairs.add(pairKey(item.id, scalar));
+    for (const segment of assuranceItemProseSegments(item)) {
+      const mentionedIds = [...segment.matchAll(mentionPattern)].map(
+        (match) => match[0],
+      );
+      mentionCount += mentionedIds.length;
+      proseMentions.push({
+        holder_id: item.id,
+        segment,
+        mentioned_ids: mentionedIds,
+      });
+    }
+  }
+  return {
+    canonical_ids: canonicalIds,
+    linked_pairs: linkedPairs,
+    prose_mentions: proseMentions,
+    mention_count: mentionCount,
+  };
+}
+
+/** Count distinct prose-named item pairs that have no typed edge in either direction. */
+function proseEdgeGapSourceResult(
+  source: AssuranceProseEdgeGapSource,
+  context: AssuranceEvaluationContext,
+): AssuranceExternalMeasurementResult {
+  const census = collectProseEdgeCensusInputs(context.items);
+  const pairKey = (left: string, right: string): string =>
+    [left.toLowerCase(), right.toLowerCase()].sort().join("\u0000");
+  const gaps = new Map<string, { contributor: string; explicit: boolean }>();
+  for (const proseMention of census.prose_mentions) {
+    const mentions = proseMention.mentioned_ids
+      .map((id) => census.canonical_ids.get(id.toLowerCase()))
+      .filter(
+        (id): id is string => id !== undefined && id !== proseMention.holder_id,
+      );
+    const distinctMentions = [...new Set(mentions)];
+    for (const targetId of distinctMentions) {
+      const key = pairKey(proseMention.holder_id, targetId);
+      if (
+        census.linked_pairs.has(key) ||
+        proseReferenceIsExempt(
+          source.exemptions ?? [],
+          proseMention.holder_id,
+          targetId,
+          proseMention.segment,
+        )
+      )
+        continue;
+      const explicit = distinctMentions.some(
+        (candidate) => candidate !== targetId,
+      );
+      if (gaps.get(key)?.explicit === true && !explicit) continue;
+      gaps.set(key, {
+        contributor: `${proseMention.holder_id}->${targetId}|subject=${explicit ? "explicit" : "implicit"}`,
+        explicit,
+      });
+    }
+  }
+  const gapRows = [...gaps.values()];
+  const contributors = gapRows.map((entry) => entry.contributor).sort();
+  return {
+    value: contributors.length,
+    population_size: census.canonical_ids.size,
+    cost:
+      context.items.length + census.linked_pairs.size + census.mention_count,
+    contributors: contributors.slice(0, source.sample_limit ?? 25),
+    partitions: {
+      explicit_subject: gapRows.filter((entry) => entry.explicit).length,
+      implicit_subject: gapRows.filter((entry) => !entry.explicit).length,
+    },
   };
 }
 
@@ -1193,6 +1475,8 @@ function sourceResult(
   if (source.kind === "dependency_kind") {
     return dependencyKindSourceResult(source, context);
   }
+  if (source.kind === "prose_edge_gap")
+    return proseEdgeGapSourceResult(source, context);
   if (source.kind === "history") return historySourceResult(source, context);
   if (source.kind === "links") return linksSourceResult(source, context);
   return null;
@@ -1377,6 +1661,7 @@ async function evaluateMeasurementInternal(
     items_scanned:
       definition.source.kind === "items" ||
       definition.source.kind === "dependency_kind" ||
+      definition.source.kind === "prose_edge_gap" ||
       definition.source.kind === "links"
         ? context.items.length
         : 0,
@@ -1400,6 +1685,7 @@ async function evaluateMeasurementInternal(
     population_size: result.population_size,
     cost,
     contributors: result.contributors ?? [],
+    ...(result.partitions ? { partitions: result.partitions } : {}),
   };
 }
 
@@ -1505,6 +1791,7 @@ export function evaluateAssuranceAssertion(
     negative_control_proven: proveNegativeControl(definition),
     cost: measurement.cost,
     contributors: measurement.contributors,
+    ...(measurement.partitions ? { partitions: measurement.partitions } : {}),
   };
 }
 
