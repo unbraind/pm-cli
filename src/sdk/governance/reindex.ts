@@ -3,6 +3,7 @@
  *
  * Implements the pm reindex command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -13,7 +14,6 @@ import {
   collectRegisteredItemFieldNames,
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
-  pathExists,
   writeFileAtomic,
   resolveItemTypeRegistry,
   parseItemDocument,
@@ -45,7 +45,6 @@ import {
   nowIso,
   listAllDocumentCandidatesCached,
   type CachedDocumentCandidate,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -1354,12 +1353,7 @@ export async function runReindex(
   const forceFullSemantic = options.full === true;
   emitReindexProgress(progressEnabled, `start mode=${requestedMode}`);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = resolveSettingsWithSemanticRuntimeDefaults(
     await readSettings(pmRoot),

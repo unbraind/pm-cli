@@ -3,6 +3,7 @@
  *
  * Implements the pm test command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import { cp, mkdir, mkdtemp, open, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -3040,12 +3041,7 @@ export async function runTest(
 ): Promise<TestResult> {
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   if ((options.measure?.length ?? 0) > 0 && options.run !== true) {
     throw new PmCliError("--measure requires --run", EXIT_CODE.USAGE);

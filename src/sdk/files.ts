@@ -3,9 +3,9 @@
  *
  * Implements the pm files command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathExists } from "../core/fs/fs-utils.js";
 import {
   getActiveExtensionRegistrations,
   hasActiveOnReadHooks,
@@ -23,7 +23,6 @@ import {
 import { readItemMetadataDerivedIndexState } from "../core/store/item-metadata-cache.js";
 import { queryLinkedFileMetadataIndex } from "../core/store/item-metadata-query-index.js";
 import {
-  getSettingsPath,
   resolvePmRoot,
   resolveWorkspaceRoot,
 } from "../core/store/paths.js";
@@ -762,12 +761,7 @@ export async function runFilesLookup(
 ): Promise<FilesLookupResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const paths = await normalizeFilesLookupPaths(options.paths, workspaceRoot);
   if (options.lineRange && paths.length !== 1) {
     throw new PmCliError(
@@ -833,12 +827,7 @@ export async function runFilesDiscover(
 ): Promise<FilesDiscoverResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

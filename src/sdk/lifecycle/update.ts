@@ -3,8 +3,8 @@
  *
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
@@ -57,7 +57,6 @@ import {
   listAllItemMetadataLight,
   locateItem,
   readLocatedItem,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -1832,12 +1831,7 @@ async function buildNoopUpdateResult(params: {
 }
 
 async function assertUpdateTrackerInitialized(pmRoot: string): Promise<void> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 function assertMatchingOrderRank(options: UpdateCommandOptions): void {

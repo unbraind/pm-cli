@@ -3,8 +3,8 @@
  *
  * Implements the SDK-owned focus lifecycle operation shared by every surface.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   getActiveExtensionRegistrations,
   normalizeItemId,
   resolveItemTypeRegistry,
@@ -17,7 +17,6 @@ import {
   buildItemNotFoundError,
   locateItem,
   readLocatedItem,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -43,12 +42,7 @@ export interface FocusResult {
 }
 
 async function ensureInitialized(pmRoot: string): Promise<void> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 /** Implements run focus for the public runtime surface of this module. */

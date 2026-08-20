@@ -3,6 +3,7 @@
  *
  * Implements the pm history compact command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHistoryEntry } from "../core/history/history.js";
@@ -42,7 +43,7 @@ import {
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
 import { readLocatedItem } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import type { HistoryEntry } from "../types/index.js";
@@ -410,12 +411,7 @@ export async function runHistoryCompact(
   global: GlobalOptions,
 ): Promise<HistoryCompactResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
@@ -794,12 +790,7 @@ export async function runHistoryCompactBulk(
   global: GlobalOptions,
 ): Promise<HistoryCompactBulkResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(

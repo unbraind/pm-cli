@@ -3,8 +3,8 @@
  *
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   removeFileIfExists,
   writeFileAtomic,
   appendHistoryEntry,
@@ -69,7 +69,6 @@ import {
   createMutationGuardSdk,
   getHistoryPath,
   getItemPath,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -1493,15 +1492,7 @@ async function loadCreateTemplateOptionsFromRuntime(
 }
 
 function ensureInitHasRun(pmRoot: string): Promise<void> {
-  return pathExists(getSettingsPath(pmRoot)).then((exists) => {
-    /* c8 ignore next -- init guard failures are covered by top-level create command tests. */
-    if (!exists) {
-      throw new PmCliError(
-        `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-        EXIT_CODE.NOT_FOUND,
-      );
-    }
-  });
+  return assertInitializedTracker(pmRoot);
 }
 
 /**

@@ -3,8 +3,8 @@
  *
  * Implements the pm claim command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   resolveRuntimeStatusRegistry,
   statusIsTerminal,
   EXIT_CODE,
@@ -12,7 +12,6 @@ import {
   PmCliError,
   toItemRecord,
   mutateItem,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -142,12 +141,7 @@ export async function runClaim(
   options: ClaimMutationOptions = {},
 ): Promise<ClaimResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = resolveAuthor(options.author, settings.author_default);
@@ -362,12 +356,7 @@ export async function runRelease(
   options: ReleaseMutationOptions = {},
 ): Promise<ReleaseResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
   const claimPrincipal = resolveClaimPrincipal(author);

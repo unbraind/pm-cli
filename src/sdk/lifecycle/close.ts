@@ -3,8 +3,8 @@
  *
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   toItemRecord,
   isTerminalStatus,
   resolveItemTypeRegistry,
@@ -18,7 +18,6 @@ import {
   locateItem,
   mutateItem,
   readLocatedItem,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -607,12 +606,7 @@ export async function closeItem(
   global: GlobalOptions,
 ): Promise<CloseOperationResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);

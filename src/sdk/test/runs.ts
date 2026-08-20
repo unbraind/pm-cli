@@ -3,8 +3,8 @@
  *
  * Implements the pm test runs command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import os from "node:os";
-import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -23,7 +23,6 @@ import {
   stopBackgroundTestRun,
 } from "../../core/test/background-runs.js";
 import {
-  getSettingsPath,
   resolveGlobalPmRoot,
   resolvePmRoot,
 } from "../../core/store/paths.js";
@@ -106,12 +105,7 @@ function resolveRequestedBy(
 }
 
 async function ensureInitialized(pmRoot: string): Promise<void> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 /** Documents the start background run command options payload exchanged by command, SDK, and package integrations. */

@@ -9,9 +9,9 @@
  * {@link module:core/profile/profile-plan}; this module is the I/O orchestration
  * and human formatting around it.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import path from "node:path";
 import {
-  pathExists,
   readFileIfExists,
 } from "../core/fs/fs-utils.js";
 import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
@@ -21,7 +21,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import {
   readSettings,
   resolveGovernanceKnobs,
@@ -464,12 +464,7 @@ function buildApplyResult(
 }
 
 async function assertProfileTrackerInitialized(pmRoot: string): Promise<void> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 function resolveProfileForCommand(name: string | undefined): {

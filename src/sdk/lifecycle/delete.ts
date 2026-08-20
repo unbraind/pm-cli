@@ -3,16 +3,13 @@
  *
  * Implements the SDK-owned delete lifecycle operation shared by every surface.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import path from "node:path";
 import {
-  pathExists,
-  EXIT_CODE,
   type GlobalOptions,
-  PmCliError,
   toItemRecord,
   deleteItem,
   getHistoryPath,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -60,12 +57,7 @@ export async function runDelete(
   global: GlobalOptions,
 ): Promise<DeleteResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);

@@ -51,10 +51,12 @@ describe("executable refusal closure gate", () => {
   it("proves real retries and blocks a seeded omission", () => {
     expect(verifyExecutableRefusalClosure()).toMatchObject({
       ok: true,
-      probe_count: 18,
-      closed_probe_count: 18,
+      probe_count: 21,
+      closed_probe_count: 21,
       closure_fraction: 1,
-      contract_count: 18,
+      contract_count: 21,
+      closed_domain_contract_count: 18,
+      tracker_preflight_contract_count: 3,
       baseline_version: 1,
       findings: [],
     });
@@ -180,6 +182,51 @@ describe("executable refusal closure gate", () => {
           code: "required_probe_missing",
           probe_id: "removed-probe",
         }),
+      ]),
+    });
+  });
+
+  it("handles an empty corpus and malformed preflight envelopes deterministically", () => {
+    expect(
+      verifyExecutableRefusalClosure({
+        probes: [],
+        preflightProbes: [],
+        baseline: EMPTY_BASELINE,
+        spawn: () => ({ status: 0, stderr: "" }),
+      }),
+    ).toMatchObject({
+      ok: false,
+      probe_count: 0,
+      closed_probe_count: 0,
+      closure_fraction: 1,
+    });
+
+    const results = [
+      { status: 0, stderr: "" },
+      { status: 0, stderr: "" },
+      { status: null, stderr: JSON.stringify({ code: 7 }) },
+      { status: 0, stderr: "" },
+    ];
+    expect(
+      verifyExecutableRefusalClosure({
+        probes: [],
+        preflightProbes: [
+          {
+            probe_id: "tracker-root-not-directory",
+            failure_kind: "not_directory",
+            expected_error_code: "tracker_root_not_directory",
+            expected_exit_code: 2,
+            recovery_kind: "select_directory",
+          },
+        ],
+        baseline: EMPTY_BASELINE,
+        spawn: () => results.shift(),
+      }),
+    ).toMatchObject({
+      ok: false,
+      findings: expect.arrayContaining([
+        expect.objectContaining({ code: "error_code_mismatch" }),
+        expect.objectContaining({ code: "exit_code_mismatch" }),
       ]),
     });
   });

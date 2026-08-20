@@ -21,9 +21,8 @@ import { acquireLock } from "../core/lock/lock.js";
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { serializeItemDocument } from "../core/item/item-format.js";
-import { getHistoryPath, getSettingsPath } from "../core/store/paths.js";
+import { getHistoryPath } from "../core/store/paths.js";
 import {
-  pathExists,
   removeFileIfExists,
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
@@ -32,6 +31,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import type {
   ConfidenceTextLevel,
   ItemDocument,
@@ -540,13 +540,7 @@ function toImportLinkedTestAssertions(
 
 /** Throws a NOT_FOUND PmCliError when the tracker has not been initialized. */
 export async function ensureTrackerInitialized(pmRoot: string): Promise<void> {
-  const exists = await pathExists(getSettingsPath(pmRoot));
-  if (!exists) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 /** Returns an empty item document used as the `before` state on import. */

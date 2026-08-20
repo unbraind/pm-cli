@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_destination",
-    meaning: "Missing destination condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_destination",
-    aliases: [],
-  },
-  {
     code: "missing_directory",
     meaning: "Missing directory condition.",
     stability: "stable",
@@ -31,6 +18,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_directory",
+    aliases: [],
+  },
+  {
+    code: "missing_init_recovery",
+    meaning: "Missing init recovery condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/tracker-preflight-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_init_recovery",
     aliases: [],
   },
   {
@@ -83,6 +83,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_parameter_alias",
+    aliases: [],
+  },
+  {
+    code: "missing_probe",
+    meaning: "Missing probe condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/tracker-preflight-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_probe",
     aliases: [],
   },
   {
@@ -528,6 +541,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "recovery_kind_mismatch",
+    meaning: "Recovery kind mismatch condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/tracker-preflight-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "recovery_kind_mismatch",
+    aliases: [],
+  },
+  {
     code: "redundant_edge",
     meaning: "Redundant edge condition.",
     stability: "stable",
@@ -639,7 +665,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
+    sources: ["sdk/agent/refusal-closure.ts", "sdk/agent/tracker-preflight-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "retry_failed",
     aliases: [],
@@ -1055,12 +1081,16 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "not_found",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
+    sources: [
+      "cli/error-guidance.ts",
+      "core/store/tracker-preflight.ts",
+      "core/telemetry/observability.ts",
+    ],
     emitting_commands: ["*"],
     canonical_code: "tracker_not_initialized",
     aliases: [],
     owned_states: [
-      { state: "selected_tracker_root_is_a_regular_file", probe_id: "tracker-root-regular-file", entrypoints: ["list"], expected_exit_class: "not_found" },
+      { state: "selected_tracker_root_exists_without_settings", probe_id: "tracker-root-settings-missing", entrypoints: ["list"], expected_exit_class: "not_found" },
     ],
   },
   {
@@ -1071,10 +1101,13 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "not_found",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/store/item-store.ts"],
+    sources: ["core/store/tracker-preflight.ts"],
     emitting_commands: ["*"],
     canonical_code: "tracker_root_missing",
     aliases: [],
+    owned_states: [
+      { state: "selected_tracker_root_does_not_exist", probe_id: "tracker-root-missing", entrypoints: ["list"], expected_exit_class: "not_found" },
+    ],
   },
   {
     code: "tracker_root_not_directory",
@@ -1084,10 +1117,13 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/store/item-store.ts"],
+    sources: ["core/store/tracker-preflight.ts"],
     emitting_commands: ["*"],
     canonical_code: "tracker_root_not_directory",
     aliases: [],
+    owned_states: [
+      { state: "selected_tracker_root_is_a_regular_file", probe_id: "tracker-root-regular-file", entrypoints: ["list"], expected_exit_class: "usage" },
+    ],
   },
   {
     code: "tracker_root_unreadable",
@@ -1097,7 +1133,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/store/item-store.ts"],
+    sources: ["core/store/tracker-preflight.ts"],
     emitting_commands: ["*"],
     canonical_code: "tracker_root_unreadable",
     aliases: [],
@@ -1322,6 +1358,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
       { state: "nested_command_token_is_not_declared_by_its_family", probe_id: "schema-unknown-subcommand", entrypoints: ["schema"], expected_exit_class: "usage" },
       { state: "package_lifecycle_token_is_not_declared", probe_id: "package-unknown-action", entrypoints: ["package"], expected_exit_class: "usage" },
     ],
+  },
+  {
+    code: "unsafe_init_recovery",
+    meaning: "Unsafe init recovery condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/tracker-preflight-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "unsafe_init_recovery",
+    aliases: [],
   },
   {
     code: "unsupported_update_option",

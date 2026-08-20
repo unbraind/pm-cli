@@ -10,8 +10,8 @@
  * follow-up reads without re-scanning the workspace; identical repeated
  * queries in long-lived hosts are answered from the memoized snapshot.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -20,7 +20,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
   parseDirection,
@@ -1381,12 +1381,7 @@ export async function runGraph(
     "--summary",
   );
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

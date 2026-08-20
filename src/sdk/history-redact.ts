@@ -3,6 +3,7 @@
  *
  * Implements the pm history redact command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import {
   pathExists,
@@ -44,7 +45,6 @@ import {
 import {
   getHistoryPath,
   getItemPath,
-  getSettingsPath,
   resolvePmRoot,
 } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -809,12 +809,7 @@ export async function runHistoryRedact(
   global: GlobalOptions,
 ): Promise<HistoryRedactResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(

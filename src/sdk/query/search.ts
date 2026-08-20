@@ -3,6 +3,7 @@
  *
  * Implements the pm search command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
@@ -69,7 +70,6 @@ import {
   type Bm25Params,
 } from "../../core/search/bm25.js";
 import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
@@ -116,7 +116,6 @@ import { listAllDocumentCandidatesCached } from "../../core/store/item-metadata-
 import { listAllItemMetadata } from "../../core/store/item-store.js";
 import {
   getItemPath,
-  getSettingsPath,
   resolveGlobalPmRoot,
   resolvePmRoot,
 } from "../../core/store/paths.js";
@@ -2738,12 +2737,7 @@ async function resolveSearchRuntimeContext(
   global: GlobalOptions,
 ): Promise<SearchRuntimeContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const storedSettings = await readSettings(pmRoot);
   const settings =
     resolveSettingsWithSemanticRuntimeDefaults(storedSettings).settings;

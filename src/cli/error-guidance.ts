@@ -757,7 +757,7 @@ function buildTrackerNotInitializedGuidance(
   context: PmCliErrorContext | undefined,
 ): GuidanceMessage | null {
   const trackerNotInitialized = message.match(
-    /^Tracker is not initialized at (.+)\. Run pm init first\.$/,
+    /^Tracker is not initialized at (.+)\. (?:Run pm init first|Tracker root does not exist\. Run pm init first)\.$/,
   );
   if (!trackerNotInitialized) {
     return null;

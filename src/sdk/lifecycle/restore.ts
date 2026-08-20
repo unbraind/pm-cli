@@ -3,6 +3,7 @@
  *
  * Implements the SDK-owned restore lifecycle operation shared by every surface.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import {
@@ -35,7 +36,6 @@ import {
   readLocatedItem,
   getHistoryPath,
   getItemPath,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -337,12 +337,7 @@ export async function runRestore(
   global: GlobalOptions,
 ): Promise<RestoreResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(

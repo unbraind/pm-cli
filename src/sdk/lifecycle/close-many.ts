@@ -3,8 +3,8 @@
  *
  * Implements the pm close many command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   createCheckpointId,
   loadMutationCheckpoint,
   restoreCheckpointItems,
@@ -21,7 +21,6 @@ import {
   resolveAuthor,
   nowIso,
   listAllItemMetadataLight,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
@@ -657,12 +656,7 @@ export async function runCloseMany(
   global: GlobalOptions,
 ): Promise<CloseManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
 
   const dryRun = options.dryRun === true;

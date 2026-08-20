@@ -15,6 +15,7 @@ const {
   listAllItemMetadataMock,
   readFileMock,
   realpathMock,
+  statMock,
   runActiveOnReadHooksMock,
   spawnSyncMock,
 } = vi.hoisted(() => ({
@@ -24,6 +25,7 @@ const {
   readFileMock:
     vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
   realpathMock: vi.fn<(targetPath: string) => Promise<string>>(),
+  statMock: vi.fn(),
   runActiveOnReadHooksMock: vi.fn<() => Promise<string[]>>(),
   spawnSyncMock: vi.fn(),
 }));
@@ -65,6 +67,7 @@ vi.mock("node:fs/promises", () => ({
   default: {
     readFile: readFileMock,
     realpath: realpathMock,
+    stat: statMock,
   },
 }));
 
@@ -288,6 +291,7 @@ describe("runSearch", () => {
     readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
     listAllItemMetadataMock.mockResolvedValue([]);
     realpathMock.mockImplementation(async (targetPath) => targetPath);
+    statMock.mockRejectedValue(Object.assign(new Error("missing"), { code: "ENOENT" }));
     runActiveOnReadHooksMock.mockResolvedValue([]);
     spawnSyncMock.mockReturnValue({
       status: 1,

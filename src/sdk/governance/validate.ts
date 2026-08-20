@@ -3,6 +3,7 @@
  *
  * Implements the pm validate command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import type { Dirent } from "node:fs";
@@ -12,7 +13,7 @@ import { promisify } from "node:util";
 import { buildRemediationCommands } from "../../core/diagnostics/remediation.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
-import { isFileMissingError, pathExists } from "../../core/fs/fs-utils.js";
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
@@ -34,7 +35,7 @@ import {
   effectiveItemFormatVersion,
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
   partitionFixesByGrant,
@@ -166,12 +167,10 @@ const VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES = [
   "warn",
   "error",
 ] as const;
-const LIFECYCLE_PATTERN_FIELD_KEYS = [
-  "blocked_reason",
-  "resolution",
-  "actual_result",
-] as const;
-type LifecyclePatternFieldKey = (typeof LIFECYCLE_PATTERN_FIELD_KEYS)[number];
+type LifecyclePatternFieldKey =
+  | "blocked_reason"
+  | "resolution"
+  | "actual_result";
 const CORE_METADATA_REQUIRED_FIELDS = [
   "author",
   "acceptance_criteria",
@@ -3591,12 +3590,7 @@ export async function runValidate(
   // Resolved up-front so unknown --fix-scope values fail fast before any scan.
   const grantedFixScopes = resolveGrantedFixScopes(options.fixScope);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);

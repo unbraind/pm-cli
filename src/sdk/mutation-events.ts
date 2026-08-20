@@ -4,6 +4,7 @@
  * Exposes cursor-resumable, cross-item mutation events over the append-only
  * history store without requiring a daemon or shell subprocess.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { createHash } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import {
@@ -12,11 +13,10 @@ import {
   rebuildHistoryEventIndex,
   type IndexedHistoryEvent,
 } from "../core/history/event-index.js";
-import { pathExists } from "../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry } from "../types/index.js";
 import {
@@ -312,12 +312,7 @@ export async function listMutationEvents(
   options: ListMutationEventsOptions = {},
 ): Promise<MutationEventPage> {
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const requestedLimit = parseMutationEventLimit(options.limit);
   const cursorMode = resolveMutationEventCursorMode(options.cursorMode);
   if (options.full === true && options.provenance === true) {

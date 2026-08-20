@@ -16,6 +16,7 @@ export * from "./output-contracts.js";
 export * from "./read-output-contracts.js";
 export * from "./agent/refusal-closure.js";
 export * from "./agent/closed-domain-contracts.js";
+export * from "./agent/tracker-preflight-contracts.js";
 export type {
   PmReadOutputSessionReceipt,
   PmReadOutputSessionState,

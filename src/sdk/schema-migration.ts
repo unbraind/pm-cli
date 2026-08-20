@@ -6,12 +6,12 @@
  * primitives so every applied item keeps its normal lock, history, and index
  * guarantees.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
   isFileMissingError,
-  pathExists,
   readFileIfExists,
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
@@ -42,7 +42,7 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -1171,12 +1171,7 @@ export async function runSchemaEvolutionMigration(
 ): Promise<SchemaEvolutionMigrationResult> {
   const request = normalizedRequest(requestInput);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const migrationId =
     options.migrationId === undefined
       ? deriveSchemaEvolutionMigrationId(request, await fs.realpath(pmRoot))

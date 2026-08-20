@@ -215,11 +215,6 @@
       "count": 2
     }
   },
-  "src/sdk/governance/validate.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/sdk/guide.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1

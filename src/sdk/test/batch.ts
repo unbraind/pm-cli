@@ -3,7 +3,7 @@
  *
  * Implements the pm test all command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
@@ -18,7 +18,6 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import {
-  getSettingsPath,
   resolveGlobalPmRoot,
   resolvePmRoot,
 } from "../../core/store/paths.js";
@@ -786,12 +785,7 @@ const prepareTestAllRun = async (
   global: GlobalOptions,
 ): Promise<PreparedTestAllRun> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const selection = await selectTestAllItems({ pmRoot, settings, options });
   const defaultTimeoutSeconds = parseTimeout(options.timeout);

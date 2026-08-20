@@ -3,8 +3,8 @@
  *
  * Implements the pm plan command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   getActiveExtensionRegistrations,
   isTerminalStatus,
   resolveItemTypeRegistry,
@@ -18,7 +18,6 @@ import {
   locateItem,
   mutateItem,
   readLocatedItem,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -960,12 +959,7 @@ interface PlanWriteContext {
 
 async function loadContext(global: GlobalOptions): Promise<PlanWriteContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   return { pmRoot, settings };
 }

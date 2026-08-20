@@ -3,10 +3,26 @@
   "codes": {
     "tracker_not_initialized": [
       {
+        "state": "selected_tracker_root_exists_without_settings",
+        "probe_id": "tracker-root-settings-missing",
+        "entrypoints": ["list"],
+        "expected_exit_class": "not_found"
+      }
+    ],
+    "tracker_root_missing": [
+      {
+        "state": "selected_tracker_root_does_not_exist",
+        "probe_id": "tracker-root-missing",
+        "entrypoints": ["list"],
+        "expected_exit_class": "not_found"
+      }
+    ],
+    "tracker_root_not_directory": [
+      {
         "state": "selected_tracker_root_is_a_regular_file",
         "probe_id": "tracker-root-regular-file",
         "entrypoints": ["list"],
-        "expected_exit_class": "not_found"
+        "expected_exit_class": "usage"
       }
     ],
     "unknown_option": [

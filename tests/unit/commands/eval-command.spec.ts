@@ -11,12 +11,14 @@ const {
   resolvePmRootMock,
   getSettingsPathMock,
   runSearchMock,
+  statMock,
 } = vi.hoisted(() => ({
   pathExistsMock: vi.fn<() => Promise<boolean>>(),
   readFileMock:
     vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
   resolvePmRootMock: vi.fn<() => string>(),
   getSettingsPathMock: vi.fn<() => string>(),
+  statMock: vi.fn(),
   runSearchMock:
     vi.fn<
       (
@@ -28,7 +30,7 @@ const {
 }));
 
 vi.mock("node:fs/promises", () => ({
-  default: { readFile: readFileMock },
+  default: { readFile: readFileMock, stat: statMock },
 }));
 vi.mock("../../../src/core/fs/fs-utils.js", () => ({
   pathExists: pathExistsMock,
@@ -65,6 +67,7 @@ beforeEach(() => {
   pathExistsMock.mockResolvedValue(true);
   resolvePmRootMock.mockReturnValue("/pmroot");
   getSettingsPathMock.mockReturnValue("/pmroot/settings.json");
+  statMock.mockRejectedValue(Object.assign(new Error("missing"), { code: "ENOENT" }));
 });
 
 describe("runEval", () => {

@@ -16376,7 +16376,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/agent/refusal-closure.ts"
+        "sdk/agent/refusal-closure.ts",
+        "sdk/agent/tracker-preflight-contracts.ts"
       ],
       "stability": "provisional"
     },
@@ -16413,6 +16414,23 @@
         "sdk/mutation-events.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "exit_code_mismatch",
+      "class": "generic_failure",
+      "code": "exit_code_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Exit code mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/tracker-preflight-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -18162,6 +18180,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "missing_init_recovery",
+      "class": "generic_failure",
+      "code": "missing_init_recovery",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing init recovery condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/tracker-preflight-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "missing_lifecycle_target",
       "class": "usage",
       "code": "missing_lifecycle_target",
@@ -18225,6 +18260,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/cli-contracts/tool-option-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_probe",
+      "class": "generic_failure",
+      "code": "missing_probe",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing probe condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/tracker-preflight-contracts.ts"
       ],
       "stability": "provisional"
     },
@@ -18809,6 +18861,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "recovery_kind_mismatch",
+      "class": "generic_failure",
+      "code": "recovery_kind_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Recovery kind mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/tracker-preflight-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "redundant_edge",
       "class": "generic_failure",
       "code": "redundant_edge",
@@ -18956,7 +19025,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/agent/refusal-closure.ts"
+        "sdk/agent/refusal-closure.ts",
+        "sdk/agent/tracker-preflight-contracts.ts"
       ],
       "stability": "provisional"
     },
@@ -19505,13 +19575,14 @@
             "list"
           ],
           "expected_exit_class": "not_found",
-          "probe_id": "tracker-root-regular-file",
-          "state": "selected_tracker_root_is_a_regular_file"
+          "probe_id": "tracker-root-settings-missing",
+          "state": "selected_tracker_root_exists_without_settings"
         }
       ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
+        "core/store/tracker-preflight.ts",
         "core/telemetry/observability.ts"
       ],
       "stability": "stable"
@@ -19526,10 +19597,19 @@
       ],
       "exit_code": 3,
       "meaning": "Tracker root missing condition.",
-      "owned_states": [],
+      "owned_states": [
+        {
+          "entrypoints": [
+            "list"
+          ],
+          "expected_exit_class": "not_found",
+          "probe_id": "tracker-root-missing",
+          "state": "selected_tracker_root_does_not_exist"
+        }
+      ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/store/item-store.ts"
+        "core/store/tracker-preflight.ts"
       ],
       "stability": "stable"
     },
@@ -19543,10 +19623,19 @@
       ],
       "exit_code": 2,
       "meaning": "Tracker root not directory condition.",
-      "owned_states": [],
+      "owned_states": [
+        {
+          "entrypoints": [
+            "list"
+          ],
+          "expected_exit_class": "usage",
+          "probe_id": "tracker-root-regular-file",
+          "state": "selected_tracker_root_is_a_regular_file"
+        }
+      ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/store/item-store.ts"
+        "core/store/tracker-preflight.ts"
       ],
       "stability": "stable"
     },
@@ -19563,7 +19652,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/store/item-store.ts"
+        "core/store/tracker-preflight.ts"
       ],
       "stability": "provisional"
     },
@@ -19890,6 +19979,23 @@
         "sdk/agent/subcommand-recovery.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "unsafe_init_recovery",
+      "class": "generic_failure",
+      "code": "unsafe_init_recovery",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Unsafe init recovery condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/tracker-preflight-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

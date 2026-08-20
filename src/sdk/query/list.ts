@@ -3,7 +3,7 @@
  *
  * Implements the pm list command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   getActiveExtensionRegistrations,
   hasActiveOnReadHooks,
@@ -67,7 +67,7 @@ import {
   readItemMetadataDerivedIndexState,
 } from "../../core/store/item-metadata-cache.js";
 import { queryItemMetadataIndex } from "../../core/store/item-metadata-query-index.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemMetadata, ItemStatus, ItemType } from "../../types/index.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
@@ -1594,12 +1594,7 @@ async function resolveListRuntimeContext(
   global: GlobalOptions,
 ): Promise<ListRuntimeContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);

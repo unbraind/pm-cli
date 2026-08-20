@@ -6,8 +6,8 @@
  * building block for provenance browsers, immutable records, and VCS-like
  * systems without acquiring locks or appending history.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
-import { pathExists } from "../core/fs/fs-utils.js";
 import {
   applyHistoryPatch,
   ensureMaterializedHistoryTarget,
@@ -28,7 +28,7 @@ import {
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry, ItemDocument } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
@@ -128,12 +128,7 @@ export async function getItemAt(
   options: GetItemAtOptions = {},
 ): Promise<GetItemAtResult> {
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

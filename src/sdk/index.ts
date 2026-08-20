@@ -303,6 +303,11 @@ export {
 export { describeItemOwnershipConflict } from "./ownership-source.js";
 export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";
 export {
+  assertInitializedTracker,
+  assertReadableTrackerRoot,
+  buildTrackerInitializationRecovery,
+} from "./environment/tracker-preflight.js";
+export {
   _testOnly as _testOnlyTemplates,
   type TemplateSource,
 } from "./templates.js";
@@ -687,6 +692,7 @@ export * from "./generated-error-code-catalog.js";
 export * from "./agent/refusal-reachability.js";
 export * from "./agent/refusal-closure.js";
 export * from "./agent/closed-domain-contracts.js";
+export * from "./agent/tracker-preflight-contracts.js";
 export * from "./agent/subcommand-recovery.js";
 export * from "./flag-invocation-contracts.js";
 export * from "./cli-contracts/flag-lexicon-contracts.js";
