@@ -562,7 +562,10 @@ async function measureSourcePatternRatchet(ratchet, root) {
 async function validateSourcePatternRatchets(config, root) {
   const reports = [];
   const violations = [];
-  const ratchets = config.source_pattern_ratchets ?? [];
+  const ratchets = config.source_pattern_ratchets;
+  if (ratchets === undefined) {
+    return { reports, violations };
+  }
   if (!Array.isArray(ratchets)) {
     return {
       reports,

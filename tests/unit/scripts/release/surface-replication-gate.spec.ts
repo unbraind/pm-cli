@@ -155,6 +155,15 @@ describe("surface replication gate", () => {
       ok: false,
       violations: ["source_ratchet:declaration:invalid"],
     });
+    await expect(
+      validateSurfaceReplication(
+        { ...config, source_pattern_ratchets: null },
+        { repoRoot: root, changedFiles: [], today: "2026-08-20" },
+      ),
+    ).resolves.toMatchObject({
+      ok: false,
+      violations: ["source_ratchet:declaration:invalid"],
+    });
   });
 
   it("detects undeclared repeated rule bodies and enforces denominator floors", async () => {

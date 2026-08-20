@@ -1,4 +1,6 @@
 import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ItemMetadata } from "../../../src/types.js";
 
@@ -8,6 +10,7 @@ const writeFileAtomicMock = vi.fn<() => Promise<void>>();
 const readSettingsMock = vi.fn<() => Promise<unknown>>();
 const listAllItemMetadataMock = vi.fn<() => Promise<ItemMetadata[]>>();
 const listAllItemMetadataWithBodyMock = vi.fn<() => Promise<Array<ItemMetadata & { body: string }>>>();
+let trackerRoot: string;
 
 vi.mock("../../../src/core/fs/fs-utils.js", () => ({
   pathExists: pathExistsMock,
@@ -25,11 +28,11 @@ vi.mock("../../../src/core/store/item-store.js", () => ({
 }));
 
 beforeAll(async () => {
-  await fs.mkdir("/tmp/pm-list-sort", { recursive: true });
+  trackerRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-list-sort-"));
 });
 
 afterAll(async () => {
-  await fs.rm("/tmp/pm-list-sort", { recursive: true, force: true });
+  await fs.rm(trackerRoot, { recursive: true, force: true });
 });
 
 describe("runList sorting branches", () => {
@@ -112,7 +115,7 @@ describe("runList sorting branches", () => {
 
   it("orders open items before terminal then applies priority/updated/id tie-breakers", async () => {
     const { runList } = await import("../../../src/cli/commands/list.js");
-    const result = await runList(undefined, {}, { path: "/tmp/pm-list-sort" });
+    const result = await runList(undefined, {}, { path: trackerRoot });
     expect(result.items.map((item) => item.id)).toEqual([
       "pm-priority",
       "pm-aaa",
@@ -150,16 +153,16 @@ describe("runList sorting branches", () => {
     ]);
 
     const { runList } = await import("../../../src/cli/commands/list.js");
-    const result = await runList(undefined, {}, { path: "/tmp/pm-list-sort" });
+    const result = await runList(undefined, {}, { path: trackerRoot });
     expect(result.items.map((item) => item.id)).toEqual(["pm-open-second", "pm-terminal-first"]);
   });
 
   it("covers configurable sort field and order branches", async () => {
     const { runList } = await import("../../../src/cli/commands/list.js");
-    const byPriorityDesc = await runList(undefined, { sort: "priority", order: "desc" }, { path: "/tmp/pm-list-sort" });
+    const byPriorityDesc = await runList(undefined, { sort: "priority", order: "desc" }, { path: trackerRoot });
     expect(byPriorityDesc.items.map((item) => item.priority)).toEqual([3, 3, 1, 1, 0, 0]);
 
-    const byTitleAsc = await runList(undefined, { sort: "title", order: "asc" }, { path: "/tmp/pm-list-sort" });
+    const byTitleAsc = await runList(undefined, { sort: "title", order: "asc" }, { path: trackerRoot });
     expect(byTitleAsc.items.map((item) => item.title)).toEqual([
       "priority-wins",
       "same-time-id-a",
@@ -213,7 +216,7 @@ describe("runList sorting branches", () => {
     ]);
 
     const { runList } = await import("../../../src/cli/commands/list.js");
-    const byDeadlineAsc = await runList(undefined, { sort: "deadline", order: "asc" }, { path: "/tmp/pm-list-sort" });
+    const byDeadlineAsc = await runList(undefined, { sort: "deadline", order: "asc" }, { path: trackerRoot });
     expect(byDeadlineAsc.items.map((item) => item.id)).toEqual(["pm-parent-a", "pm-parent-b", "pm-parent-null"]);
 
     listAllItemMetadataMock.mockResolvedValueOnce([
@@ -253,7 +256,7 @@ describe("runList sorting branches", () => {
         updated_at: "2026-02-18T00:00:00.000Z",
       },
     ]);
-    const byParentAsc = await runList(undefined, { sort: "parent", order: "asc" }, { path: "/tmp/pm-list-sort" });
+    const byParentAsc = await runList(undefined, { sort: "parent", order: "asc" }, { path: trackerRoot });
     expect(byParentAsc.items.map((item) => item.id)).toEqual(["pm-parent-a", "pm-parent-b", "pm-parent-null"]);
   });
 });
