@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",defect-recurrence,error-taxonomy,refactor,simplification
 created_at: "2026-08-10T05:54:06.969Z"
-updated_at: "2026-08-20T06:23:44.469Z"
+updated_at: "2026-08-20T06:30:11.021Z"
 closed_at: "2026-08-20T06:21:13.120Z"
 completed_at: "2026-08-20T06:21:13.120Z"
 author: "harness:claude-code"
@@ -28,9 +28,10 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-tmhs,related,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
   pm-elmpav,related,"2026-08-10T06:10:16.142Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-10T06:10:16.142Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-20T04:53:16.013Z","harness:codex","Implementation start 2026-08-20: selected after complete all-status live orientation across 2,525 items, full metadata/history/relationship review of this canonical lineage, and GitHub/release/security/dependency verification. This item owns the public SDK preflight primitive and migration of all 50 current literal checks across 45 files; the same branch will execute its three recovery states and add a source-derived replication ratchet."
   "2026-08-20T06:14:24.553Z","harness:codex","Verification evidence 2026-08-20: centralized all 50 current initialized-tracker checks across 45 SDK modules behind the public shared preflight; missing root, empty root, and regular-file root now emit distinct typed codes and safe tokenized recovery. The executable refusal corpus expanded 18 -> 21 and passes 21/21; the source ratchet reports 50 required occurrences and zero forbidden legacy literals. Full repository proof passes 537/537 files and 7,634/7,634 tests at exact 55,749/55,749 statements, 41,582/41,582 branches, 11,567/11,567 functions, and 53,789/53,789 lines. ESLint and jscpd passed; package artifact gate passed (1,449 files); isolated packed npm consumer recovered missing/empty roots, safely refused a file root, imported SDK contracts, and passed local npx/bunx. Secret scan, production audit (0 vulnerabilities), and Trivy high/critical vuln+secret+misconfiguration scan passed."
+  "2026-08-20T06:30:11.021Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1065 at implementation head 3a83a155f. This reviewed branch carries the shared SDK preflight, 50-site migration, typed filesystem refusals, 21-probe executable recovery gate, source ratchet, generated contracts, docs, exact coverage, package acceptance, changelog, and PM closeout."
 learnings[1]{created_at,author,text}:
   "2026-08-20T06:14:25.217Z","harness:codex","Tracker initialization is a filesystem state machine, not one missing-file boolean: preserving root-missing, non-directory, settings-missing, and readable-root states in one SDK primitive prevents unsafe recovery advice and lets executable assurance measure every transition."
 files[71]{path,scope,note}:
