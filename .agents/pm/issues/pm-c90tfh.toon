@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: enforcement,graph,measurement-ratchet,ordering,tracker-governance
 created_at: "2026-08-10T12:11:08.571Z"
-updated_at: "2026-08-20T21:47:15.069Z"
+updated_at: "2026-08-20T22:10:08.700Z"
 closed_at: "2026-08-20T21:47:14.380Z"
 completed_at: "2026-08-20T21:47:14.380Z"
 author: "harness:claude-code"
@@ -38,13 +38,15 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w6scp,blocks,"2026-08-20T20:10:18.400Z","harness:codex","evidence:pm-c90tfh",detected
   pm-gxs55a,blocks,"2026-08-20T20:10:18.400Z","harness:codex","evidence:pm-c90tfh",detected
   pm-ye46ns,blocks,"2026-08-20T20:10:18.400Z","harness:codex","evidence:pm-c90tfh",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-20T19:59:23.004Z","harness:codex","Implementation start 2026-08-20: duplicate search and all-status graph review confirm this is the canonical owner of evidence-partitioned ordering ratchets. This branch will add typed provenance selectors and measurements with ceiling/floor negative controls, then replace only this item's weak related edges with evidence-backed scheduling semantics."
   "2026-08-20T20:56:56.950Z","harness:codex","Verification evidence: all 540 test files and 7,653 tests pass with exact 100% statements (55,898/55,898), branches (41,738/41,738), functions (11,596/11,596), and lines (53,927/53,927). repository-static-quality, package boundary/parity/replication, command grammar, flag parity/lexicon, refusal closure, public SDK surface, graph-composition, record-integrity, ESLint, jscpd zero clones, secret scan, and pnpm audit all pass. Live graph-composition observes 202 uncited blocks at ceiling 202 and 3 evidence-cited blocks at floor 3."
   "2026-08-20T21:14:48.750Z","harness:codex","Final linked-test evidence: tracker-context execution passed 2/2 linked commands. An earlier schema-context run exposed the expected absence of live defect evidence; a second attempt hit host /tmp inode exhaustion (UNKNOWN -122), confirmed at 99% inode usage. Routing the sandbox through a dedicated home-backed TMPDIR produced a clean terminal pass without changing test semantics."
   "2026-08-20T21:19:04.751Z","harness:codex","Post-close gate correction: classified the unpartitioned blocks ratchet as review_caught_late and recorded structured gate_strengthened evidence. The negative control now names both protected failure directions: an uncited blocks edge above 202 and removal of an evidence-cited edge below 3."
   "2026-08-20T21:40:02.248Z","harness:codex","PR #1069 review evidence: restored blocks-total-ceiling at the historical 243 outer bound with pass=243/fail=244 controls and added it to graph-composition and tracker-context-quality. Current measurements remain total=205, uncited=202, evidence-cited=3. The module-scope prosePairKey now supplies one canonical key implementation to link collection and gap lookup."
   "2026-08-20T21:47:13.660Z","harness:codex","Final review-fix verification: 20/20 focused assurance and benchmark tests pass. Full quality:static passes repository assurance, contract snapshots, package/SDK parity, surface replication, grammar/flag/refusal gates, tracker-context-quality, graph-composition, record-integrity, public surface, and cost budgets; blocks receipts are total 205<=243, uncited 202<=202, evidence 3>=3."
+  "2026-08-20T22:08:26.249Z","harness:codex","Post-merge closeout: PR #1069 merged to main as c839c4df338a51725eb54dd165ce46ef46aca8db after exact-head hosted CI, coverage, security, benchmark, and review-thread gates passed. Sentry PM-CLI-37 recorded one handled 2026.8.20 event during the implementation window when the published CLI read dependency-kind-blocks before its source existed; there was no recurrence. The merged source implements that measurement, so the Sentry issue is now resolved in exact commit c839c4df3 with regression tracking retained."
+  "2026-08-20T22:10:08.700Z","harness:codex","Post-merge telemetry proof: with NODE_USE_ENV_PROXY=1, a real context action increased the durable queue from 1 to 2; telemetry flush reported queue_entries_drained=2, queue_progressed=true, queue_empty=true, zero invalid rows, and no failed flush; the endpoint health probe returned ok with zero warnings. The self-observing CLI then queued its own flush/status action, so final drainage is performed through the public SDK without generating another CLI event."
 learnings[1]{created_at,author,text}:
   "2026-08-20T20:56:58.124Z","harness:codex","Provenance must be a first-class filter on dependency measurements: separating evidence-cited blocks from uncited ordering edges lets historical reconstruction advance without weakening the original anti-fabrication ratchet."
 files[6]{path,scope,note}:
