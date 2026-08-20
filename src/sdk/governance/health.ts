@@ -5,10 +5,10 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   isFileMissingError,
-  pathExists,
   readFileIfExists,
 } from "../../core/fs/fs-utils.js";
 import {
@@ -3020,13 +3020,8 @@ export async function runHealth(
   options: RunHealthOptions = {},
 ): Promise<HealthResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await assertInitializedTracker(pmRoot);
   const settingsPath = getSettingsPath(pmRoot);
-  if (!(await pathExists(settingsPath))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
 
   const { settings, warnings: settingsReadWarnings } =
     await readSettingsWithMetadata(pmRoot);

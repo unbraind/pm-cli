@@ -43,6 +43,7 @@ import {
 } from "./item-metadata-cache.js";
 import { getHistoryPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
+import { assertReadableTrackerRoot } from "./tracker-preflight.js";
 import { resolveClaimPrincipal } from "../shared/author.js";
 import { nowIso } from "../shared/time.js";
 import type {
@@ -112,109 +113,6 @@ function resolveItemFormatSearchOrder(
     return ["json_markdown", "toon"];
   }
   return ["toon", "json_markdown"];
-}
-
-function trackerRootNotDirectoryError(pmRoot: string): PmCliError {
-  return new PmCliError(
-    `Tracker root is not a directory at ${pmRoot}.`,
-    EXIT_CODE.USAGE,
-    {
-      code: "tracker_root_not_directory",
-      reason: "not_a_directory",
-      nextSteps: [
-        "Pass the tracker directory itself, usually <workspace>/.agents/pm.",
-      ],
-    },
-  );
-}
-
-function trackerRootUnreadableError(pmRoot: string): PmCliError {
-  return new PmCliError(
-    `Tracker root is not readable at ${pmRoot}.`,
-    EXIT_CODE.GENERIC_FAILURE,
-    {
-      code: "tracker_root_unreadable",
-      reason: "unreadable",
-      nextSteps: [
-        "Grant read and directory-search permission to the tracker root, then retry the SDK read.",
-      ],
-    },
-  );
-}
-
-async function assertMissingMetadataRootAncestors(
-  pmRoot: string,
-): Promise<void> {
-  const filesystemRoot = path.parse(path.resolve(pmRoot)).root;
-  let ancestor = path.dirname(path.resolve(pmRoot));
-  while (ancestor !== filesystemRoot) {
-    let ancestorStats;
-    try {
-      ancestorStats = await fs.stat(ancestor);
-    } catch (error: unknown) {
-      if (isErrno(error, "ENOTDIR")) {
-        throw trackerRootNotDirectoryError(pmRoot);
-      }
-      if (!isErrno(error, "ENOENT")) {
-        throw error;
-      }
-      ancestor = path.dirname(ancestor);
-      continue;
-    }
-    if (!ancestorStats.isDirectory()) {
-      throw trackerRootNotDirectoryError(pmRoot);
-    }
-    break;
-  }
-}
-
-/** Require metadata enumeration to start from a real directory so an invalid source cannot masquerade as an empty tracker. */
-async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
-  let stats;
-  try {
-    stats = await fs.stat(pmRoot);
-  } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
-      await assertMissingMetadataRootAncestors(pmRoot);
-      throw new PmCliError(
-        `Tracker root does not exist at ${pmRoot}.`,
-        EXIT_CODE.NOT_FOUND,
-        {
-          code: "tracker_root_missing",
-          reason: "missing",
-          nextSteps: [
-            "Confirm the tracker root path and retry the SDK read.",
-            "Initialize a tracker before enumerating its item metadata.",
-          ],
-        },
-      );
-    }
-    if (isErrno(error, "ENOTDIR")) {
-      throw trackerRootNotDirectoryError(pmRoot);
-    }
-    if (isErrno(error, "EACCES") || isErrno(error, "EPERM")) {
-      throw trackerRootUnreadableError(pmRoot);
-    }
-    throw error;
-  }
-  if (!stats.isDirectory()) {
-    throw trackerRootNotDirectoryError(pmRoot);
-  }
-  if (
-    process.platform !== "win32" &&
-    ((stats.mode & 0o444) === 0 || (stats.mode & 0o111) === 0)
-  ) {
-    throw trackerRootUnreadableError(pmRoot);
-  }
-  try {
-    const directory = await fs.opendir(pmRoot);
-    await directory.close();
-  } catch (error: unknown) {
-    if (isErrno(error, "EACCES") || isErrno(error, "EPERM")) {
-      throw trackerRootUnreadableError(pmRoot);
-    }
-    throw error;
-  }
 }
 
 /** Implements locate item for the public runtime surface of this module. */
@@ -290,7 +188,7 @@ export async function listAllItemMetadata(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemMetadata[]> {
-  await assertItemMetadataRoot(pmRoot);
+  await assertReadableTrackerRoot(pmRoot);
   const documents = await listAllDocumentsCached(
     pmRoot,
     preferredFormat,
@@ -314,7 +212,7 @@ export async function listAllItemMetadataLight(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemMetadata[]> {
-  await assertItemMetadataRoot(pmRoot);
+  await assertReadableTrackerRoot(pmRoot);
   const documents = await listAllDocumentsCachedLight(
     pmRoot,
     preferredFormat,
@@ -334,7 +232,7 @@ export async function listAllItemMetadataWithBody(
   schema?: RuntimeSchemaSettings,
   options: { forceSourceScan?: boolean } = {},
 ): Promise<Array<ItemMetadata & { body: string }>> {
-  await assertItemMetadataRoot(pmRoot);
+  await assertReadableTrackerRoot(pmRoot);
   const candidates = await listAllDocumentCandidatesCached(
     pmRoot,
     preferredFormat,

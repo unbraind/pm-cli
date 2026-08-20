@@ -7,6 +7,7 @@
  * those attributes effective. Idempotent and re-runnable; schema type
  * mutations refresh the fenced block automatically once it is installed.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import { readFile, realpath, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
@@ -21,7 +22,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { nowIso } from "../../core/shared/time.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {resolvePmRoot } from "../../core/store/paths.js";
 import {
   readSettings,
   resolveGovernanceKnobs,
@@ -664,12 +665,7 @@ export async function runMergeInstall(
     environment: process.env,
   });
   const pmRoot = context.pm_root;
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const workspaceRoot = await resolveGitWorkspaceRoot(context.workspace_start);
   return installMergeFence({
     pmRoot,

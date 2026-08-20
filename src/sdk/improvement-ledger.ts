@@ -4,11 +4,12 @@
  * Persists append-only quantitative observations in an audited workspace
  * singleton and exposes bounded trend reads for self-improvement loops.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
+import {readFileIfExists } from "../core/fs/fs-utils.js";
 import { mutateWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -16,7 +17,6 @@ import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { nowIso } from "../core/shared/time.js";
 import {
-  getSettingsPath,
   resolvePmRoot,
   resolveWorkspaceRoot,
 } from "../core/store/paths.js";
@@ -394,12 +394,7 @@ export async function recordImprovementObservation(
   global: { path?: string } = {},
 ): Promise<RecordImprovementObservationResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const observation = await buildImprovementObservation(
     pmRoot,
@@ -448,12 +443,7 @@ export async function readImprovementLedger(
   options: ReadImprovementLedgerOptions = {},
 ): Promise<ImprovementLedgerResult> {
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const metric =
     options.metric === undefined
       ? undefined

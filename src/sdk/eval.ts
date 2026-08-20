@@ -9,6 +9,7 @@
  * provider swaps (including the offline BM25 provider, pm-75k9) — fail the build
  * instead of silently degrading retrieval quality.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -25,8 +26,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { coercePositiveInteger } from "../core/shared/primitives.js";
-import { pathExists } from "../core/fs/fs-utils.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { runSearch } from "./query/search.js";
 
 export {
@@ -312,12 +312,7 @@ export const runEval = async (
   global: GlobalOptions,
 ): Promise<EvalResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const k = parseEvalK(options.k);
   const defaultMode = parseEvalMode(options.mode);
   const failUnder = parseFailUnder(options.failUnder);

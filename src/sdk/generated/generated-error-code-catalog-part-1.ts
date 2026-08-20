@@ -743,7 +743,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
+    sources: ["sdk/agent/refusal-closure.ts", "sdk/agent/tracker-preflight-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "error_code_mismatch",
     aliases: [],
@@ -772,6 +772,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
     canonical_code: "event_index_unavailable",
+    aliases: [],
+  },
+  {
+    code: "exit_code_mismatch",
+    meaning: "Exit code mismatch condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/tracker-preflight-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "exit_code_mismatch",
     aliases: [],
   },
   {
@@ -2069,6 +2082,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_cli_flag",
+    aliases: [],
+  },
+  {
+    code: "missing_destination",
+    meaning: "Missing destination condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_destination",
     aliases: [],
   },
 ];

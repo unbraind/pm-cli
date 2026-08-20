@@ -3,6 +3,7 @@
  *
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import jsonPatch from "fast-json-patch";
 import { patchPathToChangedField } from "../core/history/history-diff.js";
 import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
@@ -39,7 +40,7 @@ import {
   listAllItemMetadataWithBody,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type {
   HistoryEntry,
@@ -483,12 +484,7 @@ export async function runHistoryRepair(
   global: GlobalOptions,
 ): Promise<HistoryRepairResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
@@ -744,12 +740,7 @@ export async function runHistoryRepairAll(
   global: GlobalOptions,
 ): Promise<HistoryRepairAllResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(

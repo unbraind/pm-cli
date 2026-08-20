@@ -3,9 +3,9 @@
  *
  * Implements the pm calendar command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { encode as encodeToon } from "@toon-format/toon";
 import {
-  pathExists,
   getActiveExtensionRegistrations,
   resolveItemTypeRegistry,
   type ItemTypeRegistry,
@@ -23,7 +23,6 @@ import {
   nowIso,
   resolveIsoOrRelative,
   listAllItemMetadataLight,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
@@ -1612,12 +1611,7 @@ export async function runCalendar(
   global: GlobalOptions,
 ): Promise<CalendarResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const inputs = resolveCalendarExecutionInputs(options);
 

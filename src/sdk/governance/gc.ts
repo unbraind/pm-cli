@@ -3,6 +3,7 @@
  *
  * Implements the pm gc command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runCheckpointGc } from "../../core/checkpoint/checkpoint-gc.js";
@@ -18,7 +19,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
 const GC_SCOPE_VALUES = [
@@ -357,12 +358,7 @@ export async function runGc(
   options: GcCommandOptions = {},
 ): Promise<GcResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const dryRun = options.dryRun === true;

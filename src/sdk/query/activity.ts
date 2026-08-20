@@ -3,13 +3,13 @@
  *
  * Implements the pm activity command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
   getActiveExtensionRegistrations,
   runActiveOnReadHooks,
-  pathExists,
   enforceHistoryStreamPolicyForItems,
   resolveItemTypeRegistry,
   EXIT_CODE,
@@ -19,7 +19,6 @@ import {
   nowIso,
   resolveIsoOrRelative,
   listAllItemMetadataLight,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
@@ -417,12 +416,7 @@ async function resolveActivityRuntimeContext(
   global: GlobalOptions,
 ): Promise<ActivityRuntimeContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   return {
     pmRoot,
     settings: await readSettings(pmRoot),

@@ -3,6 +3,7 @@
  *
  * Implements the pm stats command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -30,15 +31,13 @@ import {
 } from "../core/history/history-storage-stats.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
-import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
 import {
   listAllItemMetadataLight,
   listAllItemMetadataWithBody,
 } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { ItemStatus, ItemType } from "../types/index.js";
 import {
@@ -442,12 +441,7 @@ export async function runStats(
   options: StatsCommandOptions = {},
 ): Promise<StatsResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const recordedObservations = await recordStatsObservations(global, options);

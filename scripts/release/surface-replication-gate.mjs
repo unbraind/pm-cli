@@ -479,6 +479,115 @@ async function refusalInventory(config, root) {
   };
 }
 
+function isNonEmptyStringArray(values) {
+  return (
+    Array.isArray(values) &&
+    values.length > 0 &&
+    values.every((value) => typeof value === "string" && value.length > 0)
+  );
+}
+
+function isSourcePatternRatchet(ratchet) {
+  return (
+    typeof ratchet === "object" &&
+    ratchet !== null &&
+    typeof ratchet.id === "string" &&
+    ratchet.id.length > 0 &&
+    /^pm-[a-z0-9]+$/u.test(ratchet.owner ?? "") &&
+    isNonEmptyStringArray(ratchet.source_roots) &&
+    typeof ratchet.required_pattern === "string" &&
+    ratchet.required_pattern.length > 0 &&
+    Number.isSafeInteger(ratchet.minimum_occurrences) &&
+    ratchet.minimum_occurrences >= 0 &&
+    isNonEmptyStringArray(ratchet.forbidden_patterns)
+  );
+}
+
+function countSourcePattern(source, pattern) {
+  return source.split(pattern).length - 1;
+}
+
+async function measureSourcePatternRatchet(ratchet, root) {
+  const files = new Set();
+  for (const sourceRoot of ratchet.source_roots) {
+    for (const absolute of await collectTypeScriptFiles(
+      path.join(root, sourceRoot),
+    )) {
+      files.add(absolute);
+    }
+  }
+  let matchedFiles = 0;
+  let requiredOccurrences = 0;
+  const forbiddenCounts = new Map(
+    ratchet.forbidden_patterns.map((pattern) => [pattern, 0]),
+  );
+  for (const absolute of files) {
+    const source = await readFile(absolute, "utf8");
+    const count = countSourcePattern(source, ratchet.required_pattern);
+    if (count > 0) matchedFiles += 1;
+    requiredOccurrences += count;
+    for (const pattern of ratchet.forbidden_patterns) {
+      forbiddenCounts.set(
+        pattern,
+        forbiddenCounts.get(pattern) + countSourcePattern(source, pattern),
+      );
+    }
+  }
+  const forbiddenOccurrences = [...forbiddenCounts]
+    .filter(([, count]) => count > 0)
+    .map(([pattern, count]) => ({ pattern, count }));
+  return {
+    report: {
+      id: ratchet.id,
+      owner: ratchet.owner,
+      matched_files: matchedFiles,
+      required_occurrences: requiredOccurrences,
+      minimum_occurrences: ratchet.minimum_occurrences,
+      forbidden_occurrences: forbiddenOccurrences,
+    },
+    violations: [
+      ...(requiredOccurrences < ratchet.minimum_occurrences
+        ? [
+            `source_ratchet:${ratchet.id}:floor:${requiredOccurrences}:${ratchet.minimum_occurrences}`,
+          ]
+        : []),
+      ...forbiddenOccurrences.map(
+        ({ pattern, count }) =>
+          `source_ratchet:${ratchet.id}:forbidden:${pattern}:${count}`,
+      ),
+    ],
+  };
+}
+
+async function validateSourcePatternRatchets(config, root) {
+  const reports = [];
+  const violations = [];
+  const ratchets = config.source_pattern_ratchets;
+  if (ratchets === undefined) {
+    return { reports, violations };
+  }
+  if (!Array.isArray(ratchets)) {
+    return {
+      reports,
+      violations: ["source_ratchet:declaration:invalid"],
+    };
+  }
+  for (const [index, ratchet] of ratchets.entries()) {
+    if (!isSourcePatternRatchet(ratchet)) {
+      const id =
+        typeof ratchet?.id === "string" && ratchet.id.length > 0
+          ? ratchet.id
+          : String(index);
+      violations.push(`source_ratchet:${id}:invalid`);
+      continue;
+    }
+    const measurement = await measureSourcePatternRatchet(ratchet, root);
+    reports.push(measurement.report);
+    violations.push(...measurement.violations);
+  }
+  return { reports, violations };
+}
+
 async function validateActiveSets(
   config,
   changedFiles,
@@ -588,6 +697,11 @@ export async function validateSurfaceReplication(config, options = {}) {
   }
   const refusals = await refusalInventory(config, root);
   violations.push(...refusals.violations);
+  const sourcePatternRatchets = await validateSourcePatternRatchets(
+    config,
+    root,
+  );
+  violations.push(...sourcePatternRatchets.violations);
   const denominator = await replicationDenominator(config, root);
   violations.push(...(denominator?.violations ?? []));
   const reports = activeSets.reports;
@@ -602,6 +716,7 @@ export async function validateSurfaceReplication(config, options = {}) {
     active_sets: reports,
     recurrence_size_candidates: reports,
     cli_owned_refusals: refusals,
+    source_pattern_ratchets: sourcePatternRatchets.reports,
     replication_detection: denominator,
     applied_waivers: [
       ...new Map(

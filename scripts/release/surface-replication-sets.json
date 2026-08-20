@@ -7,6 +7,18 @@
     "minimum_detected_cluster_count": 5,
     "minimum_declared_coverage_ratio": 0.4
   },
+  "source_pattern_ratchets": [
+    {
+      "id": "tracker-initialization-preflight",
+      "owner": "pm-6qiwan",
+      "source_roots": ["src/sdk"],
+      "required_pattern": "assertInitializedTracker(pmRoot)",
+      "minimum_occurrences": 50,
+      "forbidden_patterns": [
+        "Tracker is not initialized at ${pmRoot}. Run pm init first."
+      ]
+    }
+  ],
   "sets": [
     {
       "id": "database-sync-test-seam",
@@ -94,7 +106,15 @@
       "owner": "pm-9stazf",
       "description": "Replicate bounded mutation receipts and the explicit full-history escape hatch across every annotation transport.",
       "triggers": [
-        "src/sdk/annotations.ts",
+        {
+          "path": "src/sdk/annotations.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "normalizeAnnotationTransportOptions",
+            "fullHistory",
+            "omission_receipt"
+          ]
+        },
         "src/sdk/comments.ts",
         "src/sdk/notes.ts",
         "src/sdk/learnings.ts",

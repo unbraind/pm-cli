@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Provide consistent tracker preflight and executable recovery across SDK, CLI, and MCP ([pm-6qiwan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6qiwan.toon))
+
 ## 2026.8.20 - 2026-08-20
 
 ### Added

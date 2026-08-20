@@ -597,7 +597,14 @@ describe("runGc", () => {
 
   it("rethrows unexpected filesystem errors", async () => {
     await withTempPmPath(async (context) => {
-      const statSpy = vi.spyOn(fs, "stat").mockRejectedValueOnce(new Error("stat failure"));
+      const failedTarget = path.join(context.pmPath, "index", "manifest.json");
+      const actualStat = fs.stat.bind(fs);
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(async (target) => {
+        if (target === failedTarget) {
+          throw new Error("stat failure");
+        }
+        return actualStat(target);
+      });
       try {
         await expect(runGc({ path: context.pmPath })).rejects.toThrow("stat failure");
       } finally {

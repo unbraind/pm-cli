@@ -3,10 +3,11 @@
  *
  * Implements the pm linked artifacts command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
-import { isFileAbsentError, pathExists } from "../core/fs/fs-utils.js";
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
   assertNoUnknownCsvKeys,
@@ -27,7 +28,6 @@ import {
   readLocatedItem,
 } from "../core/store/item-store.js";
 import {
-  getSettingsPath,
   resolvePmRoot,
   resolveWorkspaceRoot,
 } from "../core/store/paths.js";
@@ -705,12 +705,7 @@ export async function runLinkedArtifacts(
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const invocationRoot = process.cwd();
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

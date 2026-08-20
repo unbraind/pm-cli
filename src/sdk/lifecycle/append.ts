@@ -3,8 +3,8 @@
  *
  * Implements the pm append command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   EXIT_CODE,
   type GlobalOptions,
   PmCliError,
@@ -12,7 +12,6 @@ import {
   toItemRecord,
   createStdinTokenResolver,
   mutateItem,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
@@ -52,12 +51,7 @@ export async function runAppend(
   }
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
   // options.body is guaranteed defined by the guard above, so resolveValue returns a defined string.

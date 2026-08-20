@@ -3,8 +3,8 @@
  *
  * Implements the SDK-owned copy lifecycle operation shared by every surface.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   removeFileIfExists,
   writeFileAtomic,
   appendHistoryEntry,
@@ -30,7 +30,6 @@ import {
   readLocatedItem,
   getHistoryPath,
   getItemPath,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -109,12 +108,7 @@ export async function runCopy(
   global: GlobalOptions,
 ): Promise<CopyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(

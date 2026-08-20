@@ -1,6 +1,6 @@
 # SDK Primitive Inventory
 
-Tracked work: [pm-lodl](../.agents/pm/tasks/pm-lodl.toon), [pm-8778](../.agents/pm/tasks/pm-8778.toon), [pm-rjqr](../.agents/pm/features/pm-rjqr.toon), [pm-oslr](../.agents/pm/features/pm-oslr.toon), capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon), parent [pm-usfg](../.agents/pm/epics/pm-usfg.toon).
+Tracked work: [pm-lodl](../.agents/pm/tasks/pm-lodl.toon), [pm-8778](../.agents/pm/tasks/pm-8778.toon), [pm-rjqr](../.agents/pm/features/pm-rjqr.toon), [pm-oslr](../.agents/pm/features/pm-oslr.toon), [pm-6qiwan](../.agents/pm/chores/pm-6qiwan.toon), capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon), parent [pm-usfg](../.agents/pm/epics/pm-usfg.toon).
 
 This inventory records the completed SDK-first migration for the principle `project management = context management`.
 CLI and MCP modules now import shared host services through `src/sdk/runtime-primitives.ts`; direct `src/core` imports, type-only edges, re-exports, and computed dynamic imports are unconditionally rejected by the static quality gate. There is no allowance file or ratchet escape hatch.
@@ -17,6 +17,20 @@ CLI and MCP modules now import shared host services through `src/sdk/runtime-pri
 ## Public Presentation Runtime
 
 `src/sdk/runtime-primitives.ts` is the curated low-level seam for presentation hosts. It exposes filesystem, schema, history, extension-runtime, telemetry, search, output, and storage services needed to compose the shipped CLI and MCP adapters. External integrations should still prefer typed `PmClient` and top-level SDK operations; runtime primitives exist for embedded hosts that need to build an equivalent presentation layer without private imports.
+
+## Tracker Preflight Primitive
+
+`assertInitializedTracker` is the shared SDK boundary for commands that require
+an initialized project, while `assertReadableTrackerRoot` supports low-level
+metadata enumeration that intentionally accepts an empty directory. The former
+replaced 50 literal checks across 45 SDK modules. It preserves one structured
+error vocabulary and one exact recovery contract for CLI, MCP dispatch through
+the SDK runtime, first-party packages, and external SDK consumers.
+
+The preflight is public from the aggregate SDK; its four-state static recovery
+corpus is also public from `@unbrained/pm-cli/sdk/contracts`. A source-derived
+ratchet prevents the adoption count from falling below 50 and refuses the old
+inline tracker-not-initialized message anywhere under `src/sdk`.
 
 ## Promotion Partition
 

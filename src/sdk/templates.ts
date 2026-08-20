@@ -3,6 +3,7 @@
  *
  * Implements the pm templates command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -15,7 +16,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS } from "./cli-contracts.js";
 
@@ -158,12 +159,7 @@ function templatePath(pmRoot: string, normalizedName: string): string {
 }
 
 async function ensureTrackerInitialized(pmRoot: string): Promise<void> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 function sortTemplateOptions(

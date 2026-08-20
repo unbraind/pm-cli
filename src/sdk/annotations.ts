@@ -3,8 +3,9 @@
  *
  * Implements the pm annotation command command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { readFile } from "node:fs/promises";
-import { isFileAbsentError, pathExists } from "../core/fs/fs-utils.js";
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { createStdinTokenResolver, parseCsvKv } from "../core/item/parse.js";
@@ -19,7 +20,7 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
@@ -459,12 +460,7 @@ export async function runAnnotationCommand<
 ): Promise<AnnotationCommandResult<TKey, TEntry>> {
   assertAnnotationMessageHasTextSource(config, options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

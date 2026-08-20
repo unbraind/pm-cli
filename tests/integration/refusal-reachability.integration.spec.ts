@@ -1,4 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { chmodSync } from "node:fs";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import fg from "fast-glob";
@@ -19,7 +20,57 @@ import {
   type PmRecoveryReferenceObservation,
   type PmRefusalProbeObservation,
 } from "../../src/sdk/agent/refusal-reachability.js";
-import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../helpers/withTempPmPath.js";
+
+interface RefusalEnvelope {
+  code: string;
+  exit_code: number;
+  recovery?: {
+    suggested_retry?: string;
+    suggested_retry_args?: string[];
+  };
+}
+
+function verifyTrackerPreflightRecovery(
+  context: TempPmContext,
+  probeId: string,
+  envelope: RefusalEnvelope,
+  stderr: string,
+  roots: { missing: string; settingsMissing: string },
+): void {
+  if (
+    probeId === "tracker-root-missing" ||
+    probeId === "tracker-root-settings-missing"
+  ) {
+    expect(envelope.recovery?.suggested_retry_args).toEqual([
+      "--pm-path",
+      probeId === "tracker-root-missing"
+        ? roots.missing
+        : roots.settingsMissing,
+      "init",
+      "--defaults",
+      "--agent-guidance",
+      "skip",
+    ]);
+    expect(
+      context.runCli([
+        ...envelope.recovery!.suggested_retry_args!,
+        "--json",
+      ]).code,
+    ).toBe(0);
+  }
+  if (
+    probeId === "tracker-root-not-directory" ||
+    probeId === "tracker-root-unreadable"
+  ) {
+    expect(envelope.recovery?.suggested_retry).toBeUndefined();
+    expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+    expect(stderr).not.toContain("pm init");
+  }
+}
 
 /** Remove invocation-only amount receipts before comparing replacement results. */
 function withoutReadInvocationReceipts(
@@ -67,10 +118,27 @@ describe("real-entrypoint refusal reachability", () => {
     ).toEqual([]);
   });
 
-  it("reaches every declared state as its typed code and exit class", async () => {
+  it.runIf(process.platform !== "win32")(
+    "reaches every declared state as its typed code and exit class",
+    async () => {
     await withTempPmPath(async (context) => {
       const invalidRoot = path.join(context.tempRoot, "tracker-root-file");
       await writeFile(invalidRoot, "not a directory", "utf8");
+      const missingRoot = path.join(context.tempRoot, "tracker-root-missing");
+      const settingsMissingRoot = path.join(
+        context.tempRoot,
+        "tracker-root-settings-missing",
+      );
+      await mkdir(settingsMissingRoot, { recursive: true });
+      const unreadableRoot = path.join(
+        context.tempRoot,
+        "tracker-root-unreadable",
+      );
+      await mkdir(unreadableRoot, { recursive: true });
+      await copyFile(
+        path.join(context.pmPath, "settings.json"),
+        path.join(unreadableRoot, "settings.json"),
+      );
       const probes = new Map<
         string,
         {
@@ -79,11 +147,51 @@ describe("real-entrypoint refusal reachability", () => {
         }
       >([
         [
-          "tracker-root-regular-file",
+          "tracker-root-missing",
+          {
+            entrypoint: "list",
+            run: () =>
+              context.runCli(["--pm-path", missingRoot, "list", "--json"]),
+          },
+        ],
+        [
+          "tracker-root-settings-missing",
+          {
+            entrypoint: "list",
+            run: () =>
+              context.runCli([
+                "--pm-path",
+                settingsMissingRoot,
+                "list",
+                "--json",
+              ]),
+          },
+        ],
+        [
+          "tracker-root-not-directory",
           {
             entrypoint: "list",
             run: () =>
               context.runCli(["--pm-path", invalidRoot, "list", "--json"]),
+          },
+        ],
+        [
+          "tracker-root-unreadable",
+          {
+            entrypoint: "list",
+            run: () => {
+              chmodSync(unreadableRoot, 0o000);
+              try {
+                return context.runCli([
+                  "--pm-path",
+                  unreadableRoot,
+                  "list",
+                  "--json",
+                ]);
+              } finally {
+                chmodSync(unreadableRoot, 0o700);
+              }
+            },
           },
         ],
         [
@@ -131,11 +239,15 @@ describe("real-entrypoint refusal reachability", () => {
           const probe = probes.get(state.probe_id);
           expect(probe, `missing probe driver ${state.probe_id}`).toBeDefined();
           const result = probe!.run();
-          const envelope = JSON.parse(result.stderr) as {
-            code: string;
-            exit_code: number;
-          };
+          const envelope = JSON.parse(result.stderr) as RefusalEnvelope;
           expect(result.code).toBe(envelope.exit_code);
+          verifyTrackerPreflightRecovery(
+            context,
+            state.probe_id,
+            envelope,
+            result.stderr,
+            { missing: missingRoot, settingsMissing: settingsMissingRoot },
+          );
           observations.push({
             probe_id: state.probe_id,
             entrypoint: probe!.entrypoint,
@@ -151,9 +263,10 @@ describe("real-entrypoint refusal reachability", () => {
       }
       expect(
         verifyPmRefusalReachability(PM_ERROR_CODE_CATALOG, observations),
-      ).toMatchObject({ ok: true, declared_probe_count: 6 });
+      ).toMatchObject({ ok: true, declared_probe_count: 9 });
     });
-  });
+    },
+  );
 
   it("executes and measures every recovery-reference kind emitted by real refusals", async () => {
     await withTempPmPath(async (context) => {

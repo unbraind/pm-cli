@@ -3,7 +3,6 @@
  *
  * Implements the pm config command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../core/fs/fs-utils.js";
 import {
   resolveConfigPositionalValue,
   type ConfigKey,
@@ -29,6 +28,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import {
   getSettingsPath,
@@ -946,11 +946,8 @@ async function resolveSettingsTarget(
       ? resolvePmRoot(cwd, global.path)
       : resolveGlobalPmRoot(cwd);
   const settingsPath = getSettingsPath(pmRoot);
-  if (scope === "project" && !(await pathExists(settingsPath))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
+  if (scope === "project") {
+    await assertInitializedTracker(pmRoot);
   }
   return { pmRoot, settingsPath };
 }

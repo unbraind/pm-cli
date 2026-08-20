@@ -60,6 +60,112 @@ afterEach(async () => {
 });
 
 describe("surface replication gate", () => {
+  it("ratchets shared primitive adoption and rejects reintroduced inline guards", async () => {
+    const root = await fixtureRoot();
+    await writeFile(
+      path.join(root, "src", "sdk", "a.ts"),
+      "assertInitializedTracker(pmRoot);\nlegacy guard\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src", "sdk", "b.ts"),
+      "assertInitializedTracker(pmRoot);\n",
+      "utf8",
+    );
+    const config = {
+      ...declaration(),
+      sets: [],
+      source_pattern_ratchets: [
+        {
+          id: "tracker-preflight",
+          owner: "pm-fixture",
+          source_roots: ["src/sdk"],
+          required_pattern: "assertInitializedTracker(pmRoot)",
+          minimum_occurrences: 2,
+          forbidden_patterns: ["legacy guard"],
+        },
+      ],
+    };
+
+    const failed = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: [],
+      today: "2026-08-20",
+    });
+    expect(failed.source_pattern_ratchets).toEqual([
+      {
+        id: "tracker-preflight",
+        owner: "pm-fixture",
+        matched_files: 2,
+        required_occurrences: 2,
+        minimum_occurrences: 2,
+        forbidden_occurrences: [{ pattern: "legacy guard", count: 1 }],
+      },
+    ]);
+    expect(failed.violations).toContain(
+      "source_ratchet:tracker-preflight:forbidden:legacy guard:1",
+    );
+
+    await writeFile(
+      path.join(root, "src", "sdk", "a.ts"),
+      "assertInitializedTracker(pmRoot);\n",
+      "utf8",
+    );
+    await writeFile(path.join(root, "src", "sdk", "b.ts"), "drifted\n", "utf8");
+    const belowFloor = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: [],
+      today: "2026-08-20",
+    });
+    expect(belowFloor.violations).toContain(
+      "source_ratchet:tracker-preflight:floor:1:2",
+    );
+
+    await writeFile(
+      path.join(root, "src", "sdk", "b.ts"),
+      "assertInitializedTracker(pmRoot);\n",
+      "utf8",
+    );
+    await expect(
+      validateSurfaceReplication(config, {
+        repoRoot: root,
+        changedFiles: [],
+        today: "2026-08-20",
+      }),
+    ).resolves.toMatchObject({ ok: true });
+
+    const invalid = await validateSurfaceReplication(
+      {
+        ...config,
+        source_pattern_ratchets: [null, { id: "named" }],
+      },
+      { repoRoot: root, changedFiles: [], today: "2026-08-20" },
+    );
+    expect(invalid.violations).toEqual([
+      "source_ratchet:0:invalid",
+      "source_ratchet:named:invalid",
+    ]);
+
+    await expect(
+      validateSurfaceReplication(
+        { ...config, source_pattern_ratchets: {} },
+        { repoRoot: root, changedFiles: [], today: "2026-08-20" },
+      ),
+    ).resolves.toMatchObject({
+      ok: false,
+      violations: ["source_ratchet:declaration:invalid"],
+    });
+    await expect(
+      validateSurfaceReplication(
+        { ...config, source_pattern_ratchets: null },
+        { repoRoot: root, changedFiles: [], today: "2026-08-20" },
+      ),
+    ).resolves.toMatchObject({
+      ok: false,
+      violations: ["source_ratchet:declaration:invalid"],
+    });
+  });
+
   it("detects undeclared repeated rule bodies and enforces denominator floors", async () => {
     const root = await fixtureRoot();
     const repeated = `function normalizeRule(value: string): string {\n  // SDK spelling.\n  const trimmed = value.trim();\n  const lowered = trimmed.toLowerCase();\n  return lowered.replaceAll("-", "_");\n}\n`;

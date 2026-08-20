@@ -3,6 +3,7 @@
  *
  * Implements the pm history command surface and its agent-facing runtime behavior.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   pathExists,
   computeHistoryDiff,
@@ -22,7 +23,6 @@ import {
   getHistoryPath,
   getWorkspaceHistoryPath,
   inspectWorkspaceHistoryState,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   WORKSPACE_HISTORY_ID,
@@ -155,12 +155,7 @@ function buildDiffEntries(
 
 async function resolveHistoryReadTarget(id: string, global: GlobalOptions) {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

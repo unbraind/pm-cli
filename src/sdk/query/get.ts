@@ -3,8 +3,8 @@
  *
  * Implements the SDK-owned item query shared by every surface.
  */
+import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
-  pathExists,
   getActiveExtensionRegistrations,
   toItemRecord,
   resolveItemTypeRegistry,
@@ -19,7 +19,6 @@ import {
   locateItem,
   readLocatedItem,
   getHistoryPath,
-  getSettingsPath,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -500,12 +499,7 @@ async function loadGetItemContext(
   at?: string,
 ): Promise<GetItemContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

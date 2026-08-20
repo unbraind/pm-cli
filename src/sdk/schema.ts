@@ -3,6 +3,7 @@
  *
  * Owns typed schema customization primitives shared by SDK, CLI, and MCP consumers.
  */
+import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -75,7 +76,7 @@ import {
   getActiveExtensionRegistrations,
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {resolvePmRoot } from "../core/store/paths.js";
 import {
   readSettings,
   resolveGovernanceKnobs,
@@ -735,12 +736,7 @@ export async function runSchemaAddType(
 }
 
 async function ensureInitialized(pmRoot: string): Promise<void> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await assertInitializedTracker(pmRoot);
 }
 
 /**

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1743,
+    "covered_symbols": 1751,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1744
+    "required_symbols": 1752
   },
   "breaking_acknowledgements": [
     {
@@ -902,6 +902,18 @@
       ],
       "package_version": "2026.8.19",
       "reason": "Replace non-executable item action with the executable item-reopen action in the typed transport contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmTrackerPreflightFailureKind",
+        "signature ./sdk:PmTrackerPreflightRecoveryContract",
+        "signature ./sdk:PmTrackerPreflightRecoveryKind",
+        "signature ./sdk/contracts:PmTrackerPreflightFailureKind",
+        "signature ./sdk/contracts:PmTrackerPreflightRecoveryContract",
+        "signature ./sdk/contracts:PmTrackerPreflightRecoveryKind"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Expand tracker preflight failure and recovery unions with executable unreadable-root repair contracts"
     }
   ],
   "entrypoints": {
@@ -1643,6 +1655,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "assertInitializedTracker",
+          "signature": "(pmRoot: string) => Promise<void> | calls: (pmRoot: string) => Promise<void>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "assertLinkedArtifactMutationIsUnambiguous",
           "signature": "(adds: LinkedArtifact[], removes: string[], migrations?: PathMigration[]) => void | calls: (adds: LinkedArtifact[], removes: string[], migrations?: PathMigration[]) => void"
         },
@@ -1693,6 +1711,12 @@
           "kind": "function",
           "name": "assertProjectRuntimeCompatibility",
           "signature": "(options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult | calls: (options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertReadableTrackerRoot",
+          "signature": "(pmRoot: string) => Promise<void> | calls: (pmRoot: string) => Promise<void>"
         },
         {
           "classification": "supported",
@@ -2503,6 +2527,12 @@
           "kind": "function",
           "name": "buildSemanticCorpusInput",
           "signature": "(document: ItemDocument, options?: SemanticCorpusInputOptions) => string | calls: (document: ItemDocument, options?: SemanticCorpusInputOptions) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildTrackerInitializationRecovery",
+          "signature": "(pmRoot: string) => PmCliErrorRecoveryPayload | calls: (pmRoot: string) => PmCliErrorRecoveryPayload"
         },
         {
           "classification": "advanced_export",
@@ -7887,6 +7917,12 @@
           "signature": "export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "listTrackerPreflightRecoveryContracts",
+          "signature": "() => PmTrackerPreflightRecoveryContract[] | calls: () => PmTrackerPreflightRecoveryContract[]"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ListTreeItem",
@@ -10579,6 +10615,42 @@
           "kind": "interface",
           "name": "PmToolCustomFieldCollision",
           "signature": "export interface PmToolCustomFieldCollision { field: string; property: string; owner: \"mcp_tool_input\"; nested_path: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmTrackerPreflightFailureKind",
+          "signature": "export type PmTrackerPreflightFailureKind = \"missing_root\" | \"settings_missing\" | \"not_directory\" | \"unreadable_root\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryContract",
+          "signature": "export interface PmTrackerPreflightRecoveryContract { probe_id: string; failure_kind: PmTrackerPreflightFailureKind; expected_error_code: string; expected_exit_code: 1 | 2 | 3; recovery_kind: PmTrackerPreflightRecoveryKind; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryFinding",
+          "signature": "export interface PmTrackerPreflightRecoveryFinding { code: \"missing_probe\" | \"error_code_mismatch\" | \"exit_code_mismatch\" | \"recovery_kind_mismatch\" | \"missing_init_recovery\" | \"unsafe_init_recovery\" | \"retry_failed\"; probe_id: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmTrackerPreflightRecoveryKind",
+          "signature": "export type PmTrackerPreflightRecoveryKind = \"initialize\" | \"select_directory\" | \"repair_permissions\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryObservation",
+          "signature": "export interface PmTrackerPreflightRecoveryObservation { probe_id: string; error_code: string; exit_code: number; recovery_kind: PmTrackerPreflightRecoveryKind; suggested_retry_args: string[]; retry_succeeded: boolean; unsafe_init_recommended: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryReport",
+          "signature": "export interface PmTrackerPreflightRecoveryReport { ok: boolean; probe_count: number; closed_probe_count: number; findings: PmTrackerPreflightRecoveryFinding[]; }"
         },
         {
           "classification": "contract_data",
@@ -14359,6 +14431,12 @@
           "kind": "function",
           "name": "scorePreparedItemSimilarity",
           "signature": "(left: PreparedSimilarityText, right: PreparedSimilarityText) => ItemSimilarityScore | calls: (left: PreparedSimilarityText, right: PreparedSimilarityText) => ItemSimilarityScore"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "scoreTrackerPreflightRecoveryClosure",
+          "signature": "(observations: readonly PmTrackerPreflightRecoveryObservation[]) => PmTrackerPreflightRecoveryReport | calls: (observations: readonly PmTrackerPreflightRecoveryObservation[]) => PmTrackerPreflightRecoveryReport"
         },
         {
           "classification": "advanced_export",
@@ -18532,6 +18610,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "listTrackerPreflightRecoveryContracts",
+          "signature": "() => PmTrackerPreflightRecoveryContract[] | calls: () => PmTrackerPreflightRecoveryContract[]"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "MEET_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -19391,6 +19475,42 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmTrackerPreflightFailureKind",
+          "signature": "export type PmTrackerPreflightFailureKind = \"missing_root\" | \"settings_missing\" | \"not_directory\" | \"unreadable_root\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryContract",
+          "signature": "export interface PmTrackerPreflightRecoveryContract { probe_id: string; failure_kind: PmTrackerPreflightFailureKind; expected_error_code: string; expected_exit_code: 1 | 2 | 3; recovery_kind: PmTrackerPreflightRecoveryKind; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryFinding",
+          "signature": "export interface PmTrackerPreflightRecoveryFinding { code: \"missing_probe\" | \"error_code_mismatch\" | \"exit_code_mismatch\" | \"recovery_kind_mismatch\" | \"missing_init_recovery\" | \"unsafe_init_recovery\" | \"retry_failed\"; probe_id: string; detail: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmTrackerPreflightRecoveryKind",
+          "signature": "export type PmTrackerPreflightRecoveryKind = \"initialize\" | \"select_directory\" | \"repair_permissions\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryObservation",
+          "signature": "export interface PmTrackerPreflightRecoveryObservation { probe_id: string; error_code: string; exit_code: number; recovery_kind: PmTrackerPreflightRecoveryKind; suggested_retry_args: string[]; retry_succeeded: boolean; unsafe_init_recommended: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmTrackerPreflightRecoveryReport",
+          "signature": "export interface PmTrackerPreflightRecoveryReport { ok: boolean; probe_count: number; closed_probe_count: number; findings: PmTrackerPreflightRecoveryFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmUpdateActionOptions",
           "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
         },
@@ -19597,6 +19717,12 @@
           "kind": "function",
           "name": "scorePmRefusalClosure",
           "signature": "(observations: readonly PmRefusalClosureObservation[]) => PmRefusalClosureReport | calls: (observations: readonly PmRefusalClosureObservation[]) => PmRefusalClosureReport"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "scoreTrackerPreflightRecoveryClosure",
+          "signature": "(observations: readonly PmTrackerPreflightRecoveryObservation[]) => PmTrackerPreflightRecoveryReport | calls: (observations: readonly PmTrackerPreflightRecoveryObservation[]) => PmTrackerPreflightRecoveryReport"
         },
         {
           "classification": "contract_data",
@@ -29082,6 +29208,7 @@
     "error_code_mismatch",
     "event_cursor_query_mismatch",
     "event_index_unavailable",
+    "exit_code_mismatch",
     "extension_command_activation_failed",
     "extension_dependency_name_unsafe",
     "extension_dependency_spec_invalid",
@@ -29183,10 +29310,12 @@
     "missing_cli_flag",
     "missing_destination",
     "missing_directory",
+    "missing_init_recovery",
     "missing_lifecycle_target",
     "missing_observation",
     "missing_observed_signature",
     "missing_parameter_alias",
+    "missing_probe",
     "missing_required_argument",
     "missing_required_option",
     "missing_suggested_retry",
@@ -29220,6 +29349,7 @@
     "read_output_cursor_command_mismatch",
     "read_output_cursor_invalid",
     "read_output_cursor_stale",
+    "recovery_kind_mismatch",
     "redundant_edge",
     "reindex_already_running",
     "removed_canonical_spelling",
@@ -29280,6 +29410,7 @@
     "unknown_provenance_dimension",
     "unknown_status",
     "unknown_subcommand",
+    "unsafe_init_recovery",
     "unsupported_update_option",
     "validate_command_references_stale_pm_ids",
     "validate_files_missing_linked_paths",
