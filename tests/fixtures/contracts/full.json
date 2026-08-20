@@ -19629,7 +19629,7 @@
             "list"
           ],
           "expected_exit_class": "usage",
-          "probe_id": "tracker-root-regular-file",
+          "probe_id": "tracker-root-not-directory",
           "state": "selected_tracker_root_is_a_regular_file"
         }
       ],
@@ -19649,7 +19649,16 @@
       ],
       "exit_code": 1,
       "meaning": "Tracker root unreadable condition.",
-      "owned_states": [],
+      "owned_states": [
+        {
+          "entrypoints": [
+            "list"
+          ],
+          "expected_exit_class": "generic_failure",
+          "probe_id": "tracker-root-unreadable",
+          "state": "selected_tracker_root_is_not_readable"
+        }
+      ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/store/tracker-preflight.ts"

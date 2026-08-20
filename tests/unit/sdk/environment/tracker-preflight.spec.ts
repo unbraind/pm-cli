@@ -32,10 +32,11 @@ describe("tracker preflight", () => {
 
     expect(buildTrackerInitializationRecovery(trackerRoot)).toEqual({
       suggested_retry:
-        "pm 'init' '/tmp/tracker with '\"'\"'quotes'\"'\"'/$variables' '--defaults' '--agent-guidance' 'skip'",
+        "pm '--pm-path' '/tmp/tracker with '\"'\"'quotes'\"'\"'/$variables' 'init' '--defaults' '--agent-guidance' 'skip'",
       suggested_retry_args: [
-        "init",
+        "--pm-path",
         trackerRoot,
+        "init",
         "--defaults",
         "--agent-guidance",
         "skip",
@@ -56,8 +57,9 @@ describe("tracker preflight", () => {
         resolved_path: trackerRoot,
         recovery: {
           suggested_retry_args: [
-            "init",
+            "--pm-path",
             trackerRoot,
+            "init",
             "--defaults",
             "--agent-guidance",
             "skip",
@@ -79,8 +81,9 @@ describe("tracker preflight", () => {
         resolved_path: trackerRoot,
         recovery: {
           suggested_retry_args: [
-            "init",
+            "--pm-path",
             trackerRoot,
+            "init",
             "--defaults",
             "--agent-guidance",
             "skip",
@@ -130,6 +133,27 @@ describe("tracker preflight", () => {
       code: "tracker_root_not_directory",
     });
   });
+
+  it.runIf(process.platform !== "win32")(
+    "distinguishes an unreadable tracker root",
+    async () => {
+      const trackerRoot = await createTemporaryRoot("unreadable-tracker");
+      await fs.chmod(trackerRoot, 0o000);
+      try {
+        await expect(assertReadableTrackerRoot(trackerRoot)).rejects.toMatchObject({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          code: "tracker_root_unreadable",
+          context: {
+            code: "tracker_root_unreadable",
+            reason: "unreadable",
+            resolved_path: trackerRoot,
+          },
+        });
+      } finally {
+        await fs.chmod(trackerRoot, 0o700);
+      }
+    },
+  );
 
   it("allows readable empty roots for metadata enumeration and initialized roots for commands", async () => {
     const trackerRoot = await createTemporaryRoot("valid-tracker");

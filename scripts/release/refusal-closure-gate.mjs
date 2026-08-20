@@ -2,6 +2,7 @@
 
 /** Execute closed-domain refusal retries and score their recovery closure. */
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -98,18 +99,54 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
     missing_root: path.join(root, "tracker-root-missing"),
     settings_missing: path.join(root, "tracker-root-settings-missing"),
     not_directory: path.join(root, "tracker-root-not-directory"),
+    unreadable_root: path.join(root, "tracker-root-unreadable"),
   };
   if (probes.length > 0) {
     mkdirSync(roots.settings_missing, { recursive: true });
     writeFileSync(roots.not_directory, "not a tracker directory\n", "utf8");
   }
-  return probes.map((contract) => {
-    const selectedRoot = roots[contract.failure_kind];
-    const refusal = runCli(
+  if (probes.some(({ failure_kind: failureKind }) => failureKind === "unreadable_root")) {
+    const initialized = runCli(
       spawn,
-      ["--pm-path", selectedRoot, "list", "--json"],
+      [
+        "--pm-path",
+        roots.unreadable_root,
+        "init",
+        "--defaults",
+        "--agent-guidance",
+        "skip",
+        "--json",
+      ],
       environment,
     );
+    requireSuccessfulSetup(initialized, "unreadable tracker setup");
+    chmodSync(roots.unreadable_root, 0o000);
+  }
+  return probes.map((contract) => {
+    const selectedRoot = roots[contract.failure_kind];
+    if (typeof selectedRoot !== "string") {
+      return {
+        probe_id: contract.probe_id,
+        error_code: "invalid_tracker_preflight_failure_kind",
+        exit_code: 1,
+        recovery_kind: contract.recovery_kind,
+        suggested_retry_args: [],
+        retry_succeeded: false,
+        unsafe_init_recommended: false,
+      };
+    }
+    let refusal;
+    try {
+      refusal = runCli(
+        spawn,
+        ["--pm-path", selectedRoot, "list", "--json"],
+        environment,
+      );
+    } finally {
+      if (contract.failure_kind === "unreadable_root") {
+        chmodSync(selectedRoot, 0o700);
+      }
+    }
     const envelope = parseProblemEnvelope(refusal);
     const retryArguments = strictStringArray(
       (envelope.recovery ?? {}).suggested_retry_args,
@@ -118,7 +155,9 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
       spawn,
       contract.recovery_kind === "initialize"
         ? [...retryArguments, "--json"]
-        : ["--pm-path", environment.PM_PATH, "list", "--json"],
+        : contract.recovery_kind === "repair_permissions"
+          ? ["--pm-path", selectedRoot, "list", "--json"]
+          : ["--pm-path", environment.PM_PATH, "list", "--json"],
       environment,
     );
     return {
@@ -129,7 +168,7 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
       suggested_retry_args: retryArguments,
       retry_succeeded: retry.status === 0,
       unsafe_init_recommended:
-        contract.recovery_kind === "select_directory" &&
+        contract.recovery_kind !== "initialize" &&
         (retryArguments.includes("init") || refusal.stderr.includes("pm init")),
     };
   });
@@ -146,6 +185,7 @@ export function verifyExecutableRefusalClosure({
   removeDirectory = rmSync,
 } = {}) {
   const closedDomainProbes = probes ?? listCoreClosedDomainContracts();
+  // Preserve injected closed-domain-only tests: preflights default only with the production corpus.
   const trackerPreflightProbes =
     preflightProbes ??
     (probes === undefined ? listTrackerPreflightRecoveryContracts() : []);

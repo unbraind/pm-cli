@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmodSync } from "node:fs";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import fg from "fast-glob";
@@ -45,10 +46,11 @@ function verifyTrackerPreflightRecovery(
     probeId === "tracker-root-settings-missing"
   ) {
     expect(envelope.recovery?.suggested_retry_args).toEqual([
-      "init",
+      "--pm-path",
       probeId === "tracker-root-missing"
         ? roots.missing
         : roots.settingsMissing,
+      "init",
       "--defaults",
       "--agent-guidance",
       "skip",
@@ -60,7 +62,10 @@ function verifyTrackerPreflightRecovery(
       ]).code,
     ).toBe(0);
   }
-  if (probeId === "tracker-root-regular-file") {
+  if (
+    probeId === "tracker-root-not-directory" ||
+    probeId === "tracker-root-unreadable"
+  ) {
     expect(envelope.recovery?.suggested_retry).toBeUndefined();
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
     expect(stderr).not.toContain("pm init");
@@ -123,6 +128,15 @@ describe("real-entrypoint refusal reachability", () => {
         "tracker-root-settings-missing",
       );
       await mkdir(settingsMissingRoot, { recursive: true });
+      const unreadableRoot = path.join(
+        context.tempRoot,
+        "tracker-root-unreadable",
+      );
+      await mkdir(unreadableRoot, { recursive: true });
+      await copyFile(
+        path.join(context.pmPath, "settings.json"),
+        path.join(unreadableRoot, "settings.json"),
+      );
       const probes = new Map<
         string,
         {
@@ -152,11 +166,30 @@ describe("real-entrypoint refusal reachability", () => {
           },
         ],
         [
-          "tracker-root-regular-file",
+          "tracker-root-not-directory",
           {
             entrypoint: "list",
             run: () =>
               context.runCli(["--pm-path", invalidRoot, "list", "--json"]),
+          },
+        ],
+        [
+          "tracker-root-unreadable",
+          {
+            entrypoint: "list",
+            run: () => {
+              chmodSync(unreadableRoot, 0o000);
+              try {
+                return context.runCli([
+                  "--pm-path",
+                  unreadableRoot,
+                  "list",
+                  "--json",
+                ]);
+              } finally {
+                chmodSync(unreadableRoot, 0o700);
+              }
+            },
           },
         ],
         [
@@ -228,7 +261,7 @@ describe("real-entrypoint refusal reachability", () => {
       }
       expect(
         verifyPmRefusalReachability(PM_ERROR_CODE_CATALOG, observations),
-      ).toMatchObject({ ok: true, declared_probe_count: 8 });
+      ).toMatchObject({ ok: true, declared_probe_count: 9 });
     });
   });
 

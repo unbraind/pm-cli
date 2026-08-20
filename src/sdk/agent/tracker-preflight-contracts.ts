@@ -8,12 +8,14 @@
 export type PmTrackerPreflightFailureKind =
   | "missing_root"
   | "settings_missing"
-  | "not_directory";
+  | "not_directory"
+  | "unreadable_root";
 
 /** Recovery behavior that is safe for a tracker preflight failure. */
 export type PmTrackerPreflightRecoveryKind =
   | "initialize"
-  | "select_directory";
+  | "select_directory"
+  | "repair_permissions";
 
 /** Static refusal and recovery obligation for one tracker filesystem state. */
 export interface PmTrackerPreflightRecoveryContract {
@@ -24,7 +26,7 @@ export interface PmTrackerPreflightRecoveryContract {
   /** Stable structured error code required from CLI and SDK transports. */
   expected_error_code: string;
   /** Process exit code required from the CLI transport. */
-  expected_exit_code: 2 | 3;
+  expected_exit_code: 1 | 2 | 3;
   /** Safe recovery behavior for this filesystem state. */
   recovery_kind: PmTrackerPreflightRecoveryKind;
 }
@@ -99,6 +101,13 @@ const TRACKER_PREFLIGHT_RECOVERY_CONTRACTS: readonly PmTrackerPreflightRecoveryC
       expected_exit_code: 2,
       recovery_kind: "select_directory",
     },
+    {
+      probe_id: "tracker-root-unreadable",
+      failure_kind: "unreadable_root",
+      expected_error_code: "tracker_root_unreadable",
+      expected_exit_code: 1,
+      recovery_kind: "repair_permissions",
+    },
   ];
 
 /** Return defensive copies of every core tracker preflight recovery contract. */
@@ -134,10 +143,13 @@ function findTrackerPreflightObservationFindings(
       detail: `Expected ${contract.recovery_kind}, received ${observation.recovery_kind}.`,
     });
   }
-  if (
-    contract.recovery_kind === "initialize" &&
-    observation.suggested_retry_args[0] !== "init"
-  ) {
+  const initIndex = observation.suggested_retry_args.indexOf("init");
+  const validInitCommand =
+    initIndex === 0 ||
+    (initIndex === 2 &&
+      observation.suggested_retry_args[0] === "--pm-path" &&
+      observation.suggested_retry_args[1]?.length > 0);
+  if (contract.recovery_kind === "initialize" && !validInitCommand) {
     findings.push({
       code: "missing_init_recovery",
       probe_id: contract.probe_id,
@@ -146,13 +158,13 @@ function findTrackerPreflightObservationFindings(
   }
   if (
     observation.unsafe_init_recommended ||
-    (contract.recovery_kind === "select_directory" &&
+    (contract.recovery_kind !== "initialize" &&
       observation.suggested_retry_args.includes("init"))
   ) {
     findings.push({
       code: "unsafe_init_recovery",
       probe_id: contract.probe_id,
-      detail: "A non-directory tracker root must not recommend initialization.",
+      detail: "A tracker root that cannot be initialized safely must not recommend initialization.",
     });
   }
   if (!observation.retry_succeeded) {

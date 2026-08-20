@@ -902,6 +902,18 @@
       ],
       "package_version": "2026.8.19",
       "reason": "Replace non-executable item action with the executable item-reopen action in the typed transport contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmTrackerPreflightFailureKind",
+        "signature ./sdk:PmTrackerPreflightRecoveryContract",
+        "signature ./sdk:PmTrackerPreflightRecoveryKind",
+        "signature ./sdk/contracts:PmTrackerPreflightFailureKind",
+        "signature ./sdk/contracts:PmTrackerPreflightRecoveryContract",
+        "signature ./sdk/contracts:PmTrackerPreflightRecoveryKind"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Expand tracker preflight failure and recovery unions with executable unreadable-root repair contracts"
     }
   ],
   "entrypoints": {
@@ -10608,13 +10620,13 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmTrackerPreflightFailureKind",
-          "signature": "export type PmTrackerPreflightFailureKind = \"missing_root\" | \"settings_missing\" | \"not_directory\";"
+          "signature": "export type PmTrackerPreflightFailureKind = \"missing_root\" | \"settings_missing\" | \"not_directory\" | \"unreadable_root\";"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmTrackerPreflightRecoveryContract",
-          "signature": "export interface PmTrackerPreflightRecoveryContract { probe_id: string; failure_kind: PmTrackerPreflightFailureKind; expected_error_code: string; expected_exit_code: 2 | 3; recovery_kind: PmTrackerPreflightRecoveryKind; }"
+          "signature": "export interface PmTrackerPreflightRecoveryContract { probe_id: string; failure_kind: PmTrackerPreflightFailureKind; expected_error_code: string; expected_exit_code: 1 | 2 | 3; recovery_kind: PmTrackerPreflightRecoveryKind; }"
         },
         {
           "classification": "contract_data",
@@ -10626,7 +10638,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmTrackerPreflightRecoveryKind",
-          "signature": "export type PmTrackerPreflightRecoveryKind = \"initialize\" | \"select_directory\";"
+          "signature": "export type PmTrackerPreflightRecoveryKind = \"initialize\" | \"select_directory\" | \"repair_permissions\";"
         },
         {
           "classification": "contract_data",
@@ -19464,13 +19476,13 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmTrackerPreflightFailureKind",
-          "signature": "export type PmTrackerPreflightFailureKind = \"missing_root\" | \"settings_missing\" | \"not_directory\";"
+          "signature": "export type PmTrackerPreflightFailureKind = \"missing_root\" | \"settings_missing\" | \"not_directory\" | \"unreadable_root\";"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmTrackerPreflightRecoveryContract",
-          "signature": "export interface PmTrackerPreflightRecoveryContract { probe_id: string; failure_kind: PmTrackerPreflightFailureKind; expected_error_code: string; expected_exit_code: 2 | 3; recovery_kind: PmTrackerPreflightRecoveryKind; }"
+          "signature": "export interface PmTrackerPreflightRecoveryContract { probe_id: string; failure_kind: PmTrackerPreflightFailureKind; expected_error_code: string; expected_exit_code: 1 | 2 | 3; recovery_kind: PmTrackerPreflightRecoveryKind; }"
         },
         {
           "classification": "contract_data",
@@ -19482,7 +19494,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmTrackerPreflightRecoveryKind",
-          "signature": "export type PmTrackerPreflightRecoveryKind = \"initialize\" | \"select_directory\";"
+          "signature": "export type PmTrackerPreflightRecoveryKind = \"initialize\" | \"select_directory\" | \"repair_permissions\";"
         },
         {
           "classification": "contract_data",

@@ -1122,7 +1122,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     canonical_code: "tracker_root_not_directory",
     aliases: [],
     owned_states: [
-      { state: "selected_tracker_root_is_a_regular_file", probe_id: "tracker-root-regular-file", entrypoints: ["list"], expected_exit_class: "usage" },
+      { state: "selected_tracker_root_is_a_regular_file", probe_id: "tracker-root-not-directory", entrypoints: ["list"], expected_exit_class: "usage" },
     ],
   },
   {
@@ -1137,6 +1137,9 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     emitting_commands: ["*"],
     canonical_code: "tracker_root_unreadable",
     aliases: [],
+    owned_states: [
+      { state: "selected_tracker_root_is_not_readable", probe_id: "tracker-root-unreadable", entrypoints: ["list"], expected_exit_class: "generic_failure" },
+    ],
   },
   {
     code: "type_duplicate",

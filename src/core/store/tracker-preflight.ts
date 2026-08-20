@@ -27,8 +27,9 @@ export function buildTrackerInitializationRecovery(
   pmRoot: string,
 ): PmCliErrorRecoveryPayload {
   const suggestedRetryArguments = [
-    "init",
+    "--pm-path",
     pmRoot,
+    "init",
     "--defaults",
     "--agent-guidance",
     "skip",

@@ -20,9 +20,17 @@
     "tracker_root_not_directory": [
       {
         "state": "selected_tracker_root_is_a_regular_file",
-        "probe_id": "tracker-root-regular-file",
+        "probe_id": "tracker-root-not-directory",
         "entrypoints": ["list"],
         "expected_exit_class": "usage"
+      }
+    ],
+    "tracker_root_unreadable": [
+      {
+        "state": "selected_tracker_root_is_not_readable",
+        "probe_id": "tracker-root-unreadable",
+        "entrypoints": ["list"],
+        "expected_exit_class": "generic_failure"
       }
     ],
     "unknown_option": [

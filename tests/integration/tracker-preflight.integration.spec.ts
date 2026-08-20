@@ -16,8 +16,9 @@ describe("tracker preflight transport parity", () => {
         context: {
           recovery: {
             suggested_retry_args: [
-              "init",
+              "--pm-path",
               missingRoot,
+              "init",
               "--defaults",
               "--agent-guidance",
               "skip",
@@ -37,8 +38,9 @@ describe("tracker preflight transport parity", () => {
         code: "tracker_root_missing",
         recovery: {
           suggested_retry_args: [
-            "init",
+            "--pm-path",
             missingRoot,
+            "init",
             "--defaults",
             "--agent-guidance",
             "skip",
@@ -62,8 +64,9 @@ describe("tracker preflight transport parity", () => {
           resolved_path: missingRoot,
           recovery: {
             suggested_retry_args: [
-              "init",
+              "--pm-path",
               missingRoot,
+              "init",
               "--defaults",
               "--agent-guidance",
               "skip",

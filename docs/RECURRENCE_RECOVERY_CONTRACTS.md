@@ -82,20 +82,21 @@ await assertReadableTrackerRoot(candidateRoot); // an empty directory is valid
 await assertInitializedTracker(projectRoot); // settings.json is required
 ```
 
-The refusal contract distinguishes three states before any command-specific
+The refusal contract distinguishes four states before any command-specific
 read or mutation begins:
 
 | Selected root state | Code | Exit | Recovery |
 | --- | --- | ---: | --- |
-| Path does not exist | `tracker_root_missing` | 3 | Tokenized, non-interactive `pm init <path> --defaults --agent-guidance skip` |
+| Path does not exist | `tracker_root_missing` | 3 | Tokenized, non-interactive `pm --pm-path <path> init --defaults --agent-guidance skip` |
 | Directory exists but `settings.json` does not | `tracker_not_initialized` | 3 | The same exact initialization retry |
 | Path or ancestor is a regular file | `tracker_root_not_directory` | 2 | Select a directory; never suggest `pm init` against the file |
+| Directory cannot be read or searched | `tracker_root_unreadable` | 1 | Repair permissions, then retry the same selected root |
 
-`listTrackerPreflightRecoveryContracts` publishes this three-state corpus from
+`listTrackerPreflightRecoveryContracts` publishes this four-state corpus from
 `@unbrained/pm-cli/sdk/contracts`.
 `scoreTrackerPreflightRecoveryClosure` verifies code, exit class, recovery kind,
 and executable retry evidence. The repository recovery gate runs these probes
-beside the 18 closed-domain probes, so its ratcheted corpus is 21 and a removed
+beside the 18 closed-domain probes, so its ratcheted corpus is 22 and a removed
 state, failed retry, or unsafe file-path initialization suggestion blocks the
 release. The surface-replication gate separately requires at least 50 shared
 preflight invocations across the 45 migrated SDK modules and forbids the former

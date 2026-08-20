@@ -27,7 +27,7 @@ replaced 50 literal checks across 45 SDK modules. It preserves one structured
 error vocabulary and one exact recovery contract for CLI, MCP dispatch through
 the SDK runtime, first-party packages, and external SDK consumers.
 
-The preflight is public from the aggregate SDK; its three-state static recovery
+The preflight is public from the aggregate SDK; its four-state static recovery
 corpus is also public from `@unbrained/pm-cli/sdk/contracts`. A source-derived
 ratchet prevents the adoption count from falling below 50 and refuses the old
 inline tracker-not-initialized message anywhere under `src/sdk`.

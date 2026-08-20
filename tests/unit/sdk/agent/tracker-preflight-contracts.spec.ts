@@ -8,7 +8,7 @@ describe("tracker preflight recovery contracts", () => {
   it("declares every tracker root filesystem state without duplicate probes", () => {
     const contracts = listTrackerPreflightRecoveryContracts();
 
-    expect(contracts).toHaveLength(3);
+    expect(contracts).toHaveLength(4);
     expect(new Set(contracts.map(({ probe_id: probeId }) => probeId)).size).toBe(
       contracts.length,
     );
@@ -16,6 +16,7 @@ describe("tracker preflight recovery contracts", () => {
       "missing_root",
       "not_directory",
       "settings_missing",
+      "unreadable_root",
     ]);
     expect(
       contracts.find(({ failure_kind: kind }) => kind === "not_directory"),
@@ -34,7 +35,7 @@ describe("tracker preflight recovery contracts", () => {
           error_code: "tracker_root_missing",
           exit_code: 3,
           recovery_kind: "initialize",
-          suggested_retry_args: ["init", "/tmp/missing"],
+          suggested_retry_args: ["--pm-path", "/tmp/missing", "init"],
           retry_succeeded: true,
           unsafe_init_recommended: false,
         },
@@ -43,7 +44,7 @@ describe("tracker preflight recovery contracts", () => {
           error_code: "tracker_not_initialized",
           exit_code: 3,
           recovery_kind: "initialize",
-          suggested_retry_args: ["init", "/tmp/empty"],
+          suggested_retry_args: ["--pm-path", "/tmp/empty", "init"],
           retry_succeeded: true,
           unsafe_init_recommended: false,
         },
@@ -56,11 +57,20 @@ describe("tracker preflight recovery contracts", () => {
           retry_succeeded: true,
           unsafe_init_recommended: false,
         },
+        {
+          probe_id: "tracker-root-unreadable",
+          error_code: "tracker_root_unreadable",
+          exit_code: 1,
+          recovery_kind: "repair_permissions",
+          suggested_retry_args: [],
+          retry_succeeded: true,
+          unsafe_init_recommended: false,
+        },
       ]),
     ).toEqual({
       ok: true,
-      probe_count: 3,
-      closed_probe_count: 3,
+      probe_count: 4,
+      closed_probe_count: 4,
       findings: [],
     });
   });

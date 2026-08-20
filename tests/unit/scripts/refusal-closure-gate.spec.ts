@@ -48,33 +48,37 @@ function createSuccessfulOptions() {
 }
 
 describe("executable refusal closure gate", () => {
-  it("proves real retries and blocks a seeded omission", () => {
-    expect(verifyExecutableRefusalClosure()).toMatchObject({
-      ok: true,
-      probe_count: 21,
-      closed_probe_count: 21,
-      closure_fraction: 1,
-      contract_count: 21,
-      closed_domain_contract_count: 18,
-      tracker_preflight_contract_count: 3,
-      baseline_version: 1,
-      findings: [],
-    });
-    expect(
-      verifyExecutableRefusalClosure({
-        ...createSuccessfulOptions(),
-        injectMismatch: true,
-      }),
-    ).toMatchObject({
-      ok: false,
-      findings: expect.arrayContaining([
-        expect.objectContaining({
-          code: "missing_allowed_values",
-          probe_id: "context-invalid-intent",
+  it.runIf(process.platform !== "win32")(
+    "proves real retries and blocks a seeded omission",
+    () => {
+      expect(verifyExecutableRefusalClosure()).toMatchObject({
+        ok: true,
+        probe_count: 22,
+        closed_probe_count: 22,
+        closure_fraction: 1,
+        contract_count: 22,
+        closed_domain_contract_count: 18,
+        tracker_preflight_contract_count: 4,
+        baseline_version: 1,
+        findings: [],
+      });
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions(),
+          injectMismatch: true,
         }),
-      ]),
-    });
-  });
+      ).toMatchObject({
+        ok: false,
+        findings: expect.arrayContaining([
+          expect.objectContaining({
+            code: "missing_allowed_values",
+            probe_id: "context-invalid-intent",
+          }),
+        ]),
+      });
+    },
+    60_000,
+  );
 
   it("fails setup closed and normalizes malformed refusal recovery", () => {
     const removed: string[] = [];
@@ -98,6 +102,30 @@ describe("executable refusal closure gate", () => {
         spawn: () => itemSetupResults.shift(),
       }),
     ).toThrow("Refusal closure item setup failed: item setup failed");
+
+    const unreadableSetupResults = [
+      { status: 0, stderr: "" },
+      { status: 0, stderr: "" },
+      { status: 1, stderr: "permission fixture failed" },
+    ];
+    expect(() =>
+      verifyExecutableRefusalClosure({
+        probes: [],
+        preflightProbes: [
+          {
+            probe_id: "tracker-root-unreadable",
+            failure_kind: "unreadable_root",
+            expected_error_code: "tracker_root_unreadable",
+            expected_exit_code: 1,
+            recovery_kind: "repair_permissions",
+          },
+        ],
+        baseline: EMPTY_BASELINE,
+        spawn: () => unreadableSetupResults.shift(),
+      }),
+    ).toThrow(
+      "Refusal closure unreadable tracker setup failed: permission fixture failed",
+    );
 
     const results = [
       { status: 0, stderr: "" },
@@ -182,6 +210,29 @@ describe("executable refusal closure gate", () => {
           code: "required_probe_missing",
           probe_id: "removed-probe",
         }),
+      ]),
+    });
+
+    expect(
+      verifyExecutableRefusalClosure({
+        probes: [],
+        preflightProbes: [
+          {
+            probe_id: "invalid-kind",
+            failure_kind: "unknown",
+            expected_error_code: "invalid",
+            expected_exit_code: 1,
+            recovery_kind: "select_directory",
+          },
+        ],
+        baseline: EMPTY_BASELINE,
+        spawn: () => ({ status: 0, stderr: "" }),
+      }),
+    ).toMatchObject({
+      ok: false,
+      tracker_preflight_contract_count: 1,
+      findings: expect.arrayContaining([
+        expect.objectContaining({ code: "missing_probe" }),
       ]),
     });
   });

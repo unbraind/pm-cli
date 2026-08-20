@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "minimum_probe_count": 21,
+  "minimum_probe_count": 22,
   "required_probe_ids": [
     "context-invalid-intent",
     "get-invalid-field",
@@ -22,6 +22,7 @@
     "search-mutually-exclusive-projection",
     "tracker-root-missing",
     "tracker-root-not-directory",
-    "tracker-root-settings-missing"
+    "tracker-root-settings-missing",
+    "tracker-root-unreadable"
   ]
 }
