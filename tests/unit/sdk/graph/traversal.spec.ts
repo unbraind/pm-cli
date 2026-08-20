@@ -208,6 +208,11 @@ describe("ordering traversal", () => {
         kinds: ["substantiates"],
       }).value,
     ).toEqual(["pm-proof"]);
+    expect(
+      hierarchyAncestors(graph, "pm-feature", {
+        kinds: ["substantiates"],
+      }).value,
+    ).toEqual(["pm-proof"]);
     expect(() =>
       orderingPredecessors(graph, "pm-outcome", { kinds: ["parent"] }),
     ).toThrow(/uses hierarchy traversal; use graph ancestors or graph descendants/);

@@ -57,5 +57,16 @@ describe("dependency error guidance", () => {
       unmatched_selectors: unmatchedSelectors,
       available_dependencies: availableDependencies,
     });
+    expect(
+      classifyPmCliError("Dependency removal did not match a stored edge.", {
+        code: "dependency_remove_no_match",
+        required: "Use an exact stored dependency selector.",
+        unmatched_selectors: unmatchedSelectors,
+        available_dependencies: availableDependencies,
+      }),
+    ).toMatchObject({
+      unmatched_selectors: unmatchedSelectors,
+      available_dependencies: availableDependencies,
+    });
   });
 });

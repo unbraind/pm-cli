@@ -121,6 +121,7 @@ describe("relationship graph structural governance", () => {
         title: "Outcome milestone: semantic lineage",
         status: "open",
         type: "Milestone",
+        dependencies: [{ id: "pm-child-carried", kind: "child" }],
       },
       {
         id: "pm-living",
@@ -151,14 +152,20 @@ describe("relationship graph structural governance", () => {
         status: "closed",
         type: "Task",
       },
+      {
+        id: "pm-child-carried",
+        title: "Inverse hierarchy lineage",
+        status: "closed",
+        type: "Task",
+      },
     ] as never);
     expect(auditWorkspaceRelationshipGraph(assembly).profile).toMatchObject({
       active_outcome_reachable_nodes: 1,
-      terminal_outcome_reachable_nodes: 2,
+      terminal_outcome_reachable_nodes: 3,
       terminal_outcome_unreachable_nodes: 1,
-      outcome_reachable_nodes: 3,
+      outcome_reachable_nodes: 4,
       outcome_unreachable_nodes: 1,
-      outcome_reachability_basis_points: 7_500,
+      outcome_reachability_basis_points: 8_000,
     });
   });
 

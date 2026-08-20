@@ -111,17 +111,17 @@ export interface RelationshipCoverageProfile {
   outcome_nodes: number;
   /** Declared edge kinds and directions admitted by typed outcome reachability. */
   outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>;
-  /** Active non-outcome nodes with a typed hierarchy or implements path to an outcome. */
+  /** Active non-outcome nodes with a path admitted by outcome_reachability_basis. */
   active_outcome_reachable_nodes: number;
-  /** Active non-outcome nodes without a typed hierarchy or implements path to an outcome. */
+  /** Active non-outcome nodes without a path admitted by outcome_reachability_basis. */
   active_outcome_unreachable_nodes: number;
   /** Active typed-outcome reachability expressed as integer basis points. */
   active_outcome_reachability_basis_points: number;
   /** Terminal non-placeholder, non-outcome nodes included in the all-status census. */
   terminal_nodes: number;
-  /** Terminal non-outcome nodes with a typed hierarchy or implements path to an outcome. */
+  /** Terminal non-outcome nodes with a path admitted by outcome_reachability_basis. */
   terminal_outcome_reachable_nodes: number;
-  /** Terminal non-outcome nodes without a typed hierarchy or implements path to an outcome. */
+  /** Terminal non-outcome nodes without a path admitted by outcome_reachability_basis. */
   terminal_outcome_unreachable_nodes: number;
   /** Terminal typed-outcome reachability expressed as integer basis points. */
   terminal_outcome_reachability_basis_points: number;
