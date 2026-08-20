@@ -177,7 +177,7 @@ describe("assurance relationship measurement sources", () => {
               null,
             ],
             notes: [{ text: "pm-four" }],
-            learnings: "pm-four",
+            learnings: ["pm-five"],
             parent: "pm-one",
             blocked_by: "pm-two",
           },
@@ -185,20 +185,22 @@ describe("assurance relationship measurement sources", () => {
           { id: "pm-two", status: "open", type: "Task" },
           { id: "pm-three", status: "open", type: "Task" },
           { id: "pm-four", status: "open", type: "Task" },
+          { id: "pm-five", status: "open", type: "Task" },
         ],
       },
     );
 
     expect(result).toMatchObject({
-      value: 2,
-      population_size: 5,
+      value: 3,
+      population_size: 6,
       contributors: [
+        "pm-holder->pm-five|subject=implicit",
         "pm-holder->pm-four|subject=implicit",
         "pm-holder->pm-three|subject=explicit",
       ],
-      partitions: { explicit_subject: 1, implicit_subject: 1 },
+      partitions: { explicit_subject: 1, implicit_subject: 2 },
     });
-    expect(result.cost.units).toBe(14);
+    expect(result.cost.units).toBe(16);
     expect(
       evaluateAssuranceAssertion(
         {
@@ -206,12 +208,12 @@ describe("assurance relationship measurement sources", () => {
           measurement_id: "all-prose",
           owner_item_id: "pm-holder",
           scope: { kind: "all" },
-          ceiling: 2,
+          ceiling: 3,
           enforcement: "block",
           negative_control: {
             cases: [
-              { observed: 2, expected: "pass" },
-              { observed: 3, expected: "fail" },
+              { observed: 3, expected: "pass" },
+              { observed: 4, expected: "fail" },
             ],
           },
         },
@@ -219,7 +221,7 @@ describe("assurance relationship measurement sources", () => {
       ),
     ).toMatchObject({
       verdict: "pass",
-      partitions: { explicit_subject: 1, implicit_subject: 1 },
+      partitions: { explicit_subject: 1, implicit_subject: 2 },
     });
   });
 

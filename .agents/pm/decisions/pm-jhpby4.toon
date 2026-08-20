@@ -1,16 +1,16 @@
 id: pm-jhpby4
 title: "ADR: Ordering assurance partitions evidence-cited blocks from uncited blocks"
-description: Authorize the blocks ratchet to preserve its anti-fabrication ceiling over non-evidence rows while separately flooring evidence-cited ordering.
+description: "Authorize three simultaneous blocks ratchets: retain the historical total ceiling as an outer bound, preserve the anti-fabrication ceiling over non-evidence rows, and floor evidence-cited ordering."
 type: Decision
 status: closed
 priority: 1
 tags: []
 created_at: "2026-08-20T20:11:18.429Z"
-updated_at: "2026-08-20T20:11:42.799Z"
-closed_at: "2026-08-20T20:11:42.036Z"
-completed_at: "2026-08-20T20:11:42.036Z"
+updated_at: "2026-08-20T21:39:30.886Z"
+closed_at: "2026-08-20T21:39:30.278Z"
+completed_at: "2026-08-20T21:39:30.278Z"
 author: "harness:codex"
-acceptance_criteria: The existing blocks ceiling is retargeted to total blocks minus evidence-cited blocks; Evidence-cited blocks receive an independent non-regression floor; Both assertions carry executable boundary negative controls and remain blocking in graph-composition
+acceptance_criteria: The existing blocks ceiling is retargeted to total blocks minus evidence-cited blocks; Evidence-cited blocks receive an independent non-regression floor; Both assertions carry executable boundary negative controls and remain blocking in graph-composition; The historical total blocks ceiling remains a blocking outer bound with adjacent pass and fail controls
 goal: Provable history
 objective: Keep anti-fabrication and recovered ordering simultaneously enforceable
 value: Evidence-backed historical ordering can grow without weakening graph governance
@@ -18,17 +18,18 @@ impact: Unblocks pm-c90tfh and its three ordering-lineage dependents
 outcome: Provenance-partitioned blocking assertions replace one contradictory global count
 why_now: The live global blocks ceiling is exactly saturated and rejected the required evidence-backed edges
 parent: pm-m2u1
-resolution: "Accepted ADR: preserve the uncited blocks ceiling and independently floor evidence-cited blocks."
-expected_result: "Evidence-backed ordering can grow without permitting uncited directional-edge growth, and recovered evidence cannot be silently removed."
-actual_result: The SDK now measures exact and prefix provenance partitions; the live declarations keep the 243 uncited ceiling and add an evidence floor with adjacent negative controls.
+resolution: "Accepted ADR: retain the historical total blocks outer ceiling, preserve the uncited ceiling, and independently floor evidence-cited blocks."
+expected_result: Total ordering-edge growth stays bounded; uncited directional-edge growth cannot spend evidence headroom; and recovered evidence cannot be silently removed.
+actual_result: "The historical total ceiling was 243. The current graph measures total blocks=205, comprising uncited=202 and evidence-cited=3; blocks-total-ceiling retains 243 as the outer bound, blocks-ceiling enforces the current uncited ceiling of 202, and the evidence floor protects all 3 recovered edges."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4jqm,implements,"2026-08-20T20:11:18.429Z","harness:codex","evidence:pm-c90tfh",detected
   pm-c90tfh,discovered_from,"2026-08-20T20:11:18.429Z","harness:codex","evidence:pm-c90tfh",detected
   pm-dwj33e,implements,"2026-08-20T20:11:18.429Z","harness:codex","evidence:pm-c90tfh",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-20T20:11:18.429Z","harness:codex","Duplicate-check evidence: all-status searches for blocks provenance assertion population authorization decision and evidence cited ordering edge ceiling decision found pm-c90tfh as the canonical defect plus general graph ADRs pm-4jqm and pm-dwj33e, but no Decision authorizing this specific assertion population transition."
   "2026-08-20T20:11:36.876Z","harness:codex","Decision evidence: the prior global assertion was saturated at total blocks=243. Three evidence:pm-c90tfh rows raise total blocks to 246 while the derived uncited population remains 243 and the evidence partition is 3; this preserves both properties without headroom."
+  "2026-08-20T21:38:57.211Z","harness:codex","Review clarification: 243 is the historical total ceiling, not the current uncited count. The live SDK evaluation after the partition measures edges-blocks=205, blocks-uncited=202, and blocks-evidence-cited=3. Retaining 243 on edges-blocks bounds total growth while the 202 ceiling and 3 floor independently protect provenance semantics."
 docs[1]{path,scope,note}:
   docs/RELATIONSHIP_GRAPH.md,project,Documents the authorized provenance partitions and negative controls.
-close_reason: "Accepted: graph assurance partitions blocks by explicit evidence provenance, retains the uncited anti-fabrication ceiling, and independently protects recovered ordering with a floor."
-body: "## Context\nThe existing blocking assertion counts all blocks rows identically. The live population was exactly at its ceiling, while accepted graph reconstruction requires adding ordering edges backed by recorded evidence.\n\n## Decision\nRetain total blocks as a diagnostic measurement. Define evidence-cited blocks by the explicit evidence: source-kind prefix. Define uncited blocks as total minus evidence-cited. Move the existing anti-fabrication ceiling to the uncited population and add a floor over evidence-cited rows. Both remain blocking and carry adjacent pass/fail negative controls.\n\n## Consequences\nAdding an evidence-cited ordering edge cannot spend anti-fabrication headroom. Deleting recovered ordering fails the evidence floor. Adding a block without the evidence prefix fails the uncited ceiling. Changing either population still requires a verified Decision."
+close_reason: "Accepted after review: the ADR now consistently retains total=243 as an outer bound while independently enforcing uncited=202 and evidence-cited>=3."
+body: "## Context\nThe historical blocking assertion counted all blocks rows identically and carried a total ceiling of 243. Accepted graph reconstruction also requires evidence-backed ordering edges, so one undifferentiated ratchet could not express all required properties.\n\n## Decision\nRetain the historical total ceiling of 243 as a blocking outer bound. Define evidence-cited blocks by the explicit evidence: source-kind prefix. Define uncited blocks as total minus evidence-cited. Move the anti-fabrication ratchet to the uncited population at its current ceiling of 202 and add a floor of 3 over evidence-cited rows. All three assertions remain blocking and carry adjacent pass/fail negative controls.\n\n## Consequences\nTotal ordering edges cannot grow beyond the historical bound without a new Decision. Adding an evidence-cited ordering edge cannot spend anti-fabrication headroom. Deleting recovered ordering fails the evidence floor. Adding a block without evidence provenance fails the uncited ceiling. Changing any population requires a verified Decision."

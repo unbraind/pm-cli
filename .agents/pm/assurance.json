@@ -2027,12 +2027,36 @@
         ]
       },
       "ceiling": 1343
+    },
+    {
+      "id": "blocks-total-ceiling",
+      "measurement_id": "edges-blocks",
+      "owner_item_id": "pm-c90tfh",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 243,
+            "expected": "pass"
+          },
+          {
+            "observed": 244,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 243,
+      "authorization_decision": "pm-jhpby4"
     }
   ],
   "gates": [
     {
       "id": "graph-composition",
-      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, canonical associative edges remain bounded, evidence-backed ordering is preserved, and unlinked prose references cannot grow.",
+      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, total and uncited ordering edges remain bounded, evidence-backed ordering cannot be removed, and unlinked prose references cannot grow.",
       "assertion_ids": [
         "semantic-edge-share-floor",
         "graph-semantic-edge-share-floor",
@@ -2040,6 +2064,7 @@
         "supersedes-floor",
         "discovered-from-floor",
         "verifies-floor",
+        "blocks-total-ceiling",
         "blocks-ceiling",
         "blocks-evidence-cited-floor",
         "prose-edge-gaps-ceiling"
@@ -2062,7 +2087,7 @@
     },
     {
       "id": "tracker-context-quality",
-      "description": "Native assurance replacement for the bespoke tracker census: typed relationship preservation, structural graph resilience, outcome reachability, validation debt and workspace health.",
+      "description": "Native assurance replacement for the bespoke tracker census: typed relationship preservation with total and uncited ordering-edge bounds, structural graph resilience, outcome reachability, validation debt and workspace health.",
       "assertion_ids": [
         "implements-floor",
         "discovered-from-floor",
@@ -2073,6 +2098,7 @@
         "graph-redundant-edges-ceiling",
         "graph-ordering-contradiction-edges-zero",
         "graph-finding-legacy-ordering-storage-contradiction-zero",
+        "blocks-total-ceiling",
         "blocks-ceiling",
         "related-to-ceiling",
         "graph-isolated-active-zero",

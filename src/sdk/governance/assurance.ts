@@ -1340,6 +1340,11 @@ interface AssuranceProseEdgeCensusInputs {
   mention_count: number;
 }
 
+/** Return the direction-independent identity of a prose or structured item pair. */
+function prosePairKey(left: string, right: string): string {
+  return [left.toLowerCase(), right.toLowerCase()].sort().join("\u0000");
+}
+
 /** Collect canonical ids, typed links, and raw prose mentions in one item pass. */
 function collectProseEdgeCensusInputs(
   items: readonly AssuranceItemRecord[],
@@ -1347,16 +1352,15 @@ function collectProseEdgeCensusInputs(
   const canonicalIds = new Map<string, string>();
   const linkedPairs = new Set<string>();
   const proseMentions: AssuranceProseMentionRecord[] = [];
-  const pairKey = (left: string, right: string): string =>
-    [left.toLowerCase(), right.toLowerCase()].sort().join("\u0000");
   const mentionPattern = /\b[a-z][a-z0-9]*-[a-z0-9]+\b/giu;
   let mentionCount = 0;
   for (const item of items) {
     canonicalIds.set(item.id.toLowerCase(), item.id);
     for (const dependency of item.dependencies ?? [])
-      linkedPairs.add(pairKey(item.id, dependency.id));
+      linkedPairs.add(prosePairKey(item.id, dependency.id));
     for (const scalar of [item.parent, item.blocked_by])
-      if (typeof scalar === "string") linkedPairs.add(pairKey(item.id, scalar));
+      if (typeof scalar === "string")
+        linkedPairs.add(prosePairKey(item.id, scalar));
     for (const segment of assuranceItemProseSegments(item)) {
       const mentionedIds = [...segment.matchAll(mentionPattern)].map(
         (match) => match[0],
@@ -1383,8 +1387,6 @@ function proseEdgeGapSourceResult(
   context: AssuranceEvaluationContext,
 ): AssuranceExternalMeasurementResult {
   const census = collectProseEdgeCensusInputs(context.items);
-  const pairKey = (left: string, right: string): string =>
-    [left.toLowerCase(), right.toLowerCase()].sort().join("\u0000");
   const gaps = new Map<string, { contributor: string; explicit: boolean }>();
   for (const proseMention of census.prose_mentions) {
     const mentions = proseMention.mentioned_ids
@@ -1394,7 +1396,7 @@ function proseEdgeGapSourceResult(
       );
     const distinctMentions = [...new Set(mentions)];
     for (const targetId of distinctMentions) {
-      const key = pairKey(proseMention.holder_id, targetId);
+      const key = prosePairKey(proseMention.holder_id, targetId);
       if (
         census.linked_pairs.has(key) ||
         proseReferenceIsExempt(
