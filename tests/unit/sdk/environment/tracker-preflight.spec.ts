@@ -155,6 +155,27 @@ describe("tracker preflight", () => {
     },
   );
 
+  it.runIf(process.platform !== "win32")(
+    "checks initialized roots for readability before accepting their settings marker",
+    async () => {
+      const trackerRoot = await createTemporaryRoot("unreadable-initialized-tracker");
+      await fs.writeFile(
+        path.join(trackerRoot, "settings.json"),
+        '{"id_prefix":"pm-"}\n',
+        "utf8",
+      );
+      await fs.chmod(trackerRoot, 0o000);
+      try {
+        await expect(assertInitializedTracker(trackerRoot)).rejects.toMatchObject({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          code: "tracker_root_unreadable",
+        });
+      } finally {
+        await fs.chmod(trackerRoot, 0o700);
+      }
+    },
+  );
+
   it("allows readable empty roots for metadata enumeration and initialized roots for commands", async () => {
     const trackerRoot = await createTemporaryRoot("valid-tracker");
     await expect(assertReadableTrackerRoot(trackerRoot)).resolves.toBeUndefined();

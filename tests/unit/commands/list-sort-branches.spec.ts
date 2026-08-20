@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ItemMetadata } from "../../../src/types.js";
 
 const pathExistsMock = vi.fn<() => Promise<boolean>>();
@@ -22,6 +23,14 @@ vi.mock("../../../src/core/store/item-store.js", () => ({
   listAllItemMetadata: listAllItemMetadataMock,
   listAllItemMetadataWithBody: listAllItemMetadataWithBodyMock,
 }));
+
+beforeAll(async () => {
+  await fs.mkdir("/tmp/pm-list-sort", { recursive: true });
+});
+
+afterAll(async () => {
+  await fs.rm("/tmp/pm-list-sort", { recursive: true, force: true });
+});
 
 describe("runList sorting branches", () => {
   beforeEach(() => {

@@ -88,7 +88,7 @@ read or mutation begins:
 | Selected root state | Code | Exit | Recovery |
 | --- | --- | ---: | --- |
 | Path does not exist | `tracker_root_missing` | 3 | Tokenized, non-interactive `pm --pm-path <path> init --defaults --agent-guidance skip` |
-| Directory exists but `settings.json` does not | `tracker_not_initialized` | 3 | The same exact initialization retry |
+| Directory exists but `settings.json` does not | `tracker_not_initialized` | 3 | The same initialization retry |
 | Path or ancestor is a regular file | `tracker_root_not_directory` | 2 | Select a directory; never suggest `pm init` against the file |
 | Directory cannot be read or searched | `tracker_root_unreadable` | 1 | Repair permissions, then retry the same selected root |
 

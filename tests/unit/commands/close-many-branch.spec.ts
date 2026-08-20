@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -7,6 +8,7 @@ afterEach(() => {
 
 describe("close-many branch coverage", () => {
   it("coerces non-string item titles to empty strings in dry-run plans", async () => {
+    await fs.mkdir("/tmp/pm-close-many-branch", { recursive: true });
     vi.doMock("../../../src/core/fs/fs-utils.js", () => ({
       pathExists: vi.fn(async () => true),
     }));
@@ -61,18 +63,25 @@ describe("close-many branch coverage", () => {
       restoreCheckpointItems: vi.fn(),
       writeMutationCheckpoint: vi.fn(),
     }));
-    const { runCloseMany } =
-      await import("../../../src/sdk/lifecycle/close-many.js");
-    const result = await runCloseMany(
-      {
-        list: { ids: "pm-1" },
-        reason: "dry-run branch",
-        dryRun: true,
-      },
-      { path: "/tmp/pm-close-many-branch" },
-    );
+    try {
+      const { runCloseMany } =
+        await import("../../../src/sdk/lifecycle/close-many.js");
+      const result = await runCloseMany(
+        {
+          list: { ids: "pm-1" },
+          reason: "dry-run branch",
+          dryRun: true,
+        },
+        { path: "/tmp/pm-close-many-branch" },
+      );
 
-    expect(result.mode).toBe("dry_run");
-    expect(result.item_plans?.[0]?.title).toBe("");
+      expect(result.mode).toBe("dry_run");
+      expect(result.item_plans?.[0]?.title).toBe("");
+    } finally {
+      await fs.rm("/tmp/pm-close-many-branch", {
+        recursive: true,
+        force: true,
+      });
+    }
   });
 });

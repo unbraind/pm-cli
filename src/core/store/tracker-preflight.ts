@@ -149,10 +149,10 @@ export async function assertReadableTrackerRoot(pmRoot: string): Promise<void> {
 
 /** Require the selected tracker root and its settings marker before an SDK command reads or mutates project state. */
 export async function assertInitializedTracker(pmRoot: string): Promise<void> {
+  await assertReadableTrackerRoot(pmRoot);
   if (await pathExists(getSettingsPath(pmRoot))) {
     return;
   }
-  await assertReadableTrackerRoot(pmRoot);
   throw new PmCliError(
     `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
     EXIT_CODE.NOT_FOUND,

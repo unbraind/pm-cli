@@ -118,7 +118,9 @@ describe("real-entrypoint refusal reachability", () => {
     ).toEqual([]);
   });
 
-  it("reaches every declared state as its typed code and exit class", async () => {
+  it.runIf(process.platform !== "win32")(
+    "reaches every declared state as its typed code and exit class",
+    async () => {
     await withTempPmPath(async (context) => {
       const invalidRoot = path.join(context.tempRoot, "tracker-root-file");
       await writeFile(invalidRoot, "not a directory", "utf8");
@@ -263,7 +265,8 @@ describe("real-entrypoint refusal reachability", () => {
         verifyPmRefusalReachability(PM_ERROR_CODE_CATALOG, observations),
       ).toMatchObject({ ok: true, declared_probe_count: 9 });
     });
-  });
+    },
+  );
 
   it("executes and measures every recovery-reference kind emitted by real refusals", async () => {
     await withTempPmPath(async (context) => {

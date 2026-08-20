@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   main,
@@ -191,6 +194,51 @@ describe("executable refusal closure gate", () => {
       }),
     ).toThrow(SyntaxError);
   });
+
+  it.runIf(process.platform !== "win32")(
+    "restores an unreadable fixture when an earlier preflight probe throws",
+    () => {
+      const root = mkdtempSync(path.join(tmpdir(), "pm-refusal-cleanup-unit-"));
+      const unreadableRoot = path.join(root, "tracker-root-unreadable");
+      mkdirSync(unreadableRoot);
+      const results = [
+        { status: 0, stderr: "" },
+        { status: 0, stderr: "" },
+        { status: 0, stderr: "" },
+        { status: 2, stderr: "not-json" },
+      ];
+      let restoredMode = 0;
+      expect(() =>
+        verifyExecutableRefusalClosure({
+          probes: [],
+          preflightProbes: [
+            {
+              probe_id: "tracker-root-not-directory",
+              failure_kind: "not_directory",
+              expected_error_code: "tracker_root_not_directory",
+              expected_exit_code: 2,
+              recovery_kind: "select_directory",
+            },
+            {
+              probe_id: "tracker-root-unreadable",
+              failure_kind: "unreadable_root",
+              expected_error_code: "tracker_root_unreadable",
+              expected_exit_code: 1,
+              recovery_kind: "repair_permissions",
+            },
+          ],
+          baseline: EMPTY_BASELINE,
+          makeTemporaryDirectory: () => root,
+          removeDirectory: (target) => {
+            restoredMode = statSync(unreadableRoot).mode & 0o777;
+            rmSync(target, { recursive: true, force: true });
+          },
+          spawn: () => results.shift(),
+        }),
+      ).toThrow(SyntaxError);
+      expect(restoredMode).toBe(0o700);
+    },
+  );
 
   it("fails closed when the historical contract corpus regresses", () => {
     const report = verifyExecutableRefusalClosure({

@@ -105,7 +105,10 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
     mkdirSync(roots.settings_missing, { recursive: true });
     writeFileSync(roots.not_directory, "not a tracker directory\n", "utf8");
   }
-  if (probes.some(({ failure_kind: failureKind }) => failureKind === "unreadable_root")) {
+  const needsUnreadableRoot = probes.some(
+    ({ failure_kind: failureKind }) => failureKind === "unreadable_root",
+  );
+  if (needsUnreadableRoot) {
     const initialized = runCli(
       spawn,
       [
@@ -122,56 +125,58 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
     requireSuccessfulSetup(initialized, "unreadable tracker setup");
     chmodSync(roots.unreadable_root, 0o000);
   }
-  return probes.map((contract) => {
-    const selectedRoot = roots[contract.failure_kind];
-    if (typeof selectedRoot !== "string") {
-      return {
-        probe_id: contract.probe_id,
-        error_code: "invalid_tracker_preflight_failure_kind",
-        exit_code: 1,
-        recovery_kind: contract.recovery_kind,
-        suggested_retry_args: [],
-        retry_succeeded: false,
-        unsafe_init_recommended: false,
-      };
-    }
-    let refusal;
-    try {
-      refusal = runCli(
+  try {
+    return probes.map((contract) => {
+      const selectedRoot = roots[contract.failure_kind];
+      if (typeof selectedRoot !== "string") {
+        return {
+          probe_id: contract.probe_id,
+          error_code: "invalid_tracker_preflight_failure_kind",
+          exit_code: 1,
+          recovery_kind: contract.recovery_kind,
+          suggested_retry_args: [],
+          retry_succeeded: false,
+          unsafe_init_recommended: false,
+        };
+      }
+      const refusal = runCli(
         spawn,
         ["--pm-path", selectedRoot, "list", "--json"],
         environment,
       );
-    } finally {
-      if (contract.failure_kind === "unreadable_root") {
+      const envelope = parseProblemEnvelope(refusal);
+      const retryArguments = strictStringArray(
+        (envelope.recovery ?? {}).suggested_retry_args,
+      );
+      if (contract.recovery_kind === "repair_permissions") {
         chmodSync(selectedRoot, 0o700);
       }
+      const retry = runCli(
+        spawn,
+        contract.recovery_kind === "initialize"
+          ? [...retryArguments, "--json"]
+          : contract.recovery_kind === "repair_permissions"
+            ? ["--pm-path", selectedRoot, "list", "--json"]
+            : ["--pm-path", environment.PM_PATH, "list", "--json"],
+        environment,
+      );
+      return {
+        probe_id: contract.probe_id,
+        error_code: typeof envelope.code === "string" ? envelope.code : "",
+        exit_code: refusal.status ?? 1,
+        recovery_kind: contract.recovery_kind,
+        suggested_retry_args: retryArguments,
+        retry_succeeded: retry.status === 0,
+        unsafe_init_recommended:
+          contract.recovery_kind !== "initialize" &&
+          (retryArguments.includes("init") || refusal.stderr.includes("pm init")),
+      };
+    });
+  } finally {
+    if (needsUnreadableRoot) {
+      chmodSync(roots.unreadable_root, 0o700);
     }
-    const envelope = parseProblemEnvelope(refusal);
-    const retryArguments = strictStringArray(
-      (envelope.recovery ?? {}).suggested_retry_args,
-    );
-    const retry = runCli(
-      spawn,
-      contract.recovery_kind === "initialize"
-        ? [...retryArguments, "--json"]
-        : contract.recovery_kind === "repair_permissions"
-          ? ["--pm-path", selectedRoot, "list", "--json"]
-          : ["--pm-path", environment.PM_PATH, "list", "--json"],
-      environment,
-    );
-    return {
-      probe_id: contract.probe_id,
-      error_code: typeof envelope.code === "string" ? envelope.code : "",
-      exit_code: refusal.status ?? 1,
-      recovery_kind: contract.recovery_kind,
-      suggested_retry_args: retryArguments,
-      retry_succeeded: retry.status === 0,
-      unsafe_init_recommended:
-        contract.recovery_kind !== "initialize" &&
-        (retryArguments.includes("init") || refusal.stderr.includes("pm init")),
-    };
-  });
+  }
 }
 
 /** Execute the real core CLI refusal corpus in an isolated tracker. */

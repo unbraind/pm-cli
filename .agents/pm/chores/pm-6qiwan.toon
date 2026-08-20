@@ -1,23 +1,23 @@
 id: pm-6qiwan
-title: "One shared tracker-initialization guard: 48 sites re-implement resolvePmRoot plus a settings probe plus the same literal refusal, so every precision fix has to be applied 48 times and never is"
+title: "Provide consistent tracker preflight and executable recovery across SDK, CLI, and MCP"
 description: "Promote tracker-initialization detection into one public SDK guard and migrate the 48 hand-rolled CLI call sites to it. The shared primitive must distinguish missing roots, file collisions, and missing settings with precise recovery and a static replication gate."
 type: Chore
 status: closed
 priority: 2
 tags[5]: "area:sdk",defect-recurrence,error-taxonomy,refactor,simplification
 created_at: "2026-08-10T05:54:06.969Z"
-updated_at: "2026-08-20T07:33:22.663Z"
-closed_at: "2026-08-20T07:33:04.888Z"
-completed_at: "2026-08-20T07:33:04.888Z"
+updated_at: "2026-08-20T08:49:26.651Z"
+closed_at: "2026-08-20T08:42:31.220Z"
+completed_at: "2026-08-20T08:42:31.220Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "A single SDK guard owns the tracker-initialization refusal and all 48 call sites delegate to it; The guard distinguishes root-missing, root-is-a-file, and settings-missing, and each carries its own recovery; The recovery for root-is-a-file does not suggest pm init, which cannot succeed against a regular file; The surface-replication gate declares this set so a 49th hand-rolled copy fails CI"
 parent: pm-usfg
 risk: medium
 confidence: high
-resolution: Replaced 50 replicated SDK initialization probes with one public shared preflight and added a four-state executable recovery corpus plus source adoption ratchet.
-expected_result: "One SDK guard distinguishes missing root, non-directory root, and missing settings; file roots never recommend initialization; CI prevents new inline copies."
-actual_result: "All 50 invocations across 45 SDK modules delegate the shared guard; the 22-probe executable corpus passes missing-root, settings-missing, non-directory, and unreadable-root recovery states; the source ratchet reports zero forbidden copies."
+resolution: "Centralized tracker initialization and readability behind public SDK primitives, migrated all CLI and MCP entrypoints, added typed executable recovery and source ratchets, and closed hosted review portability and cleanup gaps."
+expected_result: "Every SDK, CLI, and MCP tracker consumer uses one precise preflight contract; every refusal has executable recovery; replication and full repository quality gates prevent recurrence."
+actual_result: "All 50 preflight sites across 45 SDK modules delegate to the shared guard; four filesystem states have typed recovery; 22 executable probes, packed npm/npx/bunx acceptance, and exact 100/100/100/100 coverage pass."
 component: "sdk/* command entrypoints, core/store/item-store"
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-69nl,related,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
@@ -28,14 +28,16 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-tmhs,related,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
   pm-elmpav,related,"2026-08-10T06:10:16.142Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-10T06:10:16.142Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-20T04:53:16.013Z","harness:codex","Implementation start 2026-08-20: selected after complete all-status live orientation across 2,525 items, full metadata/history/relationship review of this canonical lineage, and GitHub/release/security/dependency verification. This item owns the public SDK preflight primitive and migration of all 50 current literal checks across 45 files; the same branch will execute its three recovery states and add a source-derived replication ratchet."
   "2026-08-20T06:14:24.553Z","harness:codex","Verification evidence 2026-08-20: centralized all 50 current initialized-tracker checks across 45 SDK modules behind the public shared preflight; missing root, empty root, and regular-file root now emit distinct typed codes and safe tokenized recovery. The executable refusal corpus expanded 18 -> 21 and passes 21/21; the source ratchet reports 50 required occurrences and zero forbidden legacy literals. Full repository proof passes 537/537 files and 7,634/7,634 tests at exact 55,749/55,749 statements, 41,582/41,582 branches, 11,567/11,567 functions, and 53,789/53,789 lines. ESLint and jscpd passed; package artifact gate passed (1,449 files); isolated packed npm consumer recovered missing/empty roots, safely refused a file root, imported SDK contracts, and passed local npx/bunx. Secret scan, production audit (0 vulnerabilities), and Trivy high/critical vuln+secret+misconfiguration scan passed."
   "2026-08-20T06:30:11.021Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1065 at implementation head 3a83a155f. This reviewed branch carries the shared SDK preflight, 50-site migration, typed filesystem refusals, 21-probe executable recovery gate, source ratchet, generated contracts, docs, exact coverage, package acceptance, changelog, and PM closeout."
   "2026-08-20T07:32:55.589Z","harness:codex","Review-fix evidence for PR #1065: seven valid CodeRabbit findings were implemented. The recovery builder now emits explicit --pm-path <root> init ordering; the public contract and executable corpus cover missing, settings-missing, non-directory, and unreadable roots; malformed reachability and source-ratchet declarations fail closed; optional context-intent discovery preserves typed unreadable-root errors; and the PM umbrella test-array correction was replayed through append-only pm history. One suggested control-root change was declined because select_directory intentionally proves the initialized alternate root recovery. The PM-linked run first exposed the real executable corpus test crossing Vitest 30s under full-suite contention, then passed after a scoped 60s integration-test timeout. Final PM-linked results: source-replication gate passed; 537 files and 7,635 tests passed; exact coverage 100/100/100/100 with zero uncovered counts; focused SDK/CLI/MCP/reachability suite 37/37 passed. Repository static quality, SDK/package parity, command grammar, flag parity/lexicon, token budgets, 22/22 refusal closure, npm audit, tracked secret scan, and Trivy high/critical including dev dependencies all passed. Fresh packed consumer smoke passed installed CLI refusal exit 3, exact tokenized recovery execution, four SDK contracts including repair_permissions, npx 2026.8.20, and bunx 2026.8.20."
+  "2026-08-20T08:42:30.555Z","harness:codex","Second hosted review evidence 2026-08-20: implemented five valid CodeRabbit improvements and declined one immutable-history nit with rationale. The executable refusal fixture now restores permissions through an outer finally path, initialized preflight validates root readability before accepting settings, POSIX chmod reachability is explicitly skipped on Windows, and all affected command test doubles model a real readable tracker root. The PM-linked suite passes source replication, 537/537 files with 7,637/7,637 tests at exact 55,768/55,768 statements, 41,598/41,598 branches, 11,568/11,568 functions, and 53,808/53,808 lines, plus 39/39 focused SDK/CLI/MCP/reachability tests. Earlier failed runs remain append-only evidence of the test-double and one-branch coverage gaps that the final passing run closed."
+  "2026-08-20T08:49:26.651Z","harness:codex","Final local gate note 2026-08-20: the lint umbrella passed ESLint, zero-duplicate jscpd, build/contracts/generated surfaces, repository assurance, SDK/package parity, source replication, command grammar, flag parity/lexicon, 22/22 refusal closure, tracker-context quality, gate registry, SDK surface, and SDK entrypoint costs. The transport-floor benchmark was load-sensitive (first get 414ms > 362ms; isolated replay create 409ms > 398ms) and passed all six operations on the second isolated replay; the downstream graph-composition gate passed 7/7 assertions and record-integrity passed 1/1. No code change or threshold relaxation was used."
 learnings[1]{created_at,author,text}:
   "2026-08-20T06:14:25.217Z","harness:codex","Tracker initialization is a filesystem state machine, not one missing-file boolean: preserving root-missing, non-directory, settings-missing, and readable-root states in one SDK primitive prevents unsafe recovery advice and lets executable assurance measure every transition."
-files[72]{path,scope,note}:
+files[75]{path,scope,note}:
   eslint-suppressions.json,project,pruned obsolete suppression after shared preflight refactor
   scripts/error-code-reachability.json,project,tracker preflight migration or verification evidence
   scripts/release/refusal-closure-baseline.json,project,tracker preflight migration or verification evidence
@@ -108,17 +110,24 @@ files[72]{path,scope,note}:
   tests/unit/scripts/release/surface-replication-gate.spec.ts,project,tracker preflight migration or verification evidence
   tests/unit/sdk/agent/tracker-preflight-contracts.spec.ts,project,recovery scorer unit coverage
   tests/unit/sdk/environment/tracker-preflight.spec.ts,project,filesystem state and recovery unit coverage
+  tests/unit/commands/close-many-branch.spec.ts,project,readable tracker root regression fixture
+  tests/unit/commands/gc-command.spec.ts,project,preflight compatible cache stat failure coverage
+  tests/unit/commands/list-sort-branches.spec.ts,project,readable tracker root regression fixture
 tests[3]{command,scope,timeout_seconds}:
   node scripts/release/surface-replication-gate.mjs,project,240
   node scripts/run-tests.mjs coverage,project,2400
   node scripts/run-tests.mjs test -- tests/unit/sdk/environment/tracker-preflight.spec.ts tests/unit/sdk/agent/tracker-preflight-contracts.spec.ts tests/integration/tracker-preflight.integration.spec.ts tests/integration/refusal-reachability.integration.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,project,360
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mt14tl03-9j8fe4,test,passed,"2026-08-20T06:14:27.441Z","2026-08-20T06:21:02.738Z","2026-08-20T06:21:02.738Z",3,0,0
   test-local-mt1735ka-z6fvey,test,failed,"2026-08-20T07:17:50.835Z","2026-08-20T07:24:28.521Z","2026-08-20T07:24:28.521Z",2,1,0
   test-local-mt17cgbl-g0ui45,test,passed,"2026-08-20T07:25:07.613Z","2026-08-20T07:31:42.369Z","2026-08-20T07:31:42.369Z",3,0,0
+  test-local-mt18r1fv-t82hak,test,failed,"2026-08-20T08:04:10.204Z","2026-08-20T08:11:02.539Z","2026-08-20T08:11:02.539Z",2,1,0
+  test-local-mt19288o-zdx64l,test,failed,"2026-08-20T08:12:55.760Z","2026-08-20T08:19:44.568Z","2026-08-20T08:19:44.568Z",2,1,0
+  test-local-mt19bww1-nb859u,test,failed,"2026-08-20T08:20:33.407Z","2026-08-20T08:27:16.416Z","2026-08-20T08:27:16.416Z",2,1,0
+  test-local-mt19m2ax-br4drp,test,passed,"2026-08-20T08:28:28.397Z","2026-08-20T08:35:09.993Z","2026-08-20T08:35:09.993Z",3,0,0
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog generated reviewed delivery entry
   docs/RECURRENCE_RECOVERY_CONTRACTS.md,project,tracker preflight error matrix and executable recovery corpus
   docs/SDK_PRIMITIVE_INVENTORY.md,project,shared SDK preflight architecture and ratchet
-close_reason: "Completed centralized tracker preflight and four-state executable recovery delivery with PR #1065 review fixes, exact full coverage, security gates, and packed CLI/SDK/npx/bunx proof"
+close_reason: "Delivered shared SDK/CLI/MCP tracker preflight across all 50 sites in 45 modules with typed four-state recovery, 22 executable refusal probes, source replication enforcement, generated contracts, public documentation, packed npm/npx/bunx acceptance, exact 100% repository coverage, and two hosted review rounds with all valid findings resolved."
 body: "## The population\n\n`grep -rn \"Run pm init first\" src/ --include=*.ts | grep -v test` returns **48** sites. Each one repeats the same three steps:\n\n```ts\nconst pmRoot = resolvePmRoot(process.cwd(), global.path);\nif (!(await pathExists(getSettingsPath(pmRoot)))) {\n  throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);\n}\n```\n\n## Why it matters beyond tidiness\n\nThe refusal is not merely duplicated, it is **imprecise in a way that cannot be fixed cheaply**. Three distinct states collapse into one message:\n\n- the root does not exist\n- the root exists but is a regular file\n- the root is a directory with no settings\n\nOnly the third is repairable by `pm init`, yet all three recommend it. pm-tmhs already closed one shape of this defect (recovery re-suggested `pm init` when a `--pm-path` tracker existed). The class recurred in a new shape - discovered via pm-6xlyss, where a root that is a regular file still recommends `pm init`. It will keep recurring while the guard has 48 owners.\n\n## Shape of the fix\n\n`core/store/item-store.ts` already contains the precise logic: `assertItemMetadataRoot` distinguishes `tracker_root_missing`, `tracker_root_not_directory`, and walks ancestors to attribute the cause. That analysis is the right one and is already tested. It is simply not what the 48 entrypoints call.\n\nPromote it to a single SDK guard, delegate all 48 sites, and declare the set in the surface-replication gate so a 49th copy fails CI rather than review."

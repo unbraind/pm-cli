@@ -16,6 +16,7 @@ const {
   readFileMock,
   realpathMock,
   statMock,
+  opendirMock,
   runActiveOnReadHooksMock,
   spawnSyncMock,
 } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ const {
     vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
   realpathMock: vi.fn<(targetPath: string) => Promise<string>>(),
   statMock: vi.fn(),
+  opendirMock: vi.fn(),
   runActiveOnReadHooksMock: vi.fn<() => Promise<string[]>>(),
   spawnSyncMock: vi.fn(),
 }));
@@ -68,6 +70,7 @@ vi.mock("node:fs/promises", () => ({
     readFile: readFileMock,
     realpath: realpathMock,
     stat: statMock,
+    opendir: opendirMock,
   },
 }));
 
@@ -283,6 +286,8 @@ describe("runSearch", () => {
     listAllItemMetadataMock.mockReset();
     readFileMock.mockReset();
     realpathMock.mockReset();
+    statMock.mockReset();
+    opendirMock.mockReset();
     runActiveOnReadHooksMock.mockReset();
     spawnSyncMock.mockReset();
     activeExtensionRegistrations = null;
@@ -291,7 +296,21 @@ describe("runSearch", () => {
     readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
     listAllItemMetadataMock.mockResolvedValue([]);
     realpathMock.mockImplementation(async (targetPath) => targetPath);
-    statMock.mockRejectedValue(Object.assign(new Error("missing"), { code: "ENOENT" }));
+    statMock.mockImplementation(async (targetPath: string) => {
+      if (
+        new Set([
+          "/tmp/not-init",
+          "/tmp/pm-search",
+          "/tmp/pm-search-hooks",
+          "/tmp/pm-search-realpath-fail",
+          "/tmp/pm-search-symlink",
+        ]).has(targetPath)
+      ) {
+        return { isDirectory: () => true, mode: 0o755 };
+      }
+      throw Object.assign(new Error("missing"), { code: "ENOENT" });
+    });
+    opendirMock.mockResolvedValue({ close: vi.fn(async () => {}) });
     runActiveOnReadHooksMock.mockResolvedValue([]);
     spawnSyncMock.mockReturnValue({
       status: 1,

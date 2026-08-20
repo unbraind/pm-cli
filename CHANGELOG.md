@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-### Fixed
+### Changed
 
-- One shared tracker-initialization guard: 48 sites re-implement resolvePmRoot plus a settings probe plus the same literal refusal, so every precision fix has to be applied 48 times and never is ([pm-6qiwan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6qiwan.toon))
+- Provide consistent tracker preflight and executable recovery across SDK, CLI, and MCP ([pm-6qiwan](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6qiwan.toon))
 
 ## 2026.8.20 - 2026-08-20
 
