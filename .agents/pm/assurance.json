@@ -1577,16 +1577,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 2438,
+            "observed": 2516,
             "expected": "pass"
           },
           {
-            "observed": 2437,
+            "observed": 2515,
             "expected": "fail"
           }
         ]
       },
-      "floor": 2438
+      "floor": 2516
     },
     {
       "id": "graph-outcome-unreachable-ceiling",
@@ -1600,16 +1600,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 15,
+            "observed": 0,
             "expected": "pass"
           },
           {
-            "observed": 16,
+            "observed": 1,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 15
+      "ceiling": 0
     },
     {
       "id": "graph-outcome-reachability-basis-points-floor",
@@ -1623,16 +1623,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 9938,
+            "observed": 10000,
             "expected": "pass"
           },
           {
-            "observed": 9937,
+            "observed": 9999,
             "expected": "fail"
           }
         ]
       },
-      "floor": 9938
+      "floor": 10000
     },
     {
       "id": "graph-redundant-edges-ceiling",

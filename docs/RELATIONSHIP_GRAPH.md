@@ -1,6 +1,6 @@
 # Relationship graph semantics
 
-Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon), and [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon).
+Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon), [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon), [pm-ayg31c](../.agents/pm/issues/pm-ayg31c.toon), and [pm-3dyec2](../.agents/pm/issues/pm-3dyec2.toon).
 
 ## Decision
 
@@ -10,7 +10,17 @@ The alternatives were rejected as follows: a closed enum cannot model applicatio
 
 ## Contract
 
-Each relationship kind declares direction, inverse, ordering and hierarchy participation, optional temporal order, incoming and outgoing cardinality, lifecycle, aliases, payload schema, self-edge policy, and compatibility version. Built-ins normalize legacy `related_to`, `depends_on`, `child_of`, `parent_child`, `epic`, and `task` spellings. Unknown custom kinds remain importable only after their definitions are registered, preventing algorithms from guessing their meaning.
+Each relationship kind declares direction, inverse, a traversal family,
+optional typed-outcome traversal direction, ordering and hierarchy
+participation, optional temporal order, incoming and outgoing cardinality,
+lifecycle, aliases, payload schema, self-edge policy, and compatibility version.
+Built-ins normalize legacy `related_to`, `depends_on`, `child_of`,
+`parent_child`, `epic`, and `task` spellings. Unknown custom kinds remain
+importable only after their definitions are registered, preventing algorithms
+from guessing their meaning. Omitted custom traversal metadata remains
+compatible: hierarchy and ordering declarations select their corresponding
+families, undirected kinds are associative, and other directed kinds are
+semantic.
 
 `recurs_from` is the canonical recurrence relation: `new --recurs_from--> old`
 means the source is a later event with the same observable failure identity as
@@ -251,6 +261,14 @@ for domain packages that need more than generic adjacency:
 - `enumerateRelationshipPaths` returns bounded simple paths with edge evidence,
   cost metadata, cancellation, direction/kind filters, and explicit truncation.
 
+An explicit kind filter may include `traversal: "semantic"` kinds on either
+hierarchy or ordering walks, giving package-defined lineage edges a bounded
+semantic traversal surface without pretending that they are structural or
+scheduling edges. Default walks remain family-strict when no kind filter is
+provided. Association kinds refuse these walks with an `impact --direction
+both` recovery route; selecting the other structural family points to the
+matching hierarchy or ordering commands.
+
 All semantic walks are breadth-first and deterministic. `limit`, `maxDepth`,
 and `after` provide bounded continuation for hierarchy and ordering walks;
 path enumeration separately bounds returned paths and expanded partial paths.
@@ -281,8 +299,17 @@ identities and structured rows proven to contradict scalar blocker precedence.
 censuses so repair can tighten their ceilings without weakening the
 information-bearing floor. `articulation_points` and `bridge_edges` reuse the exact cut-structure
 algorithm; outcome metrics count explicit `Milestone` titles beginning with
-`Outcome milestone:` and follow only hierarchy or `implements` edges toward
-them. Active and terminal populations are reported separately, with integer
+`Outcome milestone:` and follow the registry's declared
+`outcomeTraversal` directions toward them. The audit publishes that exact
+`outcome_reachability_basis` direction groups beside the rates, using sorted
+comma-separated kind names so consumers never infer lineage meaning from
+labels while repeated direction labels stay out of the token surface. Built-in
+hierarchy, implementation, verification,
+discovery, incident, recurrence, and supersession edges opt in explicitly;
+`supersedes` traverses both directions so an archived predecessor remains
+connected to the replacement outcome lineage. Generic `related` and ordering
+edges declare no outcome traversal and cannot satisfy the metric. Active and
+terminal populations are reported separately, with integer
 basis-point rates and all-status reachable/unreachable totals; the explicit
 outcome milestones are roots, not work subjects, and are excluded from those
 populations. Rate or
@@ -290,8 +317,7 @@ all-status floors are lifecycle-stable; an absolute active-population floor is
 invalid because completing reachable work legitimately moves it into the
 terminal population. `finding_subjects_by_code` includes every known finding
 code even when its population is zero, so assurance selectors never confuse a
-clean class with a missing contract field. Generic `related` edges cannot
-satisfy outcome reachability.
+clean class with a missing contract field.
 
 ```ts
 import {

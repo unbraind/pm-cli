@@ -23,11 +23,19 @@ import {
 export function assertValidBareDependencyFlagValue(
   value: string,
   structured: boolean,
+  flag = "--dep",
 ): void {
   if (!structured && /[:,=]/.test(value)) {
     throw new PmCliError(
-      `Invalid --dep value "${value}". Use a bare item id or id=<id>,kind=<kind>.`,
+      `Invalid ${flag} value "${value}". Use a bare item id or id=<id>,kind=<kind>.`,
       EXIT_CODE.USAGE,
+      {
+        code: "dependency_flag_value_invalid",
+        reason: "malformed_dependency_shorthand",
+        flag,
+        value,
+        required: "Use a bare item id or an explicit id=<id>,kind=<kind> entry.",
+      },
     );
   }
 }

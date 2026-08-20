@@ -590,6 +590,12 @@ describe("relationship graph governance", () => {
         articulation_points: 0,
         bridge_edges: 0,
         outcome_nodes: 0,
+        outcome_reachability_basis: {
+          source_to_target:
+            "discovered_from,implements,incident_from,parent,recurs_from,verifies",
+          target_to_source: "child",
+          both: "supersedes",
+        },
         active_outcome_reachable_nodes: 0,
         active_outcome_unreachable_nodes: 0,
         active_outcome_reachability_basis_points: 0,

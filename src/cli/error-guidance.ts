@@ -21,6 +21,12 @@ interface GuidanceMessage {
   examples?: string[];
   nextSteps?: string[];
   verificationErrors?: string[];
+  flag?: string;
+  value?: string;
+  unmatchedSelectors?: NonNullable<PmCliErrorContext["unmatched_selectors"]>;
+  availableDependencies?: NonNullable<
+    PmCliErrorContext["available_dependencies"]
+  >;
   recovery?: PmCliErrorRecoveryPayload;
 }
 
@@ -46,6 +52,18 @@ export interface JsonErrorEnvelope {
   next_steps?: string[];
   /** Exact integrity verifier findings that caused the operation to refuse. */
   verification_errors?: string[];
+  /** CLI flag whose supplied value violated a shared mutation grammar. */
+  flag?: string;
+  /** Supplied scalar value that violated a shared mutation grammar. */
+  value?: string;
+  /** Dependency selectors that matched no stored edge. */
+  unmatched_selectors?: NonNullable<
+    PmCliErrorContext["unmatched_selectors"]
+  >;
+  /** Compact stored dependency identities available when a removal failed. */
+  available_dependencies?: NonNullable<
+    PmCliErrorContext["available_dependencies"]
+  >;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }
@@ -83,6 +101,18 @@ export interface ErrorClassification {
   next_steps?: string[];
   /** Exact integrity verifier findings that caused the operation to refuse. */
   verification_errors?: string[];
+  /** CLI flag whose supplied value violated a shared mutation grammar. */
+  flag?: string;
+  /** Supplied scalar value that violated a shared mutation grammar. */
+  value?: string;
+  /** Dependency selectors that matched no stored edge. */
+  unmatched_selectors?: NonNullable<
+    PmCliErrorContext["unmatched_selectors"]
+  >;
+  /** Compact stored dependency identities available when a removal failed. */
+  available_dependencies?: NonNullable<
+    PmCliErrorContext["available_dependencies"]
+  >;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }
@@ -551,18 +581,10 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
   return lines.join("\n");
 }
 
-function guidanceToJsonEnvelope(
-  message: GuidanceMessage,
-  exitCode: number,
-): JsonErrorEnvelope {
-  const payload: JsonErrorEnvelope = {
-    type: message.type,
-    code: message.code,
-    title: message.title,
-    detail: message.happened,
-    required: message.required,
-    exit_code: exitCode,
-  };
+/** Attach optional actionable fields shared by JSON and classification envelopes. */
+function attachStructuredGuidanceDetails<
+  Payload extends JsonErrorEnvelope | ErrorClassification,
+>(payload: Payload, message: GuidanceMessage): Payload {
   if (includeWhyInStructuredGuidance(message)) {
     payload.why = message.why;
   }
@@ -575,38 +597,48 @@ function guidanceToJsonEnvelope(
   if (message.verificationErrors && message.verificationErrors.length > 0) {
     payload.verification_errors = message.verificationErrors;
   }
+  if (message.flag !== undefined) payload.flag = message.flag;
+  if (message.value !== undefined) payload.value = message.value;
+  if (message.unmatchedSelectors !== undefined)
+    payload.unmatched_selectors = message.unmatchedSelectors;
+  if (message.availableDependencies !== undefined)
+    payload.available_dependencies = message.availableDependencies;
   if (message.recovery) {
     payload.recovery = message.recovery;
   }
   return payload;
 }
 
+function guidanceToJsonEnvelope(
+  message: GuidanceMessage,
+  exitCode: number,
+): JsonErrorEnvelope {
+  return attachStructuredGuidanceDetails(
+    {
+      type: message.type,
+      code: message.code,
+      title: message.title,
+      detail: message.happened,
+      required: message.required,
+      exit_code: exitCode,
+    },
+    message,
+  );
+}
+
 function guidanceToClassification(
   message: GuidanceMessage,
 ): ErrorClassification {
-  const payload: ErrorClassification = {
-    type: message.type,
-    code: message.code,
-    title: message.title,
-    detail: message.happened,
-    required: message.required,
-  };
-  if (includeWhyInStructuredGuidance(message)) {
-    payload.why = message.why;
-  }
-  if (message.examples && message.examples.length > 0) {
-    payload.examples = message.examples;
-  }
-  if (message.nextSteps && message.nextSteps.length > 0) {
-    payload.next_steps = message.nextSteps;
-  }
-  if (message.verificationErrors && message.verificationErrors.length > 0) {
-    payload.verification_errors = message.verificationErrors;
-  }
-  if (message.recovery) {
-    payload.recovery = message.recovery;
-  }
-  return payload;
+  return attachStructuredGuidanceDetails(
+    {
+      type: message.type,
+      code: message.code,
+      title: message.title,
+      detail: message.happened,
+      required: message.required,
+    },
+    message,
+  );
 }
 
 function normalizeMessage(message: string): string {
@@ -747,6 +779,10 @@ function applyPmCliErrorContext(
     examples,
     nextSteps,
     verificationErrors,
+    flag: context.flag,
+    value: context.value,
+    unmatchedSelectors: context.unmatched_selectors,
+    availableDependencies: context.available_dependencies,
     recovery,
   };
 }

@@ -879,11 +879,9 @@ function parseDependencyRemovals(
         EXIT_CODE.USAGE,
       );
     }
-    if (
-      trimmed.includes("=") ||
-      /^(?:[-*+]\s+)?(?:id|kind|type|source_kind)\s*[:=]/i.test(trimmed) ||
-      trimmed.startsWith("```")
-    ) {
+    const isStructured = looksLikeStructuredDependencyEntry(trimmed);
+    assertValidBareDependencyFlagValue(trimmed, isStructured, "--dep-remove");
+    if (isStructured) {
       const kv = parseCsvKv(trimmed, "--dep-remove");
       assertNoUnknownCsvKeys(kv, "--dep-remove", DEP_REMOVE_KEYS);
       const idRaw = kv.id?.trim();
@@ -2262,6 +2260,60 @@ function applyTypeOptionMutation(
   document.metadata.type_options = validation.normalized;
 }
 
+/** Collapse duplicate rows only for identities explicitly touched by this mutation. */
+function normalizeTouchedDependencyIdentities(
+  current: readonly Dependency[],
+  additions: readonly Dependency[],
+): Dependency[] {
+  const touchedKeys = new Set(additions.map((entry) => dependencyKey(entry)));
+  const retainedTouchedKeys = new Set<string>();
+  return current.filter((entry) => {
+    const key = dependencyKey(entry);
+    if (!touchedKeys.has(key)) {
+      return true;
+    }
+    if (retainedTouchedKeys.has(key)) {
+      return false;
+    }
+    retainedTouchedKeys.add(key);
+    return true;
+  });
+}
+
+/** Refuse lossless removals unless every selector resolves against stored edges. */
+function assertDependencyRemovalSelectorsMatch(
+  current: readonly Dependency[],
+  selectors: readonly DependencyRemovalSelector[],
+  itemId: string,
+): void {
+  const unmatchedSelectors = selectors.filter(
+    (selector) =>
+      !current.some((entry) => matchesDependencySelector(entry, selector)),
+  );
+  if (unmatchedSelectors.length === 0) {
+    return;
+  }
+  throw new PmCliError(
+    `Dependency removal did not match ${unmatchedSelectors.length === 1 ? "a stored edge" : "stored edges"}.`,
+    EXIT_CODE.NOT_FOUND,
+    {
+      code: "dependency_remove_no_match",
+      reason: "selector_not_found",
+      unmatched_selectors: unmatchedSelectors,
+      available_dependencies: current.map((entry) => ({
+        id: entry.id,
+        kind: entry.kind,
+        source_kind: entry.source_kind,
+      })),
+      why: "Failing on a zero-match selector prevents a mistyped dependency removal from being reported as successful.",
+      nextSteps: [
+        `Inspect the current item with: pm get ${itemId} --full`,
+        "Retry --dep-remove with the exact id, kind, and optional source_kind shown in dependencies.",
+      ],
+    },
+  );
+}
+
 function applyDependencyMutations(
   document: ItemDocument,
   context: UpdateMutationContext,
@@ -2278,6 +2330,10 @@ function applyDependencyMutations(
     ? []
     : [...(document.metadata.dependencies ?? [])];
   if (context.dependencyUpdates.additions.length > 0) {
+    nextDependencies = normalizeTouchedDependencyIdentities(
+      nextDependencies,
+      context.dependencyUpdates.additions,
+    );
     const seen = new Set(nextDependencies.map((entry) => dependencyKey(entry)));
     for (const addition of context.dependencyUpdates.additions) {
       const key = dependencyKey(addition);
@@ -2288,6 +2344,11 @@ function applyDependencyMutations(
     }
   }
   if (context.dependencyRemovals.length > 0) {
+    assertDependencyRemovalSelectorsMatch(
+      nextDependencies,
+      context.dependencyRemovals,
+      document.metadata.id,
+    );
     nextDependencies = nextDependencies.filter(
       (entry) =>
         !context.dependencyRemovals.some((selector) =>

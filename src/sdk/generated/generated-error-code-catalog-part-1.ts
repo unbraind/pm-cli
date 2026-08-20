@@ -541,6 +541,32 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "dependency_flag_value_invalid",
+    meaning: "Dependency flag value invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/dependency-flag-validation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "dependency_flag_value_invalid",
+    aliases: [],
+  },
+  {
+    code: "dependency_remove_no_match",
+    meaning: "Dependency remove no match condition.",
+    stability: "provisional",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/update.ts"],
+    emitting_commands: ["update"],
+    canonical_code: "dependency_remove_no_match",
+    aliases: [],
+  },
+  {
     code: "dependency_target_not_found",
     meaning: "Dependency target not found condition.",
     stability: "provisional",
@@ -2082,19 +2108,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_cli_flag",
-    aliases: [],
-  },
-  {
-    code: "missing_destination",
-    meaning: "Missing destination condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_destination",
     aliases: [],
   },
 ];

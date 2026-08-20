@@ -1,6 +1,6 @@
 # Agent UX Contracts
 
-Tracker references: [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.agents/pm/issues/pm-i6pi.toon), [pm-um4g](../.agents/pm/issues/pm-um4g.toon), [pm-tmhs](../.agents/pm/issues/pm-tmhs.toon), [pm-6m1i](../.agents/pm/issues/pm-6m1i.toon), [pm-cj9v](../.agents/pm/issues/pm-cj9v.toon), [pm-yp56](../.agents/pm/issues/pm-yp56.toon).
+Tracker references: [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.agents/pm/issues/pm-i6pi.toon), [pm-um4g](../.agents/pm/issues/pm-um4g.toon), [pm-tmhs](../.agents/pm/issues/pm-tmhs.toon), [pm-6m1i](../.agents/pm/issues/pm-6m1i.toon), [pm-cj9v](../.agents/pm/issues/pm-cj9v.toon), [pm-yp56](../.agents/pm/issues/pm-yp56.toon), [pm-gos426](../.agents/pm/issues/pm-gos426.toon), and [pm-flnefm](../.agents/pm/issues/pm-flnefm.toon).
 
 These contracts keep common agent loops deterministic, token-efficient, and recoverable. Runtime contracts and `--help --json` remain the exact source for available flags.
 
@@ -9,6 +9,13 @@ These contracts keep common agent loops deterministic, token-efficient, and reco
 `pm create`, `pm update`, and `pm update-many` preserve existing relationship data, including legacy cycles. When a mutation introduces a new cycle through an ordering relationship such as `blocked_by`, the result includes an `ordering_cycle_created:` warning with a concrete cycle path and a `pm graph audit` recovery pointer.
 
 The public SDK exports `collectNewOrderingCycleWarnings(beforeItems, afterItems, changedItemId)` from `@unbrained/pm-cli/sdk`. Package authors can apply the same immutable-snapshot advisory to custom mutation workflows; activated custom relationship kinds participate through the shared registry.
+
+Dependency removal is lossless. `--dep-remove` rejects the same malformed
+shorthand as `--dep`, and a selector that matches nothing returns the typed
+`dependency_remove_no_match` refusal instead of a successful no-op. Exact
+duplicate rows can be normalized without delete-then-add risk by re-adding the
+same `id`, `kind`, and `source_kind`; the mutation keeps one canonical row and
+never removes the logical edge.
 
 `pm graph audit` uses two explicit units:
 

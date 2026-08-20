@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1751,
+    "covered_symbols": 1753,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1752
+    "required_symbols": 1754
   },
   "breaking_acknowledgements": [
     {
@@ -914,6 +914,33 @@
       ],
       "package_version": "2026.8.20",
       "reason": "Expand tracker preflight failure and recovery unions with executable unreadable-root repair contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk:RelationshipKindDefinition",
+        "signature ./sdk/graph:RelationshipCoverageProfile",
+        "signature ./sdk/graph:RelationshipKindDefinition"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Add declarative traversal and typed outcome fields plus structured dependency-refusal context; existing runtime behavior remains backward compatible and new fields are additive."
+    },
+    {
+      "changes": [
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk/graph:RelationshipCoverageProfile"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Add declarative traversal and typed outcome fields plus structured dependency-refusal context; existing runtime behavior remains backward compatible and new fields are additive."
+    },
+    {
+      "changes": [
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk/graph:RelationshipCoverageProfile"
+      ],
+      "package_version": "2026.8.20",
+      "reason": "Add declarative traversal and typed outcome fields plus structured dependency-refusal context; existing runtime behavior remains backward compatible and new fields are additive."
     }
   ],
   "entrypoints": {
@@ -9828,7 +9855,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -11904,7 +11931,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -12138,7 +12165,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipKindDefinition",
-          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; inverse?: string; ordering: boolean; temporalOrder?: RelationshipTemporalOrder; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
+          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; traversal?: RelationshipTraversalFamily; outcomeTraversal?: RelationshipOutcomeTraversal; inverse?: string; ordering: boolean; temporalOrder?: RelationshipTemporalOrder; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
         },
         {
           "classification": "supported",
@@ -12163,6 +12190,12 @@
           "kind": "interface",
           "name": "RelationshipNeighborEdge",
           "signature": "export interface RelationshipNeighborEdge { id: string; edge: RelationshipEdge; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "RelationshipOutcomeTraversal",
+          "signature": "export type RelationshipOutcomeTraversal = \"source_to_target\" | \"target_to_source\" | \"both\";"
         },
         {
           "classification": "supported",
@@ -12277,6 +12310,12 @@
           "kind": "type",
           "name": "RelationshipTraversalDirection",
           "signature": "export type RelationshipTraversalDirection = \"outgoing\" | \"incoming\" | \"both\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "RelationshipTraversalFamily",
+          "signature": "export type RelationshipTraversalFamily = \"hierarchy\" | \"ordering\" | \"semantic\" | \"association\";"
         },
         {
           "classification": "supported",
@@ -23466,7 +23505,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -23700,7 +23739,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipKindDefinition",
-          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; inverse?: string; ordering: boolean; temporalOrder?: RelationshipTemporalOrder; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
+          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; traversal?: RelationshipTraversalFamily; outcomeTraversal?: RelationshipOutcomeTraversal; inverse?: string; ordering: boolean; temporalOrder?: RelationshipTemporalOrder; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
         },
         {
           "classification": "supported",
@@ -23725,6 +23764,12 @@
           "kind": "interface",
           "name": "RelationshipNeighborEdge",
           "signature": "export interface RelationshipNeighborEdge { id: string; edge: RelationshipEdge; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "RelationshipOutcomeTraversal",
+          "signature": "export type RelationshipOutcomeTraversal = \"source_to_target\" | \"target_to_source\" | \"both\";"
         },
         {
           "classification": "supported",
@@ -23833,6 +23878,12 @@
           "kind": "type",
           "name": "RelationshipTraversalDirection",
           "signature": "export type RelationshipTraversalDirection = \"outgoing\" | \"incoming\" | \"both\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "RelationshipTraversalFamily",
+          "signature": "export type RelationshipTraversalFamily = \"hierarchy\" | \"ordering\" | \"semantic\" | \"association\";"
         },
         {
           "classification": "supported",
@@ -29190,6 +29241,8 @@
     "core_item_field_requires_dedicated_flag",
     "create_positional_type_without_title",
     "dependency_edge_not_allowed",
+    "dependency_flag_value_invalid",
+    "dependency_remove_no_match",
     "dependency_target_not_found",
     "dependency_temporal_order_invalid",
     "duplicate_canonical_flag",

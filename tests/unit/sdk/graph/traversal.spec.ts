@@ -103,7 +103,12 @@ describe("hierarchy traversal", () => {
     ).toEqual(["pm-epic"]);
     expect(() =>
       hierarchyAncestors(graph, "pm-task", { kinds: ["related"] }),
-    ).toThrow(/not a hierarchy kind/);
+    ).toThrow(/uses association traversal; use graph impact --direction both/);
+    expect(() =>
+      hierarchyAncestors(graph, "pm-task", { kinds: ["blocked_by"] }),
+    ).toThrow(
+      /uses ordering traversal; use graph predecessors or graph successors/,
+    );
     expect(() =>
       hierarchyAncestors(graph, "pm-task", { kinds: ["nope"] }),
     ).toThrow(/Unknown relationship kind/);
@@ -158,7 +163,7 @@ describe("ordering traversal", () => {
     ).toEqual(["pm-second"]);
     expect(() =>
       orderingPredecessors(graph, "pm-third", { kinds: ["parent"] }),
-    ).toThrow(/not a ordering kind/);
+    ).toThrow(/uses hierarchy traversal; use graph ancestors or graph descendants/);
   });
 
   it("ignores non-ordering edges during ordering walks", () => {
@@ -168,6 +173,52 @@ describe("ordering traversal", () => {
     ]);
     expect(orderingPredecessors(graph, "pm-a").value).toEqual([]);
     expect(orderingSuccessors(graph, "pm-a").value).toEqual([]);
+  });
+
+  it("admits explicit semantic kinds without changing default ordering walks", () => {
+    const registry = new RelationshipKindRegistry().register({
+      kind: "substantiates",
+      direction: "directed",
+      traversal: "semantic",
+      outcomeTraversal: "source_to_target",
+      ordering: false,
+      hierarchy: false,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: false,
+    });
+    const graph = new RelationshipGraph(
+      ["pm-outcome", "pm-feature", "pm-proof"],
+      [
+        { source: "pm-feature", target: "pm-outcome", kind: "implements" },
+        { source: "pm-proof", target: "pm-feature", kind: "substantiates" },
+      ],
+      registry,
+    );
+
+    expect(orderingPredecessors(graph, "pm-outcome").value).toEqual([]);
+    expect(
+      orderingPredecessors(graph, "pm-outcome", { kinds: ["implements"] })
+        .value,
+    ).toEqual(["pm-feature"]);
+    expect(
+      orderingPredecessors(graph, "pm-feature", {
+        kinds: ["substantiates"],
+      }).value,
+    ).toEqual(["pm-proof"]);
+    expect(
+      hierarchyAncestors(graph, "pm-feature", {
+        kinds: ["substantiates"],
+      }).value,
+    ).toEqual(["pm-proof"]);
+    expect(() =>
+      orderingPredecessors(graph, "pm-outcome", { kinds: ["parent"] }),
+    ).toThrow(/uses hierarchy traversal; use graph ancestors or graph descendants/);
+    expect(() =>
+      orderingPredecessors(graph, "pm-outcome", { kinds: ["related"] }),
+    ).toThrow(/uses association traversal; use graph impact --direction both/);
   });
 });
 

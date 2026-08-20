@@ -18,6 +18,17 @@ export type RelationshipPrecedence =
   | "target_before_source";
 /** Endpoint that represents the structural parent for hierarchy kinds. */
 export type RelationshipHierarchyDirection = "source_parent" | "target_parent";
+/** Closure family that gives a relationship its default traversal vocabulary. */
+export type RelationshipTraversalFamily =
+  | "hierarchy"
+  | "ordering"
+  | "semantic"
+  | "association";
+/** Direction in which an edge can carry a node toward a declared outcome. */
+export type RelationshipOutcomeTraversal =
+  | "source_to_target"
+  | "target_to_source"
+  | "both";
 
 /** Versioned semantic definition for a built-in or application-defined edge kind. */
 export interface RelationshipKindDefinition {
@@ -25,6 +36,10 @@ export interface RelationshipKindDefinition {
   kind: string;
   /** Whether traversing source to target has distinct meaning from the reverse. */
   direction: RelationshipDirection;
+  /** Default closure vocabulary; omitted custom definitions infer it from legacy flags. */
+  traversal?: RelationshipTraversalFamily;
+  /** Direction this kind contributes to typed outcome reachability, when any. */
+  outcomeTraversal?: RelationshipOutcomeTraversal;
   /** Optional canonical kind used when traversing a directed edge in reverse. */
   inverse?: string;
   /** Whether the kind participates in execution-order cycle checks. */
@@ -55,15 +70,15 @@ export interface RelationshipKindDefinition {
 
 /** Stable built-in relationship ontology without graph or storage dependencies. */
 export const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] = [
-  { kind: "blocked_by", direction: "directed", inverse: "blocks", ordering: true, precedence: "target_before_source", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", aliases: ["depends_on"], compatibilityVersion: 1, allowSelf: false },
-  { kind: "blocks", direction: "directed", inverse: "blocked_by", ordering: true, precedence: "source_before_target", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
-  { kind: "parent", direction: "directed", inverse: "child", ordering: false, hierarchy: true, hierarchyDirection: "target_parent", outgoing: "one", incoming: "many", lifecycle: "supersedable", aliases: ["child_of", "epic"], compatibilityVersion: 1, allowSelf: false },
-  { kind: "child", direction: "directed", inverse: "parent", ordering: false, hierarchy: true, hierarchyDirection: "source_parent", outgoing: "many", incoming: "one", lifecycle: "supersedable", aliases: ["parent_child", "task"], compatibilityVersion: 1, allowSelf: false },
-  { kind: "related", direction: "undirected", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", aliases: ["related_to"], compatibilityVersion: 1, allowSelf: false },
-  { kind: "discovered_from", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
-  { kind: "incident_from", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
-  { kind: "implements", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
-  { kind: "recurs_from", direction: "directed", ordering: false, temporalOrder: "source_after_target", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
-  { kind: "verifies", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
-  { kind: "supersedes", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "supersedable", compatibilityVersion: 1, allowSelf: false },
+  { kind: "blocked_by", direction: "directed", traversal: "ordering", inverse: "blocks", ordering: true, precedence: "target_before_source", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", aliases: ["depends_on"], compatibilityVersion: 1, allowSelf: false },
+  { kind: "blocks", direction: "directed", traversal: "ordering", inverse: "blocked_by", ordering: true, precedence: "source_before_target", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "parent", direction: "directed", traversal: "hierarchy", outcomeTraversal: "source_to_target", inverse: "child", ordering: false, hierarchy: true, hierarchyDirection: "target_parent", outgoing: "one", incoming: "many", lifecycle: "supersedable", aliases: ["child_of", "epic"], compatibilityVersion: 1, allowSelf: false },
+  { kind: "child", direction: "directed", traversal: "hierarchy", outcomeTraversal: "target_to_source", inverse: "parent", ordering: false, hierarchy: true, hierarchyDirection: "source_parent", outgoing: "many", incoming: "one", lifecycle: "supersedable", aliases: ["parent_child", "task"], compatibilityVersion: 1, allowSelf: false },
+  { kind: "related", direction: "undirected", traversal: "association", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", aliases: ["related_to"], compatibilityVersion: 1, allowSelf: false },
+  { kind: "discovered_from", direction: "directed", traversal: "semantic", outcomeTraversal: "source_to_target", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "incident_from", direction: "directed", traversal: "semantic", outcomeTraversal: "source_to_target", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "implements", direction: "directed", traversal: "semantic", outcomeTraversal: "source_to_target", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "recurs_from", direction: "directed", traversal: "semantic", outcomeTraversal: "source_to_target", ordering: false, temporalOrder: "source_after_target", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "verifies", direction: "directed", traversal: "semantic", outcomeTraversal: "source_to_target", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "supersedes", direction: "directed", traversal: "semantic", outcomeTraversal: "both", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "supersedable", compatibilityVersion: 1, allowSelf: false },
 ] as const;
