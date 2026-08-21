@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:graph",cycle-detection,hierarchy,integrity,validation
 created_at: "2026-07-25T20:39:41.651Z"
-updated_at: "2026-08-21T05:44:50.317Z"
+updated_at: "2026-08-21T05:51:08.347Z"
 closed_at: "2026-08-21T05:34:36.522Z"
 completed_at: "2026-08-21T05:34:36.522Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[8]{id,kind,created_at}:
   pm-p9a4,related,"2026-07-25T20:39:41.651Z"
   pm-bzmeaa,related,"2026-07-25T20:50:37.575Z"
   pm-96h7,implements,"2026-07-26T05:57:33.033Z"
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-07-26T11:46:25.644Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:47:23.836Z","harness:codex","Partial implementation evidence: validate lifecycle now builds one hierarchy graph from scalar parents plus every registry-declared hierarchy dependency spelling, including source_parent/target_parent directions, missing targets, aliases, dedupe, and closed holders; child_of cycles are now reported. Mutation fail-fast, graph/health agreement, legacy classification, and merge-conformance clauses remain outstanding, so this item remains incomplete."
   "2026-07-26T13:11:37.855Z","harness:codex","Verification 2026-07-26: repository release gates passed build/typecheck/docs/static quality, SDK surface/import-cost/transport ratchets, secret scan, version policy, 374 files and 6,420 tests at exact 100% statements/branches/functions/lines, packed npx smoke, and 88-command package-first dogfood. Aggregate stopped only at hosted-analysis because the branch exact SHA was not yet pushed. Manual unrelated-directory packed consumer also proved the installed SDK link, 85-action coverage, same-harness cross-session claim exclusion, and bounded 22 MB Bun output capture."
@@ -38,6 +38,7 @@ comments[13]{created_at,author,text}:
   "2026-08-21T05:34:28.796Z","harness:codex","Implementation evidence 2026-08-21: shipped one registry-driven hierarchy analyzer across SDK graph assembly, graph analyze/audit/remediation, validate, health, parent filters, tree and child rollups, create/update mutation transactions, and merge composition. All accepted hierarchy spellings share direction/cardinality semantics; new active defects fail before persistence with stable error codes, while terminal-only legacy debt remains visible and advisory. Audit summary no longer repeats the finding census, reducing the update help surface by 8 tokens and keeping repository token gates green."
   "2026-08-21T05:34:29.331Z","harness:codex","Verification evidence 2026-08-21: full suite passed 547 files and 7,673 tests; exact coverage passed 100% statements (56137/56137), branches (41895/41895), functions (11679/11679), and lines (54140/54140). Lint found zero clones and no ESLint/static-quality violations; 100% source/export/member docstrings, contracts, SDK surface, package boundary/parity, refusal closure, token budgets, and repository assurance passed. Manual packed-tarball smoke in a fresh tracker passed under npx and bunx 2026.8.21: both graph analyze results reported acyclic=true/relation_count=1, conflicting parent mutation exited 4 with hierarchy_parent_divergence_created, and persisted parent stayed pm-parent-a."
   "2026-08-21T05:44:50.317Z","harness:codex","PR evidence 2026-08-21: broad registry-driven hierarchy integrity delivery published as GitHub PR #1077 (https://github.com/unbraind/pm-cli/pull/1077) from codex/hierarchy-integrity-contracts at initial head fe0213cab. Hosted checks and complete AI review-thread disposition are pending."
+  "2026-08-21T05:51:08.347Z","harness:codex","Hosted gate correction 2026-08-21: PR #1077 head 7c4d90776 passed coverage, CodeQL, Semgrep, Trivy, Windows, runtime, and compatibility checks but the defect-evidence gate correctly refused this post-epoch terminal Issue without escape_class and gate_evidence. Classified it as production_defect and bound it to the registry-driven every-spelling mutation/merge negative control plus local and hosted static/coverage/Windows owners; no waiver is used."
 learnings[1]{created_at,author,text}:
   "2026-08-21T05:34:29.917Z","harness:codex","Hierarchy integrity must be normalized from registry direction and child-end cardinality before any consumer reasons about ancestors, descendants, cycles, or rollups. Mutation checks should compare before/after defect identities so legacy debt stays repairable while new debt fails closed. Terminal-only defects belong in visible advisory findings, not health failure state."
 files[34]{path,scope,note}:
@@ -83,4 +84,12 @@ docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Structured hierarchy refusal and recovery contract
   docs/RELATIONSHIP_GRAPH.md,project,Registry driven hierarchy integrity and compact audit output
 close_reason: "Completed registry-driven hierarchy integrity across mutation, SDK graph, CLI read, validation, health, governance, remediation, accepted spellings, terminal legacy classification, and merge-composition tests; full 7,673-test suite passes exact 100/100/100/100 and packed npx/bunx manual acceptance passed."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-rggtvd
+  gate_id: registry-driven-hierarchy-integrity
+  negative_control: "for every registry-declared hierarchy spelling, a second sound branch edge that composes into a cycle must be refused before persistence and reported consistently by graph, validate, and health"
+  local_checks[3]: node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""
