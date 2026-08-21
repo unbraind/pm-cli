@@ -30,6 +30,12 @@ describe("id generation and normalization", () => {
     expect(normalizeItemId("A1", "pm-")).toBe("pm-a1");
   });
 
+  it("normalizes adversarial separator runs in linear time", () => {
+    const separators = "-".repeat(100_000);
+    expect(normalizePrefix(separators)).toBe("pm-");
+    expect(normalizePrefix(`alpha${separators}beta`)).toBe("alpha-beta-");
+  });
+
   it("generates 4-character tokens by default", async () => {
     const sequence = [0, 1, 2, 3];
     let call = 0;

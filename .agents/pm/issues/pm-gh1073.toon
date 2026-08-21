@@ -6,43 +6,46 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:init",github,validation
 created_at: "2026-08-21T05:41:56.036Z"
-updated_at: "2026-08-21T17:49:49.680Z"
-closed_at: "2026-08-21T17:49:49.080Z"
-completed_at: "2026-08-21T17:49:49.080Z"
+updated_at: "2026-08-21T18:09:25.668Z"
+closed_at: "2026-08-21T18:09:25.153Z"
+completed_at: "2026-08-21T18:09:25.153Z"
 author: "harness:codex"
 acceptance_criteria: Share one prefix validation primitive between SDK init and lifecycle create; fail before tracker persistence or normalize deterministically; cover CLI/SDK/MCP and packed npx/bunx behavior; document accepted prefix grammar and recovery.
 parent: pm-7t04
 severity: high
 repro_steps: "Initialize a fresh tracker with a whitespace-containing prefix, then create an item with or without an explicit ID; observe the downstream normalization refusal."
-resolution: "Resolved: init canonicalizes natural-language ID prefixes through the shared SDK contract before settings persistence and item creation."
-expected_result: "Init normalizes or rejects an invalid prefix before committing tracker state, using the same actionable ID contract as create."
-actual_result: Init succeeds and persists a prefix that makes ordinary item creation fail.
+resolution: "Resolved: init canonicalizes natural-language ID prefixes through a linear-time shared SDK contract before settings persistence and item creation."
+expected_result: Init normalizes or rejects any untrusted prefix before committing tracker state without superlinear regular-expression behavior.
+actual_result: The first canonicalizer used uncontrolled-data regular expressions that CodeQL identified as polynomial on long separator runs.
 affected_version: 2026.8.20
 component: tracker initialization
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-nmzx,discovered_from,"2026-08-21T06:19:24.627Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-21T05:41:56.036Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for whitespace prefix, init prefix validation, and GitHub #1073; existing pm-nmzx covers the distinct missing prefix flag, not invalid persisted values. Source: https://github.com/unbraind/pm-cli/issues/1073"
   "2026-08-21T17:06:12.693Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
   "2026-08-21T17:45:41.874Z","harness:codex","Final evidence: the shared SDK normalizePrefix contract canonicalizes whitespace/punctuation to lowercase dash-separated prefixes, rejects the empty result via the existing pm fallback, and persists exactly one trailing dash before create. Linked CLI+SDK tests passed (9/9). Fresh packed npx, bunx, and installed-SDK consumers initialized natural-language prefixes and created IDs matching their canonical prefixes. Full suite passed 551 files / 7702 tests at exact 100% coverage; package and static gates passed."
   "2026-08-21T17:49:37.962Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+  "2026-08-21T18:08:10.618Z","harness:codex","Hosted review finding: CodeQL flagged the prefix-normalization regular expressions as polynomial on uncontrolled input. Replace the regex pipeline with a single-pass ASCII normalizer and add an adversarial long-separator negative control before reclosing."
+  "2026-08-21T18:09:16.156Z","harness:codex","Hosted security remediation: replaced both uncontrolled-data regular expressions with a single-pass ASCII alphanumeric normalizer. A 100,000-character separator negative control, linked 10/10 tests, focused ESLint, and build pass."
 files[3]{path,scope,note}:
   src/core/item/id.ts,project,shared create-safe prefix normalization
   tests/integration/init-prefix-contract.integration.spec.ts,project,CLI and SDK init-create acceptance
   tests/unit/core/item/id-generation.spec.ts,project,prefix grammar unit coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/id-generation.spec.ts tests/integration/init-prefix-contract.integration.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mt38ouoe-z258tj,test,passed,"2026-08-21T17:44:42.815Z","2026-08-21T17:44:52.814Z","2026-08-21T17:44:52.814Z",1,0,0
+  test-local-mt39jr8p-0arw7f,test,passed,"2026-08-21T18:08:45.165Z","2026-08-21T18:08:54.697Z","2026-08-21T18:08:54.697Z",1,0,0
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,accepted prefix grammar and recovery
-close_reason: Reclosed with required production-defect evidence for the init-prefix regression gate.
+close_reason: Reclosed after valid CodeQL polynomial-regex remediation with a linear-time normalizer and adversarial negative-control evidence.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   owner: pm-gh1073
   gate_id: init-prefix-contract
   negative_control: node scripts/run-tests.mjs test -- tests/unit/core/item/id-generation.spec.ts tests/integration/init-prefix-contract.integration.spec.ts
-  local_checks[2]: linked prefix tests 9/9,"manual packed npx, bunx, and SDK init-create acceptance"
-  hosted_checks[2]: CI / Gates (static),CI / Tests (coverage)
+  local_checks[4]: linked prefix tests 10/10,"manual packed npx, bunx, and SDK init-create acceptance",100000-character adversarial separator run,focused ESLint and build
+  hosted_checks[3]: CI / Gates (static),CI / Tests (coverage),CodeQL polynomial-regex alert
 body: ""

@@ -4,10 +4,10 @@
 
 ### Fixed
 
+- GH-1073: pm init accepts a whitespace id prefix that makes later creates fail ([pm-gh1073](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1073.toon))
 - GH-1078: Complete-list certification accepts absent or contradictory truth receipts and emits stale recovery ([pm-gh1078](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1078.toon))
 - GH-1076: read-only duplicates rejects universal JSON output controls ([pm-gh1076](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1076.toon))
 - GH-1074: package doctor cannot distinguish a safe declining service override from a global interceptor ([pm-gh1074](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1074.toon))
-- GH-1073: pm init accepts a whitespace id prefix that makes later creates fail ([pm-gh1073](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1073.toon))
 - GH-1075: Windows Node 24 nightly validation failed at main 3e7ac007 ([pm-gh1075](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1075.toon))
 - The child hierarchy kind has an unenforced direction and cardinality: 7 of 15 rows are inverted against the registry's own declaration and no channel, validator, or audit finding notices ([pm-vk7zek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vk7zek.toon))
 - Hierarchy-canonicalizing dependency kinds bypass every cycle detector: mutual child_of edges leave the graph provably inconsistent while validate, health, and graph analyze all report acyclic ([pm-rggtvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rggtvd.toon))
