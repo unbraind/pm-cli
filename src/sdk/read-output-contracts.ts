@@ -1605,7 +1605,6 @@ function omitReadOutputForBudget(
 /** Decide whether shaping would add no value to an already-bounded result. */
 function canReturnReadOutputUnchanged(
   resolved: PmResolvedReadOutputDimensions,
-  requested: readonly PmReadOutputDimension[],
   session: PmReadOutputSessionState | undefined,
   result: Record<string, unknown>,
 ): boolean {
@@ -1880,7 +1879,7 @@ export function applyReadOutputDimensions<
   const requested = requestedDimensions(resolved);
   if (
     cursor === undefined &&
-    canReturnReadOutputUnchanged(resolved, requested, session, result)
+    canReturnReadOutputUnchanged(resolved, session, result)
   ) {
     return result;
   }
