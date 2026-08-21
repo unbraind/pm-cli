@@ -166,6 +166,8 @@ export interface PmResolvedReadOutputDimensions {
   cost?: PmResolvedReadOutputDimension<number | "unbounded">;
   /** Requested static encoding or a retained legacy streaming behavior. */
   encoding?: PmResolvedReadOutputDimension<"json" | "toon" | "stream">;
+  /** Canonical CLI options observed on the invocation. */
+  canonical_options_used?: string[];
   /** Compatibility flags observed on the invocation. */
   legacy_aliases_used: string[];
   /** One-line migration instructions for observed compatibility flags. */
@@ -188,6 +190,8 @@ export interface PmReadOutputReceipt {
   budget_tokens?: number;
   /** Deterministic precedence used during resolution. */
   precedence: readonly ["canonical", "legacy", "intent", "default"];
+  /** Canonical CLI options observed on the invocation. */
+  canonical_options_used?: string[];
   /** Compatibility options observed on the invocation. */
   legacy_aliases_used: string[];
   /** One-line migration instructions for compatibility options. */
@@ -329,6 +333,23 @@ const CANONICAL_OPTIONS: Record<PmReadOutputDimension, string> = {
   amount: "--output-limit",
   cost: "--output-budget",
   encoding: "--output-format",
+};
+
+const READ_OUTPUT_INVOCATION_PROVENANCE = Symbol.for(
+  "pm.readOutputInvocationProvenance",
+);
+
+interface PmReadOutputInvocationProvenance {
+  /** Canonical include modes forwarded through command-local option keys. */
+  canonical_include_modes: string[];
+  /** Compatibility aliases observed before defaults or canonical forwarding. */
+  explicit_legacy_aliases: string[];
+  /** Whether the CLI captured the complete set of caller-supplied aliases. */
+  cli_invocation_observed?: boolean;
+}
+
+type PmReadOutputOptionsWithProvenance = Record<string, unknown> & {
+  [READ_OUTPUT_INVOCATION_PROVENANCE]?: PmReadOutputInvocationProvenance;
 };
 
 /** Canonical CLI flags that opt a read invocation into universal output shaping. */
@@ -717,14 +738,38 @@ export function applyReadOutputIncludeModes(
   const modeOptions = readOutputIncludeModeOptions(command);
   const selectors: string[] = [];
   const modes: string[] = [];
+  const optionsWithProvenance = commandOptions as PmReadOutputOptionsWithProvenance;
+  const existingProvenance = optionsWithProvenance[
+    READ_OUTPUT_INVOCATION_PROVENANCE
+  ];
+  const canonicalModes = new Set(
+    existingProvenance?.canonical_include_modes ?? [],
+  );
+  const explicitLegacyAliases = new Set(
+    existingProvenance?.explicit_legacy_aliases ?? [],
+  );
   for (const token of requested) {
     const option = modeOptions.get(token);
     if (option === undefined) {
       selectors.push(token);
       continue;
     }
+    const legacyFlag = `--${token.replaceAll("_", "-")}`;
+    if (isRequestedOption(readOption(commandOptions, legacyFlag))) {
+      explicitLegacyAliases.add(legacyFlag);
+    }
     commandOptions[option] = true;
     modes.push(token);
+    canonicalModes.add(token);
+  }
+  if (modes.length > 0) {
+    optionsWithProvenance[READ_OUTPUT_INVOCATION_PROVENANCE] = {
+      canonical_include_modes: [...canonicalModes],
+      explicit_legacy_aliases: [...explicitLegacyAliases],
+      ...(existingProvenance?.cli_invocation_observed === true
+        ? { cli_invocation_observed: true }
+        : {}),
+    };
   }
   return { selectors, modes };
 }
@@ -798,8 +843,10 @@ function resolveLegacyDimension(
   contract: PmReadOutputDimensionContract,
   options: Record<string, unknown>,
   usable: (candidate: { value: unknown; flag: string }) => boolean,
+  ignore: (flag: string) => boolean,
 ): { value: unknown; flag: string } | undefined {
   for (const alias of contract.legacy_aliases) {
+    if (ignore(alias.flag)) continue;
     const value = readOption(options, alias.flag);
     const candidate = { value, flag: alias.flag };
     if (isRequestedOption(value) && usable(candidate)) return candidate;
@@ -875,6 +922,65 @@ function resolveEncodingValue(
     : undefined;
 }
 
+function shouldIgnoreReadOutputLegacyAlias(
+  provenance: PmReadOutputInvocationProvenance | undefined,
+  dimension: PmReadOutputDimension,
+  flag: string,
+): boolean {
+  if (!provenance) return false;
+  const explicitLegacyAliases = new Set(provenance.explicit_legacy_aliases);
+  if (provenance.cli_invocation_observed === true) {
+    return !explicitLegacyAliases.has(flag);
+  }
+  const forwardedIncludeAliases = new Set(
+    provenance.canonical_include_modes.map(
+      (mode) => `--${mode.replaceAll("_", "-")}`,
+    ),
+  );
+  return (
+    dimension === "include" &&
+    forwardedIncludeAliases.has(flag) &&
+    !explicitLegacyAliases.has(flag)
+  );
+}
+
+function hasCompleteReadOutputIntent(
+  command: string,
+  legacyByDimension: Record<
+    PmReadOutputDimension,
+    { value: unknown; flag: string } | undefined
+  >,
+  provenance: PmReadOutputInvocationProvenance | undefined,
+): boolean {
+  const root = command
+    .trim()
+    .toLowerCase()
+    .replaceAll(/\s+/gu, " ")
+    .split(" ")[0];
+  return (
+    root === "list-all" ||
+    legacyByDimension.amount?.flag === "--no-truncate" ||
+    legacyByDimension.include?.flag === "--full" ||
+    provenance?.canonical_include_modes.includes("full") === true
+  );
+}
+
+function canonicalReadOutputOptionsUsed(
+  resolvedByDimension: Record<
+    PmReadOutputDimension,
+    PmResolvedReadOutputDimension<unknown> | undefined
+  >,
+  provenance: PmReadOutputInvocationProvenance | undefined,
+): string[] {
+  return PM_READ_OUTPUT_DIMENSIONS.flatMap((dimension) =>
+    resolvedByDimension[dimension]?.source === "canonical" ||
+    (dimension === "include" &&
+      (provenance?.canonical_include_modes.length ?? 0) > 0)
+      ? [CANONICAL_OPTIONS[dimension]]
+      : [],
+  );
+}
+
 /** Resolve canonical and compatibility controls into the universal dimension set. */
 export function resolveReadOutputDimensions(
   command: string,
@@ -883,6 +989,9 @@ export function resolveReadOutputDimensions(
   const normalizedCommand = resolveReadOutputSurface(command, options);
   if (!normalizedCommand) return undefined;
   const contract = SURFACE_CONTRACT_BY_COMMAND.get(normalizedCommand)!;
+  const invocationProvenance = (options as PmReadOutputOptionsWithProvenance)[
+    READ_OUTPUT_INVOCATION_PROVENANCE
+  ];
   const legacyResolvers = {
     include: (candidate: { value: unknown; flag: string }) =>
       resolveIncludeValue(undefined, candidate),
@@ -903,6 +1012,12 @@ export function resolveReadOutputDimensions(
         contract.dimensions[dimension],
         options,
         (candidate) => legacyResolvers[dimension](candidate) !== undefined,
+        (flag) =>
+          shouldIgnoreReadOutputLegacyAlias(
+            invocationProvenance,
+            dimension,
+            flag,
+          ),
       ),
     ]),
   ) as Record<
@@ -925,15 +1040,23 @@ export function resolveReadOutputDimensions(
     options.outputFormat ?? options.output_format,
     legacyByDimension.encoding,
   );
+  const include = resolveIncludeValue(
+    options.outputInclude ?? options.output_include,
+    legacyByDimension.include,
+  );
+  const amount = resolveAmountValue(
+    options.outputLimit ?? options.output_limit,
+    legacyByDimension.amount,
+  );
   const explicitCost = resolveCostValue(
     options.outputBudget ?? options.output_budget,
     legacyByDimension.cost,
   );
-  const completeResultIntent =
-    command.trim().toLowerCase().replaceAll(/\s+/gu, " ").split(" ")[0] ===
-      "list-all" ||
-    legacyByDimension.amount?.flag === "--no-truncate" ||
-    legacyByDimension.include?.flag === "--full";
+  const completeResultIntent = hasCompleteReadOutputIntent(
+    command,
+    legacyByDimension,
+    invocationProvenance,
+  );
   const budget = resolvePmCommandOutputBudget(command, {
     generateFallback: true,
   });
@@ -941,28 +1064,28 @@ export function resolveReadOutputDimensions(
     encoding?.value === "json" || options.resolvedOutputFormat === "json"
       ? "json"
       : "toon";
+  const cost =
+    explicitCost ??
+    (completeResultIntent
+      ? { source: "intent" as const, value: "unbounded" as const }
+      : {
+          source: "default" as const,
+          value:
+            budget.default_max_estimated_tokens_by_format[
+              resolvedOutputFormat
+            ],
+        });
+  const resolvedByDimension = { include, amount, cost, encoding };
   return {
     command: normalizedCommand,
-    include: resolveIncludeValue(
-      options.outputInclude ?? options.output_include,
-      legacyByDimension.include,
-    ),
-    amount: resolveAmountValue(
-      options.outputLimit ?? options.output_limit,
-      legacyByDimension.amount,
-    ),
-    cost:
-      explicitCost ??
-      (completeResultIntent
-        ? { source: "intent", value: "unbounded" }
-        : {
-            source: "default",
-            value:
-              budget.default_max_estimated_tokens_by_format[
-                resolvedOutputFormat
-              ],
-          }),
+    include,
+    amount,
+    cost,
     encoding,
+    canonical_options_used: canonicalReadOutputOptionsUsed(
+      resolvedByDimension,
+      invocationProvenance,
+    ),
     legacy_aliases_used: legacyAliasesUsed,
     migration_hints: migrationHints,
     precedence: READ_OUTPUT_PRECEDENCE,
@@ -1225,8 +1348,11 @@ function requestedDimensions(
 ): PmReadOutputDimension[] {
   return PM_READ_OUTPUT_DIMENSIONS.filter(
     (dimension) =>
-      resolved[dimension] !== undefined &&
-      resolved[dimension]?.source !== "default",
+      (resolved[dimension] !== undefined &&
+        resolved[dimension]?.source !== "default") ||
+      resolved.canonical_options_used!.includes(
+        CANONICAL_OPTIONS[dimension],
+      ),
   );
 }
 
@@ -1401,6 +1527,15 @@ function resolveBindingReadOutputBudget(
   return budgets.sort((left, right) => left.tokens - right.tokens)[0];
 }
 
+function canonicalReadOutputReceiptFields(
+  resolved: PmResolvedReadOutputDimensions,
+): Pick<PmReadOutputReceipt, "canonical_options_used"> {
+  const canonicalOptions = resolved.canonical_options_used;
+  return canonicalOptions && canonicalOptions.length > 0
+    ? { canonical_options_used: canonicalOptions }
+    : {};
+}
+
 /** Build the smallest truthful omission envelope or reject an exhausted session. */
 function omitReadOutputForBudget(
   resolved: PmResolvedReadOutputDimensions,
@@ -1423,6 +1558,7 @@ function omitReadOutputForBudget(
         }
       : {}),
     precedence: resolved.precedence,
+    ...canonicalReadOutputReceiptFields(resolved),
     legacy_aliases_used: [],
     migration_hints: [],
     estimated_tokens: 0,
@@ -1474,9 +1610,7 @@ function canReturnReadOutputUnchanged(
   result: Record<string, unknown>,
 ): boolean {
   if (session !== undefined) return false;
-  const canonicalRequestedCount = requested.filter(
-    (dimension) => resolved[dimension]?.source === "canonical",
-  ).length;
+  const canonicalRequestedCount = resolved.canonical_options_used!.length;
   if (resolved.cost?.value === "unbounded") {
     return (
       canonicalRequestedCount === (resolved.cost.source === "canonical" ? 1 : 0)
@@ -1777,6 +1911,7 @@ export function applyReadOutputDimensions<
         }
       : {}),
     precedence: resolved.precedence,
+    ...canonicalReadOutputReceiptFields(resolved),
     legacy_aliases_used: resolved.legacy_aliases_used,
     migration_hints: resolved.migration_hints,
     estimated_tokens: 0,

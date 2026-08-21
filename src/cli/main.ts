@@ -169,11 +169,70 @@ import { loadExtensionRecoveryFailures, loadUnknownCommandRecoveryFailures } fro
 import { maybeRenderBootstrapJsonHelp, attachCreateUpdatePolicyHelpText } from "./help-json-payload.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
-import { applyReadOutputIncludeModes, validateReadOutputOptions } from "../sdk/read-output-contracts.js";
+import {
+  PM_READ_OUTPUT_SURFACE_CONTRACTS,
+  applyReadOutputIncludeModes,
+  readOutputIncludeModeOptions,
+  resolveReadOutputSurface,
+  validateReadOutputOptions,
+} from "../sdk/read-output-contracts.js";
 import { loadContextIntentSnapshotForInvocation } from "./context-intent-invocation.js";
 import { isPmSuccessfulExitCode } from "../sdk/cli-contracts/command-exit-contracts.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+const READ_OUTPUT_INVOCATION_PROVENANCE = Symbol.for(
+  "pm.readOutputInvocationProvenance",
+);
+
+/** Carry private read-output provenance across Commander's option rebuilds. */
+function copyReadOutputInvocationProvenance(
+  source: object,
+  target: object,
+): void {
+  const provenance = Reflect.get(source, READ_OUTPUT_INVOCATION_PROVENANCE);
+  if (provenance !== undefined) {
+    Reflect.set(target, READ_OUTPUT_INVOCATION_PROVENANCE, provenance);
+  }
+}
+
+/** Record the exact compatibility flags present in the raw CLI invocation. */
+function recordCliReadOutputInvocationProvenance(
+  actionCommand: Command,
+  commandPath: string,
+  commandOptions: Record<string, unknown>,
+): void {
+  const surface = resolveReadOutputSurface(commandPath, commandOptions);
+  if (!surface) return;
+  let rootCommand = actionCommand;
+  while (rootCommand.parent) rootCommand = rootCommand.parent;
+  const rawArgs = (rootCommand as Command & { rawArgs: string[] }).rawArgs;
+  const providedFlags = new Set(
+    extractProvidedOptionFlags(rawArgs.slice(2)),
+  );
+  const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+    (candidate) => candidate.command === surface,
+  )!;
+  const explicitLegacyAliases = Object.values(contract.dimensions).flatMap(
+    (dimension) =>
+      dimension.legacy_aliases.flatMap((alias) =>
+        providedFlags.has(alias.flag) ? [alias.flag] : [],
+      ),
+  );
+  const previous = Reflect.get(
+    commandOptions,
+    READ_OUTPUT_INVOCATION_PROVENANCE,
+  ) as
+    | {
+        canonical_include_modes?: string[];
+      }
+    | undefined;
+  Reflect.set(commandOptions, READ_OUTPUT_INVOCATION_PROVENANCE, {
+    canonical_include_modes: previous?.canonical_include_modes ?? [],
+    explicit_legacy_aliases: explicitLegacyAliases,
+    cli_invocation_observed: true,
+  });
+  copyReadOutputInvocationProvenance(commandOptions, actionCommand);
+}
 
 function resolvePmPackageRoot(): string {
   return resolvePmPackageRootFromModule(import.meta.url, ["../.."]);
@@ -812,13 +871,24 @@ function forwardReadOutputIncludeModes(
   globalOptions: GlobalOptions,
   commandOptions: Record<string, unknown>,
 ): void {
+  recordCliReadOutputInvocationProvenance(
+    actionCommand,
+    commandPath,
+    commandOptions,
+  );
   const requested = globalOptions.outputInclude;
   if (requested === undefined) return;
-  const modeOptions: Record<string, unknown> = {};
-  const { selectors, modes } = applyReadOutputIncludeModes(commandPath, requested, modeOptions);
+  const { selectors, modes } = applyReadOutputIncludeModes(
+    commandPath,
+    requested,
+    commandOptions,
+  );
   if (modes.length === 0) return;
-  for (const [key, value] of Object.entries(modeOptions)) {
-    commandOptions[key] = value;
+  copyReadOutputInvocationProvenance(commandOptions, actionCommand);
+  const modeOptions = readOutputIncludeModeOptions(commandPath);
+  for (const mode of modes) {
+    const key = modeOptions.get(mode)!;
+    const value = commandOptions[key];
     actionCommand.setOptionValueWithSource(key, value, "cli");
   }
   const residual = selectors.length > 0 ? selectors.join(",") : undefined;
@@ -842,6 +912,7 @@ function extractCommandScopedOptions(
 ): Record<string, unknown> {
   const allOptions = command.optsWithGlobals() as Record<string, unknown>;
   const scoped: Record<string, unknown> = { ...allOptions };
+  copyReadOutputInvocationProvenance(command, scoped);
   delete scoped.json;
   delete scoped.quiet;
   delete scoped.path;
@@ -3154,6 +3225,7 @@ export const _testOnly = {
   readRecordBoolean,
   readRecordNumber,
   readRecordString,
+  recordCliReadOutputInvocationProvenance,
   registerDynamicExtensionCommandPaths,
   registerRuntimeSchemaFieldFlags,
   resolveCoreCommandRegistrationSelection,
