@@ -280,10 +280,22 @@ export interface GraphHierarchySummary {
   relation_count: number;
   /** Total strongly connected hierarchy components. */
   cycle_count: number;
+  /** Active hierarchy cycles that require remediation. */
+  active_cycle_count?: number;
+  /** Terminal-only hierarchy cycles retained as historical debt. */
+  legacy_cycle_count?: number;
   /** Total children that resolve to more than one logical parent. */
   cardinality_violation_count: number;
+  /** Active one-parent cardinality violations. */
+  active_cardinality_violation_count?: number;
+  /** Terminal-only one-parent cardinality violations. */
+  legacy_cardinality_violation_count?: number;
   /** Total scalar/dependency parent disagreements. */
   parent_divergence_count: number;
+  /** Active scalar/dependency parent disagreements. */
+  active_parent_divergence_count?: number;
+  /** Terminal-only scalar/dependency parent disagreements. */
+  legacy_parent_divergence_count?: number;
   /** Bounded hierarchy-cycle sample; absent with summary. */
   cycles?: string[][];
 }
@@ -900,12 +912,32 @@ function buildGraphHierarchySummary(
   summary: boolean,
   sampleLimit: number,
 ): GraphHierarchySummary {
+  let legacyCycleCount = 0;
+  let legacyCardinalityCount = 0;
+  let legacyDivergenceCount = 0;
+  for (const finding of hierarchy.cycles) {
+    legacyCycleCount += Number(finding.legacy_terminal);
+  }
+  for (const finding of hierarchy.cardinality_violations) {
+    legacyCardinalityCount += Number(finding.legacy_terminal);
+  }
+  for (const finding of hierarchy.divergences) {
+    legacyDivergenceCount += Number(finding.legacy_terminal);
+  }
   return {
     acyclic: hierarchy.cycles.length === 0,
     relation_count: hierarchy.relations.length,
     cycle_count: hierarchy.cycles.length,
+    active_cycle_count: hierarchy.cycles.length - legacyCycleCount,
+    legacy_cycle_count: legacyCycleCount,
     cardinality_violation_count: hierarchy.cardinality_violations.length,
+    active_cardinality_violation_count:
+      hierarchy.cardinality_violations.length - legacyCardinalityCount,
+    legacy_cardinality_violation_count: legacyCardinalityCount,
     parent_divergence_count: hierarchy.divergences.length,
+    active_parent_divergence_count:
+      hierarchy.divergences.length - legacyDivergenceCount,
+    legacy_parent_divergence_count: legacyDivergenceCount,
     ...(summary
       ? {}
       : {

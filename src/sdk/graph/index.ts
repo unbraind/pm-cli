@@ -101,6 +101,7 @@ export {
 export {
   analyzeHierarchyIntegrity,
   assertHierarchyMutationAllowed,
+  collectHierarchyRelations,
   formatHierarchyRelation,
   indexHierarchyRelations,
   type HierarchyCardinalityViolation,

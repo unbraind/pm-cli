@@ -1,0 +1,28 @@
+id: pm-gh1078
+title: "GH-1078: Complete-list certification accepts absent or contradictory truth receipts and emits stale recovery"
+description: "The public certifyCompleteListResult SDK primitive in 2026.8.21 can issue a complete_list certificate when omission_receipt or read_output is absent, when completeness reports unreadable rows, or when omission fields contradict has_omissions=false. PmCompleteListValidationError also recommends deprecated list-all recovery without the current unbounded output-limit/include controls. This is the GitHub #1078 follow-on to the shipped fail-closed complete-list lineage in pm-y4aaol and belongs under the SDK-first architecture epic pm-usfg."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:query","area:sdk",complete-list,context-integrity,recovery
+created_at: "2026-08-21T12:55:33.362Z"
+updated_at: "2026-08-21T12:55:33.362Z"
+author: "harness:codex"
+acceptance_criteria: "Require completeness.status=complete with safe-integer zero unreadable counts; require omission_receipt has_omissions=false, safe-integer zero count, and empty groups; require read_output contract v1 for list with within_budget=true, no compaction or omission, and complete include/amount/cost dimensions; reject output budget truncation/exceeded disclosures; return stable independent finding codes with absent, malformed, contradictory, and nonzero negative controls; emit canonical executable current recovery and prove it in a fresh-tracker acceptance test"
+parent: pm-usfg
+risk: high
+confidence: high
+reporter: GitHub issue #1078
+severity: high
+environment: @unbrained/pm-cli 2026.8.21 public SDK
+repro_steps: "Obtain the real pm list --all strict unbounded JSON envelope, then independently delete omission_receipt, contradict its count/groups, delete read_output, or set completeness unreadable_item_count=1; certifyCompleteListResult currently accepts each mutated envelope. Inspect PmCompleteListValidationError.recovery.suggested_retry for stale list-all syntax."
+expected_result: "Certification fails closed unless completeness, omission_receipt, and read_output independently prove complete unbounded delivery with stable finding codes; budget truncation disclosures are rejected; the canonical suggested retry uses list --all, output-include full, output-budget unbounded, and output-limit unbounded and executes successfully in a fresh tracker."
+actual_result: Missing or contradictory truth receipts are accepted and certified; recovery suggests pm list-all --full --strict-read --no-truncate --output-budget unbounded --json.
+affected_version: 2026.8.21
+component: SDK complete-list certification
+regression: true
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-y4aaol,incident_from,"2026-08-21T12:55:33.362Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-21T12:55:33.362Z","harness:codex","text=Duplicate check 2026-08-21: searched all-status PM corpus for GH-1078, certifyCompleteListResult, contradictory receipts, complete-list certification, and stale list-all recovery. No duplicate exists. pm-y4aaol is the closed predecessor that shipped the first complete-list certificate and pm-usfg is the canonical open SDK-first parent; linked with incident_from plus scalar parent rather than a generic related edge. GitHub source: https://github.com/unbraind/pm-cli/issues/1078"
+body: ""

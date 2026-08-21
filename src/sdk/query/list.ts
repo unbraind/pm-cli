@@ -74,7 +74,7 @@ import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import { LIST_FILTER_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import {
-  analyzeHierarchyIntegrity,
+  collectHierarchyRelations,
   indexHierarchyRelations,
   type HierarchyRelationIndexes,
 } from "../graph/hierarchy-integrity.js";
@@ -1229,11 +1229,13 @@ function matchesListScopeFilters(
   filters: ListFilterSet,
   parentsByChild?: HierarchyRelationIndexes["parents_by_child"],
 ): boolean {
-  const logicalParentIds = parentsByChild
-    ? (parentsByChild.get(item.id.trim().toLowerCase()) ?? [])
-    : [item.parent?.trim().toLowerCase()].filter(
-        (value): value is string => value !== undefined,
-      );
+  const scalarParent = item.parent?.trim().toLowerCase();
+  const logicalParentIds = [
+    ...new Set([
+      ...(parentsByChild?.get(item.id.trim().toLowerCase()) ?? []),
+      ...(scalarParent ? [scalarParent] : []),
+    ]),
+  ];
   if (
     filters.parentFilter !== undefined &&
     !filters.treeEnabled &&
@@ -1436,11 +1438,7 @@ function orderItemsAsTree(
       if (visited.has(itemId)) continue;
       visited.add(itemId);
       ordered.push(
-        withTreeMetadata(
-          item,
-          0,
-          childrenByParent.get(itemId)!.length,
-        ),
+        withTreeMetadata(item, 0, childrenByParent.get(itemId)?.length ?? 0),
       );
     }
   }
@@ -2051,12 +2049,10 @@ export async function runList(
       ordering.treeEnabled || trimNonEmpty(options.parent) !== undefined;
     const hierarchyIndexes = needsHierarchyIndexes
       ? indexHierarchyRelations(
-          analyzeHierarchyIntegrity(
+          collectHierarchyRelations(
             items,
-            (itemStatus) =>
-              isTerminalStatus(itemStatus, runtime.statusRegistry),
             resolveWorkspaceRelationshipKindRegistry(),
-          ).relations,
+          ),
         )
       : undefined;
     appendUnknownTagWarning(items, options.tag, listWarnings);

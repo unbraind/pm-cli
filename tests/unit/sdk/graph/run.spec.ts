@@ -707,8 +707,14 @@ describe("runGraph", () => {
         acyclic: true,
         relation_count: 2,
         cycle_count: 0,
+        active_cycle_count: 0,
+        legacy_cycle_count: 0,
         cardinality_violation_count: 0,
+        active_cardinality_violation_count: 0,
+        legacy_cardinality_violation_count: 0,
         parent_divergence_count: 0,
+        active_parent_divergence_count: 0,
+        legacy_parent_divergence_count: 0,
         cycles: [],
       });
 

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1768,
+    "covered_symbols": 1769,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1769
+    "required_symbols": 1770
   },
   "breaking_acknowledgements": [
     {
@@ -992,6 +992,14 @@
       ],
       "package_version": "2026.8.21",
       "reason": "Extend the existing test-only health diagnostics surface with hierarchy warning rendering coverage."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GraphHierarchySummary",
+        "signature ./sdk/graph:GraphHierarchySummary"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Add optional active and terminal-only hierarchy defect counts without removing or narrowing existing GraphHierarchySummary fields"
     }
   ],
   "entrypoints": {
@@ -3085,6 +3093,12 @@
           "kind": "function",
           "name": "collectErrorCauseCodes",
           "signature": "(error: unknown) => string | calls: (error: unknown) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectHierarchyRelations",
+          "signature": "(items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[] | calls: (items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[]"
         },
         {
           "classification": "supported",
@@ -6528,7 +6542,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphHierarchySummary",
-          "signature": "export interface GraphHierarchySummary { acyclic: boolean; relation_count: number; cycle_count: number; cardinality_violation_count: number; parent_divergence_count: number; cycles?: string[][]; }"
+          "signature": "export interface GraphHierarchySummary { acyclic: boolean; relation_count: number; cycle_count: number; active_cycle_count?: number; legacy_cycle_count?: number; cardinality_violation_count: number; active_cardinality_violation_count?: number; legacy_cardinality_violation_count?: number; parent_divergence_count: number; active_parent_divergence_count?: number; legacy_parent_divergence_count?: number; cycles?: string[][]; }"
         },
         {
           "classification": "supported",
@@ -22985,6 +22999,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "collectHierarchyRelations",
+          "signature": "(items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[] | calls: (items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "collectMissingDependencyTargetIds",
           "signature": "(dangling: DanglingDependencyReferenceSummary) => string[] | calls: (dangling: DanglingDependencyReferenceSummary) => string[]"
         },
@@ -23316,7 +23336,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphHierarchySummary",
-          "signature": "export interface GraphHierarchySummary { acyclic: boolean; relation_count: number; cycle_count: number; cardinality_violation_count: number; parent_divergence_count: number; cycles?: string[][]; }"
+          "signature": "export interface GraphHierarchySummary { acyclic: boolean; relation_count: number; cycle_count: number; active_cycle_count?: number; legacy_cycle_count?: number; cardinality_violation_count: number; active_cardinality_violation_count?: number; legacy_cardinality_violation_count?: number; parent_divergence_count: number; active_parent_divergence_count?: number; legacy_parent_divergence_count?: number; cycles?: string[][]; }"
         },
         {
           "classification": "supported",

@@ -111,18 +111,27 @@ describe("hierarchy mutation contract", () => {
         );
       }
 
-      const outcomes = await Promise.allSettled([
-        runUpdate(
-          "pm-parent-a",
-          { dep: ["id=pm-shared-child,kind=child"] },
-          { path: context.pmPath },
-        ),
-        runUpdate(
-          "pm-parent-b",
-          { dep: ["id=pm-shared-child,kind=child"] },
-          { path: context.pmPath },
-        ),
-      ]);
+      const inheritedLockWait = process.env.PM_LOCK_WAIT_MS;
+      delete process.env.PM_LOCK_WAIT_MS;
+      process.env.PM_LOCK_WAIT_MS = "3000";
+      let outcomes: PromiseSettledResult<unknown>[];
+      try {
+        outcomes = await Promise.allSettled([
+          runUpdate(
+            "pm-parent-a",
+            { dep: ["id=pm-shared-child,kind=child"] },
+            { path: context.pmPath },
+          ),
+          runUpdate(
+            "pm-parent-b",
+            { dep: ["id=pm-shared-child,kind=child"] },
+            { path: context.pmPath },
+          ),
+        ]);
+      } finally {
+        if (inheritedLockWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
+        else process.env.PM_LOCK_WAIT_MS = inheritedLockWait;
+      }
       expect(
         outcomes.filter((outcome) => outcome.status === "fulfilled"),
       ).toHaveLength(1);

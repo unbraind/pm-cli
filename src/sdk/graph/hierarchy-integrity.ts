@@ -265,7 +265,7 @@ function buildDependencyHierarchyRelation(
   };
 }
 
-function collectHierarchyRelations(
+function collectHierarchyRelationsFromItemMap(
   itemById: ReadonlyMap<string, HierarchyIntegrityItem>,
   registry: RelationshipKindRegistry,
 ): HierarchyRelation[] {
@@ -291,6 +291,17 @@ function collectHierarchyRelations(
   }
   return [...relationsByIdentity.values()].sort((left, right) =>
     relationIdentity(left).localeCompare(relationIdentity(right)),
+  );
+}
+
+/** Collect normalized hierarchy evidence without running defect analysis. */
+export function collectHierarchyRelations(
+  items: readonly HierarchyIntegrityItem[],
+  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
+): HierarchyRelation[] {
+  return collectHierarchyRelationsFromItemMap(
+    collectHierarchyItems(items),
+    registry,
   );
 }
 
@@ -369,7 +380,7 @@ export function analyzeHierarchyIntegrity(
   registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): HierarchyIntegrityAnalysis {
   const itemById = collectHierarchyItems(items);
-  const relations = collectHierarchyRelations(itemById, registry);
+  const relations = collectHierarchyRelationsFromItemMap(itemById, registry);
   const indexes = indexHierarchyRelations(relations);
   const terminalIds = new Set(
     [...itemById]

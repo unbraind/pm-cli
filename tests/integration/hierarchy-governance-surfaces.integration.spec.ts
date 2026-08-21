@@ -12,21 +12,34 @@ import {
   type TempPmContext,
 } from "../helpers/withTempPmPath.js";
 
-function injectHierarchyDependency(
+function injectHierarchyState(
   context: TempPmContext,
   holderId: string,
-  targetId: string,
-  terminal = false,
+  options: {
+    dependencyTargets?: string[];
+    parent?: string;
+    terminal?: boolean;
+  },
 ): void {
   const itemPath = path.join(context.pmPath, "tasks", `${holderId}.toon`);
   const raw = readFileSync(itemPath, "utf8");
+  const dependencyTargets = options.dependencyTargets ?? [];
+  const dependencies =
+    dependencyTargets.length === 0
+      ? ""
+      : `\ndependencies[${dependencyTargets.length}]{id,kind,created_at,author}:\n${dependencyTargets
+          .map(
+            (targetId) =>
+              `  ${targetId},child_of,"2026-08-21T00:00:00.000Z",surface-contract`,
+          )
+          .join("\n")}`;
   writeFileSync(
     itemPath,
     raw
-      .replace(/^(status: open)$/m, terminal ? "status: closed" : "$1")
+      .replace(/^(status: open)$/m, options.terminal ? "status: closed" : "$1")
       .replace(
         /^(priority:.*)$/m,
-        `$1\ndependencies[1]{id,kind,created_at,author}:\n  ${targetId},child_of,"2026-08-21T00:00:00.000Z",surface-contract`,
+        `$1${options.parent ? `\nparent: ${options.parent}` : ""}${dependencies}`,
       ),
     "utf8",
   );
@@ -45,8 +58,12 @@ describe("hierarchy governance surface parity", () => {
         "pm-surface-b",
         "Cross-surface hierarchy fixture",
       );
-      injectHierarchyDependency(context, "pm-surface-a", "pm-surface-b");
-      injectHierarchyDependency(context, "pm-surface-b", "pm-surface-a");
+      injectHierarchyState(context, "pm-surface-a", {
+        dependencyTargets: ["pm-surface-b"],
+      });
+      injectHierarchyState(context, "pm-surface-b", {
+        dependencyTargets: ["pm-surface-a"],
+      });
       clearItemMetadataEnvelopeMemo();
 
       const validate = await runValidate(
@@ -88,6 +105,8 @@ describe("hierarchy governance surface parity", () => {
         { path: context.pmPath },
       )) as GraphAnalyzeResult;
       expect(graph.hierarchy.cycle_count).toBe(1);
+      expect(graph.hierarchy.active_cycle_count).toBe(1);
+      expect(graph.hierarchy.legacy_cycle_count).toBe(0);
       expect(graph.hierarchy.acyclic).toBe(false);
       expect(graph.hierarchy.cycles).toEqual([
         ["pm-surface-a", "pm-surface-b"],
@@ -107,8 +126,14 @@ describe("hierarchy governance surface parity", () => {
         "pm-legacy-b",
         "Cross-surface hierarchy fixture",
       );
-      injectHierarchyDependency(context, "pm-legacy-a", "pm-legacy-b", true);
-      injectHierarchyDependency(context, "pm-legacy-b", "pm-legacy-a", true);
+      injectHierarchyState(context, "pm-legacy-a", {
+        dependencyTargets: ["pm-legacy-b"],
+        terminal: true,
+      });
+      injectHierarchyState(context, "pm-legacy-b", {
+        dependencyTargets: ["pm-legacy-a"],
+        terminal: true,
+      });
       clearItemMetadataEnvelopeMemo();
 
       const validate = await runValidate(
@@ -121,19 +146,75 @@ describe("hierarchy governance surface parity", () => {
       expect(validate.warnings).not.toContain(
         "validate_hierarchy_parent_cycle:1",
       );
+      const strictValidate = await runValidate(
+        { checkLifecycle: true, parentCycleSeverity: "error" },
+        { path: context.pmPath },
+      );
+      expect(strictValidate.warnings).toContain(
+        "validate_legacy_hierarchy_parent_cycle:1",
+      );
+      expect(strictValidate.warnings).not.toContain(
+        "validate_legacy_hierarchy_parent_cycle_error:1",
+      );
 
       const health = await runHealth(
         { path: context.pmPath },
         { skipDrift: true, skipVectors: true },
       );
-    expect(health.warnings).toContain(
-      "integrity_legacy_hierarchy_cycle:pm-legacy-a,pm-legacy-b",
-    );
-    expect(health.ok).toBe(true);
-    expect(health.checks.find((check) => check.name === "integrity")).toMatchObject({
-      status: "ok",
-      ok: true,
+      expect(health.warnings).toContain(
+        "integrity_legacy_hierarchy_cycle:pm-legacy-a,pm-legacy-b",
+      );
+      expect(health.ok).toBe(true);
+      expect(
+        health.checks.find((check) => check.name === "integrity"),
+      ).toMatchObject({
+        status: "ok",
+        ok: true,
+      });
+      const graph = (await runGraph(
+        "analyze",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphAnalyzeResult;
+      expect(graph.hierarchy).toMatchObject({
+        cycle_count: 1,
+        active_cycle_count: 0,
+        legacy_cycle_count: 1,
+      });
     });
+  });
+
+  it("separates terminal-only cardinality and divergence debt in graph summaries", async () => {
+    await withTempPmPath(async (context) => {
+      for (const id of ["pm-parent-a", "pm-parent-b", "pm-legacy-child"]) {
+        createTaskFixture(context, id, "Cross-surface hierarchy fixture");
+      }
+      injectHierarchyState(context, "pm-parent-a", { terminal: true });
+      injectHierarchyState(context, "pm-parent-b", { terminal: true });
+      injectHierarchyState(context, "pm-legacy-child", {
+        dependencyTargets: ["pm-parent-b"],
+        parent: "pm-parent-a",
+        terminal: true,
+      });
+      clearItemMetadataEnvelopeMemo();
+
+      const graph = (await runGraph(
+        "analyze",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphAnalyzeResult;
+      expect(graph.hierarchy).toMatchObject({
+        cardinality_violation_count: 1,
+        active_cardinality_violation_count: 0,
+        legacy_cardinality_violation_count: 1,
+        parent_divergence_count: 1,
+        active_parent_divergence_count: 0,
+        legacy_parent_divergence_count: 1,
+      });
     });
   });
 });

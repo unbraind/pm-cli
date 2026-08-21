@@ -8,10 +8,7 @@ import {
   statusIsTerminal,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
-import {
-  createRelationshipKindRegistry,
-  type RelationshipKindRegistry,
-} from "../relationships.js";
+import type { RelationshipKindRegistry } from "../relationships.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import { analyzeHierarchyIntegrity } from "../graph/hierarchy-integrity.js";
 import type { ValidateItem } from "./validate-item-reader.js";
@@ -81,14 +78,12 @@ function appendDependencyHierarchyEdges(
 /** Build canonical child-to-parent adjacency across every hierarchy spelling. */
 export function buildLifecycleParentGraph(
   items: ValidateItem[],
-  relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
+  relationshipRegistry: RelationshipKindRegistry = resolveWorkspaceRelationshipKindRegistry(),
 ): Map<string, string[]> {
   const canonicalIdByLowercase = new Map(
     items.map((item) => [item.id.toLowerCase(), item.id]),
   );
-  const graph = new Map(
-    items.map((item) => [item.id, [] as string[]]),
-  );
+  const graph = new Map(items.map((item) => [item.id, [] as string[]]));
   for (const item of [...items].sort((left, right) =>
     left.id.localeCompare(right.id),
   )) {
@@ -143,10 +138,12 @@ export function detectLifecycleParentCycles(
   const cycleComponents = hierarchy.cycles.map((cycle) => cycle.item_ids);
   return {
     cycle_count: cycleComponents.length,
-    active_cycle_count: hierarchy.cycles.filter((cycle) => !cycle.legacy_terminal)
-      .length,
-    legacy_cycle_count: hierarchy.cycles.filter((cycle) => cycle.legacy_terminal)
-      .length,
+    active_cycle_count: hierarchy.cycles.filter(
+      (cycle) => !cycle.legacy_terminal,
+    ).length,
+    legacy_cycle_count: hierarchy.cycles.filter(
+      (cycle) => cycle.legacy_terminal,
+    ).length,
     cycle_item_ids: [...new Set(cycleComponents.flat())].sort(),
     cycle_sample_paths: cycleComponents.map((component) =>
       resolveLifecycleDependencyCycleSamplePath(component, graph).join("->"),

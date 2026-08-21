@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[5]: "area:graph",cycle-detection,hierarchy,integrity,validation
 created_at: "2026-07-25T20:39:41.651Z"
-updated_at: "2026-08-21T06:55:03.724Z"
-closed_at: "2026-08-21T05:34:36.522Z"
-completed_at: "2026-08-21T05:34:36.522Z"
+updated_at: "2026-08-21T12:56:31.817Z"
+closed_at: "2026-08-21T12:56:16.523Z"
+completed_at: "2026-08-21T12:56:16.523Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Cycle detection covers every dependency kind the relationship registry canonicalizes to a hierarchy edge, not only the ordering kinds, and a mutation that would close such a cycle fails fast with the same contract the scalar parent field already enforces; A regression test asserts no item can be reported as both an ancestor and a descendant of the same item by pm graph, for every accepted kind spelling in the declared dependency-kind domain; validate lifecycle, pm health, and pm graph analyze agree on cycle count for a corpus whose cycles are built from dependency rows rather than the parent scalar; The related-edge false-cycle behaviour fixed under pm-6irg does not regress: the reciprocal-related and all-related-loop corpus stays green; Hierarchy cycles already stored on terminal items are reported as legacy findings with their holders named, and are never repaired by mutating closed items; The post-merge composition case is covered: a randomized branch pair that each add one sound hierarchy edge and merge into a cycle fails the merge conformance suite"
 parent: pm-96h7
 risk: high
 confidence: 85
-resolution: "Unified scalar and registry-declared dependency hierarchy into one analyzer and enforced its cycle, cardinality, divergence, and missing-reference contracts before persistence and across graph, validation, health, and readers."
-expected_result: "Every hierarchy spelling and storage channel shares one registry-driven direction, cardinality, cycle, and read contract; invalid mutations fail without persistence and legacy defects remain visible."
-actual_result: "Dependency-row hierarchy cycles and divergences were previously accepted and omitted from graph, health, and several reader surfaces; the completed implementation now rejects and reports them consistently."
+resolution: "A registry-driven hierarchy analyzer now normalizes scalar and dependency evidence, enforces every hierarchy spelling before persistence, classifies active versus terminal-only debt, and feeds graph, validate, health, list/tree/rollups, remediation, CLI, SDK, and MCP-consumed surfaces."
+expected_result: "Every registry-declared hierarchy relation has one direction/cardinality interpretation; new cycles, multiple parents, and scalar/dependency divergence fail before persistence; existing terminal-only debt remains visible and advisory; merge composition and readers agree."
+actual_result: "Before the fix, mutual child_of rows could make an item both ancestor and descendant while validate and graph reported acyclic, and dependency-backed hierarchy mutations bypassed scalar-parent safeguards."
 dependencies[8]{id,kind,created_at}:
   pm-6irg,related,"2026-07-25T20:39:41.651Z"
   pm-6x7o,related,"2026-07-25T20:39:41.651Z"
@@ -27,7 +27,7 @@ dependencies[8]{id,kind,created_at}:
   pm-p9a4,related,"2026-07-25T20:39:41.651Z"
   pm-bzmeaa,related,"2026-07-25T20:50:37.575Z"
   pm-96h7,implements,"2026-07-26T05:57:33.033Z"
-comments[15]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-07-26T11:46:25.644Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:47:23.836Z","harness:codex","Partial implementation evidence: validate lifecycle now builds one hierarchy graph from scalar parents plus every registry-declared hierarchy dependency spelling, including source_parent/target_parent directions, missing targets, aliases, dedupe, and closed holders; child_of cycles are now reported. Mutation fail-fast, graph/health agreement, legacy classification, and merge-conformance clauses remain outstanding, so this item remains incomplete."
   "2026-07-26T13:11:37.855Z","harness:codex","Verification 2026-07-26: repository release gates passed build/typecheck/docs/static quality, SDK surface/import-cost/transport ratchets, secret scan, version policy, 374 files and 6,420 tests at exact 100% statements/branches/functions/lines, packed npx smoke, and 88-command package-first dogfood. Aggregate stopped only at hosted-analysis because the branch exact SHA was not yet pushed. Manual unrelated-directory packed consumer also proved the installed SDK link, 85-action coverage, same-harness cross-session claim exclusion, and bounded 22 MB Bun output capture."
@@ -43,6 +43,8 @@ comments[15]{created_at,author,text}:
   "2026-08-21T05:44:50.317Z","harness:codex","PR evidence 2026-08-21: broad registry-driven hierarchy integrity delivery published as GitHub PR #1077 (https://github.com/unbraind/pm-cli/pull/1077) from codex/hierarchy-integrity-contracts at initial head fe0213cab. Hosted checks and complete AI review-thread disposition are pending."
   "2026-08-21T05:51:08.347Z","harness:codex","Hosted gate correction 2026-08-21: PR #1077 head 7c4d90776 passed coverage, CodeQL, Semgrep, Trivy, Windows, runtime, and compatibility checks but the defect-evidence gate correctly refused this post-epoch terminal Issue without escape_class and gate_evidence. Classified it as production_defect and bound it to the registry-driven every-spelling mutation/merge negative control plus local and hosted static/coverage/Windows owners; no waiver is used."
   "2026-08-21T06:55:03.724Z","harness:codex","Review remediation verification 2026-08-21: after addressing valid CodeRabbit findings and adding the workspace hierarchy writer lock, the definitive isolated full run passed 547 files and 7,676 tests with exact 100% statements (56157/56157), branches (41913/41913), functions (11684/11684), and lines (54158/54158). The first attempted rerun was invalidated by /tmp inode exhaustion (errno -122); a second home-based temp root correctly exposed ancestor tracker discovery, and the final /var/tmp run was fully isolated and clean."
+  "2026-08-21T07:38:06.659Z","harness:codex","Review cycle 2026-08-21: CodeRabbit exact-head review of b468869c0 produced actionable terminal-alias, legacy advisory-token, graph active/legacy projection, relation-only indexing, orphan parent-filter, and cycle-tree leaf findings. Implementing with focused negative controls; generated CHANGELOG wording suggestion will be evaluated against package-owned artifact policy."
+  "2026-08-21T12:56:15.501Z","harness:codex","Second-review implementation and verification 2026-08-21: resolved terminal alias parity, advisory-only terminal debt tokens, active versus terminal graph summary counts, relation-only hierarchy indexing, dangling scalar-parent filtering, and cycle-tree leaf retention. The collector is public through the graph SDK barrel; read paths no longer pay defect-analysis cost. Isolated full verification passed 547 files / 7,677 tests with exact 100% statements 56170/56170, branches 41920/41920, functions 11682/11682, and lines 54169/54169. TMPDIR=/var/tmp pnpm quality:static passed repository assurance, SDK/package parity, command and flag grammar, refusal closure, tracker-context quality, graph composition, record integrity, SDK cost, and transport floors."
 learnings[1]{created_at,author,text}:
   "2026-08-21T05:34:29.917Z","harness:codex","Hierarchy integrity must be normalized from registry direction and child-end cardinality before any consumer reasons about ancestors, descendants, cycles, or rollups. Mutation checks should compare before/after defect identities so legacy debt stays repairable while new debt fails closed. Terminal-only defects belong in visible advisory findings, not health failure state."
 files[37]{path,scope,note}:
@@ -91,7 +93,7 @@ tests[4]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Structured hierarchy refusal and recovery contract
   docs/RELATIONSHIP_GRAPH.md,project,Registry driven hierarchy integrity and compact audit output
-close_reason: "Completed registry-driven hierarchy integrity across mutation, SDK graph, CLI read, validation, health, governance, remediation, accepted spellings, terminal legacy classification, and merge-composition tests; full 7,673-test suite passes exact 100/100/100/100 and packed npx/bunx manual acceptance passed."
+close_reason: "Completed registry-driven hierarchy integrity and all exact-head review remediation: SDK, CLI, MCP/readers, mutation refusal, merge composition, active-versus-terminal debt, extension registries, token-efficient relation indexing, and deterministic cycle/tree behavior are covered by 7,677 tests at exact 100/100/100/100 plus the full static assurance suite."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

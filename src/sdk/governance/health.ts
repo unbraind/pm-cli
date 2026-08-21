@@ -6,6 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import {
@@ -688,8 +689,7 @@ async function buildIntegrityCheck(
   const statusRegistry = resolveRuntimeStatusRegistry(schema);
   const hierarchyIntegrity = analyzeHierarchyIntegrity(
     items,
-    (status) =>
-      statusRegistry.terminal_statuses.has(status.trim().toLowerCase()),
+    (status) => isTerminalStatus(status, statusRegistry),
     resolveWorkspaceRelationshipKindRegistry(),
   );
   const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);

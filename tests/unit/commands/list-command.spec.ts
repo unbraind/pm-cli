@@ -337,6 +337,7 @@ describe("runList", () => {
           [
             { ...openItem, id: "pm-cycle-a", parent: "pm-cycle-b" },
             { ...openItem, id: "pm-cycle-b", parent: "pm-cycle-a" },
+            { ...openItem, id: "pm-cycle-leaf", parent: "pm-cycle-a" },
             { ...openItem, id: "pm-rootless", parent: "pm-missing" },
           ] as never,
           undefined,
@@ -347,6 +348,7 @@ describe("runList", () => {
       ["pm-rootless", 0],
       ["pm-cycle-a", 0],
       ["pm-cycle-b", 0],
+      ["pm-cycle-leaf", 0],
     ]);
     expect(
       listInternals.withTreeMetadata(
@@ -541,6 +543,17 @@ describe("runList", () => {
         {},
       ),
     ).toEqual([]);
+    expect(
+      listInternals.applyFilters(
+        [{ ...openItem, parent: "pm-missing-parent" }],
+        undefined,
+        { parent: "pm-missing-parent" },
+        permissiveTypeRegistry as never,
+        statusRegistry,
+        {},
+        new Map(),
+      ),
+    ).toHaveLength(1);
     expect(
       listInternals.applyFilters(
         [{ ...openItem }],

@@ -80,9 +80,7 @@ import {
   assertProjectionModeChoice,
   type OutputProjectionDeclaration,
 } from "../output-projection.js";
-import {
-  collectDanglingDependencyReferences,
-} from "../graph/assembly.js";
+import { collectDanglingDependencyReferences } from "../graph/assembly.js";
 import {
   auditMergeAttributeFence,
   auditMergeDriverConfiguration,
@@ -2202,10 +2200,7 @@ function lifecycleCycleWarningToken(
     | "validate_lifecycle_dependency_cycles"
     | "validate_hierarchy_parent_cycle"
     | "validate_hierarchy_cardinality_violation"
-    | "validate_hierarchy_parent_divergence"
-    | "validate_legacy_hierarchy_parent_cycle"
-    | "validate_legacy_hierarchy_cardinality_violation"
-    | "validate_legacy_hierarchy_parent_divergence",
+    | "validate_hierarchy_parent_divergence",
   severity: ValidateDependencyCycleSeverity,
   count: number,
 ): string | null {
@@ -2213,6 +2208,17 @@ function lifecycleCycleWarningToken(
     return null;
   }
   return `${severity === "error" ? `${prefix}_error` : prefix}:${count}`;
+}
+
+function lifecycleAdvisoryWarningToken(
+  prefix:
+    | "validate_legacy_hierarchy_parent_cycle"
+    | "validate_legacy_hierarchy_cardinality_violation"
+    | "validate_legacy_hierarchy_parent_divergence",
+  severity: ValidateDependencyCycleSeverity,
+  count: number,
+): string | null {
+  return count > 0 && severity !== "off" ? `${prefix}:${count}` : null;
 }
 
 function buildLifecycleWarnings(
@@ -2264,17 +2270,17 @@ function buildLifecycleWarnings(
     parentCycleSeverity,
     hierarchyDivergenceCount,
   );
-  const legacyCycleWarning = lifecycleCycleWarningToken(
+  const legacyCycleWarning = lifecycleAdvisoryWarningToken(
     "validate_legacy_hierarchy_parent_cycle",
     parentCycleSeverity,
     legacyHierarchyCycleCount,
   );
-  const legacyCardinalityWarning = lifecycleCycleWarningToken(
+  const legacyCardinalityWarning = lifecycleAdvisoryWarningToken(
     "validate_legacy_hierarchy_cardinality_violation",
     parentCycleSeverity,
     legacyHierarchyCardinalityCount,
   );
-  const legacyDivergenceWarning = lifecycleCycleWarningToken(
+  const legacyDivergenceWarning = lifecycleAdvisoryWarningToken(
     "validate_legacy_hierarchy_parent_divergence",
     parentCycleSeverity,
     legacyHierarchyDivergenceCount,

@@ -24,5 +24,8 @@ export function createTaskFixture(
     ],
     { expectJson: true },
   );
-  expect(result.code).toBe(0);
+  expect(
+    result.code,
+    `create ${id} failed: ${result.stderr || result.stdout}`,
+  ).toBe(0);
 }

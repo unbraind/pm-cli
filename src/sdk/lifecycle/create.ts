@@ -30,6 +30,7 @@ import {
   resolvePriority,
   getFocusedItem,
   normalizeStatusInput,
+  isTerminalStatus,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
   type ItemTypeRegistry,
@@ -2485,6 +2486,7 @@ async function writeCreatedItem(params: {
     waitMs: settings.locks.wait_ms,
     required: hierarchyMutationRequired,
   });
+  let hierarchyLockHeld = hierarchyMutationRequired;
   let hookWarnings: string[] = [];
   try {
     const lockRelease = await acquireLock(
@@ -2525,8 +2527,7 @@ async function writeCreatedItem(params: {
           graphBeforeCreate,
           [...graphBeforeCreate, afterDocument.metadata],
           id,
-          (status) =>
-            statusRegistry.terminal_statuses.has(status.trim().toLowerCase()),
+          (status) => isTerminalStatus(status, statusRegistry),
           relationshipRegistry,
         );
       }
@@ -2587,6 +2588,10 @@ async function writeCreatedItem(params: {
           await removeFileIfExists(itemPath);
           throw error;
         }
+        if (hierarchyLockHeld) {
+          await hierarchyLockRelease();
+          hierarchyLockHeld = false;
+        }
         derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
           pmRoot,
           preferredFormat: settings.item_format,
@@ -2643,7 +2648,7 @@ async function writeCreatedItem(params: {
       await lockRelease();
     }
   } finally {
-    await hierarchyLockRelease();
+    if (hierarchyLockHeld) await hierarchyLockRelease();
   }
   return hookWarnings;
 }

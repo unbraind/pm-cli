@@ -13,7 +13,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import type { ItemMetadata } from "../types/index.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "./graph/assembly.js";
 import {
-  analyzeHierarchyIntegrity,
+  collectHierarchyRelations,
   indexHierarchyRelations,
 } from "./graph/hierarchy-integrity.js";
 
@@ -103,11 +103,10 @@ export function buildItemChildrenRollup(
     ]),
   );
   const hierarchyIndexes = indexHierarchyRelations(
-    analyzeHierarchyIntegrity(
+    collectHierarchyRelations(
       candidates,
-      (status) => isTerminalStatus(status, statusRegistry),
       resolveWorkspaceRelationshipKindRegistry(),
-    ).relations,
+    ),
   );
   const childIds = new Set(
     hierarchyIndexes.children_by_parent.get(normalizedParentId) ?? [],

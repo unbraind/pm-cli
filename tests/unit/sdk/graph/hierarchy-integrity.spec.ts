@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeHierarchyIntegrity,
   assertHierarchyMutationAllowed,
+  collectHierarchyRelations,
   formatHierarchyRelation,
 } from "../../../../src/sdk/graph/hierarchy-integrity.js";
 import { createRelationshipKindRegistry } from "../../../../src/sdk/relationships.js";
@@ -46,7 +47,7 @@ function dependency(id: string, kind: string): Dependency {
 
 describe("hierarchy integrity", () => {
   it("normalizes scalar, canonical, inverse, and alias spellings into one parent relation", () => {
-    const analysis = analyzeHierarchyIntegrity([
+    const items = [
       item("pm-parent", {
         dependencies: [
           dependency("pm-child-b", "child"),
@@ -59,7 +60,8 @@ describe("hierarchy integrity", () => {
       item("pm-child-d", {
         dependencies: [dependency("pm-parent", "child_of")],
       }),
-    ]);
+    ];
+    const analysis = analyzeHierarchyIntegrity(items);
 
     expect(
       analysis.relations.map((row) => [
@@ -77,6 +79,7 @@ describe("hierarchy integrity", () => {
     expect(analysis.cycles).toEqual([]);
     expect(analysis.cardinality_violations).toEqual([]);
     expect(analysis.divergences).toEqual([]);
+    expect(collectHierarchyRelations(items)).toEqual(analysis.relations);
   });
 
   it("reports active and terminal cycles with deterministic members", () => {
@@ -197,7 +200,9 @@ describe("hierarchy integrity", () => {
     expect(() =>
       assertHierarchyMutationAllowed(after, after, "pm-b"),
     ).not.toThrow();
-    expect(() => assertHierarchyMutationAllowed(before, after, " ")).not.toThrow();
+    expect(() =>
+      assertHierarchyMutationAllowed(before, after, " "),
+    ).not.toThrow();
   });
 
   it("rejects a new parent divergence before persistence but permits repair", () => {
