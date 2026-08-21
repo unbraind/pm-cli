@@ -7,7 +7,12 @@ import { normalizeExtensionNameForMatch } from "./shared.js";
 
 interface OutputActivationSummary {
   services: {
-    overrides: Array<{ service: string; layer: string; name: string }>;
+    overrides: Array<{
+      service: string;
+      layer: string;
+      name: string;
+      passThrough?: boolean;
+    }>;
   };
   renderers: {
     overrides: Array<{
@@ -40,6 +45,7 @@ export function collectGlobalOutputOverrideDoctorWarnings(
   ));
   const serviceWarnings = activationResult.services.overrides
     .filter((entry) => entry.service === "output_format")
+    .filter((entry) => entry.passThrough !== true)
     .filter((entry) => !commandScopedOwners.has(
       `${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`,
     ))

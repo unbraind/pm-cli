@@ -73,6 +73,7 @@ export const PM_READ_OUTPUT_SURFACES = [
   "docs",
   "stats",
   "aggregate",
+  "duplicates",
   "package-catalog",
   "package-manage",
   "comments-audit",
@@ -412,6 +413,7 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   docs: {},
   stats: {},
   aggregate: {},
+  duplicates: { amount: ["--limit"] },
   "package-catalog": {},
   "package-manage": {},
   "comments-audit": {},
@@ -1320,7 +1322,8 @@ function attachValidateDiagnosticRowContract(
         (entry): entry is string => typeof entry === "string",
       )
     : [];
-  const rowKeys = existingRowKeys.length > 0 ? existingRowKeys : diagnosticRowKeys;
+  const rowKeys =
+    existingRowKeys.length > 0 ? existingRowKeys : diagnosticRowKeys;
   const continuationRowKeys = [...new Set(diagnosticRowKeys)];
   return JSON.stringify(rowKeys) === JSON.stringify(existingRowKeys) &&
     JSON.stringify(continuationRowKeys) ===

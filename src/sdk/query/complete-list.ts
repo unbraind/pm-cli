@@ -18,6 +18,11 @@ export const PM_COMPLETE_LIST_FINDING_CODES = [
   "count_mismatch",
   "projection_incomplete",
   "field_omission",
+  "omission_receipt_missing",
+  "omission_receipt_invalid",
+  "read_output_missing",
+  "read_output_invalid",
+  "read_output_dimensions_incomplete",
   "budget_compaction",
   "budget_omission",
   "session_projection",
@@ -61,8 +66,8 @@ export interface PmCompleteListCertificate {
 export interface PmCompleteListResult extends ListFullResult {
   /** Exact proof that the returned rows represent the full tracker corpus. */
   complete_list: PmCompleteListCertificate;
-  /** Universal read receipt when the runtime attached one. */
-  read_output?: PmReadOutputReceipt;
+  /** Mandatory universal read receipt proving unbounded, uncompacted delivery. */
+  read_output: PmReadOutputReceipt;
 }
 
 /** Inspection report returned without throwing for policy and UI consumers. */
@@ -107,7 +112,7 @@ export class PmCompleteListValidationError extends Error {
       findings,
       recovery: {
         suggested_retry:
-          "pm list-all --full --strict-read --no-truncate --output-budget unbounded --json",
+          "pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json",
         sdk: "await client.listAllComplete()",
       },
     };
@@ -178,6 +183,27 @@ function inspectSourceScope(
     completeness.status !== "complete" && completeness.status !== "partial",
     "source_unchecked",
     "The source scan did not prove completeness.",
+  );
+  const unreadableItemCount = completeness.unreadable_item_count;
+  const unreadableDirectoryCount = completeness.unreadable_directory_count;
+  addFinding(
+    findings,
+    completeness.status === "complete" &&
+      (unreadableItemCount !== 0 || unreadableDirectoryCount !== 0) &&
+      Number.isSafeInteger(unreadableItemCount) &&
+      Number.isSafeInteger(unreadableDirectoryCount),
+    "source_incomplete",
+    "The source scan reports unreadable tracker artifacts despite a complete status.",
+  );
+  addFinding(
+    findings,
+    completeness.status === "complete" &&
+      (!Number.isSafeInteger(unreadableItemCount) ||
+        !Number.isSafeInteger(unreadableDirectoryCount) ||
+        Number(unreadableItemCount) < 0 ||
+        Number(unreadableDirectoryCount) < 0),
+    "source_unchecked",
+    "The source scan did not report safe non-negative unreadable counts.",
   );
 
   const filters = isRecord(candidate.filters) ? candidate.filters : {};
@@ -251,9 +277,51 @@ function inspectEnvelopeShape(
     : undefined;
   addFinding(
     findings,
+    omissionReceipt === undefined,
+    "omission_receipt_missing",
+    "The result carries no field-omission receipt.",
+  );
+  addFinding(
+    findings,
+    omissionReceipt !== undefined &&
+      (omissionReceipt.has_omissions !== false ||
+        omissionReceipt.omitted_field_group_count !== 0 ||
+        !Number.isSafeInteger(omissionReceipt.omitted_field_group_count) ||
+        !Array.isArray(omissionReceipt.omitted_field_groups) ||
+        omissionReceipt.omitted_field_groups.length !== 0),
+    "omission_receipt_invalid",
+    "The field-omission receipt is malformed or contradicts its no-omission claim.",
+  );
+  addFinding(
+    findings,
     omissionReceipt?.has_omissions === true,
     "field_omission",
     "The omission receipt reports withheld field groups.",
+  );
+}
+
+/** Return whether a universal read receipt cannot prove an intact list result. */
+function isInvalidCompleteListReadOutput(
+  readOutput: Record<string, unknown>,
+): boolean {
+  return (
+    readOutput.contract_version !== 1 ||
+    readOutput.command !== "list" ||
+    readOutput.within_budget !== true ||
+    readOutput.strings_compacted !== false ||
+    readOutput.rows_compacted !== false ||
+    readOutput.result_omitted !== false
+  );
+}
+
+/** Return whether the receipt proves every dimension required for an unbounded full read. */
+function hasCompleteListReadOutputDimensions(
+  readOutput: Record<string, unknown>,
+): boolean {
+  if (!Array.isArray(readOutput.requested_dimensions)) return false;
+  const requestedDimensions = new Set(readOutput.requested_dimensions);
+  return ["include", "amount", "cost"].every((dimension) =>
+    requestedDimensions.has(dimension),
   );
 }
 
@@ -265,6 +333,25 @@ function inspectOutputScope(
   const readOutput = isRecord(candidate.read_output)
     ? candidate.read_output
     : undefined;
+  addFinding(
+    findings,
+    readOutput === undefined,
+    "read_output_missing",
+    "The result carries no universal read-output receipt.",
+  );
+  addFinding(
+    findings,
+    readOutput !== undefined && isInvalidCompleteListReadOutput(readOutput),
+    "read_output_invalid",
+    "The universal read-output receipt does not prove an intact list result.",
+  );
+  addFinding(
+    findings,
+    readOutput !== undefined &&
+      !hasCompleteListReadOutputDimensions(readOutput),
+    "read_output_dimensions_incomplete",
+    "The universal read-output receipt does not prove full, unbounded include, amount, and cost dimensions.",
+  );
   addFinding(
     findings,
     readOutput?.strings_compacted === true ||
@@ -349,7 +436,7 @@ export function certifyCompleteListResult(
   }
   const result = candidate as ListFullResult & {
     items: ListedItem[];
-    read_output?: PmReadOutputReceipt;
+    read_output: PmReadOutputReceipt;
   };
   return {
     ...result,

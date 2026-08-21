@@ -814,9 +814,9 @@ export class PmClient {
   }
 
   /** Discover existing duplicate clusters without mutating tracker state. */
-  duplicates(
-    options: DuplicatesCommandOptions = {},
-  ): Promise<DuplicatesResult> {
+  duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<DuplicatesResult, Options> {
     return this.runTyped("duplicates", { options });
   }
 
@@ -1740,10 +1740,10 @@ export function stats<
 }
 
 /** Discover duplicate clusters without constructing a reusable client. */
-export function duplicates(
-  options: DuplicatesCommandOptions = {},
+export function duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<DuplicatesResult> {
+): ReadPromise<DuplicatesResult, Options> {
   return new PmClient(clientOptions).duplicates(options);
 }
 

@@ -2,22 +2,51 @@ id: pm-gh1072
 title: "GH-1072: pm install leaks user allow-scripts config into isolated package installs"
 description: GitHub issue #1072 reports that a non-empty user-level npm allow-scripts setting leaks into pm-owned isolated installs and makes npm reject an otherwise valid package despite --ignore-scripts.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:packages",configuration-isolation,github,security
 created_at: "2026-08-21T05:41:50.945Z"
-updated_at: "2026-08-21T06:19:23.728Z"
+updated_at: "2026-08-21T18:47:54.771Z"
+closed_at: "2026-08-21T18:47:54.214Z"
+completed_at: "2026-08-21T18:47:54.214Z"
 author: "harness:codex"
 acceptance_criteria: Sanitize inherited npm configuration for pm-owned installs without weakening --ignore-scripts; cover npm and packed npx/bunx installs with an ambient allow-scripts negative control; return an actionable structured error for truly invalid package policy; preserve project/global package isolation.
 parent: pm-tnud
 severity: high
 repro_steps: Configure user npm allow-scripts; initialize a fresh tracker; install a valid packed extension through npx with --project; observe npm EALLOWSCRIPTS.
-expected_result: Package installation runs inside a sanitized npm configuration boundary while pm remains authoritative for lifecycle-script policy.
-actual_result: Ambient user allow-scripts reaches the subprocess and aborts the install before activation.
+resolution: "Resolved: pm-owned npm installs remove inherited allow-scripts keys case-insensitively, set one empty authoritative key, and preserve unrelated environment configuration."
+expected_result: "Hostile lower- and mixed-case allow-scripts settings cannot escape into pm-owned npm installs, while unrelated npm and process configuration remains intact."
+actual_result: "Focused security coverage and replayable package artifact, audit, and secret gates pass; generated changelog traceability is linked."
 affected_version: 2026.8.20
 component: package installer
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-59gj,discovered_from,"2026-08-21T06:19:23.425Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-21T05:41:50.945Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for allow-scripts, EALLOWSCRIPTS, isolated install, and GitHub #1072; no canonical item existed. Source: https://github.com/unbraind/pm-cli/issues/1072"
+  "2026-08-21T17:06:12.222Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
+  "2026-08-21T17:45:41.433Z","harness:codex","Final evidence: SDK install execution now removes ambient npm_config_allow_scripts case-insensitively and supplies an empty NPM_CONFIG_ALLOW_SCRIPTS while preserving the caller environment; --ignore-scripts remains mandatory. Linked test passed (10/10). Manual fresh tarball acceptance passed through both npx and bunx with NPM_CONFIG_ALLOW_SCRIPTS=packed-safe-service-package while installing an npm: local package with runtime dependencies. Full suite passed 551 files / 7702 tests at exact 100% statements, branches, functions, and lines; package artifact, audit, secret, static-quality, and zero-duplication gates passed."
+  "2026-08-21T17:49:37.480Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+  "2026-08-21T18:47:51.912Z","harness:codex","PR review remediation evidence: mixed-case allow-scripts isolation and unrelated-environment preservation passed in focused run test-local-mt3amyla-r17evz (10/10). Replayable package artifact, production audit, and secret scan passed in run test-local-mt3awb8c-sq3zw3. CHANGELOG.md is linked as reviewed delivery documentation."
+files[2]{path,scope,note}:
+  src/sdk/extension/install-sources.ts,project,sanitize ambient npm allow-scripts configuration
+  tests/unit/extensions/extension-install-security.spec.ts,project,ambient policy regression coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts,project,240
+  "pnpm quality:package-artifact && pnpm audit --prod --audit-level=high && pnpm security:scan",project,1200
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt38omnx-k1r8nu,test,passed,"2026-08-21T17:44:36.657Z","2026-08-21T17:44:42.429Z","2026-08-21T17:44:42.429Z",1,0,0
+  test-local-mt3amyla-r17evz,test,passed,"2026-08-21T18:39:17.815Z","2026-08-21T18:39:23.806Z","2026-08-21T18:39:23.806Z",1,0,0
+  test-local-mt3awb8c-sq3zw3,test,passed,"2026-08-21T18:46:28.254Z","2026-08-21T18:46:40.092Z","2026-08-21T18:46:40.092Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated reviewed delivery record
+  docs/EXTENSIONS.md,project,isolated install policy documentation
+close_reason: Reclosed after CodeRabbit traceability and mixed-case security-fixture remediation.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1072
+  gate_id: extension-install-lifecycle-policy
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts
+  local_checks[3]: linked security test 10/10,manual packed npx and bunx npm install acceptance,"pnpm audit and pnpm security:scan"
+  hosted_checks[2]: CI / Gates (static),CI / Tests (coverage)
 body: ""

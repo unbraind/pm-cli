@@ -46,6 +46,24 @@ const completeResult = () => ({
   },
   filters: { status: "all", no_truncate: true, strict_read: true, runtime_filters: {} },
   projection: { mode: "full" as const, fields: null },
+  omission_receipt: {
+    has_omissions: false,
+    omitted_field_group_count: 0,
+    omitted_field_groups: [],
+  },
+  read_output: {
+    contract_version: 1,
+    command: "list" as const,
+    requested_dimensions: ["include", "amount", "cost"],
+    precedence: ["canonical", "legacy", "intent", "default"] as const,
+    legacy_aliases_used: ["--full", "--no-truncate"],
+    migration_hints: [],
+    estimated_tokens: 100,
+    within_budget: true,
+    strings_compacted: false,
+    rows_compacted: false,
+    result_omitted: false,
+  },
   sorting: { sort: "default" as const, order: "asc" as const },
   now: "2026-08-17T00:00:00.000Z",
 });
@@ -90,6 +108,8 @@ describe("complete list SDK contract", () => {
     ["source_incomplete", { completeness: { status: "partial", unreadable_item_count: 1, unreadable_directory_count: 0 } }],
     ["source_unchecked", { completeness: { status: "unchecked", unreadable_item_count: 0, unreadable_directory_count: 0 } }],
     ["source_unchecked", { completeness: undefined }],
+    ["source_incomplete", { completeness: { status: "complete", unreadable_item_count: 1, unreadable_directory_count: 0 } }],
+    ["source_unchecked", { completeness: { status: "complete", unreadable_item_count: -1, unreadable_directory_count: 0 } }],
     ["filtered_corpus", { filters: { status: "open", no_truncate: true, strict_read: true, runtime_filters: {} } }],
     ["filtered_corpus", { filters: null }],
     ["filtered_corpus", { filters: { status: "all", no_truncate: true, strict_read: true, runtime_filters: { severity: "critical" } } }],
@@ -103,6 +123,11 @@ describe("complete list SDK contract", () => {
     ["projection_incomplete", { projection: { mode: "brief", fields: ["id"] } }],
     ["projection_incomplete", { projection: null }],
     ["field_omission", { omission_receipt: { has_omissions: true, omitted_field_group_count: 1, omitted_field_groups: [{ name: "full_item_fields", restore_with: "--full" }] } }],
+    ["omission_receipt_missing", { omission_receipt: undefined }],
+    ["omission_receipt_invalid", { omission_receipt: { has_omissions: false, omitted_field_group_count: 1, omitted_field_groups: ["body"] } }],
+    ["read_output_missing", { read_output: undefined }],
+    ["read_output_invalid", { read_output: { ...completeResult().read_output, command: "search" } }],
+    ["read_output_dimensions_incomplete", { read_output: { ...completeResult().read_output, requested_dimensions: ["cost"] } }],
     ["budget_compaction", { read_output: { within_budget: true, strings_compacted: false, rows_compacted: true, result_omitted: false } }],
     ["budget_compaction", { output_budget_truncation: { reason: "output_budget_reached" } }],
     ["budget_omission", { output_budget_exceeded: { omitted_result: true } }],
@@ -128,7 +153,13 @@ describe("complete list SDK contract", () => {
       expect(error).toBeInstanceOf(PmCompleteListValidationError);
       if (error instanceof PmCompleteListValidationError) {
         expect(error.receipt.recovery.suggested_retry).toContain(
-          "pm list-all",
+          "pm list --all",
+        );
+        expect(error.receipt.recovery.suggested_retry).toContain(
+          "--output-include full",
+        );
+        expect(error.receipt.recovery.suggested_retry).toContain(
+          "--output-limit unbounded",
         );
       }
     }

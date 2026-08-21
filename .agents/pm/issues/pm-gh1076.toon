@@ -2,22 +2,54 @@ id: pm-gh1076
 title: "GH-1076: read-only duplicates rejects universal JSON output controls"
 description: "GitHub issue #1076 reports that pm duplicates emits structured TOON but is classified as a non-read surface, so universal JSON, lean, and token-accounting controls are refused."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,duplicates,github,output-contracts,token-efficiency
 created_at: "2026-08-21T05:42:19.703Z"
-updated_at: "2026-08-21T06:19:28.707Z"
+updated_at: "2026-08-21T18:47:58.162Z"
+closed_at: "2026-08-21T18:47:57.601Z"
+completed_at: "2026-08-21T18:47:57.601Z"
 author: "harness:codex"
 acceptance_criteria: Add red-first CLI/runtime contract coverage; return valid JSON with all existing duplicate result fields; declare applicable universal controls in the capability registry; preserve bounded default TOON and read-only behavior; cover CLI and SDK action parity.
 parent: pm-5t33or
 severity: medium
 repro_steps: Run pm duplicates --since 2026-08-20 --output-format json on 2026.8.21; observe universal-output refusal despite successful structured TOON output without the flag.
-expected_result: "Read-only duplicate diagnostics support stable JSON and declare the applicable projection, budget, lean, and token-accounting controls."
-actual_result: The command is globally classified as non-read and refuses JSON output.
+resolution: "Resolved: duplicates exposes the universal read-output contract and explicitly maps legacy --limit to the amount dimension across SDK and generated contracts."
+expected_result: "CLI and SDK duplicate reads publish applicable dimensions, stable receipts, and legacy amount migration metadata while preserving bounded TOON defaults."
+actual_result: Focused receipt coverage passes; generated contracts are current; zero duplication is recorded; changelog traceability is linked.
 affected_version: 2026.8.21
 component: universal read output controls
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,discovered_from,"2026-08-21T06:19:28.368Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-21T05:42:19.703Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for duplicates JSON, universal output controls, and GitHub #1076; no canonical item existed. Source: https://github.com/unbraind/pm-cli/issues/1076"
+  "2026-08-21T17:06:13.690Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
+  "2026-08-21T17:45:42.851Z","harness:codex","Final evidence: duplicates is registered on the universal read-output surface, CLI JSON and SDK calls return typed read_output receipts with include/amount/cost/encoding dimensions, and default TOON remains bounded without receipt noise. Linked integration test passed (1/1); fresh npx and bunx tarballs emitted valid duplicates receipts. Full suite passed 551 files / 7702 tests at exact 100% coverage; contract snapshots, package, and static gates passed."
+  "2026-08-21T17:49:39.043Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+  "2026-08-21T18:47:53.262Z","harness:codex","PR review remediation evidence: duplicates now declares --limit as its legacy amount alias, the generated runtime contract is refreshed, and integration coverage asserts the alias. Focused run test-local-mt3anlel-7rz6t7 passed 1/1; generated-contract and zero-duplication run test-local-mt3awmem-kslmtv passed. Duplicate final-evidence projection was removed through PM history and CHANGELOG.md is linked."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,generated SDK surface
+  src/sdk/read-output-contracts.ts,project,duplicates universal read registry
+  src/sdk/runtime.ts,project,typed read-output SDK return
+  tests/fixtures/contracts/full.json,project,generated runtime contract
+  tests/integration/duplicates-read-output.integration.spec.ts,project,CLI SDK and TOON parity
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/duplicates-read-output.integration.spec.ts,project,240
+  "pnpm contracts:check && pnpm lint:duplicates",project,1200
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt38pa1f-goif9i,test,passed,"2026-08-21T17:45:03.077Z","2026-08-21T17:45:12.723Z","2026-08-21T17:45:12.723Z",1,0,0
+  test-local-mt3anlel-7rz6t7,test,passed,"2026-08-21T18:39:43.738Z","2026-08-21T18:39:53.373Z","2026-08-21T18:39:53.373Z",1,0,0
+  test-local-mt3awmem-kslmtv,test,passed,"2026-08-21T18:46:45.561Z","2026-08-21T18:46:54.574Z","2026-08-21T18:46:54.574Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated reviewed delivery record
+  docs/COMMANDS.md,project,universal duplicates output guidance
+close_reason: "Reclosed after CodeRabbit legacy-alias contract, generated snapshot, and traceability remediation."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1076
+  gate_id: duplicates-read-output-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/duplicates-read-output.integration.spec.ts
+  local_checks[3]: linked duplicates receipt test 1/1,manual packed npx and bunx JSON receipt acceptance,contract snapshot check
+  hosted_checks[2]: CI / Gates (static),CI / Tests (coverage)
 body: ""
