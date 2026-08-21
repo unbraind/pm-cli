@@ -2,22 +2,48 @@ id: pm-gh1075
 title: "GH-1075: Windows Node 24 nightly validation failed at main 3e7ac007"
 description: The scheduled Nightly Validation workflow failed on windows-latest / Node 24 for main commit 3e7ac007725f6d2262407a56ac92e2d9e82838df in run 32447807398.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: ci,github,nightly,node24,windows
 created_at: "2026-08-21T05:42:10.609Z"
-updated_at: "2026-08-21T06:19:27.649Z"
+updated_at: "2026-08-21T16:11:12.313Z"
+closed_at: "2026-08-21T16:11:11.671Z"
+completed_at: "2026-08-21T16:11:11.671Z"
 author: "harness:codex"
 acceptance_criteria: Identify the exact failing test or infrastructure condition from the run logs; reproduce with a Windows-equivalent contract; fix product or harness without weakening the gate; rerun the full nightly matrix green and link exact-head evidence.
 parent: pm-wo8
 severity: high
 repro_steps: "Inspect https://github.com/unbraind/pm-cli/actions/runs/32447807398 and reproduce its windows-latest Node 24 job at exact main SHA 3e7ac007725f6d2262407a56ac92e2d9e82838df."
-expected_result: All scheduled Windows Node 24 validation gates pass on exact main.
-actual_result: The scheduled workflow completed with failure and created GitHub issue #1075.
+resolution: "Made search tracker fixtures host-path-native, reinstalled filesystem doubles in the nested suite, added project-root-to-.agents/pm search integration coverage, and assigned a Windows-safe 60-second budget only to the real git-composition acceptance test."
+expected_result: "All Nightly validation jobs pass on the exact fix branch, including windows-latest / Node 24, without weakening product preflight or test assertions."
+actual_result: "Nightly run 32500201496 passed Ubuntu Node 22/24/25, macOS Node 24, and windows-latest Node 24; the Windows job completed successfully in 11m34s. PR #1079 exact-head checks also passed."
 affected_version: 2026.8.21
 component: Nightly Validation workflow
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-zno2iu,incident_from,"2026-08-21T06:19:27.251Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-21T05:42:10.609Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and Windows nightly lineage for run 32447807398 and GitHub #1075; prior Windows items cover older exact failures, not this run. Source: https://github.com/unbraind/pm-cli/issues/1075"
+  "2026-08-21T15:42:09.786Z","harness:codex","Reproduction evidence 2026-08-21: exact-main manual Nightly run 32497483748 reproduced Windows Node 24 only. 65 search-command tests fail because the suite hard-codes D:\\tmp\\pm-search without initializing a tracker after fail-closed tracker preflight; context-integrity-primitives also timed out at 30s. Linux Node 22/24/25 and macOS Node 24 passed. Proceeding with harness-only repair; product preflight remains unchanged."
+  "2026-08-21T15:44:24.766Z","harness:codex","TDD green step: focused Linux verification passes 2 files / 98 tests. The red evidence is exact Windows Nightly runs 32447807398 and 32497483748; the fix resolves fixture roots with path.resolve in both suites and raises only the real git-composition test budget to 60s."
+  "2026-08-21T15:54:29.116Z","harness:codex","Local pre-review evidence 2026-08-21: focused verification passes 2 files / 98 tests; full repository coverage passes 547 files / 7,681 tests at exactly 100% statements (56,179/56,179), branches (41,937/41,937), functions (11,686/11,686), and lines (54,177/54,177); pnpm quality:static passes all mandatory gates. pm-changelog 2026.8.17 reports CHANGELOG.md unchanged while the item remains in progress. Hosted Windows exact-head evidence remains required before closure."
+  "2026-08-21T16:08:53.318Z","harness:codex","Correction to the 2026-08-21T15:44:24.766Z TDD comment: fixture-root normalization changed only tests/unit/commands/search-command.spec.ts. tests/unit/sdk/context-integrity-primitives.spec.ts changed only the real git-composition test timeout from the default 30 seconds to 60 seconds; its fixture roots and assertions were unchanged. This later mutation preserves the original hash-chained event while correcting its wording."
+  "2026-08-21T16:11:10.515Z","harness:codex","Hosted acceptance evidence: https://github.com/unbraind/pm-cli/actions/runs/32500201496 passed all five Nightly jobs at PR #1079 head 9a0fabe362276f0d92745003eae0a824614cc908. Windows Node 24 passed in 11m34s; Ubuntu Node 22/24/25 and macOS Node 24 also passed. The PR's full exact-head checks passed, including Windows regression, four coverage shards plus aggregate 100% gate, static, smokes, compatibility, CodeQL, Trivy, TruffleHog, Semgrep, ShellCheck, PSScriptAnalyzer, actionlint, Codecov, and CodSpeed."
+learnings[1]{created_at,author,text}:
+  "2026-08-21T16:11:11.010Z","harness:codex","Cross-platform command tests that mock fail-closed filesystem preflight must normalize fixture roots through node:path and exercise both direct tracker-root and explicit project-root-to-.agents/pm resolution. Real git-composition acceptance tests need an explicit CI-platform time budget while keeping assertions unchanged."
+files[2]{path,scope,note}:
+  tests/unit/commands/search-command.spec.ts,project,Resolve every tracker fixture path through the host path implementation and share readable-root mocks across nested search suites
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Give the real git merge-driver composition acceptance test an explicit Windows-safe time budget
+tests[3]{command,scope,timeout_seconds}:
+  TMPDIR=/var/tmp node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts,project,180
+  TMPDIR=/var/tmp node scripts/run-tests.mjs coverage,project,900
+  "TMPDIR=/var/tmp pnpm quality:static",project,900
+close_reason: "Resolved and proven on hosted Windows: Nightly run 32500201496 passed the full five-job matrix, PR #1079 exact-head checks passed, focused verification passes 2 files / 99 tests, and all CodeRabbit findings were handled with append-only PM evidence."
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-cli maintainers
+  gate_id: windows-nightly-search-fixtures
+  negative_control: Nightly runs 32447807398 and 32497483748 failed Windows Node 24 before the fix
+  local_checks[3]: focused 2 files / 99 tests,full 547 files / 7681 tests at 100/100/100/100,"pnpm quality:static"
+  hosted_checks[2]: PR #1079 Windows regression job,Nightly run 32500201496 five-job matrix
 body: ""

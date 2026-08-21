@@ -1,4 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import type { ItemMetadata } from "../../../src/types.js";
 import {
@@ -32,6 +39,27 @@ const {
   spawnSyncMock: vi.fn(),
 }));
 let activeExtensionRegistrations: Record<string, unknown> | null = null;
+
+const SEARCH_TRACKER_ROOTS = new Set(
+  [
+    "/tmp/not-init",
+    "/tmp/pm-search",
+    "/tmp/pm-search-hooks",
+    "/tmp/pm-search-realpath-fail",
+    "/tmp/pm-search-symlink",
+  ].map((root) => path.resolve(root)),
+);
+
+/** Install platform-resolved filesystem doubles for every search tracker fixture. */
+function mockReadableSearchTrackerRoots(): void {
+  statMock.mockImplementation(async (targetPath: string) => {
+    if (SEARCH_TRACKER_ROOTS.has(path.resolve(targetPath))) {
+      return { isDirectory: () => true, mode: 0o755 };
+    }
+    throw Object.assign(new Error("missing"), { code: "ENOENT" });
+  });
+  opendirMock.mockResolvedValue({ close: vi.fn(async () => {}) });
+}
 
 function createExtensionRegistrations(): Record<string, unknown> {
   return {
@@ -296,21 +324,7 @@ describe("runSearch", () => {
     readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
     listAllItemMetadataMock.mockResolvedValue([]);
     realpathMock.mockImplementation(async (targetPath) => targetPath);
-    statMock.mockImplementation(async (targetPath: string) => {
-      if (
-        new Set([
-          "/tmp/not-init",
-          "/tmp/pm-search",
-          "/tmp/pm-search-hooks",
-          "/tmp/pm-search-realpath-fail",
-          "/tmp/pm-search-symlink",
-        ]).has(targetPath)
-      ) {
-        return { isDirectory: () => true, mode: 0o755 };
-      }
-      throw Object.assign(new Error("missing"), { code: "ENOENT" });
-    });
-    opendirMock.mockResolvedValue({ close: vi.fn(async () => {}) });
+    mockReadableSearchTrackerRoots();
     runActiveOnReadHooksMock.mockResolvedValue([]);
     spawnSyncMock.mockReturnValue({
       status: 1,
@@ -327,6 +341,34 @@ describe("runSearch", () => {
     ).rejects.toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
     });
+  });
+
+  it("resolves an explicit project root into its initialized nested tracker", async () => {
+    const projectRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-search-project-root-"),
+    );
+    const trackerRoot = path.join(projectRoot, ".agents", "pm");
+    const normalizedTrackerRoot = path.resolve(trackerRoot);
+    mkdirSync(trackerRoot, { recursive: true });
+    writeFileSync(path.join(trackerRoot, "settings.json"), "{}\n", "utf8");
+    SEARCH_TRACKER_ROOTS.add(normalizedTrackerRoot);
+
+    try {
+      const result = await runSearch("token", {}, { path: projectRoot });
+
+      expect(result.count).toBe(0);
+      expect(readSettingsMock).toHaveBeenCalledWith(normalizedTrackerRoot);
+      expect(listAllItemMetadataMock).toHaveBeenCalledWith(
+        normalizedTrackerRoot,
+        "toon",
+        expect.any(Object),
+        [],
+        undefined,
+      );
+    } finally {
+      SEARCH_TRACKER_ROOTS.delete(normalizedTrackerRoot);
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
   });
 
   it("applies active content and governance-missing filters in the search predicate (kept vs excluded)", async () => {
@@ -4190,12 +4232,15 @@ describe("inline query syntax and highlighting (GH-157)", () => {
       listAllItemMetadataMock.mockReset();
       readFileMock.mockReset();
       realpathMock.mockReset();
+      statMock.mockReset();
+      opendirMock.mockReset();
       runActiveOnReadHooksMock.mockReset();
       spawnSyncMock.mockReset();
       activeExtensionRegistrations = null;
       pathExistsMock.mockResolvedValue(true);
       readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
       realpathMock.mockImplementation(async (targetPath) => targetPath);
+      mockReadableSearchTrackerRoots();
       runActiveOnReadHooksMock.mockResolvedValue([]);
       spawnSyncMock.mockReturnValue({ status: 1, stdout: "", stderr: "" });
     });
