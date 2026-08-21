@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { PmClient, listAllComplete } from "../../src/sdk/runtime.js";
+import {
+  PmClient,
+  PmCompleteListValidationError,
+  certifyCompleteListResult,
+  listAllComplete,
+} from "../../src/sdk/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("complete list SDK acceptance", () => {
@@ -86,6 +91,31 @@ describe("complete list SDK acceptance", () => {
         "closed body",
         "open body",
       ]);
+    });
+  });
+
+  it("executes the typed canonical recovery against a fresh tracker", async () => {
+    await withTempPmPath(async (context) => {
+      let recovery: string | undefined;
+      try {
+        certifyCompleteListResult({ items: [] });
+      } catch (error: unknown) {
+        expect(error).toBeInstanceOf(PmCompleteListValidationError);
+        if (error instanceof PmCompleteListValidationError) {
+          recovery = error.receipt.recovery.suggested_retry;
+        }
+      }
+      expect(recovery).toBe(
+        "pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json",
+      );
+      const recovered = context.runCli(recovery!.split(" ").slice(1), {
+        expectJson: true,
+      }).json;
+      expect(certifyCompleteListResult(recovered).complete_list).toMatchObject({
+        source_complete: true,
+        no_omissions: true,
+        unbounded: true,
+      });
     });
   });
 });

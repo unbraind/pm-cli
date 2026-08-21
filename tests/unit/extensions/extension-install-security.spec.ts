@@ -175,6 +175,32 @@ describe("untrusted extension runtime dependencies", () => {
       ]);
     },
   );
+
+  it("isolates the pm-owned npm lifecycle policy from ambient allow-scripts", async () => {
+    const calls: NodeJS.ProcessEnv[] = [];
+    await _testOnlyInstallSources.runNpmCommand(
+      ["install", "--ignore-scripts", "--"],
+      undefined,
+      async (_file, _args, options) => {
+        calls.push(options.env ?? {});
+        return { stdout: "", stderr: "" } as never;
+      },
+      "linux",
+      {
+        PATH: "/bin",
+        npm_config_allow_scripts: "unsafe-package",
+        NPM_CONFIG_REGISTRY: "https://registry.example.test",
+      },
+    );
+
+    expect(calls).toEqual([
+      {
+        PATH: "/bin",
+        NPM_CONFIG_REGISTRY: "https://registry.example.test",
+        NPM_CONFIG_ALLOW_SCRIPTS: "",
+      },
+    ]);
+  });
 });
 
 describe("local npm package archives", () => {

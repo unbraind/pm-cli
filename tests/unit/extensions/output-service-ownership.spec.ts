@@ -39,4 +39,22 @@ describe("output service doctor ownership", () => {
       ),
     ).toEqual([]);
   });
+
+  it("recognizes a host-enforced pass-through service contract", () => {
+    expect(
+      _testOnly.collectGlobalOutputOverrideDoctorWarnings({
+        services: {
+          overrides: [
+            {
+              service: "output_format",
+              layer: "project",
+              name: "declining-output",
+              passThrough: true,
+            },
+          ],
+        },
+        renderers: { overrides: [] },
+      } as never),
+    ).toEqual([]);
+  });
 });

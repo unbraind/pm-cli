@@ -18,6 +18,12 @@ describe("id generation and normalization", () => {
     expect(normalizePrefix(" PM ")).toBe("pm-");
     expect(normalizePrefix("task")).toBe("task-");
     expect(normalizePrefix("task-")).toBe("task-");
+    expect(normalizePrefix("Packed extension acceptance")).toBe(
+      "packed-extension-acceptance-",
+    );
+    expect(normalizePrefix("  release___candidate  ")).toBe(
+      "release-candidate-",
+    );
 
     expect(normalizeItemId("#A1", "pm-")).toBe("pm-a1");
     expect(normalizeItemId("pm-A1", "pm-")).toBe("pm-a1");

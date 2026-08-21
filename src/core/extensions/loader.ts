@@ -34,6 +34,7 @@ import {
   collectPreflightCollisionWarnings,
   normalizePreflightOverride,
 } from "./preflight-ownership.js";
+import { normalizeServiceOverrideOwnership } from "./service-ownership.js";
 import { assertCommandDefinitionMetadataStrings } from "./command-visibility-tier.js";
 import {
   buildImportExportContext,
@@ -184,6 +185,7 @@ import {
   type PreflightOverride,
   type ScopedPreflightOverrideDefinition,
   type ServiceOverride,
+  type ServiceOverrideOwnership,
   type ExtensionHookRegistry,
   type ExtensionServiceName,
   type ExtensionCommandArgumentDefinition,
@@ -2500,10 +2502,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
-  public registerService(
-    service: ExtensionServiceName,
-    override: ServiceOverride,
-  ): void {
+  public registerService(service: ExtensionServiceName, override: ServiceOverride, ownership: ServiceOverrideOwnership = {}): void {
     assertExtensionCapability(
       this.#loadedExtension,
       "services",
@@ -2531,6 +2530,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
       name: this.#loadedExtension.name,
       service: normalizedService as ExtensionServiceName,
       run: override,
+      ...(normalizeServiceOverrideOwnership(ownership)
+        ? { passThrough: true }
+        : {}),
     });
   }
 

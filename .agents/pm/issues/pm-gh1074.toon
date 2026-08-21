@@ -2,16 +2,19 @@ id: pm-gh1074
 title: "GH-1074: package doctor cannot distinguish a safe declining service override from a global interceptor"
 description: "GitHub issue #1074 reports that strict isolated package doctor fails a package whose output_format service always returns the documented handled:false decline decision, even though runtime behavior is inert and warning-free."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:packages",github,sdk,service-ownership
 created_at: "2026-08-21T05:42:05.594Z"
-updated_at: "2026-08-21T06:19:26.115Z"
+updated_at: "2026-08-21T17:49:50.987Z"
+closed_at: "2026-08-21T17:49:50.379Z"
+completed_at: "2026-08-21T17:49:50.379Z"
 author: "harness:codex"
 acceptance_criteria: "Add an SDK-declared service ownership or safe-pass-through contract; keep global interception fail-closed; align doctor diagnostics with the runtime handled:false decision; test third-party package, first-party collision, and negative interceptor controls; document author guidance."
 parent: pm-tnud
 severity: medium
 repro_steps: "Install a package that registers output_format and always returns handled:false; verify native output is unchanged; run package doctor --project --isolated --strict-exit; observe extension_output_service_override_global and exit 1."
+resolution: "Resolved: service overrides can declare strictly validated pass-through ownership that runtime and package doctor enforce without masking real interceptors."
 expected_result: Doctor retains warnings for genuine interceptors but recognizes declared ownership or a machine-verifiable unconditional decline.
 actual_result: A safe canonical decline is classified as a global interceptor and fails strict doctor.
 affected_version: 2026.8.21
@@ -19,6 +22,36 @@ component: package doctor
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-5teq,discovered_from,"2026-08-21T06:19:25.813Z","harness:codex","cli:update:dep",detected
   pm-nf7q,discovered_from,"2026-08-21T06:19:25.813Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-21T05:42:05.594Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for the exact diagnostic, output_format ownership, safe decline, and strict doctor; pm-5teq and pm-nf7q are related but do not cover machine-verifiable third-party decline. External reproduction lineage: pm-starter-gx6x. Source: https://github.com/unbraind/pm-cli/issues/1074"
+  "2026-08-21T17:06:13.182Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
+  "2026-08-21T17:45:42.324Z","harness:codex","Final evidence: public SDK authoring types accept strict { passThrough: true } ownership, loader validation rejects malformed/unknown metadata, runtime enforces pass-through by ignoring handled results with a stable violation diagnostic, and package doctor exempts only declared inert services while retaining interceptor warnings. Linked tests passed (11/11), including strict isolated third-party package doctor. Fresh npx/bunx tarball installs both passed strict isolated doctor. Full suite passed 551 files / 7702 tests at exact 100% coverage; zero-duplication/static/package gates passed."
+  "2026-08-21T17:45:51.413Z","harness:codex","Final evidence: public SDK authoring types accept strict passThrough ownership, loader validation rejects malformed or unknown metadata, runtime enforces pass-through by ignoring handled results with a stable violation diagnostic, and package doctor exempts only declared inert services while retaining interceptor warnings. Linked tests passed 11/11, including strict isolated third-party package doctor. Fresh npx and bunx tarball installs both passed strict isolated doctor. Full suite passed 551 files / 7702 tests at exact 100% coverage; zero-duplication, static, and package gates passed."
+  "2026-08-21T17:49:38.485Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+files[10]{path,scope,note}:
+  src/core/extensions/extension-hook-runtime.ts,project,host-enforced pass-through runtime
+  src/core/extensions/extension-types.ts,project,service pass-through ownership contract
+  src/core/extensions/loader.ts,project,strict ownership registration
+  src/core/extensions/service-ownership.ts,project,Validates the typed pass-through ownership metadata before extension activation
+  src/sdk/authoring.ts,project,public authoring type export
+  src/sdk/extension/output-ownership.ts,project,doctor classification
+  tests/integration/service-pass-through-package.integration.spec.ts,project,third-party strict doctor acceptance
+  tests/types/service-pass-through.test-d.ts,project,public SDK type contract
+  tests/unit/extensions/output-service-ownership.spec.ts,project,doctor ownership coverage
+  tests/unit/extensions/service-pass-through-contract.spec.ts,project,runtime negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/service-pass-through-contract.spec.ts tests/unit/extensions/output-service-ownership.spec.ts tests/integration/service-pass-through-package.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt38p28q-ttxl5x,test,passed,"2026-08-21T17:44:53.195Z","2026-08-21T17:45:02.618Z","2026-08-21T17:45:02.618Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package author pass-through guidance
+close_reason: Reclosed with required production-defect evidence for the service pass-through ownership regression gate.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1074
+  gate_id: service-pass-through-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/service-pass-through-contract.spec.ts tests/integration/service-pass-through-package.integration.spec.ts
+  local_checks[3]: linked service ownership tests 11/11,manual packed strict isolated package doctor acceptance,"pnpm lint:duplicates"
+  hosted_checks[2]: CI / Gates (static),CI / Tests (coverage)
 body: ""

@@ -6,6 +6,8 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
 
 Workspace-integrity contracts are tracked by [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), and [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon).
 
+Create-safe init prefix normalization is tracked by [pm-gh1073](../.agents/pm/issues/pm-gh1073.toon).
+
 ```bash
 pm <command> --help
 pm <command> --help --json
@@ -89,6 +91,14 @@ ID prefix without relying on the legacy positional form. `pm init ops` remains
 compatible, and supplying both forms is accepted only when they normalize to the
 same prefix; conflicting values fail with `init_id_prefix_conflict` instead of
 silently choosing one.
+Prefixes normalize through the same primitive used by item creation: letters
+become lowercase, each run of whitespace or punctuation becomes one `-`, edge
+separators are removed, and exactly one trailing `-` is stored. For example,
+`"Release Candidate"` persists as `release-candidate-`; an input with no ASCII
+letters or digits falls back to `pm-`. Path-like values remain invalid tracker
+targets rather than prefixes. To repair an older unsafe value, rerun init with a
+safe prefix and explicit replacement intent, for example
+`pm init --id-prefix "release candidate" --force --defaults`.
 Use `pm init --workspace <dir>` when `<dir>` is a project root; it creates `<dir>/.agents/pm`. A path-like positional remains the advanced tracker-root form and writes tracker files directly at that path. Both explicit target forms return `target.mode`, `target.tracker_root`, and tracker-scoped executable `next_steps` so agents can run the suggestions from any working directory.
 Implicit init discovery also reports whether the selected tracker is local or was found in an ancestor. If `pm init <name>` would change an ancestor tracker, the refusal names both directories and gives the safe current-directory retry: `pm init <name> --pm-path "$PWD/.agents/pm" --defaults`.
 `pm init --agent-guidance ask` is the default behavior: prompt in TTY only when AGENTS/CLAUDE guidance is missing and no decline is recorded.
@@ -163,6 +173,10 @@ Use `duplicates --status all` for a true whole-history duplicate check. The
 result echoes `filters.statuses: null` for the unrestricted corpus; named or
 custom statuses are normalized through the runtime status registry and an
 unknown status fails instead of returning a false-clean result.
+As a read-only structured surface, `duplicates` accepts the universal output
+controls, including `--output-format json`, `--lean`, projection/amount
+controls, and token accounting, while its default TOON output remains bounded.
+Tracked by [pm-gh1076](../.agents/pm/issues/pm-gh1076.toon).
 Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. Standard/deep reads expose a normalized `schedule` facet (`deadline`, `start_at`, `end_at`, `location`, reminders, and events) when scheduling metadata exists. Container-oriented built-ins (Epic, Feature, Milestone, and Plan) plus custom types automatically expose type-agnostic child counts and continuation metadata. Standard depth keeps that rollup counts-only; `--depth deep|full` or an explicit `--fields id,children` request adds the deterministic bounded child sample. Built-in leaf reads avoid a workspace scan unless children are explicitly requested. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
 
 When the strongest duplicate match is terminal because the same work recurred,

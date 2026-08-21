@@ -630,6 +630,12 @@ export type ServiceOverride = (
   context: ServiceOverrideContext,
 ) => unknown | ServiceOverrideDecision;
 
+/** Host-enforced ownership metadata for a service override. */
+export interface ServiceOverrideOwnership {
+  /** Declare that the callback may only decline. Any handled result is ignored and diagnosed by the host. */
+  passThrough?: boolean;
+}
+
 /** Documents the registered extension hook payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExtensionHook<THook> {
   /** Value that configures or reports layer for this contract. */
@@ -1430,6 +1436,8 @@ export interface RegisteredExtensionServiceOverride {
   service: ExtensionServiceName;
   /** Value that configures or reports run for this contract. */
   run: ServiceOverride;
+  /** Whether the host forbids this callback from handling the service payload. */
+  passThrough?: boolean;
 }
 
 /** Documents the registered extension renderer override payload exchanged by command, SDK, and package integrations. */
@@ -1734,6 +1742,7 @@ export interface ExtensionApi {
   registerService(
     service: ExtensionServiceName,
     override: ServiceOverride,
+    ownership?: ServiceOverrideOwnership,
   ): void;
   /** Value that configures or reports register flags for this contract. */
   registerFlags(targetCommand: string, flags: FlagDefinition[]): void;

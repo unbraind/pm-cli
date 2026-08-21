@@ -30,6 +30,7 @@ import type {
   PreflightOverrideResult,
   PreflightRuntimeDecision,
   ExtensionServiceRegistry,
+  RegisteredExtensionServiceOverride,
   ServiceOverrideContext,
   ServiceOverrideDecision,
   ServiceOverrideResult,
@@ -655,6 +656,27 @@ function isLegacyOutputPayloadEcho(
   );
 }
 
+function resolveMatchedServiceDecision(
+  matched: RegisteredExtensionServiceOverride,
+  decision: { handled: boolean; result: unknown },
+  warnings: string[],
+): ServiceOverrideResult | undefined {
+  if (!decision.handled) {
+    return undefined;
+  }
+  if (matched.passThrough === true) {
+    warnings.push(
+      `extension_service_pass_through_contract_violated:${matched.layer}:${matched.name}:${matched.service}`,
+    );
+    return undefined;
+  }
+  return {
+    handled: true,
+    result: decision.result,
+    warnings,
+  };
+}
+
 /** Implements run service override sync for the public runtime surface of this module. */
 export function runServiceOverrideSync(
   services: ExtensionServiceRegistry,
@@ -682,15 +704,12 @@ export function runServiceOverrideSync(
         );
         continue;
       }
-      const decision = resolveServiceOverrideValue(result, context);
-      if (!decision.handled) {
-        continue;
-      }
-      return {
-        handled: true,
-        result: decision.result,
+      const resolved = resolveMatchedServiceDecision(
+        matched,
+        resolveServiceOverrideValue(result, context),
         warnings,
-      };
+      );
+      if (resolved) return resolved;
     } catch {
       warnings.push(
         `extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`,
@@ -725,15 +744,12 @@ export async function runServiceOverride(
         );
         continue;
       }
-      const decision = resolveServiceOverrideValue(result, context);
-      if (!decision.handled) {
-        continue;
-      }
-      return {
-        handled: true,
-        result: decision.result,
+      const resolved = resolveMatchedServiceDecision(
+        matched,
+        resolveServiceOverrideValue(result, context),
         warnings,
-      };
+      );
+      if (resolved) return resolved;
     } catch {
       warnings.push(
         `extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`,

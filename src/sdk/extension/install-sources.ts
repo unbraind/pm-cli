@@ -365,12 +365,20 @@ async function runNpmCommand(
   cwd?: string,
   execRunner: typeof execFileAsync = execFileAsync,
   platform: NodeJS.Platform = process.platform,
+  environment: NodeJS.ProcessEnv = process.env,
 ): Promise<string> {
   const npmCommand = resolveNpmCommandName(platform);
+  const env = Object.fromEntries(
+    Object.entries(environment).filter(
+      ([key]) => key.toLowerCase() !== "npm_config_allow_scripts",
+    ),
+  );
+  env.NPM_CONFIG_ALLOW_SCRIPTS = "";
   try {
     const result = await execRunner(npmCommand, args, {
       cwd,
       encoding: "utf8",
+      env,
       shell: shouldRunNpmCommandInShell(platform),
     });
     return (result.stdout ?? "").trim();

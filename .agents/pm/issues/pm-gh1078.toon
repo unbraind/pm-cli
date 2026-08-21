@@ -2,11 +2,13 @@ id: pm-gh1078
 title: "GH-1078: Complete-list certification accepts absent or contradictory truth receipts and emits stale recovery"
 description: "The public certifyCompleteListResult SDK primitive in 2026.8.21 can issue a complete_list certificate when omission_receipt or read_output is absent, when completeness reports unreadable rows, or when omission fields contradict has_omissions=false. PmCompleteListValidationError also recommends deprecated list-all recovery without the current unbounded output-limit/include controls. This is the GitHub #1078 follow-on to the shipped fail-closed complete-list lineage in pm-y4aaol and belongs under the SDK-first architecture epic pm-usfg."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:query","area:sdk",complete-list,context-integrity,recovery
 created_at: "2026-08-21T12:55:33.362Z"
-updated_at: "2026-08-21T13:20:36.743Z"
+updated_at: "2026-08-21T17:49:53.637Z"
+closed_at: "2026-08-21T17:49:52.918Z"
+completed_at: "2026-08-21T17:49:52.918Z"
 author: "harness:codex"
 acceptance_criteria: "Require completeness.status=complete with safe-integer zero unreadable counts; require omission_receipt has_omissions=false, safe-integer zero count, and empty groups; require read_output contract v1 for list with within_budget=true, no compaction or omission, and complete include/amount/cost dimensions; reject output budget truncation/exceeded disclosures; return stable independent finding codes with absent, malformed, contradictory, and nonzero negative controls; emit canonical executable current recovery and prove it in a fresh-tracker acceptance test"
 parent: pm-usfg
@@ -16,6 +18,7 @@ reporter: GitHub issue #1078
 severity: high
 environment: @unbrained/pm-cli 2026.8.21 public SDK
 repro_steps: "Obtain the real pm list --all strict unbounded JSON envelope, then independently delete omission_receipt, contradict its count/groups, delete read_output, or set completeness unreadable_item_count=1; certifyCompleteListResult currently accepts each mutated envelope. Inspect PmCompleteListValidationError.recovery.suggested_retry for stale list-all syntax."
+resolution: "Resolved: complete-list certification fails closed on missing or inconsistent completeness receipts and supplies an executable strict unbounded recovery."
 expected_result: "Certification fails closed unless completeness, omission_receipt, and read_output independently prove complete unbounded delivery with stable finding codes; budget truncation disclosures are rejected; the canonical suggested retry uses list --all, output-include full, output-budget unbounded, and output-limit unbounded and executes successfully in a fresh tracker."
 actual_result: Missing or contradictory truth receipts are accepted and certified; recovery suggests pm list-all --full --strict-read --no-truncate --output-budget unbounded --json.
 affected_version: 2026.8.21
@@ -23,7 +26,30 @@ component: SDK complete-list certification
 regression: true
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-y4aaol,incident_from,"2026-08-21T12:55:33.362Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-21T12:55:33.362Z","harness:codex","text=Duplicate check 2026-08-21: searched all-status PM corpus for GH-1078, certifyCompleteListResult, contradictory receipts, complete-list certification, and stale list-all recovery. No duplicate exists. pm-y4aaol is the closed predecessor that shipped the first complete-list certificate and pm-usfg is the canonical open SDK-first parent; linked with incident_from plus scalar parent rather than a generic related edge. GitHub source: https://github.com/unbraind/pm-cli/issues/1078"
   "2026-08-21T13:20:36.743Z","harness:codex","Duplicate check 2026-08-21: searched all-status PM corpus for GH-1078, certifyCompleteListResult, contradictory receipts, complete-list certification, and stale list-all recovery. No duplicate exists. pm-y4aaol is the closed predecessor that shipped the first complete-list certificate and pm-usfg is the canonical open SDK-first parent; linked with incident_from plus scalar parent rather than a generic related edge. GitHub source: https://github.com/unbraind/pm-cli/issues/1078"
+  "2026-08-21T17:06:14.185Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
+  "2026-08-21T17:45:43.301Z","harness:codex","Final evidence: complete-list certification now fails closed on missing/invalid omission receipts, missing/invalid read_output, incomplete requested dimensions, compaction/omission indicators, and unsafe unreadable counts. Recovery is the exact executable strict unbounded list command. Linked unit+integration tests passed (36/36); fresh npx/bunx recovery execution and installed-tarball SDK certification passed. Full suite passed 551 files / 7702 tests at exact 100% coverage; package/static gates passed."
+  "2026-08-21T17:45:52.319Z","harness:codex","Final evidence: complete-list certification now fails closed on missing or invalid omission receipts, missing or invalid read_output, incomplete requested dimensions, compaction or omission indicators, and unsafe unreadable counts. Recovery is the exact executable strict unbounded list command. Linked unit and integration tests passed 36/36; fresh npx and bunx recovery execution and installed-tarball SDK certification passed. Full suite passed 551 files / 7702 tests at exact 100% coverage; package and static gates passed."
+  "2026-08-21T17:45:58.573Z","harness:codex","Final evidence: complete-list certification now fails closed on missing or invalid omission receipts, missing or invalid read_output, incomplete requested dimensions, compaction or omission indicators, and unsafe unreadable counts. Recovery is the exact executable strict unbounded list command. Linked unit and integration tests passed 36/36; fresh npx and bunx recovery execution and installed-tarball SDK certification passed. Full suite passed 551 files / 7702 tests at exact 100% coverage; package and static gates passed."
+  "2026-08-21T17:49:39.515Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+files[4]{path,scope,note}:
+  sdk/public-surface.json,project,required receipt SDK contract
+  src/sdk/query/complete-list.ts,project,fail-closed complete-list certification
+  tests/integration/sdk-complete-list.integration.spec.ts,project,executable recovery acceptance
+  tests/unit/sdk/query/complete-list.spec.ts,project,independent negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/query/complete-list.spec.ts tests/integration/sdk-complete-list.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mt38phv8-5h7his,test,passed,"2026-08-21T17:45:13.117Z","2026-08-21T17:45:22.868Z","2026-08-21T17:45:22.868Z",1,0,0
+close_reason: Reclosed with required production-defect evidence for the complete-list certification regression gate.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1078
+  gate_id: complete-list-certification-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/query/complete-list.spec.ts tests/integration/sdk-complete-list.integration.spec.ts
+  local_checks[3]: linked complete-list tests 36/36,manual packed recovery and SDK certification acceptance,exact full coverage 100/100/100/100
+  hosted_checks[2]: CI / Gates (static),CI / Tests (coverage)
 body: ""

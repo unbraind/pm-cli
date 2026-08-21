@@ -11,9 +11,13 @@ import { nextReproducibleToken } from "../reproducibility/context.js";
 
 /** Implements normalize prefix for the public runtime surface of this module. */
 export function normalizePrefix(input: string | undefined): string {
-  const normalized = (input ?? "").trim().toLowerCase();
+  const normalized = (input ?? "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/gu, "-")
+    .replaceAll(/^-+|-+$/gu, "");
   if (!normalized) return "pm-";
-  return normalized.endsWith("-") ? normalized : `${normalized}-`;
+  return `${normalized}-`;
 }
 
 /** Implements normalize raw item id for the public runtime surface of this module. */

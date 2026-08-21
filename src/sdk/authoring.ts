@@ -173,6 +173,7 @@ export type {
   ServiceOverride,
   ServiceOverrideContext,
   ServiceOverrideDecision,
+  ServiceOverrideOwnership,
   VectorStoreAdapterDefinition,
   VectorStoreDeleteContext,
   VectorStoreQueryContext,
