@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
+  applyReadOutputDimensions,
   applyReadOutputIncludeModes,
   normalizeReadOutputIncludeModeOptions,
   readOutputIncludeModeOptions,
+  resolveReadOutputDimensions,
 } from "../../../src/sdk/read-output-contracts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -56,6 +58,11 @@ function withoutReadOutputReceipts(value: unknown): unknown {
   );
 }
 
+/** Compare only public string-keyed options, excluding internal provenance. */
+function visibleOptions(options: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(options));
+}
+
 describe("read-output migration hints are executable", () => {
   it("recommends a canonical include token for at least one alias per shaped surface", () => {
     const recommendations = includeModeRecommendations();
@@ -89,7 +96,7 @@ describe("read-output migration hints are executable", () => {
           character.toUpperCase(),
         );
       expect(
-        options,
+        visibleOptions(options),
         `${command} --output-include ${token} must set the ${flag} option`,
       ).toEqual({ [optionName]: true });
     }
@@ -138,7 +145,7 @@ describe("read-output migration hints are executable", () => {
     );
     expect(applied.modes).toEqual(["brief"]);
     expect(applied.selectors).toEqual(["id", "title"]);
-    expect(options).toEqual({ brief: true });
+    expect(visibleOptions(options)).toEqual({ brief: true });
   });
 
   it("treats an unknown token as a field selector rather than a silent mode", () => {
@@ -159,16 +166,78 @@ describe("read-output migration hints are executable", () => {
       outputInclude: "brief,id",
     };
     normalizeReadOutputIncludeModeOptions("list", camelOptions);
-    expect(camelOptions).toEqual({ outputInclude: "id", brief: true });
+    expect(visibleOptions(camelOptions)).toEqual({
+      outputInclude: "id",
+      brief: true,
+    });
 
     const snakeOptions: Record<string, unknown> = {
       output_include: "brief",
     };
     normalizeReadOutputIncludeModeOptions("list", snakeOptions);
-    expect(snakeOptions).toEqual({
+    expect(visibleOptions(snakeOptions)).toEqual({
       outputInclude: undefined,
       output_include: undefined,
       brief: true,
+    });
+  });
+
+  it("preserves canonical provenance when normalization forwards a mode", () => {
+    const canonicalOnly: Record<string, unknown> = {
+      outputInclude: "full",
+      outputLimit: "unbounded",
+    };
+    normalizeReadOutputIncludeModeOptions("list", canonicalOnly);
+    expect(resolveReadOutputDimensions("list", canonicalOnly)).toMatchObject({
+      canonical_options_used: ["--output-include", "--output-limit"],
+      legacy_aliases_used: [],
+      migration_hints: [],
+    });
+    expect(
+      applyReadOutputDimensions("list", canonicalOnly, {
+        items: [{ id: "pm-1", title: "One" }],
+      }),
+    ).toMatchObject({
+      read_output: {
+        requested_dimensions: ["include", "amount", "cost"],
+        canonical_options_used: ["--output-include", "--output-limit"],
+        legacy_aliases_used: [],
+        migration_hints: [],
+      },
+    });
+
+    const mixed: Record<string, unknown> = {
+      outputInclude: "full",
+      outputLimit: "unbounded",
+      full: true,
+    };
+    normalizeReadOutputIncludeModeOptions("list", mixed);
+    expect(resolveReadOutputDimensions("list", mixed)).toMatchObject({
+      canonical_options_used: ["--output-include", "--output-limit"],
+      legacy_aliases_used: ["--full"],
+      migration_hints: [
+        "--full is a compatibility alias; prefer --output-include full.",
+      ],
+    });
+  });
+
+  it("records every canonical dimension independently of legacy aliases", () => {
+    expect(
+      resolveReadOutputDimensions("list", {
+        outputInclude: "id,title",
+        outputLimit: 2,
+        outputBudget: 800,
+        outputFormat: "json",
+      }),
+    ).toMatchObject({
+      canonical_options_used: [
+        "--output-include",
+        "--output-limit",
+        "--output-budget",
+        "--output-format",
+      ],
+      legacy_aliases_used: [],
+      migration_hints: [],
     });
   });
 
@@ -232,7 +301,15 @@ describe("read-output migration hints are executable", () => {
         const base = commandArguments[command];
         expect(base, `${command} needs an executable fixture`).toBeDefined();
         const legacy = runCli(
-          [command, ...(base ?? []), flag, "--json", "--no-extensions"],
+          [
+            command,
+            ...(base ?? []),
+            flag,
+            "--output-limit",
+            "unbounded",
+            "--json",
+            "--no-extensions",
+          ],
           { expectJson: true },
         );
         const canonical = runCli(
@@ -241,6 +318,8 @@ describe("read-output migration hints are executable", () => {
             ...(base ?? []),
             "--output-include",
             token,
+            "--output-limit",
+            "unbounded",
             "--json",
             "--no-extensions",
           ],
@@ -255,7 +334,47 @@ describe("read-output migration hints are executable", () => {
           withoutReadOutputReceipts(canonical.json),
           `${command} --output-include ${token} must preserve ${flag}`,
         ).toEqual(withoutReadOutputReceipts(legacy.json));
+        expect(
+          (legacy.json as { read_output: Record<string, unknown> }).read_output,
+          `${command} ${flag} must identify only the caller-supplied compatibility alias`,
+        ).toMatchObject({
+          canonical_options_used: ["--output-limit"],
+          legacy_aliases_used: [flag],
+        });
+        expect(
+          (canonical.json as { read_output: Record<string, unknown> })
+            .read_output,
+          `${command} --output-include ${token} must retain canonical provenance`,
+        ).toMatchObject({
+          canonical_options_used: ["--output-include", "--output-limit"],
+          legacy_aliases_used: [],
+          migration_hints: [],
+        });
       }
+
+      const mixed = runCli(
+        [
+          "list",
+          "--full",
+          "--output-include",
+          "full",
+          "--output-limit",
+          "unbounded",
+          "--json",
+          "--no-extensions",
+        ],
+        { expectJson: true },
+      );
+      expect(mixed.code).toBe(0);
+      expect(
+        (mixed.json as { read_output: Record<string, unknown> }).read_output,
+      ).toMatchObject({
+        canonical_options_used: ["--output-include", "--output-limit"],
+        legacy_aliases_used: ["--full"],
+        migration_hints: [
+          "--full is a compatibility alias; prefer --output-include full.",
+        ],
+      });
     });
   }, 30_000);
 });

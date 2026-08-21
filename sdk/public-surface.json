@@ -1031,6 +1031,17 @@
       ],
       "package_version": "2026.8.21",
       "reason": "Fail closed complete-list certification and add typed duplicates/service pass-through contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputReceipt",
+        "signature ./sdk:PmResolvedReadOutputDimensions",
+        "signature ./sdk/contracts:PmReadOutputReceipt",
+        "signature ./sdk/contracts:PmResolvedReadOutputDimensions",
+        "signature ./sdk/core:PmReadOutputReceipt"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Add optional canonical read-output provenance to typed receipts while preserving all existing fields and behavior."
     }
   ],
   "entrypoints": {
@@ -10617,7 +10628,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
           "classification": "supported",
@@ -10803,7 +10814,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmResolvedReadOutputDimensions",
-          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number | \"unbounded\">; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number | \"unbounded\">; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
         },
         {
           "classification": "supported",
@@ -19611,7 +19622,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
           "classification": "contract_data",
@@ -19689,7 +19700,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmResolvedReadOutputDimensions",
-          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number | \"unbounded\">; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number | \"unbounded\">; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
         },
         {
           "classification": "contract_data",
@@ -21135,7 +21146,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
           "classification": "supported",
