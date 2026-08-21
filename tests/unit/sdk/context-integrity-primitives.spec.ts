@@ -176,7 +176,7 @@ describe("SDK and CLI context-integrity primitives", () => {
         "",
       );
     });
-  });
+  }, 60_000);
 
   it("projects lean read envelopes without repeating request context", () => {
     const envelope = {

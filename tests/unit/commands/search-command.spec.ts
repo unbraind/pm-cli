@@ -33,6 +33,27 @@ const {
 }));
 let activeExtensionRegistrations: Record<string, unknown> | null = null;
 
+const SEARCH_TRACKER_ROOTS = new Set(
+  [
+    "/tmp/not-init",
+    "/tmp/pm-search",
+    "/tmp/pm-search-hooks",
+    "/tmp/pm-search-realpath-fail",
+    "/tmp/pm-search-symlink",
+  ].map((root) => path.resolve(root)),
+);
+
+/** Install platform-resolved filesystem doubles for every search tracker fixture. */
+function mockReadableSearchTrackerRoots(): void {
+  statMock.mockImplementation(async (targetPath: string) => {
+    if (SEARCH_TRACKER_ROOTS.has(path.resolve(targetPath))) {
+      return { isDirectory: () => true, mode: 0o755 };
+    }
+    throw Object.assign(new Error("missing"), { code: "ENOENT" });
+  });
+  opendirMock.mockResolvedValue({ close: vi.fn(async () => {}) });
+}
+
 function createExtensionRegistrations(): Record<string, unknown> {
   return {
     commands: [],
@@ -296,21 +317,7 @@ describe("runSearch", () => {
     readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
     listAllItemMetadataMock.mockResolvedValue([]);
     realpathMock.mockImplementation(async (targetPath) => targetPath);
-    statMock.mockImplementation(async (targetPath: string) => {
-      if (
-        new Set([
-          "/tmp/not-init",
-          "/tmp/pm-search",
-          "/tmp/pm-search-hooks",
-          "/tmp/pm-search-realpath-fail",
-          "/tmp/pm-search-symlink",
-        ]).has(targetPath)
-      ) {
-        return { isDirectory: () => true, mode: 0o755 };
-      }
-      throw Object.assign(new Error("missing"), { code: "ENOENT" });
-    });
-    opendirMock.mockResolvedValue({ close: vi.fn(async () => {}) });
+    mockReadableSearchTrackerRoots();
     runActiveOnReadHooksMock.mockResolvedValue([]);
     spawnSyncMock.mockReturnValue({
       status: 1,
@@ -4190,12 +4197,15 @@ describe("inline query syntax and highlighting (GH-157)", () => {
       listAllItemMetadataMock.mockReset();
       readFileMock.mockReset();
       realpathMock.mockReset();
+      statMock.mockReset();
+      opendirMock.mockReset();
       runActiveOnReadHooksMock.mockReset();
       spawnSyncMock.mockReset();
       activeExtensionRegistrations = null;
       pathExistsMock.mockResolvedValue(true);
       readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
       realpathMock.mockImplementation(async (targetPath) => targetPath);
+      mockReadableSearchTrackerRoots();
       runActiveOnReadHooksMock.mockResolvedValue([]);
       spawnSyncMock.mockReturnValue({ status: 1, stdout: "", stderr: "" });
     });
