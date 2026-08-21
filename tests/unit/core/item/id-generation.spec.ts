@@ -24,6 +24,7 @@ describe("id generation and normalization", () => {
     expect(normalizePrefix("  release___candidate  ")).toBe(
       "release-candidate-",
     );
+    expect(normalizePrefix("Project 42")).toBe("project-42-");
 
     expect(normalizeItemId("#A1", "pm-")).toBe("pm-a1");
     expect(normalizeItemId("pm-A1", "pm-")).toBe("pm-a1");

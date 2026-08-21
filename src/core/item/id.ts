@@ -15,7 +15,7 @@ export function normalizePrefix(input: string | undefined): string {
   let separatorPending = false;
 
   for (const character of (input ?? "").toLowerCase()) {
-    const codePoint = character.codePointAt(0) ?? 0;
+    const codePoint = character.charCodeAt(0);
     const isAsciiDigit = codePoint >= 48 && codePoint <= 57;
     const isAsciiLetter = codePoint >= 97 && codePoint <= 122;
     if (!isAsciiDigit && !isAsciiLetter) {
