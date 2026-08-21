@@ -703,6 +703,20 @@ describe("runGraph", () => {
       expect(analyze.knowledge.component_count).toBeGreaterThanOrEqual(2);
       expect(analyze.knowledge.orphans).toContain(isolate);
       expect(analyze.knowledge.hubs![0]!.degree).toBeGreaterThan(0);
+      expect(analyze.hierarchy).toMatchObject({
+        acyclic: true,
+        relation_count: 2,
+        cycle_count: 0,
+        active_cycle_count: 0,
+        legacy_cycle_count: 0,
+        cardinality_violation_count: 0,
+        active_cardinality_violation_count: 0,
+        legacy_cardinality_violation_count: 0,
+        parent_divergence_count: 0,
+        active_parent_divergence_count: 0,
+        legacy_parent_divergence_count: 0,
+        cycles: [],
+      });
 
       const summary = (await runGraph(
         "analyze",
@@ -717,6 +731,7 @@ describe("runGraph", () => {
       expect(summary.execution.cycles).toBeUndefined();
       expect(summary.knowledge.orphans).toBeUndefined();
       expect(summary.knowledge.hubs).toBeUndefined();
+      expect(summary.hierarchy.cycles).toBeUndefined();
     });
   });
 

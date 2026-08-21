@@ -332,6 +332,63 @@ describe("runList", () => {
         .map((item) => item.id),
     ).toEqual(["pm-b", "pm-a"]);
     expect(
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "pm-cycle-a", parent: "pm-cycle-b" },
+            { ...openItem, id: "pm-cycle-b", parent: "pm-cycle-a" },
+            { ...openItem, id: "pm-cycle-leaf", parent: "pm-cycle-a" },
+            { ...openItem, id: "pm-rootless", parent: "pm-missing" },
+          ] as never,
+          undefined,
+          undefined,
+        )
+        .map((item) => [item.id, item.tree_depth]),
+    ).toEqual([
+      ["pm-rootless", 0],
+      ["pm-cycle-a", 0],
+      ["pm-cycle-b", 0],
+      ["pm-cycle-leaf", 0],
+    ]);
+    expect(
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "Child-ID", parent: "Root-ID" },
+            {
+              ...openItem,
+              id: "Grandchild-ID",
+              parent: "Child-ID",
+            },
+          ] as never,
+          "root-id",
+          undefined,
+          undefined,
+          [
+            { ...openItem, id: "Root-ID" },
+            { ...openItem, id: "Child-ID", parent: "Root-ID" },
+            {
+              ...openItem,
+              id: "Grandchild-ID",
+              parent: "Child-ID",
+            },
+          ] as never,
+        )
+        .map((item) => [item.id, item.tree_parent]),
+    ).toEqual([
+      ["Child-ID", "Root-ID"],
+      ["Grandchild-ID", "Child-ID"],
+    ]);
+    expect(
+      listInternals.orderItemsAsTree(
+        [
+          { ...openItem, id: "Orphan-ID", parent: "Missing-Root" },
+        ] as never,
+        "missing-root",
+        undefined,
+      )[0]?.tree_parent,
+    ).toBe("missing-root");
+    expect(
       listInternals.withTreeMetadata(
         { ...openItem, parent: "  " } as never,
         2,
@@ -524,6 +581,17 @@ describe("runList", () => {
         {},
       ),
     ).toEqual([]);
+    expect(
+      listInternals.applyFilters(
+        [{ ...openItem, parent: "pm-missing-parent" }],
+        undefined,
+        { parent: "pm-missing-parent" },
+        permissiveTypeRegistry as never,
+        statusRegistry,
+        {},
+        new Map(),
+      ),
+    ).toHaveLength(1);
     expect(
       listInternals.applyFilters(
         [{ ...openItem }],

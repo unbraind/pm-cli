@@ -1,0 +1,23 @@
+id: pm-gh1072
+title: "GH-1072: pm install leaks user allow-scripts config into isolated package installs"
+description: GitHub issue #1072 reports that a non-empty user-level npm allow-scripts setting leaks into pm-owned isolated installs and makes npm reject an otherwise valid package despite --ignore-scripts.
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:packages",configuration-isolation,github,security
+created_at: "2026-08-21T05:41:50.945Z"
+updated_at: "2026-08-21T06:19:23.728Z"
+author: "harness:codex"
+acceptance_criteria: Sanitize inherited npm configuration for pm-owned installs without weakening --ignore-scripts; cover npm and packed npx/bunx installs with an ambient allow-scripts negative control; return an actionable structured error for truly invalid package policy; preserve project/global package isolation.
+parent: pm-tnud
+severity: high
+repro_steps: Configure user npm allow-scripts; initialize a fresh tracker; install a valid packed extension through npx with --project; observe npm EALLOWSCRIPTS.
+expected_result: Package installation runs inside a sanitized npm configuration boundary while pm remains authoritative for lifecycle-script policy.
+actual_result: Ambient user allow-scripts reaches the subprocess and aborts the install before activation.
+affected_version: 2026.8.20
+component: package installer
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-59gj,discovered_from,"2026-08-21T06:19:23.425Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-21T05:41:50.945Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for allow-scripts, EALLOWSCRIPTS, isolated install, and GitHub #1072; no canonical item existed. Source: https://github.com/unbraind/pm-cli/issues/1072"
+body: ""

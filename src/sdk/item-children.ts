@@ -11,6 +11,11 @@ import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import type { ItemMetadata } from "../types/index.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "./graph/assembly.js";
+import {
+  collectHierarchyRelations,
+  indexHierarchyRelations,
+} from "./graph/hierarchy-integrity.js";
 
 /** Maximum corpus rows inspected by one child projection. */
 export const MAX_CHILD_PROJECTION_ITEMS = 1_000_000;
@@ -71,8 +76,7 @@ export function buildItemChildrenRollup(
   }
   const normalizedParentId = parentId.trim().toLowerCase();
   const byStatus: Record<string, number> = {};
-  const children: ItemMetadata[] = [];
-  let active = 0;
+  const candidates: ItemMetadata[] = [];
   let scanned = 0;
   for (const candidate of corpus) {
     scanned += 1;
@@ -90,11 +94,32 @@ export function buildItemChildrenRollup(
         },
       );
     }
-    if (candidate.parent?.trim().toLowerCase() !== normalizedParentId) {
-      continue;
+    candidates.push(candidate);
+  }
+  const itemById = new Map(
+    candidates.map((candidate) => [
+      candidate.id.trim().toLowerCase(),
+      candidate,
+    ]),
+  );
+  const hierarchyIndexes = indexHierarchyRelations(
+    collectHierarchyRelations(
+      candidates,
+      resolveWorkspaceRelationshipKindRegistry(),
+    ),
+  );
+  const childIds = new Set(
+    hierarchyIndexes.children_by_parent.get(normalizedParentId) ?? [],
+  );
+  for (const candidate of candidates) {
+    if (candidate.parent?.trim().toLowerCase() === normalizedParentId) {
+      childIds.add(candidate.id.trim().toLowerCase());
     }
-    children.push(candidate);
-    const status = candidate.status.trim().toLowerCase();
+  }
+  const children = [...childIds].map((childId) => itemById.get(childId)!);
+  let active = 0;
+  for (const child of children) {
+    const status = child.status.trim().toLowerCase();
     byStatus[status] = (byStatus[status] ?? 0) + 1;
     if (!isTerminalStatus(status, statusRegistry)) {
       active += 1;

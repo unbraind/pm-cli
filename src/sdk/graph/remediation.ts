@@ -58,8 +58,7 @@ export interface RelationshipRemediationStep {
 }
 
 /** Tuning inputs accepted by dry-run remediation planning. */
-export interface RelationshipRemediationPlanOptions
-  extends RelationshipAuditOptions {
+export interface RelationshipRemediationPlanOptions extends RelationshipAuditOptions {
   /** Maximum witnessed redundant edges scanned into proposals; defaults to the audit sample bound. */
   redundancyLimit?: number;
 }
@@ -126,6 +125,42 @@ const FINDING_STEP_TEMPLATES: Record<
     confidence: "high",
     rationale:
       "The terminal holder contains a proven contradictory structured ordering row; remove it in a dedicated changelog-safe batch while preserving the scalar blocker as history.",
+  },
+  hierarchy_cycle: {
+    op: "investigate",
+    confidence: "low",
+    rationale:
+      "Cut or retype one exact structural relation in the cycle; the planner preserves every evidence row because intent determines the correct parent.",
+  },
+  legacy_hierarchy_cycle: {
+    op: "waive",
+    confidence: "high",
+    rationale:
+      "Terminal-only hierarchy cycles are historical debt; waive them unless an explicit closed-history repair is approved.",
+  },
+  hierarchy_cardinality_violation: {
+    op: "investigate",
+    confidence: "medium",
+    rationale:
+      "Choose the canonical parent and remove or retype the exact surplus hierarchy rows; the planner cannot infer ownership intent.",
+  },
+  legacy_hierarchy_cardinality_violation: {
+    op: "waive",
+    confidence: "high",
+    rationale:
+      "Multiple parents confined to terminal items are historical debt; waive them unless a dedicated history repair is approved.",
+  },
+  hierarchy_direction_violation: {
+    op: "investigate",
+    confidence: "medium",
+    rationale:
+      "Align the scalar parent and dependency-backed hierarchy rows to the intended canonical parent.",
+  },
+  legacy_hierarchy_direction_violation: {
+    op: "waive",
+    confidence: "high",
+    rationale:
+      "Divergent hierarchy storage confined to terminal items is historical debt; waive it unless a dedicated history repair is approved.",
   },
   // duplicate_edge findings are expanded into per-stored-edge remove steps by
   // the planner itself (see stepsFromDuplicateGroup); this template documents

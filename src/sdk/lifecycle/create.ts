@@ -30,6 +30,7 @@ import {
   resolvePriority,
   getFocusedItem,
   normalizeStatusInput,
+  isTerminalStatus,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
   type ItemTypeRegistry,
@@ -84,6 +85,9 @@ import {
   refreshItemMetadataDerivedIndex,
 } from "../item-metadata-index.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
+import { assertHierarchyMutationAllowed } from "../graph/hierarchy-integrity.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
+import { acquireHierarchyMutationLock } from "./hierarchy-mutation-lock.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -2469,149 +2473,182 @@ async function writeCreatedItem(params: {
     typeRegistry.type_to_folder,
   );
   const historyPath = getHistoryPath(pmRoot, id);
-  const lockRelease = await acquireLock(
+  const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
+  const hierarchyMutationRequired =
+    afterDocument.metadata.parent !== undefined ||
+    (afterDocument.metadata.dependencies ?? []).some(
+      (dependency) => relationshipRegistry.resolve(dependency.kind)?.hierarchy,
+    );
+  const hierarchyLockRelease = await acquireHierarchyMutationLock({
     pmRoot,
-    id,
-    settings.locks.ttl_seconds,
     author,
-    false,
-    settings.governance.force_required_for_stale_lock,
-    settings.locks.wait_ms,
-  );
+    ttlSeconds: settings.locks.ttl_seconds,
+    waitMs: settings.locks.wait_ms,
+    required: hierarchyMutationRequired,
+  });
+  let hierarchyLockHeld = hierarchyMutationRequired;
   let hookWarnings: string[] = [];
   try {
-    const graphBeforeCreate =
-      afterDocument.metadata.dependencies &&
-      afterDocument.metadata.dependencies.length > 0
-        ? await listAllItemMetadataLight(
-            pmRoot,
-            settings.item_format,
-            typeRegistry.type_to_folder,
-            undefined,
-            settings.schema,
-          )
-        : undefined;
-    const existing = await locateItem(
+    const lockRelease = await acquireLock(
       pmRoot,
       id,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    if (existing) {
-      throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
-    }
-    await runActiveBeforeMutationHooks({
-      pm_root: pmRoot,
-      operation: "create",
-      before: null,
-      after: afterDocument,
-      changed_fields: changedFields,
-      sdk: createMutationGuardSdk({
-        pmRoot,
-        settings,
-        typeToFolder: typeRegistry.type_to_folder,
-      }),
-    });
-    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-      pmRoot,
+      settings.locks.ttl_seconds,
       author,
-      {
-        required:
-          settings.governance.duplicate_detection_mode === "strict" &&
-          allowDuplicate !== true,
-      },
+      false,
+      settings.governance.force_required_for_stale_lock,
+      settings.locks.wait_ms,
     );
-    let derivedIndexWarnings: string[] = [];
     try {
-      if (
-        settings.governance.duplicate_detection_mode === "strict" &&
-        allowDuplicate !== true
-      ) {
-        await evaluateSimilarityGovernance(similarityCandidate, {
-          pmRoot,
-          mode: "strict",
-          threshold: settings.governance.duplicate_detection_threshold,
-          limit: settings.governance.duplicate_detection_limit,
-          allowDuplicate: false,
-        });
-      }
-      await writeFileAtomic(
-        itemPath,
-        serializeItemDocument(afterDocument, {
-          format: settings.item_format,
-          schema: settings.schema,
-          extensionFieldNames,
-        }),
+      const graphBeforeCreate =
+        afterDocument.metadata.parent !== undefined ||
+        (afterDocument.metadata.dependencies !== undefined &&
+          afterDocument.metadata.dependencies.length > 0)
+          ? await listAllItemMetadataLight(
+              pmRoot,
+              settings.item_format,
+              typeRegistry.type_to_folder,
+              undefined,
+              settings.schema,
+            )
+          : undefined;
+      const existing = await locateItem(
+        pmRoot,
+        id,
+        settings.id_prefix,
+        settings.item_format,
+        typeRegistry.type_to_folder,
       );
+      if (existing) {
+        throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
+      }
+      if (graphBeforeCreate) {
+        const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+        assertHierarchyMutationAllowed(
+          graphBeforeCreate,
+          [...graphBeforeCreate, afterDocument.metadata],
+          id,
+          (status) => isTerminalStatus(status, statusRegistry),
+          relationshipRegistry,
+        );
+      }
+      await runActiveBeforeMutationHooks({
+        pm_root: pmRoot,
+        operation: "create",
+        before: null,
+        after: afterDocument,
+        changed_fields: changedFields,
+        sdk: createMutationGuardSdk({
+          pmRoot,
+          settings,
+          typeToFolder: typeRegistry.type_to_folder,
+        }),
+      });
+      const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+        pmRoot,
+        author,
+        {
+          required:
+            settings.governance.duplicate_detection_mode === "strict" &&
+            allowDuplicate !== true,
+        },
+      );
+      let derivedIndexWarnings: string[] = [];
       try {
-        const entry = createHistoryEntry({
-          nowIso: nowValue,
-          author,
+        if (
+          settings.governance.duplicate_detection_mode === "strict" &&
+          allowDuplicate !== true
+        ) {
+          await evaluateSimilarityGovernance(similarityCandidate, {
+            pmRoot,
+            mode: "strict",
+            threshold: settings.governance.duplicate_detection_threshold,
+            limit: settings.governance.duplicate_detection_limit,
+            allowDuplicate: false,
+          });
+        }
+        await writeFileAtomic(
+          itemPath,
+          serializeItemDocument(afterDocument, {
+            format: settings.item_format,
+            schema: settings.schema,
+            extensionFieldNames,
+          }),
+        );
+        try {
+          const entry = createHistoryEntry({
+            nowIso: nowValue,
+            author,
+            op: "create",
+            before: beforeDocument,
+            after: afterDocument,
+            message: historyMessage,
+          });
+          await appendHistoryEntry(historyPath, entry);
+        } catch (error: unknown) {
+          await removeFileIfExists(itemPath);
+          throw error;
+        }
+        if (hierarchyLockHeld) {
+          await hierarchyLockRelease();
+          hierarchyLockHeld = false;
+        }
+        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+          pmRoot,
+          preferredFormat: settings.item_format,
+          typeToFolder: typeRegistry.type_to_folder,
+          schema: settings.schema,
+          itemPath,
+          document: afterDocument,
+        });
+      } finally {
+        await releaseDerivedIndexLock();
+      }
+      hookWarnings = [
+        ...(graphBeforeCreate
+          ? collectNewOrderingCycleWarnings(
+              graphBeforeCreate,
+              [...graphBeforeCreate, afterDocument.metadata],
+              id,
+            )
+          : []),
+        ...derivedIndexWarnings,
+        ...(await runActiveOnWriteHooks({
+          path: itemPath,
+          scope: "project",
           op: "create",
+          item_id: afterDocument.metadata.id,
+          item_type: afterDocument.metadata.type,
           before: beforeDocument,
           after: afterDocument,
-          message: historyMessage,
-        });
-        await appendHistoryEntry(historyPath, entry);
-      } catch (error: unknown) {
-        await removeFileIfExists(itemPath);
-        throw error;
-      }
-      derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
-        pmRoot,
-        preferredFormat: settings.item_format,
-        typeToFolder: typeRegistry.type_to_folder,
-        schema: settings.schema,
-        itemPath,
-        document: afterDocument,
+          changed_fields: changedFields,
+        })),
+        ...(await runActiveOnWriteHooks({
+          path: historyPath,
+          scope: "project",
+          op: "create:history",
+          item_id: afterDocument.metadata.id,
+          item_type: afterDocument.metadata.type,
+          before: beforeDocument,
+          after: afterDocument,
+          changed_fields: changedFields,
+        })),
+      ];
+      recordAfterCommandAffectedItem({
+        id: afterDocument.metadata.id,
+        op: "create",
+        item_type: afterDocument.metadata.type,
+        status: afterDocument.metadata.status,
+        current: projectAfterCommandItemSnapshot(
+          afterDocument.metadata,
+          changedFields,
+        ),
+        changed_fields: changedFields,
       });
     } finally {
-      await releaseDerivedIndexLock();
+      await lockRelease();
     }
-    hookWarnings = [
-      ...(graphBeforeCreate
-        ? collectNewOrderingCycleWarnings(
-            graphBeforeCreate,
-            [...graphBeforeCreate, afterDocument.metadata],
-            id,
-          )
-        : []),
-      ...derivedIndexWarnings,
-      ...(await runActiveOnWriteHooks({
-        path: itemPath,
-        scope: "project",
-        op: "create",
-        item_id: afterDocument.metadata.id,
-        item_type: afterDocument.metadata.type,
-        before: beforeDocument,
-        after: afterDocument,
-        changed_fields: changedFields,
-      })),
-      ...(await runActiveOnWriteHooks({
-        path: historyPath,
-        scope: "project",
-        op: "create:history",
-        item_id: afterDocument.metadata.id,
-        item_type: afterDocument.metadata.type,
-        before: beforeDocument,
-        after: afterDocument,
-        changed_fields: changedFields,
-      })),
-    ];
-    recordAfterCommandAffectedItem({
-      id: afterDocument.metadata.id,
-      op: "create",
-      item_type: afterDocument.metadata.type,
-      status: afterDocument.metadata.status,
-      current: projectAfterCommandItemSnapshot(
-        afterDocument.metadata,
-        changedFields,
-      ),
-      changed_fields: changedFields,
-    });
   } finally {
-    await lockRelease();
+    if (hierarchyLockHeld) await hierarchyLockRelease();
   }
   return hookWarnings;
 }

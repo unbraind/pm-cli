@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   assembleWorkspaceRelationshipGraph,
+  analyzeHierarchyIntegrity,
   composeExtension,
   describeExtensionBlueprint,
   describeExtensionActivation,
@@ -91,6 +92,49 @@ describe("extension relationship-kind registration", () => {
     });
     expect(assembly.graph.edges()).toEqual([
       { source: "change-1", target: "main", kind: "commits_to" },
+    ]);
+  });
+
+  it("uses active extension hierarchy kinds when analysis omits a registry", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api) {
+          api.registerRelationshipKinds([
+            {
+              kind: "contains_work",
+              direction: "directed",
+              ordering: false,
+              hierarchy: true,
+              hierarchyDirection: "source_parent",
+              outgoing: "many",
+              incoming: "one",
+              lifecycle: "persistent",
+              compatibilityVersion: 1,
+              allowSelf: false,
+            },
+          ]);
+        },
+      },
+      { name: "hierarchy-domain", capabilities: ["schema"] },
+    );
+    setActiveExtensionRegistrations(activation.registrations);
+
+    expect(
+      analyzeHierarchyIntegrity([
+        {
+          id: "pm-parent",
+          title: "Parent",
+          status: "open",
+          dependencies: [{ id: "pm-child", kind: "contains_work" }],
+        },
+        { id: "pm-child", title: "Child", status: "open" },
+      ] as never).relations,
+    ).toEqual([
+      expect.objectContaining({
+        parent_id: "pm-parent",
+        child_id: "pm-child",
+        kind: "contains_work",
+      }),
     ]);
   });
 

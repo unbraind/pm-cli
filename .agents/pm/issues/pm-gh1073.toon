@@ -1,0 +1,23 @@
+id: pm-gh1073
+title: "GH-1073: pm init accepts a whitespace id prefix that makes later creates fail"
+description: "GitHub issue #1073 reports that init persists a natural-language prefix containing spaces, then every later create fails the stricter normalized-ID contract."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,"area:init",github,validation
+created_at: "2026-08-21T05:41:56.036Z"
+updated_at: "2026-08-21T06:19:24.978Z"
+author: "harness:codex"
+acceptance_criteria: Share one prefix validation primitive between SDK init and lifecycle create; fail before tracker persistence or normalize deterministically; cover CLI/SDK/MCP and packed npx/bunx behavior; document accepted prefix grammar and recovery.
+parent: pm-7t04
+severity: high
+repro_steps: "Initialize a fresh tracker with a whitespace-containing prefix, then create an item with or without an explicit ID; observe the downstream normalization refusal."
+expected_result: "Init normalizes or rejects an invalid prefix before committing tracker state, using the same actionable ID contract as create."
+actual_result: Init succeeds and persists a prefix that makes ordinary item creation fail.
+affected_version: 2026.8.20
+component: tracker initialization
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-nmzx,discovered_from,"2026-08-21T06:19:24.627Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-21T05:41:56.036Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for whitespace prefix, init prefix validation, and GitHub #1073; existing pm-nmzx covers the distinct missing prefix flag, not invalid persisted values. Source: https://github.com/unbraind/pm-cli/issues/1073"
+body: ""

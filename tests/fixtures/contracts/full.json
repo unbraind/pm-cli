@@ -16775,6 +16775,57 @@
     },
     {
       "aliases": [],
+      "canonical_code": "hierarchy_cardinality_created",
+      "class": "conflict",
+      "code": "hierarchy_cardinality_created",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Hierarchy cardinality created condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/graph/hierarchy-integrity.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "hierarchy_cycle_created",
+      "class": "conflict",
+      "code": "hierarchy_cycle_created",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Hierarchy cycle created condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/graph/hierarchy-integrity.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "hierarchy_parent_divergence_created",
+      "class": "conflict",
+      "code": "hierarchy_parent_divergence_created",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Hierarchy parent divergence created condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/graph/hierarchy-integrity.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "history_author_acknowledge_plan_conflict",
       "class": "conflict",
       "code": "history_author_acknowledge_plan_conflict",

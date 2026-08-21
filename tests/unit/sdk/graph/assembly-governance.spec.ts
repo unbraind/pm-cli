@@ -6,6 +6,7 @@ import {
   collectDuplicateDependencyRows,
   collectMissingDependencyTargetIds,
   collectOrderingStorageContradictions,
+  getWorkspaceHierarchyIntegrity,
 } from "../../../../src/sdk/graph/assembly.js";
 import {
   auditWorkspaceRelationshipGraph,
@@ -79,6 +80,9 @@ describe("workspace relationship graph assembly", () => {
       title: "[missing] pm-missing",
       status: "missing",
     });
+    expect(getWorkspaceHierarchyIntegrity({ ...assembly })).toEqual(
+      assembly.hierarchyIntegrity,
+    );
 
     const padded = assembleWorkspaceRelationshipGraph([
       {
@@ -614,6 +618,12 @@ describe("relationship graph governance", () => {
           legacy_ordering_cycle: 0,
           ordering_storage_contradiction: 0,
           legacy_ordering_storage_contradiction: 0,
+          hierarchy_cycle: 0,
+          legacy_hierarchy_cycle: 0,
+          hierarchy_cardinality_violation: 0,
+          legacy_hierarchy_cardinality_violation: 0,
+          hierarchy_direction_violation: 0,
+          legacy_hierarchy_direction_violation: 0,
           duplicate_edge: 0,
           legacy_duplicate_edge: 0,
           duplicate_dependency_row: 0,

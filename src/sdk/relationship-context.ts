@@ -194,9 +194,7 @@ function explainDirectEdge(
     return node === before ? "prerequisite" : "dependent";
   }
   if (definition?.hierarchy) {
-    // Legacy and JSON-parsed definitions may predate explicit hierarchy direction.
-    const sourceIsParent =
-      (definition.hierarchyDirection ?? "source_parent") === "source_parent";
+    const sourceIsParent = definition.hierarchyDirection === "source_parent";
     const parent = sourceIsParent ? edge.source : edge.target;
     return node === parent ? "ancestor" : "descendant";
   }

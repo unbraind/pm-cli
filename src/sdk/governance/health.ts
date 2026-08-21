@@ -6,7 +6,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import {
   isFileMissingError,
   readFileIfExists,
@@ -110,6 +112,11 @@ import {
   listMergeReceipts,
   partitionMergeReceipts,
 } from "../merge/receipts.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
+import {
+  analyzeHierarchyIntegrity,
+  type HierarchyIntegrityAnalysis,
+} from "../graph/hierarchy-integrity.js";
 
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -298,6 +305,7 @@ function isAdvisoryHealthWarning(
   return (
     warning.startsWith("telemetry_") ||
     warning.startsWith("history_stream_over_compact_threshold:") ||
+    warning.startsWith("integrity_legacy_hierarchy_") ||
     warning.startsWith("stale_in_progress_items:") ||
     warning.startsWith("provenance_resolver_zero_success:") ||
     warning.startsWith("provenance_value_domain_invalid:") ||
@@ -646,15 +654,44 @@ async function scanHistoryIntegrity(
   return { files, unreadable, conflictMarkers, invalidJson };
 }
 
+function buildHierarchyIntegrityWarnings(
+  analysis: HierarchyIntegrityAnalysis,
+): string[] {
+  return [
+    ...analysis.cycles.map((cycle) =>
+      cycle.legacy_terminal
+        ? `integrity_legacy_hierarchy_cycle:${cycle.item_ids.join(",")}`
+        : `integrity_hierarchy_cycle:${cycle.item_ids.join(",")}`,
+    ),
+    ...analysis.cardinality_violations.map((finding) =>
+      finding.legacy_terminal
+        ? `integrity_legacy_hierarchy_cardinality:${finding.child_id}`
+        : `integrity_hierarchy_cardinality:${finding.child_id}`,
+    ),
+    ...analysis.divergences.map((finding) =>
+      finding.legacy_terminal
+        ? `integrity_legacy_hierarchy_divergence:${finding.child_id}`
+        : `integrity_hierarchy_divergence:${finding.child_id}`,
+    ),
+  ];
+}
+
 async function buildIntegrityCheck(
   pmRoot: string,
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
   requireMergeDrivers: boolean,
+  items: Array<ItemMetadata | ItemWithBody>,
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const itemScan = await scanItemIntegrity(pmRoot, typeToFolder, schema);
   const historyScan = await scanHistoryIntegrity(pmRoot);
   const formatVersionScan = scanItemFormatVersions(itemScan.formatVersions);
+  const statusRegistry = resolveRuntimeStatusRegistry(schema);
+  const hierarchyIntegrity = analyzeHierarchyIntegrity(
+    items,
+    (status) => isTerminalStatus(status, statusRegistry),
+    resolveWorkspaceRelationshipKindRegistry(),
+  );
   const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
   const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
   const mergeDriverAudit =
@@ -702,6 +739,7 @@ async function buildIntegrityCheck(
     ...formatVersionScan.ahead.map(
       (entry) => `integrity_item_ahead_format_version:${entry}`,
     ),
+    ...buildHierarchyIntegrityWarnings(hierarchyIntegrity),
     ...(trackedRuntimeCache.tracked_path_count > 0
       ? [
           `tracked_runtime_cache_files:${trackedRuntimeCache.tracked_path_count}`,
@@ -719,12 +757,15 @@ async function buildIntegrityCheck(
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),
   );
+  const actionableWarnings = normalizedWarnings.filter(
+    (warning) => !warning.startsWith("integrity_legacy_hierarchy_"),
+  );
 
   return {
     check: {
       name: "integrity",
-      status: normalizedWarnings.length === 0 ? "ok" : "warn",
-      ok: normalizedWarnings.length === 0,
+      status: actionableWarnings.length === 0 ? "ok" : "warn",
+      ok: actionableWarnings.length === 0,
       details: {
         checked_item_files: itemScan.paths.length,
         checked_history_streams: historyScan.files.length,
@@ -737,6 +778,10 @@ async function buildIntegrityCheck(
           history_invalid_json: historyScan.invalidJson.length,
           item_outdated_format_version: formatVersionScan.outdated.length,
           item_ahead_format_version: formatVersionScan.ahead.length,
+          hierarchy_cycles: hierarchyIntegrity.cycles.length,
+          hierarchy_cardinality_violations:
+            hierarchyIntegrity.cardinality_violations.length,
+          hierarchy_parent_divergences: hierarchyIntegrity.divergences.length,
           tracked_runtime_cache_files: trackedRuntimeCache.tracked_path_count,
           merge_driver_configuration:
             mergeDriverAudit === null || mergeDriverAudit.status === "ok"
@@ -751,6 +796,13 @@ async function buildIntegrityCheck(
         item_parse_failures: itemScan.parseFailures,
         item_outdated_format_version: formatVersionScan.outdated,
         item_ahead_format_version: formatVersionScan.ahead,
+        hierarchy_integrity: {
+          ...hierarchyIntegrity,
+          relations: summarizeRecordList(
+            hierarchyIntegrity.relations,
+            BRIEF_HEALTH_DETAIL_LIMIT,
+          ),
+        },
         history_unreadable: historyScan.unreadable,
         history_conflict_markers: historyScan.conflictMarkers,
         history_invalid_json: historyScan.invalidJson,
@@ -2858,9 +2910,9 @@ function buildHealthRemediationSources(params: {
 }): Record<HealthCheck["name"], string[]> {
   return {
     settings: params.normalizedSettingsReadWarnings,
-    directories: params.directoryState.missingDirs.map(
-      (dir) => `missing_directory:${dir}`,
-    ).concat(params.directoryState.hookWarnings),
+    directories: params.directoryState.missingDirs
+      .map((dir) => `missing_directory:${dir}`)
+      .concat(params.directoryState.hookWarnings),
     settings_values: params.settingWarnings,
     telemetry: params.telemetryCheck.warnings,
     extensions: params.extensionCheck.warnings,
@@ -3099,6 +3151,7 @@ export async function runHealth(
         typeRegistry.type_to_folder,
         settings.schema,
         options.requireMergeDrivers === true,
+        items,
       );
   const historyDriftCheck = skipPolicy.skipDrift
     ? buildSkippedHealthCheck("history_drift")
@@ -3205,6 +3258,7 @@ export async function runHealth(
 
 /** Public contract for test only health command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyHealthCommand = {
+  buildHierarchyIntegrityWarnings,
   buildExtensionHealthTriageSummary,
   buildHealthFindings,
   buildCapabilityContractMetadata,

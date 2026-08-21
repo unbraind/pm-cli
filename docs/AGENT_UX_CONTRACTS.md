@@ -1,6 +1,6 @@
 # Agent UX Contracts
 
-Tracker references: [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.agents/pm/issues/pm-i6pi.toon), [pm-um4g](../.agents/pm/issues/pm-um4g.toon), [pm-tmhs](../.agents/pm/issues/pm-tmhs.toon), [pm-6m1i](../.agents/pm/issues/pm-6m1i.toon), [pm-cj9v](../.agents/pm/issues/pm-cj9v.toon), [pm-yp56](../.agents/pm/issues/pm-yp56.toon), [pm-gos426](../.agents/pm/issues/pm-gos426.toon), and [pm-flnefm](../.agents/pm/issues/pm-flnefm.toon).
+Tracker references: [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.agents/pm/issues/pm-i6pi.toon), [pm-um4g](../.agents/pm/issues/pm-um4g.toon), [pm-tmhs](../.agents/pm/issues/pm-tmhs.toon), [pm-6m1i](../.agents/pm/issues/pm-6m1i.toon), [pm-cj9v](../.agents/pm/issues/pm-cj9v.toon), [pm-yp56](../.agents/pm/issues/pm-yp56.toon), [pm-gos426](../.agents/pm/issues/pm-gos426.toon), [pm-flnefm](../.agents/pm/issues/pm-flnefm.toon), [pm-rggtvd](../.agents/pm/issues/pm-rggtvd.toon), and [pm-vk7zek](../.agents/pm/issues/pm-vk7zek.toon).
 
 These contracts keep common agent loops deterministic, token-efficient, and recoverable. Runtime contracts and `--help --json` remain the exact source for available flags.
 
@@ -13,9 +13,25 @@ The public SDK exports `collectNewOrderingCycleWarnings(beforeItems, afterItems,
 Dependency removal is lossless. `--dep-remove` rejects the same malformed
 shorthand as `--dep`, and a selector that matches nothing returns the typed
 `dependency_remove_no_match` refusal instead of a successful no-op. Exact
-duplicate rows can be normalized without delete-then-add risk by re-adding the
-same `id`, `kind`, and `source_kind`; the mutation keeps one canonical row and
-never removes the logical edge.
+rows can be retired by selecting `id`, `kind` (or its input-only `type` alias),
+`source_kind`, `author`, and `created_at`; omitted coordinates intentionally broaden the match. Exact
+duplicate rows can still be normalized without delete-then-add risk by
+re-adding the same identity; the mutation keeps one canonical row and never
+removes the logical edge. Identity comparison includes normalized `id`, `kind`,
+`source_kind`, `author`, and creation instant, preserving provenance-distinct
+siblings.
+
+Hierarchy mutations are stricter than ordering advisories. `pm create` and
+`pm update` refuse a new cycle, registry cardinality breach, or contradictory
+scalar/dependency parent before writing. The structured refusal names the
+changed holder plus the cycle members or competing parents. Existing legacy
+debt remains mutable only toward a cleaner state, so repair does not require a
+global bypass. Read paths canonicalize every registry-declared hierarchy kind;
+an item cannot disappear from `pm list --parent` or `pm get --tree` merely
+because an integration used a dependency row instead of the scalar field.
+`pm update-many` applies the same hierarchy guard independently to each matched
+item: one refused row is reported as failed while other rows may still commit,
+so a bulk hierarchy mutation is not atomic across the complete match set.
 
 `pm graph audit` uses two explicit units:
 

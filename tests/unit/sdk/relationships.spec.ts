@@ -225,6 +225,23 @@ describe("relationship kind registry", () => {
     ).toThrow("Undirected relationship kind cannot declare directional outcome traversal");
   });
 
+  it("uses ordering precedence for dual-family extension kinds", () => {
+    const registry = new RelationshipKindRegistry([]).register({
+      kind: "staged_child",
+      direction: "directed",
+      ordering: true,
+      hierarchy: true,
+      hierarchyDirection: "source_parent",
+      precedence: "source_before_target",
+      outgoing: "many",
+      incoming: "one",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: false,
+    });
+    expect(registry.require("staged_child").traversal).toBe("ordering");
+  });
+
   it("enforces self-edge policy after alias resolution while preserving custom opt-ins", () => {
     const registry = createRelationshipKindRegistry().register({
       kind: "reflects",

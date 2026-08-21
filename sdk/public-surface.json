@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1755,
+    "covered_symbols": 1769,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1756
+    "required_symbols": 1770
   },
   "breaking_acknowledgements": [
     {
@@ -967,6 +967,47 @@
       ],
       "package_version": "2026.8.20",
       "reason": "Expose exact prose-gap partitions on measurement and gate receipts while keeping fields optional for existing SDK consumers"
+    },
+    {
+      "changes": [
+        "signature ./sdk:GraphAnalyzeResult",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk/graph:GraphAnalyzeResult"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Expose optional graph hierarchy analytics and exact dependency-removal provenance; the snapshot conservatively classifies additive interface fields as signature changes."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GraphAuditResult",
+        "signature ./sdk/graph:GraphAuditResult"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Remove the duplicate audit finding census from summary profiles while preserving it in detailed output and the top-level summary census."
+    },
+    {
+      "changes": [
+        "signature ./sdk:_testOnlyHealthCommand",
+        "signature ./sdk/governance:_testOnlyHealthCommand"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Extend the existing test-only health diagnostics surface with hierarchy warning rendering coverage."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GraphHierarchySummary",
+        "signature ./sdk/graph:GraphHierarchySummary"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Add optional active and terminal-only hierarchy defect counts without removing or narrowing existing GraphHierarchySummary fields"
+    },
+    {
+      "changes": [
+        "signature ./sdk:WorkspaceRelationshipAssembly",
+        "signature ./sdk/graph:WorkspaceRelationshipAssembly"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Additive optional hierarchyIntegrity field preserves analysis across spread-copied assemblies; existing consumers and constructors remain source-compatible."
     }
   ],
   "entrypoints": {
@@ -1019,7 +1060,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildHierarchyIntegrityWarnings: typeof buildHierarchyIntegrityWarnings; buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "advanced_export",
@@ -1378,6 +1419,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "analyzeHierarchyIntegrity",
+          "signature": "(items: readonly HierarchyIntegrityItem[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => HierarchyIntegrityAnalysis | calls: (items: readonly HierarchyIntegrityItem[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => HierarchyIntegrityAnalysis"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "analyzeKnowledgeGraph",
           "signature": "(graph: RelationshipGraph) => RelationshipKnowledgeAnalysis | calls: (graph: RelationshipGraph) => RelationshipKnowledgeAnalysis"
         },
@@ -1692,6 +1739,12 @@
           "kind": "function",
           "name": "assertExtensionPreflight",
           "signature": "(blueprint: ExtensionBlueprint, options?: PreflightExtensionOptions) => ExtensionPreflightReport | calls: (blueprint: ExtensionBlueprint, options?: PreflightExtensionOptions) => ExtensionPreflightReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "assertHierarchyMutationAllowed",
+          "signature": "(beforeItems: readonly HierarchyIntegrityItem[], afterItems: readonly HierarchyIntegrityItem[], changedItemId: string, isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => void | calls: (beforeItems: readonly HierarchyIntegrityItem[], afterItems: readonly HierarchyIntegrityItem[], changedItemId: string, isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => void"
         },
         {
           "classification": "advanced_export",
@@ -3048,6 +3101,12 @@
           "kind": "function",
           "name": "collectErrorCauseCodes",
           "signature": "(error: unknown) => string | calls: (error: unknown) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectHierarchyRelations",
+          "signature": "(items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[] | calls: (items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[]"
         },
         {
           "classification": "supported",
@@ -6100,6 +6159,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "formatHierarchyRelation",
+          "signature": "(relation: HierarchyRelation) => string | calls: (relation: HierarchyRelation) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "formatOrderingStorageContradiction",
           "signature": "(contradiction: Pick<OrderingStorageContradiction, \"dependency_kind\" | \"holder_id\" | \"target_id\">) => string | calls: (contradiction: Pick<OrderingStorageContradiction, \"holder_id\" | \"target_id\" | \"dependency_kind\">) => string"
         },
@@ -6377,7 +6442,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAnalyzeResult",
-          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; hierarchy?: GraphHierarchySummary; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -6395,7 +6460,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAuditResult",
-          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: RelationshipAuditReport[\"profile\"]; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -6480,6 +6545,12 @@
           "kind": "interface",
           "name": "GraphExecutionSummary",
           "signature": "export interface GraphExecutionSummary { acyclic: boolean; ordered_node_count: number; layer_count: number; frontier_count: number; frontier?: string[]; critical_path_length: number; critical_path?: string[]; cycle_count: number; cycles?: string[][]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "GraphHierarchySummary",
+          "signature": "export interface GraphHierarchySummary { acyclic: boolean; relation_count: number; cycle_count: number; active_cycle_count?: number; legacy_cycle_count?: number; cardinality_violation_count: number; active_cardinality_violation_count?: number; legacy_cardinality_violation_count?: number; parent_divergence_count: number; active_parent_divergence_count?: number; legacy_parent_divergence_count?: number; cycles?: string[][]; }"
         },
         {
           "classification": "supported",
@@ -6724,8 +6795,20 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "HierarchyCardinalityViolation",
+          "signature": "export interface HierarchyCardinalityViolation { child_id: string; parent_ids: string[]; legacy_terminal: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "HierarchyChild",
           "signature": "export interface HierarchyChild { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyCycle",
+          "signature": "export interface HierarchyCycle { item_ids: string[]; legacy_terminal: boolean; }"
         },
         {
           "classification": "supported",
@@ -6736,8 +6819,44 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "HierarchyIntegrityAnalysis",
+          "signature": "export interface HierarchyIntegrityAnalysis { relations: HierarchyRelation[]; cycles: HierarchyCycle[]; cardinality_violations: HierarchyCardinalityViolation[]; divergences: HierarchyParentDivergence[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyIntegrityItem",
+          "signature": "export interface HierarchyIntegrityItem { id: string; status: ItemStatus; parent?: string; dependencies?: Dependency[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "HierarchyNode",
           "signature": "export interface HierarchyNode { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; children_open: number; children_in_progress: number; children_blocked: number; children: HierarchyChild[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyParentDivergence",
+          "signature": "export interface HierarchyParentDivergence { child_id: string; scalar_parent_id: string; dependency_parent_ids: string[]; legacy_terminal: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyRelation",
+          "signature": "export interface HierarchyRelation { parent_id: string; child_id: string; source: HierarchyRelationSource; kind: string; holder_id: string; target_id?: string; child_cardinality: \"one\" | \"many\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyRelationIndexes",
+          "signature": "export interface HierarchyRelationIndexes { parents_by_child: ReadonlyMap<string, readonly string[]>; children_by_parent: ReadonlyMap<string, readonly string[]>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "HierarchyRelationSource",
+          "signature": "export type HierarchyRelationSource = \"scalar_parent\" | \"dependency\";"
         },
         {
           "classification": "contract_data",
@@ -7092,6 +7211,12 @@
           "kind": "interface",
           "name": "IndexedLinkedFileMatch",
           "signature": "export interface IndexedLinkedFileMatch { item: ItemMetadata; files: LinkedFile[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "indexHierarchyRelations",
+          "signature": "(relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes | calls: (relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes"
         },
         {
           "classification": "advanced_export",
@@ -9893,7 +10018,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -16433,7 +16558,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; hierarchyIntegrity?: HierarchyIntegrityAnalysis; }"
         },
         {
           "classification": "supported",
@@ -21341,7 +21466,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildHierarchyIntegrityWarnings: typeof buildHierarchyIntegrityWarnings; buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "supported",
@@ -22762,6 +22887,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "analyzeHierarchyIntegrity",
+          "signature": "(items: readonly HierarchyIntegrityItem[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => HierarchyIntegrityAnalysis | calls: (items: readonly HierarchyIntegrityItem[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => HierarchyIntegrityAnalysis"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "analyzeKnowledgeGraph",
           "signature": "(graph: RelationshipGraph) => RelationshipKnowledgeAnalysis | calls: (graph: RelationshipGraph) => RelationshipKnowledgeAnalysis"
         },
@@ -22782,6 +22913,12 @@
           "kind": "function",
           "name": "assembleWorkspaceRelationshipGraph",
           "signature": "(items: readonly WorkspaceRelationshipItem[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => WorkspaceRelationshipAssembly | calls: (items: readonly WorkspaceRelationshipItem[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => WorkspaceRelationshipAssembly"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "assertHierarchyMutationAllowed",
+          "signature": "(beforeItems: readonly HierarchyIntegrityItem[], afterItems: readonly HierarchyIntegrityItem[], changedItemId: string, isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => void | calls: (beforeItems: readonly HierarchyIntegrityItem[], afterItems: readonly HierarchyIntegrityItem[], changedItemId: string, isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => void"
         },
         {
           "classification": "supported",
@@ -22866,6 +23003,12 @@
           "kind": "function",
           "name": "collectDuplicateRelationshipEdgeGroups",
           "signature": "(assembly: WorkspaceRelationshipAssembly) => DuplicateRelationshipEdgeGroup[] | calls: (assembly: WorkspaceRelationshipAssembly) => DuplicateRelationshipEdgeGroup[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectHierarchyRelations",
+          "signature": "(items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[] | calls: (items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[]"
         },
         {
           "classification": "supported",
@@ -23062,6 +23205,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "formatHierarchyRelation",
+          "signature": "(relation: HierarchyRelation) => string | calls: (relation: HierarchyRelation) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "formatOrderingStorageContradiction",
           "signature": "(contradiction: Pick<OrderingStorageContradiction, \"dependency_kind\" | \"holder_id\" | \"target_id\">) => string | calls: (contradiction: Pick<OrderingStorageContradiction, \"holder_id\" | \"target_id\" | \"dependency_kind\">) => string"
         },
@@ -23087,7 +23236,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAnalyzeResult",
-          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; hierarchy?: GraphHierarchySummary; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -23105,7 +23254,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAuditResult",
-          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: RelationshipAuditReport[\"profile\"]; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -23190,6 +23339,12 @@
           "kind": "interface",
           "name": "GraphExecutionSummary",
           "signature": "export interface GraphExecutionSummary { acyclic: boolean; ordered_node_count: number; layer_count: number; frontier_count: number; frontier?: string[]; critical_path_length: number; critical_path?: string[]; cycle_count: number; cycles?: string[][]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "GraphHierarchySummary",
+          "signature": "export interface GraphHierarchySummary { acyclic: boolean; relation_count: number; cycle_count: number; active_cycle_count?: number; legacy_cycle_count?: number; cardinality_violation_count: number; active_cardinality_violation_count?: number; legacy_cardinality_violation_count?: number; parent_divergence_count: number; active_parent_divergence_count?: number; legacy_parent_divergence_count?: number; cycles?: string[][]; }"
         },
         {
           "classification": "supported",
@@ -23313,15 +23468,69 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyCardinalityViolation",
+          "signature": "export interface HierarchyCardinalityViolation { child_id: string; parent_ids: string[]; legacy_terminal: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyCycle",
+          "signature": "export interface HierarchyCycle { item_ids: string[]; legacy_terminal: boolean; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "hierarchyDescendants",
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyIntegrityAnalysis",
+          "signature": "export interface HierarchyIntegrityAnalysis { relations: HierarchyRelation[]; cycles: HierarchyCycle[]; cardinality_violations: HierarchyCardinalityViolation[]; divergences: HierarchyParentDivergence[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyIntegrityItem",
+          "signature": "export interface HierarchyIntegrityItem { id: string; status: ItemStatus; parent?: string; dependencies?: Dependency[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyParentDivergence",
+          "signature": "export interface HierarchyParentDivergence { child_id: string; scalar_parent_id: string; dependency_parent_ids: string[]; legacy_terminal: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyRelation",
+          "signature": "export interface HierarchyRelation { parent_id: string; child_id: string; source: HierarchyRelationSource; kind: string; holder_id: string; target_id?: string; child_cardinality: \"one\" | \"many\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyRelationIndexes",
+          "signature": "export interface HierarchyRelationIndexes { parents_by_child: ReadonlyMap<string, readonly string[]>; children_by_parent: ReadonlyMap<string, readonly string[]>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "HierarchyRelationSource",
+          "signature": "export type HierarchyRelationSource = \"scalar_parent\" | \"dependency\";"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "indexBlockedByIds",
           "signature": "(corpus: readonly ItemMetadata[]) => Map<string, string[]> | calls: (corpus: readonly ItemMetadata[]) => Map<string, string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "indexHierarchyRelations",
+          "signature": "(relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes | calls: (relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes"
         },
         {
           "classification": "supported",
@@ -24011,7 +24220,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; hierarchyIntegrity?: HierarchyIntegrityAnalysis; }"
         },
         {
           "classification": "supported",
@@ -29330,6 +29539,9 @@
     "field_invalid",
     "field_mcp_input_collision",
     "github_source_entry_unbuilt",
+    "hierarchy_cardinality_created",
+    "hierarchy_cycle_created",
+    "hierarchy_parent_divergence_created",
     "history_author_acknowledge_plan_conflict",
     "history_author_acknowledge_plan_fingerprint_required",
     "history_author_acknowledge_preview_limit_invalid",

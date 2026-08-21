@@ -659,7 +659,7 @@ describe("runUpdate", () => {
         runUpdate(id, { depRemove: ["id=pm-2,boguskey=v"] }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: '--dep-remove does not recognize key "boguskey". Allowed keys: id, kind, type, source_kind.',
+        message: '--dep-remove does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at, source_kind.',
       });
       // A FIRST-key typo must not bypass validation by being read as a bare item id (GH-258).
       await expect(
