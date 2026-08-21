@@ -232,6 +232,51 @@ describe("hierarchy integrity", () => {
     ).not.toThrow();
   });
 
+  it("permits monotonic repair that leaves a smaller pre-existing defect", () => {
+    const cyclic = [
+      item("pm-a", { dependencies: [dependency("pm-b", "parent")] }),
+      item("pm-b", { dependencies: [dependency("pm-c", "parent")] }),
+      item("pm-c", { dependencies: [dependency("pm-a", "parent")] }),
+    ];
+    const smallerCycle = [
+      cyclic[0]!,
+      item("pm-b", { dependencies: [dependency("pm-a", "parent")] }),
+      item("pm-c"),
+    ];
+    expect(() =>
+      assertHierarchyMutationAllowed(cyclic, smallerCycle, "pm-b"),
+    ).not.toThrow();
+
+    const overCardinality = [
+      item("pm-a"),
+      item("pm-b"),
+      item("pm-c"),
+      item("pm-child", {
+        dependencies: [
+          dependency("pm-a", "parent"),
+          dependency("pm-b", "parent"),
+          dependency("pm-c", "parent"),
+        ],
+      }),
+    ];
+    const fewerParents = [
+      ...overCardinality.slice(0, 3),
+      item("pm-child", {
+        dependencies: [
+          dependency("pm-a", "parent"),
+          dependency("pm-b", "parent"),
+        ],
+      }),
+    ];
+    expect(() =>
+      assertHierarchyMutationAllowed(
+        overCardinality,
+        fewerParents,
+        "pm-child",
+      ),
+    ).not.toThrow();
+  });
+
   it("uses extension hierarchy semantics and formats exact stored rows", () => {
     const registry = createRelationshipKindRegistry();
     registry.register({

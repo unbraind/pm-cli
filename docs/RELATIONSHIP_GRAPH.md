@@ -314,9 +314,12 @@ outcome milestones are roots, not work subjects, and are excluded from those
 populations. Rate or
 all-status floors are lifecycle-stable; an absolute active-population floor is
 invalid because completing reachable work legitimately moves it into the
-terminal population. Detailed output's `finding_subjects_by_code` includes every known finding
-code even when its population is zero, so assurance selectors never confuse a
-clean class with a missing contract field.
+terminal population. Detailed output's nested SDK profile census,
+`finding_subjects_by_code`, includes every known finding code even when its
+population is zero, so assurance selectors never confuse a clean class with a
+missing contract field. The top-level audit and persisted-baseline census is
+`affected_subjects_by_code`; both fields count affected subjects, but their
+locations and consumers differ and neither is an alias for the other.
 
 ```ts
 import {

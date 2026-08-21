@@ -257,8 +257,10 @@ function resolveRelationshipTraversal(
   definition: RelationshipKindDefinition,
 ): NonNullable<RelationshipKindDefinition["traversal"]> {
   if (definition.traversal) return definition.traversal;
-  if (definition.hierarchy) return "hierarchy";
+  // Dual-family extension kinds use ordering precedence, matching relationship
+  // context role classification. Explicit traversal always remains authoritative.
   if (definition.ordering) return "ordering";
+  if (definition.hierarchy) return "hierarchy";
   return definition.direction === "undirected" ? "association" : "semantic";
 }
 

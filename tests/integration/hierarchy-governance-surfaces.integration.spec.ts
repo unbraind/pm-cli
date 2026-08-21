@@ -85,6 +85,7 @@ describe("hierarchy governance surface parity", () => {
       )!;
       const hierarchy = integrity.details.hierarchy_integrity as {
         cycles: Array<{ item_ids: string[]; legacy_terminal: boolean }>;
+        relations: { count: number; sample: unknown[]; truncated: boolean };
       };
       expect(hierarchy.cycles).toEqual([
         {
@@ -92,6 +93,10 @@ describe("hierarchy governance surface parity", () => {
           legacy_terminal: false,
         },
       ]);
+      expect(hierarchy.relations).toMatchObject({
+        count: 2,
+        truncated: false,
+      });
       expect(health.warnings).toContain(
         "integrity_hierarchy_cycle:pm-surface-a,pm-surface-b",
       );

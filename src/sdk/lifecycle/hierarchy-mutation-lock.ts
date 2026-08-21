@@ -26,14 +26,21 @@ export interface HierarchyMutationLockOptions {
 export async function acquireHierarchyMutationLock(
   options: HierarchyMutationLockOptions,
 ): Promise<() => Promise<void>> {
-  if (!options.required) return async () => {};
-  return acquireLock(
-    options.pmRoot,
-    HIERARCHY_MUTATION_LOCK_ID,
-    options.ttlSeconds,
-    options.author,
-    false,
-    false,
-    options.waitMs,
-  );
+  const release = options.required
+    ? await acquireLock(
+        options.pmRoot,
+        HIERARCHY_MUTATION_LOCK_ID,
+        options.ttlSeconds,
+        options.author,
+        false,
+        false,
+        options.waitMs,
+      )
+    : async () => {};
+  let released = false;
+  return async () => {
+    if (released) return;
+    released = true;
+    await release();
+  };
 }

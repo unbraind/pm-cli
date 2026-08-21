@@ -1000,6 +1000,14 @@
       ],
       "package_version": "2026.8.21",
       "reason": "Add optional active and terminal-only hierarchy defect counts without removing or narrowing existing GraphHierarchySummary fields"
+    },
+    {
+      "changes": [
+        "signature ./sdk:WorkspaceRelationshipAssembly",
+        "signature ./sdk/graph:WorkspaceRelationshipAssembly"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Additive optional hierarchyIntegrity field preserves analysis across spread-copied assemblies; existing consumers and constructors remain source-compatible."
     }
   ],
   "entrypoints": {
@@ -16550,7 +16558,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; hierarchyIntegrity?: HierarchyIntegrityAnalysis; }"
         },
         {
           "classification": "supported",
@@ -24212,7 +24220,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; hierarchyIntegrity?: HierarchyIntegrityAnalysis; }"
         },
         {
           "classification": "supported",

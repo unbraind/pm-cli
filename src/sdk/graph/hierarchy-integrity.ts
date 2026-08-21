@@ -7,10 +7,8 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import type { Dependency, ItemStatus } from "../../types/index.js";
-import {
-  createRelationshipKindRegistry,
-  type RelationshipKindRegistry,
-} from "../relationships.js";
+import type { RelationshipKindRegistry } from "../relationships.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "./workspace-relationship-kind-registry.js";
 
 /** Storage surface from which one normalized hierarchy relation originated. */
 export type HierarchyRelationSource = "scalar_parent" | "dependency";
@@ -297,7 +295,7 @@ function collectHierarchyRelationsFromItemMap(
 /** Collect normalized hierarchy evidence without running defect analysis. */
 export function collectHierarchyRelations(
   items: readonly HierarchyIntegrityItem[],
-  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
+  registry: RelationshipKindRegistry = resolveWorkspaceRelationshipKindRegistry(),
 ): HierarchyRelation[] {
   return collectHierarchyRelationsFromItemMap(
     collectHierarchyItems(items),
@@ -377,7 +375,7 @@ export function analyzeHierarchyIntegrity(
   items: readonly HierarchyIntegrityItem[],
   isTerminal: (status: ItemStatus) => boolean = (status) =>
     status === "closed" || status === "canceled",
-  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
+  registry: RelationshipKindRegistry = resolveWorkspaceRelationshipKindRegistry(),
 ): HierarchyIntegrityAnalysis {
   const itemById = collectHierarchyItems(items);
   const relations = collectHierarchyRelationsFromItemMap(itemById, registry);
@@ -442,6 +440,15 @@ export function indexHierarchyRelations(
   };
 }
 
+/** Return whether every candidate identifier existed in the prior defect. */
+function isIdentifierSubset(
+  candidate: readonly string[],
+  prior: readonly string[],
+): boolean {
+  const priorIds = new Set(prior);
+  return candidate.every((id) => priorIds.has(id));
+}
+
 /**
  * Reject a mutation only when it introduces a new hierarchy defect involving
  * the changed item. Existing debt remains repairable without a global bypass.
@@ -493,17 +500,14 @@ export function assertHierarchyMutationAllowed(
       },
     );
   }
-  const priorCardinality = new Set(
-    before.cardinality_violations.map((finding) =>
-      [finding.child_id, ...finding.parent_ids].join("\u0000"),
-    ),
-  );
   const cardinality = after.cardinality_violations.find(
     (finding) =>
       (finding.child_id === holderId ||
         finding.parent_ids.includes(holderId)) &&
-      !priorCardinality.has(
-        [finding.child_id, ...finding.parent_ids].join("\u0000"),
+      !before.cardinality_violations.some(
+        (prior) =>
+          prior.child_id === finding.child_id &&
+          isIdentifierSubset(finding.parent_ids, prior.parent_ids),
       ),
   );
   if (cardinality) {
@@ -518,13 +522,12 @@ export function assertHierarchyMutationAllowed(
       },
     );
   }
-  const priorCycles = new Set(
-    before.cycles.map((finding) => finding.item_ids.join("\u0000")),
-  );
   const cycle = after.cycles.find(
     (finding) =>
       finding.item_ids.includes(holderId) &&
-      !priorCycles.has(finding.item_ids.join("\u0000")),
+      !before.cycles.some((prior) =>
+        isIdentifierSubset(finding.item_ids, prior.item_ids),
+      ),
   );
   if (cycle) {
     throw new PmCliError(

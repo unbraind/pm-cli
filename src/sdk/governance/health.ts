@@ -796,7 +796,13 @@ async function buildIntegrityCheck(
         item_parse_failures: itemScan.parseFailures,
         item_outdated_format_version: formatVersionScan.outdated,
         item_ahead_format_version: formatVersionScan.ahead,
-        hierarchy_integrity: hierarchyIntegrity,
+        hierarchy_integrity: {
+          ...hierarchyIntegrity,
+          relations: summarizeRecordList(
+            hierarchyIntegrity.relations,
+            BRIEF_HEALTH_DETAIL_LIMIT,
+          ),
+        },
         history_unreadable: historyScan.unreadable,
         history_conflict_markers: historyScan.conflictMarkers,
         history_invalid_json: historyScan.invalidJson,

@@ -65,6 +65,12 @@ function appendDependencyHierarchyEdges(
   relationshipRegistry: RelationshipKindRegistry,
 ): void {
   for (const dependency of item.dependencies ?? []) {
+    if (
+      typeof dependency !== "object" ||
+      dependency === null ||
+      typeof dependency.id !== "string"
+    )
+      continue;
     const definition = relationshipRegistry.resolve(dependency.kind);
     if (!definition?.hierarchy) continue;
     const target = canonicalIdByLowercase.get(dependency.id.toLowerCase());

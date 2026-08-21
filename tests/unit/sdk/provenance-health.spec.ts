@@ -33,10 +33,18 @@ describe("provenance resolver health", () => {
     const history = path.join(root, "history");
     await mkdir(history);
     await mkdir(path.join(history, "00-unreadable.jsonl"));
-    await symlink(
-      "missing-history-target",
-      path.join(history, "01-missing.jsonl"),
-    );
+    try {
+      await symlink(
+        "missing-history-target",
+        path.join(history, "01-missing.jsonl"),
+      );
+    } catch (error: unknown) {
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String(error.code)
+          : "";
+      if (!["EACCES", "ENOTSUP", "EPERM"].includes(code)) throw error;
+    }
     const entries = [
       "not-json",
       "null",

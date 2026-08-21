@@ -113,6 +113,13 @@ describe("hierarchy graph governance", () => {
       auditWorkspaceRelationshipGraph({ ...assembly }).findings.some(
         (finding) => finding.code.includes("hierarchy"),
       ),
+    ).toBe(true);
+    const legacyAssembly = { ...assembly };
+    delete legacyAssembly.hierarchyIntegrity;
+    expect(
+      auditWorkspaceRelationshipGraph(legacyAssembly).findings.some(
+        (finding) => finding.code.includes("hierarchy"),
+      ),
     ).toBe(false);
   });
 });

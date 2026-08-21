@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[5]: "area:graph",cycle-detection,hierarchy,integrity,validation
 created_at: "2026-07-25T20:39:41.651Z"
-updated_at: "2026-08-21T12:56:31.817Z"
-closed_at: "2026-08-21T12:56:16.523Z"
-completed_at: "2026-08-21T12:56:16.523Z"
+updated_at: "2026-08-21T14:09:47.277Z"
+closed_at: "2026-08-21T14:09:46.678Z"
+completed_at: "2026-08-21T14:09:46.678Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Cycle detection covers every dependency kind the relationship registry canonicalizes to a hierarchy edge, not only the ordering kinds, and a mutation that would close such a cycle fails fast with the same contract the scalar parent field already enforces; A regression test asserts no item can be reported as both an ancestor and a descendant of the same item by pm graph, for every accepted kind spelling in the declared dependency-kind domain; validate lifecycle, pm health, and pm graph analyze agree on cycle count for a corpus whose cycles are built from dependency rows rather than the parent scalar; The related-edge false-cycle behaviour fixed under pm-6irg does not regress: the reciprocal-related and all-related-loop corpus stays green; Hierarchy cycles already stored on terminal items are reported as legacy findings with their holders named, and are never repaired by mutating closed items; The post-merge composition case is covered: a randomized branch pair that each add one sound hierarchy edge and merge into a cycle fails the merge conformance suite"
 parent: pm-96h7
 risk: high
 confidence: 85
-resolution: "A registry-driven hierarchy analyzer now normalizes scalar and dependency evidence, enforces every hierarchy spelling before persistence, classifies active versus terminal-only debt, and feeds graph, validate, health, list/tree/rollups, remediation, CLI, SDK, and MCP-consumed surfaces."
-expected_result: "Every registry-declared hierarchy relation has one direction/cardinality interpretation; new cycles, multiple parents, and scalar/dependency divergence fail before persistence; existing terminal-only debt remains visible and advisory; merge composition and readers agree."
-actual_result: "Before the fix, mutual child_of rows could make an item both ancestor and descendant while validate and graph reported acyclic, and dependency-backed hierarchy mutations bypassed scalar-parent safeguards."
+resolution: "Every registry-declared hierarchy spelling now shares one extension-aware analyzer, before/after mutation guard, bounded diagnostics, terminal advisory policy, and copy-stable public assembly contract."
+expected_result: "Dependency-row hierarchy cycles are refused before persistence, reported consistently by graph/validate/health, do not regress related-edge handling, and legacy terminal debt remains visible and repairable."
+actual_result: "All acceptance paths and negative controls pass in 7,680 tests with literal 100/100/100/100 coverage, full static/docstring/security gates, packed npx/bunx acceptance, and all 13 third-round review threads resolved."
 dependencies[8]{id,kind,created_at}:
   pm-6irg,related,"2026-07-25T20:39:41.651Z"
   pm-6x7o,related,"2026-07-25T20:39:41.651Z"
@@ -27,7 +27,7 @@ dependencies[8]{id,kind,created_at}:
   pm-p9a4,related,"2026-07-25T20:39:41.651Z"
   pm-bzmeaa,related,"2026-07-25T20:50:37.575Z"
   pm-96h7,implements,"2026-07-26T05:57:33.033Z"
-comments[17]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-07-26T11:46:25.644Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:47:23.836Z","harness:codex","Partial implementation evidence: validate lifecycle now builds one hierarchy graph from scalar parents plus every registry-declared hierarchy dependency spelling, including source_parent/target_parent directions, missing targets, aliases, dedupe, and closed holders; child_of cycles are now reported. Mutation fail-fast, graph/health agreement, legacy classification, and merge-conformance clauses remain outstanding, so this item remains incomplete."
   "2026-07-26T13:11:37.855Z","harness:codex","Verification 2026-07-26: repository release gates passed build/typecheck/docs/static quality, SDK surface/import-cost/transport ratchets, secret scan, version policy, 374 files and 6,420 tests at exact 100% statements/branches/functions/lines, packed npx smoke, and 88-command package-first dogfood. Aggregate stopped only at hosted-analysis because the branch exact SHA was not yet pushed. Manual unrelated-directory packed consumer also proved the installed SDK link, 85-action coverage, same-harness cross-session claim exclusion, and bounded 22 MB Bun output capture."
@@ -45,9 +45,13 @@ comments[17]{created_at,author,text}:
   "2026-08-21T06:55:03.724Z","harness:codex","Review remediation verification 2026-08-21: after addressing valid CodeRabbit findings and adding the workspace hierarchy writer lock, the definitive isolated full run passed 547 files and 7,676 tests with exact 100% statements (56157/56157), branches (41913/41913), functions (11684/11684), and lines (54158/54158). The first attempted rerun was invalidated by /tmp inode exhaustion (errno -122); a second home-based temp root correctly exposed ancestor tracker discovery, and the final /var/tmp run was fully isolated and clean."
   "2026-08-21T07:38:06.659Z","harness:codex","Review cycle 2026-08-21: CodeRabbit exact-head review of b468869c0 produced actionable terminal-alias, legacy advisory-token, graph active/legacy projection, relation-only indexing, orphan parent-filter, and cycle-tree leaf findings. Implementing with focused negative controls; generated CHANGELOG wording suggestion will be evaluated against package-owned artifact policy."
   "2026-08-21T12:56:15.501Z","harness:codex","Second-review implementation and verification 2026-08-21: resolved terminal alias parity, advisory-only terminal debt tokens, active versus terminal graph summary counts, relation-only hierarchy indexing, dangling scalar-parent filtering, and cycle-tree leaf retention. The collector is public through the graph SDK barrel; read paths no longer pay defect-analysis cost. Isolated full verification passed 547 files / 7,677 tests with exact 100% statements 56170/56170, branches 41920/41920, functions 11682/11682, and lines 54169/54169. TMPDIR=/var/tmp pnpm quality:static passed repository assurance, SDK/package parity, command and flag grammar, refusal closure, tracker-context quality, graph composition, record integrity, SDK cost, and transport floors."
-learnings[1]{created_at,author,text}:
+  "2026-08-21T13:20:37.291Z","harness:codex","Exact-head review recurrence: CodeRabbit reviewed 20e4a7a9d and opened 13 threads. Valid hierarchy-integrity scope includes partial-debt repair monotonicity, malformed dependency resilience, assembly copy retention, bounded health output, early update-lock release, canonical tree parent IDs, registry defaults, and fixture proof. Reopened and claimed only while actively implementing these fixes."
+  "2026-08-21T14:09:40.722Z","harness:codex","Third-review completion evidence 2026-08-21: all 13 CodeRabbit exact-head findings were verified and addressed on their original inline threads. The SDK now keeps active extension relationship registries as the omitted-argument default, retains hierarchy analysis across spread-copied assemblies, rejects malformed dependency input without crashing, bounds health relation evidence, permits monotonic partial repair of legacy cycle/cardinality debt, and releases the workspace writer lock immediately after durable persistence. Definitive isolated coverage passed 547 files and 7,680 tests at exact 100% statements 56180/56180, branches 41936/41936, functions 11686/11686, and lines 54178/54178. TMPDIR=/var/tmp pnpm quality:static passed the complete repository, docstring, duplication, package, SDK, grammar, refusal, tracker-context, graph-composition, record-integrity, and transport gates."
+  "2026-08-21T14:09:41.215Z","harness:codex","Manual acceptance evidence 2026-08-21: a newly packed tarball was exercised from /var/tmp/pm-hierarchy-manual-XMedgu in a fresh tracker through both npx and bunx 2026.8.21. npx created a parent and child, the canonical parent reader returned the child, bunx graph analyze reported an acyclic normalized hierarchy, and bunx get preserved the canonical parent. pnpm audit reports no known vulnerabilities; GitHub Dependabot, code-scanning, and secret-scanning each report zero open alerts."
+learnings[2]{created_at,author,text}:
   "2026-08-21T05:34:29.917Z","harness:codex","Hierarchy integrity must be normalized from registry direction and child-end cardinality before any consumer reasons about ancestors, descendants, cycles, or rollups. Mutation checks should compare before/after defect identities so legacy debt stays repairable while new debt fails closed. Terminal-only defects belong in visible advisory findings, not health failure state."
-files[37]{path,scope,note}:
+  "2026-08-21T14:09:41.765Z","harness:codex","Public graph analysis attached only through object identity is not a stable SDK contract because consumers routinely spread or serialize assemblies. Preserve derived contracts on the public assembly value, keep workspace registry resolution in a dependency-cycle-free module, and compare defect sets monotonically so a repair that shrinks legacy debt remains allowed."
+files[39]{path,scope,note}:
   eslint-suppressions.json,project,Shrinking-only governance complexity suppression baseline
   package.json,project,Strict quality gate suppression ceiling
   scripts/release/static-quality-gate.mts,project,Canonical suppression ceiling
@@ -64,6 +68,7 @@ files[37]{path,scope,note}:
   src/sdk/graph/index.ts,project,Unified hierarchy integrity implementation and evidence
   src/sdk/graph/remediation.ts,project,Unified hierarchy integrity implementation and evidence
   src/sdk/graph/run.ts,project,Unified hierarchy integrity implementation and evidence
+  src/sdk/graph/workspace-relationship-kind-registry.ts,project,Cycle-safe workspace registry resolver keeps omitted SDK registry arguments extension-aware
   src/sdk/item-children.ts,project,Unified hierarchy integrity implementation and evidence
   src/sdk/lifecycle/create.ts,project,Unified hierarchy integrity implementation and evidence
   src/sdk/lifecycle/hierarchy-mutation-lock.ts,project,Serializes hierarchy-affecting writers across item ids so validation and persistence share one workspace snapshot
@@ -79,6 +84,7 @@ files[37]{path,scope,note}:
   tests/unit/commands/hierarchy-mutation-contract.spec.ts,project,Unified hierarchy integrity implementation and evidence
   tests/unit/commands/list-command.spec.ts,project,Proves cyclic and rootless hierarchy rows remain visible in unbounded tree output
   tests/unit/commands/validate-command.spec.ts,project,child_of dependency cycle regression
+  tests/unit/sdk/extension-relationship-kinds.spec.ts,project,Omitted-registry extension hierarchy negative control
   tests/unit/sdk/graph/assembly-governance.spec.ts,project,Unified hierarchy integrity implementation and evidence
   tests/unit/sdk/graph/durable-cache.spec.ts,project,Unified hierarchy integrity implementation and evidence
   tests/unit/sdk/graph/hierarchy-governance.spec.ts,project,Unified hierarchy integrity implementation and evidence
@@ -93,7 +99,7 @@ tests[4]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Structured hierarchy refusal and recovery contract
   docs/RELATIONSHIP_GRAPH.md,project,Registry driven hierarchy integrity and compact audit output
-close_reason: "Completed registry-driven hierarchy integrity and all exact-head review remediation: SDK, CLI, MCP/readers, mutation refusal, merge composition, active-versus-terminal debt, extension registries, token-efficient relation indexing, and deterministic cycle/tree behavior are covered by 7,677 tests at exact 100/100/100/100 plus the full static assurance suite."
+close_reason: "Registry-driven hierarchy integrity is complete across SDK, CLI, MCP-backed commands, mutations, readers, graph analysis, validation, health, governance, remediation, merge composition, and legacy repair. Three review rounds are resolved with exact local and manual acceptance evidence."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

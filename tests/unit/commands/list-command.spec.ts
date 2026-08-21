@@ -351,6 +351,44 @@ describe("runList", () => {
       ["pm-cycle-leaf", 0],
     ]);
     expect(
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "Child-ID", parent: "Root-ID" },
+            {
+              ...openItem,
+              id: "Grandchild-ID",
+              parent: "Child-ID",
+            },
+          ] as never,
+          "root-id",
+          undefined,
+          undefined,
+          [
+            { ...openItem, id: "Root-ID" },
+            { ...openItem, id: "Child-ID", parent: "Root-ID" },
+            {
+              ...openItem,
+              id: "Grandchild-ID",
+              parent: "Child-ID",
+            },
+          ] as never,
+        )
+        .map((item) => [item.id, item.tree_parent]),
+    ).toEqual([
+      ["Child-ID", "Root-ID"],
+      ["Grandchild-ID", "Child-ID"],
+    ]);
+    expect(
+      listInternals.orderItemsAsTree(
+        [
+          { ...openItem, id: "Orphan-ID", parent: "Missing-Root" },
+        ] as never,
+        "missing-root",
+        undefined,
+      )[0]?.tree_parent,
+    ).toBe("missing-root");
+    expect(
       listInternals.withTreeMetadata(
         { ...openItem, parent: "  " } as never,
         2,

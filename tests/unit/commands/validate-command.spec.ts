@@ -32,6 +32,7 @@ import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-s
 import { getActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { writeWorkspaceJsonWithHistory } from "../../../src/core/history/workspace-history.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
+import { parseItemDocument } from "../../../src/core/item/item-format.js";
 import {
   clearItemMetadataEnvelopeMemo,
   listAllDocumentCandidatesCached,
@@ -313,6 +314,10 @@ function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
   );
   expect(patched).not.toBe(original);
   writeFileSync(itemPath, patched, "utf8");
+  expect(
+    parseItemDocument(readFileSync(itemPath, "utf8"), { format: "toon" })
+      .metadata.parent,
+  ).toBe(ids[0]);
   clearItemMetadataEnvelopeMemo();
   return ids;
 }
@@ -890,6 +895,9 @@ describe("runValidate", () => {
           { id: "pm-b", kind: "parent" },
           { id: "pm-c", kind: "parent" },
           { id: "pm-missing", kind: "parent" },
+          null,
+          7,
+          { id: 9, kind: "parent" },
         ],
       },
       {
@@ -1931,6 +1939,15 @@ describe("runValidate", () => {
       );
       expect(patched).not.toBe(original);
       writeFileSync(secondPath, patched, "utf8");
+      expect(
+        parseItemDocument(readFileSync(secondPath, "utf8"), {
+          format: "toon",
+        }).metadata.dependencies,
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: first, kind: "child_of" }),
+        ]),
+      );
       clearItemMetadataEnvelopeMemo();
 
       const result = await runValidate(

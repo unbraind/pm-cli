@@ -10,10 +10,8 @@
  * instead of silently dropping it.
  */
 import type { Dependency, ItemStatus } from "../../types/index.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import {
   RelationshipGraph,
-  createRelationshipKindRegistry,
   type RelationshipKindRegistry,
 } from "../relationships.js";
 import { isExternalDependencySourceKind } from "../dependency-provenance.js";
@@ -21,6 +19,9 @@ import {
   analyzeHierarchyIntegrity,
   type HierarchyIntegrityAnalysis,
 } from "./hierarchy-integrity.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "./workspace-relationship-kind-registry.js";
+
+export { resolveWorkspaceRelationshipKindRegistry } from "./workspace-relationship-kind-registry.js";
 
 /** Minimal item shape inspected by dependency-reference governance. */
 export interface DependencyReferenceHolder {
@@ -98,17 +99,6 @@ export function normalizeDependencyGraphTarget(
  * share this resolution so custom ordering semantics apply identically on
  * every surface.
  */
-export function resolveWorkspaceRelationshipKindRegistry(): RelationshipKindRegistry {
-  const registry = createRelationshipKindRegistry();
-  for (const registration of getActiveExtensionRegistrations()
-    ?.relationship_kinds ?? []) {
-    for (const definition of registration.definitions) {
-      registry.register(definition);
-    }
-  }
-  return registry;
-}
-
 /** One raw stored dependency row duplicated verbatim on a single holder. */
 export interface DuplicateDependencyRow {
   /** Item that stores the duplicated row. */
@@ -450,6 +440,8 @@ export interface WorkspaceRelationshipAssembly {
   orderingContradictions?: OrderingStorageContradiction[];
   /** Raw legacy alias rows grouped by accepted spelling before graph canonicalization. */
   legacyAliasCounts: Record<string, number>;
+  /** Shared hierarchy analysis retained across ordinary object spread copies. */
+  hierarchyIntegrity?: HierarchyIntegrityAnalysis;
 }
 
 const hierarchyIntegrityByAssembly = new WeakMap<
@@ -461,7 +453,7 @@ const hierarchyIntegrityByAssembly = new WeakMap<
 export function getWorkspaceHierarchyIntegrity(
   assembly: WorkspaceRelationshipAssembly,
 ): HierarchyIntegrityAnalysis | undefined {
-  return hierarchyIntegrityByAssembly.get(assembly);
+  return assembly.hierarchyIntegrity ?? hierarchyIntegrityByAssembly.get(assembly);
 }
 
 /** Count raw dependency rows that use a registered compatibility alias instead of its canonical kind. */
@@ -550,6 +542,11 @@ export function assembleWorkspaceRelationshipGraph(
       dependencies,
     };
   });
+  const hierarchyIntegrity = analyzeHierarchyIntegrity(
+    safeItems,
+    isTerminal,
+    relationshipRegistry,
+  );
   const assembly: WorkspaceRelationshipAssembly = {
     graph: RelationshipGraph.fromItems(
       [
@@ -593,10 +590,8 @@ export function assembleWorkspaceRelationshipGraph(
       safeItems,
       relationshipRegistry,
     ),
+    hierarchyIntegrity,
   };
-  hierarchyIntegrityByAssembly.set(
-    assembly,
-    analyzeHierarchyIntegrity(safeItems, isTerminal, relationshipRegistry),
-  );
+  hierarchyIntegrityByAssembly.set(assembly, hierarchyIntegrity);
   return assembly;
 }

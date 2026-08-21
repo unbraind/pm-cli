@@ -15,6 +15,12 @@ Dependency rows have one canonical stored spelling per relationship meaning. Com
 
 The SDK relationship registry is authoritative. `canonicalizeRelationshipKind()` rejects unknown spellings, while `resolveCanonicalRelationshipKind()` supports validation flows that need an undefined result. `pm contracts` publishes `relationship_kind_contracts` with canonical names, aliases, inverses, and ordering/hierarchy semantics.
 
+Extension kinds may opt into both ordering and hierarchy semantics. Unless they
+declare an explicit `traversal`, ordering is the primary traversal and context
+role family; hierarchy direction and cardinality remain enforceable integrity
+constraints. This ordering-first precedence is shared by registry snapshots and
+direct-edge context explanations.
+
 Dependency additions and removals share the same lossless input grammar. A
 bare value is an item id; structured removal input uses `id=<id>` plus optional
 canonical `kind` (with `type` accepted only as an input alias), `source_kind`, `author`, and ISO `created_at`

@@ -3351,6 +3351,7 @@ async function runUpdateWithContext(
         return mutation;
       },
     });
+    await releaseHierarchyMutationLock();
     const orderingCycleWarnings = graphBeforeUpdate
       ? collectNewOrderingCycleWarnings(
           graphBeforeUpdate,

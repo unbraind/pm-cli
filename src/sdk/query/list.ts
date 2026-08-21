@@ -1401,6 +1401,7 @@ function orderItemsAsTree(
   parentRoot: string | undefined,
   maxDepth: number | undefined,
   hierarchyIndexes?: HierarchyRelationIndexes,
+  completeItems: readonly ListedItem[] = sortedItems,
 ): ListedItem[] {
   const { byId, childrenByParent } = buildListTreeIndexes(
     sortedItems,
@@ -1415,10 +1416,17 @@ function orderItemsAsTree(
   );
   const ordered: ListedItem[] = [];
   const visited = new Set<string>();
+  const canonicalIdByLowercase = new Map(
+    completeItems.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]),
+  );
   const pending = [...roots].reverse().map((node) => ({
     node,
     depth: 0,
-    parentId: parentRoot?.toLowerCase(),
+    parentId:
+      parentRoot === undefined
+        ? undefined
+        : (canonicalIdByLowercase.get(parentRoot.trim().toLowerCase()) ??
+          parentRoot.trim()),
   }));
   while (pending.length > 0) {
     const { node, depth, parentId } = pending.pop()!;
@@ -1429,7 +1437,11 @@ function orderItemsAsTree(
     ordered.push(withTreeMetadata(node, depth, children.length, parentId));
     if (maxDepth !== undefined && depth >= maxDepth) continue;
     for (const child of [...children].reverse()) {
-      pending.push({ node: child, depth: depth + 1, parentId: nodeId });
+      pending.push({
+        node: child,
+        depth: depth + 1,
+        parentId: canonicalIdByLowercase.get(nodeId)!,
+      });
     }
   }
   if (parentRoot === undefined && maxDepth === undefined) {
@@ -2092,6 +2104,7 @@ export async function runList(
           ordering.parentRoot,
           ordering.treeDepth,
           hierarchyIndexes,
+          items,
         )
       : sorted;
     page = pageAndProjectListItems(

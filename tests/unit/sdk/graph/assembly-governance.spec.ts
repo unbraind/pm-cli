@@ -6,6 +6,7 @@ import {
   collectDuplicateDependencyRows,
   collectMissingDependencyTargetIds,
   collectOrderingStorageContradictions,
+  getWorkspaceHierarchyIntegrity,
 } from "../../../../src/sdk/graph/assembly.js";
 import {
   auditWorkspaceRelationshipGraph,
@@ -79,6 +80,9 @@ describe("workspace relationship graph assembly", () => {
       title: "[missing] pm-missing",
       status: "missing",
     });
+    expect(getWorkspaceHierarchyIntegrity({ ...assembly })).toEqual(
+      assembly.hierarchyIntegrity,
+    );
 
     const padded = assembleWorkspaceRelationshipGraph([
       {

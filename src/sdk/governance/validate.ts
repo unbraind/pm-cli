@@ -2226,13 +2226,15 @@ function buildLifecycleWarnings(
   includeStaleBlockers: boolean,
   dependencyCycleSeverity: ValidateDependencyCycleSeverity,
   parentCycleSeverity: ValidateDependencyCycleSeverity,
-  dependencyCycleCount: number,
-  parentCycleCount: number,
-  hierarchyCardinalityCount: number,
-  hierarchyDivergenceCount: number,
-  legacyHierarchyCycleCount: number,
-  legacyHierarchyCardinalityCount: number,
-  legacyHierarchyDivergenceCount: number,
+  counts: {
+    dependencyCycles: number;
+    activeHierarchyCycles: number;
+    activeHierarchyCardinality: number;
+    activeHierarchyDivergence: number;
+    legacyHierarchyCycles: number;
+    legacyHierarchyCardinality: number;
+    legacyHierarchyDivergence: number;
+  },
 ): string[] {
   const warnings: string[] = [];
   if (rows.closureLikeRows.length > 0) {
@@ -2253,37 +2255,37 @@ function buildLifecycleWarnings(
   const dependencyWarning = lifecycleCycleWarningToken(
     "validate_lifecycle_dependency_cycles",
     dependencyCycleSeverity,
-    dependencyCycleCount,
+    counts.dependencyCycles,
   );
   const parentWarning = lifecycleCycleWarningToken(
     "validate_hierarchy_parent_cycle",
     parentCycleSeverity,
-    parentCycleCount,
+    counts.activeHierarchyCycles,
   );
   const cardinalityWarning = lifecycleCycleWarningToken(
     "validate_hierarchy_cardinality_violation",
     parentCycleSeverity,
-    hierarchyCardinalityCount,
+    counts.activeHierarchyCardinality,
   );
   const divergenceWarning = lifecycleCycleWarningToken(
     "validate_hierarchy_parent_divergence",
     parentCycleSeverity,
-    hierarchyDivergenceCount,
+    counts.activeHierarchyDivergence,
   );
   const legacyCycleWarning = lifecycleAdvisoryWarningToken(
     "validate_legacy_hierarchy_parent_cycle",
     parentCycleSeverity,
-    legacyHierarchyCycleCount,
+    counts.legacyHierarchyCycles,
   );
   const legacyCardinalityWarning = lifecycleAdvisoryWarningToken(
     "validate_legacy_hierarchy_cardinality_violation",
     parentCycleSeverity,
-    legacyHierarchyCardinalityCount,
+    counts.legacyHierarchyCardinality,
   );
   const legacyDivergenceWarning = lifecycleAdvisoryWarningToken(
     "validate_legacy_hierarchy_parent_divergence",
     parentCycleSeverity,
-    legacyHierarchyDivergenceCount,
+    counts.legacyHierarchyDivergence,
   );
   return [
     ...warnings,
@@ -2482,13 +2484,19 @@ function buildLifecycleCheck(
     includeStaleBlockers,
     dependencyCycleSeverity,
     parentCycleSeverity,
-    dependencyCycleDiagnostics.cycle_count,
-    parentCycleDiagnostics.active_cycle_count,
-    parentCycleDiagnostics.active_cardinality_violation_count,
-    parentCycleDiagnostics.active_parent_divergence_count,
-    parentCycleDiagnostics.legacy_cycle_count,
-    parentCycleDiagnostics.legacy_cardinality_violation_count,
-    parentCycleDiagnostics.legacy_parent_divergence_count,
+    {
+      dependencyCycles: dependencyCycleDiagnostics.cycle_count,
+      activeHierarchyCycles: parentCycleDiagnostics.active_cycle_count,
+      activeHierarchyCardinality:
+        parentCycleDiagnostics.active_cardinality_violation_count,
+      activeHierarchyDivergence:
+        parentCycleDiagnostics.active_parent_divergence_count,
+      legacyHierarchyCycles: parentCycleDiagnostics.legacy_cycle_count,
+      legacyHierarchyCardinality:
+        parentCycleDiagnostics.legacy_cardinality_violation_count,
+      legacyHierarchyDivergence:
+        parentCycleDiagnostics.legacy_parent_divergence_count,
+    },
   );
 
   const diagnosticLimit = verboseDiagnostics
