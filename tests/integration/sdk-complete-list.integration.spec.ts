@@ -108,7 +108,10 @@ describe("complete list SDK acceptance", () => {
       expect(recovery).toBe(
         "pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json",
       );
-      const recovered = context.runCli(recovery!.split(" ").slice(1), {
+      if (recovery === undefined) {
+        throw new Error("Complete-list validation did not provide recovery.");
+      }
+      const recovered = context.runCli(recovery.split(" ").slice(1), {
         expectJson: true,
       }).json;
       expect(certifyCompleteListResult(recovered).complete_list).toMatchObject({

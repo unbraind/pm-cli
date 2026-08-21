@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:query","area:sdk",complete-list,context-integrity,recovery
 created_at: "2026-08-21T12:55:33.362Z"
-updated_at: "2026-08-21T17:49:53.637Z"
-closed_at: "2026-08-21T17:49:52.918Z"
-completed_at: "2026-08-21T17:49:52.918Z"
+updated_at: "2026-08-21T18:00:06.839Z"
+closed_at: "2026-08-21T18:00:06.290Z"
+completed_at: "2026-08-21T18:00:06.290Z"
 author: "harness:codex"
 acceptance_criteria: "Require completeness.status=complete with safe-integer zero unreadable counts; require omission_receipt has_omissions=false, safe-integer zero count, and empty groups; require read_output contract v1 for list with within_budget=true, no compaction or omission, and complete include/amount/cost dimensions; reject output budget truncation/exceeded disclosures; return stable independent finding codes with absent, malformed, contradictory, and nonzero negative controls; emit canonical executable current recovery and prove it in a fresh-tracker acceptance test"
 parent: pm-usfg
@@ -26,7 +26,7 @@ component: SDK complete-list certification
 regression: true
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-y4aaol,incident_from,"2026-08-21T12:55:33.362Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-21T12:55:33.362Z","harness:codex","text=Duplicate check 2026-08-21: searched all-status PM corpus for GH-1078, certifyCompleteListResult, contradictory receipts, complete-list certification, and stale list-all recovery. No duplicate exists. pm-y4aaol is the closed predecessor that shipped the first complete-list certificate and pm-usfg is the canonical open SDK-first parent; linked with incident_from plus scalar parent rather than a generic related edge. GitHub source: https://github.com/unbraind/pm-cli/issues/1078"
   "2026-08-21T13:20:36.743Z","harness:codex","Duplicate check 2026-08-21: searched all-status PM corpus for GH-1078, certifyCompleteListResult, contradictory receipts, complete-list certification, and stale list-all recovery. No duplicate exists. pm-y4aaol is the closed predecessor that shipped the first complete-list certificate and pm-usfg is the canonical open SDK-first parent; linked with incident_from plus scalar parent rather than a generic related edge. GitHub source: https://github.com/unbraind/pm-cli/issues/1078"
   "2026-08-21T17:06:14.185Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
@@ -34,6 +34,8 @@ comments[7]{created_at,author,text}:
   "2026-08-21T17:45:52.319Z","harness:codex","Final evidence: complete-list certification now fails closed on missing or invalid omission receipts, missing or invalid read_output, incomplete requested dimensions, compaction or omission indicators, and unsafe unreadable counts. Recovery is the exact executable strict unbounded list command. Linked unit and integration tests passed 36/36; fresh npx and bunx recovery execution and installed-tarball SDK certification passed. Full suite passed 551 files / 7702 tests at exact 100% coverage; package and static gates passed."
   "2026-08-21T17:45:58.573Z","harness:codex","Final evidence: complete-list certification now fails closed on missing or invalid omission receipts, missing or invalid read_output, incomplete requested dimensions, compaction or omission indicators, and unsafe unreadable counts. Recovery is the exact executable strict unbounded list command. Linked unit and integration tests passed 36/36; fresh npx and bunx recovery execution and installed-tarball SDK certification passed. Full suite passed 551 files / 7702 tests at exact 100% coverage; package and static gates passed."
   "2026-08-21T17:49:39.515Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+  "2026-08-21T17:59:28.239Z","harness:codex","Hosted review finding: DeepScan NULL_POINTER at tests/integration/sdk-complete-list.integration.spec.ts:111 is valid because the Vitest expectation does not narrow recovery for static analysis. Replace the non-null assertion with an explicit fail-closed guard, rerun the linked test and gates, then reclose."
+  "2026-08-21T18:00:05.661Z","harness:codex","Hosted review remediation: DeepScan NULL_POINTER was valid. Replaced the non-null assertion with an explicit undefined guard before executing the recovery; linked 36/36 tests and focused ESLint pass."
 files[4]{path,scope,note}:
   sdk/public-surface.json,project,required receipt SDK contract
   src/sdk/query/complete-list.ts,project,fail-closed complete-list certification
@@ -41,15 +43,16 @@ files[4]{path,scope,note}:
   tests/unit/sdk/query/complete-list.spec.ts,project,independent negative controls
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/query/complete-list.spec.ts tests/integration/sdk-complete-list.integration.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mt38phv8-5h7his,test,passed,"2026-08-21T17:45:13.117Z","2026-08-21T17:45:22.868Z","2026-08-21T17:45:22.868Z",1,0,0
-close_reason: Reclosed with required production-defect evidence for the complete-list certification regression gate.
+  test-local-mt3985sb-c43ug2,test,passed,"2026-08-21T17:59:43.849Z","2026-08-21T17:59:53.675Z","2026-08-21T17:59:53.675Z",1,0,0
+close_reason: Reclosed after valid DeepScan nullability remediation with an explicit fail-closed recovery guard and linked test evidence.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   owner: pm-gh1078
   gate_id: complete-list-certification-contract
   negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/query/complete-list.spec.ts tests/integration/sdk-complete-list.integration.spec.ts
-  local_checks[3]: linked complete-list tests 36/36,manual packed recovery and SDK certification acceptance,exact full coverage 100/100/100/100
-  hosted_checks[2]: CI / Gates (static),CI / Tests (coverage)
+  local_checks[4]: linked complete-list tests 36/36,manual packed recovery and SDK certification acceptance,exact full coverage 100/100/100/100,explicit recovery undefined guard
+  hosted_checks[3]: CI / Gates (static),CI / Tests (coverage),DeepScan NULL_POINTER
 body: ""
