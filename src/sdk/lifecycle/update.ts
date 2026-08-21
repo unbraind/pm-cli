@@ -93,6 +93,8 @@ import {
 } from "../dependency-provenance.js";
 import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
+import { assertHierarchyMutationAllowed } from "../graph/hierarchy-integrity.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import type {
   Comment,
   Dependency,
@@ -745,6 +747,8 @@ interface DependencyRemovalSelector {
   id: string;
   kind?: (typeof DEPENDENCY_KIND_VALUES)[number];
   source_kind?: string;
+  author?: string;
+  created_at?: string;
 }
 
 function parseDependencyCreatedAt(
@@ -754,6 +758,10 @@ function parseDependencyCreatedAt(
   if (!value || value.trim() === "" || value.trim().toLowerCase() === "now") {
     return currentIso;
   }
+  return normalizeDependencyTimestamp(value);
+}
+
+function normalizeDependencyTimestamp(value: string): string {
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed)) {
     throw new PmCliError(
@@ -782,7 +790,14 @@ const DEP_ADDITION_KEYS = [
   "source_kind",
 ] as const;
 /** Allowed CSV/markdown keys for the `--dep-remove` selector (GH-258). */
-const DEP_REMOVE_KEYS = ["id", "kind", "type", "source_kind"] as const;
+const DEP_REMOVE_KEYS = [
+  "id",
+  "kind",
+  "type",
+  "author",
+  "created_at",
+  "source_kind",
+] as const;
 
 function looksLikeStructuredDependencyEntry(raw: string): boolean {
   if (raw.startsWith("```") || raw.includes("\n")) {
@@ -903,12 +918,18 @@ function parseDependencyRemovals(
       const sourceKind = normalizeDependencySourceKind(
         parseOptionalDependencyString(kv.source_kind),
       );
+      const author = parseOptionalDependencyString(kv.author);
+      const createdAt = parseOptionalDependencyString(kv.created_at);
       return {
         id: normalizeDependencySeedId(idRaw, prefix, sourceKind),
         kind: kindRaw
           ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind")
           : undefined,
         source_kind: sourceKind,
+        author,
+        created_at: createdAt
+          ? normalizeDependencyTimestamp(createdAt)
+          : undefined,
       };
     }
     if (trimmed.toLowerCase() === "undefined") {
@@ -1063,6 +1084,18 @@ function matchesDependencySelector(
     selector.source_kind !== undefined &&
     value.source_kind?.trim().toLowerCase() !==
       selector.source_kind.trim().toLowerCase()
+  ) {
+    return false;
+  }
+  if (
+    selector.author !== undefined &&
+    value.author?.trim().toLowerCase() !== selector.author.trim().toLowerCase()
+  ) {
+    return false;
+  }
+  if (
+    selector.created_at !== undefined &&
+    value.created_at !== selector.created_at
   ) {
     return false;
   }
@@ -1828,6 +1861,49 @@ async function buildNoopUpdateResult(params: {
   };
 }
 
+async function loadUpdateRelationshipGraph(params: {
+  fieldFlags: Readonly<Record<string, boolean>>;
+  clearedMetadataKeys: ReadonlySet<string>;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+}): Promise<ItemMetadata[] | undefined> {
+  if (
+    !params.fieldFlags.dep &&
+    !params.fieldFlags.depRemove &&
+    !params.fieldFlags.blockedBy &&
+    !params.fieldFlags.parent &&
+    !params.clearedMetadataKeys.has("parent")
+  )
+    return undefined;
+  return listAllItemMetadataLight(
+    params.pmRoot,
+    params.settings.item_format,
+    params.typeToFolder,
+    undefined,
+    params.settings.schema,
+  );
+}
+
+function assertUpdateHierarchyIntegrity(params: {
+  before: readonly ItemMetadata[] | undefined;
+  document: ItemDocument;
+  statusRegistry: RuntimeStatusRegistry;
+}): void {
+  if (!params.before) return;
+  assertHierarchyMutationAllowed(
+    params.before,
+    params.before.map((item) =>
+      item.id === params.document.metadata.id
+        ? params.document.metadata
+        : item,
+    ),
+    params.document.metadata.id,
+    (status) => isTerminalStatus(status, params.statusRegistry),
+    resolveWorkspaceRelationshipKindRegistry(),
+  );
+}
+
 async function assertUpdateTrackerInitialized(pmRoot: string): Promise<void> {
   await assertInitializedTracker(pmRoot);
 }
@@ -2304,11 +2380,13 @@ function assertDependencyRemovalSelectorsMatch(
         id: entry.id,
         kind: entry.kind,
         source_kind: entry.source_kind,
+        author: entry.author,
+        created_at: entry.created_at,
       })),
       why: "Failing on a zero-match selector prevents a mistyped dependency removal from being reported as successful.",
       nextSteps: [
         `Inspect the current item with: pm get ${itemId} --full`,
-        "Retry --dep-remove with the exact id, kind, and optional source_kind shown in dependencies.",
+        "Retry --dep-remove with the exact id plus any kind, source_kind, author, or created_at selectors needed to identify one stored row.",
       ],
     },
   );
@@ -3185,16 +3263,13 @@ async function runUpdateWithContext(
   }
   assertMatchingOrderRank(options);
 
-  let graphBeforeUpdate =
-    fieldFlags.dep || fieldFlags.depRemove || fieldFlags.blockedBy
-      ? await listAllItemMetadataLight(
-          pmRoot,
-          settings.item_format,
-          typeRegistry.type_to_folder,
-          undefined,
-          settings.schema,
-        )
-      : undefined;
+  let graphBeforeUpdate = await loadUpdateRelationshipGraph({
+    fieldFlags,
+    clearedMetadataKeys: clearItemMetadataKeys,
+    pmRoot,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+  });
 
   let lifecycleTransition: ReopenUpdateReceipt | undefined;
   let recurrenceHistoryContext: RecurrenceHistoryContext | undefined;
@@ -3228,7 +3303,7 @@ async function runUpdateWithContext(
           ? structuredClone(document.metadata)
           : item,
       );
-      return mutateUpdateDocument(document, {
+      const mutation = mutateUpdateDocument(document, {
         options,
         settings,
         typeRegistry,
@@ -3253,6 +3328,12 @@ async function runUpdateWithContext(
         author,
         pmRoot,
       });
+      assertUpdateHierarchyIntegrity({
+        before: graphBeforeUpdate,
+        document,
+        statusRegistry,
+      });
+      return mutation;
     },
   });
   const orderingCycleWarnings = graphBeforeUpdate

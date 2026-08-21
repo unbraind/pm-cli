@@ -20,7 +20,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import {resolvePmRoot } from "../../core/store/paths.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
   parseDirection,
@@ -46,9 +46,11 @@ import {
 import { analyzeRelationshipSchedule } from "./scheduling.js";
 import {
   assembleWorkspaceRelationshipGraph,
+  getWorkspaceHierarchyIntegrity,
   resolveWorkspaceRelationshipKindRegistry,
   type WorkspaceRelationshipAssembly,
 } from "./assembly.js";
+import type { HierarchyIntegrityAnalysis } from "./hierarchy-integrity.js";
 import {
   computeWorkspaceGraphFingerprint,
   workspaceGraphCache,
@@ -72,6 +74,7 @@ import {
   type RelationshipAuditReport,
   type RelationshipAuditSnapshot,
 } from "./governance.js";
+import { RELATIONSHIP_AUDIT_FINDING_CODES } from "./governance-contracts.js";
 import {
   planRelationshipRemediation,
   type RelationshipRemediationStep,
@@ -269,6 +272,22 @@ export interface GraphKnowledgeSummary {
   hubs?: { id: string; degree: number }[];
 }
 
+/** Unified hierarchy-integrity projection inside an analyze result. */
+export interface GraphHierarchySummary {
+  /** Whether the structural hierarchy is acyclic. */
+  acyclic: boolean;
+  /** Total canonical parent-child evidence rows. */
+  relation_count: number;
+  /** Total strongly connected hierarchy components. */
+  cycle_count: number;
+  /** Total children that resolve to more than one logical parent. */
+  cardinality_violation_count: number;
+  /** Total scalar/dependency parent disagreements. */
+  parent_divergence_count: number;
+  /** Bounded hierarchy-cycle sample; absent with summary. */
+  cycles?: string[][];
+}
+
 /** Result envelope for the analyze subcommand. */
 export interface GraphAnalyzeResult {
   /** Executed graph subcommand. */
@@ -285,6 +304,8 @@ export interface GraphAnalyzeResult {
   execution: GraphExecutionSummary;
   /** Structural analytics over every stored edge. */
   knowledge: GraphKnowledgeSummary;
+  /** Registry-driven structural hierarchy integrity across all storage surfaces. */
+  hierarchy?: GraphHierarchySummary;
   /** Cache observability for this invocation. */
   cache?: GraphCacheMetadata;
 }
@@ -303,8 +324,14 @@ export interface GraphAuditResult {
   affected_subjects_by_severity: Record<string, number>;
   /** Affected-subject counts keyed by finding code. */
   affected_subjects_by_code: Record<string, number>;
-  /** Structural coverage metrics computed during the audit. */
-  profile: RelationshipAuditReport["profile"];
+  /** Structural coverage metrics; the duplicated finding census is absent with summary. */
+  profile: Omit<
+    RelationshipAuditReport["profile"],
+    "finding_subjects_by_code"
+  > &
+    Partial<
+      Pick<RelationshipAuditReport["profile"], "finding_subjects_by_code">
+    >;
   /** Stored legacy relationship aliases grouped by spelling; canonical graph counts remain in profile. */
   legacy_alias_counts?: Record<string, number>;
   /** Ordered findings with bounded evidence samples; absent with summary. */
@@ -828,6 +855,67 @@ function runGraphImpact(
   };
 }
 
+function buildGraphExecutionSummary(
+  execution: ReturnType<typeof analyzeRelationshipExecution>,
+  summary: boolean,
+  sampleLimit: number,
+): GraphExecutionSummary {
+  return {
+    acyclic: execution.acyclic,
+    ordered_node_count: execution.order.length,
+    layer_count: execution.layers.length,
+    frontier_count: execution.frontier.length,
+    critical_path_length: execution.criticalPathLength,
+    cycle_count: execution.cycles.length,
+    ...(summary
+      ? {}
+      : {
+          frontier: execution.frontier.slice(0, sampleLimit),
+          critical_path: execution.criticalPath.slice(0, sampleLimit),
+          cycles: execution.cycles.slice(0, sampleLimit),
+        }),
+  };
+}
+
+function buildGraphKnowledgeSummary(
+  knowledge: ReturnType<typeof analyzeKnowledgeGraph>,
+  summary: boolean,
+  sampleLimit: number,
+): GraphKnowledgeSummary {
+  return {
+    component_count: knowledge.components.length,
+    largest_component_size: knowledge.components[0]?.length ?? 0,
+    orphan_count: knowledge.orphans.length,
+    ...(summary
+      ? {}
+      : {
+          orphans: knowledge.orphans.slice(0, sampleLimit),
+          hubs: knowledge.hubs.slice(0, sampleLimit),
+        }),
+  };
+}
+
+function buildGraphHierarchySummary(
+  hierarchy: HierarchyIntegrityAnalysis,
+  summary: boolean,
+  sampleLimit: number,
+): GraphHierarchySummary {
+  return {
+    acyclic: hierarchy.cycles.length === 0,
+    relation_count: hierarchy.relations.length,
+    cycle_count: hierarchy.cycles.length,
+    cardinality_violation_count: hierarchy.cardinality_violations.length,
+    parent_divergence_count: hierarchy.divergences.length,
+    ...(summary
+      ? {}
+      : {
+          cycles: hierarchy.cycles
+            .slice(0, sampleLimit)
+            .map((cycle) => cycle.item_ids),
+        }),
+  };
+}
+
 /** Execute the workspace-wide execution and knowledge analytics subcommand. */
 function runGraphAnalyze(invocation: GraphInvocation): GraphAnalyzeResult {
   const graph = invocation.assembly.graph;
@@ -842,32 +930,21 @@ function runGraphAnalyze(invocation: GraphInvocation): GraphAnalyzeResult {
     edge_count: graph.edges().length,
     edge_basis: "deduplicated_directed",
     sample_limit: sampleLimit,
-    execution: {
-      acyclic: execution.acyclic,
-      ordered_node_count: execution.order.length,
-      layer_count: execution.layers.length,
-      frontier_count: execution.frontier.length,
-      critical_path_length: execution.criticalPathLength,
-      cycle_count: execution.cycles.length,
-      ...(invocation.summary
-        ? {}
-        : {
-            frontier: execution.frontier.slice(0, sampleLimit),
-            critical_path: execution.criticalPath.slice(0, sampleLimit),
-            cycles: execution.cycles.slice(0, sampleLimit),
-          }),
-    },
-    knowledge: {
-      component_count: knowledge.components.length,
-      largest_component_size: knowledge.components[0]?.length ?? 0,
-      orphan_count: knowledge.orphans.length,
-      ...(invocation.summary
-        ? {}
-        : {
-            orphans: knowledge.orphans.slice(0, sampleLimit),
-            hubs: knowledge.hubs.slice(0, sampleLimit),
-          }),
-    },
+    execution: buildGraphExecutionSummary(
+      execution,
+      invocation.summary,
+      sampleLimit,
+    ),
+    knowledge: buildGraphKnowledgeSummary(
+      knowledge,
+      invocation.summary,
+      sampleLimit,
+    ),
+    hierarchy: buildGraphHierarchySummary(
+      getWorkspaceHierarchyIntegrity(invocation.assembly)!,
+      invocation.summary,
+      sampleLimit,
+    ),
   };
 }
 
@@ -900,6 +977,8 @@ function runGraphAudit(
     affectedByCode[finding.code] =
       (affectedByCode[finding.code] ?? 0) + finding.count;
   }
+  const { finding_subjects_by_code: _findingSubjects, ...compactProfile } =
+    report.profile;
   return {
     subcommand: "audit",
     finding_count: report.findings.length,
@@ -907,7 +986,7 @@ function runGraphAudit(
     findings_by_code: byCode,
     affected_subjects_by_severity: affectedBySeverity,
     affected_subjects_by_code: affectedByCode,
-    profile: report.profile,
+    profile: invocation.summary ? compactProfile : report.profile,
     legacy_alias_counts: invocation.assembly.legacyAliasCounts,
     ...(invocation.summary ? {} : { findings: report.findings }),
   };
@@ -1336,7 +1415,15 @@ async function applyAuditBaseline(
     saved_at: new Date().toISOString(),
     fingerprint,
     affected_subjects_by_code: audit.affected_subjects_by_code,
-    profile: audit.profile,
+    profile: {
+      ...audit.profile,
+      finding_subjects_by_code: Object.fromEntries(
+        RELATIONSHIP_AUDIT_FINDING_CODES.map((code) => [
+          code,
+          audit.affected_subjects_by_code[code] ?? 0,
+        ]),
+      ) as RelationshipAuditSnapshot["profile"]["finding_subjects_by_code"],
+    },
   };
   const stored = await loadGraphAuditBaseline(pmRoot);
   if (saveBaseline) await saveGraphAuditBaseline(pmRoot, current);

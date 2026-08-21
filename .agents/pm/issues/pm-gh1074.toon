@@ -1,0 +1,24 @@
+id: pm-gh1074
+title: "GH-1074: package doctor cannot distinguish a safe declining service override from a global interceptor"
+description: "GitHub issue #1074 reports that strict isolated package doctor fails a package whose output_format service always returns the documented handled:false decline decision, even though runtime behavior is inert and warning-free."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:packages",github,sdk,service-ownership
+created_at: "2026-08-21T05:42:05.594Z"
+updated_at: "2026-08-21T05:43:12.217Z"
+author: "harness:codex"
+acceptance_criteria: "Add an SDK-declared service ownership or safe-pass-through contract; keep global interception fail-closed; align doctor diagnostics with the runtime handled:false decision; test third-party package, first-party collision, and negative interceptor controls; document author guidance."
+parent: pm-tnud
+severity: medium
+repro_steps: "Install a package that registers output_format and always returns handled:false; verify native output is unchanged; run package doctor --project --isolated --strict-exit; observe extension_output_service_override_global and exit 1."
+expected_result: Doctor retains warnings for genuine interceptors but recognizes declared ownership or a machine-verifiable unconditional decline.
+actual_result: A safe canonical decline is classified as a global interceptor and fails strict doctor.
+affected_version: 2026.8.21
+component: package doctor
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5teq,related,"2026-08-21T05:42:05.594Z","harness:codex","cli:create:dep",detected
+  pm-tnud,blocks,"2026-08-21T05:43:11.791Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-21T05:42:05.594Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for the exact diagnostic, output_format ownership, safe decline, and strict doctor; pm-5teq and pm-nf7q are related but do not cover machine-verifiable third-party decline. External reproduction lineage: pm-starter-gx6x. Source: https://github.com/unbraind/pm-cli/issues/1074"
+body: ""

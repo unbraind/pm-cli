@@ -1024,8 +1024,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "depRemove",
       keys: ["depRemove", "dep_remove"],
       option: "--dep-remove <value>",
-      description:
-        "Remove dependencies by id or id=<id>,kind=<value>,source_kind=<value> selectors (repeatable)",
+      description: "Remove by dependency id or exact row signature (repeatable)",
       repeatable: true,
       aliasOptions: [
         {

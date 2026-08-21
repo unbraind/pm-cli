@@ -84,6 +84,8 @@ import {
   refreshItemMetadataDerivedIndex,
 } from "../item-metadata-index.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
+import { assertHierarchyMutationAllowed } from "../graph/hierarchy-integrity.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -2481,8 +2483,9 @@ async function writeCreatedItem(params: {
   let hookWarnings: string[] = [];
   try {
     const graphBeforeCreate =
-      afterDocument.metadata.dependencies &&
-      afterDocument.metadata.dependencies.length > 0
+      afterDocument.metadata.parent !== undefined ||
+      (afterDocument.metadata.dependencies !== undefined &&
+        afterDocument.metadata.dependencies.length > 0)
         ? await listAllItemMetadataLight(
             pmRoot,
             settings.item_format,
@@ -2500,6 +2503,17 @@ async function writeCreatedItem(params: {
     );
     if (existing) {
       throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
+    }
+    if (graphBeforeCreate) {
+      const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+      assertHierarchyMutationAllowed(
+        graphBeforeCreate,
+        [...graphBeforeCreate, afterDocument.metadata],
+        id,
+        (status) =>
+          statusRegistry.terminal_statuses.has(status.trim().toLowerCase()),
+        resolveWorkspaceRelationshipKindRegistry(),
+      );
     }
     await runActiveBeforeMutationHooks({
       pm_root: pmRoot,

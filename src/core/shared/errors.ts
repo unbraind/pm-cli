@@ -30,10 +30,7 @@ export interface PmCliErrorRecoveryPayload {
   /** Whether additional accepting command paths were omitted from this payload. */
   candidate_commands_truncated?: boolean;
   /** Declared lexicon membership of an option rejected by the attempted path. */
-  option_scope?:
-    | "declared_on_path"
-    | "declared_elsewhere"
-    | "declared_nowhere";
+  option_scope?: "declared_on_path" | "declared_elsewhere" | "declared_nowhere";
   /** Value that configures or reports suggested retry for this contract. */
   suggested_retry?: string;
   /** Tokenized retry arguments for direct execution without reparsing display text. */
@@ -109,12 +106,16 @@ export interface PmCliErrorContext {
     id: string;
     kind?: string;
     source_kind?: string;
+    author?: string;
+    created_at?: string;
   }>;
   /** Compact stored dependency identities available when a removal failed. */
   available_dependencies?: Array<{
     id: string;
     kind: string;
     source_kind?: string;
+    author?: string;
+    created_at?: string;
   }>;
   /** Exact verifier findings that caused an integrity-sensitive operation to refuse. */
   verification_errors?: string[];

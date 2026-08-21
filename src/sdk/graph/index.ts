@@ -99,6 +99,18 @@ export {
   type RelationshipCoverageTypeProfile,
 } from "./governance.js";
 export {
+  analyzeHierarchyIntegrity,
+  assertHierarchyMutationAllowed,
+  formatHierarchyRelation,
+  type HierarchyCardinalityViolation,
+  type HierarchyCycle,
+  type HierarchyIntegrityAnalysis,
+  type HierarchyIntegrityItem,
+  type HierarchyParentDivergence,
+  type HierarchyRelation,
+  type HierarchyRelationSource,
+} from "./hierarchy-integrity.js";
+export {
   clearDurableGraphCache,
   durableGraphCachePath,
   durableGraphCacheStatus,
@@ -160,6 +172,7 @@ export {
   type GraphExecutionSummary,
   type GraphImpactResult,
   type GraphImpactRow,
+  type GraphHierarchySummary,
   type GraphIndexResult,
   type GraphKnowledgeSummary,
   type GraphPathRow,

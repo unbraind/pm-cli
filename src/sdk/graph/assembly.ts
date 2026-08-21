@@ -17,6 +17,10 @@ import {
   type RelationshipKindRegistry,
 } from "../relationships.js";
 import { isExternalDependencySourceKind } from "../dependency-provenance.js";
+import {
+  analyzeHierarchyIntegrity,
+  type HierarchyIntegrityAnalysis,
+} from "./hierarchy-integrity.js";
 
 /** Minimal item shape inspected by dependency-reference governance. */
 export interface DependencyReferenceHolder {
@@ -285,10 +289,7 @@ export function collectOrderingStorageContradictions(
       right.target_id,
     );
     if (targetCompare !== 0) return targetCompare;
-    return compareCaseFoldedText(
-      left.dependency_kind,
-      right.dependency_kind,
-    );
+    return compareCaseFoldedText(left.dependency_kind, right.dependency_kind);
   });
 }
 
@@ -451,6 +452,18 @@ export interface WorkspaceRelationshipAssembly {
   legacyAliasCounts: Record<string, number>;
 }
 
+const hierarchyIntegrityByAssembly = new WeakMap<
+  WorkspaceRelationshipAssembly,
+  HierarchyIntegrityAnalysis
+>();
+
+/** Read the hierarchy analysis paired with an assembly created by this module. */
+export function getWorkspaceHierarchyIntegrity(
+  assembly: WorkspaceRelationshipAssembly,
+): HierarchyIntegrityAnalysis | undefined {
+  return hierarchyIntegrityByAssembly.get(assembly);
+}
+
 /** Count raw dependency rows that use a registered compatibility alias instead of its canonical kind. */
 export function collectLegacyDependencyAliasCounts(
   items: readonly DependencyReferenceHolder[],
@@ -470,9 +483,7 @@ export function collectLegacyDependencyAliasCounts(
     }
   }
   return Object.fromEntries(
-    Object.entries(counts).sort(([left], [right]) =>
-      left.localeCompare(right),
-    ),
+    Object.entries(counts).sort(([left], [right]) => left.localeCompare(right)),
   );
 }
 
@@ -539,7 +550,7 @@ export function assembleWorkspaceRelationshipGraph(
       dependencies,
     };
   });
-  return {
+  const assembly: WorkspaceRelationshipAssembly = {
     graph: RelationshipGraph.fromItems(
       [
         ...graphItems,
@@ -583,4 +594,9 @@ export function assembleWorkspaceRelationshipGraph(
       relationshipRegistry,
     ),
   };
+  hierarchyIntegrityByAssembly.set(
+    assembly,
+    analyzeHierarchyIntegrity(safeItems, isTerminal, relationshipRegistry),
+  );
+  return assembly;
 }

@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import {
   mkdir,
   mkdtemp,
@@ -286,7 +287,7 @@ function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
         ];
   // Wire each item's parent to the next, closing the ring back to the first
   // (A->B->...->A) so the composition graph contains a true cycle.
-  for (let index = 0; index < ids.length; index += 1) {
+  for (let index = 0; index < ids.length - 1; index += 1) {
     const child = ids[index]!;
     const parent = ids[(index + 1) % ids.length]!;
     const updated = context.runCli(
@@ -303,6 +304,17 @@ function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
     );
     expect(updated.code).toBe(0);
   }
+  const lastChild = ids.at(-1)!;
+  const itemPath = path.join(context.pmPath, "tasks", `${lastChild}.toon`);
+  writeFileSync(
+    itemPath,
+    readFileSync(itemPath, "utf8").replace(
+      /^(status:.*)$/m,
+      `$1\nparent: ${ids[0]}`,
+    ),
+    "utf8",
+  );
+  clearItemMetadataEnvelopeMemo();
   return ids;
 }
 
@@ -953,6 +965,7 @@ describe("runValidate", () => {
       { id: "pm-pc", parent: "none" },
       { id: "pm-pd", parent: "pm-missing" },
       { id: "pm-pe" },
+      { id: "pm-pg", parent: " " },
       // Case-insensitive parent resolution (matches PR #279): an uppercase
       // parent ref must still resolve to its canonical lowercase item id so a
       // casing mismatch can never hide a cycle edge.
@@ -963,6 +976,7 @@ describe("runValidate", () => {
     expect(parentGraph.get("pm-pc")).toEqual([]);
     expect(parentGraph.get("pm-pd")).toEqual([]);
     expect(parentGraph.get("pm-pe")).toEqual([]);
+    expect(parentGraph.get("pm-pg")).toEqual([]);
     expect(parentGraph.get("pm-pf")).toEqual(["pm-pa"]);
     const parentCycles = validateInternals.detectLifecycleParentCycles([
       { id: "pm-pa", parent: "pm-pb" },
@@ -973,6 +987,42 @@ describe("runValidate", () => {
     expect(parentCycles.cycle_item_ids).toEqual(["pm-pa", "pm-pb"]);
     expect(parentCycles.cycle_sample_paths[0]).toContain("pm-pa");
     expect(parentCycles.cycle_sample_paths[0]).toContain("pm-pb");
+    expect(
+      validateInternals.detectLifecycleParentCycles(
+        [
+          { id: "pm-active-a", status: "open" },
+          { id: "pm-active-b", status: "open" },
+          {
+            id: "pm-active-child",
+            status: "open",
+            parent: "pm-active-a",
+            dependencies: [{ id: "pm-active-b", kind: "parent" }],
+          },
+          { id: "pm-old-a", status: "closed" },
+          { id: "pm-old-b", status: "canceled" },
+          {
+            id: "pm-old-child",
+            status: "closed",
+            parent: "pm-old-a",
+            dependencies: [{ id: "pm-old-b", kind: "parent" }],
+          },
+        ] as never,
+        statusRegistry,
+      ),
+    ).toMatchObject({
+      active_cardinality_violation_count: 1,
+      legacy_cardinality_violation_count: 1,
+      cardinality_violation_rows: [
+        "pm-active-child:pm-active-a,pm-active-b:active",
+        "pm-old-child:pm-old-a,pm-old-b:legacy",
+      ],
+      active_parent_divergence_count: 1,
+      legacy_parent_divergence_count: 1,
+      parent_divergence_rows: [
+        "pm-active-child:scalar=pm-active-a:dependencies=pm-active-b:active",
+        "pm-old-child:scalar=pm-old-a:dependencies=pm-old-b:legacy",
+      ],
+    });
 
     const lifecyclePolicy = {
       stale_blocker_reason_patterns: ["no active blocker", "stale blocker"],
@@ -1850,22 +1900,27 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       const first = createTask(context, "validate-hierarchy-dependency-a");
       const second = createTask(context, "validate-hierarchy-dependency-b");
-      for (const [child, parent] of [
-        [first, second],
-        [second, first],
-      ]) {
-        const updated = context.runCli(
-          [
-            "update",
-            child,
-            "--dep",
-            `id=${parent},kind=child_of,author=seed-author,created_at=now`,
-            "--json",
-          ],
-          { expectJson: true },
-        );
-        expect(updated.code).toBe(0);
-      }
+      const updated = context.runCli(
+        [
+          "update",
+          first,
+          "--dep",
+          `id=${second},kind=child_of,author=seed-author,created_at=now`,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+      const secondPath = path.join(context.pmPath, "tasks", `${second}.toon`);
+      writeFileSync(
+        secondPath,
+        readFileSync(secondPath, "utf8").replace(
+          /^(status:.*)$/m,
+          `$1\ndependencies[1]{id,kind,created_at,author}:\n  ${first},child_of,"2026-08-21T00:00:00.000Z",seed-author`,
+        ),
+        "utf8",
+      );
+      clearItemMetadataEnvelopeMemo();
 
       const result = await runValidate(
         { checkLifecycle: true },

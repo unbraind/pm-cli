@@ -27,6 +27,8 @@ import type {
   OrderingStorageContradiction,
   WorkspaceRelationshipAssembly,
 } from "./assembly.js";
+import { getWorkspaceHierarchyIntegrity } from "./assembly.js";
+import type { HierarchyIntegrityAnalysis } from "./hierarchy-integrity.js";
 import {
   RELATIONSHIP_AUDIT_FINDING_CODES,
   type RelationshipAuditFindingCode,
@@ -188,7 +190,9 @@ const SEVERITY_RANK: Record<RelationshipAuditSeverity, number> = {
 };
 
 /** Normalize optional exemption identifiers into a case-insensitive lookup set. */
-function normalizeExemptionSet(values: readonly string[] | undefined): Set<string> {
+function normalizeExemptionSet(
+  values: readonly string[] | undefined,
+): Set<string> {
   return new Set(
     (values ?? [])
       .filter((value): value is string => typeof value === "string")
@@ -263,6 +267,102 @@ function buildFinding(
             .slice(0, maxSampleSize),
         }),
   };
+}
+
+function collectHierarchyCycleFindings(
+  analysis: HierarchyIntegrityAnalysis,
+  maxSampleSize: number,
+): RelationshipAuditFinding[] {
+  return analysis.cycles.map((cycle) =>
+    buildFinding(
+      cycle.legacy_terminal ? "legacy_hierarchy_cycle" : "hierarchy_cycle",
+      cycle.legacy_terminal ? "info" : "error",
+      "Structural hierarchy must be acyclic across scalar and registered dependency relationships.",
+      (count) => `${count} items participate in one hierarchy cycle.`,
+      cycle.item_ids,
+      maxSampleSize,
+      cycle.legacy_terminal
+        ? "Preserve historical rows unless an explicit legacy repair is approved."
+        : "Remove or retype one exact hierarchy relation before continuing mutation.",
+    ),
+  );
+}
+
+function collectHierarchyCardinalityFindings(
+  analysis: HierarchyIntegrityAnalysis,
+  maxSampleSize: number,
+  legacyTerminal: boolean,
+): RelationshipAuditFinding[] {
+  const rows = analysis.cardinality_violations.filter(
+    (finding) => finding.legacy_terminal === legacyTerminal,
+  );
+  if (rows.length === 0) return [];
+  return [
+    buildFinding(
+      legacyTerminal
+        ? "legacy_hierarchy_cardinality_violation"
+        : "hierarchy_cardinality_violation",
+      legacyTerminal ? "info" : "error",
+      "Every structural child must resolve to at most one logical parent across all hierarchy spellings.",
+      (count) =>
+        `${count} child item${count === 1 ? "" : "s"} resolve to multiple hierarchy parents.`,
+      rows.map((finding) => finding.child_id),
+      maxSampleSize,
+      legacyTerminal
+        ? "Preserve historical rows unless an explicit legacy repair is approved."
+        : "Remove the exact surplus hierarchy rows so each child has one parent.",
+      rows.map(
+        (finding) => `${finding.child_id} <- ${finding.parent_ids.join(", ")}`,
+      ),
+    ),
+  ];
+}
+
+function collectHierarchyDirectionFindings(
+  analysis: HierarchyIntegrityAnalysis,
+  maxSampleSize: number,
+  legacyTerminal: boolean,
+): RelationshipAuditFinding[] {
+  const rows = analysis.divergences.filter(
+    (finding) => finding.legacy_terminal === legacyTerminal,
+  );
+  if (rows.length === 0) return [];
+  return [
+    buildFinding(
+      legacyTerminal
+        ? "legacy_hierarchy_direction_violation"
+        : "hierarchy_direction_violation",
+      legacyTerminal ? "info" : "error",
+      "Scalar parent metadata and dependency-backed hierarchy rows must resolve to the same logical parent.",
+      (count) =>
+        `${count} child item${count === 1 ? "" : "s"} have divergent hierarchy storage surfaces.`,
+      rows.map((finding) => finding.child_id),
+      maxSampleSize,
+      legacyTerminal
+        ? "Preserve historical rows unless an explicit legacy repair is approved."
+        : "Align the scalar parent and exact dependency rows to one canonical parent.",
+      rows.map(
+        (finding) =>
+          `${finding.child_id}: scalar=${finding.scalar_parent_id} dependencies=${finding.dependency_parent_ids.join(",")}`,
+      ),
+    ),
+  ];
+}
+
+/** Convert unified hierarchy analysis into lifecycle-aware governance findings. */
+function collectHierarchyIntegrityFindings(
+  assembly: WorkspaceRelationshipAssembly,
+  maxSampleSize: number,
+): RelationshipAuditFinding[] {
+  const analysis = getWorkspaceHierarchyIntegrity(assembly);
+  if (!analysis) return [];
+  return [
+    ...collectHierarchyCycleFindings(analysis, maxSampleSize),
+    ...collectHierarchyCardinalityFindings(analysis, maxSampleSize, false),
+    ...collectHierarchyCardinalityFindings(analysis, maxSampleSize, true),
+    ...collectHierarchyDirectionFindings(analysis, maxSampleSize, false),
+    ...collectHierarchyDirectionFindings(analysis, maxSampleSize, true),
+  ];
 }
 /** Resolve the ordering-only successor adjacency for cycle analysis. */
 function buildOrderingAdjacency(
@@ -1075,8 +1175,7 @@ function collectCoverageReport(
     ),
   );
   const semanticEdges = Object.entries(sortedEdgesByKind).reduce(
-    (count, [kind, value]) =>
-      count + (isSemanticContextKind(kind) ? value : 0),
+    (count, [kind, value]) => count + (isSemanticContextKind(kind) ? value : 0),
     0,
   );
   const cutStructure = findRelationshipCutStructure(assembly.graph, {
@@ -1176,6 +1275,7 @@ export function auditWorkspaceRelationshipGraph(
     isTerminal,
     maxSampleSize,
   );
+  findings.push(...collectHierarchyIntegrityFindings(assembly, maxSampleSize));
   options.signal?.throwIfAborted();
   findings.push(
     ...collectOrderingStorageContradictionFindings(assembly, maxSampleSize),

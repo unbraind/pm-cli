@@ -314,7 +314,7 @@ outcome milestones are roots, not work subjects, and are excluded from those
 populations. Rate or
 all-status floors are lifecycle-stable; an absolute active-population floor is
 invalid because completing reachable work legitimately moves it into the
-terminal population. `finding_subjects_by_code` includes every known finding
+terminal population. Detailed output's `finding_subjects_by_code` includes every known finding
 code even when its population is zero, so assurance selectors never confuse a
 clean class with a missing contract field.
 

@@ -253,6 +253,15 @@ function assertRelationshipKindPayload(
     throw new TypeError(`Invalid relationship aliases for ${kind}`);
 }
 
+function resolveRelationshipTraversal(
+  definition: RelationshipKindDefinition,
+): NonNullable<RelationshipKindDefinition["traversal"]> {
+  if (definition.traversal) return definition.traversal;
+  if (definition.hierarchy) return "hierarchy";
+  if (definition.ordering) return "ordering";
+  return definition.direction === "undirected" ? "association" : "semantic";
+}
+
 /** Mutable registry with immutable snapshots and collision-safe extension registration. */
 export class RelationshipKindRegistry {
   readonly #definitions = new Map<string, RelationshipKindDefinition>();
@@ -292,16 +301,11 @@ export class RelationshipKindRegistry {
     const normalized = Object.freeze({
       ...definition,
       kind,
-      traversal:
-        definition.traversal ??
-        (definition.hierarchy
-          ? "hierarchy"
-          : definition.ordering
-            ? "ordering"
-            : definition.direction === "undirected"
-              ? "association"
-              : "semantic"),
+      traversal: resolveRelationshipTraversal(definition),
       hierarchy: definition.hierarchy ?? false,
+      hierarchyDirection: definition.hierarchy
+        ? (definition.hierarchyDirection ?? "source_parent")
+        : undefined,
       inverse,
       aliases: Object.freeze(aliases),
       payloadSchema: definition.payloadSchema

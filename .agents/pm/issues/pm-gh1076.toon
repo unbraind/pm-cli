@@ -1,0 +1,24 @@
+id: pm-gh1076
+title: "GH-1076: read-only duplicates rejects universal JSON output controls"
+description: "GitHub issue #1076 reports that pm duplicates emits structured TOON but is classified as a non-read surface, so universal JSON, lean, and token-accounting controls are refused."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,duplicates,github,output-contracts,token-efficiency
+created_at: "2026-08-21T05:42:19.703Z"
+updated_at: "2026-08-21T05:43:14.840Z"
+author: "harness:codex"
+acceptance_criteria: Add red-first CLI/runtime contract coverage; return valid JSON with all existing duplicate result fields; declare applicable universal controls in the capability registry; preserve bounded default TOON and read-only behavior; cover CLI and SDK action parity.
+parent: pm-5t33or
+severity: medium
+repro_steps: Run pm duplicates --since 2026-08-20 --output-format json on 2026.8.21; observe universal-output refusal despite successful structured TOON output without the flag.
+expected_result: "Read-only duplicate diagnostics support stable JSON and declare the applicable projection, budget, lean, and token-accounting controls."
+actual_result: The command is globally classified as non-read and refuses JSON output.
+affected_version: 2026.8.21
+component: universal read output controls
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-n7rr,related,"2026-08-21T05:42:19.703Z","harness:codex","cli:create:dep",detected
+  pm-5t33or,blocks,"2026-08-21T05:43:14.412Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-21T05:42:19.703Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for duplicates JSON, universal output controls, and GitHub #1076; no canonical item existed. Source: https://github.com/unbraind/pm-cli/issues/1076"
+body: ""

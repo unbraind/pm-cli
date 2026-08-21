@@ -35,7 +35,7 @@ import {
   effectiveItemFormatVersion,
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
-import {resolvePmRoot } from "../../core/store/paths.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
   partitionFixesByGrant,
@@ -80,7 +80,9 @@ import {
   assertProjectionModeChoice,
   type OutputProjectionDeclaration,
 } from "../output-projection.js";
-import { collectDanglingDependencyReferences } from "../graph/assembly.js";
+import {
+  collectDanglingDependencyReferences,
+} from "../graph/assembly.js";
 import {
   auditMergeAttributeFence,
   auditMergeDriverConfiguration,
@@ -106,6 +108,11 @@ import {
   type ValidateItem,
 } from "./validate-item-reader.js";
 import { buildValidateHistoryDriftCheck } from "./validate-history-drift.js";
+import {
+  buildLifecycleParentGraph,
+  detectLifecycleParentCycles,
+  resolveLifecycleDependencyCycleSamplePath,
+} from "./hierarchy-validation.js";
 
 type ValidateCheckName =
   | "metadata"
@@ -1807,49 +1814,6 @@ function findLifecycleDependencyCycleComponents(
 }
 /* c8 ignore stop */
 
-/* c8 ignore start -- cycle sample-path fallback branches are covered by lifecycle graph integration tests */
-function resolveLifecycleDependencyCycleSamplePath(
-  component: string[],
-  graph: Map<string, string[]>,
-): string[] {
-  const start = component[0];
-  if (component.length === 1) {
-    return [start, start];
-  }
-  const componentSet = new Set(component);
-  const path: string[] = [start];
-  const visited = new Set<string>([start]);
-
-  const search = (current: string): boolean => {
-    const neighbors = (graph.get(current) ?? []).filter((candidate) =>
-      componentSet.has(candidate),
-    );
-    for (const next of neighbors) {
-      if (next === start && path.length > 1) {
-        path.push(start);
-        return true;
-      }
-      if (visited.has(next)) {
-        continue;
-      }
-      visited.add(next);
-      path.push(next);
-      if (search(next)) {
-        return true;
-      }
-      path.pop();
-      visited.delete(next);
-    }
-    return false;
-  };
-
-  if (search(start)) {
-    return [...path];
-  }
-  return [...component, start];
-}
-/* c8 ignore stop */
-
 function detectLifecycleDependencyCycles(
   activeItems: ItemWithBody[],
   idPrefix = "pm",
@@ -1859,81 +1823,6 @@ function detectLifecycleDependencyCycles(
   cycle_sample_paths: string[];
 } {
   const graph = buildLifecycleDependencyGraph(activeItems, idPrefix);
-  const cycleComponents = findLifecycleDependencyCycleComponents(graph);
-  const cycleItemIds = [...new Set(cycleComponents.flat())].sort(
-    (left, right) => left.localeCompare(right),
-  );
-  const cycleSamplePaths = cycleComponents.map((component) =>
-    resolveLifecycleDependencyCycleSamplePath(component, graph).join("->"),
-  );
-  return {
-    cycle_count: cycleComponents.length,
-    cycle_item_ids: cycleItemIds,
-    cycle_sample_paths: cycleSamplePaths,
-  };
-}
-
-// Parent (composition) cycle detection (pm-8vul / GH-280). The dependency-cycle
-// path above only walks blocked_by/definition_of_ready edges across ACTIVE items;
-// it never traverses item.parent, so a parent cycle (A.parent=B, B.parent=A, or
-// any longer ring) goes undetected while it silently breaks `pm list --tree`,
-// orphan detection, and progress rollups. We reuse the generic Tarjan SCC helper
-// on a child->[parent] adjacency map. Unlike dependency cycles we scan ALL items
-// (not just active ones) because a parent cycle among closed items is still
-// structural corruption of the hierarchy.
-function buildLifecycleParentGraph(
-  items: ItemWithBody[],
-  relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
-): Map<string, string[]> {
-  // PR #279 made parent matching case-insensitive (e.g. `parent: PM-FK49`
-  // resolves to `id: pm-fk49`). Resolve parent references to their canonical
-  // item id the same way so a casing mismatch can never silently drop a cycle
-  // edge and hide a parent cycle (false negative).
-  const canonicalIdByLowercase = new Map(
-    items.map((item) => [item.id.toLowerCase(), item.id]),
-  );
-  const graph = new Map<string, string[]>(
-    items.map((item) => [item.id, [] as string[]]),
-  );
-  const sortedItems = [...items].sort((left, right) =>
-    left.id.localeCompare(right.id),
-  );
-  sortedItems.forEach((item) => {
-    const edges = graph.get(item.id)!;
-    const parentId = toMeaningfulString(item.parent);
-    const canonicalParentId = parentId
-      ? canonicalIdByLowercase.get(parentId.toLowerCase())
-      : undefined;
-    if (canonicalParentId) {
-      edges.push(canonicalParentId);
-    }
-    (item.dependencies ?? []).forEach((dependency) => {
-      const definition = relationshipRegistry.resolve(dependency.kind);
-      if (!definition?.hierarchy) return;
-      const target = canonicalIdByLowercase.get(dependency.id.toLowerCase());
-      if (!target) return;
-      if (definition.hierarchyDirection === "source_parent") {
-        graph.get(target)!.push(item.id);
-      } else {
-        edges.push(target);
-      }
-    });
-  });
-  graph.forEach((edges, id) => {
-    graph.set(
-      id,
-      [...new Set(edges)].sort((left, right) => left.localeCompare(right)),
-    );
-  });
-  return graph;
-}
-
-function detectLifecycleParentCycles(items: ItemWithBody[]): {
-  cycle_count: number;
-  cycle_item_ids: string[];
-  cycle_sample_paths: string[];
-} {
-  const graph = buildLifecycleParentGraph(items);
   const cycleComponents = findLifecycleDependencyCycleComponents(graph);
   const cycleItemIds = [...new Set(cycleComponents.flat())].sort(
     (left, right) => left.localeCompare(right),
@@ -2311,7 +2200,9 @@ function sortLifecycleScanRows(rows: LifecycleScanRows): void {
 function lifecycleCycleWarningToken(
   prefix:
     | "validate_lifecycle_dependency_cycles"
-    | "validate_hierarchy_parent_cycle",
+    | "validate_hierarchy_parent_cycle"
+    | "validate_hierarchy_cardinality_violation"
+    | "validate_hierarchy_parent_divergence",
   severity: ValidateDependencyCycleSeverity,
   count: number,
 ): string | null {
@@ -2328,6 +2219,11 @@ function buildLifecycleWarnings(
   parentCycleSeverity: ValidateDependencyCycleSeverity,
   dependencyCycleCount: number,
   parentCycleCount: number,
+  hierarchyCardinalityCount: number,
+  hierarchyDivergenceCount: number,
+  legacyHierarchyCycleCount: number,
+  legacyHierarchyCardinalityCount: number,
+  legacyHierarchyDivergenceCount: number,
 ): string[] {
   const warnings: string[] = [];
   if (rows.closureLikeRows.length > 0) {
@@ -2355,10 +2251,35 @@ function buildLifecycleWarnings(
     parentCycleSeverity,
     parentCycleCount,
   );
+  const cardinalityWarning = lifecycleCycleWarningToken(
+    "validate_hierarchy_cardinality_violation",
+    parentCycleSeverity,
+    hierarchyCardinalityCount,
+  );
+  const divergenceWarning = lifecycleCycleWarningToken(
+    "validate_hierarchy_parent_divergence",
+    parentCycleSeverity,
+    hierarchyDivergenceCount,
+  );
   return [
     ...warnings,
     ...(dependencyWarning ? [dependencyWarning] : []),
     ...(parentWarning ? [parentWarning] : []),
+    ...(cardinalityWarning ? [cardinalityWarning] : []),
+    ...(divergenceWarning ? [divergenceWarning] : []),
+    ...(legacyHierarchyCycleCount > 0
+      ? [`validate_legacy_hierarchy_parent_cycle:${legacyHierarchyCycleCount}`]
+      : []),
+    ...(legacyHierarchyCardinalityCount > 0
+      ? [
+          `validate_legacy_hierarchy_cardinality_violation:${legacyHierarchyCardinalityCount}`,
+        ]
+      : []),
+    ...(legacyHierarchyDivergenceCount > 0
+      ? [
+          `validate_legacy_hierarchy_parent_divergence:${legacyHierarchyDivergenceCount}`,
+        ]
+      : []),
   ];
 }
 
@@ -2538,14 +2459,22 @@ function buildLifecycleCheck(
     rows.activeItems,
     idPrefix,
   );
-  const parentCycleDiagnostics = detectLifecycleParentCycles(items);
+  const parentCycleDiagnostics = detectLifecycleParentCycles(
+    items,
+    statusRegistry,
+  );
   const warnings = buildLifecycleWarnings(
     rows,
     includeStaleBlockers,
     dependencyCycleSeverity,
     parentCycleSeverity,
     dependencyCycleDiagnostics.cycle_count,
-    parentCycleDiagnostics.cycle_count,
+    parentCycleDiagnostics.active_cycle_count,
+    parentCycleDiagnostics.active_cardinality_violation_count,
+    parentCycleDiagnostics.active_parent_divergence_count,
+    parentCycleDiagnostics.legacy_cycle_count,
+    parentCycleDiagnostics.legacy_cardinality_violation_count,
+    parentCycleDiagnostics.legacy_parent_divergence_count,
   );
 
   const diagnosticLimit = verboseDiagnostics
@@ -2583,11 +2512,22 @@ function buildLifecycleCheck(
     parentCycleDiagnostics.cycle_sample_paths,
     diagnosticLimit,
   );
+  const summarizedHierarchyCardinalityRows = summarizeList(
+    parentCycleDiagnostics.cardinality_violation_rows,
+    diagnosticLimit,
+  );
+  const summarizedHierarchyDivergenceRows = summarizeList(
+    parentCycleDiagnostics.parent_divergence_rows,
+    diagnosticLimit,
+  );
 
   const hasErrorSeverityCycle =
     (dependencyCycleDiagnostics.cycle_count > 0 &&
       dependencyCycleSeverity === "error") ||
-    (parentCycleDiagnostics.cycle_count > 0 && parentCycleSeverity === "error");
+    ((parentCycleDiagnostics.active_cycle_count > 0 ||
+      parentCycleDiagnostics.active_cardinality_violation_count > 0 ||
+      parentCycleDiagnostics.active_parent_divergence_count > 0) &&
+      parentCycleSeverity === "error");
 
   return {
     check: {
@@ -2625,12 +2565,34 @@ function buildLifecycleCheck(
           summarizedDependencyCycleSamplePaths.truncated,
         parent_cycle_severity_policy: parentCycleSeverity,
         parent_cycle_count: parentCycleDiagnostics.cycle_count,
+        active_parent_cycle_count: parentCycleDiagnostics.active_cycle_count,
+        legacy_parent_cycle_count: parentCycleDiagnostics.legacy_cycle_count,
         parent_cycle_item_count: parentCycleDiagnostics.cycle_item_ids.length,
         parent_cycle_item_ids: summarizedParentCycleItemIds.values,
         parent_cycle_item_ids_truncated: summarizedParentCycleItemIds.truncated,
         parent_cycle_sample_paths: summarizedParentCycleSamplePaths.values,
         parent_cycle_sample_paths_truncated:
           summarizedParentCycleSamplePaths.truncated,
+        hierarchy_cardinality_violation_count:
+          parentCycleDiagnostics.cardinality_violation_count,
+        active_hierarchy_cardinality_violation_count:
+          parentCycleDiagnostics.active_cardinality_violation_count,
+        legacy_hierarchy_cardinality_violation_count:
+          parentCycleDiagnostics.legacy_cardinality_violation_count,
+        hierarchy_cardinality_violation_rows:
+          summarizedHierarchyCardinalityRows.values,
+        hierarchy_cardinality_violation_rows_truncated:
+          summarizedHierarchyCardinalityRows.truncated,
+        hierarchy_parent_divergence_count:
+          parentCycleDiagnostics.parent_divergence_count,
+        active_hierarchy_parent_divergence_count:
+          parentCycleDiagnostics.active_parent_divergence_count,
+        legacy_hierarchy_parent_divergence_count:
+          parentCycleDiagnostics.legacy_parent_divergence_count,
+        hierarchy_parent_divergence_rows:
+          summarizedHierarchyDivergenceRows.values,
+        hierarchy_parent_divergence_rows_truncated:
+          summarizedHierarchyDivergenceRows.truncated,
         stale_blocker_reason_patterns: [
           ...lifecyclePatternPolicy.stale_blocker_reason_patterns,
         ],

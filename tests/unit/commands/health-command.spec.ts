@@ -95,6 +95,51 @@ function createSeedItem(context: TempPmContext): string {
 }
 
 describe("runHealth", () => {
+  it("renders active and historical hierarchy-integrity warning families", () => {
+    expect(
+      healthInternals.buildHierarchyIntegrityWarnings({
+        relations: [],
+        cycles: [
+          { item_ids: ["pm-active"], legacy_terminal: false },
+          { item_ids: ["pm-old"], legacy_terminal: true },
+        ],
+        cardinality_violations: [
+          {
+            child_id: "pm-active-child",
+            parent_ids: ["pm-a", "pm-b"],
+            legacy_terminal: false,
+          },
+          {
+            child_id: "pm-old-child",
+            parent_ids: ["pm-old-a", "pm-old-b"],
+            legacy_terminal: true,
+          },
+        ],
+        divergences: [
+          {
+            child_id: "pm-active-divergent",
+            scalar_parent_id: "pm-a",
+            dependency_parent_ids: ["pm-b"],
+            legacy_terminal: false,
+          },
+          {
+            child_id: "pm-old-divergent",
+            scalar_parent_id: "pm-old-a",
+            dependency_parent_ids: ["pm-old-b"],
+            legacy_terminal: true,
+          },
+        ],
+      }),
+    ).toEqual([
+      "integrity_hierarchy_cycle:pm-active",
+      "integrity_legacy_hierarchy_cycle:pm-old",
+      "integrity_hierarchy_cardinality:pm-active-child",
+      "integrity_legacy_hierarchy_cardinality:pm-old-child",
+      "integrity_hierarchy_divergence:pm-active-divergent",
+      "integrity_legacy_hierarchy_divergence:pm-old-divergent",
+    ]);
+  });
+
   beforeEach(() => {
     process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = "1";
   });

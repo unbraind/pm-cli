@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The child hierarchy kind has an unenforced direction and cardinality: 7 of 15 rows are inverted against the registry's own declaration and no channel, validator, or audit finding notices ([pm-vk7zek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vk7zek.toon))
+- Hierarchy-canonicalizing dependency kinds bypass every cycle detector: mutual child_of edges leave the graph provably inconsistent while validate, health, and graph analyze all report acyclic ([pm-rggtvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rggtvd.toon))
+
 ## 2026.8.21 - 2026-08-21
 
 ### Added

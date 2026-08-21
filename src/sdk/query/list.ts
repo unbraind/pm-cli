@@ -67,11 +67,17 @@ import {
   readItemMetadataDerivedIndexState,
 } from "../../core/store/item-metadata-cache.js";
 import { queryItemMetadataIndex } from "../../core/store/item-metadata-query-index.js";
-import {resolvePmRoot } from "../../core/store/paths.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemMetadata, ItemStatus, ItemType } from "../../types/index.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import { LIST_FILTER_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
+import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
+import {
+  analyzeHierarchyIntegrity,
+  indexHierarchyRelations,
+  type HierarchyRelationIndexes,
+} from "../graph/hierarchy-integrity.js";
 import {
   createQueryFingerprint,
   encodeQueryCursor,
@@ -397,12 +403,11 @@ function resolveListCompleteness(
     warning.startsWith("item_list_directory_read_failed:"),
   ).length;
   const completeness: ListResultBase["completeness"] = {
-    status:
-      indexed
-        ? "unchecked"
-        : unreadableItemCount + unreadableDirectoryCount > 0
-          ? "partial"
-          : "complete",
+    status: indexed
+      ? "unchecked"
+      : unreadableItemCount + unreadableDirectoryCount > 0
+        ? "partial"
+        : "complete",
     unreadable_item_count: unreadableItemCount,
     unreadable_directory_count: unreadableDirectoryCount,
   };
@@ -908,7 +913,9 @@ function parseProjectionConfig(
     return {
       mode: "fields",
       fields: [
-        ...new Set(fieldSelectors.map((field) => normalizeProjectionField(field))),
+        ...new Set(
+          fieldSelectors.map((field) => normalizeProjectionField(field)),
+        ),
       ],
     };
   }
@@ -1088,9 +1095,7 @@ function appendUnknownTagWarning(
     return;
   }
   const knownTags = new Set(
-    items.flatMap((item) =>
-      item.tags.map((tag) => tag.trim().toLowerCase()),
-    ),
+    items.flatMap((item) => item.tags.map((tag) => tag.trim().toLowerCase())),
   );
   const unknownTags = [...requestedTags].filter((tag) => !knownTags.has(tag));
   if (unknownTags.length > 0) {
@@ -1105,7 +1110,8 @@ function assertListAssigneeFilters(
   if (
     assigneeFilter &&
     [...assigneeFilter].some(
-      (value) => value.toLowerCase() === "none" || value.toLowerCase() === "null",
+      (value) =>
+        value.toLowerCase() === "none" || value.toLowerCase() === "null",
     )
   ) {
     throw new PmCliError(
@@ -1161,26 +1167,15 @@ function resolveListFilterSet(
     parentFilter: options.parent?.trim(),
     treeEnabled: options.tree === true,
     sprintFilter: parseStringFilterSet(options.sprint, { label: "--sprint" }),
-    releaseFilter: parseStringFilterSet(options.release, { label: "--release" }),
+    releaseFilter: parseStringFilterSet(options.release, {
+      label: "--release",
+    }),
     missingMetadataFilters,
     missingMetadataActive: hasMissingMetadataFilter(missingMetadataFilters),
     lifecycleClassifier: lifecycleClassifierFromStatusRegistry(statusRegistry),
     contentFieldFilters,
     contentFiltersActive: hasContentFieldFilter(contentFieldFilters),
   };
-}
-
-function matchesListScalarFilters(
-  item: ListedItem,
-  filters: ListFilterSet,
-  statusRegistry: RuntimeStatusRegistry,
-): boolean {
-  return (
-    matchesListIdentityFilters(item, filters, statusRegistry) &&
-    matchesListDateFilters(item, filters) &&
-    matchesListAssigneeFilterSet(item, filters) &&
-    matchesListScopeFilters(item, filters)
-  );
 }
 
 function matchesListIdentityFilters(
@@ -1232,11 +1227,17 @@ function matchesListAssigneeFilterSet(
 function matchesListScopeFilters(
   item: ListedItem,
   filters: ListFilterSet,
+  parentsByChild?: HierarchyRelationIndexes["parents_by_child"],
 ): boolean {
+  const logicalParentIds = parentsByChild
+    ? (parentsByChild.get(item.id.trim().toLowerCase()) ?? [])
+    : [item.parent?.trim().toLowerCase()].filter(
+        (value): value is string => value !== undefined,
+      );
   if (
     filters.parentFilter !== undefined &&
     !filters.treeEnabled &&
-    item.parent !== filters.parentFilter
+    !logicalParentIds.includes(filters.parentFilter.trim().toLowerCase())
   )
     return false;
   if (
@@ -1255,8 +1256,14 @@ function matchesListFilterSet(
   filters: ListFilterSet,
   statusRegistry: RuntimeStatusRegistry,
   runtimeFieldFilters: Record<string, unknown>,
+  parentsByChild?: HierarchyRelationIndexes["parents_by_child"],
 ): boolean {
-  if (!matchesListScalarFilters(item, filters, statusRegistry)) {
+  if (
+    !matchesListIdentityFilters(item, filters, statusRegistry) ||
+    !matchesListDateFilters(item, filters) ||
+    !matchesListAssigneeFilterSet(item, filters) ||
+    !matchesListScopeFilters(item, filters, parentsByChild)
+  ) {
     return false;
   }
   if (
@@ -1290,6 +1297,7 @@ function applyFilters(
   typeRegistry: ItemTypeRegistry,
   statusRegistry: RuntimeStatusRegistry,
   runtimeFieldFilters: Record<string, unknown>,
+  parentsByChild?: HierarchyRelationIndexes["parents_by_child"],
 ): ListedItem[] {
   const filters = resolveListFilterSet(
     status,
@@ -1298,7 +1306,13 @@ function applyFilters(
     statusRegistry,
   );
   return items.filter((item) =>
-    matchesListFilterSet(item, filters, statusRegistry, runtimeFieldFilters),
+    matchesListFilterSet(
+      item,
+      filters,
+      statusRegistry,
+      runtimeFieldFilters,
+      parentsByChild,
+    ),
   );
 }
 
@@ -1314,13 +1328,16 @@ function withTreeMetadata(
   item: ListedItem,
   depth: number,
   childCount: number,
+  parentId?: string,
 ): ListTreeItem {
   const itemRecord = toItemRecord(item);
   const title = typeof itemRecord.title === "string" ? itemRecord.title : "";
   const parent =
+    parentId ??
     trimNonEmpty(
       typeof itemRecord.parent === "string" ? itemRecord.parent : undefined,
-    ) ?? null;
+    ) ??
+    null;
   return {
     ...item,
     tree_depth: depth,
@@ -1330,51 +1347,88 @@ function withTreeMetadata(
   };
 }
 
+function buildListTreeIndexes(
+  sortedItems: ListedItem[],
+  hierarchyIndexes?: HierarchyRelationIndexes,
+): {
+  byId: Map<string, ListedItem>;
+  childrenByParent: Map<string, ListedItem[]>;
+} {
+  const byId = new Map<string, ListedItem>();
+  const childrenByParent = new Map<string, ListedItem[]>();
+  for (const item of sortedItems) {
+    const itemId = item.id.trim().toLowerCase();
+    byId.set(itemId, item);
+    const parentIds = hierarchyIndexes
+      ? (hierarchyIndexes.parents_by_child.get(itemId) ?? [])
+      : [trimNonEmpty(item.parent)?.toLowerCase()].filter(
+          (value): value is string => value !== undefined,
+        );
+    for (const parentId of parentIds) {
+      const children = childrenByParent.get(parentId) ?? [];
+      children.push(item);
+      childrenByParent.set(parentId, children);
+    }
+  }
+  return { byId, childrenByParent };
+}
+
+function resolveListTreeRoots(
+  sortedItems: ListedItem[],
+  parentRoot: string | undefined,
+  byId: ReadonlyMap<string, ListedItem>,
+  childrenByParent: ReadonlyMap<string, ListedItem[]>,
+  hierarchyIndexes?: HierarchyRelationIndexes,
+): ListedItem[] {
+  return parentRoot
+    ? [...(childrenByParent.get(parentRoot.toLowerCase()) ?? [])]
+    : sortedItems.filter((item) => {
+        const parentIds = hierarchyIndexes
+          ? (hierarchyIndexes.parents_by_child.get(
+              item.id.trim().toLowerCase(),
+            ) ?? [])
+          : [trimNonEmpty(item.parent)?.toLowerCase()].filter(
+              (value): value is string => value !== undefined,
+            );
+        return parentIds.every((parentId) => !byId.has(parentId));
+      });
+}
+
 function orderItemsAsTree(
   sortedItems: ListedItem[],
   parentRoot: string | undefined,
   maxDepth: number | undefined,
+  hierarchyIndexes?: HierarchyRelationIndexes,
 ): ListedItem[] {
-  const byId = new Map<string, ListedItem>();
-  const childrenByParent = new Map<string, ListedItem[]>();
-  for (const item of sortedItems) {
-    byId.set(item.id, item);
-    const parentId = trimNonEmpty(item.parent);
-    if (!parentId) {
-      continue;
-    }
-    const bucket = childrenByParent.get(parentId);
-    if (bucket) {
-      bucket.push(item);
-    } else {
-      childrenByParent.set(parentId, [item]);
-    }
-  }
-
-  const roots = parentRoot
-    ? [...(childrenByParent.get(parentRoot) ?? [])]
-    : sortedItems.filter((item) => {
-        const parentId = trimNonEmpty(item.parent);
-        return !parentId || !byId.has(parentId);
-      });
+  const { byId, childrenByParent } = buildListTreeIndexes(
+    sortedItems,
+    hierarchyIndexes,
+  );
+  const roots = resolveListTreeRoots(
+    sortedItems,
+    parentRoot,
+    byId,
+    childrenByParent,
+    hierarchyIndexes,
+  );
   const ordered: ListedItem[] = [];
   const visited = new Set<string>();
-  const pushNode = (node: ListedItem, depth: number): void => {
-    if (visited.has(node.id)) {
-      return;
+  const pending = [...roots].reverse().map((node) => ({
+    node,
+    depth: 0,
+    parentId: parentRoot?.toLowerCase(),
+  }));
+  while (pending.length > 0) {
+    const { node, depth, parentId } = pending.pop()!;
+    const nodeId = node.id.trim().toLowerCase();
+    if (visited.has(nodeId)) continue;
+    visited.add(nodeId);
+    const children = childrenByParent.get(nodeId) ?? [];
+    ordered.push(withTreeMetadata(node, depth, children.length, parentId));
+    if (maxDepth !== undefined && depth >= maxDepth) continue;
+    for (const child of [...children].reverse()) {
+      pending.push({ node: child, depth: depth + 1, parentId: nodeId });
     }
-    visited.add(node.id);
-    const children = childrenByParent.get(node.id) ?? [];
-    ordered.push(withTreeMetadata(node, depth, children.length));
-    if (maxDepth !== undefined && depth >= maxDepth) {
-      return;
-    }
-    for (const child of children) {
-      pushNode(child, depth + 1);
-    }
-  };
-  for (const root of roots) {
-    pushNode(root, 0);
   }
   return ordered;
 }
@@ -1979,6 +2033,13 @@ export async function runList(
   let page = indexedPage;
   if (!page) {
     const items = await loadListItems(options, runtime, listWarnings);
+    const hierarchyIndexes = indexHierarchyRelations(
+      analyzeHierarchyIntegrity(
+        items,
+        (itemStatus) => isTerminalStatus(itemStatus, runtime.statusRegistry),
+        resolveWorkspaceRelationshipKindRegistry(),
+      ).relations,
+    );
     appendUnknownTagWarning(items, options.tag, listWarnings);
     const filtered = applyFilters(
       items,
@@ -1987,6 +2048,7 @@ export async function runList(
       runtime.typeRegistry,
       runtime.statusRegistry,
       runtime.runtimeFieldFilters,
+      hierarchyIndexes.parents_by_child,
     );
     // Edge-aware blocked selection (GH-578): classify against the complete
     // loaded corpus so terminal blocker targets count as satisfied, then narrow
@@ -2010,7 +2072,12 @@ export async function runList(
       runtime.statusRegistry,
     );
     const ordered = ordering.treeEnabled
-      ? orderItemsAsTree(sorted, ordering.parentRoot, ordering.treeDepth)
+      ? orderItemsAsTree(
+          sorted,
+          ordering.parentRoot,
+          ordering.treeDepth,
+          hierarchyIndexes,
+        )
       : sorted;
     page = pageAndProjectListItems(
       ordered,
