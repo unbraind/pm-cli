@@ -949,7 +949,32 @@ function dependencyKey(
   value: Pick<Dependency, "id" | "kind" | "source_kind">,
 ): string {
   const sourceKind = value.source_kind?.trim().toLowerCase() ?? "";
-  return `${value.id.trim().toLowerCase()}::${value.kind}::${sourceKind}`;
+  return [value.id.trim().toLowerCase(), value.kind, sourceKind].join(
+    "\u0000",
+  );
+}
+
+/** Return the complete normalized identity of one stored dependency row. */
+function storedDependencyIdentityKey(
+  value: Pick<
+    Dependency,
+    "id" | "kind" | "source_kind" | "author" | "created_at"
+  >,
+): string {
+  const sourceKind = value.source_kind?.trim().toLowerCase() ?? "";
+  const author = value.author?.trim().toLowerCase() ?? "";
+  const rawCreatedAt = value.created_at?.trim() ?? "";
+  const parsedCreatedAt = Date.parse(rawCreatedAt);
+  const createdAt = Number.isFinite(parsedCreatedAt)
+    ? new Date(parsedCreatedAt).toISOString()
+    : rawCreatedAt;
+  return [
+    value.id.trim().toLowerCase(),
+    value.kind,
+    sourceKind,
+    author,
+    createdAt,
+  ].join("\u0000");
 }
 
 // pm-kyd6: `--blocked-by` writes the `blocked_by` scalar, but the dependency
@@ -2343,16 +2368,16 @@ function normalizeTouchedDependencyIdentities(
   additions: readonly Dependency[],
 ): Dependency[] {
   const touchedKeys = new Set(additions.map((entry) => dependencyKey(entry)));
-  const retainedTouchedKeys = new Set<string>();
+  const retainedStoredIdentities = new Set<string>();
   return current.filter((entry) => {
-    const key = dependencyKey(entry);
-    if (!touchedKeys.has(key)) {
+    if (!touchedKeys.has(dependencyKey(entry))) {
       return true;
     }
-    if (retainedTouchedKeys.has(key)) {
+    const storedIdentity = storedDependencyIdentityKey(entry);
+    if (retainedStoredIdentities.has(storedIdentity)) {
       return false;
     }
-    retainedTouchedKeys.add(key);
+    retainedStoredIdentities.add(storedIdentity);
     return true;
   });
 }

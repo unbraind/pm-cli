@@ -33,6 +33,8 @@ dangling id. A removal selector that matches no stored row fails with
 available identities. Re-adding a stored dependency identity is idempotent; if
 legacy storage contains that exact identity more than once, the same mutation
 collapses the touched copies to one without creating an edge-absence window.
+The stored identity includes normalized `id`, `kind`, `source_kind`, `author`,
+and creation instant, so provenance-distinct sibling rows remain independent.
 
 ## Hierarchy integrity
 

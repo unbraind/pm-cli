@@ -224,6 +224,26 @@ describe("hierarchy mutation contract", () => {
           verification_errors: ["pm-parent-a", "pm-parent-b"],
         }),
       });
+
+      await runUpdate(
+        "pm-child-a",
+        { parent: "pm-parent-a" },
+        { path: context.pmPath },
+      );
+      await expect(
+        runUpdate(
+          "pm-parent-b",
+          { dep: ["id=pm-child-a,kind=child"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        code: "hierarchy_parent_divergence_created",
+        context: expect.objectContaining({
+          source_id: "pm-parent-b",
+          target_id: "pm-child-a",
+          verification_errors: ["pm-parent-a", "pm-parent-b"],
+        }),
+      });
     });
   });
 });

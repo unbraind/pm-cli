@@ -275,6 +275,46 @@ describe("hierarchy integrity", () => {
         "pm-child",
       ),
     ).not.toThrow();
+
+    const divergent = [
+      item("pm-a"),
+      item("pm-b"),
+      item("pm-c"),
+      item("pm-child", {
+        parent: "pm-a",
+        dependencies: [
+          dependency("pm-b", "parent"),
+          dependency("pm-c", "parent"),
+        ],
+      }),
+    ];
+    const smallerDivergence = [
+      ...divergent.slice(0, 3),
+      item("pm-child", {
+        parent: "pm-a",
+        dependencies: [dependency("pm-b", "parent")],
+      }),
+    ];
+    expect(() =>
+      assertHierarchyMutationAllowed(
+        divergent,
+        smallerDivergence,
+        "pm-child",
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertHierarchyMutationAllowed(
+        divergent,
+        [
+          ...divergent.slice(0, 3),
+          item("pm-child", {
+            parent: "pm-c",
+            dependencies: [dependency("pm-b", "parent")],
+          }),
+        ],
+        "pm-child",
+      ),
+    ).toThrow(expect.objectContaining({ code: "hierarchy_parent_divergence_created" }));
   });
 
   it("uses extension hierarchy semantics and formats exact stored rows", () => {

@@ -464,24 +464,16 @@ export function assertHierarchyMutationAllowed(
   if (!holderId) return;
   const before = analyzeHierarchyIntegrity(beforeItems, isTerminal, registry);
   const after = analyzeHierarchyIntegrity(afterItems, isTerminal, registry);
-  const priorDivergences = new Set(
-    before.divergences.map((finding) =>
-      [
-        finding.child_id,
-        finding.scalar_parent_id,
-        ...finding.dependency_parent_ids,
-      ].join("\u0000"),
-    ),
-  );
   const divergence = after.divergences.find(
     (finding) =>
-      finding.child_id === holderId &&
-      !priorDivergences.has(
-        [
-          finding.child_id,
-          finding.scalar_parent_id,
-          ...finding.dependency_parent_ids,
-        ].join("\u0000"),
+      !before.divergences.some(
+        (prior) =>
+          prior.child_id === finding.child_id &&
+          prior.scalar_parent_id === finding.scalar_parent_id &&
+          isIdentifierSubset(
+            finding.dependency_parent_ids,
+            prior.dependency_parent_ids,
+          ),
       ),
   );
   if (divergence) {
@@ -490,12 +482,12 @@ export function assertHierarchyMutationAllowed(
       ...divergence.dependency_parent_ids,
     ].sort();
     throw new PmCliError(
-      `Hierarchy mutation would assign ${holderId} to multiple parents: ${parentIds.join(", ")}.`,
+      `Hierarchy mutation would assign ${divergence.child_id} to multiple parents: ${parentIds.join(", ")}.`,
       EXIT_CODE.CONFLICT,
       {
         code: "hierarchy_parent_divergence_created",
         source_id: holderId,
-        target_id: holderId,
+        target_id: divergence.child_id,
         verification_errors: parentIds,
       },
     );

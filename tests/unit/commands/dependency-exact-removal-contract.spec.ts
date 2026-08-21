@@ -168,4 +168,46 @@ describe("exact dependency removal contract", () => {
       });
     });
   });
+
+  it("collapses only provenance-identical rows during dependency re-add", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-holder", "Exact re-add fixture");
+      createTaskFixture(context, "pm-target", "Exact re-add fixture");
+      const holderPath = path.join(context.pmPath, "tasks", "pm-holder.toon");
+      writeFileSync(
+        holderPath,
+        readFileSync(holderPath, "utf8").replace(
+          /^(priority:.*)$/m,
+          '$1\ndependencies[3]{id,kind,created_at,author,source_kind}:\n  pm-target,related,"2026-01-01T00:00:00.000Z",first,import\n  pm-target,related,"2026-01-01T00:00:00.000Z",first,import\n  pm-target,related,"2026-01-02T00:00:00.000Z",second,import',
+        ),
+        "utf8",
+      );
+      clearItemMetadataEnvelopeMemo();
+
+      await runUpdate(
+        "pm-holder",
+        {
+          dep: [
+            "id=pm-target,kind=related,source_kind=import,author=FIRST,created_at=2025-12-31T19:00:00-05:00",
+          ],
+        },
+        { path: context.pmPath },
+      );
+
+      expect(
+        (await runGet("pm-holder", { path: context.pmPath })).item.dependencies,
+      ).toEqual([
+        expect.objectContaining({
+          id: "pm-target",
+          author: "first",
+          created_at: "2026-01-01T00:00:00.000Z",
+        }),
+        expect.objectContaining({
+          id: "pm-target",
+          author: "second",
+          created_at: "2026-01-02T00:00:00.000Z",
+        }),
+      ]);
+    });
+  });
 });

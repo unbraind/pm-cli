@@ -17,7 +17,9 @@ rows can be retired by selecting `id`, `kind` (or its input-only `type` alias),
 `source_kind`, `author`, and `created_at`; omitted coordinates intentionally broaden the match. Exact
 duplicate rows can still be normalized without delete-then-add risk by
 re-adding the same identity; the mutation keeps one canonical row and never
-removes the logical edge.
+removes the logical edge. Identity comparison includes normalized `id`, `kind`,
+`source_kind`, `author`, and creation instant, preserving provenance-distinct
+siblings.
 
 Hierarchy mutations are stricter than ordering advisories. `pm create` and
 `pm update` refuse a new cycle, registry cardinality breach, or contradictory
