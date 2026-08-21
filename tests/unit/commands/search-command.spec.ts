@@ -1,4 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import type { ItemMetadata } from "../../../src/types.js";
 import {
@@ -334,6 +341,34 @@ describe("runSearch", () => {
     ).rejects.toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
     });
+  });
+
+  it("resolves an explicit project root into its initialized nested tracker", async () => {
+    const projectRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-search-project-root-"),
+    );
+    const trackerRoot = path.join(projectRoot, ".agents", "pm");
+    const normalizedTrackerRoot = path.resolve(trackerRoot);
+    mkdirSync(trackerRoot, { recursive: true });
+    writeFileSync(path.join(trackerRoot, "settings.json"), "{}\n", "utf8");
+    SEARCH_TRACKER_ROOTS.add(normalizedTrackerRoot);
+
+    try {
+      const result = await runSearch("token", {}, { path: projectRoot });
+
+      expect(result.count).toBe(0);
+      expect(readSettingsMock).toHaveBeenCalledWith(normalizedTrackerRoot);
+      expect(listAllItemMetadataMock).toHaveBeenCalledWith(
+        normalizedTrackerRoot,
+        "toon",
+        expect.any(Object),
+        [],
+        undefined,
+      );
+    } finally {
+      SEARCH_TRACKER_ROOTS.delete(normalizedTrackerRoot);
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
   });
 
   it("applies active content and governance-missing filters in the search predicate (kept vs excluded)", async () => {
