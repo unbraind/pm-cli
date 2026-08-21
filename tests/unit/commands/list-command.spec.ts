@@ -332,6 +332,23 @@ describe("runList", () => {
         .map((item) => item.id),
     ).toEqual(["pm-b", "pm-a"]);
     expect(
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "pm-cycle-a", parent: "pm-cycle-b" },
+            { ...openItem, id: "pm-cycle-b", parent: "pm-cycle-a" },
+            { ...openItem, id: "pm-rootless", parent: "pm-missing" },
+          ] as never,
+          undefined,
+          undefined,
+        )
+        .map((item) => [item.id, item.tree_depth]),
+    ).toEqual([
+      ["pm-rootless", 0],
+      ["pm-cycle-a", 0],
+      ["pm-cycle-b", 0],
+    ]);
+    expect(
       listInternals.withTreeMetadata(
         { ...openItem, parent: "  " } as never,
         2,

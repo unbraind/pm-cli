@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -33,6 +33,10 @@ describe("provenance resolver health", () => {
     const history = path.join(root, "history");
     await mkdir(history);
     await mkdir(path.join(history, "00-unreadable.jsonl"));
+    await symlink(
+      "missing-history-target",
+      path.join(history, "01-missing.jsonl"),
+    );
     const entries = [
       "not-json",
       "null",

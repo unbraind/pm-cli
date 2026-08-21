@@ -13,8 +13,8 @@ The public SDK exports `collectNewOrderingCycleWarnings(beforeItems, afterItems,
 Dependency removal is lossless. `--dep-remove` rejects the same malformed
 shorthand as `--dep`, and a selector that matches nothing returns the typed
 `dependency_remove_no_match` refusal instead of a successful no-op. Exact
-rows can be retired by selecting `id`, `kind`, `source_kind`, `author`, and
-`created_at`; omitted coordinates intentionally broaden the match. Exact
+rows can be retired by selecting `id`, `kind` (or its input-only `type` alias),
+`source_kind`, `author`, and `created_at`; omitted coordinates intentionally broaden the match. Exact
 duplicate rows can still be normalized without delete-then-add risk by
 re-adding the same identity; the mutation keeps one canonical row and never
 removes the logical edge.
@@ -27,6 +27,9 @@ debt remains mutable only toward a cleaner state, so repair does not require a
 global bypass. Read paths canonicalize every registry-declared hierarchy kind;
 an item cannot disappear from `pm list --parent` or `pm get --tree` merely
 because an integration used a dependency row instead of the scalar field.
+`pm update-many` applies the same hierarchy guard independently to each matched
+item: one refused row is reported as failed while other rows may still commit,
+so a bulk hierarchy mutation is not atomic across the complete match set.
 
 `pm graph audit` uses two explicit units:
 

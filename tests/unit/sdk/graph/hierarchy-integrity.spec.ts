@@ -155,6 +155,26 @@ describe("hierarchy integrity", () => {
     expect(analysis.divergences[0]?.legacy_terminal).toBe(true);
   });
 
+  it("sorts divergence rows independently of caller item order", () => {
+    const analysis = analyzeHierarchyIntegrity([
+      item("pm-z-child", {
+        parent: "pm-parent-a",
+        dependencies: [dependency("pm-parent-b", "parent")],
+      }),
+      item("pm-parent-b"),
+      item("pm-a-child", {
+        parent: "pm-parent-a",
+        dependencies: [dependency("pm-parent-b", "parent")],
+      }),
+      item("pm-parent-a"),
+    ]);
+
+    expect(analysis.divergences.map((row) => row.child_id)).toEqual([
+      "pm-a-child",
+      "pm-z-child",
+    ]);
+  });
+
   it("rejects only newly introduced hierarchy defects and names exact endpoints", () => {
     const before = [
       item("pm-a", { dependencies: [dependency("pm-b", "child_of")] }),

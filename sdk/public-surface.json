@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1766,
+    "covered_symbols": 1768,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1767
+    "required_symbols": 1769
   },
   "breaking_acknowledgements": [
     {
@@ -6826,6 +6826,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyRelationIndexes",
+          "signature": "export interface HierarchyRelationIndexes { parents_by_child: ReadonlyMap<string, readonly string[]>; children_by_parent: ReadonlyMap<string, readonly string[]>; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "HierarchyRelationSource",
           "signature": "export type HierarchyRelationSource = \"scalar_parent\" | \"dependency\";"
@@ -7183,6 +7189,12 @@
           "kind": "interface",
           "name": "IndexedLinkedFileMatch",
           "signature": "export interface IndexedLinkedFileMatch { item: ItemMetadata; files: LinkedFile[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "indexHierarchyRelations",
+          "signature": "(relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes | calls: (relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes"
         },
         {
           "classification": "advanced_export",
@@ -23470,6 +23482,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyRelationIndexes",
+          "signature": "export interface HierarchyRelationIndexes { parents_by_child: ReadonlyMap<string, readonly string[]>; children_by_parent: ReadonlyMap<string, readonly string[]>; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "HierarchyRelationSource",
           "signature": "export type HierarchyRelationSource = \"scalar_parent\" | \"dependency\";"
@@ -23479,6 +23497,12 @@
           "kind": "function",
           "name": "indexBlockedByIds",
           "signature": "(corpus: readonly ItemMetadata[]) => Map<string, string[]> | calls: (corpus: readonly ItemMetadata[]) => Map<string, string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "indexHierarchyRelations",
+          "signature": "(relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes | calls: (relations: readonly HierarchyRelation[]) => HierarchyRelationIndexes"
         },
         {
           "classification": "supported",

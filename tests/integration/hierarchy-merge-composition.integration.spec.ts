@@ -45,7 +45,7 @@ describe("hierarchy merge composition conformance", () => {
         { item_ids: [...ids].sort(), legacy_terminal: false },
       ]);
       expect(() =>
-        assertHierarchyMutationAllowed(branchA, merged, ids.at(-1)!),
+        assertHierarchyMutationAllowed(branchA, merged, ids[1]!),
       ).toThrow(
         expect.objectContaining({
           code: "hierarchy_cycle_created",

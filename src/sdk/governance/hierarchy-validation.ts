@@ -4,7 +4,10 @@
  * Adapts the shared hierarchy analyzer to validation-specific diagnostics and
  * deterministic cycle paths without coupling the analyzer to CLI policy.
  */
-import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  statusIsTerminal,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import {
   createRelationshipKindRegistry,
   type RelationshipKindRegistry,
@@ -132,7 +135,7 @@ export function detectLifecycleParentCycles(
     items,
     (status) =>
       statusRegistry
-        ? statusRegistry.terminal_statuses.has(status.trim().toLowerCase())
+        ? statusIsTerminal(status, statusRegistry)
         : status === "closed" || status === "canceled",
     relationshipRegistry,
   );

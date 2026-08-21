@@ -95,6 +95,7 @@ import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
 import { assertHierarchyMutationAllowed } from "../graph/hierarchy-integrity.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
+import { acquireHierarchyMutationLock } from "./hierarchy-mutation-lock.js";
 import type {
   Comment,
   Dependency,
@@ -1095,7 +1096,10 @@ function matchesDependencySelector(
   }
   if (
     selector.created_at !== undefined &&
-    value.created_at !== selector.created_at
+    (value.created_at === undefined ||
+      !Number.isFinite(Date.parse(value.created_at)) ||
+      new Date(Date.parse(value.created_at)).toISOString() !==
+        selector.created_at)
   ) {
     return false;
   }
@@ -1870,7 +1874,6 @@ async function loadUpdateRelationshipGraph(params: {
 }): Promise<ItemMetadata[] | undefined> {
   if (
     !params.fieldFlags.dep &&
-    !params.fieldFlags.depRemove &&
     !params.fieldFlags.blockedBy &&
     !params.fieldFlags.parent &&
     !params.clearedMetadataKeys.has("parent")
@@ -1894,9 +1897,7 @@ function assertUpdateHierarchyIntegrity(params: {
   assertHierarchyMutationAllowed(
     params.before,
     params.before.map((item) =>
-      item.id === params.document.metadata.id
-        ? params.document.metadata
-        : item,
+      item.id === params.document.metadata.id ? params.document.metadata : item,
     ),
     params.document.metadata.id,
     (status) => isTerminalStatus(status, params.statusRegistry),
@@ -3263,103 +3264,120 @@ async function runUpdateWithContext(
   }
   assertMatchingOrderRank(options);
 
-  let graphBeforeUpdate = await loadUpdateRelationshipGraph({
-    fieldFlags,
-    clearedMetadataKeys: clearItemMetadataKeys,
+  const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
+  const hierarchyMutationRequired =
+    (fieldFlags.parent && !clearItemMetadataKeys.has("parent")) ||
+    dependencyUpdates.additions.some(
+      (dependency) => relationshipRegistry.resolve(dependency.kind)?.hierarchy,
+    );
+  const releaseHierarchyMutationLock = await acquireHierarchyMutationLock({
     pmRoot,
-    settings,
-    typeToFolder: typeRegistry.type_to_folder,
-  });
-
-  let lifecycleTransition: ReopenUpdateReceipt | undefined;
-  let recurrenceHistoryContext: RecurrenceHistoryContext | undefined;
-  const result = await mutateItemWithHistoryContextResolver({
-    pmRoot,
-    settings,
-    typeToFolder: typeRegistry.type_to_folder,
-    id,
-    op: resolveUpdateHistoryOperation(options, execution),
     author,
-    message: options.message,
-    resolveHistoryContext: () => recurrenceHistoryContext,
-    force: options.force,
-    bypassAssigneeConflict:
-      options.ownershipMetadataBypass === true ||
-      options.ownershipDependencyBypass === true,
-    extensionFieldNames,
-    skipNoop: true,
-    mutate(document) {
-      lifecycleTransition = prepareRecurrenceTransition({
-        document,
-        recurrenceReason: execution.recurrenceReason,
-        requestedStatus: options.status,
-        statusRegistry,
-      });
-      recurrenceHistoryContext = lifecycleTransition
-        ? { recurrence: lifecycleTransition }
-        : undefined;
-      graphBeforeUpdate = graphBeforeUpdate?.map((item) =>
-        item.id === document.metadata.id
-          ? structuredClone(document.metadata)
-          : item,
-      );
-      const mutation = mutateUpdateDocument(document, {
-        options,
-        settings,
-        typeRegistry,
-        statusRegistry,
-        runtimeFieldRegistry,
-        extensionRegistrations,
-        extensionFieldNames,
-        clearItemMetadataKeys,
-        dependencyUpdates,
-        dependencyRemovals,
-        commentUpdates,
-        noteUpdates,
-        learningUpdates,
-        fileUpdates,
-        testUpdates,
-        docUpdates,
-        resolvedParentValue: parentReference.resolvedParentValue,
-        resolvedBlockedByDependencyId,
-        runtimeFieldUpdates,
-        nowValue,
-        nowIso,
-        author,
-        pmRoot,
-      });
-      assertUpdateHierarchyIntegrity({
-        before: graphBeforeUpdate,
-        document,
-        statusRegistry,
-      });
-      return mutation;
-    },
+    ttlSeconds: settings.locks.ttl_seconds,
+    waitMs: settings.locks.wait_ms,
+    required: hierarchyMutationRequired,
   });
-  const orderingCycleWarnings = graphBeforeUpdate
-    ? collectNewOrderingCycleWarnings(
-        graphBeforeUpdate,
-        graphBeforeUpdate.map((item) =>
-          item.id === result.item.id ? result.item : item,
-        ),
-        result.item.id,
-      )
-    : [];
+  try {
+    let graphBeforeUpdate = await loadUpdateRelationshipGraph({
+      fieldFlags,
+      clearedMetadataKeys: clearItemMetadataKeys,
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
+    });
 
-  return {
-    item: toItemRecord(result.item),
-    changed_fields: result.changedFields,
-    warnings: [
-      ...workflowTransitionWarnings,
-      ...parentReferenceWarnings,
-      ...dependencyTargetWarnings,
-      ...orderingCycleWarnings,
-      ...result.warnings,
-    ],
-    ...(lifecycleTransition === undefined
-      ? {}
-      : { lifecycle_transition: lifecycleTransition }),
-  };
+    let lifecycleTransition: ReopenUpdateReceipt | undefined;
+    let recurrenceHistoryContext: RecurrenceHistoryContext | undefined;
+    const result = await mutateItemWithHistoryContextResolver({
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
+      id,
+      op: resolveUpdateHistoryOperation(options, execution),
+      author,
+      message: options.message,
+      resolveHistoryContext: () => recurrenceHistoryContext,
+      force: options.force,
+      bypassAssigneeConflict:
+        options.ownershipMetadataBypass === true ||
+        options.ownershipDependencyBypass === true,
+      extensionFieldNames,
+      skipNoop: true,
+      mutate(document) {
+        lifecycleTransition = prepareRecurrenceTransition({
+          document,
+          recurrenceReason: execution.recurrenceReason,
+          requestedStatus: options.status,
+          statusRegistry,
+        });
+        recurrenceHistoryContext = lifecycleTransition
+          ? { recurrence: lifecycleTransition }
+          : undefined;
+        graphBeforeUpdate = graphBeforeUpdate?.map((item) =>
+          item.id === document.metadata.id
+            ? structuredClone(document.metadata)
+            : item,
+        );
+        const mutation = mutateUpdateDocument(document, {
+          options,
+          settings,
+          typeRegistry,
+          statusRegistry,
+          runtimeFieldRegistry,
+          extensionRegistrations,
+          extensionFieldNames,
+          clearItemMetadataKeys,
+          dependencyUpdates,
+          dependencyRemovals,
+          commentUpdates,
+          noteUpdates,
+          learningUpdates,
+          fileUpdates,
+          testUpdates,
+          docUpdates,
+          resolvedParentValue: parentReference.resolvedParentValue,
+          resolvedBlockedByDependencyId,
+          runtimeFieldUpdates,
+          nowValue,
+          nowIso,
+          author,
+          pmRoot,
+        });
+        assertUpdateHierarchyIntegrity({
+          before: graphBeforeUpdate,
+          document,
+          statusRegistry,
+        });
+        return mutation;
+      },
+    });
+    const orderingCycleWarnings = graphBeforeUpdate
+      ? collectNewOrderingCycleWarnings(
+          graphBeforeUpdate,
+          graphBeforeUpdate.map((item) =>
+            item.id === result.item.id ? result.item : item,
+          ),
+          result.item.id,
+        )
+      : [];
+
+    return {
+      item: toItemRecord(result.item),
+      changed_fields: result.changedFields,
+      warnings: [
+        ...workflowTransitionWarnings,
+        ...parentReferenceWarnings,
+        ...dependencyTargetWarnings,
+        ...orderingCycleWarnings,
+        ...result.warnings,
+      ],
+      ...(lifecycleTransition === undefined
+        ? {}
+        : { lifecycle_transition: lifecycleTransition }),
+    };
+  } finally {
+    await releaseHierarchyMutationLock();
+  }
 }
 
 /** Resolve the immutable operation name for ordinary, bypass, and recurrence updates. */

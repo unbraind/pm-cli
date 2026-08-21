@@ -2202,7 +2202,10 @@ function lifecycleCycleWarningToken(
     | "validate_lifecycle_dependency_cycles"
     | "validate_hierarchy_parent_cycle"
     | "validate_hierarchy_cardinality_violation"
-    | "validate_hierarchy_parent_divergence",
+    | "validate_hierarchy_parent_divergence"
+    | "validate_legacy_hierarchy_parent_cycle"
+    | "validate_legacy_hierarchy_cardinality_violation"
+    | "validate_legacy_hierarchy_parent_divergence",
   severity: ValidateDependencyCycleSeverity,
   count: number,
 ): string | null {
@@ -2261,25 +2264,30 @@ function buildLifecycleWarnings(
     parentCycleSeverity,
     hierarchyDivergenceCount,
   );
+  const legacyCycleWarning = lifecycleCycleWarningToken(
+    "validate_legacy_hierarchy_parent_cycle",
+    parentCycleSeverity,
+    legacyHierarchyCycleCount,
+  );
+  const legacyCardinalityWarning = lifecycleCycleWarningToken(
+    "validate_legacy_hierarchy_cardinality_violation",
+    parentCycleSeverity,
+    legacyHierarchyCardinalityCount,
+  );
+  const legacyDivergenceWarning = lifecycleCycleWarningToken(
+    "validate_legacy_hierarchy_parent_divergence",
+    parentCycleSeverity,
+    legacyHierarchyDivergenceCount,
+  );
   return [
     ...warnings,
     ...(dependencyWarning ? [dependencyWarning] : []),
     ...(parentWarning ? [parentWarning] : []),
     ...(cardinalityWarning ? [cardinalityWarning] : []),
     ...(divergenceWarning ? [divergenceWarning] : []),
-    ...(legacyHierarchyCycleCount > 0
-      ? [`validate_legacy_hierarchy_parent_cycle:${legacyHierarchyCycleCount}`]
-      : []),
-    ...(legacyHierarchyCardinalityCount > 0
-      ? [
-          `validate_legacy_hierarchy_cardinality_violation:${legacyHierarchyCardinalityCount}`,
-        ]
-      : []),
-    ...(legacyHierarchyDivergenceCount > 0
-      ? [
-          `validate_legacy_hierarchy_parent_divergence:${legacyHierarchyDivergenceCount}`,
-        ]
-      : []),
+    ...(legacyCycleWarning ? [legacyCycleWarning] : []),
+    ...(legacyCardinalityWarning ? [legacyCardinalityWarning] : []),
+    ...(legacyDivergenceWarning ? [legacyDivergenceWarning] : []),
   ];
 }
 

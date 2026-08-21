@@ -102,12 +102,14 @@ export {
   analyzeHierarchyIntegrity,
   assertHierarchyMutationAllowed,
   formatHierarchyRelation,
+  indexHierarchyRelations,
   type HierarchyCardinalityViolation,
   type HierarchyCycle,
   type HierarchyIntegrityAnalysis,
   type HierarchyIntegrityItem,
   type HierarchyParentDivergence,
   type HierarchyRelation,
+  type HierarchyRelationIndexes,
   type HierarchyRelationSource,
 } from "./hierarchy-integrity.js";
 export {

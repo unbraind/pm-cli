@@ -17,7 +17,7 @@ The SDK relationship registry is authoritative. `canonicalizeRelationshipKind()`
 
 Dependency additions and removals share the same lossless input grammar. A
 bare value is an item id; structured removal input uses `id=<id>` plus optional
-canonical `kind`/`type`, `source_kind`, `author`, and ISO `created_at`
+canonical `kind` (with `type` accepted only as an input alias), `source_kind`, `author`, and ISO `created_at`
 selectors. Supplying all stored coordinates retires exactly one dependency row
 without deleting siblings that share an id and kind. Punctuation-shaped shorthand such as
 `OTHER,related` is rejected with `dependency_flag_value_invalid` on both

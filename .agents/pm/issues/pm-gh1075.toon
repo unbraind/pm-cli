@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: ci,github,nightly,node24,windows
 created_at: "2026-08-21T05:42:10.609Z"
-updated_at: "2026-08-21T05:43:13.647Z"
+updated_at: "2026-08-21T06:19:27.649Z"
 author: "harness:codex"
 acceptance_criteria: Identify the exact failing test or infrastructure condition from the run logs; reproduce with a Windows-equivalent contract; fix product or harness without weakening the gate; rerun the full nightly matrix green and link exact-head evidence.
 parent: pm-wo8
@@ -16,9 +16,8 @@ expected_result: All scheduled Windows Node 24 validation gates pass on exact ma
 actual_result: The scheduled workflow completed with failure and created GitHub issue #1075.
 affected_version: 2026.8.21
 component: Nightly Validation workflow
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
-  pm-zno2iu,related,"2026-08-21T05:42:10.609Z","harness:codex","cli:create:dep",detected
-  pm-7zs0,blocks,"2026-08-21T05:43:13.216Z","harness:codex","cli:update:dep",detected
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-zno2iu,incident_from,"2026-08-21T06:19:27.251Z","harness:codex","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-21T05:42:10.609Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and Windows nightly lineage for run 32447807398 and GitHub #1075; prior Windows items cover older exact failures, not this run. Source: https://github.com/unbraind/pm-cli/issues/1075"
 body: ""

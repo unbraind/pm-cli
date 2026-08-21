@@ -9,31 +9,10 @@ import { runGet } from "../../../src/cli/commands/get.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { clearItemMetadataEnvelopeMemo } from "../../../src/core/store/item-metadata-cache.js";
+import { createTaskFixture } from "../../helpers/createTaskFixture.js";
 import {
   withTempPmPath,
-  type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
-
-function createTask(context: TempPmContext, id: string): void {
-  const result = context.runCli(
-    [
-      "create",
-      "--id",
-      id,
-      "--title",
-      id,
-      "--description",
-      "Exact dependency removal fixture",
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--json",
-    ],
-    { expectJson: true },
-  );
-  expect(result.code).toBe(0);
-}
 
 describe("exact dependency removal contract", () => {
   it("parses and matches author/timestamp coordinates without broadening", () => {
@@ -76,6 +55,34 @@ describe("exact dependency removal contract", () => {
         {
           id: "pm-target",
           kind: "related",
+          created_at: "2026-01-02T01:00:00+01:00",
+        },
+        {
+          id: "pm-target",
+          kind: "related",
+          created_at: "2026-01-02T00:00:00.000Z",
+        },
+      ),
+    ).toBe(true);
+    expect(
+      _testOnlyUpdateCommand.matchesDependencySelector(
+        {
+          id: "pm-target",
+          kind: "related",
+          created_at: "not-a-timestamp",
+        },
+        {
+          id: "pm-target",
+          kind: "related",
+          created_at: "2026-01-02T00:00:00.000Z",
+        },
+      ),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateCommand.matchesDependencySelector(
+        {
+          id: "pm-target",
+          kind: "related",
           author: "Owner",
           created_at: "2026-01-02T00:00:00.000Z",
         },
@@ -97,8 +104,16 @@ describe("exact dependency removal contract", () => {
 
   it("retires one legacy row while preserving a sibling with the same id and kind", async () => {
     await withTempPmPath(async (context) => {
-      createTask(context, "pm-holder");
-      createTask(context, "pm-target");
+      createTaskFixture(
+        context,
+        "pm-holder",
+        "Exact dependency removal fixture",
+      );
+      createTaskFixture(
+        context,
+        "pm-target",
+        "Exact dependency removal fixture",
+      );
       const holderPath = path.join(context.pmPath, "tasks", "pm-holder.toon");
       writeFileSync(
         holderPath,

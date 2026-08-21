@@ -6,31 +6,11 @@ import { runHealth } from "../../src/cli/commands/health.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
 import { clearItemMetadataEnvelopeMemo } from "../../src/core/store/item-metadata-cache.js";
 import type { GraphAnalyzeResult } from "../../src/sdk/graph/run.js";
+import { createTaskFixture } from "../helpers/createTaskFixture.js";
 import {
   withTempPmPath,
   type TempPmContext,
 } from "../helpers/withTempPmPath.js";
-
-function createTask(context: TempPmContext, id: string): void {
-  const result = context.runCli(
-    [
-      "create",
-      "--id",
-      id,
-      "--title",
-      id,
-      "--description",
-      "Cross-surface hierarchy fixture",
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--json",
-    ],
-    { expectJson: true },
-  );
-  expect(result.code).toBe(0);
-}
 
 function injectHierarchyDependency(
   context: TempPmContext,
@@ -55,8 +35,16 @@ function injectHierarchyDependency(
 describe("hierarchy governance surface parity", () => {
   it("reports the same dependency-backed active cycle in validate, health, and graph analyze", async () => {
     await withTempPmPath(async (context) => {
-      createTask(context, "pm-surface-a");
-      createTask(context, "pm-surface-b");
+      createTaskFixture(
+        context,
+        "pm-surface-a",
+        "Cross-surface hierarchy fixture",
+      );
+      createTaskFixture(
+        context,
+        "pm-surface-b",
+        "Cross-surface hierarchy fixture",
+      );
       injectHierarchyDependency(context, "pm-surface-a", "pm-surface-b");
       injectHierarchyDependency(context, "pm-surface-b", "pm-surface-a");
       clearItemMetadataEnvelopeMemo();
@@ -109,8 +97,16 @@ describe("hierarchy governance surface parity", () => {
 
   it("classifies terminal-only hierarchy cycles as legacy and advisory", async () => {
     await withTempPmPath(async (context) => {
-      createTask(context, "pm-legacy-a");
-      createTask(context, "pm-legacy-b");
+      createTaskFixture(
+        context,
+        "pm-legacy-a",
+        "Cross-surface hierarchy fixture",
+      );
+      createTaskFixture(
+        context,
+        "pm-legacy-b",
+        "Cross-surface hierarchy fixture",
+      );
       injectHierarchyDependency(context, "pm-legacy-a", "pm-legacy-b", true);
       injectHierarchyDependency(context, "pm-legacy-b", "pm-legacy-a", true);
       clearItemMetadataEnvelopeMemo();

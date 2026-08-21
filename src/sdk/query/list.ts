@@ -1430,6 +1430,20 @@ function orderItemsAsTree(
       pending.push({ node: child, depth: depth + 1, parentId: nodeId });
     }
   }
+  if (parentRoot === undefined && maxDepth === undefined) {
+    for (const item of sortedItems) {
+      const itemId = item.id.trim().toLowerCase();
+      if (visited.has(itemId)) continue;
+      visited.add(itemId);
+      ordered.push(
+        withTreeMetadata(
+          item,
+          0,
+          childrenByParent.get(itemId)!.length,
+        ),
+      );
+    }
+  }
   return ordered;
 }
 
@@ -2033,13 +2047,18 @@ export async function runList(
   let page = indexedPage;
   if (!page) {
     const items = await loadListItems(options, runtime, listWarnings);
-    const hierarchyIndexes = indexHierarchyRelations(
-      analyzeHierarchyIntegrity(
-        items,
-        (itemStatus) => isTerminalStatus(itemStatus, runtime.statusRegistry),
-        resolveWorkspaceRelationshipKindRegistry(),
-      ).relations,
-    );
+    const needsHierarchyIndexes =
+      ordering.treeEnabled || trimNonEmpty(options.parent) !== undefined;
+    const hierarchyIndexes = needsHierarchyIndexes
+      ? indexHierarchyRelations(
+          analyzeHierarchyIntegrity(
+            items,
+            (itemStatus) =>
+              isTerminalStatus(itemStatus, runtime.statusRegistry),
+            resolveWorkspaceRelationshipKindRegistry(),
+          ).relations,
+        )
+      : undefined;
     appendUnknownTagWarning(items, options.tag, listWarnings);
     const filtered = applyFilters(
       items,
@@ -2048,7 +2067,7 @@ export async function runList(
       runtime.typeRegistry,
       runtime.statusRegistry,
       runtime.runtimeFieldFilters,
-      hierarchyIndexes.parents_by_child,
+      hierarchyIndexes?.parents_by_child,
     );
     // Edge-aware blocked selection (GH-578): classify against the complete
     // loaded corpus so terminal blocker targets count as satisfied, then narrow

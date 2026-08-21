@@ -121,11 +121,20 @@ function collectHierarchyFinishOrder(
   for (const root of [...nodeIds].sort()) {
     if (visited.has(root)) continue;
     visited.add(root);
-    const frames = [{ nodeId: root, nextChild: 0 }];
+    const frames: Array<{
+      nodeId: string;
+      children: string[];
+      nextChild: number;
+    }> = [
+      {
+        nodeId: root,
+        children: [...(childrenByParent.get(root) ?? [])].sort(),
+        nextChild: 0,
+      },
+    ];
     while (frames.length > 0) {
       const frame = frames.at(-1)!;
-      const children = [...(childrenByParent.get(frame.nodeId) ?? [])].sort();
-      const childId = children[frame.nextChild];
+      const childId = frame.children[frame.nextChild];
       if (childId === undefined) {
         finishOrder.push(frame.nodeId);
         frames.pop();
@@ -133,7 +142,11 @@ function collectHierarchyFinishOrder(
         frame.nextChild += 1;
         if (!visited.has(childId)) {
           visited.add(childId);
-          frames.push({ nodeId: childId, nextChild: 0 });
+          frames.push({
+            nodeId: childId,
+            children: [...(childrenByParent.get(childId) ?? [])].sort(),
+            nextChild: 0,
+          });
         }
       }
     }
@@ -339,7 +352,9 @@ function collectHierarchyDivergences(
         dependencyParentIds.every((id) => terminalIds.has(id)),
     });
   }
-  return divergences;
+  return divergences.sort((left, right) =>
+    left.child_id.localeCompare(right.child_id),
+  );
 }
 
 /**

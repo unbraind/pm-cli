@@ -306,14 +306,13 @@ function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
   }
   const lastChild = ids.at(-1)!;
   const itemPath = path.join(context.pmPath, "tasks", `${lastChild}.toon`);
-  writeFileSync(
-    itemPath,
-    readFileSync(itemPath, "utf8").replace(
-      /^(status:.*)$/m,
-      `$1\nparent: ${ids[0]}`,
-    ),
-    "utf8",
+  const original = readFileSync(itemPath, "utf8");
+  const patched = original.replace(
+    /^(status:.*)$/m,
+    `$1\nparent: ${ids[0]}`,
   );
+  expect(patched).not.toBe(original);
+  writeFileSync(itemPath, patched, "utf8");
   clearItemMetadataEnvelopeMemo();
   return ids;
 }
@@ -987,6 +986,18 @@ describe("runValidate", () => {
     expect(parentCycles.cycle_item_ids).toEqual(["pm-pa", "pm-pb"]);
     expect(parentCycles.cycle_sample_paths[0]).toContain("pm-pa");
     expect(parentCycles.cycle_sample_paths[0]).toContain("pm-pb");
+    expect(
+      validateInternals.detectLifecycleParentCycles(
+        [
+          { id: "pm-alias-a", status: "cancelled", parent: "pm-alias-b" },
+          { id: "pm-alias-b", status: "cancelled", parent: "pm-alias-a" },
+        ] as never,
+        statusRegistry,
+      ),
+    ).toMatchObject({
+      active_cycle_count: 0,
+      legacy_cycle_count: 1,
+    });
     expect(
       validateInternals.detectLifecycleParentCycles(
         [
@@ -1912,14 +1923,14 @@ describe("runValidate", () => {
       );
       expect(updated.code).toBe(0);
       const secondPath = path.join(context.pmPath, "tasks", `${second}.toon`);
-      writeFileSync(
-        secondPath,
-        readFileSync(secondPath, "utf8").replace(
-          /^(status:.*)$/m,
-          `$1\ndependencies[1]{id,kind,created_at,author}:\n  ${first},child_of,"2026-08-21T00:00:00.000Z",seed-author`,
-        ),
-        "utf8",
+      const original = readFileSync(secondPath, "utf8");
+      expect(original).not.toContain("dependencies[");
+      const patched = original.replace(
+        /^(status:.*)$/m,
+        `$1\ndependencies[1]{id,kind,created_at,author}:\n  ${first},child_of,"2026-08-21T00:00:00.000Z",seed-author`,
       );
+      expect(patched).not.toBe(original);
+      writeFileSync(secondPath, patched, "utf8");
       clearItemMetadataEnvelopeMemo();
 
       const result = await runValidate(
@@ -1979,6 +1990,30 @@ describe("runValidate", () => {
       };
       expect(offDetails.parent_cycle_severity_policy).toBe("off");
       expect(offDetails.parent_cycle_count).toBe(1);
+    });
+  });
+
+  it("suppresses terminal-only hierarchy warnings when parent-cycle policy is off", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = seedParentCycle(context, 2);
+      for (const id of ids) {
+        const closed = context.runCli(
+          ["close", id, "Terminal hierarchy fixture", "--json"],
+          { expectJson: true },
+        );
+        expect(closed.code).toBe(0);
+      }
+
+      const result = await runValidate(
+        { checkLifecycle: true, parentCycleSeverity: "off" },
+        { path: context.pmPath },
+      );
+      expect(result.ok).toBe(true);
+      expect(
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_legacy_hierarchy_"),
+        ),
+      ).toBe(false);
     });
   });
 

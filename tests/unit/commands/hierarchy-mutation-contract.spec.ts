@@ -44,7 +44,7 @@ describe("hierarchy mutation contract", () => {
         }),
       });
       await expect(
-        runGet("pm-forward-b", {}, { path: context.pmPath }),
+        runGet("pm-forward-b", { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
     });
   });
@@ -93,6 +93,47 @@ describe("hierarchy mutation contract", () => {
         const persisted = await runGet(second, { path: context.pmPath });
         expect(persisted.item.dependencies).toBeUndefined();
       }
+    });
+  });
+
+  it("serializes concurrent hierarchy writers across different item locks", async () => {
+    await withTempPmPath(async (context) => {
+      for (const id of ["pm-parent-a", "pm-parent-b", "pm-shared-child"]) {
+        await runCreate(
+          {
+            id,
+            title: id,
+            description: "Concurrent hierarchy writer fixture",
+            type: "Task",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+      }
+
+      const outcomes = await Promise.allSettled([
+        runUpdate(
+          "pm-parent-a",
+          { dep: ["id=pm-shared-child,kind=child"] },
+          { path: context.pmPath },
+        ),
+        runUpdate(
+          "pm-parent-b",
+          { dep: ["id=pm-shared-child,kind=child"] },
+          { path: context.pmPath },
+        ),
+      ]);
+      expect(
+        outcomes.filter((outcome) => outcome.status === "fulfilled"),
+      ).toHaveLength(1);
+      const rejected = outcomes.find(
+        (outcome): outcome is PromiseRejectedResult =>
+          outcome.status === "rejected",
+      );
+      expect(rejected?.reason).toMatchObject<PmCliError>({
+        code: "hierarchy_cardinality_created",
+        context: expect.objectContaining({ target_id: "pm-shared-child" }),
+      });
     });
   });
 
