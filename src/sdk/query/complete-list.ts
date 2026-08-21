@@ -66,7 +66,7 @@ export interface PmCompleteListCertificate {
 export interface PmCompleteListResult extends ListFullResult {
   /** Exact proof that the returned rows represent the full tracker corpus. */
   complete_list: PmCompleteListCertificate;
-  /** Universal read receipt when the runtime attached one. */
+  /** Mandatory universal read receipt proving unbounded, uncompacted delivery. */
   read_output: PmReadOutputReceipt;
 }
 

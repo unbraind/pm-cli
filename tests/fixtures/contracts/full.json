@@ -34970,7 +34970,14 @@
           "canonical_option": "--output-limit",
           "dimension": "amount",
           "inapplicable_reason": null,
-          "legacy_aliases": []
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
+              "visibility": "hidden_alias"
+            }
+          ]
         },
         "cost": {
           "applicable": true,

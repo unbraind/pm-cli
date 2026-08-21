@@ -6,28 +6,31 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:packages",github,sdk,service-ownership
 created_at: "2026-08-21T05:42:05.594Z"
-updated_at: "2026-08-21T17:49:50.987Z"
-closed_at: "2026-08-21T17:49:50.379Z"
-completed_at: "2026-08-21T17:49:50.379Z"
+updated_at: "2026-08-21T18:54:06.039Z"
+closed_at: "2026-08-21T18:47:56.455Z"
+completed_at: "2026-08-21T18:47:56.455Z"
 author: "harness:codex"
 acceptance_criteria: "Add an SDK-declared service ownership or safe-pass-through contract; keep global interception fail-closed; align doctor diagnostics with the runtime handled:false decision; test third-party package, first-party collision, and negative interceptor controls; document author guidance."
 parent: pm-tnud
 severity: medium
 repro_steps: "Install a package that registers output_format and always returns handled:false; verify native output is unchanged; run package doctor --project --isolated --strict-exit; observe extension_output_service_override_global and exit 1."
-resolution: "Resolved: service overrides can declare strictly validated pass-through ownership that runtime and package doctor enforce without masking real interceptors."
-expected_result: Doctor retains warnings for genuine interceptors but recognizes declared ownership or a machine-verifiable unconditional decline.
-actual_result: A safe canonical decline is classified as a global interceptor and fails strict doctor.
+resolution: "Resolved: strictly validated pass-through ownership is host-enforced, and package acceptance proves successful activation before evaluating doctor diagnostics."
+expected_result: Declared inert services activate successfully without interceptor warnings; undeclared interceptors remain blocking and independently proven.
+actual_result: "Focused package, doctor, runtime, and ownership tests pass 11 of 11; static quality is linked for a terminal-state rerun after governed closure."
 affected_version: 2026.8.21
 component: package doctor
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-5teq,discovered_from,"2026-08-21T06:19:25.813Z","harness:codex","cli:update:dep",detected
   pm-nf7q,discovered_from,"2026-08-21T06:19:25.813Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-21T05:42:05.594Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and repository history for the exact diagnostic, output_format ownership, safe decline, and strict doctor; pm-5teq and pm-nf7q are related but do not cover machine-verifiable third-party decline. External reproduction lineage: pm-starter-gx6x. Source: https://github.com/unbraind/pm-cli/issues/1074"
   "2026-08-21T17:06:13.182Z","harness:codex","Implementation evidence: focused contract suite passed (9 files, 64 tests); pnpm build, TypeScript public type tests, and full ESLint passed. Full repository gates and packed-runtime acceptance are next."
   "2026-08-21T17:45:42.324Z","harness:codex","Final evidence: public SDK authoring types accept strict { passThrough: true } ownership, loader validation rejects malformed/unknown metadata, runtime enforces pass-through by ignoring handled results with a stable violation diagnostic, and package doctor exempts only declared inert services while retaining interceptor warnings. Linked tests passed (11/11), including strict isolated third-party package doctor. Fresh npx/bunx tarball installs both passed strict isolated doctor. Full suite passed 551 files / 7702 tests at exact 100% coverage; zero-duplication/static/package gates passed."
-  "2026-08-21T17:45:51.413Z","harness:codex","Final evidence: public SDK authoring types accept strict passThrough ownership, loader validation rejects malformed or unknown metadata, runtime enforces pass-through by ignoring handled results with a stable violation diagnostic, and package doctor exempts only declared inert services while retaining interceptor warnings. Linked tests passed 11/11, including strict isolated third-party package doctor. Fresh npx and bunx tarball installs both passed strict isolated doctor. Full suite passed 551 files / 7702 tests at exact 100% coverage; zero-duplication, static, and package gates passed."
   "2026-08-21T17:49:38.485Z","harness:codex","Governance evidence correction: classified as production_defect and bound the fix to its executable negative-control test, local packed/full/static gates, and hosted static/coverage owners; no waiver used."
+  "2026-08-21T18:46:27.831Z","harness:codex","Review verification finding: pnpm quality:static reached repository assurance but defect-evidence correctly failed while the five governed production defects were reopened for remediation. Reclose only after the focused and global gates pass, then rerun this linked static gate in terminal state."
+  "2026-08-21T18:47:52.766Z","harness:codex","PR review remediation evidence: both package fixtures now assert successful install, activated=true, runtime_activation_status=ok, and healthy verification before doctor diagnostics. Focused run test-local-mt3andna-xoy4zu passed 11/11. The linked static run test-local-mt3avuwc-qzzasc correctly stopped only at defect-evidence while all five defects were reopened; terminal rerun follows closure."
+  "2026-08-21T18:49:47.732Z","harness:codex","Correction to the prior verification note: closure alone was insufficient because pm test executes non-pm commands in schema context by default, where defect-evidence sees an empty tracker. The second run therefore reproduced the same zero-governed-items result after closure. Rerun the identical linked static gate with --pm-context tracker --override-linked-pm-context so governance evaluates a sandboxed copy of the real tracker."
+  "2026-08-21T18:54:06.039Z","harness:codex","Terminal governance evidence: tracker-context static run test-local-mt3b5fn8-oeq42e passed the complete pnpm quality:static chain against a sandboxed 2533-item tracker copy. The linked test now persists pm_context_mode=tracker so future runs are replayable without an override. The two earlier failed records remain as provenance for the empty-schema-context diagnosis."
 files[10]{path,scope,note}:
   src/core/extensions/extension-hook-runtime.ts,project,host-enforced pass-through runtime
   src/core/extensions/extension-types.ts,project,service pass-through ownership contract
@@ -39,13 +42,24 @@ files[10]{path,scope,note}:
   tests/types/service-pass-through.test-d.ts,project,public SDK type contract
   tests/unit/extensions/output-service-ownership.spec.ts,project,doctor ownership coverage
   tests/unit/extensions/service-pass-through-contract.spec.ts,project,runtime negative controls
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/service-pass-through-contract.spec.ts tests/unit/extensions/output-service-ownership.spec.ts tests/integration/service-pass-through-package.integration.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/service-pass-through-contract.spec.ts tests/unit/extensions/output-service-ownership.spec.ts tests/integration/service-pass-through-package.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 1200
+    pm_context_mode: tracker
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mt38p28q-ttxl5x,test,passed,"2026-08-21T17:44:53.195Z","2026-08-21T17:45:02.618Z","2026-08-21T17:45:02.618Z",1,0,0
-docs[1]{path,scope,note}:
+  test-local-mt3andna-xoy4zu,test,passed,"2026-08-21T18:39:34.292Z","2026-08-21T18:39:43.318Z","2026-08-21T18:39:43.318Z",1,0,0
+  test-local-mt3avuwc-qzzasc,test,failed,"2026-08-21T18:44:53.777Z","2026-08-21T18:46:18.924Z","2026-08-21T18:46:18.924Z",0,1,0
+  test-local-mt3azxln-uakwul,test,failed,"2026-08-21T18:48:04.237Z","2026-08-21T18:49:29.051Z","2026-08-21T18:49:29.051Z",0,1,0
+  test-local-mt3b5fn8-oeq42e,test,passed,"2026-08-21T18:49:48.181Z","2026-08-21T18:53:45.716Z","2026-08-21T18:53:45.716Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated reviewed delivery record
   docs/EXTENSIONS.md,project,package author pass-through guidance
-close_reason: Reclosed with required production-defect evidence for the service pass-through ownership regression gate.
+close_reason: Reclosed after CodeRabbit install-activation assertions and replayable static-gate linkage.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -7,7 +7,13 @@ describe("duplicates universal read output", () => {
   it("returns matching JSON and SDK receipts while preserving bounded TOON defaults", async () => {
     await withTempPmPath(async (context) => {
       const json = context.runCli(
-        ["duplicates", "--output-format", "json", "--output-budget", "unbounded"],
+        [
+          "duplicates",
+          "--output-format",
+          "json",
+          "--output-budget",
+          "unbounded",
+        ],
         { expectJson: true },
       ).json as Record<string, unknown>;
       expect(json).toMatchObject({
@@ -38,6 +44,11 @@ describe("duplicates universal read output", () => {
         cost: { applicable: true },
         encoding: { applicable: true },
       });
+      expect(
+        PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+          (contract) => contract.command === "duplicates",
+        )?.dimensions.amount.legacy_aliases.map((alias) => alias.flag),
+      ).toEqual(["--limit"]);
 
       const toon = context.runCli(["duplicates"]);
       expect(toon.stdout).toContain("count: 0");

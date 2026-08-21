@@ -189,7 +189,9 @@ describe("untrusted extension runtime dependencies", () => {
       {
         PATH: "/bin",
         npm_config_allow_scripts: "unsafe-package",
+        NpM_CoNfIg_AlLoW_ScRiPtS: "mixed-case-unsafe-package",
         NPM_CONFIG_REGISTRY: "https://registry.example.test",
+        PM_UNRELATED_POLICY: "preserved",
       },
     );
 
@@ -197,9 +199,15 @@ describe("untrusted extension runtime dependencies", () => {
       {
         PATH: "/bin",
         NPM_CONFIG_REGISTRY: "https://registry.example.test",
+        PM_UNRELATED_POLICY: "preserved",
         NPM_CONFIG_ALLOW_SCRIPTS: "",
       },
     ]);
+    expect(
+      Object.keys(calls[0] ?? {}).filter(
+        (key) => key.toLowerCase() === "npm_config_allow_scripts",
+      ),
+    ).toEqual(["NPM_CONFIG_ALLOW_SCRIPTS"]);
   });
 });
 
@@ -348,10 +356,16 @@ describe("local npm package archives", () => {
     expect(unnamedResolved.version).toBeUndefined();
     await unnamedResolved.cleanup();
 
-    const root = await mkdtemp(path.join(os.tmpdir(), "pm-local-archive-empty-"));
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "pm-local-archive-empty-"),
+    );
     temporaryRoots.push(root);
     await mkdir(path.join(root, "package"));
-    await writeFile(path.join(root, "package", "README.md"), "missing metadata", "utf8");
+    await writeFile(
+      path.join(root, "package", "README.md"),
+      "missing metadata",
+      "utf8",
+    );
     const archive = path.join(root, "missing-package-json.tgz");
     await createTar({ cwd: root, file: archive, gzip: true }, ["package"]);
     await expect(

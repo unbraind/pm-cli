@@ -9,7 +9,7 @@ async function installOutputPackage(
   sourceDir: string,
   name: string,
   registration: string,
-): Promise<void> {
+): Promise<Awaited<ReturnType<typeof runExtension>>> {
   await writeTestExtension({
     root: sourceDir,
     name,
@@ -21,18 +21,30 @@ async function installOutputPackage(
       "",
     ].join("\n"),
   });
-  await runExtension(sourceDir, { install: true, project: true }, { path: pmPath });
+  return await runExtension(
+    sourceDir,
+    { install: true, project: true },
+    { path: pmPath },
+  );
 }
 
 describe("package service pass-through integration", () => {
   it("keeps an inert third-party service package clean under strict isolated doctor", async () => {
     await withTempPmPath(async (context) => {
-      await installOutputPackage(
+      const install = await installOutputPackage(
         context.pmPath,
         path.join(context.tempRoot, "safe-service-source"),
         "safe-service",
         "api.registerService('output_format', () => ({ handled: false }), { passThrough: true });",
       );
+      expect(install).toMatchObject({
+        ok: true,
+        details: {
+          activated: true,
+          runtime_activation_status: "ok",
+          verification: { status: "ok", activated: true },
+        },
+      });
 
       const doctor = context.runCli(
         [
@@ -59,12 +71,20 @@ describe("package service pass-through integration", () => {
 
   it("retains strict diagnostics for an undeclared global interceptor", async () => {
     await withTempPmPath(async (context) => {
-      await installOutputPackage(
+      const install = await installOutputPackage(
         context.pmPath,
         path.join(context.tempRoot, "interceptor-source"),
         "interceptor-service",
         "api.registerService('output_format', () => ({ handled: true, result: 'intercepted' }));",
       );
+      expect(install).toMatchObject({
+        ok: true,
+        details: {
+          activated: true,
+          runtime_activation_status: "ok",
+          verification: { status: "ok", activated: true },
+        },
+      });
 
       const doctor = context.runCli(
         [

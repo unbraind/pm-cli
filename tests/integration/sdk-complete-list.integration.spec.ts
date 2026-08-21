@@ -96,6 +96,27 @@ describe("complete list SDK acceptance", () => {
 
   it("executes the typed canonical recovery against a fresh tracker", async () => {
     await withTempPmPath(async (context) => {
+      const seededIds = Array.from({ length: 3 }, (_, index) => {
+        const created = context.runCli(
+          [
+            "create",
+            "--create-mode",
+            "progressive",
+            "--title",
+            `Budget-sensitive complete-list row ${index + 1}`,
+            "--description",
+            `${index + 1}:`.padEnd(10_000, String(index + 1)),
+            "--type",
+            "Task",
+            "--status",
+            "open",
+            "--json",
+          ],
+          { expectJson: true },
+        ).json as { item: { id: string } };
+        return created.item.id;
+      });
+
       let recovery: string | undefined;
       try {
         certifyCompleteListResult({ items: [] });
@@ -113,11 +134,43 @@ describe("complete list SDK acceptance", () => {
       }
       const recovered = context.runCli(recovery.split(" ").slice(1), {
         expectJson: true,
-      }).json;
-      expect(certifyCompleteListResult(recovered).complete_list).toMatchObject({
+      }).json as {
+        items: Array<{ id: string; description: string }>;
+        omission_receipt: {
+          has_omissions: boolean;
+          omitted_field_group_count: number;
+          omitted_field_groups: string[];
+        };
+        read_output: {
+          within_budget: boolean;
+          strings_compacted: boolean;
+          rows_compacted: boolean;
+          result_omitted: boolean;
+        };
+      };
+      const certified = certifyCompleteListResult(recovered);
+      expect(certified.complete_list).toMatchObject({
+        item_count: seededIds.length,
         source_complete: true,
         no_omissions: true,
         unbounded: true,
+      });
+      expect(recovered.items.map((item) => item.id).sort()).toEqual(
+        seededIds.sort(),
+      );
+      expect(
+        recovered.items.every((item) => item.description.length === 10_000),
+      ).toBe(true);
+      expect(recovered.read_output).toMatchObject({
+        within_budget: true,
+        strings_compacted: false,
+        rows_compacted: false,
+        result_omitted: false,
+      });
+      expect(recovered.omission_receipt).toEqual({
+        has_omissions: false,
+        omitted_field_group_count: 0,
+        omitted_field_groups: [],
       });
     });
   });
