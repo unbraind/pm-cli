@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-08-22T07:28:05.550Z"
+updated_at: "2026-08-22T07:47:28.166Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -19,7 +19,7 @@ why_now: "The baseline identifies meaningful graph debt, but direct bulk mutatio
 parent: pm-6x7o
 risk: high
 confidence: medium
-dependencies[11]:
+dependencies[13]:
   - id: pm-6x7o
     kind: blocked_by
     created_at: "2026-07-13T21:59:23.505Z"
@@ -56,7 +56,19 @@ dependencies[11]:
     kind: verifies
     created_at: "2026-08-14T14:37:39.237Z"
     author: "harness:codex"
-comments[12]{created_at,author,text}:
+  - id: pm-klxax7
+    kind: verifies
+    created_at: "2026-08-22T07:47:23.431Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-olcoon
+    kind: verifies
+    created_at: "2026-08-22T07:47:23.431Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[13]{created_at,author,text}:
   "2026-07-13T21:59:23.505Z",codex-root,"Duplicate check 2026-07-13: prior all-status audits are completed point-in-time reviews and pm-e9zh owns terminal resolution evidence; none owns a future resumable typed-relationship reconstruction program. This plan starts only after pm-6x7o."
   "2026-07-31T10:17:21.616Z","harness:codex","Live reconstruction input 2026-07-31: complete all-status/current-state and immutable-activity snapshots were reviewed before mutation; no active isolate, missing active endpoint, parent-scope duplicate, or active ordering cycle exists. Wave 1 received only evidence-backed active prerequisites and semantic implementation/verification/provenance edges. The remaining 11 graph findings are terminal-only information and stay in the dedicated changelog-safe waves; no closed item was rewritten opportunistically."
   "2026-08-01T20:21:49.469Z","harness:codex","Current reconstruction checkpoint 2026-08-01: live graph has 2,266 nodes including three historical missing endpoints, 10,495 deduplicated directed edges, one connected component, zero active isolates, and zero active degree-one nodes. Stored dependencies total 8,872: related 5,403, implements 2,147, discovered_from 291, parent 275, blocked_by 238, blocks 231, verifies 181, supersedes 56, related_to 40, child 8, incident_from 2. The 11 audit findings are informational terminal-only debt: one legacy duplicate class, one retired sentinel class, eight historical ordering-cycle components, and three dangling terminal references. Active enrichment can proceed with evidence-backed typed edges; terminal cleanup remains isolated in pm-hnc9w7, pm-lnrk, and pm-s5e04g so history and changelog truth are preserved."
@@ -69,6 +81,7 @@ comments[12]{created_at,author,text}:
   "2026-08-15T14:19:31.504Z","harness:codex","Hosted feedback correction 2026-08-15: exact-head CI run 31889148328 found two deterministic tracker-context-quality ratchet breaches introduced by this organization: redundant ordering edges rose 67 -> 69 and generic related-family edges rose 6,053 -> 6,054. Graph redundancy identified the exact transitive prerequisites, so direct pm-o2kc edges were removed while preserving deeper typed paths through pm-4k6b and pm-dj98; the optional generic pm-k9m6wc -> pm-gydv edge was removed while retaining parent, discovered_from, implements, and verifies lineage. Post-correction redundancy is 67, graph edges 12,298, active outcome reachability remains 100 percent, and the full 40-assertion tracker-context-quality CI gate passes locally with no failed assertions. The hosted health-telemetry observation was enforcement=warn and local remeasurement is clear; no ratchet was weakened."
   "2026-08-22T07:18:05.502Z","harness:codex","Ecosystem review evidence 2026-08-22. The strict unbounded all-status read returned 2,533 unique items with total=2,533, has_more=false, truncated=false, no omitted field groups, and completeness=complete: 307 open, 2,212 closed, and 14 canceled; no item is currently in progress. The corpus contains 2,548 history streams and 53,059 immutable entries. Validation scanned every item and stream: zero unreadable items or directories, missing or unreadable streams, hash or chain mismatches, workspace-state mismatches, dangling references, active lifecycle defects, stale blockers, dependency cycles, parent cycles, storage failures, merge-fence defects, or pending merge decisions. The known historical debt remains explicit: 295 terminal records lack complete resolution evidence and seven terminal-only hierarchy rows preserve divergent legacy storage; both are warnings with canonical owners, not fabricated repairs.\n\nGraph evidence: 2,533 nodes, 12,474 deduplicated directed edges, one connected component, zero orphans, 12 layers, critical path length 11, zero active isolates or degree-one nodes, and 100 percent outcome reachability for all 307 active and all 2,226 terminal records. Kind totals are parent 2,357, implements 2,691, discovered_from 619, blocked_by 612, verifies 298, blocks 205, supersedes 87, recurs_from 26, incident_from 11, and related 5,568. The graph is connected but not finished: related still represents 44.6 percent of directed edges, semantic edges are 8.35 percent, and 67 ordering edges are transitively redundant. This review adds no generic relationship and does not mutate terminal history for density. Exact normalized-title inspection found only the three already-canceled accidental probe records. The all-status fuzzy sweep correctly refused at its one-million-pair safety ceiling; pm-pshhry remains the scalability owner, so no exhaustive fuzzy-uniqueness claim is made.\n\nPortfolio reconciliation found canonical owners for every requested theme: grammar pm-n7rr, output budgets pm-5t33or, SDK-first architecture pm-usfg, context algorithms pm-4k6b, graph maturity pm-96h7, immutable restoration pm-w7ccmv, multi-agent convergence pm-dj98, RL/eval environments pm-klxax7, recursive improvement pm-o0sqz5, provenance pm-c0lrdm, release/skills/CI pm-u9d0, and horizons through 2036. One narrow new recurrence, pm-xam9bt, records the live smaller-than-current output-budget recovery defect after all-status duplicate checks. Strategic owners received missing goal, objective, value, or why-now metadata; pm-olcoon received the only missing active acceptance/risk/confidence/estimate set and moved from the portfolio root to the CLI ergonomics capability. This is evidence-backed organization, not synthetic graph inflation.\n"
   "2026-08-22T07:27:51.075Z","harness:codex","Final verification evidence (2026-08-22): the linked suite now passes pnpm build, pnpm security:scan, and pnpm quality:tracker-measurements. The assurance gate evaluated all 2,534 items with 41 blocking assertions, verdict pass, and negative_control_proven=true for every assertion. pnpm changelog:pm:check also passes directly against the complete real tracker and reports CHANGELOG.md unchanged with 2,167 closed items. An attempted linked changelog check reproduced the canonical workspace/tracker parity issue pm-e97jyf; it was removed from the linked suite because its current sandbox contract compares a copied tracker to the source workspace artifact, and recurrence evidence was appended to that existing item rather than creating a duplicate."
+  "2026-08-22T07:47:27.577Z","harness:codex","Hosted graph-ratchet correction (2026-08-22): a full SDK-owned prose-edge census compared exact contributors against pre-review commit 1e7606bf and isolated exactly two new gaps: this plan naming pm-klxax7 as the canonical RL/eval environment owner and pm-olcoon as the command-ergonomics metadata repair. Added verifies edges for those two evidence-reviewed portfolio assertions; no generic relationship, ordering edge, exemption, or ceiling change was used."
 notes[2]:
   - created_at: "2026-07-25T00:00:23.513Z"
     author: maintainer-agent
