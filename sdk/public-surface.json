@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1783,
+    "covered_symbols": 1784,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1784
+    "required_symbols": 1785
   },
   "breaking_acknowledgements": [
     {
@@ -8481,6 +8481,12 @@
           "kind": "function",
           "name": "mergeSortedWarnings",
           "signature": "(...warningGroups: Array<string[] | undefined>) => string[] | calls: (...warningGroups: Array<string[] | undefined>) => string[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "MergeSubcommand",
+          "signature": "export type MergeSubcommand = (typeof MERGE_SUBCOMMAND_VALUES)[number];"
         },
         {
           "classification": "advanced_export",
@@ -19035,6 +19041,12 @@
           "kind": "value",
           "name": "MERGE_SUBCOMMAND_VALUES",
           "signature": "readonly [\"install\", \"reconcile\", \"report\", \"driver\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "MergeSubcommand",
+          "signature": "export type MergeSubcommand = (typeof MERGE_SUBCOMMAND_VALUES)[number];"
         },
         {
           "classification": "contract_data",

@@ -169,6 +169,21 @@ describe("assurance action transport", () => {
           examples: [
             "pm assurance apply software-delivery --owner <pm-item-id>",
           ],
+          required: "Provide the missing assurance operand: preset.",
+          recovery: { missing: ["preset"] },
+        },
+      });
+      await expect(
+        runAssuranceAction(
+          { action: "apply", preset: "software-delivery" },
+          global,
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "missing_required_argument",
+          required: "Provide the missing assurance operand: owner.",
+          recovery: { missing: ["owner"] },
         },
       });
       await expect(

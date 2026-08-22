@@ -207,6 +207,18 @@ describe("pm cli error guidance context plumbing", () => {
       "Allowed values: brief|standard|deep|full",
       'Run "pm get --help" to confirm command-specific constraints.',
     ]);
+    expect(envelope.recovery?.allowed_values).toEqual([
+      "brief",
+      "standard",
+      "deep",
+      "full",
+    ]);
+    expect(envelope.refusal.legal_domain).toEqual([
+      "brief",
+      "standard",
+      "deep",
+      "full",
+    ]);
   });
 
   it("never exposes a global option value as the recovery command", () => {

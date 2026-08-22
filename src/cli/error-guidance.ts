@@ -854,8 +854,11 @@ function applyPmCliErrorContext(
     guidance.code === "command_failed" && context.code
       ? buildFallbackTitleFromMessage(normalizedRawMessage)
       : undefined;
+  const contextRecovery = normalizeRecoveryPayload(context.recovery);
   const recovery =
-    normalizeRecoveryPayload(context.recovery) ?? guidance.recovery;
+    contextRecovery && guidance.recovery
+      ? normalizeRecoveryPayload({ ...guidance.recovery, ...contextRecovery })
+      : (contextRecovery ?? guidance.recovery);
   return {
     ...guidance,
     code,
@@ -1115,6 +1118,10 @@ function buildInvalidArgumentGuidance(
     ? `pm ${commandName} --help`
     : "pm <command> --help";
   const allowedValues = inferAllowedValuesFromMessage(message);
+  const enrichedRecovery = normalizeRecoveryPayload({
+    ...recovery,
+    allowed_values: recovery?.allowed_values ?? allowedValues,
+  });
   const retryExample = buildAllowedValueRetryCommand(recovery, allowedValues);
   const examples = retryExample
     ? [retryExample, helpExample]
@@ -1137,6 +1144,7 @@ function buildInvalidArgumentGuidance(
       why: "Validation protects data consistency and deterministic behavior across commands.",
       examples,
       nextSteps,
+      recovery: enrichedRecovery,
     }),
     rawMessage,
     context,

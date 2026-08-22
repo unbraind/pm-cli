@@ -208,16 +208,23 @@ function parseAction(value: string): AssuranceAction {
 }
 
 /** Throw the shared structured usage refusal for a missing assurance operand. */
-function missingAssuranceArgument(detail: string, example: string): never {
+function missingAssuranceArgument(
+  operand: string,
+  detail: string,
+  example: string,
+): never {
   throw new PmCliError(detail, EXIT_CODE.USAGE, {
     code: "missing_required_argument",
+    required: `Provide the missing assurance operand: ${operand}.`,
     examples: [example],
+    recovery: { missing: [operand] },
   });
 }
 
 function parseKind(value: string | undefined): AssuranceDeclarationKind {
   if (!value) {
     return missingAssuranceArgument(
+      "kind",
       `Assurance declaration kind is required. Expected: ${ASSURANCE_DECLARATION_KINDS.join(", ")}`,
       "pm assurance list measurement",
     );
@@ -234,6 +241,7 @@ function parseKind(value: string | undefined): AssuranceDeclarationKind {
 function parsePreset(value: string | undefined): AssurancePresetId {
   if (!value) {
     return missingAssuranceArgument(
+      "preset",
       `Assurance preset is required. Expected: ${ASSURANCE_PRESET_IDS.join(", ")}`,
       "pm assurance apply software-delivery --owner <pm-item-id>",
     );
@@ -249,9 +257,10 @@ function parsePreset(value: string | undefined): AssurancePresetId {
 
 function requireOwner(input: AssuranceActionInput): string {
   if (input.owner?.trim()) return input.owner.trim();
-  throw new PmCliError(
+  return missingAssuranceArgument(
+    "owner",
     "assurance preset and derivation actions require --owner <pm-item-id>",
-    EXIT_CODE.USAGE,
+    "pm assurance apply software-delivery --owner <pm-item-id>",
   );
 }
 
@@ -415,6 +424,7 @@ async function runAdoptionAction(
   }
   if (!input.id) {
     return missingAssuranceArgument(
+      "assertion-id",
       "assurance promote requires an assertion id",
       "pm assurance promote <assertion-id> --enforcement warn",
     );
@@ -450,6 +460,7 @@ async function runGateAction(
 ): Promise<AssuranceGateVerdict> {
   if (!input.id) {
     return missingAssuranceArgument(
+      "gate-id",
       "assurance run requires a gate id",
       "pm assurance run <gate-id> --trigger ci --dry-run",
     );
@@ -634,6 +645,7 @@ export async function runAssuranceAction(
   if (action === "list") return listAssuranceDeclarations(pmRoot, kind);
   if (!input.id) {
     return missingAssuranceArgument(
+      "id",
       `assurance ${action} requires an id`,
       `pm assurance ${action} ${kind} <id>`,
     );

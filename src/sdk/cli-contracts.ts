@@ -69,6 +69,7 @@ export {
   isPmExtensionPolicySurfaceContract,
 } from "./cli-contracts/enum-contracts.js";
 export type {
+  MergeSubcommand,
   PmExtensionCapabilityContract,
   PmExtensionServiceNameContract,
   PmExtensionPolicyModeContract,

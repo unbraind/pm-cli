@@ -571,6 +571,7 @@ export type {
   PmExtensionSandboxProfileContract,
   PmExtensionServiceNameContract,
   PmExtensionTrustModeContract,
+  MergeSubcommand,
   PmToolAction,
   SdkCliActionParameterCoverage,
   SdkCliCompletenessContractSource,
