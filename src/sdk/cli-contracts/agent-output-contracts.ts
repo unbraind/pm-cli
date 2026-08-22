@@ -95,12 +95,16 @@ export interface PmDiagnosticOutputReceipt {
   degradation_steps: PmDiagnosticDegradationStep[];
   /** Top-level fields removed from the original diagnostic. */
   omitted_fields: string[];
+  /** Additional omitted fields not named individually in a bounded receipt. */
+  omitted_fields_overflow_count?: number;
 }
 
 /** JSON diagnostic after binding it to a declared output contract. */
-export type PmProjectedDiagnostic<TDiagnostic extends object> = TDiagnostic & {
-  diagnostic_output?: PmDiagnosticOutputReceipt;
-};
+export type PmProjectedDiagnostic<TDiagnostic extends object> =
+  Partial<TDiagnostic> &
+    Pick<TDiagnostic, Extract<keyof TDiagnostic, "code" | "required">> & {
+      diagnostic_output?: PmDiagnosticOutputReceipt;
+    };
 
 /** Describes one command's default agent-output budget and degradation policy. */
 export interface PmCommandOutputBudgetContract {
@@ -338,7 +342,13 @@ export function estimatePmOutputTokens(utf8Bytes: number): number {
 export function resolvePmDiagnosticOutputBudget(
   diagnosticClass: PmDiagnosticOutputClass,
 ): PmDiagnosticOutputBudgetContract {
-  return DIAGNOSTIC_BUDGET_BY_CLASS.get(diagnosticClass)!;
+  const contract = DIAGNOSTIC_BUDGET_BY_CLASS.get(diagnosticClass);
+  if (contract === undefined) {
+    throw new TypeError(
+      `diagnosticClass must be one of: ${PM_DIAGNOSTIC_OUTPUT_CLASSES.join(", ")}`,
+    );
+  }
+  return contract;
 }
 
 function estimateJsonDiagnosticTokens(value: Record<string, unknown>): number {
@@ -395,10 +405,14 @@ function prioritizeDiagnosticFields(
     "why",
     "examples",
   ]) {
-    if (diagnostic[key] !== undefined) prioritized[key] = diagnostic[key];
+    if (Object.hasOwn(diagnostic, key) && diagnostic[key] !== undefined) {
+      prioritized[key] = diagnostic[key];
+    }
   }
   for (const [key, value] of Object.entries(diagnostic)) {
-    if (prioritized[key] === undefined) prioritized[key] = value;
+    if (key !== "__proto__" && !Object.hasOwn(prioritized, key)) {
+      prioritized[key] = value;
+    }
   }
   return prioritized;
 }
@@ -470,6 +484,55 @@ function attachDiagnosticReceipt(
   return projected;
 }
 
+function createMinimalDiagnosticFallback(
+  projected: Record<string, unknown>,
+  budget: number,
+): Record<string, unknown> {
+  const receipt = projected.diagnostic_output as PmDiagnosticOutputReceipt;
+  const { estimated_tokens: _estimatedTokens, ...receiptWithoutEstimate } =
+    receipt;
+  const boundedOmittedFields = receiptWithoutEstimate.omitted_fields
+    .slice(0, 8)
+    .map((field) => String(truncateDiagnosticString(field, 32)));
+  const boundedReceipt = {
+    ...receiptWithoutEstimate,
+    omitted_fields: boundedOmittedFields,
+    ...(receiptWithoutEstimate.omitted_fields.length >
+    boundedOmittedFields.length
+      ? {
+          omitted_fields_overflow_count:
+            receiptWithoutEstimate.omitted_fields.length -
+            boundedOmittedFields.length,
+        }
+      : {}),
+  };
+  const recoveryCandidate = compactDiagnosticRecovery(projected.recovery);
+  const recovery =
+    recoveryCandidate && estimateJsonDiagnosticTokens(recoveryCandidate) <= 48
+      ? recoveryCandidate
+      : undefined;
+  const candidate = {
+    code: truncateDiagnosticString(projected.code, 48),
+    required: truncateDiagnosticString(projected.required, 48),
+    ...(recovery ? { recovery } : {}),
+    ...(projected.exit_code !== undefined
+      ? { exit_code: projected.exit_code }
+      : {}),
+  };
+  let fallback = attachDiagnosticReceipt(candidate, boundedReceipt);
+  while (
+    estimateJsonDiagnosticTokens(fallback) > budget &&
+    boundedReceipt.omitted_fields.length > 0
+  ) {
+    boundedReceipt.omitted_fields.pop();
+    boundedReceipt.omitted_fields_overflow_count =
+      receiptWithoutEstimate.omitted_fields.length -
+      boundedReceipt.omitted_fields.length;
+    fallback = attachDiagnosticReceipt(candidate, boundedReceipt);
+  }
+  return fallback;
+}
+
 /**
  * Bind a JSON diagnostic to its declared ceiling while preserving the first
  * corrective action and reporting every top-level omission.
@@ -508,7 +571,7 @@ export function projectPmDiagnosticOutput<TDiagnostic extends object>(
   for (const [index, stage] of contract.degradation_ladder.entries()) {
     const candidate = diagnosticCandidate(diagnosticRecord, stage);
     const omittedFields = originalFields.filter(
-      (field) => candidate[field] === undefined,
+      (field) => !Object.hasOwn(candidate, field),
     );
     const withReceipt = attachDiagnosticReceipt(candidate, {
       diagnostic_class: diagnosticClass,
@@ -524,26 +587,7 @@ export function projectPmDiagnosticOutput<TDiagnostic extends object>(
     if (estimateJsonDiagnosticTokens(withReceipt) <= budget) break;
   }
   if (estimateJsonDiagnosticTokens(projected!) > budget) {
-    const receipt = projected!.diagnostic_output as PmDiagnosticOutputReceipt;
-    const { estimated_tokens: _estimatedTokens, ...receiptWithoutEstimate } =
-      receipt;
-    const required = truncateDiagnosticString(projected!.required, 48);
-    const recoveryCandidate = compactDiagnosticRecovery(projected!.recovery);
-    const recovery =
-      recoveryCandidate && estimateJsonDiagnosticTokens(recoveryCandidate) <= 48
-        ? recoveryCandidate
-        : undefined;
-    projected = attachDiagnosticReceipt(
-      {
-        code: truncateDiagnosticString(projected!.code, 48),
-        required,
-        ...(recovery ? { recovery } : {}),
-        ...(projected!.exit_code !== undefined
-          ? { exit_code: projected!.exit_code }
-          : {}),
-      },
-      receiptWithoutEstimate,
-    );
+    projected = createMinimalDiagnosticFallback(projected!, budget);
   }
   return projected as PmProjectedDiagnostic<TDiagnostic>;
 }

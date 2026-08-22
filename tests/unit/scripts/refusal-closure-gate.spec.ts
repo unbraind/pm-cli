@@ -182,6 +182,31 @@ describe("executable refusal closure gate", () => {
           corrective_action_count: 1,
         });
       }
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions({
+            required: "Choose a usable corrective action.",
+            recovery: {
+              allowed_values: ["   "],
+              suggested_retry_args: [""],
+            },
+            next_steps: ["\t"],
+          }),
+          diagnosticBaseline: {
+            version: 9,
+            required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+          },
+        }).diagnostic_output,
+      ).toMatchObject({
+        ok: false,
+        corrective_action_count: 0,
+        findings: [
+          expect.objectContaining({
+            code: "diagnostic_corrective_action_missing",
+            probe_id: SAMPLE_CONTRACT.probe_id,
+          }),
+        ],
+      });
     },
     60_000,
   );

@@ -54,7 +54,9 @@ explanation. Untruncated diagnostics add no per-call receipt overhead; their
 binding declaration is discoverable from `pm contracts --full --json` under
 `diagnostic_output_contracts`. When degradation occurs, the returned
 `diagnostic_output` receipt records the effective budget, original and emitted
-estimates, applied stages, and omitted top-level fields.
+estimates, applied stages, and omitted top-level fields. Minimal fallbacks bound
+the named omission list and disclose any additional count through
+`omitted_fields_overflow_count`.
 
 The deterministic ladder is:
 

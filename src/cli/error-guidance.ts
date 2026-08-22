@@ -12,6 +12,7 @@ import {
   projectPmDiagnosticOutput,
   projectPmDiagnosticText,
   type PmDiagnosticOutputReceipt,
+  type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
@@ -73,10 +74,14 @@ export interface JsonErrorEnvelope {
   diagnostic_output?: PmDiagnosticOutputReceipt;
 }
 
+/** Error envelope after deterministic budget projection. */
+export type ProjectedJsonErrorEnvelope =
+  PmProjectedDiagnostic<JsonErrorEnvelope>;
+
 /** Compact an error envelope to fields that change the caller's next action. */
 export function projectLeanErrorEnvelope(
-  envelope: JsonErrorEnvelope,
-): Omit<JsonErrorEnvelope, "why" | "title"> {
+  envelope: ProjectedJsonErrorEnvelope,
+): ProjectedJsonErrorEnvelope {
   const { why: _why, title: _title, ...actionable } = envelope;
   return actionable;
 }
@@ -1800,7 +1805,7 @@ export function formatPmCliErrorForJson(
   rawMessage: string,
   exitCode: number,
   context?: PmCliErrorContext,
-): JsonErrorEnvelope {
+): ProjectedJsonErrorEnvelope {
   return projectPmDiagnosticOutput(
     guidanceToJsonEnvelope(
       buildPmCliErrorGuidance(rawMessage, context),
@@ -1847,7 +1852,7 @@ export function formatCommanderErrorForJson(
   allowedTypes: string,
   exitCode: number,
   context?: CommanderGuidanceContext,
-): JsonErrorEnvelope {
+): ProjectedJsonErrorEnvelope {
   return projectPmDiagnosticOutput(
     guidanceToJsonEnvelope(
       buildCommanderErrorGuidance(
@@ -1865,7 +1870,7 @@ export function formatCommanderErrorForJson(
 export function formatUnknownErrorForJson(
   rawMessage: string,
   exitCode: number,
-): JsonErrorEnvelope {
+): ProjectedJsonErrorEnvelope {
   const guidance = buildUnknownErrorGuidance(rawMessage);
   return projectPmDiagnosticOutput(guidanceToJsonEnvelope(guidance, exitCode));
 }

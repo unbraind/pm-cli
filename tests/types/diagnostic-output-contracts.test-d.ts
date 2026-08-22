@@ -24,6 +24,10 @@ const projected = projectPmDiagnosticOutput(
 );
 const receipt: PmDiagnosticOutputReceipt | undefined =
   projected.diagnostic_output;
+const projectedCode: string = projected.code;
+const projectedRequired: string = projected.required;
+const projectedRecovery: { suggested_retry: string } | undefined =
+  projected.recovery;
 const text = projectPmDiagnosticText("Diagnostic", "Retry.");
 const declaredCount: number = PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS.length;
 
@@ -31,6 +35,9 @@ const declaredCount: number = PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS.length;
 const invalidClass: PmDiagnosticOutputClass = "notice";
 
 void receipt;
+void projectedCode;
+void projectedRequired;
+void projectedRecovery;
 void text;
 void declaredCount;
 void invalidClass;

@@ -1050,6 +1050,16 @@
       ],
       "package_version": "2026.8.21",
       "reason": "Add optional diagnostic_output_contracts discovery metadata and additive diagnostic projection exports"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmDiagnosticOutputReceipt",
+        "signature ./sdk:PmProjectedDiagnostic",
+        "signature ./sdk/contracts:PmDiagnosticOutputReceipt",
+        "signature ./sdk/contracts:PmProjectedDiagnostic"
+      ],
+      "package_version": "2026.8.21",
+      "reason": "Correct projected diagnostic types to model deterministic field omission and disclose bounded omission overflow."
     }
   ],
   "entrypoints": {
@@ -10402,7 +10412,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmDiagnosticOutputReceipt",
-          "signature": "export interface PmDiagnosticOutputReceipt { diagnostic_class: PmDiagnosticOutputClass; format: \"json\" | \"text\"; budget: number; budget_source: \"default\" | \"explicit\"; original_estimated_tokens: number; estimated_tokens: number; truncated: boolean; degradation_steps: PmDiagnosticDegradationStep[]; omitted_fields: string[]; }"
+          "signature": "export interface PmDiagnosticOutputReceipt { diagnostic_class: PmDiagnosticOutputClass; format: \"json\" | \"text\"; budget: number; budget_source: \"default\" | \"explicit\"; original_estimated_tokens: number; estimated_tokens: number; truncated: boolean; degradation_steps: PmDiagnosticDegradationStep[]; omitted_fields: string[]; omitted_fields_overflow_count?: number; }"
         },
         {
           "classification": "contract_data",
@@ -10630,7 +10640,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmProjectedDiagnostic",
-          "signature": "export type PmProjectedDiagnostic<TDiagnostic extends object> = TDiagnostic & { diagnostic_output?: PmDiagnosticOutputReceipt; };"
+          "signature": "export type PmProjectedDiagnostic<TDiagnostic extends object> = Partial<TDiagnostic> & Pick<TDiagnostic, Extract<keyof TDiagnostic, \"code\" | \"required\">> & { diagnostic_output?: PmDiagnosticOutputReceipt; };"
         },
         {
           "classification": "contract_data",
@@ -19546,7 +19556,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmDiagnosticOutputReceipt",
-          "signature": "export interface PmDiagnosticOutputReceipt { diagnostic_class: PmDiagnosticOutputClass; format: \"json\" | \"text\"; budget: number; budget_source: \"default\" | \"explicit\"; original_estimated_tokens: number; estimated_tokens: number; truncated: boolean; degradation_steps: PmDiagnosticDegradationStep[]; omitted_fields: string[]; }"
+          "signature": "export interface PmDiagnosticOutputReceipt { diagnostic_class: PmDiagnosticOutputClass; format: \"json\" | \"text\"; budget: number; budget_source: \"default\" | \"explicit\"; original_estimated_tokens: number; estimated_tokens: number; truncated: boolean; degradation_steps: PmDiagnosticDegradationStep[]; omitted_fields: string[]; omitted_fields_overflow_count?: number; }"
         },
         {
           "classification": "contract_data",
@@ -19696,7 +19706,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmProjectedDiagnostic",
-          "signature": "export type PmProjectedDiagnostic<TDiagnostic extends object> = TDiagnostic & { diagnostic_output?: PmDiagnosticOutputReceipt; };"
+          "signature": "export type PmProjectedDiagnostic<TDiagnostic extends object> = Partial<TDiagnostic> & Pick<TDiagnostic, Extract<keyof TDiagnostic, \"code\" | \"required\">> & { diagnostic_output?: PmDiagnosticOutputReceipt; };"
         },
         {
           "classification": "contract_data",

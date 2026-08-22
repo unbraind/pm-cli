@@ -109,9 +109,13 @@ function executeClosedDomainProbes(probes, spawn, environment) {
       corrective_action_present:
         typeof envelope.required === "string" &&
         envelope.required.trim().length > 0 &&
-        (retryArguments.length > 0 ||
-          stringArray(recovery.allowed_values).length > 0 ||
-          stringArray(envelope.next_steps).length > 0),
+        (retryArguments.some((entry) => entry.trim().length > 0) ||
+          stringArray(recovery.allowed_values).some(
+            (entry) => entry.trim().length > 0,
+          ) ||
+          stringArray(envelope.next_steps).some(
+            (entry) => entry.trim().length > 0,
+          )),
     };
   });
 }

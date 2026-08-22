@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: agent-ux,"area:cli",diagnostics,error-contract,token-efficiency
 created_at: "2026-07-25T12:28:06.310Z"
-updated_at: "2026-08-21T23:59:01.664Z"
+updated_at: "2026-08-22T00:51:50.951Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7b28a00954f9d51f10384882"
 author: "harness:claude-code"
@@ -33,11 +33,12 @@ dependencies[12]{id,kind,created_at}:
   pm-t5dt4z,related,"2026-07-25T12:35:08.895Z"
   pm-g3n00m,related,"2026-07-25T12:40:16.506Z"
   pm-g3n00m,implements,"2026-07-25T20:44:27.098Z"
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-07T05:38:50.502Z","harness:claude-code","Measured 2026-08-07: a one-line refusal costs 1100 bytes of envelope.\n\nThe exact invocation that produced the release-blocking production error was replayed after its refusal was reclassified as a usage error. The refusal now exits 2 with a stable code, and the JSON envelope is 1100 bytes for a single sentence of diagnosis. The message itself appears twice, as title and as detail. The recovery bundle re-serializes the invocation three ways: the attempted command as one string, the normalized argument vector as ten separate array entries, and the provided flag names as a fourth list. The examples offered are the two most generic strings the product can emit, naming the root help and a placeholder command, neither of which addresses the refusal. Against a 9-byte version read, the cheapest thing this CLI can print, the refusal is 122 times larger, and against the 524-byte agent-token baseline recorded for this command it is more than double.\n\nThe observation for this item is that the three re-serializations are the bulk of the payload and none of them tells the caller anything the caller did not just type. The teachable content, the code and the one sentence that names what was wrong, is under 150 bytes.\n"
   "2026-08-14T07:55:44.969Z","harness:codex","Tranche evidence: health diagnostics now have a hard 100-warning collection bound and truthful completeness receipts; strict-exit selects summary, command-scoped contracts omit unrelated payload, and the mandatory omission receipt was shortened while preserving structured recovery. Token-surface and 109 linked health/contracts tests pass. Residual all-error-family ceilings and ten-path before/after corpus remain, so this item returns open."
   "2026-08-21T22:48:07.831Z","harness:codex","Implementation start 2026-08-22: one coupled SDK/CLI/contract/assurance tranche will declare binding diagnostic ceilings, preserve corrective actions through deterministic degradation, replay the ten most frequent refusal paths in isolated trackers, and extend executable recovery evidence. Only these four actively edited items are claimed; all other backlog items remain unclaimed."
   "2026-08-21T23:58:52.681Z","harness:codex","Implementation evidence (2026-08-22): shipped the first production diagnostic output-budget family across SDK, CLI rendering, runtime contracts, MCP parity, corpus governance, generated artifacts, and docs. Ten representative error/warning/validation/recovery paths are ratcheted by a production baseline and refusal-closure gate; all 10 preserve corrective action and stay within their declared budgets. Exact verification: pnpm lint passed; 7,717 tests at 100% statements/branches/functions/lines; 22/22 refusal probes; 10/10 diagnostic probes; security scan and pnpm audit clean; packed npx plus isolated Node and bunx consumers passed. The item remains active for its stated remaining exhaustive family/CLI-path and before/after measurement scope."
+  "2026-08-22T00:51:50.951Z","harness:codex","Review follow-up (2026-08-22 UTC): CodeRabbit findings were reproduced and fixed for blank-only corrective actions, unknown diagnostic classes, prototype-sensitive own properties, projected-envelope typing, and unbounded omitted-field receipts. The PM test plan now carries exact commands and current run records: focused integration 77/77, recovery closure 22/22 plus diagnostics 10/10, exact coverage 56,428/56,428 statements, 42,152/42,152 branches, 11,725/11,725 functions, and 54,405/54,405 lines, tracker-context lint/static assurance, credential scan, dependency audit, package artifact, and packed npx smoke all passed. Timestamp clarification: the earlier comment labeled 2026-08-22 used the repository operator timezone Europe/Vienna; its stored 2026-08-21T23:58:52Z timestamp is 2026-08-22 local time."
 notes[1]{created_at,author,text}:
   "2026-07-25T20:42:10.437Z","harness:claude-code","Measured diagnostic cost and its redundancy on the shipped 2026.7.25 build, so this item's ceilings can be set against real output. Isolated sandbox, one item present.\n\nPer-diagnostic sizes: get on an unknown id 447 B (~111 tokens); unknown mutating flag 725 B (~181); unknown command 668 B (~167); invalid multi-value filter 684 B (~171); close without a required argument 940 B (~235); unknown graph subcommand 711 B (~177); out-of-domain --confidence value 613 B (~153).\n\nThe range is modest, but roughly 40 percent of each envelope is literal repetition, which is the cheapest thing to reclaim before any ceiling is enforced. On the unknown-flag case (22 lines):\n- the message text appears twice verbatim, once after \"Error:\" and again under \"What happened:\";\n- the corrective command appears three times, as the Examples entry, as attempted_command, and as suggested_retry, with normalized_args carrying a fourth near-copy;\n- \"What is required\" and \"Why\" render generic contract prose that is identical across unrelated failures and carries no case-specific information.\n\nThat suggests the degradation order this item declares should drop the duplicated renderings before it ever truncates the corrective action, and that the smallest permitted budget can be well under the current sizes without losing a single fact. The related structural assertion — corrective action first — is already testable against this shape: the recovery bundle is last today, so an agent reads the full explanation before reaching the command it needs."
 learnings[1]{created_at,author,text}:
@@ -59,12 +60,51 @@ files[16]{path,scope,note}:
   tests/types/diagnostic-output-contracts.test-d.ts,project,Published diagnostic SDK types
   tests/integration/structured-mutation-io.integration.spec.ts,project,Lean diagnostic action-preservation regression
   tests/unit/cli/structured-mutation-registration.spec.ts,project,Lean projector retains required action
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/types/diagnostic-output-contracts.test-d.ts,project,360
-  node scripts/run-tests.mjs coverage,project,1200
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+tests[10]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/commands/contracts-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/agent-output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/types/diagnostic-output-contracts.test-d.ts
+    scope: project
+    timeout_seconds: 360
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts
+    scope: project
+    timeout_seconds: 420
+    note: diagnostic integration and review regressions
+  - command: "pnpm quality:recovery-closure"
+    scope: project
+    timeout_seconds: 300
+    note: executable refusal and diagnostic corpus
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 180
+    note: credential scan
+  - command: pnpm audit
+    scope: project
+    timeout_seconds: 300
+    note: dependency vulnerability audit
+  - command: "pnpm quality:package-artifact"
+    scope: project
+    timeout_seconds: 300
+    note: packed artifact contract
+  - command: "pnpm smoke:npx"
+    scope: project
+    timeout_seconds: 600
+    note: packed npx consumer smoke
+  - command: pnpm lint
+    scope: project
+    timeout_seconds: 1200
+    pm_context_mode: tracker
+    note: full static and assurance suite
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssnijvf-o9f8di,test,passed,"2026-08-14T07:54:03.066Z","2026-08-14T07:54:25.179Z","2026-08-14T07:54:25.179Z",1,0,0
+  test-local-mt3n0035-squ5m2,test,failed,"2026-08-22T00:17:11.632Z","2026-08-22T00:25:27.665Z","2026-08-22T00:25:27.665Z",9,1,0
+  test-local-mt3n4apd-e4p5ob,test,failed,"2026-08-22T00:26:42.829Z","2026-08-22T00:28:48.049Z","2026-08-22T00:28:48.049Z",0,1,0
+  test-local-mt3nb2wk-93e4ua,test,passed,"2026-08-22T00:29:14.141Z","2026-08-22T00:34:04.532Z","2026-08-22T00:34:04.532Z",1,0,0
+  test-local-mt3nhzoh-o8tmah,test,passed,"2026-08-22T00:34:08.783Z","2026-08-22T00:39:26.944Z","2026-08-22T00:39:26.944Z",1,0,0
 docs[3]{path,scope,note}:
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project,Diagnostic class budgets and degradation ladder
   docs/READ_OUTPUT_CONTRACTS.md,project,diagnostic budget behavior

@@ -148,6 +148,54 @@ describe("agent output contracts", () => {
     );
   });
 
+  it("bounds receipt field names when a diagnostic has many top-level fields", () => {
+    const noisyFields = Object.fromEntries(
+      Array.from({ length: 200 }, (_, index) => [
+        `unbounded_field_${index}_${"x".repeat(80)}`,
+        "detail ".repeat(100),
+      ]),
+    );
+    const projected = projectPmDiagnosticOutput(
+      {
+        code: "many_fields",
+        required: "Retry with a valid value.",
+        ...noisyFields,
+      },
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(projected.diagnostic_output).toMatchObject({
+      budget: 192,
+      truncated: true,
+      omitted_fields_overflow_count: expect.any(Number),
+    });
+    expect(
+      projected.diagnostic_output!.omitted_fields.length,
+    ).toBeLessThanOrEqual(8);
+    expect(
+      projected.diagnostic_output!.omitted_fields_overflow_count,
+    ).toBeGreaterThan(0);
+    expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+  });
+
+  it("preserves safe own names and reports rejected prototype keys", () => {
+    const projected = projectPmDiagnosticOutput(
+      JSON.parse(
+        `{"code":"own-fields","required":"Retry.","constructor":"owned","toString":"owned","valueOf":"owned","__proto__":{"polluted":true},"detail":"${"x".repeat(4_000)}"}`,
+      ),
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(Object.getPrototypeOf(projected)).toBe(Object.prototype);
+    expect(Object.hasOwn(projected, "__proto__")).toBe(false);
+    expect(projected.diagnostic_output!.omitted_fields).toContain("__proto__");
+    expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+  });
+
   it("covers default degradation when only a next step can supply the action", () => {
     const projected = projectPmDiagnosticOutput({
       code: 42,
@@ -223,6 +271,9 @@ describe("agent output contracts", () => {
     expect(estimatePmOutputTokens(0)).toBe(0);
     expect(estimatePmOutputTokens(5)).toBe(2);
     expect(estimatePmOutputTokens(-4)).toBe(0);
+    expect(() => resolvePmDiagnosticOutputBudget("notice" as never)).toThrow(
+      "diagnosticClass must be one of: error, warning, validation_summary, recovery_bundle",
+    );
   });
 
   it("selects encoding-specific ceilings for exact command paths", () => {
