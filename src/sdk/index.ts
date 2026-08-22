@@ -316,6 +316,7 @@ export {
   _testOnlyConfigCommand,
   type NestedSettingResultValue,
 } from "./config.js";
+export * from "./agent/identity-config.js";
 export {
   INIT_AGENT_GUIDANCE_MODE_VALUES,
   runInitAgentGuidance,

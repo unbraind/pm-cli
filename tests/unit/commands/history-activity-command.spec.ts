@@ -631,6 +631,8 @@ describe("runHistory and runActivity", () => {
           "--provenance",
           "--harness",
           "codex",
+          "--agent-instance",
+          "instance-a",
           "--provenance-filter",
           "model=gpt-5.6-sol",
         ],

@@ -2,11 +2,13 @@ id: pm-c0lrdm
 title: "Cross-harness provenance adapters: automatically resolve native model, version, and effort signals beyond Claude without identity flags"
 description: "The bounded non-environment resolver shipped for Claude session JSONL and AI_AGENT_VERSION, but fresh Codex mutations on 2026-08-03 still record model null and effort null. The built-in registry covers seven harness names while live non-null provenance is effectively harness-specific. Build a public SDK adapter contract and privacy-reviewed built-in adapters for Codex, OpenCode, Pi, Cursor, Aider, and Gemini CLI. Each adapter declares its native sources, supported dimensions, bounded probe policy, normalization vocabulary, version, confidence, and explicit unavailable or failed outcomes. Packages may register adapters without patching CLI code. No agent supplies PM_AUTHOR or repeats model or thinking-level flags."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[8]: agent-ux,"area:sdk",extensibility,identity,instrument-integrity,observability,provenance,security
 created_at: "2026-08-03T11:08:43.782Z"
-updated_at: "2026-08-22T07:28:19.950Z"
+updated_at: "2026-08-22T10:34:29.696Z"
+closed_at: "2026-08-22T10:34:29.063Z"
+completed_at: "2026-08-22T10:34:29.063Z"
 author: "harness:codex"
 estimated_minutes: 900
 acceptance_criteria: "A versioned public SDK adapter interface declares harness detection, native sources, supported dimensions, bounded probe limits, normalization, source attribution, and explicit outcome categories; Built-in adapters cover Codex, Claude Code, OpenCode, Pi, Cursor, Aider, and Gemini CLI; each adapter has a redacted real boundary fixture or a documented no-signal waiver; A live Codex mutation records the actual model family and reasoning effort available to the harness, without PM_AUTHOR, author, model, or effort flags; if the platform exposes neither, the exact unavailable source is observable rather than silently null; Probe implementations read only allow-listed metadata fields under byte and time ceilings, fail closed, never block a mutation, never retain arbitrary session text or host paths, and can be disabled by policy; CLI, SDK, MCP, extension, nested-process, npx, and bunx paths share the same adapter result and immutable source attribution; Packages can add or override a harness adapter through the SDK registry with schema validation, priority rules, collision diagnostics, and no CLI source change; Corpus coverage reports success, unavailable, failed, and undeclared rates per harness and dimension; a negative control proves CI fails when a declared live adapter remains inert; Normalization preserves raw provider identifiers only when policy permits and always emits a stable model-family and effort vocabulary suitable for longitudinal analytics"
@@ -19,6 +21,9 @@ why_now: "The current Codex session is correctly detected as a harness and uniqu
 parent: pm-5oj5
 risk: high
 confidence: medium
+resolution: "Shipped a versioned public provenance adapter registry with seven bounded built-ins, package overrides, Codex model/effort discovery, and explicit resolver outcomes."
+expected_result: Every supported harness exposes attributable provenance or an explicit unavailable/failed outcome without identity flags or sensitive session retention.
+actual_result: "Seven built-ins and public package registration pass focused, full-suite, live Codex, and packed CLI/SDK/MCP verification with privacy bounds."
 dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-03pq3o,discovered_from,"2026-08-03T11:08:43.782Z","harness:codex","cli:create:dep",detected
   pm-0pzgit,blocked_by,"2026-08-03T11:08:43.782Z","harness:codex","cli:create:dep",detected
@@ -31,11 +36,42 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-08-03T11:08:43.782Z","harness:codex","cli:create:dep",detected
   pm-yds9dt,related,"2026-08-03T11:08:43.782Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-03T11:15:47.940Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-03T11:08:43.782Z","harness:codex","Duplicate check 2026-08-03: searched all statuses for Codex session JSONL model probe, cross harness model resolver adapters, OpenCode Pi Cursor Aider Gemini model provenance, native harness metadata model version effort, and Codex model version automatic identity. Closed pm-ffz0a9 delivered a Claude-specific bounded resolver; closed pm-03pq3o delivered the generic identity shape; open pm-1wiugq measures inert coverage. No active item owns the non-Claude adapter fleet."
   "2026-08-03T20:38:40.632Z","harness:claude-code","Live confirmation on this repository 2026-08-03, read from the raw history entry of a Claude Code mutation made with no identity flags and no environment override.\n\nThe recorded provenance is now: author harness:claude-code with author_source detected, agent_harness claude-code, agent_model claude-opus-5 with agent_model_source probe, model source probe, effort xhigh from environment, version 2.1.220 from probe, and a stable agent_instance.\n\nThree of the five dimensions the mandate asks for are therefore live and automatic for this harness: harness, model, and reasoning effort. Against the long-standing baseline of model null on every one of tens of thousands of entries, that is the dimension crossing from never-observed to observed, and it did so through the non-environment resolver rather than through more environment keys, which is the design decision this item generalizes.\n\nThe two dimensions still missing on the same entry are exactly the two this item and its siblings own. role records the string 1, which is a boolean environment flag rendered as a value. topic is null. Neither is a regression and neither is fixed by another Claude-side key, which is why the adapter contract and the semantic inference layer remain the right shape for the remaining work.\n\nThe concrete consequence for this item is that the Claude adapter now has a working reference implementation for the model and version dimensions, so the other six built-in adapters have a template and a fixture shape to conform to rather than a specification alone.\n"
   "2026-08-04T09:18:05.477Z","harness:codex","Fresh Codex evidence 2026-08-04 with no PM_AUTHOR or --author: the plan mutation history records author=harness:codex, author_source=detected, agent_harness=codex, and a stable agent_instance, so zero-flag harness detection works. The same raw event has no agent_model, effort, role, or topic fields, so model/version/thinking-level and semantic session attribution remain incomplete for Codex. The external-package fleet smoke script also explicitly sets PM_AUTHOR=external-package-smoke and passes --author during init, masking whether package workflows honor automatic identity. Remove that test crutch only as part of this canonical cross-harness contract, with fixtures that prove all dimensions."
   "2026-08-14T14:40:21.731Z","harness:codex","Fresh Codex Desktop evidence 2026-08-14 with no PM_AUTHOR or identity flags: mutation pm-zzylb9 records author=harness:codex, author_source=detected, harness=codex, stable instance, inferred role=implementer, and inferred topic=pm-a8zm. Model and effort remain explicitly null, so the canonical adapter requirement is narrower than the 2026-08-04 snapshot but still open: resolve the actual Codex model family/version and reasoning level when the platform exposes them, otherwise persist an observable unavailable source instead of a silent null."
   "2026-08-15T13:57:01.774Z","harness:codex","Live automatic-provenance census 2026-08-15: the most recent 7,330 immutable events all record agent_harness; 7,328 also record instance/provenance without PM_AUTHOR or --author. Harness mix is 6,260 Codex and 1,070 Claude Code. Across the full corpus, 916 model observations exist and all are claude-opus-5; current Codex events still record model and thinking effort as null even though author, harness, instance, and bounded role/topic evidence are available. The remaining contract is therefore precise: retain zero-flag automatic attribution, add privacy-safe Codex/OpenCode/Pi/Cursor/Aider/Gemini adapters through the SDK registry, distinguish unavailable from failed detection, and conformance-test CLI/MCP/npx/bunx parity without inventing model or effort values."
   "2026-08-22T07:18:32.083Z","harness:codex","Fresh zero-flag provenance evidence 2026-08-22: this task's claim event records author=harness:codex, author_source=detected, agent_harness=codex, a stable privacy-safe instance, inferred role=implementer, and a bounded workset topic spanning the claimed canonical items. Model and effort remain null. The item-level provenance summary resolves the harness on 7/7 entries but observes model and effort on only 1/7, confirming that automatic author/harness/session-role detection works while the Codex native model and thinking-level adapter remains the precise open gap. No PM_AUTHOR or --author was supplied."
+  "2026-08-22T08:03:13.991Z","harness:codex","Implementation start 2026-08-22: selected after a strict complete 2,534-item all-status read, full metadata/history review, and GitHub/security/dependency inventory. Scope is the versioned public adapter contract, privacy-bounded built-ins and package registration, shared SDK/CLI/MCP/npx/bunx behavior, explicit unavailable/failed outcomes, conformance tests, and documentation."
+  "2026-08-22T08:27:31.399Z","harness:codex","Implementation evidence 2026-08-22: added contract-v1 built-in adapters for Aider, Claude Code, Codex, Cursor, Gemini CLI, OpenCode, and Pi; public list/register/normalization APIs; explicit higher-priority package override with collision-safe disposal; privacy-bounded Codex session-file recovery for live model/effort; and immutable failed/unavailable resolver outcomes. Focused provenance/runtime tests pass 22/22 and a live bounded probe resolves model gpt-5.6-sol plus effort high without persisting paths or file content."
+  "2026-08-22T10:34:10.857Z","harness:codex","Final evidence 2026-08-22: repository static assurance passed including package/SDK parity, command grammar, flag parity, refusal closure, transport floor, graph composition, and record integrity. Exact coverage passed 557 files / 7,759 tests at 100% statements, branches, functions, and lines. Packed tarball install proved seven public adapters, package registration/disposal, live package-agent detection, and CLI/SDK/MCP execution; the 98 MiB temporary tree was removed after verification."
+learnings[1]{created_at,author,text}:
+  "2026-08-22T10:34:11.434Z","harness:codex","Privacy-bounded session probes should parse only allow-listed top-level record types, scan tail then bounded head under one byte/line budget, cache one snapshot per process, and persist explicit failed/unavailable outcomes rather than paths or arbitrary text."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed public provenance adapter SDK signature snapshot
+  src/core/history/history.ts,project,Cross-harness provenance adapter and bounded Codex probe implementation
+  src/core/shared/author.ts,project,Cross-harness provenance adapter and bounded Codex probe implementation
+  src/sdk/core-governance.ts,project,Cross-harness provenance adapter and bounded Codex probe implementation
+  src/sdk/runtime-primitives.ts,project,Cross-harness provenance adapter and bounded Codex probe implementation
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Immutable resolver outcome and mutation parity regression coverage
+  tests/unit/sdk/agent/provenance-adapters.spec.ts,project,Cross-harness provenance adapter and bounded Codex probe implementation
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent/provenance-adapters.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+test_runs[1]:
+  - run_id: test-local-mt48pnwz-y8jq2o
+    kind: test
+    status: passed
+    started_at: "2026-08-22T10:33:06.554Z"
+    finished_at: "2026-08-22T10:33:16.883Z"
+    recorded_at: "2026-08-22T10:33:16.883Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/agent/provenance-adapters.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,schema,schema
+docs[2]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Provenance adapter privacy and immutable outcome contract
+  docs/SDK_AGENT_SESSION_CONTEXT.md,project,Provenance adapter privacy and immutable outcome contract
+close_reason: "Completed public cross-harness provenance adapters with bounded probes, package extensibility, immutable outcomes, exact coverage, and packed cross-transport verification."
 body: ""

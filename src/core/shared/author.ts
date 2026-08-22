@@ -44,7 +44,8 @@ export const AGENT_PROVENANCE_DIMENSIONS = [
 /** Built-in, bounded local resolver names accepted by harness descriptors. */
 export type AgentProvenanceResolver =
   | "ai_agent_version"
-  | "claude_session_file";
+  | "claude_session_file"
+  | "codex_session_file";
 
 /** One bounded provenance value and the signal class that supplied it. */
 export interface AgentProvenanceObservation {
@@ -128,6 +129,56 @@ export interface HarnessSignalDescriptor {
   argv_markers?: readonly string[];
   /** Literal, case-insensitive MCP client-name markers. */
   client_names?: readonly string[];
+}
+
+/** Versioned package-replaceable provenance contract for one agent harness. */
+export interface AgentProvenanceAdapter {
+  /** Public adapter contract revision. */
+  contract_version: 1;
+  /** Adapter implementation revision supplied by pm or a package. */
+  adapter_version: string;
+  /** Explicit replacement precedence; built-ins use zero. */
+  priority: number;
+  /** Stable lowercase harness namespace. */
+  harness: string;
+  /** Executable detection and provenance descriptor. */
+  descriptor: HarnessSignalDescriptor;
+  /** Provenance dimensions intentionally covered by the adapter. */
+  supported_dimensions: readonly string[];
+  /** Privacy classes the adapter may inspect. */
+  native_sources: readonly (
+    | "environment"
+    | "argv"
+    | "mcp_client"
+    | "session_file"
+  )[];
+  /** Hard bounds shared by runtime probes and package review. */
+  probe_policy: {
+    max_bytes: number;
+    max_lines: number;
+    network_access: false;
+    subprocess_access: false;
+  };
+  /** Stable normalization vocabulary declarations. */
+  normalization: {
+    model_family: "v1";
+    effort: "v1";
+    preserve_raw: true;
+  };
+  /** Confidence of a value read directly from the declared sources. */
+  confidence: "high" | "medium" | "low";
+  /** Bounded reasons for intentionally uncovered dimensions. */
+  waivers?: Readonly<Record<string, string>>;
+}
+
+/** One raw and normalized adapter value with its stable vocabulary revision. */
+export interface NormalizedAgentProvenanceAdapterValue {
+  /** Bounded value retained exactly as observed. */
+  raw: string;
+  /** Stable cross-harness family or vocabulary value. */
+  normalized: string;
+  /** Normalization vocabulary revision. */
+  vocabulary: "v1";
 }
 
 type NormalizedHarnessSignalDescriptor = Required<HarnessSignalDescriptor>;
@@ -227,7 +278,11 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
         effort: ["CODEX_REASONING_EFFORT", "CODEX_EFFORT"],
         role: ["CODEX_SESSION_ROLE"],
       },
-      provenance_resolvers: { version: "ai_agent_version" },
+      provenance_resolvers: {
+        model: "codex_session_file",
+        effort: "codex_session_file",
+        version: "ai_agent_version",
+      },
       provenance_unavailable_dimensions: ["topic"],
       argv_markers: ["codex"],
       client_names: ["codex"],
@@ -285,6 +340,83 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       client_names: [],
     },
   ];
+
+const PROVENANCE_PROBE_POLICY = Object.freeze({
+  max_bytes: 1_048_576,
+  max_lines: 4_096,
+  network_access: false as const,
+  subprocess_access: false as const,
+});
+const CODEX_PROVENANCE_PROBE_POLICY = Object.freeze({
+  ...PROVENANCE_PROBE_POLICY,
+  max_bytes: 4_194_304,
+});
+
+function buildBuiltinProvenanceAdapter(
+  descriptor: HarnessSignalDescriptor,
+): AgentProvenanceAdapter {
+  const dimensions = new Set([
+    "model",
+    "version",
+    ...Object.keys(descriptor.provenance_environment_keys ?? {}),
+    ...Object.keys(descriptor.provenance_resolvers ?? {}),
+  ]);
+  return Object.freeze({
+    contract_version: 1 as const,
+    adapter_version: "v1",
+    priority: 0,
+    harness: descriptor.harness,
+    descriptor,
+    supported_dimensions: Object.freeze([...dimensions].sort()),
+    native_sources: Object.freeze([
+      "environment" as const,
+      "argv" as const,
+      "mcp_client" as const,
+      ...(Object.values(descriptor.provenance_resolvers ?? {}).some(
+        (resolver) => resolver?.endsWith("session_file"),
+      )
+        ? (["session_file" as const] as const)
+        : []),
+    ]),
+    probe_policy:
+      descriptor.harness === "codex"
+        ? CODEX_PROVENANCE_PROBE_POLICY
+        : PROVENANCE_PROBE_POLICY,
+    normalization: Object.freeze({
+      model_family: "v1" as const,
+      effort: "v1" as const,
+      preserve_raw: true as const,
+    }),
+    confidence: "high" as const,
+    waivers: Object.freeze(
+      Object.fromEntries(
+        descriptor.provenance_unavailable_dimensions!.map(
+          (dimension) => [dimension, "Harness does not expose this dimension."],
+        ),
+      ),
+    ),
+  });
+}
+
+/** Built-in versioned adapters for supported interactive agent harnesses. */
+export const BUILTIN_AGENT_PROVENANCE_ADAPTERS: readonly AgentProvenanceAdapter[] =
+  Object.freeze(
+    BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.filter(
+      (descriptor) => descriptor.harness !== "ci",
+    )
+      .map(buildBuiltinProvenanceAdapter)
+      .sort((left, right) => left.harness.localeCompare(right.harness)),
+  );
+
+interface RegisteredAgentProvenanceAdapter {
+  adapter: AgentProvenanceAdapter;
+  registrations: number;
+}
+
+const registeredAgentProvenanceAdapters = new Map<
+  string,
+  RegisteredAgentProvenanceAdapter
+>();
 
 interface RegisteredHarnessSignalDescriptor {
   descriptor: NormalizedHarnessSignalDescriptor;
@@ -356,7 +488,8 @@ function normalizeHarnessSignalDescriptor(
             typeof entry[0] === "string" &&
             HARNESS_NAMESPACE_PATTERN.test(entry[0]) &&
             (entry[1] === "ai_agent_version" ||
-              entry[1] === "claude_session_file"),
+              entry[1] === "claude_session_file" ||
+              entry[1] === "codex_session_file"),
         ),
     ),
     provenance_unavailable_dimensions: boundedUniqueStrings(
@@ -393,8 +526,23 @@ function literalSignalMatches(value: string, marker: string): boolean {
 function currentHarnessSignalDescriptors(
   localDescriptors: readonly HarnessSignalDescriptor[] = [],
 ): readonly NormalizedHarnessSignalDescriptor[] {
+  const adapterDescriptors = new Map(
+    BUILTIN_AGENT_PROVENANCE_ADAPTERS.map((adapter) => [
+      adapter.harness,
+      normalizeHarnessSignalDescriptor(adapter.descriptor),
+    ]),
+  );
+  for (const { adapter } of registeredAgentProvenanceAdapters.values()) {
+    adapterDescriptors.set(
+      adapter.harness,
+      normalizeHarnessSignalDescriptor(adapter.descriptor),
+    );
+  }
   const descriptors = [
-    ...NORMALIZED_BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+    ...adapterDescriptors.values(),
+    ...NORMALIZED_BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.filter(
+      (descriptor) => descriptor.harness === "ci",
+    ),
     ...[...registeredHarnessSignalDescriptors.values()].map(
       (entry) => entry.descriptor,
     ),
@@ -495,19 +643,22 @@ function boundedProvenanceValue(
 }
 
 const MAX_PROVENANCE_PROBE_BYTES = 1_048_576;
+const MAX_CODEX_PROVENANCE_PROBE_BYTES = 4_194_304;
+const codexProvenanceSnapshotCache = new Map<
+  string,
+  Readonly<Record<string, string | undefined>>
+>();
 
 function parseClaudeProvenanceLine(
   line: string,
   dimension: string,
 ): string | undefined {
-  if (line.length === 0 || line.length > 262_144) return undefined;
   let parsed: unknown;
   try {
     parsed = JSON.parse(line) as unknown;
   } catch {
     return undefined;
   }
-  if (typeof parsed !== "object" || parsed === null) return undefined;
   const record = parsed as Record<string, unknown>;
   const message =
     typeof record.message === "object" && record.message !== null
@@ -537,15 +688,142 @@ function readClaudeSessionProvenance(
     const file = fs.openSync(sessionPath, "r");
     try {
       const size = fs.fstatSync(file).size;
-      const length = Math.min(size, MAX_PROVENANCE_PROBE_BYTES);
-      const buffer = Buffer.alloc(length);
-      fs.readSync(file, buffer, 0, length, Math.max(0, size - length));
-      const lines = buffer.toString("utf8").split("\n").reverse();
-      for (const line of lines.slice(0, 4_096)) {
+      const tailLength = Math.min(size, MAX_PROVENANCE_PROBE_BYTES);
+      const tail = Buffer.alloc(tailLength);
+      fs.readSync(file, tail, 0, tailLength, Math.max(0, size - tailLength));
+      const lines = tail.toString("utf8").split("\n").reverse().slice(0, 4_096);
+      for (const line of lines) {
         const value = parseClaudeProvenanceLine(line, dimension);
         if (value) return value;
       }
+    } finally {
+      fs.closeSync(file);
+    }
+  } catch {
+    return undefined;
+  }
+}
+
+function findCodexSessionFile(
+  root: string,
+  session: string,
+): string | undefined {
+  let visited = 0;
+  const visit = (directory: string, depth: number): string | undefined => {
+    if (depth > 4 || visited >= 512) return undefined;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs
+        .readdirSync(directory, { withFileTypes: true })
+        .sort((left, right) => right.name.localeCompare(left.name));
+    } catch {
       return undefined;
+    }
+    for (const entry of entries) {
+      visited += 1;
+      if (visited > 512) return undefined;
+      const entryPath = path.join(directory, entry.name);
+      if (
+        entry.isFile() &&
+        entry.name.endsWith(`-${session}.jsonl`)
+      ) {
+        return entryPath;
+      }
+      if (entry.isDirectory()) {
+        const found = visit(entryPath, depth + 1);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+  return visit(root, 0);
+}
+
+function codexProvenanceWindows(
+  size: number,
+): ReadonlyArray<Readonly<{ offset: number; length: number }>> {
+  if (size <= MAX_CODEX_PROVENANCE_PROBE_BYTES) {
+    return [{ offset: 0, length: size }];
+  }
+  const halfBudget = Math.floor(MAX_CODEX_PROVENANCE_PROBE_BYTES / 2);
+  return [
+    { offset: size - halfBudget, length: halfBudget },
+    { offset: 0, length: halfBudget },
+  ];
+}
+
+function mergeCodexTurnContext(
+  snapshot: Record<string, string | undefined>,
+  line: string,
+): void {
+  if (line.length === 0 || line.length > 262_144) return;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(line) as unknown;
+  } catch {
+    return;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return;
+  }
+  const record = parsed as Record<string, unknown>;
+  if (record.type !== "turn_context") return;
+  const payload =
+    typeof record.payload === "object" && record.payload !== null
+      ? (record.payload as Record<string, unknown>)
+      : undefined;
+  snapshot.model ??= nonBlank(payload?.model)?.slice(0, 256);
+  snapshot.effort ??= nonBlank(payload?.effort)?.slice(0, 256);
+}
+
+function readCodexProvenanceSnapshot(
+  file: number,
+  size: number,
+): Readonly<Record<string, string | undefined>> {
+  const snapshot: Record<string, string | undefined> = {};
+  let linesRemaining = 4_096;
+  for (const window of codexProvenanceWindows(size)) {
+    const buffer = Buffer.alloc(window.length);
+    fs.readSync(file, buffer, 0, window.length, window.offset);
+    const lines = buffer
+      .toString("utf8")
+      .split("\n")
+      .reverse()
+      .slice(0, linesRemaining);
+    linesRemaining -= lines.length;
+    for (const line of lines) {
+      mergeCodexTurnContext(snapshot, line);
+      if (snapshot.model && snapshot.effort) break;
+    }
+    if ((snapshot.model && snapshot.effort) || linesRemaining <= 0) break;
+  }
+  return snapshot;
+}
+
+function readCodexSessionProvenance(
+  dimension: string,
+  signals: HarnessDetectionSignals,
+  env: Readonly<Record<string, string | undefined>>,
+): string | undefined {
+  const session = nonBlank(env.CODEX_THREAD_ID);
+  if (!session || !/^[A-Za-z0-9_-]{1,128}$/u.test(session)) return undefined;
+  const sessionsRoot = path.join(
+    signals.home_dir ?? os.homedir(),
+    ".codex",
+    "sessions",
+  );
+  const cacheKey = `${sessionsRoot}\0${session}`;
+  const cached = codexProvenanceSnapshotCache.get(cacheKey);
+  if (cached) return cached[dimension];
+  const sessionPath = findCodexSessionFile(sessionsRoot, session);
+  if (!sessionPath) return undefined;
+  try {
+    const file = fs.openSync(sessionPath, "r");
+    try {
+      const size = fs.fstatSync(file).size;
+      const snapshot = readCodexProvenanceSnapshot(file, size);
+      codexProvenanceSnapshotCache.set(cacheKey, snapshot);
+      return snapshot[dimension];
     } finally {
       fs.closeSync(file);
     }
@@ -571,6 +849,9 @@ function resolveProvenanceProbe(
   const resolver = descriptor?.provenance_resolvers[dimension];
   if (resolver === "claude_session_file") {
     return readClaudeSessionProvenance(dimension, signals, env);
+  }
+  if (resolver === "codex_session_file") {
+    return readCodexSessionProvenance(dimension, signals, env);
   }
   if (resolver === "ai_agent_version") {
     const value = nonBlank(env.AI_AGENT);
@@ -599,7 +880,9 @@ function provenanceResolverHasInput(
       value !== undefined && literalSignalMatches(value, descriptor.harness)
     );
   }
-  return nonBlank(env.CLAUDE_CODE_SESSION_ID) !== undefined;
+  return resolver === "codex_session_file"
+    ? nonBlank(env.CODEX_THREAD_ID) !== undefined
+    : nonBlank(env.CLAUDE_CODE_SESSION_ID) !== undefined;
 }
 
 function effectiveHarnessDetectionSignals(
@@ -853,6 +1136,172 @@ export function registerHarnessSignalDescriptors(
       }
     }
   };
+}
+
+function normalizeAgentProvenanceAdapter(
+  adapter: AgentProvenanceAdapter,
+): AgentProvenanceAdapter {
+  const descriptor = normalizeHarnessSignalDescriptor(adapter.descriptor);
+  const harness = adapter.harness.trim().toLowerCase();
+  if (adapter.contract_version !== 1) {
+    throw new Error(
+      `Unsupported provenance adapter contract for "${harness}": ${adapter.contract_version}`,
+    );
+  }
+  if (descriptor.harness !== harness) {
+    throw new Error(
+      `Provenance adapter harness "${harness}" does not match descriptor "${descriptor.harness}".`,
+    );
+  }
+  const adapterVersion = nonBlank(adapter.adapter_version)?.slice(0, 64);
+  if (!adapterVersion) {
+    throw new Error(`Provenance adapter "${harness}" requires a version.`);
+  }
+  if (!Number.isSafeInteger(adapter.priority)) {
+    throw new Error(`Provenance adapter "${harness}" requires an integer priority.`);
+  }
+  if (
+    adapter.probe_policy.network_access !== false ||
+    adapter.probe_policy.subprocess_access !== false ||
+    adapter.probe_policy.max_bytes > MAX_CODEX_PROVENANCE_PROBE_BYTES ||
+    adapter.probe_policy.max_lines > 4_096
+  ) {
+    throw new Error(
+      `Provenance adapter "${harness}" exceeds the bounded local probe policy.`,
+    );
+  }
+  return Object.freeze({
+    ...adapter,
+    adapter_version: adapterVersion,
+    harness,
+    descriptor,
+    supported_dimensions: Object.freeze(
+      boundedUniqueStrings(adapter.supported_dimensions)
+        .map((dimension) => dimension.toLowerCase())
+        .sort(),
+    ),
+    native_sources: Object.freeze([...new Set(adapter.native_sources)]),
+    probe_policy: Object.freeze({ ...adapter.probe_policy }),
+    normalization: Object.freeze({ ...adapter.normalization }),
+    ...(adapter.waivers
+      ? {
+          waivers: Object.freeze(
+            Object.fromEntries(
+              Object.entries(adapter.waivers)
+                .slice(0, 32)
+                .map(([dimension, reason]) => [
+                  dimension.slice(0, 64),
+                  reason.slice(0, 256),
+                ]),
+            ),
+          ),
+        }
+      : {}),
+  });
+}
+
+/** Return the effective built-in or explicitly higher-priority package adapters. */
+export function listAgentProvenanceAdapters(): readonly AgentProvenanceAdapter[] {
+  const effective = new Map(
+    BUILTIN_AGENT_PROVENANCE_ADAPTERS.map((adapter) => [
+      adapter.harness,
+      adapter,
+    ]),
+  );
+  for (const { adapter } of registeredAgentProvenanceAdapters.values()) {
+    effective.set(adapter.harness, adapter);
+  }
+  return Object.freeze(
+    [...effective.values()].sort((left, right) =>
+      left.harness.localeCompare(right.harness),
+    ),
+  );
+}
+
+/**
+ * Register package adapters until disposal. Replacing a built-in requires an
+ * explicitly greater priority; equal-priority ambiguity fails closed.
+ */
+export function registerAgentProvenanceAdapters(
+  adapters: readonly AgentProvenanceAdapter[],
+): () => void {
+  const normalized = adapters.map(normalizeAgentProvenanceAdapter);
+  const builtins = new Map(
+    BUILTIN_AGENT_PROVENANCE_ADAPTERS.map((adapter) => [
+      adapter.harness,
+      adapter,
+    ]),
+  );
+  const seen = new Set<string>();
+  for (const adapter of normalized) {
+    if (seen.has(adapter.harness)) {
+      throw new Error(
+        `Provenance adapter collision for "${adapter.harness}".`,
+      );
+    }
+    const builtin = builtins.get(adapter.harness);
+    if (builtin && adapter.priority <= builtin.priority) {
+      throw new Error(
+        `Provenance adapter override for "${adapter.harness}" requires priority greater than ${builtin.priority}.`,
+      );
+    }
+    const registered = registeredAgentProvenanceAdapters.get(adapter.harness);
+    if (
+      registered &&
+      JSON.stringify(registered.adapter) !== JSON.stringify(adapter)
+    ) {
+      throw new Error(
+        `Provenance adapter collision for "${adapter.harness}".`,
+      );
+    }
+    seen.add(adapter.harness);
+  }
+  for (const adapter of normalized) {
+    const registered = registeredAgentProvenanceAdapters.get(adapter.harness);
+    registeredAgentProvenanceAdapters.set(adapter.harness, {
+      adapter,
+      registrations: (registered?.registrations ?? 0) + 1,
+    });
+  }
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    for (const adapter of normalized) {
+      const registered = registeredAgentProvenanceAdapters.get(adapter.harness);
+      if (!registered || registered.registrations <= 1) {
+        registeredAgentProvenanceAdapters.delete(adapter.harness);
+      } else {
+        registered.registrations -= 1;
+      }
+    }
+  };
+}
+
+/** Normalize model-family or effort vocabulary while retaining the raw value. */
+export function normalizeAgentProvenanceAdapterValue(
+  dimension: "model" | "effort",
+  value: string,
+): NormalizedAgentProvenanceAdapterValue {
+  const raw = value.trim().slice(0, 256);
+  let normalized = raw.toLowerCase();
+  if (dimension === "model") {
+    const family = /^(gpt-\d+(?:\.\d+)?)/u.exec(normalized)?.[1];
+    if (family) normalized = family;
+  } else {
+    normalized = normalized.replaceAll(/[_\s-]+/gu, "");
+    const effortAliases: Readonly<Record<string, string>> = {
+      minimal: "low",
+      low: "low",
+      medium: "medium",
+      high: "high",
+      xhigh: "xhigh",
+      max: "max",
+      ultra: "ultra",
+    };
+    normalized = effortAliases[normalized] ?? normalized;
+  }
+  return { raw, normalized, vocabulary: "v1" };
 }
 
 /** Run one invocation with host-provided detection signals available downstream. */

@@ -278,7 +278,8 @@ export function createHistoryEntry(params: {
   const provenanceOutcomes = agentIdentity.harness
     ? Object.fromEntries(
         Object.entries(diagnoseAgentIdentity().provenance_outcomes).filter(
-          ([, outcome]) => outcome.status === "failed",
+          ([, outcome]) =>
+            outcome.resolver !== undefined && outcome.status !== "resolved",
         ),
       )
     : undefined;

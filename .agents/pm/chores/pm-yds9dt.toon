@@ -2,17 +2,22 @@ id: pm-yds9dt
 title: Expose agent probe controls and versioned legacy-author vocabulary through pm config and SDK mutation APIs
 description: "The new agent_identity.probes_enabled and identity_vocabulary settings are validated and consumed, but pm config cannot yet read or mutate them. Add typed project config keys and SDK mutation helpers for probe enablement, vocabulary version bumps, exact alias add/remove, clear, dry-run, and residual coverage preview without direct settings-file edits."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[7]: agent-ux,"area:config",cli,context-management,identity,provenance,sdk
 created_at: "2026-08-02T23:03:26.452Z"
-updated_at: "2026-08-03T11:09:32.382Z"
+updated_at: "2026-08-22T10:34:31.227Z"
+closed_at: "2026-08-22T10:34:30.434Z"
+completed_at: "2026-08-22T10:34:30.434Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "pm config project get/list/export exposes probe policy and vocabulary revision/count without dumping unnecessary aliases; Typed CLI and SDK mutations add/remove exact aliases and monotonically update the vocabulary version through audited settings history; CLI, SDK, MCP, contracts, completions, docs, sparse settings compatibility, and temporary consumer tests remain in parity"
 parent: pm-8jdc
 risk: medium
 confidence: high
+resolution: "Shipped typed probe policy and versioned legacy-author vocabulary mutations across SDK, CLI, and MCP with privacy-safe summaries and previews."
+expected_result: "Operators and integrations can get, preview, add, remove, and clear agent identity vocabulary without direct settings edits or alias disclosure."
+actual_result: "Sparse settings, monotonic revisioning, residual counts, CLI commands, SDK helpers, and MCP policy-value parity pass linked and packed-consumer tests."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-3yxwv5,discovered_from,"2026-08-02T23:03:26.452Z","harness:codex","cli:create:dep",detected
   pm-mf4j,blocked_by,"2026-08-02T23:03:26.452Z","harness:codex","cli:create:dep",detected
@@ -20,7 +25,47 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,related,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
   pm-8jdc,implements,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
   pm-usfg,implements,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-02T23:03:26.452Z","harness:codex","Duplicate check 2026-08-02: keyword and semantic searches across all statuses found pm-3yxwv5 for the read-time vocabulary, pm-mf4j for generic positional config UX, pm-9byd for earlier scalar config exposure, and pm-v68d for narrow MCP config. None owns typed agent probe/vocabulary mutation; created as the operator-facing follow-up discovered while dogfooding the live 43,561-entry residual report."
   "2026-08-03T11:09:28.654Z","harness:codex","Organization 2026-08-03: assigned to schema and universal configuration because this item owns operator-visible settings plus SDK mutation parity. Estimate 360 minutes covers typed CLI and SDK reads/writes, audited vocabulary revisioning, completions, MCP parity, sparse settings compatibility, docs, and isolated consumer tests. Risk is medium and confidence high because the underlying probe and vocabulary primitives already shipped."
+  "2026-08-22T08:03:15.740Z","harness:codex","Implementation start 2026-08-22: coupled with pm-c0lrdm because adapter policy must be operator-configurable through public typed SDK primitives before CLI/MCP presentation. Scope includes sparse-settings compatibility, exact alias add/remove/clear, monotonic vocabulary versions, dry-run/residual preview, contracts, completions, tests, and docs."
+  "2026-08-22T08:27:32.230Z","harness:codex","Implementation evidence 2026-08-22: pm config now gets/sets sparse agent-identity-probes-enabled and provides typed add/remove/clear plus preview-* vocabulary mutations over the shared SDK/CLI/MCP config action. Discovery exposes only vocabulary version and alias_count; previews report exact residual unique-author counts without spellings; revisions bump exactly once on real changes; canonical aliases fail closed. Focused config tests pass 7/7."
+  "2026-08-22T10:34:12.211Z","harness:codex","Final evidence 2026-08-22: linked SDK/config tests passed 70/70 and MCP integration passed 22/22. The packed install exercised CLI preview/add/get and a real full-profile JSON-RPC MCP initialize/tools/config preview. That smoke found and drove a fix for duplicated MCP policy values; privacy-safe results expose only version/count/residual count. Full repository coverage and static assurance are green."
+learnings[1]{created_at,author,text}:
+  "2026-08-22T10:34:12.959Z","harness:codex",MCP config transports must keep policy-owned values inside the typed option bag and suppress the generic positional value; otherwise a valid CLI/SDK vocabulary mutation is rejected as a duplicate input.
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed public identity config SDK signature snapshot
+  src/core/config/nested-settings.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+  src/core/config/positional-value.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+  src/sdk/agent/identity-config.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+  src/sdk/config.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+  src/sdk/index.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+  src/sdk/runtime.ts,project,MCP policy-value transport parity adapter
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP vocabulary preview parity regression
+  tests/unit/sdk/agent/identity-config-command.spec.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+  tests/unit/sdk/agent/identity-config.spec.ts,project,Probe policy and versioned vocabulary config SDK/CLI/MCP surface
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/agent/identity-config.spec.ts tests/unit/sdk/agent/identity-config-command.spec.ts tests/unit/commands/config-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: MCP policy vocabulary transport regression
+test_runs[1]:
+  - run_id: test-local-mt48q796-3tuetv
+    kind: test
+    status: passed
+    started_at: "2026-08-22T10:33:17.449Z"
+    finished_at: "2026-08-22T10:33:41.946Z"
+    recorded_at: "2026-08-22T10:33:41.946Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/agent/identity-config.spec.ts tests/unit/sdk/agent/identity-config-command.spec.ts tests/unit/commands/config-command.spec.ts,schema,schema
+      node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,schema,schema
+docs[1]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Operator config and privacy-safe vocabulary documentation
+close_reason: "Completed typed probe/vocabulary configuration with privacy-safe previews, MCP parity, exact coverage, and packed-consumer verification."
 body: ""

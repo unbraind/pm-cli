@@ -6,7 +6,8 @@ Tracker references: [pm-9wbiye](../.agents/pm/issues/pm-9wbiye.toon),
 [pm-3zgh2c](../.agents/pm/features/pm-3zgh2c.toon),
 [pm-eq9dlw](../.agents/pm/issues/pm-eq9dlw.toon), and
 [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), plus
-[pm-5q8wa0](../.agents/pm/issues/pm-5q8wa0.toon).
+[pm-5q8wa0](../.agents/pm/issues/pm-5q8wa0.toon) and
+[pm-c0lrdm](../.agents/pm/features/pm-c0lrdm.toon).
 
 Project management is context management. The public SDK therefore carries a
 session's purpose and episode boundary through the same immutable history that
@@ -128,9 +129,10 @@ public SDK exports for custom hosts.
 the bounded built-in resolver. It never contains environment values, session
 paths, prompts, or file contents.
 
-New mutation history records failed resolver outcomes under
-`context.agent_provenance_outcomes`; ordinary unavailable dimensions retain
-the compact legacy-compatible null projection. A resolver is only counted as
+New mutation history records failed or explicitly unavailable configured
+resolver outcomes under `context.agent_provenance_outcomes`; dimensions with
+no configured resolver retain the compact legacy-compatible null projection.
+A resolver is only counted as
 attempted when its required input belongs to the detected harness; a foreign
 host's shared `AI_AGENT` value is not Codex input. Consequently `pm health` can report
 `provenance_resolver_zero_success:<harness>:<dimension>:<resolver>:<attempts>`

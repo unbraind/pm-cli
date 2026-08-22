@@ -1,6 +1,6 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-srns](../.agents/pm/issues/pm-srns.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), and [pm-2qvq7a](../.agents/pm/issues/pm-2qvq7a.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-srns](../.agents/pm/issues/pm-srns.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), [pm-2qvq7a](../.agents/pm/issues/pm-2qvq7a.toon), and [pm-xam9bt](../.agents/pm/issues/pm-xam9bt.toon).
 
 ## Agent Quick Context
 
@@ -163,6 +163,16 @@ bounded recovery therefore does not require replacing a 600-token request with
 an unbounded multi-megabyte response;
 `recovery_budget_multiplier: 1` declares that each next page retains the same
 useful-result ceiling.
+
+When compaction affects a nested collection that is not declared resumable,
+the recovery budget is derived from the larger of the binding ceiling plus one
+and the measured pre-compaction result. The SDK adds a 25% envelope margin and
+rounds up to 100 tokens. The CLI, SDK, and MCP bindings therefore receive the
+same finite value, which is strictly larger than the request that already
+truncated. If safe-integer arithmetic cannot represent that value, recovery
+uses `unbounded` explicitly. `resolveReadOutputRecoveryBudget()` exposes the
+versioned pure calculation to package authors; there is no hard-coded smaller
+retry and no recovery cycle.
 
 Assurance declares `budget_retention_policy: verdict_priority`: failing block,
 warn, and observe rows precede retired and passing rows while preserving order

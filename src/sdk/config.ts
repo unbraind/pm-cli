@@ -28,6 +28,12 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
+import {
+  planAgentIdentityVocabularyMutation,
+  summarizeAgentIdentityVocabulary,
+  type AgentIdentityVocabularyMutationPreview,
+  type AgentIdentityVocabularySummary,
+} from "./agent/identity-config.js";
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import {
@@ -81,6 +87,7 @@ type ConfigValue =
   | GovernanceForceRequiredForStaleLockPolicy
   | TestResultTrackingPolicy
   | TelemetryTrackingPolicy
+  | AgentIdentityVocabularySummary
   | ContextConfigValue;
 
 interface ContextConfigValue {
@@ -195,6 +202,10 @@ export interface ConfigResult {
   count?: number;
   /** Configuration controlling context behavior. */
   context_settings?: ContextConfigValue;
+  /** Privacy-safe revision/count projection for legacy author interpretation. */
+  identity_vocabulary?: AgentIdentityVocabularySummary;
+  /** Dry-run or committed vocabulary mutation receipt without alias spellings. */
+  vocabulary_mutation?: AgentIdentityVocabularyMutationPreview;
   /** Whether explicit item format applies to this operation. */
   has_explicit_item_format?: boolean;
   /** Value that configures or reports migration for this contract. */
@@ -291,6 +302,10 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   ],
   test_result_tracking: ["test-result-tracking", "test_result_tracking"],
   telemetry_tracking: ["telemetry-tracking", "telemetry_tracking"],
+  agent_identity_vocabulary: [
+    "agent-identity-vocabulary",
+    "agent_identity_vocabulary",
+  ],
   context: ["context"],
 };
 
@@ -346,6 +361,8 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
     "Governance stale-lock force policy (enabled|disabled).",
   test_result_tracking: "Item-level linked test result persistence policy.",
   telemetry_tracking: "Telemetry usage reporting policy.",
+  agent_identity_vocabulary:
+    "Versioned exact legacy-author interpretation vocabulary (summary only).",
   context: "Context command settings (depth, section toggles, limits).",
 };
 
@@ -914,6 +931,10 @@ const CONFIG_VALUE_READERS: Readonly<
     settings.testing.record_results_to_items ? "enabled" : "disabled",
   telemetry_tracking: (settings) =>
     settings.telemetry.enabled ? "enabled" : "disabled",
+  agent_identity_vocabulary: (settings) =>
+    summarizeAgentIdentityVocabulary(
+      settings.agent_identity?.identity_vocabulary,
+    ),
   context: (settings) => ({
     default_depth: settings.context.default_depth,
     activity_limit: settings.context.activity_limit,
@@ -1168,7 +1189,7 @@ function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
       key: candidate,
       aliases: CONFIG_KEY_ALIASES[candidate],
       value_kind:
-        candidate === "context"
+        candidate === "context" || candidate === "agent_identity_vocabulary"
           ? ("object" as const)
           : isCriteriaConfigKey(candidate)
             ? ("string_array" as const)
@@ -1181,6 +1202,8 @@ function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
               "--stale-threshold-days",
               "--section-<name>",
             ]
+          : candidate === "agent_identity_vocabulary"
+            ? ["--policy", "--value", "--criterion"]
           : isCriteriaConfigKey(candidate)
             ? ["--criterion", "--clear-criteria"]
             : candidate === "item_format"
@@ -1261,6 +1284,15 @@ function buildConfigGetResult(
   if (key === "context") {
     return withWarnings(
       { ...base, context_settings: value as ContextConfigValue },
+      context.warnings,
+    );
+  }
+  if (key === "agent_identity_vocabulary") {
+    return withWarnings(
+      {
+        ...base,
+        identity_vocabulary: value as AgentIdentityVocabularySummary,
+      },
       context.warnings,
     );
   }
@@ -1913,6 +1945,113 @@ async function setDefinitionOfDoneConfig(
   );
 }
 
+function parseAgentIdentityVocabularyOperation(
+  raw: string | undefined,
+): { operation: "add" | "remove" | "clear"; dryRun: boolean } {
+  const policy = raw?.trim().toLowerCase().replaceAll("_", "-");
+  const dryRun = policy?.startsWith("preview-") === true;
+  const operation = dryRun ? policy!.slice("preview-".length) : policy;
+  if (operation === "add" || operation === "remove" || operation === "clear") {
+    return { operation, dryRun };
+  }
+  throw new PmCliError(
+    "Config set agent-identity-vocabulary requires --policy add|remove|clear|preview-add|preview-remove|preview-clear",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function parseAgentIdentityVocabularyMutationValue(
+  operation: "add" | "remove" | "clear",
+  value: string | undefined,
+): { legacy_author?: string; canonical_harness?: string } {
+  if (operation === "add") {
+    const separator = value?.lastIndexOf("=") ?? -1;
+    if (separator <= 0 || separator === value!.length - 1) {
+      throw new PmCliError(
+        'Config set agent-identity-vocabulary --policy add requires --value "<legacy-author>=<canonical-harness>"',
+        EXIT_CODE.USAGE,
+      );
+    }
+    return {
+      legacy_author: value!.slice(0, separator),
+      canonical_harness: value!.slice(separator + 1),
+    };
+  }
+  if (operation === "remove") {
+    if (value === undefined) {
+      throw new PmCliError(
+        "Config set agent-identity-vocabulary --policy remove requires --value <legacy-author>",
+        EXIT_CODE.USAGE,
+      );
+    }
+    return { legacy_author: value };
+  }
+  if (value !== undefined) {
+    throw new PmCliError(
+      "Config set agent-identity-vocabulary --policy clear does not accept --value",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return {};
+}
+
+async function setAgentIdentityVocabularyConfig(
+  context: ConfigExecutionContext,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  const { operation, dryRun } = parseAgentIdentityVocabularyOperation(
+    options.policy,
+  );
+  const mutationValue = parseAgentIdentityVocabularyMutationValue(
+    operation,
+    options.value,
+  );
+
+  let planned;
+  try {
+    planned = planAgentIdentityVocabularyMutation(
+      context.settings.agent_identity?.identity_vocabulary,
+      {
+        operation,
+        ...mutationValue,
+        observed_authors: options.criterion,
+      },
+    );
+  } catch (error) {
+    throw new PmCliError(
+      (error as Error).message,
+      EXIT_CODE.USAGE,
+    );
+  }
+
+  if (planned.preview.changed && !dryRun) {
+    context.settings.agent_identity = {
+      ...context.settings.agent_identity!,
+      identity_vocabulary: planned.vocabulary,
+    };
+    await writeConfigSettingsIfChanged(
+      context,
+      true,
+      `config:set:agent_identity.identity_vocabulary:${operation}:v${planned.preview.version_after}`,
+    );
+  }
+  return withWarnings(
+    {
+      scope: context.scope,
+      key: "agent_identity_vocabulary",
+      identity_vocabulary: summarizeAgentIdentityVocabulary(
+        dryRun
+          ? context.settings.agent_identity?.identity_vocabulary
+          : planned.vocabulary,
+      ),
+      vocabulary_mutation: planned.preview,
+      settings_path: context.target.settingsPath,
+      changed: planned.preview.changed && !dryRun,
+    },
+    context.warnings,
+  );
+}
+
 async function setConfigValue(
   context: ConfigExecutionContext,
   key: ConfigKey,
@@ -1935,6 +2074,9 @@ async function setConfigValue(
       context.scope,
       context.warnings,
     );
+  }
+  if (key === "agent_identity_vocabulary") {
+    return setAgentIdentityVocabularyConfig(context, options);
   }
   if (key === "definition_of_done") {
     return setDefinitionOfDoneConfig(context, key, options);

@@ -246,6 +246,13 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
       "Default author recorded on mutations when --author is not supplied.",
   },
   {
+    key: "agent_identity_probes_enabled",
+    path: "agent_identity.probes_enabled",
+    kind: "boolean",
+    summary:
+      "Allow privacy-bounded local harness provenance probes; no network or subprocess access is permitted.",
+  },
+  {
     key: "mutation_guard_require_attributed_author",
     path: "mutation_guard.require_attributed_author",
     kind: "boolean",

@@ -39,6 +39,26 @@ import { withIsolatedHarnessEnvironment } from "../../helpers/withIsolatedHarnes
 const tempRoots: string[] = [];
 const originalSourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT;
 const originalPmAuthor = process.env.PM_AUTHOR;
+const CODEX_MISSING_SESSION_PROVENANCE_OUTCOMES = {
+  effort: {
+    status: "failed",
+    reason: "resolver_failed",
+    resolver: "codex_session_file",
+    rule_version: "v1",
+  },
+  model: {
+    status: "failed",
+    reason: "resolver_failed",
+    resolver: "codex_session_file",
+    rule_version: "v1",
+  },
+  version: {
+    status: "unavailable",
+    reason: "harness_unavailable",
+    resolver: "ai_agent_version",
+    rule_version: "v1",
+  },
+} as const;
 
 afterEach(async () => {
   if (originalSourceWorkspaceRoot === undefined) {
@@ -785,6 +805,10 @@ describe("agent runtime SDK primitives", () => {
             role: null,
             topic: null,
           },
+          context: {
+            agent_provenance_outcomes:
+              CODEX_MISSING_SESSION_PROVENANCE_OUTCOMES,
+          },
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),
@@ -802,6 +826,10 @@ describe("agent runtime SDK primitives", () => {
             model: null,
             role: null,
             topic: null,
+          },
+          context: {
+            agent_provenance_outcomes:
+              CODEX_MISSING_SESSION_PROVENANCE_OUTCOMES,
           },
           ts: expect.any(String),
           patch: expect.any(Array),
