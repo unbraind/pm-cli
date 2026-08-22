@@ -2,7 +2,8 @@
  * @module core/reproducibility/context
  *
  * Provides opt-in deterministic time and identifier entropy for reproducible
- * workspace executions. The default CLI path never installs this context.
+ * workspace executions. SDK recipes and supported process adapters install
+ * this context explicitly; default execution remains nondeterministic.
  */
 import crypto from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -25,6 +26,11 @@ interface ReproducibleExecutionState extends ReproducibleExecutionSettings {
 const executionStorage = new AsyncLocalStorage<ReproducibleExecutionState>();
 const MAX_REPRODUCIBLE_TOKEN_LENGTH = 1_024;
 
+/** Runs async operations against one shared deterministic sequence. */
+export type ReproducibleExecutionRunner = <T>(
+  operation: () => Promise<T>,
+) => Promise<T>;
+
 /** Validate and normalize deterministic execution settings before work starts. */
 export function validateReproducibleExecutionSettings(
   settings: ReproducibleExecutionSettings,
@@ -36,7 +42,7 @@ export function validateReproducibleExecutionSettings(
   if (!Number.isSafeInteger(settings.tickMs) || settings.tickMs < 0) {
     throw new Error("Reproducible workspace tickMs must be a non-negative integer");
   }
-  if (settings.seed.length === 0) {
+  if (settings.seed.trim().length === 0) {
     throw new Error("Reproducible workspace seed must not be empty");
   }
   return {
@@ -45,20 +51,26 @@ export function validateReproducibleExecutionSettings(
   };
 }
 
+/** Create a runner whose serial operations share deterministic clock and entropy state. */
+export function createReproducibleExecutionRunner(
+  settings: ReproducibleExecutionSettings,
+): ReproducibleExecutionRunner {
+  const normalized = validateReproducibleExecutionSettings(settings);
+  const state: ReproducibleExecutionState = {
+    ...normalized,
+    clockReads: 0,
+    tokenReads: 0,
+  };
+  return <T>(operation: () => Promise<T>): Promise<T> =>
+    executionStorage.run(state, operation);
+}
+
 /** Run an isolated async operation with deterministic clock and entropy state. */
 export async function runWithReproducibleExecution<T>(
   settings: ReproducibleExecutionSettings,
   operation: () => Promise<T>,
 ): Promise<T> {
-  const normalized = validateReproducibleExecutionSettings(settings);
-  return executionStorage.run(
-    {
-      ...normalized,
-      clockReads: 0,
-      tokenReads: 0,
-    },
-    operation,
-  );
+  return createReproducibleExecutionRunner(settings)(operation);
 }
 
 /** Return the next deterministic clock value, or undefined outside a recipe. */

@@ -78,6 +78,7 @@ import {
   createLazyModule,
 } from "../sdk/runtime-primitives.js";
 import type { PmSettings } from "../types/index.js";
+import { runWithReproducibleProcessEnvironment } from "../sdk/reproducibility/process.js";
 import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
 import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
 import { PmClient } from "../sdk/runtime.js";
@@ -3075,8 +3076,7 @@ async function handleRunPmCliError(params: { error: unknown; invocationArgv: str
   });
 }
 
-/** Implements run pm cli for the public runtime surface of this module. */
-export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
+async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
   attachProgramLifecycleHooks(program);
   // The runtime-extension snapshot caches dedupe discovery work within a
@@ -3155,6 +3155,17 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   } finally {
     restorePagerPolicy?.();
     restorePmAuthor?.();
+  }
+}
+
+/** Implements run pm cli for the public runtime surface of this module. */
+export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
+  try {
+    await runWithReproducibleProcessEnvironment(process.env, () =>
+      runPmCliInReproducibleContext(rawArgv),
+    );
+  } catch (error: unknown) {
+    await handleRunPmCliError({ error, invocationArgv: [...rawArgv] });
   }
 }
 
