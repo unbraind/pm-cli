@@ -51,6 +51,7 @@ pm guide release --json
 - [SDK Context Platform](SDK_CONTEXT.md) - task-oriented entry point for authoritative reads, ranking, package workflows, diagnostics, recovery, and verification.
 - [Self-Describing Context Contracts](SELF_DESCRIBING_CONTEXT_CONTRACTS.md) - intent-scoped reads, semantic flag invocation metadata, visibility parity, and generated error vocabulary.
 - [Universal Read Output Contracts](READ_OUTPUT_CONTRACTS.md) - cross-command include, amount, cost, and encoding controls for CLI, SDK, MCP, and packages.
+- [Diagnostic Output Contracts](DIAGNOSTIC_OUTPUT_CONTRACTS.md) - action-first error budgets, deterministic degradation, SDK projection, and executable refusal assurance.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
 - [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) - inherited role/topic context, cross-process episode identity, and deterministic history grouping.

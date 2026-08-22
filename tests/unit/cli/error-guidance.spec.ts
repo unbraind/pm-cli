@@ -47,6 +47,12 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.verification_errors).toEqual([
       "verify_failed:before_hash_mismatch:entry_1",
     ]);
+    expect(envelope.diagnostic_output).toBeUndefined();
+    expect(Object.keys(envelope).slice(0, 3)).toEqual([
+      "code",
+      "required",
+      "next_steps",
+    ]);
 
     const verificationContext = {
       code: "workspace_history_chain_invalid",
@@ -127,6 +133,9 @@ describe("pm cli error guidance context plumbing", () => {
       "Run pm history <id> --verify and resolve conflicts.",
     );
     expect(text).toContain("retry_after_ms: 250");
+    expect(text.indexOf("What is required:")).toBeLessThan(
+      text.indexOf("What happened:"),
+    );
   });
 
   it("returns deterministic item-not-found recovery examples without echoing invalid ids", () => {
@@ -810,15 +819,18 @@ describe("collection mutation transposition guidance", () => {
   });
 
   it("renders typed positional roles and defensively normalizes malformed roles", () => {
-    const text = formatPmCliErrorForDisplay("Annotation tokens were transposed.", {
-      code: "annotation_transposed_subcommand",
-      recovery: {
-        parsed_positionals: [
-          { role: " transposed_subcommand ", value: " add " },
-          { role: 7, value: null },
-        ] as never,
+    const text = formatPmCliErrorForDisplay(
+      "Annotation tokens were transposed.",
+      {
+        code: "annotation_transposed_subcommand",
+        recovery: {
+          parsed_positionals: [
+            { role: " transposed_subcommand ", value: " add " },
+            { role: 7, value: null },
+          ] as never,
+        },
       },
-    });
+    );
 
     expect(text).toContain("parsed_positionals:");
     expect(text).toContain("- transposed_subcommand: add");

@@ -24,7 +24,7 @@ const EMPTY_BASELINE = {
   required_probe_ids: [],
 };
 
-function createSuccessfulOptions() {
+function createSuccessfulOptions(errorEnvelope = {}) {
   const results = [
     { status: 0, stderr: "" },
     { status: 0, stderr: "" },
@@ -32,11 +32,13 @@ function createSuccessfulOptions() {
       status: 2,
       stderr: JSON.stringify({
         code: SAMPLE_CONTRACT.error_code,
+        required: "Use the advertised retry.",
         recovery: {
           allowed_values: SAMPLE_CONTRACT.allowed_values,
           suggested_retry: "pm context --for resume",
           suggested_retry_args: SAMPLE_CONTRACT.suggested_retry_args,
         },
+        ...errorEnvelope,
       }),
     },
     { status: 0, stderr: "" },
@@ -63,6 +65,13 @@ describe("executable refusal closure gate", () => {
         closed_domain_contract_count: 18,
         tracker_preflight_contract_count: 4,
         baseline_version: 1,
+        diagnostic_output: {
+          ok: true,
+          baseline_version: 1,
+          probe_count: 10,
+          within_budget_count: 10,
+          corrective_action_count: 10,
+        },
         findings: [],
       });
       expect(
@@ -78,6 +87,149 @@ describe("executable refusal closure gate", () => {
             probe_id: "context-invalid-intent",
           }),
         ]),
+      });
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions(),
+          diagnosticBaseline: {
+            version: 9,
+            required_probe_ids: ["missing-diagnostic-probe"],
+          },
+        }),
+      ).toMatchObject({
+        ok: false,
+        diagnostic_output: {
+          ok: false,
+          baseline_version: 9,
+          findings: [
+            expect.objectContaining({
+              code: "diagnostic_probe_missing",
+              probe_id: "missing-diagnostic-probe",
+            }),
+          ],
+        },
+      });
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions({ required: undefined }),
+          diagnosticBaseline: {
+            version: 9,
+            required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+          },
+        }),
+      ).toMatchObject({
+        ok: false,
+        diagnostic_output: {
+          ok: false,
+          findings: [
+            expect.objectContaining({
+              code: "diagnostic_corrective_action_missing",
+              probe_id: SAMPLE_CONTRACT.probe_id,
+            }),
+          ],
+        },
+      });
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions({
+            diagnostic_output: {
+              budget: 1,
+              estimated_tokens: 1,
+              original_estimated_tokens: 1,
+            },
+          }),
+          diagnosticBaseline: {
+            version: 9,
+            required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+          },
+        }),
+      ).toMatchObject({
+        ok: false,
+        diagnostic_output: {
+          ok: false,
+          findings: [
+            expect.objectContaining({
+              code: "diagnostic_budget_mismatch",
+              probe_id: SAMPLE_CONTRACT.probe_id,
+            }),
+          ],
+        },
+      });
+      for (const diagnosticOutput of [null, "invalid", [], 42]) {
+        expect(
+          verifyExecutableRefusalClosure({
+            ...createSuccessfulOptions({
+              diagnostic_output: diagnosticOutput,
+            }),
+            diagnosticBaseline: {
+              version: 9,
+              required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+            },
+          }),
+        ).toMatchObject({
+          ok: false,
+          diagnostic_output: {
+            ok: false,
+            findings: [
+              expect.objectContaining({
+                code: "diagnostic_receipt_invalid",
+                probe_id: SAMPLE_CONTRACT.probe_id,
+              }),
+            ],
+          },
+        });
+      }
+      for (const errorEnvelope of [
+        {
+          required: "Choose an allowed value.",
+          recovery: {
+            allowed_values: SAMPLE_CONTRACT.allowed_values,
+            suggested_retry_args: [],
+          },
+        },
+        {
+          required: "Run the next step.",
+          recovery: { allowed_values: [], suggested_retry_args: [] },
+          next_steps: ["pm context --for resume"],
+        },
+      ]) {
+        expect(
+          verifyExecutableRefusalClosure({
+            ...createSuccessfulOptions(errorEnvelope),
+            diagnosticBaseline: {
+              version: 9,
+              required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+            },
+          }).diagnostic_output,
+        ).toMatchObject({
+          probe_count: 1,
+          corrective_action_count: 1,
+        });
+      }
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions({
+            required: "Choose a usable corrective action.",
+            recovery: {
+              allowed_values: ["   "],
+              suggested_retry_args: [""],
+            },
+            next_steps: ["\t"],
+          }),
+          diagnosticBaseline: {
+            version: 9,
+            required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+          },
+        }).diagnostic_output,
+      ).toMatchObject({
+        ok: false,
+        corrective_action_count: 0,
+        findings: [
+          expect.objectContaining({
+            code: "diagnostic_corrective_action_missing",
+            probe_id: SAMPLE_CONTRACT.probe_id,
+          }),
+        ],
       });
     },
     60_000,

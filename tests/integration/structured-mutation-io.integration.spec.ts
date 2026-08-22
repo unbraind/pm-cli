@@ -109,12 +109,14 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           decision: expect.stringMatching(/^pm-/u),
         },
       });
-      const references = (preview.json as {
-        references: Record<string, string>;
-      }).references;
-      expect(context.runCli(["get", references.initiative, "--json"]).code).toBe(
-        3,
-      );
+      const references = (
+        preview.json as {
+          references: Record<string, string>;
+        }
+      ).references;
+      expect(
+        context.runCli(["get", references.initiative, "--json"]).code,
+      ).toBe(3);
 
       const committed = context.runCli(
         [
@@ -281,7 +283,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
     });
   });
 
-  it("omits empty JSON containers and constant error boilerplate in lean mode", async () => {
+  it("omits explanatory boilerplate but retains corrective actions in lean mode", async () => {
     await withTempPmPath(async (context) => {
       const normal = context.runCli(["list", "--status", "all", "--json"], {
         expectJson: true,
@@ -302,8 +304,8 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
       expect(errorPayload).toMatchObject({
         code: "unknown_option",
         exit_code: 2,
+        required: expect.any(String),
       });
-      expect(errorPayload).not.toHaveProperty("required");
       expect(errorPayload).not.toHaveProperty("why");
       expect(errorPayload).not.toHaveProperty("title");
 
@@ -325,6 +327,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
       expect(JSON.parse(leanKnownError.stderr)).toMatchObject({
         code: "item_not_found",
         exit_code: 3,
+        required: expect.any(String),
       });
       expect(JSON.parse(leanKnownError.stderr)).not.toHaveProperty("title");
     });

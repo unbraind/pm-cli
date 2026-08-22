@@ -179,6 +179,13 @@ key. Health retains at most 100 warning rows and reports `warning_count`,
 projection unless `--full` is explicit, keeping the failing check identities
 and warning codes inside the ordinary budget.
 
+Failure transports use the companion
+[Diagnostic Output Contracts](DIAGNOSTIC_OUTPUT_CONTRACTS.md). Those contracts
+bind errors, warnings, validation summaries, and recovery bundles independently
+from successful command results. Corrective actions precede explanation and
+survive every degradation stage, while untruncated JSON avoids a per-call
+receipt tax.
+
 ## SDK and Package Usage
 
 Typed `PmClient` read methods accept `PmReadOutputOptions` directly:

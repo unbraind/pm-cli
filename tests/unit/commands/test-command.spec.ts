@@ -2454,9 +2454,9 @@ describe("runTest", () => {
       await withTempPmPath(async (context) => {
         const id = createTask(context, "linked-test-sentry-environment");
         const printSentryEnvironment =
-          'node -e "process.stdout.write(process.env.SENTRY_ENVIRONMENT||\'\')"';
+          "node -e \"process.stdout.write(process.env.SENTRY_ENVIRONMENT||'')\"";
         const printExplicitSentryEnvironment =
-          'node -e "process.stdout.write(String(process.env.SENTRY_ENVIRONMENT||\'\'))"';
+          "node -e \"process.stdout.write(String(process.env.SENTRY_ENVIRONMENT||''))\"";
         await runTest(
           id,
           {
@@ -2475,9 +2475,10 @@ describe("runTest", () => {
           { path: context.pmPath },
         );
         expect(run.run_results).toHaveLength(2);
-        expect(
-          run.run_results.map((result) => result.stdout?.trim()),
-        ).toEqual(["test", "staging"]);
+        expect(run.run_results.map((result) => result.stdout?.trim())).toEqual([
+          "test",
+          "staging",
+        ]);
 
         const runLevelOverride = await runTest(
           id,
@@ -3685,6 +3686,13 @@ describe("runTest", () => {
           measurements: [
             expect.objectContaining({ name: "coverage", value: 100 }),
             expect.objectContaining({ name: "latency", value: 12.5 }),
+          ],
+          executions: [
+            {
+              command: "node --version",
+              requested_pm_context_mode: "schema",
+              pm_context_mode: "schema",
+            },
           ],
         });
       } finally {

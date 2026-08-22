@@ -2550,11 +2550,7 @@ export async function runLinkedTests(
   );
 
   try {
-    await initializeLinkedTestSandboxes(
-      layout,
-      runInit,
-      includeTrackerData,
-    );
+    await initializeLinkedTestSandboxes(layout, runInit, includeTrackerData);
     await seedLinkedTestSandboxesFromSource(
       layout,
       sourceRoots,
@@ -2946,6 +2942,15 @@ function buildTrackedTestRunSummary(params: {
     skipped: summary.skipped,
     fail_on_skipped_triggered: params.failOnSkippedTriggered ? true : undefined,
     measurements: measurements.length > 0 ? measurements : undefined,
+    executions: params.runResults
+      .filter((result) => result.command?.trim())
+      .slice(0, 32)
+      .map((result) => ({
+        command: result.command!.trim(),
+        requested_pm_context_mode:
+          result.execution_context?.requested_pm_context_mode,
+        pm_context_mode: result.execution_context?.pm_context_mode,
+      })),
   };
 }
 

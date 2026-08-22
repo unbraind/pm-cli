@@ -1237,6 +1237,25 @@ describe("item-format metadata validation", () => {
           passed: 1,
           failed: 0,
           skipped: 0,
+          executions: [
+            null,
+            { command: "  " },
+            {
+              command: " pm list --status open ",
+              requested_pm_context_mode: "tracker",
+              pm_context_mode: "tracker",
+            },
+            {
+              command: " pm get pm-demo ",
+              requested_pm_context_mode: "schema",
+              pm_context_mode: "auto",
+            },
+            {
+              command: " pm context ",
+              requested_pm_context_mode: "invalid",
+              pm_context_mode: "invalid",
+            },
+          ],
           measurements: [
             null,
             {
@@ -1274,6 +1293,7 @@ describe("item-format metadata validation", () => {
           passed: 1,
           failed: 0,
           skipped: 0,
+          executions: [{ command: " " }],
           measurements: [],
         },
         {
@@ -1378,6 +1398,21 @@ describe("item-format metadata validation", () => {
         unit: "ms",
         threshold: 20,
         recorded_at: FIXED_TS,
+      },
+    ]);
+    expect(normalized.test_runs?.[1]?.executions).toEqual([
+      {
+        command: "pm list --status open",
+        requested_pm_context_mode: "tracker",
+        pm_context_mode: "tracker",
+      },
+      {
+        command: "pm get pm-demo",
+        requested_pm_context_mode: "schema",
+        pm_context_mode: "auto",
+      },
+      {
+        command: "pm context",
       },
     ]);
     expect(normalized.plan_steps?.map((entry) => entry.id)).toEqual([

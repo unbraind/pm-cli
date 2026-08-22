@@ -1025,6 +1025,9 @@ describe("public sdk entrypoint", () => {
     expect(typeof runtimeModule.next).toBe("function");
     expect(typeof runtimeModule.search).toBe("function");
     expect(typeof runtimeModule.stats).toBe("function");
+    expect(typeof runtimeModule.projectPmDiagnosticOutput).toBe("function");
+    expect(typeof runtimeModule.projectPmDiagnosticText).toBe("function");
+    expect(typeof runtimeModule.resolvePmDiagnosticOutputBudget).toBe("function");
   });
 
   it("does not register runtime test hooks when the built runtime is imported in production", () => {

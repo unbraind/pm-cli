@@ -4,14 +4,14 @@
   "headroom": 1.1,
   "surfaces": {
     "root_help": 14060,
-    "per_command_total": 355596,
-    "full_help_surface": 369656,
+    "per_command_total": 355560,
+    "full_help_surface": 369619,
     "contracts": {
       "summary_toon": 15585,
       "summary_json": 19399,
       "json": 19260,
-      "full": 1311750,
-      "bounded_full": 559
+      "full": 1323450,
+      "bounded_full": 614
     },
     "mcp_tools_list": 48783,
     "required_commands": [
@@ -128,7 +128,7 @@
       "plan decision": 10181,
       "plan approve": 10179,
       "plan resume": 10177,
-      "update": 10034,
+      "update": 9997,
       "create": 9411,
       "list": 9204,
       "search": 8261,

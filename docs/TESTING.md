@@ -366,6 +366,18 @@ The manifest records baseline bytes and estimated tokens for visible review
 deltas. Updating it cannot raise answer ceilings, which remain owned by
 `PM_COMMAND_OUTPUT_BUDGET_CONTRACTS`.
 
+Diagnostic ceilings share the executable refusal gate:
+
+```bash
+pnpm quality:recovery-closure
+```
+
+The gate replays 22 refusal contracts and ratchets ten representative failure
+paths against `PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS`. Every diagnostic must fit
+its declared JSON ceiling and preserve a mechanically actionable correction;
+the missing-probe negative control proves that the diagnostic corpus cannot
+silently shrink.
+
 The gate derives every supported harness, model, session, and provenance
 environment key from the SDK-owned harness descriptor registry. It deletes
 those host inputs before each fixture invocation, then supplies only the
@@ -480,6 +492,9 @@ pm test <item-id> --metric-below coverage=100 --metric-diff p95_latency
 
 Measurements are stored on the producing `test_runs` row, retained with the
 bounded run history, and exposed consistently by CLI, SDK, MCP, and contracts.
+Each recorded row also keeps a bounded `executions` list with the exact linked
+command plus its requested and effective `pm_context_mode`, so tracker-backed
+verification remains attributable after the transient process logs are gone.
 
 ## Linked-Test Assertions
 

@@ -8,6 +8,12 @@ import {
   type PmCliErrorRecoveryPayload,
 } from "../sdk/runtime-primitives.js";
 import { resolveRecoveryCommandName } from "../sdk/agent/command-recovery.js";
+import {
+  projectPmDiagnosticOutput,
+  projectPmDiagnosticText,
+  type PmDiagnosticOutputReceipt,
+  type PmProjectedDiagnostic,
+} from "../sdk/cli-contracts/agent-output-contracts.js";
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 
@@ -57,27 +63,26 @@ export interface JsonErrorEnvelope {
   /** Supplied scalar value that violated a shared mutation grammar. */
   value?: string;
   /** Dependency selectors that matched no stored edge. */
-  unmatched_selectors?: NonNullable<
-    PmCliErrorContext["unmatched_selectors"]
-  >;
+  unmatched_selectors?: NonNullable<PmCliErrorContext["unmatched_selectors"]>;
   /** Compact stored dependency identities available when a removal failed. */
   available_dependencies?: NonNullable<
     PmCliErrorContext["available_dependencies"]
   >;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
+  /** Binding output-budget receipt for this diagnostic. */
+  diagnostic_output?: PmDiagnosticOutputReceipt;
 }
+
+/** Error envelope after deterministic budget projection. */
+export type ProjectedJsonErrorEnvelope =
+  PmProjectedDiagnostic<JsonErrorEnvelope>;
 
 /** Compact an error envelope to fields that change the caller's next action. */
 export function projectLeanErrorEnvelope(
-  envelope: JsonErrorEnvelope,
-): Omit<JsonErrorEnvelope, "required" | "why" | "title"> {
-  const {
-    required: _required,
-    why: _why,
-    title: _title,
-    ...actionable
-  } = envelope;
+  envelope: ProjectedJsonErrorEnvelope,
+): ProjectedJsonErrorEnvelope {
+  const { why: _why, title: _title, ...actionable } = envelope;
   return actionable;
 }
 
@@ -106,9 +111,7 @@ export interface ErrorClassification {
   /** Supplied scalar value that violated a shared mutation grammar. */
   value?: string;
   /** Dependency selectors that matched no stored edge. */
-  unmatched_selectors?: NonNullable<
-    PmCliErrorContext["unmatched_selectors"]
-  >;
+  unmatched_selectors?: NonNullable<PmCliErrorContext["unmatched_selectors"]>;
   /** Compact stored dependency identities available when a removal failed. */
   available_dependencies?: NonNullable<
     PmCliErrorContext["available_dependencies"]
@@ -551,12 +554,14 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
   const lines: string[] = [
     `Error: ${message.title}`,
     "",
-    "What happened:",
-    `  ${message.happened}`,
-    "",
     "What is required:",
     `  ${message.required}`,
   ];
+  if (message.nextSteps && message.nextSteps.length > 0) {
+    lines.push("");
+    lines.push(...renderList("Next steps:", message.nextSteps));
+  }
+  lines.push("", "What happened:", `  ${message.happened}`);
   if (message.why) {
     lines.push("", "Why:");
     lines.push(`  ${message.why}`);
@@ -565,13 +570,11 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
     lines.push("");
     lines.push(...renderList("Examples:", message.examples));
   }
-  if (message.nextSteps && message.nextSteps.length > 0) {
-    lines.push("");
-    lines.push(...renderList("Next steps:", message.nextSteps));
-  }
   if (message.verificationErrors && message.verificationErrors.length > 0) {
     lines.push("");
-    lines.push(...renderList("Verification errors:", message.verificationErrors));
+    lines.push(
+      ...renderList("Verification errors:", message.verificationErrors),
+    );
   }
   const recoveryLines = renderRecoveryBundle(message.recovery);
   if (recoveryLines.length > 0) {
@@ -1782,7 +1785,11 @@ export function formatPmCliErrorForDisplay(
   rawMessage: string,
   context?: PmCliErrorContext,
 ): string {
-  return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage, context));
+  const guidance = buildPmCliErrorGuidance(rawMessage, context);
+  return projectPmDiagnosticText(
+    renderGuidanceMessage(guidance),
+    guidance.required,
+  ).output;
 }
 
 /** Implements classify pm cli error for the public runtime surface of this module. */
@@ -1798,10 +1805,12 @@ export function formatPmCliErrorForJson(
   rawMessage: string,
   exitCode: number,
   context?: PmCliErrorContext,
-): JsonErrorEnvelope {
-  return guidanceToJsonEnvelope(
-    buildPmCliErrorGuidance(rawMessage, context),
-    exitCode,
+): ProjectedJsonErrorEnvelope {
+  return projectPmDiagnosticOutput(
+    guidanceToJsonEnvelope(
+      buildPmCliErrorGuidance(rawMessage, context),
+      exitCode,
+    ),
   );
 }
 
@@ -1812,9 +1821,16 @@ export function formatCommanderErrorForDisplay(
   allowedTypes: string,
   context?: CommanderGuidanceContext,
 ): string {
-  return renderGuidanceMessage(
-    buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context),
+  const guidance = buildCommanderErrorGuidance(
+    rawMessage,
+    commandName,
+    allowedTypes,
+    context,
   );
+  return projectPmDiagnosticText(
+    renderGuidanceMessage(guidance),
+    guidance.required,
+  ).output;
 }
 
 /** Implements classify commander error for the public runtime surface of this module. */
@@ -1836,10 +1852,17 @@ export function formatCommanderErrorForJson(
   allowedTypes: string,
   exitCode: number,
   context?: CommanderGuidanceContext,
-): JsonErrorEnvelope {
-  return guidanceToJsonEnvelope(
-    buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context),
-    exitCode,
+): ProjectedJsonErrorEnvelope {
+  return projectPmDiagnosticOutput(
+    guidanceToJsonEnvelope(
+      buildCommanderErrorGuidance(
+        rawMessage,
+        commandName,
+        allowedTypes,
+        context,
+      ),
+      exitCode,
+    ),
   );
 }
 
@@ -1847,9 +1870,9 @@ export function formatCommanderErrorForJson(
 export function formatUnknownErrorForJson(
   rawMessage: string,
   exitCode: number,
-): JsonErrorEnvelope {
+): ProjectedJsonErrorEnvelope {
   const guidance = buildUnknownErrorGuidance(rawMessage);
-  return guidanceToJsonEnvelope(guidance, exitCode);
+  return projectPmDiagnosticOutput(guidanceToJsonEnvelope(guidance, exitCode));
 }
 
 function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
