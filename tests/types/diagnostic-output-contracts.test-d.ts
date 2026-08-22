@@ -29,6 +29,7 @@ const projectedRequired: string = projected.required;
 const projectedRecovery: { suggested_retry: string } | undefined =
   projected.recovery;
 const text = projectPmDiagnosticText("Diagnostic", "Retry.");
+const textReceipt: PmDiagnosticOutputReceipt = text.diagnostic_output;
 const declaredCount: number = PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS.length;
 
 // @ts-expect-error diagnostic classes are a closed contract vocabulary
@@ -39,5 +40,6 @@ void projectedCode;
 void projectedRequired;
 void projectedRecovery;
 void text;
+void textReceipt;
 void declaredCount;
 void invalidClass;

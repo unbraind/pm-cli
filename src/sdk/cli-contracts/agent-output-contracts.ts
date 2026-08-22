@@ -389,6 +389,24 @@ function truncateDiagnosticString(value: unknown, maximum: number): unknown {
   return `${value.slice(0, Math.max(1, maximum - 3))}...`;
 }
 
+function truncateDiagnosticUtf8Text(
+  value: string,
+  maximumBytes: number,
+): string {
+  if (Buffer.byteLength(value, "utf8") <= maximumBytes) return value;
+  const suffix = "...";
+  const codePoints = Array.from(value);
+  let lower = 0;
+  let upper = codePoints.length;
+  while (lower < upper) {
+    const middle = Math.ceil((lower + upper) / 2);
+    const candidate = `${codePoints.slice(0, middle).join("")}${suffix}`;
+    if (Buffer.byteLength(candidate, "utf8") <= maximumBytes) lower = middle;
+    else upper = middle - 1;
+  }
+  return `${codePoints.slice(0, lower).join("")}${suffix}`;
+}
+
 function prioritizeDiagnosticFields(
   diagnostic: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -432,8 +450,9 @@ function actionOnlyDiagnostic(
       truncateDiagnosticString(candidate.required, 160) ??
       "Inspect the diagnostic code and retry with corrected input.",
   };
-  if (candidate.recovery !== undefined) {
-    actionOnly.recovery = candidate.recovery;
+  const recovery = compactDiagnosticRecovery(candidate.recovery);
+  if (recovery !== undefined) {
+    actionOnly.recovery = recovery;
   } else if (Array.isArray(candidate.next_steps)) {
     actionOnly.next_steps = candidate.next_steps.slice(0, 1);
   }
@@ -484,6 +503,41 @@ function attachDiagnosticReceipt(
   return projected;
 }
 
+function shrinkMinimalDiagnosticCandidate(
+  candidate: Record<string, unknown>,
+  receipt: Omit<PmDiagnosticOutputReceipt, "estimated_tokens">,
+  budget: number,
+): Record<string, unknown> {
+  let fallback = attachDiagnosticReceipt(candidate, receipt);
+  for (const optionalField of ["recovery", "exit_code"]) {
+    if (
+      estimateJsonDiagnosticTokens(fallback) <= budget ||
+      candidate[optionalField] === undefined
+    ) {
+      continue;
+    }
+    delete candidate[optionalField];
+    fallback = attachDiagnosticReceipt(candidate, receipt);
+  }
+  let maximumActionBytes = 40;
+  while (
+    estimateJsonDiagnosticTokens(fallback) > budget &&
+    maximumActionBytes > 4
+  ) {
+    maximumActionBytes -= 4;
+    candidate.code = truncateDiagnosticUtf8Text(
+      String(candidate.code),
+      maximumActionBytes,
+    );
+    candidate.required = truncateDiagnosticUtf8Text(
+      String(candidate.required),
+      maximumActionBytes,
+    );
+    fallback = attachDiagnosticReceipt(candidate, receipt);
+  }
+  return fallback;
+}
+
 function createMinimalDiagnosticFallback(
   projected: Record<string, unknown>,
   budget: number,
@@ -493,7 +547,7 @@ function createMinimalDiagnosticFallback(
     receipt;
   const boundedOmittedFields = receiptWithoutEstimate.omitted_fields
     .slice(0, 8)
-    .map((field) => String(truncateDiagnosticString(field, 32)));
+    .map((field) => truncateDiagnosticUtf8Text(field, 32));
   const boundedReceipt = {
     ...receiptWithoutEstimate,
     omitted_fields: boundedOmittedFields,
@@ -511,9 +565,15 @@ function createMinimalDiagnosticFallback(
     recoveryCandidate && estimateJsonDiagnosticTokens(recoveryCandidate) <= 48
       ? recoveryCandidate
       : undefined;
-  const candidate = {
-    code: truncateDiagnosticString(projected.code, 48),
-    required: truncateDiagnosticString(projected.required, 48),
+  const candidate: Record<string, unknown> = {
+    code: truncateDiagnosticUtf8Text(
+      String(projected.code),
+      320,
+    ),
+    required: truncateDiagnosticUtf8Text(
+      String(projected.required),
+      320,
+    ),
     ...(recovery ? { recovery } : {}),
     ...(projected.exit_code !== undefined
       ? { exit_code: projected.exit_code }
@@ -530,6 +590,11 @@ function createMinimalDiagnosticFallback(
       boundedReceipt.omitted_fields.length;
     fallback = attachDiagnosticReceipt(candidate, boundedReceipt);
   }
+  fallback = shrinkMinimalDiagnosticCandidate(
+    candidate,
+    boundedReceipt,
+    budget,
+  );
   return fallback;
 }
 
@@ -627,10 +692,20 @@ export function projectPmDiagnosticText(
     Buffer.byteLength(output, "utf8"),
   );
   const truncated = originalEstimatedTokens > budget;
+  const actionPrefix = "What is required:\n  ";
+  const actionSuffix = `\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
+  const correctiveActionText =
+    correctiveAction.trim() ||
+    "Inspect the diagnostic code and retry with corrected input.";
+  const availableActionBytes = Math.max(
+    1,
+    budget * 4 - Buffer.byteLength(`${actionPrefix}${actionSuffix}`, "utf8"),
+  );
   const projectedOutput = truncated
-    ? `What is required:\n  ${String(
-        truncateDiagnosticString(correctiveAction.trim(), 320),
-      )}\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`
+    ? `${actionPrefix}${truncateDiagnosticUtf8Text(
+        correctiveActionText,
+        availableActionBytes,
+      )}${actionSuffix}`
     : output;
   return {
     output: projectedOutput,

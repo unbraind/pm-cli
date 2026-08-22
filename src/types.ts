@@ -779,6 +779,16 @@ export interface TestRunMeasurement {
   recorded_at: string;
 }
 
+/** Bounded command and tracker-context provenance for one linked-test execution. */
+export interface ItemTestRunExecution {
+  /** Exact linked command selected for execution. */
+  command: string;
+  /** Context mode requested before linked-test overrides or auto-remediation. */
+  requested_pm_context_mode?: "schema" | "tracker" | "auto";
+  /** Effective context mode used by the linked command. */
+  pm_context_mode?: "schema" | "tracker" | "auto";
+}
+
 /** Documents the item test run summary payload exchanged by command, SDK, and package integrations. */
 export interface ItemTestRunSummary {
   /** Executes the id operation through the package runtime. */
@@ -811,6 +821,8 @@ export interface ItemTestRunSummary {
   fail_on_skipped_triggered?: boolean;
   /** Bounded, deterministic quantitative evidence produced by this run. */
   measurements?: TestRunMeasurement[];
+  /** Commands and effective tracker contexts bound to this recorded run. */
+  executions?: ItemTestRunExecution[];
 }
 
 /** Documents the item metadata payload exchanged by command, SDK, and package integrations. */

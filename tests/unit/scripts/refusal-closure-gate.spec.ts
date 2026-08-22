@@ -155,6 +155,30 @@ describe("executable refusal closure gate", () => {
           ],
         },
       });
+      for (const diagnosticOutput of [null, "invalid", [], 42]) {
+        expect(
+          verifyExecutableRefusalClosure({
+            ...createSuccessfulOptions({
+              diagnostic_output: diagnosticOutput,
+            }),
+            diagnosticBaseline: {
+              version: 9,
+              required_probe_ids: [SAMPLE_CONTRACT.probe_id],
+            },
+          }),
+        ).toMatchObject({
+          ok: false,
+          diagnostic_output: {
+            ok: false,
+            findings: [
+              expect.objectContaining({
+                code: "diagnostic_receipt_invalid",
+                probe_id: SAMPLE_CONTRACT.probe_id,
+              }),
+            ],
+          },
+        });
+      }
       for (const errorEnvelope of [
         {
           required: "Choose an allowed value.",

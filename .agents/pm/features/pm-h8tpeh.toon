@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: agent-ux,"area:ci","area:sdk",assurance,contracts,recovery
 created_at: "2026-08-13T21:18:07.562Z"
-updated_at: "2026-08-22T00:51:51.433Z"
+updated_at: "2026-08-22T01:47:37.346Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7b28a00954f9d51f10384882"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-1qkivy,implements,"2026-08-16T18:35:04.320Z","harness:codex","cli:update:dep",detected
   pm-c3uru0,recurs_from,"2026-08-16T18:35:04.320Z","harness:codex","cli:update:dep",detected
-comments[61]{created_at,author,text}:
+comments[63]{created_at,author,text}:
   "2026-08-13T22:07:15.361Z","harness:codex","Progress evidence: the contract now declares replacement versus behavior_preserving semantics instead of inferring strength from prose. An executable temporary-tracker corpus derives and runs all 22 exact projection-mode replacements, comparing both spellings after only receipt/volatile metadata removal. The corpus caught --collapse <value> and health --check-only as independent execution semantics; both are excluded from false replacement mapping and --collapse now emits truthful weaker guidance. Remaining scope before this general feature can close: derive and execute the other forward-reference kinds, declare the full obligation set as assurance data, and add the cross-kind negative-control gate."
   "2026-08-13T22:27:26.637Z","harness:codex","Assurance evidence: tracker-context-quality initially blocked because the new executable migration spec was test-command linked but not file-owned. Added explicit project file ownership; preserved the pre-existing one-path orphan ceiling rather than weakening the ratchet."
   "2026-08-13T23:17:37.958Z","harness:codex","Verification evidence for this PR tranche: derived and executed all 22 replacement promises across list/search/get/health/deps/graph/history/activity/validate/events/contracts in a real temporary tracker; exact legacy-versus-canonical projections match after removing only invocation receipts and volatile run metadata. Linked PM tests passed 20/20. Full repository coverage passed 7,280 tests at exact 100/100/100/100. Packed npm acceptance exercised canonical CLI normalization and the public SDK, with independent npx and bunx dispatch succeeding. The broader feature remains open for the other forward-reference kinds and its cross-kind assurance negative control."
@@ -86,6 +86,8 @@ comments[61]{created_at,author,text}:
   "2026-08-21T22:48:12.287Z","harness:codex","Implementation start 2026-08-22: one coupled SDK/CLI/contract/assurance tranche will declare binding diagnostic ceilings, preserve corrective actions through deterministic degradation, replay the ten most frequent refusal paths in isolated trackers, and extend executable recovery evidence. Only these four actively edited items are claimed; all other backlog items remain unclaimed."
   "2026-08-21T23:58:53.699Z","harness:codex","Implementation evidence (2026-08-22): added executable diagnostic recovery contracts and action-preserving JSON/text projection to the public SDK, exposed declarations in full runtime contracts for CLI/MCP consumers, integrated CLI error guidance, and ratcheted 10 real diagnostic producers with negative controls. All 22 refusal probes and all 10 diagnostic probes passed with corrective actions present; full lint/static assurance and exact 100% coverage across 7,717 tests passed; packed and isolated consumer tests passed. Item remains active because its stated per-producer/value exhaustive runtime-test residual is broader than this tranche."
   "2026-08-22T00:51:51.433Z","harness:codex","Review follow-up (2026-08-22 UTC): added the exact reviewer-requested linked commands and item-local run records. Focused integration passed 77/77; recovery closure passed 22/22 plus 10/10 diagnostics; exact coverage passed at 56,428 statements, 42,152 branches, 11,725 functions, and 54,405 lines, all 100%; tracker-context lint/static assurance, credential scan, dependency audit, package artifact, and packed npx smoke passed. Code fixes cover blank-only actions, unknown classes, safe own-property projection, truthful compact output types, and bounded omission receipts. Timestamp clarification: the earlier 2026-08-22 label was Europe/Vienna local time; 2026-08-21T23:58:53Z is 2026-08-22 locally."
+  "2026-08-22T01:41:51.526Z","harness:codex","Verification note: tracker-context lint reached every static and assurance gate but the CLI transport-floor timing probe measured get=367ms against a 362ms floor. This is a host-timing variance, not a correctness failure; rerunning the identical linked test to obtain terminal evidence."
+  "2026-08-22T01:47:37.346Z","harness:codex","Verification evidence: the canonical tracker-context pnpm lint linked run passed after one recorded host-timing retry. Run history now persists executions=[{command:pnpm lint,requested_pm_context_mode:tracker,pm_context_mode:tracker}], proving the reviewed command and effective data context. Full exact coverage passed 7,721 tests at 100/100/100/100."
 learnings[6]{created_at,author,text}:
   "2026-08-13T22:07:15.884Z","harness:codex","A migration flag can belong to a universal output dimension without being replaceable by the universal option. Promise strength must be explicit contract data: parsing a well-formed hint or checking that its target flag exists cannot distinguish projection equivalence from preserved traversal, grouping, side-effect, cursor, or streaming semantics."
   "2026-08-15T18:45:11.542Z","harness:codex",Stable recursive obligation identifiers must encode each path segment before concatenation. Delimiter joining raw producer keys is not injective and can let one proof discharge a structurally different reference.
@@ -93,13 +95,17 @@ learnings[6]{created_at,author,text}:
   "2026-08-19T05:28:39.600Z","harness:codex","Per-kind runtime coverage closes vocabulary blind spots but is not equivalent to per-producer execution. Keep source population, distinct emitted values, and executable obligations separate in receipts so a small runtime sample cannot masquerade as exhaustive producer coverage."
   "2026-08-19T07:42:40.620Z","harness:codex","A public contract-only entrypoint should depend on declarative vocabularies, not runtime query implementations. Separate projection constants and validators into a dependency-light module, then re-export them from legacy entrypoints to preserve compatibility while keeping contract import costs bounded."
   "2026-08-19T18:27:47.015Z","harness:codex",Linked test commands are durable PM contracts and must be migrated alongside test file organization; a passing source suite does not excuse a stale executable evidence path.
-files[31]{path,scope,note}:
+files[37]{path,scope,note}:
   package.json,project,Local static-quality command now reproduces hosted generated-contract checks
   scripts/error-code-reachability.json,project,declares all three tracker filesystem refusal states
+  scripts/release/diagnostic-output-baseline.json,project,Representative invalid-input recovery corpus
   scripts/release/gate-registry.json,project,Recovery corpus provider declaration
+  scripts/release/refusal-closure-gate.mjs,project,Executes advertised retries and measures corrective actions
   scripts/release/repository-assurance.mjs,project,Assurance execution of recovery corpus
   sdk/public-surface.json,project,Active command contract and recovery conformance implementation
+  src/cli/error-guidance.ts,project,Structured recovery references remain action-first
   src/cli/main.ts,project,CLI projection-mode forwarding
+  src/core/item/item-format.ts,project,Normalizes bounded persisted linked-test execution provenance.
   src/core/output/mutation-projection.ts,project,compact recurrence receipt preservation
   src/sdk/agent/refusal-reachability.ts,project,Typed cross-kind recovery obligation and coverage receipts
   src/sdk/agent/tracker-preflight-contracts.ts,project,typed executable recovery observations and scorer
@@ -108,23 +114,25 @@ files[31]{path,scope,note}:
   src/sdk/read-output-contracts.ts,project,Typed replacement versus behavior-preserving migration promises
   src/sdk/runtime.ts,project,SDK and MCP projection-mode forwarding
   src/sdk/similarity.ts,project,executable duplicate recurrence recovery
+  src/sdk/test/batch.ts,project,Keeps test-all run evidence aligned with single-item test provenance.
+  src/sdk/test/execution.ts,project,Records exact command and requested/effective PM context for test runs.
+  src/types.ts,project,Adds typed command and tracker-context provenance to persisted linked-test run evidence.
   tests/fixtures/contracts/full.json,project,Canonical command contract snapshot synchronized after hosted drift detection
   tests/helpers/releaseContracts.ts,project,Shared local and hosted release parity contract for generated checks
   tests/integration/closed-domain-recovery.integration.spec.ts,project,Active command contract and recovery conformance implementation
   tests/integration/refusal-reachability.integration.spec.ts,project,Real retry execution and command-path corpus
+  tests/integration/structured-mutation-io.integration.spec.ts,project,Lean errors retain recovery reference semantics
   tests/integration/tracker-preflight.integration.spec.ts,project,SDK CLI and MCP structured recovery parity
   tests/unit/cli/cli-main-reentrancy.spec.ts,project,CLI raw-argument provenance and reentrant invocation coverage
+  tests/unit/cli/error-guidance.spec.ts,project,Structured recovery reference output coverage
+  tests/unit/commands/test-command.spec.ts,project,Proves command and context persist in canonical test-run history.
+  tests/unit/core/item/item-format-validation.spec.ts,project,Proves persisted execution provenance normalization.
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Executable recovery reachability negative controls
   tests/unit/sdk/read-contract-integrity.spec.ts,project,Replicated consumer contract for explicit migration semantics
   tests/unit/sdk/read-output-contracts.spec.ts,project,SDK cursor recovery and negative controls
   tests/unit/sdk/read-output-migration-hints.spec.ts,project,Executable cross-kind migration matrix that runs every declared projection replacement against a real temporary tracker
   tests/unit/sdk/read-output-transport.spec.ts,project,Executable real-CLI recovery promise replay
   tests/unit/sdk/refusal-reachability.spec.ts,project,Pass fraction and broken-reference negative control
-  src/cli/error-guidance.ts,project,Structured recovery references remain action-first
-  scripts/release/diagnostic-output-baseline.json,project,Representative invalid-input recovery corpus
-  scripts/release/refusal-closure-gate.mjs,project,Executes advertised retries and measures corrective actions
-  tests/unit/cli/error-guidance.spec.ts,project,Structured recovery reference output coverage
-  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Executable recovery reachability negative controls
-  tests/integration/structured-mutation-io.integration.spec.ts,project,Lean errors retain recovery reference semantics
 tests[19]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts
     scope: project
@@ -190,22 +198,164 @@ tests[19]:
     timeout_seconds: 1200
     pm_context_mode: tracker
     note: full static and assurance suite
-test_runs[15]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-mss2d8v9-7j0mbi,test,passed,"2026-08-13T22:02:13.183Z","2026-08-13T22:02:25.701Z","2026-08-13T22:02:25.701Z",1,0,0
-  test-local-mss4q9be-3wcuqg,test,passed,"2026-08-13T23:08:06.996Z","2026-08-13T23:08:32.042Z","2026-08-13T23:08:32.042Z",2,0,0
-  test-local-mssvd2in-n5cf67,test,passed,"2026-08-14T11:33:25.993Z","2026-08-14T11:34:06.335Z","2026-08-14T11:34:06.335Z",3,0,0
-  test-local-msteg9c5-k1yp80,test,passed,"2026-08-14T20:27:44.621Z","2026-08-14T20:28:27.845Z","2026-08-14T20:28:27.845Z",4,0,0
-  test-local-msukuedk-4tc1sh,test,passed,"2026-08-15T16:14:17.657Z","2026-08-15T16:15:11.432Z","2026-08-15T16:15:11.432Z",4,0,0
-  test-local-msupzzfc-7jyez7,test,passed,"2026-08-15T18:38:48.206Z","2026-08-15T18:39:30.072Z","2026-08-15T18:39:30.072Z",4,0,0
-  test-local-msw74ppv-s5bx9u,test,passed,"2026-08-16T19:26:07.426Z","2026-08-16T19:26:50.419Z","2026-08-16T19:26:50.419Z",4,0,0
-  test-local-msx91pi7-yowdr2,test,passed,"2026-08-17T13:07:21.668Z","2026-08-17T13:08:15.583Z","2026-08-17T13:08:15.583Z",5,0,0
-  test-local-msyat7eg-vdn3wh,test,passed,"2026-08-18T06:44:50.413Z","2026-08-18T06:45:24.279Z","2026-08-18T06:45:24.279Z",1,0,0
-  test-local-msz5saqj-er8y40,test,passed,"2026-08-18T21:04:45.009Z","2026-08-18T21:12:30.043Z","2026-08-18T21:12:30.043Z",7,0,0
-  test-local-mt0f0i5b-o95gjn,test,failed,"2026-08-19T18:10:50.429Z","2026-08-19T18:18:35.615Z","2026-08-19T18:18:35.615Z",9,1,0
-  test-local-mt0f1a6x-6qneov,test,passed,"2026-08-19T18:18:59.945Z","2026-08-19T18:19:11.961Z","2026-08-19T18:19:11.961Z",1,0,0
-  test-local-mt3nqcn5-wxvqzs,test,passed,"2026-08-22T00:39:46.436Z","2026-08-22T00:45:56.993Z","2026-08-22T00:45:56.993Z",6,0,0
-  test-local-mt3nqxmi-abshxl,test,passed,"2026-08-22T00:46:02.332Z","2026-08-22T00:46:24.186Z","2026-08-22T00:46:24.186Z",1,0,0
-  test-local-mt3nxmhz-ttf6yl,test,passed,"2026-08-22T00:46:27.766Z","2026-08-22T00:51:36.359Z","2026-08-22T00:51:36.359Z",1,0,0
+test_runs[17]:
+  - run_id: test-local-mss2d8v9-7j0mbi
+    kind: test
+    status: passed
+    started_at: "2026-08-13T22:02:13.183Z"
+    finished_at: "2026-08-13T22:02:25.701Z"
+    recorded_at: "2026-08-13T22:02:25.701Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mss4q9be-3wcuqg
+    kind: test
+    status: passed
+    started_at: "2026-08-13T23:08:06.996Z"
+    finished_at: "2026-08-13T23:08:32.042Z"
+    recorded_at: "2026-08-13T23:08:32.042Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mssvd2in-n5cf67
+    kind: test
+    status: passed
+    started_at: "2026-08-14T11:33:25.993Z"
+    finished_at: "2026-08-14T11:34:06.335Z"
+    recorded_at: "2026-08-14T11:34:06.335Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msteg9c5-k1yp80
+    kind: test
+    status: passed
+    started_at: "2026-08-14T20:27:44.621Z"
+    finished_at: "2026-08-14T20:28:27.845Z"
+    recorded_at: "2026-08-14T20:28:27.845Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msukuedk-4tc1sh
+    kind: test
+    status: passed
+    started_at: "2026-08-15T16:14:17.657Z"
+    finished_at: "2026-08-15T16:15:11.432Z"
+    recorded_at: "2026-08-15T16:15:11.432Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msupzzfc-7jyez7
+    kind: test
+    status: passed
+    started_at: "2026-08-15T18:38:48.206Z"
+    finished_at: "2026-08-15T18:39:30.072Z"
+    recorded_at: "2026-08-15T18:39:30.072Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msw74ppv-s5bx9u
+    kind: test
+    status: passed
+    started_at: "2026-08-16T19:26:07.426Z"
+    finished_at: "2026-08-16T19:26:50.419Z"
+    recorded_at: "2026-08-16T19:26:50.419Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msx91pi7-yowdr2
+    kind: test
+    status: passed
+    started_at: "2026-08-17T13:07:21.668Z"
+    finished_at: "2026-08-17T13:08:15.583Z"
+    recorded_at: "2026-08-17T13:08:15.583Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msyat7eg-vdn3wh
+    kind: test
+    status: passed
+    started_at: "2026-08-18T06:44:50.413Z"
+    finished_at: "2026-08-18T06:45:24.279Z"
+    recorded_at: "2026-08-18T06:45:24.279Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msz5saqj-er8y40
+    kind: test
+    status: passed
+    started_at: "2026-08-18T21:04:45.009Z"
+    finished_at: "2026-08-18T21:12:30.043Z"
+    recorded_at: "2026-08-18T21:12:30.043Z"
+    passed: 7
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt0f0i5b-o95gjn
+    kind: test
+    status: failed
+    started_at: "2026-08-19T18:10:50.429Z"
+    finished_at: "2026-08-19T18:18:35.615Z"
+    recorded_at: "2026-08-19T18:18:35.615Z"
+    passed: 9
+    failed: 1
+    skipped: 0
+  - run_id: test-local-mt0f1a6x-6qneov
+    kind: test
+    status: passed
+    started_at: "2026-08-19T18:18:59.945Z"
+    finished_at: "2026-08-19T18:19:11.961Z"
+    recorded_at: "2026-08-19T18:19:11.961Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt3nqcn5-wxvqzs
+    kind: test
+    status: passed
+    started_at: "2026-08-22T00:39:46.436Z"
+    finished_at: "2026-08-22T00:45:56.993Z"
+    recorded_at: "2026-08-22T00:45:56.993Z"
+    passed: 6
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt3nqxmi-abshxl
+    kind: test
+    status: passed
+    started_at: "2026-08-22T00:46:02.332Z"
+    finished_at: "2026-08-22T00:46:24.186Z"
+    recorded_at: "2026-08-22T00:46:24.186Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt3nxmhz-ttf6yl
+    kind: test
+    status: passed
+    started_at: "2026-08-22T00:46:27.766Z"
+    finished_at: "2026-08-22T00:51:36.359Z"
+    recorded_at: "2026-08-22T00:51:36.359Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt3pq1da-ab6ack
+    kind: test
+    status: failed
+    started_at: "2026-08-22T01:36:56.879Z"
+    finished_at: "2026-08-22T01:41:41.614Z"
+    recorded_at: "2026-08-22T01:41:41.614Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode}:
+      pnpm lint,tracker,tracker
+  - run_id: test-local-mt3pwis1-gah4i9
+    kind: test
+    status: passed
+    started_at: "2026-08-22T01:41:51.974Z"
+    finished_at: "2026-08-22T01:46:44.113Z"
+    recorded_at: "2026-08-22T01:46:44.113Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode}:
+      pnpm lint,tracker,tracker
 docs[10]{path,scope,note}:
   docs/DEFECT_RECURRENCE.md,project,Recovery producer census contract
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project,Recovery reference degradation guarantees

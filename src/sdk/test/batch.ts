@@ -17,10 +17,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import {
-  resolveGlobalPmRoot,
-  resolvePmRoot,
-} from "../../core/store/paths.js";
+import { resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import { resolveAuthor } from "../../core/shared/author.js";
@@ -513,6 +510,7 @@ const runTestAllItem = async (
   const trackingWarnings = await appendTestAllItemTracking(
     entry,
     summary,
+    runResults,
     context,
   );
   return {
@@ -554,6 +552,7 @@ const optionalTrue = (value: boolean): true | undefined =>
 const appendTestAllItemTracking = async (
   entry: TestAllItemTests,
   summary: { passed: number; failed: number; skipped: number },
+  runResults: TestRunResult[],
   context: TestAllItemRunContext,
 ): Promise<string[]> => {
   if (!context.trackingEnabled) {
@@ -584,6 +583,15 @@ const appendTestAllItemTracking = async (
         fail_on_skipped_triggered: optionalTrue(
           context.options.failOnSkipped === true && summary.skipped > 0,
         ),
+        executions: runResults
+          .filter((result) => result.command?.trim())
+          .slice(0, 32)
+          .map((result) => ({
+            command: result.command!.trim(),
+            requested_pm_context_mode:
+              result.execution_context?.requested_pm_context_mode,
+            pm_context_mode: result.execution_context?.pm_context_mode,
+          })),
       },
     });
   } catch (error: unknown) {

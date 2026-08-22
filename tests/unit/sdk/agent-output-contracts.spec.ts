@@ -130,6 +130,32 @@ describe("agent output contracts", () => {
     });
   });
 
+  it("keeps short default-budget text unchanged and repairs an empty action", () => {
+    const short = projectPmDiagnosticText("Short diagnostic", "Retry.");
+    const repaired = projectPmDiagnosticText(
+      "detail ".repeat(2_000),
+      "   ",
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(short).toMatchObject({
+      output: "Short diagnostic",
+      diagnostic_output: {
+        budget: 768,
+        budget_source: "default",
+        truncated: false,
+        degradation_steps: ["full"],
+        omitted_fields: [],
+      },
+    });
+    expect(repaired.output).toContain(
+      "Inspect the diagnostic code and retry with corrected input.",
+    );
+    expect(repaired.diagnostic_output.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+  });
+
   it("keeps the minimum diagnostic ceiling binding when recovery itself is oversized", () => {
     const projected = projectPmDiagnosticOutput(
       {
@@ -181,6 +207,17 @@ describe("agent output contracts", () => {
   });
 
   it("preserves safe own names and reports rejected prototype keys", () => {
+    const underBudget = projectPmDiagnosticOutput(
+      JSON.parse(
+        '{"code":"own-fields","required":"Retry.","constructor":"owned","toString":"owned","valueOf":"owned"}',
+      ),
+    );
+    expect(underBudget).toMatchObject({
+      constructor: "owned",
+      toString: "owned",
+      valueOf: "owned",
+    });
+
     const projected = projectPmDiagnosticOutput(
       JSON.parse(
         `{"code":"own-fields","required":"Retry.","constructor":"owned","toString":"owned","valueOf":"owned","__proto__":{"polluted":true},"detail":"${"x".repeat(4_000)}"}`,
@@ -209,6 +246,9 @@ describe("agent output contracts", () => {
     expect(projected.required).toBe(
       "Inspect the diagnostic code and retry with corrected input.",
     );
+    expect(projected.next_steps).toEqual([
+      "Inspect the diagnostic code and retry.",
+    ]);
     expect(projected.diagnostic_output).toMatchObject({
       budget: 2_000,
       budget_source: "default",
@@ -234,6 +274,34 @@ describe("agent output contracts", () => {
     expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
       192,
     );
+  });
+
+  it("binds multibyte JSON and text diagnostics by UTF-8 bytes", () => {
+    const emoji = "🧭".repeat(4_000);
+    const json = projectPmDiagnosticOutput(
+      {
+        code: emoji,
+        required: emoji,
+        recovery: { suggested_retry: "pm retry" },
+        exit_code: 2,
+        detail: emoji,
+      },
+      { maxEstimatedTokens: 192 },
+    );
+    const text = projectPmDiagnosticText(emoji, emoji, {
+      maxEstimatedTokens: 192,
+    });
+
+    expect(json.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(192);
+    expect(
+      estimatePmOutputTokens(
+        Buffer.byteLength(JSON.stringify(json, null, 2), "utf8"),
+      ),
+    ).toBeLessThanOrEqual(192);
+    expect(text.diagnostic_output.estimated_tokens).toBeLessThanOrEqual(192);
+    expect(
+      estimatePmOutputTokens(Buffer.byteLength(text.output, "utf8")),
+    ).toBeLessThanOrEqual(192);
   });
 
   it.each([0, 191, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(

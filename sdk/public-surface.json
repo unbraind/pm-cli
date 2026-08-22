@@ -26783,6 +26783,12 @@
           "signature": "export interface CreatePmCliExpectedErrorOptions { exitCode?: number; context?: PmCliErrorContext; cause?: unknown; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "createPmCommandOutputBudget",
+          "signature": "(command: string, budgetClass?: PmOutputBudgetClass) => PmCommandOutputBudgetContract | calls: (command: string, budgetClass?: PmOutputBudgetClass) => PmCommandOutputBudgetContract"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "CreateResult",
@@ -26805,6 +26811,12 @@
           "kind": "value",
           "name": "DEFAULT_TERMINAL_TRANSITION_POLICY",
           "signature": "Readonly<TerminalTransitionPolicy>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "definePmCommandOutputBudget",
+          "signature": "<TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract | calls: <TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract"
         },
         {
           "classification": "advanced_export",
@@ -26919,6 +26931,12 @@
           "kind": "function",
           "name": "ensureTrackerInitialized",
           "signature": "(pmRoot: string) => Promise<void> | calls: (pmRoot: string) => Promise<void>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "estimatePmOutputTokens",
+          "signature": "(utf8Bytes: number) => number | calls: (utf8Bytes: number) => number"
         },
         {
           "classification": "supported",
@@ -27237,6 +27255,12 @@
           "kind": "type",
           "name": "ImportPriorityValue",
           "signature": "export type ImportPriorityValue = 0 | 1 | 2 | 3 | 4;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "inferPmOutputBudgetClass",
+          "signature": "(command: string) => PmOutputBudgetClass | calls: (command: string) => PmOutputBudgetClass"
         },
         {
           "classification": "advanced_export",
@@ -27719,6 +27743,30 @@
           "signature": "\"PmCliError\""
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
+          "signature": "PmCommandOutputBudgetContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_DIAGNOSTIC_DEGRADATION_STEPS",
+          "signature": "readonly [\"full\", \"omit_explanation\", \"limit_collections\", \"compact_recovery\", \"action_only\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS",
+          "signature": "PmDiagnosticOutputBudgetContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_DIAGNOSTIC_OUTPUT_CLASSES",
+          "signature": "readonly [\"error\", \"warning\", \"validation_summary\", \"recovery_bundle\"]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_GITIGNORE_END",
@@ -27729,6 +27777,18 @@
           "kind": "value",
           "name": "PM_GITIGNORE_START",
           "signature": "\"# pm-cli:runtime-cache:start\""
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_OUTPUT_BUDGET_CLASSES",
+          "signature": "readonly [\"mutation\", \"read\", \"discovery\", \"governance\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_OUTPUT_DEGRADATION_STEPS",
+          "signature": "readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]"
         },
         {
           "classification": "supported",
@@ -27797,6 +27857,12 @@
           "signature": "export interface PmCliExpectedError extends Error { name: typeof PM_CLI_EXPECTED_ERROR_NAME; exitCode: number; context: PmCliErrorContext; cause?: unknown; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandOutputBudgetContract",
+          "signature": "export interface PmCommandOutputBudgetContract { command: string; budget_class: PmOutputBudgetClass; default_max_estimated_tokens: number; default_max_estimated_tokens_by_format: Readonly<{ toon: number; json: number; }>; degradation_ladder: readonly PmOutputDegradationStep[]; allows_unbounded_opt_out: boolean; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "PmCompleteListCertificate",
@@ -27852,9 +27918,57 @@
         },
         {
           "classification": "contract_data",
+          "kind": "type",
+          "name": "PmDiagnosticDegradationStep",
+          "signature": "export type PmDiagnosticDegradationStep = (typeof PM_DIAGNOSTIC_DEGRADATION_STEPS)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmDiagnosticOutputBudgetContract",
+          "signature": "export interface PmDiagnosticOutputBudgetContract { diagnostic_class: PmDiagnosticOutputClass; default_max_estimated_tokens_by_format: Readonly<{ text: number; json: number; }>; minimum_max_estimated_tokens: number; degradation_ladder: readonly PmDiagnosticDegradationStep[]; corrective_action_paths: readonly string[]; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmDiagnosticOutputClass",
+          "signature": "export type PmDiagnosticOutputClass = (typeof PM_DIAGNOSTIC_OUTPUT_CLASSES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmDiagnosticOutputReceipt",
+          "signature": "export interface PmDiagnosticOutputReceipt { diagnostic_class: PmDiagnosticOutputClass; format: \"json\" | \"text\"; budget: number; budget_source: \"default\" | \"explicit\"; original_estimated_tokens: number; estimated_tokens: number; truncated: boolean; degradation_steps: PmDiagnosticDegradationStep[]; omitted_fields: string[]; omitted_fields_overflow_count?: number; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
           "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; owned_states?: PmRefusalStateContract[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputBudgetClass",
+          "signature": "export type PmOutputBudgetClass = (typeof PM_OUTPUT_BUDGET_CLASSES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputDegradationStep",
+          "signature": "export type PmOutputDegradationStep = (typeof PM_OUTPUT_DEGRADATION_STEPS)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmProjectedDiagnostic",
+          "signature": "export type PmProjectedDiagnostic<TDiagnostic extends object> = Partial<TDiagnostic> & Pick<TDiagnostic, Extract<keyof TDiagnostic, \"code\" | \"required\">> & { diagnostic_output?: PmDiagnosticOutputReceipt; };"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmProjectedTextDiagnostic",
+          "signature": "export interface PmProjectedTextDiagnostic { output: string; diagnostic_output: PmDiagnosticOutputReceipt; }"
         },
         {
           "classification": "supported",
@@ -27987,6 +28101,18 @@
           "kind": "interface",
           "name": "ProgressEntry",
           "signature": "export interface ProgressEntry { id: string; title: string; type: string; total: number; closed: number; open: number; in_progress: number; blocked: number; completion_pct: number; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "projectPmDiagnosticOutput",
+          "signature": "<TDiagnostic extends object>(diagnostic: TDiagnostic, options?: { diagnosticClass?: PmDiagnosticOutputClass; maxEstimatedTokens?: number; }) => PmProjectedDiagnostic<TDiagnostic> | calls: <TDiagnostic extends object>(diagnostic: TDiagnostic, options?: { diagnosticClass?: PmDiagnosticOutputClass; maxEstimatedTokens?: number; }) => PmProjectedDiagnostic<TDiagnostic>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "projectPmDiagnosticText",
+          "signature": "(output: string, correctiveAction: string, options?: { diagnosticClass?: PmDiagnosticOutputClass; maxEstimatedTokens?: number; }) => PmProjectedTextDiagnostic | calls: (output: string, correctiveAction: string, options?: { diagnosticClass?: PmDiagnosticOutputClass; maxEstimatedTokens?: number; }) => PmProjectedTextDiagnostic"
         },
         {
           "classification": "advanced_export",
@@ -28137,6 +28263,18 @@
           "kind": "function",
           "name": "resolveItemTypeRegistry",
           "signature": "(settings: PmSettings, extensionRegistrations?: ExtensionRegistrationRegistry | null | undefined) => ItemTypeRegistry | calls: (settings: PmSettings, extensionRegistrations?: ExtensionRegistrationRegistry | null | undefined) => ItemTypeRegistry"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmCommandOutputBudget",
+          "signature": "{ (command: string, options: { generateFallback: true; }): PmCommandOutputBudgetContract; (command: string, options?: { generateFallback?: false; }): PmCommandOutputBudgetContract | null; } | calls: (command: string, options: { generateFallback: true; }) => PmCommandOutputBudgetContract ; (command: string, options?: { generateFallback?: false; }) => PmCommandOutputBudgetContract | null"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmDiagnosticOutputBudget",
+          "signature": "(diagnosticClass: PmDiagnosticOutputClass) => PmDiagnosticOutputBudgetContract | calls: (diagnosticClass: PmDiagnosticOutputClass) => PmDiagnosticOutputBudgetContract"
         },
         {
           "classification": "advanced_export",

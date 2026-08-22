@@ -1000,6 +1000,37 @@ function normalizeTestRunMeasurements(
   return deduplicated.length > 0 ? deduplicated : undefined;
 }
 
+/** Normalize and bound command/context provenance retained for a test run. */
+function normalizeTestRunExecutions(
+  values: ItemTestRunSummary["executions"],
+): ItemTestRunSummary["executions"] {
+  if (!Array.isArray(values)) return undefined;
+  const executions = values
+    .filter(
+      (execution) =>
+        execution &&
+        typeof execution.command === "string" &&
+        execution.command.trim().length > 0,
+    )
+    .slice(0, 32)
+    .map((execution) => ({
+      command: execution.command.trim(),
+      requested_pm_context_mode:
+        execution.requested_pm_context_mode === "schema" ||
+        execution.requested_pm_context_mode === "tracker" ||
+        execution.requested_pm_context_mode === "auto"
+          ? execution.requested_pm_context_mode
+          : undefined,
+      pm_context_mode:
+        execution.pm_context_mode === "schema" ||
+        execution.pm_context_mode === "tracker" ||
+        execution.pm_context_mode === "auto"
+          ? execution.pm_context_mode
+          : undefined,
+    }));
+  return executions.length > 0 ? executions : undefined;
+}
+
 function normalizeTestRunSummary(
   value: ItemTestRunSummary,
 ): ItemTestRunSummary {
@@ -1026,6 +1057,7 @@ function normalizeTestRunSummary(
     fail_on_skipped_triggered:
       value.fail_on_skipped_triggered === true ? true : undefined,
     measurements: normalizeTestRunMeasurements(value.measurements),
+    executions: normalizeTestRunExecutions(value.executions),
   };
   deleteUndefinedFields(summary as unknown as Record<string, unknown>);
   return summary;

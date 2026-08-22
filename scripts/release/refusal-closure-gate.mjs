@@ -103,6 +103,7 @@ function executeClosedDomainProbes(probes, spawn, environment) {
       expected_suggested_retry_args: contract.suggested_retry_args,
       retry_succeeded: retry.status === 0,
       diagnostic_output: envelope.diagnostic_output,
+      diagnostic_output_present: Object.hasOwn(envelope, "diagnostic_output"),
       diagnostic_actual_estimated_tokens: estimatePmOutputTokens(
         Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8"),
       ),
@@ -143,10 +144,17 @@ function scoreDiagnosticOutputCorpus(observations, baseline) {
       budget,
       reportedEstimatedTokens,
       originalObservationEstimatedTokens,
+      invalidReceipt,
     } = diagnosticObservationMetrics(observation);
     originalEstimatedTokens += originalObservationEstimatedTokens;
     estimatedTokens += reportedEstimatedTokens;
-    if (
+    if (invalidReceipt) {
+      findings.push({
+        code: "diagnostic_receipt_invalid",
+        probe_id: probeId,
+        detail: `${probeId} exposed a malformed diagnostic_output receipt.`,
+      });
+    } else if (
       reportedEstimatedTokens <= budget &&
       reportedEstimatedTokens === observation.diagnostic_actual_estimated_tokens
     ) {
@@ -180,21 +188,41 @@ function scoreDiagnosticOutputCorpus(observations, baseline) {
 }
 
 function diagnosticObservationMetrics(observation) {
+  const measured = observation.diagnostic_actual_estimated_tokens;
+  if (observation.diagnostic_output_present !== true) {
+    return {
+      budget:
+        resolvePmDiagnosticOutputBudget("error")
+          .default_max_estimated_tokens_by_format.json,
+      reportedEstimatedTokens: measured,
+      originalObservationEstimatedTokens: measured,
+      invalidReceipt: false,
+    };
+  }
   const receipt = observation.diagnostic_output;
-  if (receipt && typeof receipt === "object") {
+  if (
+    receipt !== null &&
+    typeof receipt === "object" &&
+    !Array.isArray(receipt) &&
+    Number.isSafeInteger(receipt.budget) &&
+    receipt.budget > 0 &&
+    Number.isSafeInteger(receipt.estimated_tokens) &&
+    receipt.estimated_tokens >= 0 &&
+    Number.isSafeInteger(receipt.original_estimated_tokens) &&
+    receipt.original_estimated_tokens >= 0
+  ) {
     return {
       budget: receipt.budget,
       reportedEstimatedTokens: receipt.estimated_tokens,
       originalObservationEstimatedTokens: receipt.original_estimated_tokens,
+      invalidReceipt: false,
     };
   }
   return {
-    budget:
-      resolvePmDiagnosticOutputBudget("error")
-        .default_max_estimated_tokens_by_format.json,
-    reportedEstimatedTokens: observation.diagnostic_actual_estimated_tokens,
-    originalObservationEstimatedTokens:
-      observation.diagnostic_actual_estimated_tokens,
+    budget: 0,
+    reportedEstimatedTokens: measured,
+    originalObservationEstimatedTokens: measured,
+    invalidReceipt: true,
   };
 }
 
