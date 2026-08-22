@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- GH-1089: expose reproducible execution through supported CLI and MCP process configuration ([pm-gh1089](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1089.toon))
 - Budget recovery can recommend a smaller ceiling than the request that already truncated ([pm-xam9bt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xam9bt.toon))
 
 ### Security
@@ -16,6 +17,7 @@
 
 ### Other
 
+- Cross-process reproducibility gate: prove CLI and MCP deterministic runs are byte-identical and fail on ambient time leaks ([pm-vklr99](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vklr99.toon))
 - Expose agent probe controls and versioned legacy-author vocabulary through pm config and SDK mutation APIs ([pm-yds9dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yds9dt.toon))
 - Diagnostic output budget: errors, warnings, and recovery bundles are the output an agent reads most and the only output with no declared ceiling ([pm-cha95z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cha95z.toon))
 

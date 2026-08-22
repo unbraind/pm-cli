@@ -84,6 +84,15 @@ export * from "./core-governance.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
 export {
+  PM_REPRODUCIBLE_PROCESS_ENV,
+  createReproducibleProcessRunner,
+  resolveReproducibleProcessEnvironment,
+  runWithReproducibleProcessEnvironment,
+  type ReproducibleExecutionSettings,
+  type ReproducibleProcessEnvironment,
+  type ReproducibleProcessRunner,
+} from "./reproducibility/process.js";
+export {
   PM_WORKSPACE_RECIPE_SCHEMA,
   defineWorkspaceRecipe,
   executeWorkspaceRecipe,

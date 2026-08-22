@@ -1799,6 +1799,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "invalid_reproducible_process_environment",
+    meaning: "Invalid reproducible process environment condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/reproducibility/process.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "invalid_reproducible_process_environment",
+    aliases: [],
+  },
+  {
     code: "invalid_workspace_snapshot_target",
     meaning: "Invalid workspace snapshot target condition.",
     stability: "provisional",

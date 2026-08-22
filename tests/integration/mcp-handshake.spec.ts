@@ -25,6 +25,7 @@ import {
   createEmptyExtensionServiceRegistry,
 } from "../../src/core/extensions/extension-registries.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import {
   GRAPH_SUBCOMMAND_VALUES,
   PM_DEPRECATED_TOOL_ACTIONS,
@@ -2209,6 +2210,56 @@ describe("MCP protocol handshake", () => {
       lineHandler?.(JSON.stringify({ jsonrpc: "2.0", id: 93, method: "ping" }));
       await vi.waitFor(() => expect(write).toHaveBeenCalled());
     } finally {
+      write.mockRestore();
+      createInterface.mockRestore();
+    }
+  });
+
+  it("keeps typed per-request errors when stdio process configuration is invalid", async () => {
+    const originalClock = process.env.PM_CLOCK;
+    const originalSeed = process.env.PM_SEED;
+    let lineHandler: ((line: string) => void) | undefined;
+    const fakeInterface = {
+      on: vi.fn((event: string, handler: (line: string) => void) => {
+        if (event === "line") {
+          lineHandler = handler;
+        }
+        return fakeInterface;
+      }),
+    };
+    const createInterface = vi
+      .spyOn(readline, "createInterface")
+      .mockReturnValue(fakeInterface as never);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    try {
+      process.env.PM_CLOCK = "2026-08-22T12:00:00.000Z";
+      delete process.env.PM_SEED;
+      startMcpServer();
+      lineHandler?.(JSON.stringify({ jsonrpc: "2.0", id: 94, method: "ping" }));
+      await vi.waitFor(() => expect(write).toHaveBeenCalled());
+      const payload = JSON.parse(String(write.mock.calls[0]?.[0])) as {
+        error?: { code?: number; data?: { code?: string; recovery?: unknown } };
+      };
+      expect(payload.error).toMatchObject({
+        code: EXIT_CODE.USAGE,
+        data: {
+          code: "invalid_reproducible_process_environment",
+          recovery: { missing_required_fields: ["PM_SEED"] },
+        },
+      });
+    } finally {
+      if (originalClock === undefined) {
+        delete process.env.PM_CLOCK;
+      } else {
+        process.env.PM_CLOCK = originalClock;
+      }
+      if (originalSeed === undefined) {
+        delete process.env.PM_SEED;
+      } else {
+        process.env.PM_SEED = originalSeed;
+      }
       write.mockRestore();
       createInterface.mockRestore();
     }

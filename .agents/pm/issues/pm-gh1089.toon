@@ -1,0 +1,43 @@
+id: pm-gh1089
+title: "GH-1089: expose reproducible execution through supported CLI and MCP process configuration"
+description: "The published SDK can install a deterministic clock and seeded entropy, but process consumers invoking pm or pm-mcp cannot enter that context. Add one typed public SDK process-configuration contract and thin CLI/MCP adapters for PM_CLOCK, PM_CLOCK_TICK_MS, and PM_SEED without changing default wall-clock behavior."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-22T12:29:57.227Z"
+updated_at: "2026-08-22T13:31:28.585Z"
+closed_at: "2026-08-22T13:31:17.146Z"
+completed_at: "2026-08-22T13:31:17.146Z"
+author: "harness:codex"
+acceptance_criteria: "PM_CLOCK plus PM_SEED opts CLI, embedded CLI, and MCP process dispatch into the SDK deterministic context; PM_CLOCK_TICK_MS is optional and validated as a non-negative integer; partial or invalid configuration fails with a stable typed error and executable recovery; identical process sequences in fresh workspaces produce byte-identical identifiers, timestamps, and history; no variables preserves current wall-clock and random-entropy behavior; the public SDK owns parsing, validation, constants, types, and execution"
+goal: project management = context management
+objective: Make deterministic workspace execution reachable from every supported process transport without global monkey-patching
+value: "Conformance, golden-file, replay, and cross-language harnesses can compare authoritative pm bytes through supported interfaces"
+why_now: GitHub issue 1089 demonstrates that the closed SDK recipe feature leaves binary consumers on the original nondeterministic path
+parent: pm-usfg
+risk: medium
+confidence: high
+resolution: "Implemented the published SDK process-environment contract and thin bundled CLI/MCP adapters, preserving default nondeterminism and providing typed recovery for invalid opt-in."
+expected_result: "Published SDK configuration installs deterministic execution in CLI and MCP without affecting the unset default, and invalid input fails before dispatch with executable typed recovery."
+actual_result: "SDK exports, bundled CLI, direct and long-lived MCP adapters, generated contracts, operator docs, and exact transport coverage implement the full expected boundary."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rgaal,implements,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
+  pm-rbcvt2,discovered_from,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-22T12:29:57.227Z","harness:codex","Duplicate check 2026-08-22: certified full read covered 2534/2534 items across open closed and canceled with no omissions or unreadable records; exact,fuzzy,GitHub-number,process-environment,deterministic CLI/MCP,and parent-scope searches found the closed SDK-only owner pm-rbcvt2 and no process-transport owner. This item records the distinct post-close GH-1089 boundary gap."
+  "2026-08-22T13:31:01.859Z","harness:codex","Implementation evidence: the public SDK now owns PM_CLOCK/PM_CLOCK_TICK_MS/PM_SEED constants, parsing, typed validation, one-shot execution, and process-lifetime runners; bundled CLI and MCP are thin boundary adapters. Default execution remains unchanged. Generated error and public-surface contracts are current. Verification: exact coverage 56,908/56,908 statements, 42,536/42,536 branches, 11,838/11,838 functions, and 54,860/54,860 lines; pnpm lint (ESLint, zero jscpd clones, full static quality), pnpm typecheck, graph composition, record integrity, package parity, contracts, SDK surface, and transport budgets all pass."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,Generated SDK surface contract
+  src/cli/main.ts,project,Bundled CLI deterministic boundary
+  src/core/reproducibility/context.ts,project,Shared deterministic sequence runner
+  src/mcp/server.ts,project,MCP request and process-lifetime deterministic boundary
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated typed error catalog
+  src/sdk/index.ts,project,Published SDK exports
+  src/sdk/reproducibility/process.ts,project,Public process environment and runner contract
+  tests/fixtures/contracts/full.json,project,Typed error contract snapshot
+docs[1]{path,scope,note}:
+  docs/REPRODUCIBLE_WORKSPACES.md,project,CLI and MCP environment operator contract
+close_reason: "SDK-owned PM_CLOCK/PM_CLOCK_TICK_MS/PM_SEED support now reaches built CLI, embedded CLI, direct MCP, and long-lived MCP transports with generated contracts, documentation, real-process acceptance, and exact 100% coverage."
+body: ""

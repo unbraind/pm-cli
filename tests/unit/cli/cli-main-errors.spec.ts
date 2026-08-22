@@ -1271,6 +1271,22 @@ describe("CLI bootstrap entrypoints", () => {
     });
   });
 
+  it("renders invalid reproducible process configuration at the public CLI boundary", async () => {
+    const result = await runSourceCli(["--json", "--version"], {
+      ...process.env,
+      PM_CLOCK: "2026-08-22T12:00:00.000Z",
+      PM_SEED: undefined,
+    });
+
+    expect(result.code).toBe(EXIT_CODE.USAGE);
+    expect(result.stdout).toBe("");
+    expect(JSON.parse(result.stderr)).toMatchObject({
+      code: "invalid_reproducible_process_environment",
+      exit_code: EXIT_CODE.USAGE,
+      recovery: { missing_required_fields: ["PM_SEED"] },
+    });
+  });
+
   it("renders generic runPmCli failures through JSON and display handlers", async () => {
     const previousExitCode = process.exitCode;
     const emitTelemetryCommandError = vi.fn(async () => ({

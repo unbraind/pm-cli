@@ -17862,6 +17862,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "invalid_reproducible_process_environment",
+      "class": "usage",
+      "code": "invalid_reproducible_process_environment",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Invalid reproducible process environment condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/reproducibility/process.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "invalid_workspace_snapshot_target",
       "class": "usage",
       "code": "invalid_workspace_snapshot_target",

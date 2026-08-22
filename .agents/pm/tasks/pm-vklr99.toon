@@ -1,0 +1,59 @@
+id: pm-vklr99
+title: "Cross-process reproducibility gate: prove CLI and MCP deterministic runs are byte-identical and fail on ambient time leaks"
+description: "Add a permanent release/CI acceptance gate that executes real CLI and MCP process workflows twice in isolated fresh workspaces with the same declared clock, tick, and seed, compares authoritative tracker and history bytes, and includes negative controls for invalid configuration and default-path variability."
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-22T12:30:15.775Z"
+updated_at: "2026-08-22T13:31:28.048Z"
+closed_at: "2026-08-22T13:31:15.156Z"
+completed_at: "2026-08-22T13:31:15.156Z"
+author: "harness:codex"
+acceptance_criteria: The gate runs real packaged CLI and MCP transports rather than calling the context primitive directly; two isolated same-configuration runs compare byte-identical authoritative item and history outputs; a negative control proves differing seeds or absent process configuration is observable; invalid and partial environment contracts are covered; the gate is invoked by an existing mandatory CI path and has focused unit coverage
+goal: ci-detects-every-defect
+objective: Turn process-level reproducibility from documentation into a mechanical release invariant
+value: A future transport or timestamp call-site regression fails locally and in hosted CI with a replayable configuration
+why_now: GH-1089 proves SDK-only tests can stay green while the shipped binary remains nondeterministic
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Implemented a permanent real-process reproducibility gate with byte comparison, negative controls, typed transport recovery, and exact coverage of CLI/MCP boundaries."
+expected_result: Two equivalent fresh CLI/MCP process workflows produce byte-identical authoritative records; changed seeds differ; partial configuration returns stable typed recovery.
+actual_result: "Real built-process tests and independent temporary-directory smoke satisfy byte identity, seed sensitivity, and typed CLI/MCP exit-2 recovery; linked and full suites pass."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4jk8kx,implements,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
+  pm-gh1089,verifies,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
+  pm-rbcvt2,verifies,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
+  pm-a8lnoh,related,"2026-08-22T13:01:59.978Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-22T12:30:15.775Z","harness:codex","Duplicate check 2026-08-22: all-status certified corpus and exact/fuzzy searches for deterministic CLI,MCP,golden-byte,conformance,and process gates found broader open simulators and format programmes but no bounded transport-level reproducibility gate. This task is the executable proof for pm-gh1089 and does not claim the much wider fault simulator pm-a8lnoh or full format suite pm-4jk8kx."
+  "2026-08-22T12:46:28.753Z","harness:codex","Gate evidence: the first fresh-process comparison exposed a bundle-context split; after moving the boundary into cli/main, the next gate exposed seed reuse collisions across distinct CLI invocations. The final contract uses stable step-derived CLI seeds and one advancing process-lifetime MCP sequence. Focused verification passes 54 tests with byte-identical tasks/history and typed invalid-input recovery."
+  "2026-08-22T12:54:19.957Z","harness:codex","Repository-wide suite evidence: 7,775/7,776 tests passed; the only failure was the intentional 120-file directory-cap contract after adding new SDK/unit files. Moved the adapter and unit gate into focused reproducibility subdirectories; the directory-cap contract and focused process suite now pass 27/27."
+  "2026-08-22T13:01:45.614Z","harness:codex","Graph assurance remediation: the exact new prose gap was pm-vklr99 -> pm-a8lnoh, which the gate description explicitly contrasts as a larger simulator. Added a typed related edge; no baseline or exemption changed."
+  "2026-08-22T13:02:00.859Z","harness:codex","Correction: the first dependency mutation was refused because the shorthand was invalid; the subsequent canonical id=pm-a8lnoh,kind=related mutation succeeded. The earlier comment's edge-added claim applies only after this successful receipt."
+  "2026-08-22T13:31:02.413Z","harness:codex","Acceptance evidence: PM-linked command passed 177/177 across real fresh CLI/MCP process comparison, SDK resolver coverage, stdio fallback, and public CLI error rendering. Full corpus passed 559/559 files and 7,778/7,778 tests at exact 100/100/100/100 coverage. Independent mktemp smoke proved byte-identical tasks/history for two built-CLI workflows plus typed exit-2 recovery from both built CLI and MCP; bounded temporary data was deleted with find -P -xdev -depth -delete."
+learnings[1]{created_at,author,text}:
+  "2026-08-22T13:31:02.944Z","harness:codex","A deterministic one-shot CLI process restarts its entropy sequence, so multi-step shell workflows need stable step-derived seeds. A serialized long-lived MCP transport should instead retain one validated process runner so its sequence advances across requests. Exercise both process lifetimes with authoritative byte comparisons; calling only the context primitive cannot prove the bundled transport boundary."
+files[4]{path,scope,note}:
+  tests/integration/mcp-handshake.spec.ts,project,Long-lived stdio invalid-configuration fallback coverage
+  tests/integration/reproducible-process.integration.spec.ts,project,Fresh-process byte identity and invalid-input gate
+  tests/unit/cli/cli-main-errors.spec.ts,project,Public CLI invalid-configuration boundary coverage
+  tests/unit/sdk/reproducibility/process.spec.ts,project,SDK resolver and sequence runner coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240
+test_runs[1]:
+  - run_id: test-local-mt4f0s0c-gnsxck
+    kind: test
+    status: passed
+    started_at: "2026-08-22T13:29:35.094Z"
+    finished_at: "2026-08-22T13:29:53.100Z"
+    recorded_at: "2026-08-22T13:29:53.100Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode}:
+      node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema
+close_reason: "Real CLI and MCP process conformance is mechanically enforced: 177 linked tests and the 7,778-test exact-coverage corpus pass, and the independent temporary-directory smoke confirmed authoritative byte identity plus typed failures."
+body: ""

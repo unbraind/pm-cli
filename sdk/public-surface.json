@@ -4227,6 +4227,12 @@
           "signature": "() => RelationshipKindRegistry | calls: () => RelationshipKindRegistry"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createReproducibleProcessRunner",
+          "signature": "(environment: ReproducibleProcessEnvironment) => ReproducibleProcessRunner | calls: (environment: ReproducibleProcessEnvironment) => ReproducibleProcessRunner"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "CreateResult",
@@ -10053,6 +10059,12 @@
           "signature": "readonly [\"suggested_retry\", \"candidate_command\", \"example\", \"next_step\", \"migration_hint\", \"restore_with\"]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_REPRODUCIBLE_PROCESS_ENV",
+          "signature": "Readonly<{ readonly clock: \"PM_CLOCK\"; readonly tickMs: \"PM_CLOCK_TICK_MS\"; readonly seed: \"PM_SEED\"; }>"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_SUCCESS_EXIT_CODES",
@@ -12958,6 +12970,24 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReproducibleExecutionSettings",
+          "signature": "export interface ReproducibleExecutionSettings { seed: string; clock: string; tickMs: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ReproducibleProcessEnvironment",
+          "signature": "export type ReproducibleProcessEnvironment = Readonly<Record<string, string | undefined>>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ReproducibleProcessRunner",
+          "signature": "export type ReproducibleProcessRunner = ReproducibleExecutionRunner;"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "requireTerminalReason",
           "signature": "(input: TerminalReasonInput, required: boolean) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean) => TerminalReasonResolution"
@@ -13465,6 +13495,12 @@
           "kind": "function",
           "name": "resolveRegisteredVectorStoreAdapter",
           "signature": "(registrations: ExtensionRegistrationRegistry | null, configuredAdapter: string | undefined) => RegisteredExtensionVectorStoreAdapter | null | calls: (registrations: ExtensionRegistrationRegistry | null, configuredAdapter: string | undefined) => RegisteredExtensionVectorStoreAdapter | null"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveReproducibleProcessEnvironment",
+          "signature": "(environment: ReproducibleProcessEnvironment) => ReproducibleExecutionSettings | undefined | calls: (environment: ReproducibleProcessEnvironment) => ReproducibleExecutionSettings | undefined"
         },
         {
           "classification": "advanced_export",
@@ -14491,6 +14527,12 @@
           "kind": "function",
           "name": "runWithHarnessDetectionSignals",
           "signature": "<T>(signals: HarnessDetectionSignals, callback: () => T) => T | calls: <T>(signals: HarnessDetectionSignals, callback: () => T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runWithReproducibleProcessEnvironment",
+          "signature": "<T>(environment: ReproducibleProcessEnvironment, operation: () => Promise<T>) => Promise<T> | calls: <T>(environment: ReproducibleProcessEnvironment, operation: () => Promise<T>) => Promise<T>"
         },
         {
           "classification": "supported",
@@ -30192,6 +30234,7 @@
     "invalid_provenance_predicate",
     "invalid_query_cursor",
     "invalid_read_output_session",
+    "invalid_reproducible_process_environment",
     "invalid_workspace_snapshot_target",
     "item_already_active",
     "item_document_invalid",

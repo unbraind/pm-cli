@@ -47,6 +47,10 @@ import { commitItemMutations } from "../sdk/item-transaction.js";
 import { isRuntimeRecord } from "../sdk/runtime-input.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
+  createReproducibleProcessRunner,
+  runWithReproducibleProcessEnvironment,
+} from "../sdk/reproducibility/process.js";
+import {
   parseAtomicMutationControls,
   resolveItemMutationDocument,
 } from "../sdk/structured-mutations.js";
@@ -344,17 +348,18 @@ function resultContent(
 function errorContent(error: unknown): Record<string, unknown> {
   const code = error instanceof PmCliError ? error.exitCode : 1;
   const message = error instanceof Error ? error.message : String(error);
+  const details = error instanceof PmCliError ? error.context : undefined;
   return {
     isError: true,
     content: [
       {
         type: "text",
-        text: JSON.stringify({ error: message, code }, null, 2),
+        text: JSON.stringify({ error: message, code, details }, null, 2),
       },
     ],
     // Keep `result` present on the error envelope so consumers can read
     // `structuredContent.result` uniformly across success and failure (pm-l40h).
-    structuredContent: { result: null, error: message, code },
+    structuredContent: { result: null, error: message, code, details },
   };
 }
 
@@ -562,7 +567,7 @@ function renderWorkflowPrompt(
 }
 
 /** Implements handle request for the public runtime surface of this module. */
-export async function handleRequest(
+async function handleRequestInReproducibleContext(
   request: JsonRpcRequest,
 ): Promise<Record<string, unknown> | undefined> {
   if (!request.id && request.method?.startsWith("notifications/")) {
@@ -630,6 +635,15 @@ export async function handleRequest(
   );
 }
 
+/** Dispatch one MCP request under supported process-level reproducibility settings. */
+export async function handleRequest(
+  request: JsonRpcRequest,
+): Promise<Record<string, unknown> | undefined> {
+  return runWithReproducibleProcessEnvironment(process.env, () =>
+    handleRequestInReproducibleContext(request),
+  );
+}
+
 function writeResponse(
   id: JsonRpcRequest["id"],
   payload: Record<string, unknown>,
@@ -642,8 +656,9 @@ function writeResponse(
 function writeError(id: JsonRpcRequest["id"], error: unknown): void {
   const code = error instanceof PmCliError ? error.exitCode : -32603;
   const message = error instanceof Error ? error.message : String(error);
+  const data = error instanceof PmCliError ? error.context : undefined;
   process.stdout.write(
-    `${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })}\n`,
+    `${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message, data } })}\n`,
   );
 }
 
@@ -651,7 +666,10 @@ function writeError(id: JsonRpcRequest["id"], error: unknown): void {
 // as a standalone async unit so the stdio loop can enqueue it onto a serial
 // queue (process lines in arrival order) and tests can drive it directly.
 /** Implements process rpc line for the public runtime surface of this module. */
-export async function processRpcLine(line: string): Promise<void> {
+async function processRpcLineWithHandler(
+  line: string,
+  requestHandler: typeof handleRequestInReproducibleContext | typeof handleRequest,
+): Promise<void> {
   if (line.trim().length === 0) {
     return;
   }
@@ -676,7 +694,7 @@ export async function processRpcLine(line: string): Promise<void> {
   }
   const shouldRespond = Object.prototype.hasOwnProperty.call(request, "id");
   try {
-    const result = await handleRequest(request);
+    const result = await requestHandler(request);
     if (shouldRespond && result !== undefined) {
       writeResponse(request.id, result);
     }
@@ -692,6 +710,11 @@ export async function processRpcLine(line: string): Promise<void> {
   }
 }
 
+/** Implements process rpc line for the public runtime surface of this module. */
+export async function processRpcLine(line: string): Promise<void> {
+  await processRpcLineWithHandler(line, handleRequest);
+}
+
 /** Implements start mcp server for the public runtime surface of this module. */
 export function startMcpServer(): void {
   const rl = readline.createInterface({
@@ -703,8 +726,20 @@ export function startMcpServer(): void {
   // concurrently, so a client that pipelined two mutations on the same item
   // (without awaiting the first response) hit a lock conflict on the second.
   const queue = createSerialQueue();
+  let processLine: (line: string) => Promise<void>;
+  try {
+    const runInProcessContext = createReproducibleProcessRunner(process.env);
+    processLine = (line) =>
+      runInProcessContext(() =>
+        processRpcLineWithHandler(line, handleRequestInReproducibleContext),
+      );
+  } catch {
+    // Preserve one typed JSON-RPC error per request when process configuration
+    // is invalid; processRpcLine resolves the same configuration fail-closed.
+    processLine = processRpcLine;
+  }
   rl.on("line", (line) => {
-    void queue.enqueue(() => processRpcLine(line));
+    void queue.enqueue(() => processLine(line));
   });
 }
 
