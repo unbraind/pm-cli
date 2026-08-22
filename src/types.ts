@@ -328,6 +328,18 @@ export interface LinkedFile {
   note?: string;
 }
 
+/** Valid immutable provenance captured when a linked command enters tracker data. */
+export interface LinkedTestProvenance {
+  /** Author identity recorded by the originating mutation. */
+  author: string;
+  /** ISO 8601 time at which the command entered tracker data. */
+  created_at: string;
+  /** Mutation path that introduced the command. */
+  source_kind: "local_mutation" | "merge_union";
+  /** Best-effort Git branch or hosted head ref of the originating mutation. */
+  source_ref?: string;
+}
+
 /** Documents the linked test payload exchanged by command, SDK, and package integrations. */
 export interface LinkedTest {
   /** Value that configures or reports command for this contract. */
@@ -343,16 +355,9 @@ export interface LinkedTest {
   /** Strategy used for source-workspace visibility and command working directory. */
   workspace_context_mode?: "source" | "isolated" | "snapshot";
   /** Immutable provenance captured when the linked command enters tracker data. */
-  provenance?: {
-    /** Author identity recorded by the originating mutation. */
-    author: string;
-    /** ISO 8601 time at which the command entered tracker data. */
-    created_at: string;
-    /** Mutation path that introduced the command. */
-    source_kind: "local_mutation" | "merge_union";
-    /** Best-effort Git branch or hosted head ref of the originating mutation. */
-    source_ref?: string;
-  };
+  provenance?: LinkedTestProvenance;
+  /** Explicit fail-closed marker retained when stored provenance is malformed. */
+  provenance_invalid?: true;
   /** Value that configures or reports env set for this contract. */
   env_set?: Record<string, string>;
   /** Value that configures or reports env clear for this contract. */

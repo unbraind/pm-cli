@@ -2828,7 +2828,12 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("  createExtensionTestHarness,");
       // The search variant imports SDK types for its strict-typed synthetic fixtures.
       expect(sampleTest).toContain('import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";');
-      expect(sampleTest).toContain("settings: {} as PmSettings");
+      expect(sampleTest).toContain(
+        "record_results_to_items: false",
+      );
+      expect(sampleTest).toContain(
+        "allow_untrusted_linked_tests: false",
+      );
       expect(sampleTest).toContain('capabilities: ["commands", "search"]');
       expect(sampleTest).toContain("ext.assertSearchProvider({");
       expect(sampleTest).toContain('provider: "starter-search-search"');

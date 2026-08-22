@@ -479,8 +479,9 @@ execution boundary. New command entries record author, creation time, source
 branch when available, and whether the item merge driver introduced the entry.
 Locally created commands keep their previous run behavior. Commands marked as
 merge-unioned or carrying a different source ref fail before process creation.
-Malformed provenance is preserved as an invalid sentinel and receives the same
-fail-closed treatment; it is never normalized into a trusted legacy command.
+Malformed provenance is sanitized to the additive `provenance_invalid` marker
+and receives the same fail-closed treatment; it is never normalized into a
+trusted legacy command.
 These pre-execution refusals use the `trust_refusal` failure category, separate
 from command or assertion failures.
 
@@ -496,8 +497,9 @@ pm test <item-id> --run --allow-untrusted-linked-tests
 ```
 
 Acknowledgments live in the clone-local ignored runtime directory and bind to
-the full command, context, and provenance fingerprint; editing any of those
-fields requires a new review. Enabling the project policy alone never executes
+the full command, tracker/workspace context, environment controls, host-safety
+mode, and provenance fingerprint; editing any of those fields requires a new
+review. Enabling the project policy alone never executes
 an untrusted command, and the per-run flag alone is also refused. Inspect all
 unacknowledged entries without executing them with:
 

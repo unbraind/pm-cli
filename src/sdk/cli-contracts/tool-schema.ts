@@ -1116,7 +1116,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "metricDiff",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
-      mutuallyExclusive: [["acknowledgeLinkedTests", "run"]],
+      mutuallyExclusive: [
+        ["acknowledgeLinkedTests", "run"],
+        ["acknowledgeLinkedTests", "background"],
+      ],
     },
     "test-all": {
       optional: [

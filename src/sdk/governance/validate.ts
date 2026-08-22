@@ -104,6 +104,7 @@ import { runFiles } from "../files.js";
 import { extractReferencedPmItemIdsFromCommand } from "../test/linked-command-detection.js";
 import {
   resolveLinkedTestSourceRef,
+  resolveLinkedTestSourceWorkspaceRoot,
   resolveLinkedTestTrustBatch,
   type LinkedTestTrustDecision,
 } from "../test/trust.js";
@@ -2845,20 +2846,22 @@ async function buildFilesCheck(
 }
 /* c8 ignore stop */
 
-/* c8 ignore start -- command preview truncation formatting is covered by command-reference integration fixtures */
+/** Collapse a linked command to the bounded preview used in validation rows. */
+function summarizeCommandPreview(command: string): string {
+  const normalizedCommand = command.trim().replaceAll(/\s+/g, " ");
+  return normalizedCommand.length > 120
+    ? `${normalizedCommand.slice(0, 117)}...`
+    : normalizedCommand;
+}
+
+/** Join command-reference identity and its bounded preview for diagnostics. */
 function summarizeCommandReferenceRow(
   ownerId: string,
   referencedId: string,
   command: string,
 ): string {
-  const normalizedCommand = command.trim().replaceAll(/\s+/g, " ");
-  const commandPreview =
-    normalizedCommand.length > 120
-      ? `${normalizedCommand.slice(0, 117)}...`
-      : normalizedCommand;
-  return `${ownerId}:${referencedId}:${commandPreview}`;
+  return `${ownerId}:${referencedId}:${summarizeCommandPreview(command)}`;
 }
-/* c8 ignore stop */
 
 /** Render portable diagnostics for linked tests that this clone has not trusted. */
 function buildUntrustedLinkedTestRows(
@@ -2869,14 +2872,7 @@ function buildUntrustedLinkedTestRows(
   linkedTests.forEach(({ item, linkedTest }, index) => {
     const trust = trustDecisions[index];
     if (trust.trusted) return;
-    const command = summarizeCommandReferenceRow(
-      item.id,
-      item.id,
-      linkedTest.command ?? "",
-    )
-      .split(":")
-      .slice(2)
-      .join(":");
+    const command = summarizeCommandPreview(linkedTest.command ?? "");
     rows.push(
       `${item.id}:${trust.source_ref ?? "unknown"}->${trust.current_source_ref ?? "unknown"}:${command}`,
     );
@@ -2900,7 +2896,9 @@ async function buildCommandReferencesCheck(
   const linkedTests = items.flatMap((item) =>
     (item.tests ?? []).map((linkedTest) => ({ item, linkedTest })),
   );
-  const currentSourceRef = await resolveLinkedTestSourceRef();
+  const currentSourceRef = await resolveLinkedTestSourceRef(
+    resolveLinkedTestSourceWorkspaceRoot(),
+  );
   const trustDecisions = await resolveLinkedTestTrustBatch(
     pmRoot,
     linkedTests.map(({ linkedTest }) => linkedTest),

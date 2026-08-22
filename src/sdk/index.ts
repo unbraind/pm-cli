@@ -1254,9 +1254,11 @@ export {
 } from "./test/parsers.js";
 export {
   acknowledgeLinkedTests,
+  attachLinkedTestMutationProvenance,
   attachLinkedTestProvenance,
   linkedTestTrustFingerprint,
   resolveLinkedTestSourceRef,
+  resolveLinkedTestSourceWorkspaceRoot,
   resolveLinkedTestTrust,
   resolveLinkedTestTrustBatch,
   type LinkedTestTrustDecision,

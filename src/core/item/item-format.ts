@@ -1188,12 +1188,16 @@ function normalizeLinkedTestWorkspaceContextMode(
 
 function normalizeLinkedTestProvenance(
   value: LinkedTest["provenance"],
-): LinkedTest["provenance"] | undefined {
+  invalid: LinkedTest["provenance_invalid"],
+): Pick<LinkedTest, "provenance" | "provenance_invalid"> {
+  if (invalid === true) {
+    return { provenance_invalid: true };
+  }
   if (value === undefined) {
-    return undefined;
+    return {};
   }
   if (!isPlainObjectRecord(value)) {
-    return { source_kind: "invalid" } as unknown as LinkedTest["provenance"];
+    return { provenance_invalid: true };
   }
   const author = trimStringOrUndefined(value.author);
   const createdAt = trimStringOrUndefined(value.created_at);
@@ -1207,13 +1211,15 @@ function normalizeLinkedTestProvenance(
     // Preserve malformed provenance as an explicit runtime sentinel. Dropping
     // it would make a tampered entry indistinguishable from a trusted legacy
     // command in the clone-local trust resolver.
-    return { ...value } as LinkedTest["provenance"];
+    return { provenance_invalid: true };
   }
   return {
-    author,
-    created_at: createdAt,
-    source_kind: sourceKind,
-    source_ref: trimStringOrUndefined(value.source_ref),
+    provenance: {
+      author,
+      created_at: createdAt,
+      source_kind: sourceKind,
+      source_ref: trimStringOrUndefined(value.source_ref),
+    },
   };
 }
 
@@ -1232,7 +1238,10 @@ function normalizeLinkedTest(value: LinkedTest): LinkedTest {
     workspace_context_mode: normalizeLinkedTestWorkspaceContextMode(
       value.workspace_context_mode,
     ),
-    provenance: normalizeLinkedTestProvenance(value.provenance),
+    ...normalizeLinkedTestProvenance(
+      value.provenance,
+      value.provenance_invalid,
+    ),
     env_set: normalizeStringRecord(value.env_set),
     env_clear: normalizeTrimmedStringList(value.env_clear),
     shared_host_safe: value.shared_host_safe === true ? true : undefined,

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:tests",environment-parity,linked-tests,regression
 created_at: "2026-08-04T09:30:07.005Z"
-updated_at: "2026-08-22T22:49:53.261Z"
-closed_at: "2026-08-22T22:49:52.804Z"
-completed_at: "2026-08-22T22:49:52.804Z"
+updated_at: "2026-08-22T23:27:13.232Z"
+closed_at: "2026-08-22T23:27:12.437Z"
+completed_at: "2026-08-22T23:27:12.437Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Per-test execution context is explicit, persisted, and visible before command execution.; Self-sandboxing repository test and benchmark commands have parity between direct and linked execution without access to real tracker data.; Merge and scale regression fixtures cover schema, tracker-copy, and self-sandboxing modes with guided recovery.; The runner distinguishes assertion failure caused by execution context from an actual product gate regression."
@@ -20,10 +20,10 @@ release: v2026.8.23
 severity: high
 environment: "pm CLI 2026.8.4, linked-test default pm_context_mode=schema"
 repro_steps: "Link the focused merge suite and pnpm benchmark:scale:check to a PM item, run pm test <id> --run --progress, then run the same commands directly through scripts/run-tests.mjs and pnpm."
-resolution: "Completed linked-test context parity across SDK, CLI, MCP schema, batch execution, receipts, diagnostics, and generated contracts."
-expected_result: "Recorded linked tests and test-all preserve explicit tracker and workspace semantics, expose requested and effective context, and distinguish trust refusals from product assertions."
-actual_result: "Single-item and batch execution now forward and report workspace/trust controls consistently; background acknowledgement is refused; focused, manual, static, lint, and exact full-coverage gates pass."
-fixed_version: 2026.8.23
+resolution: "Shipped explicit linked-test tracker/workspace execution contracts, source-root-aware validation, SDK helper parity, and requested/effective receipts with focused, manual, full-coverage, and hosted evidence."
+expected_result: "Linked commands execute with an explicit paired tracker/workspace context, preserve sandbox safety, and report requested/effective context and trust diagnostics consistently across SDK, CLI, and MCP."
+actual_result: "Before the fix, linked execution silently injected a schema tracker while retaining source-workspace semantics, causing direct-versus-linked drift and misclassified failures."
+fixed_version: v2026.8.23
 customer_impact: Agents cannot trust the canonical linked-test evidence loop and may misclassify orchestration-context failures as product regressions.
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,implements,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
@@ -34,7 +34,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-ed28wi,verifies,"2026-08-22T19:13:03.735Z","harness:codex","cli:update:dep",detected
   pm-gh1091,discovered_from,"2026-08-22T19:13:33.082Z","harness:codex","cli:update:dep",detected
   pm-u5le,discovered_from,"2026-08-22T19:13:33.082Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-04T09:30:24.732Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for linked-test schema sandbox, PM_PATH merge-driver warnings, non-PM benchmark context drift, direct-versus-linked parity, and self-sandboxing repository commands. Closed pm-uawujr fixed package prepare source fallback; closed pm-oslr delivered linked execution; open pm-ed28wi owns trust/allowlisting. None owns the reproduced semantic parity failure for already-sandboxed non-PM commands."
   "2026-08-22T07:27:50.502Z","harness:codex","Recurrence evidence (2026-08-22): pnpm changelog:pm:check passed directly against the live project and reported CHANGELOG.md unchanged with 2,167 closed items. When linked with pm_context_mode=tracker, pm test copied all 2,534 tracker items into the sandbox but retained the source checkout as the output-file workspace; the extension generated from the sandbox tracker and compared against CHANGELOG.md, then falsely reported it out of date. This is the existing issue, so no duplicate was created. The tracker-quality assurance command did pass in tracker context, proving that per-test context metadata works when the command has no coupled source-workspace artifact."
   "2026-08-22T07:37:11.696Z","harness:codex","Hosted recurrence evidence (2026-08-22): the exact-head static gate correctly rejected a host-specific absolute checkout path in this item. pm history-redact preview found one historical and one projected-item occurrence with zero preexisting hash mismatch; the applied redaction replaced it with workspace-relative CHANGELOG.md, recomputed the chain, appended an audited history_redact marker, and verified the resulting stream."
@@ -42,7 +42,8 @@ comments[7]{created_at,author,text}:
   "2026-08-22T18:26:47.821Z","harness:codex","Verification evidence 2026-08-22: explicit source|isolated|snapshot workspace contracts ship through SDK, CLI flags, generated tool schema 4.9.0, item serialization, background forwarding, and docs. Manual temporary Git workspace proved source_ref visibility, foreign-checkout refusal, dual-consent override, clone-local acknowledgment, and snapshot no-writeback. Full suite passed 563 files / 7,794 tests with exact 100/100/100/100 coverage; pnpm lint, typecheck, contract snapshots, SDK surface, and static-quality gates passed."
   "2026-08-22T19:03:33.792Z","harness:codex","Hosted CI remediation evidence: snapshot trust assertion now accepts both valid same-source states (local_mutation in a detached temp repo and local_source_ref when CI resolves the source checkout ref). Intentional linked-test help/contracts and validate trust-diagnostic growth are captured by regenerated governed token baselines; focused integration, agent token-surface, and release token-budget gates pass. The canonical GH-1091 PM item was linked to the existing manifest-authoring primitive pm-u5le, restoring graph structural resilience without loosening the graph bridge-edge ceiling; tracker-context-quality passes with no failed assertions."
   "2026-08-22T22:49:42.717Z","harness:codex","Final continuation evidence 2026-08-23: test-all now forwards workspace and trust controls, rejects background acknowledgement, preserves requested versus effective workspace receipts, and classifies trust refusals separately from assertion failures. Linked PM runs passed 37 adapter tests plus the context suite; the complete sandboxed matrix passed 563 files / 7,797 tests with exact 100% statements, branches, functions, and lines. pnpm lint, duplicate detection, and every static assurance gate passed."
-files[30]{path,scope,note}:
+  "2026-08-22T23:25:59.094Z","harness:codex","Review remediation evidence: tool schema now rejects acknowledge+background as well as acknowledge+run; validation resolves Git identity from PM_SOURCE_WORKSPACE_ROOT; public SDK exports the mutation-provenance and source-workspace helpers; command previews use one bounded formatter. Focused contract, validation, SDK-index, and full exact-coverage gates passed."
+files[31]{path,scope,note}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,linked-test execution context contract
   scripts/agent-token-surface-baseline.json,project,Hosted CLI help token-surface ratchet for linked-test flags
   scripts/release/flag-help-baseline.json,project,linked-test execution context contract
@@ -58,6 +59,7 @@ files[30]{path,scope,note}:
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,linked-test execution context contract
   src/sdk/cli-contracts/tool-schema.ts,project,linked-test execution context contract
   src/sdk/flag-invocation-contracts.ts,project,linked-test execution context contract
+  src/sdk/governance/validate.ts,project,reviewed validation source-root and preview parity
   src/sdk/index.ts,project,linked-test execution context contract
   src/sdk/test/batch.ts,project,linked-test execution context contract
   src/sdk/test/entry.ts,project,linked-test execution context contract
@@ -115,7 +117,7 @@ docs[3]{path,scope,note}:
   docs/SDK_EVIDENCE_TRACEABILITY.md,project,SDK evidence receipt semantics
   docs/SDK.md,project,SDK linked-test execution context contract
   docs/TESTING.md,project,linked-test execution context and evidence
-close_reason: "Delivered explicit and truthful linked-test context behavior across SDK, CLI, batch execution, receipts, diagnostics, docs, and generated contracts; linked tests, manual consumer acceptance, lint/static gates, and 7,797-test exact coverage pass."
+close_reason: "Linked-test context parity completed with explicit requested/effective tracker and workspace modes, source-root validation, SDK exports, regression coverage, and exact full coverage."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added

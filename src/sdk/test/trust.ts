@@ -11,13 +11,15 @@ import path from "node:path";
 import { promisify } from "node:util";
 import {
   ensureDir,
-  isFileMissingError,
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { isTimestampLiteral } from "../../core/shared/time.js";
 import { getRuntimePath } from "../../core/store/paths.js";
-import type { LinkedTest } from "../../types/index.js";
+import type {
+  LinkedTest,
+  LinkedTestProvenance,
+} from "../../types/index.js";
 
 const execFileAsync = promisify(execFile);
 const LINKED_TEST_TRUST_LEDGER_VERSION = 1;
@@ -73,10 +75,9 @@ async function readTrustLedger(pmRoot: string): Promise<LinkedTestTrustLedger> {
       version: LINKED_TEST_TRUST_LEDGER_VERSION,
       acknowledged: parsed.acknowledged,
     };
-  } catch (error: unknown) {
-    if (isFileMissingError(error)) {
-      return emptyTrustLedger();
-    }
+  } catch {
+    // A missing, corrupt, or unreadable ledger grants no acknowledgements.
+    // The local/source-ref provenance checks remain independent of this file.
     return emptyTrustLedger();
   }
 }
@@ -115,7 +116,7 @@ export function resolveLinkedTestSourceWorkspaceRoot(
 
 function hasValidLinkedTestProvenance(
   provenance: LinkedTest["provenance"],
-): boolean {
+): provenance is LinkedTestProvenance {
   if (provenance === null || typeof provenance !== "object") return false;
   return (
     typeof provenance.author === "string" &&
@@ -185,7 +186,11 @@ export function linkedTestTrustFingerprint(test: LinkedTest): string {
       scope: test.scope,
       pm_context_mode: test.pm_context_mode ?? null,
       workspace_context_mode: test.workspace_context_mode ?? null,
+      env_set: test.env_set ?? null,
+      env_clear: test.env_clear ?? null,
+      shared_host_safe: test.shared_host_safe ?? null,
       provenance: test.provenance ?? null,
+      provenance_invalid: test.provenance_invalid ?? null,
     }),
   );
 }
@@ -207,10 +212,25 @@ function resolveLinkedTestTrustFromLedger(
 ): LinkedTestTrustDecision {
   const fingerprint = linkedTestTrustFingerprint(test);
   const sourceRef = test.provenance?.source_ref;
-  if (test.provenance === undefined) {
+  if (
+    test.provenance === undefined &&
+    test.provenance_invalid !== true
+  ) {
     return { fingerprint, trusted: true, reason: "legacy" };
   }
-  if (!hasValidLinkedTestProvenance(test.provenance)) {
+  const acknowledged = Object.hasOwn(ledger.acknowledged, fingerprint);
+  if (
+    test.provenance_invalid === true ||
+    !hasValidLinkedTestProvenance(test.provenance)
+  ) {
+    if (acknowledged) {
+      return {
+        fingerprint,
+        trusted: true,
+        reason: "acknowledged",
+        ...linkedTestTrustRefs(undefined, currentSourceRef),
+      };
+    }
     return {
       fingerprint,
       trusted: false,
@@ -242,7 +262,7 @@ function resolveLinkedTestTrustFromLedger(
       current_source_ref: currentSourceRef,
     };
   }
-  if (Object.hasOwn(ledger.acknowledged, fingerprint)) {
+  if (acknowledged) {
     return {
       fingerprint,
       trusted: true,

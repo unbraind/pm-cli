@@ -133,6 +133,18 @@ describe("linked-test trust", () => {
       linkedTestTrustFingerprint({ ...localTest, path: "tests/a.spec.ts" }),
     ).not.toBe(fingerprint);
     expect(
+      linkedTestTrustFingerprint({
+        ...localTest,
+        env_set: { PM_TEST_VALUE: "changed" },
+      }),
+    ).not.toBe(fingerprint);
+    expect(
+      linkedTestTrustFingerprint({ ...localTest, env_clear: ["PM_TOKEN"] }),
+    ).not.toBe(fingerprint);
+    expect(
+      linkedTestTrustFingerprint({ ...localTest, shared_host_safe: true }),
+    ).not.toBe(fingerprint);
+    expect(
       linkedTestTrustFingerprint({ path: "tests/a.spec.ts", scope: "project" }),
     ).toMatch(/^[a-f0-9]{64}$/);
   });
@@ -248,18 +260,13 @@ describe("linked-test trust", () => {
         trusted: false,
         reason: "foreign_source_ref",
       });
+      const invalidProvenanceTest: LinkedTest = {
+        command: "node --version",
+        scope: "project",
+        provenance_invalid: true,
+      };
       await expect(
-        resolveLinkedTestTrust(
-          pmRoot,
-          {
-            command: "node --version",
-            scope: "project",
-            provenance: {
-              source_kind: "merge_union",
-            } as LinkedTest["provenance"],
-          },
-          "main",
-        ),
+        resolveLinkedTestTrust(pmRoot, invalidProvenanceTest, "main"),
       ).resolves.toMatchObject({
         trusted: false,
         reason: "invalid_provenance",
@@ -308,6 +315,19 @@ describe("linked-test trust", () => {
           resolveLinkedTestTrust(pmRoot, localTest, "main"),
         ).resolves.toMatchObject({ trusted: false });
       }
+
+      await acknowledgeLinkedTests(
+        pmRoot,
+        [invalidProvenanceTest],
+        "2026-08-22T13:59:00.000Z",
+      );
+      await expect(
+        resolveLinkedTestTrust(pmRoot, invalidProvenanceTest, "main"),
+      ).resolves.toMatchObject({
+        trusted: true,
+        reason: "acknowledged",
+        current_source_ref: "main",
+      });
 
       const acknowledgement = await acknowledgeLinkedTests(
         pmRoot,

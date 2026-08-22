@@ -229,6 +229,10 @@ describe("linked-test workspace and trust contracts", () => {
         { cwd: sourceRoot, expectJson: true },
       );
       expect(isolated.code).toBe(0);
+      expect((isolated.json as TestEnvelope).run_results[0]).toMatchObject({
+        status: "passed",
+        stdout: "false:false:false",
+      });
       expect((isolated.json as TestEnvelope).execution_context).toMatchObject({
         requested_workspace_context_mode: "isolated",
         workspace_context_mode: "isolated",

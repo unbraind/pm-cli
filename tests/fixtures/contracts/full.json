@@ -32741,6 +32741,14 @@
                 "run"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "acknowledgeLinkedTests",
+                "background"
+              ]
+            }
           }
         ],
         "properties": {
@@ -50900,6 +50908,14 @@
               "required": [
                 "acknowledgeLinkedTests",
                 "run"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "acknowledgeLinkedTests",
+                "background"
               ]
             }
           }

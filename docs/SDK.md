@@ -1706,7 +1706,11 @@ Workspace results distinguish the run-level requested mode from the effective
 per-test mode. `isolated` executes from an empty disposable directory;
 `snapshot` executes from a filtered disposable workspace. Trust preflight
 failures report `trust_refusal`, while malformed or incomplete provenance uses
-the fail-closed `invalid_provenance` trust reason.
+the additive `provenance_invalid` storage marker and fail-closed
+`invalid_provenance` trust reason. Package mutation adapters can call
+`attachLinkedTestMutationProvenance` so Git inspection occurs only when commands
+are added; `resolveLinkedTestSourceWorkspaceRoot` keeps their source-ref lookup
+aligned with CLI execution and `PM_SOURCE_WORKSPACE_ROOT` overrides.
 When item test-result tracking is enabled, `measure` persists typed numeric
 evidence on the producing run. Each entry has a stable name, finite numeric
 value, optional unit and threshold, and the run timestamp. Run history remains

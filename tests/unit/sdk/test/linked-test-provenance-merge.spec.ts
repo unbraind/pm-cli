@@ -124,9 +124,14 @@ describe("linked-test provenance merge contract", () => {
       {
         command: "node --version",
         scope: "project",
-        provenance: { source_kind: "merge_union" },
+        provenance_invalid: true,
       },
     ]);
+    expect(
+      parseItemDocument(
+        serializeItemDocument({ ...theirs, metadata: { ...theirs.metadata, tests } }),
+      ).metadata.tests,
+    ).toEqual(tests);
     const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-legacy-trust-"));
     try {
       await expect(
@@ -188,11 +193,11 @@ describe("linked-test provenance merge contract", () => {
     expect(
       parseItemDocument(serializeItemDocument(input)).metadata.tests?.[0]
         ?.provenance,
-    ).toEqual({
-      author: "maintainer",
-      created_at: "not-a-timestamp",
-      source_kind: "local_mutation",
-    });
+    ).toBeUndefined();
+    expect(
+      parseItemDocument(serializeItemDocument(input)).metadata.tests?.[0]
+        ?.provenance_invalid,
+    ).toBe(true);
     input.metadata.tests = [
       {
         command: "pnpm lint",
@@ -203,6 +208,10 @@ describe("linked-test provenance merge contract", () => {
     expect(
       parseItemDocument(serializeItemDocument(input)).metadata.tests?.[0]
         ?.provenance,
-    ).toEqual({ source_kind: "invalid" });
+    ).toBeUndefined();
+    expect(
+      parseItemDocument(serializeItemDocument(input)).metadata.tests?.[0]
+        ?.provenance_invalid,
+    ).toBe(true);
   });
 });
