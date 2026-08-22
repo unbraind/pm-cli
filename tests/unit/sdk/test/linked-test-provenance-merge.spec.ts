@@ -110,7 +110,7 @@ describe("linked-test provenance merge contract", () => {
     expect(parseItemDocument(merge.merged).metadata.tests).toEqual([shared]);
   });
 
-  it("preserves legacy tests contributed by a merge", () => {
+  it("marks legacy tests contributed by a merge as untrusted", async () => {
     const base = document();
     const ours = document();
     const theirs = document([{ command: "node --version", scope: "project" }]);
@@ -119,9 +119,27 @@ describe("linked-test provenance merge contract", () => {
       serializeItemDocument(ours),
       serializeItemDocument(theirs),
     );
-    expect(parseItemDocument(merge.merged).metadata.tests).toEqual([
-      { command: "node --version", scope: "project" },
+    const tests = parseItemDocument(merge.merged).metadata.tests ?? [];
+    expect(tests).toEqual([
+      {
+        command: "node --version",
+        scope: "project",
+        provenance: { source_kind: "merge_union" },
+      },
     ]);
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-legacy-trust-"));
+    try {
+      await expect(
+        resolveLinkedTestTrustBatch(pmRoot, tests, "main"),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          trusted: false,
+          reason: "invalid_provenance",
+        }),
+      ]);
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
   });
 
   it("round-trips workspace, provenance, and execution trust fields", () => {
@@ -170,6 +188,21 @@ describe("linked-test provenance merge contract", () => {
     expect(
       parseItemDocument(serializeItemDocument(input)).metadata.tests?.[0]
         ?.provenance,
-    ).toBeUndefined();
+    ).toEqual({
+      author: "maintainer",
+      created_at: "not-a-timestamp",
+      source_kind: "local_mutation",
+    });
+    input.metadata.tests = [
+      {
+        command: "pnpm lint",
+        scope: "project",
+        provenance: "tampered" as unknown as LinkedTest["provenance"],
+      },
+    ];
+    expect(
+      parseItemDocument(serializeItemDocument(input)).metadata.tests?.[0]
+        ?.provenance,
+    ).toEqual({ source_kind: "invalid" });
   });
 });

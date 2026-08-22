@@ -10,6 +10,7 @@ interface TestEnvelope {
   warnings?: string[];
   tests: Array<Record<string, unknown>>;
   execution_context?: {
+    requested_workspace_context_mode: string;
     workspace_context_mode: string;
     working_directory: string;
     source_workspace_root: string;
@@ -17,9 +18,11 @@ interface TestEnvelope {
   };
   run_results: Array<{
     status: string;
+    failure_category?: string;
     stdout?: string;
     error?: string;
     execution_context?: {
+      requested_workspace_context_mode: string;
       workspace_context_mode: string;
       working_directory: string;
       source_workspace_root: string;
@@ -75,6 +78,7 @@ describe("linked-test workspace and trust contracts", () => {
       const refusedEnvelope = refused.json as TestEnvelope;
       expect(refusedEnvelope.run_results[0]).toMatchObject({
         status: "failed",
+        failure_category: "trust_refusal",
       });
       expect(refusedEnvelope.execution_context?.trust).toMatchObject({
         trusted: false,
@@ -151,13 +155,27 @@ describe("linked-test workspace and trust contracts", () => {
       const sourceRoot = path.join(context.tempRoot, "source-workspace");
       await mkdir(sourceRoot, { recursive: true });
       await writeFile(path.join(sourceRoot, "marker.txt"), "source\n");
+      await mkdir(path.join(sourceRoot, "nested", ".git"), {
+        recursive: true,
+      });
+      await mkdir(path.join(sourceRoot, "nested", "coverage"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(sourceRoot, "nested", ".git", "secret"),
+        "hidden\n",
+      );
+      await writeFile(
+        path.join(sourceRoot, "nested", "coverage", "result.json"),
+        "{}\n",
+      );
       context.env.PM_SOURCE_WORKSPACE_ROOT = sourceRoot;
       const id = createTestItemId(context, {
         title: "workspace context integration",
         createMode: "progressive",
       });
       const command =
-        "node -e \"const fs=require('fs');fs.writeFileSync('snapshot-only.txt','ok');process.stdout.write(String(fs.existsSync('marker.txt')))\"";
+        "node -e \"const fs=require('fs');fs.writeFileSync('snapshot-only.txt','ok');process.stdout.write(String(fs.existsSync('marker.txt'))+':'+String(fs.existsSync('nested/.git/secret'))+':'+String(fs.existsSync('nested/coverage/result.json')))\"";
       expect(
         context.runCli(
           [
@@ -179,10 +197,11 @@ describe("linked-test workspace and trust contracts", () => {
       const snapshotResult = (snapshot.json as TestEnvelope).run_results[0];
       expect(snapshotResult).toMatchObject({
         status: "passed",
-        stdout: "true",
+        stdout: "true:false:false",
       });
       const snapshotContext = (snapshot.json as TestEnvelope).execution_context;
       expect(snapshotContext).toMatchObject({
+        requested_workspace_context_mode: "source",
         workspace_context_mode: "snapshot",
         trust: { trusted: true },
       });
@@ -211,10 +230,16 @@ describe("linked-test workspace and trust contracts", () => {
       );
       expect(isolated.code).toBe(0);
       expect((isolated.json as TestEnvelope).execution_context).toMatchObject({
+        requested_workspace_context_mode: "isolated",
         workspace_context_mode: "isolated",
-        working_directory: sourceRoot,
         source_workspace_root: "",
       });
+      expect(
+        (isolated.json as TestEnvelope).execution_context?.working_directory,
+      ).not.toBe(sourceRoot);
+      await expect(
+        access(path.join(sourceRoot, "snapshot-only.txt")),
+      ).rejects.toThrow();
 
       await overwriteTaskTests(context, id, [
         {

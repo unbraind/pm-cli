@@ -503,7 +503,13 @@ function markMergedLinkedTest(value: unknown): unknown {
   /* c8 ignore stop */
   const test = value as LinkedTest;
   if (!test.provenance) {
-    return test;
+    return {
+      ...test,
+      // Legacy entries contributed by another branch must not regain implicit
+      // local trust. This incomplete merge marker is preserved by normalization
+      // and refused until an operator acknowledges it in the receiving clone.
+      provenance: { source_kind: "merge_union" } as LinkedTest["provenance"],
+    };
   }
   return {
     ...test,

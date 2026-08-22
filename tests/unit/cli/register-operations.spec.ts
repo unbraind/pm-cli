@@ -23,4 +23,31 @@ describe("operation registration adapters", () => {
       ).workspaceContext,
     ).toBeUndefined();
   });
+
+  it("forwards test-all workspace trust controls in foreground mode", () => {
+    expect(
+      _testOnlyRegisterOperations.buildRunTestAllOptions({
+        workspaceContext: "snapshot",
+        overrideLinkedWorkspaceContext: true,
+        allowUntrustedLinkedTests: true,
+      }),
+    ).toMatchObject({
+      workspaceContext: "snapshot",
+      overrideLinkedWorkspaceContext: true,
+      allowUntrustedLinkedTests: true,
+    });
+  });
+
+  it("rejects background acknowledgement before launching a worker", () => {
+    expect(() =>
+      _testOnlyRegisterOperations.validateBackgroundTestOptions(
+        {
+          background: true,
+          run: true,
+          acknowledgeLinkedTests: true,
+        },
+        emptyValues,
+      ),
+    ).toThrow(/non-executing foreground operation/u);
+  });
 });

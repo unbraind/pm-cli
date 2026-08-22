@@ -74,6 +74,7 @@ const LINKED_TEST_TRUST_REASON_VALUES = new Set([
   "local_mutation",
   "local_source_ref",
   "acknowledged",
+  "invalid_provenance",
   "foreign_source_ref",
 ]);
 const ITEM_TEST_RUN_STATUS_VALUES = new Set([
@@ -1188,8 +1189,11 @@ function normalizeLinkedTestWorkspaceContextMode(
 function normalizeLinkedTestProvenance(
   value: LinkedTest["provenance"],
 ): LinkedTest["provenance"] | undefined {
-  if (!isPlainObjectRecord(value)) {
+  if (value === undefined) {
     return undefined;
+  }
+  if (!isPlainObjectRecord(value)) {
+    return { source_kind: "invalid" } as unknown as LinkedTest["provenance"];
   }
   const author = trimStringOrUndefined(value.author);
   const createdAt = trimStringOrUndefined(value.created_at);
@@ -1200,7 +1204,10 @@ function normalizeLinkedTestProvenance(
     !isTimestampLiteral(createdAt) ||
     (sourceKind !== "local_mutation" && sourceKind !== "merge_union")
   ) {
-    return undefined;
+    // Preserve malformed provenance as an explicit runtime sentinel. Dropping
+    // it would make a tampered entry indistinguishable from a trusted legacy
+    // command in the clone-local trust resolver.
+    return { ...value } as LinkedTest["provenance"];
   }
   return {
     author,

@@ -90,8 +90,9 @@ import { withHostEnvironmentBoundary } from "../environment/host-environment-err
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
 import {
   acknowledgeLinkedTests,
-  attachLinkedTestProvenance,
+  attachLinkedTestMutationProvenance,
   resolveLinkedTestSourceRef,
+  resolveLinkedTestSourceWorkspaceRoot,
   resolveLinkedTestTrust,
   type LinkedTestTrustDecision,
 } from "./trust.js";
@@ -285,6 +286,7 @@ export interface TestCommandOptions {
 /** Restricts linked test failure category values accepted by command, SDK, and storage contracts. */
 export type LinkedTestFailureCategory =
   | "infra_collision"
+  | "trust_refusal"
   | "assertion_failure"
   | "empty_run"
   | "timeout"
@@ -1554,6 +1556,7 @@ function createEmptyFailureCategoryCounts(): Record<
 > {
   return {
     infra_collision: 0,
+    trust_refusal: 0,
     assertion_failure: 0,
     empty_run: 0,
     timeout: 0,
@@ -2091,6 +2094,7 @@ interface LinkedTestSandboxLayout {
   trackerProjectPmPath: string;
   trackerGlobalPmPath: string;
   workspaceSnapshotRoot: string;
+  workspaceIsolatedRoot: string;
 }
 
 interface LinkedTestSandboxCounts {
@@ -2129,6 +2133,7 @@ function createLinkedTestSandboxLayout(
     ),
     trackerGlobalPmPath: path.join(sandboxRoot, "tracker", "global"),
     workspaceSnapshotRoot: path.join(sandboxRoot, "workspace", "project"),
+    workspaceIsolatedRoot: path.join(sandboxRoot, "workspace", "isolated"),
   };
 }
 
@@ -2151,7 +2156,14 @@ async function seedLinkedTestWorkspaceSnapshot(
   layout: LinkedTestSandboxLayout,
   sourceWorkspaceRoot: string,
 ): Promise<void> {
-  const excludedRoots = new Set([".agents", ".git", "node_modules"]);
+  const excludedSegments = new Set([
+    ".agents",
+    ".git",
+    ".nyc_output",
+    ".turbo",
+    "coverage",
+    "node_modules",
+  ]);
   await mkdir(path.dirname(layout.workspaceSnapshotRoot), { recursive: true });
   await cp(sourceWorkspaceRoot, layout.workspaceSnapshotRoot, {
     recursive: true,
@@ -2161,8 +2173,9 @@ async function seedLinkedTestWorkspaceSnapshot(
       if (!relative) {
         return true;
       }
-      const [rootSegment] = relative.split(path.sep);
-      return !excludedRoots.has(rootSegment);
+      return !relative
+        .split(path.sep)
+        .some((segment) => excludedSegments.has(segment));
     },
   });
   const sourceNodeModules = path.join(sourceWorkspaceRoot, "node_modules");
@@ -2311,6 +2324,7 @@ function buildLinkedTestExecutionContext(params: {
   requestedPmContextMode: LinkedTestPmContextMode;
   effectivePmContextMode: ResolvedLinkedTestPmContextMode;
   autoPmContextApplied: boolean;
+  requestedWorkspaceContextMode: LinkedTestWorkspaceContextMode;
   workspaceContextMode: LinkedTestWorkspaceContextMode;
   sourceWorkspaceRoot: string;
   trust: LinkedTestTrustDecision;
@@ -2331,7 +2345,9 @@ function buildLinkedTestExecutionContext(params: {
   const workingDirectory =
     params.workspaceContextMode === "snapshot"
       ? params.layout.workspaceSnapshotRoot
-      : params.sourceWorkspaceRoot;
+      : params.workspaceContextMode === "isolated"
+        ? params.layout.workspaceIsolatedRoot
+        : params.sourceWorkspaceRoot;
   const exposedSourceWorkspaceRoot =
     params.workspaceContextMode === "isolated" ? "" : workingDirectory;
   return {
@@ -2355,7 +2371,7 @@ function buildLinkedTestExecutionContext(params: {
         params.counts.sourceGlobalItemCount !== selectedSandboxGlobalItemCount),
     project_extensions_seeded: Boolean(params.sourceRoots),
     global_extensions_seeded: Boolean(params.sourceRoots),
-    requested_workspace_context_mode: params.workspaceContextMode,
+    requested_workspace_context_mode: params.requestedWorkspaceContextMode,
     workspace_context_mode: params.workspaceContextMode,
     working_directory: workingDirectory,
     source_workspace_root: exposedSourceWorkspaceRoot,
@@ -2370,6 +2386,7 @@ async function resolveLinkedTestCommandContext(params: {
   sourceRoots: LinkedTestSandboxSourceRoots | undefined;
   runLevelPmContextMode: LinkedTestPmContextMode;
   options: RunLinkedTestsOptions | undefined;
+  requestedWorkspaceContextMode: LinkedTestWorkspaceContextMode;
   workspaceContextMode: LinkedTestWorkspaceContextMode;
   currentSourceRef: string | undefined;
   sourceWorkspaceRoot: string;
@@ -2434,6 +2451,7 @@ async function resolveLinkedTestCommandContext(params: {
       requestedPmContextMode,
       effectivePmContextMode,
       autoPmContextApplied,
+      requestedWorkspaceContextMode: params.requestedWorkspaceContextMode,
       workspaceContextMode: params.workspaceContextMode,
       sourceWorkspaceRoot: params.sourceWorkspaceRoot,
       trust,
@@ -2473,6 +2491,22 @@ function buildLinkedTestAssertionFailureResult(
   };
 }
 
+function buildLinkedTestTrustRefusalResult(
+  linkedTest: LinkedTest,
+  executionContext: NonNullable<TestRunResult["execution_context"]>,
+  error: string,
+): TestRunResult {
+  return {
+    command: linkedTest.command,
+    path: linkedTest.path,
+    status: "failed",
+    exit_code: 1,
+    failure_category: "trust_refusal",
+    execution_context: executionContext,
+    error,
+  };
+}
+
 /** Build the fail-closed result for a command this clone has not trusted. */
 function resolveLinkedTestTrustPreflightResult(params: {
   linkedTest: LinkedTest;
@@ -2487,7 +2521,7 @@ function resolveLinkedTestTrustPreflightResult(params: {
   const recovery = policyEnabled
     ? "Retry with --allow-untrusted-linked-tests for this invocation, or acknowledge the current commands with --acknowledge-linked-tests."
     : "Set testing.allow_untrusted_linked_tests=true, then retry with --allow-untrusted-linked-tests; alternatively acknowledge the current commands with --acknowledge-linked-tests.";
-  return buildLinkedTestAssertionFailureResult(
+  return buildLinkedTestTrustRefusalResult(
     params.linkedTest,
     params.executionContext,
     `Linked test command is not trusted by this clone (source_ref=${params.executionContext.trust.source_ref ?? "unknown"}, current_ref=${params.executionContext.trust.current_source_ref ?? "unknown"}). ${recovery}`,
@@ -2756,8 +2790,7 @@ export async function runLinkedTests(
     options?.sharedHostSafe,
   );
   const sourceRoots = options?.sourceRoots;
-  const sourceWorkspaceRoot =
-    process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
+  const sourceWorkspaceRoot = resolveLinkedTestSourceWorkspaceRoot();
   const includeTrackerData = linkedTestsRequireTrackerData(
     tests,
     runLevelPmContextMode,
@@ -2773,6 +2806,7 @@ export async function runLinkedTests(
 
   try {
     await initializeLinkedTestSandboxes(layout, runInit, includeTrackerData);
+    await mkdir(layout.workspaceIsolatedRoot, { recursive: true });
     await seedLinkedTestSandboxesFromSource(
       layout,
       sourceRoots,
@@ -2797,6 +2831,7 @@ export async function runLinkedTests(
         sourceRoots,
         runLevelPmContextMode,
         options,
+        requestedWorkspaceContextMode: runLevelWorkspaceContextMode,
         workspaceContextMode,
         currentSourceRef,
         sourceWorkspaceRoot,
@@ -3334,12 +3369,11 @@ export async function runTest(
     ...parseAddJsonEntries(resolvedAddJsons),
   ];
   const adds =
-    attachLinkedTestProvenance(
+    (await attachLinkedTestMutationProvenance(
       parsedAdds,
       resolveAuthor(options.author, settings.author_default),
       nowIso(),
-      await resolveLinkedTestSourceRef(),
-    ) ?? [];
+    )) ?? [];
   const removes = parseRemoveEntries(resolvedRemoves);
   const removeIndexes = parseRemoveIndexes(options.removeIndex);
   const item = await resolveLinkedTestItem({

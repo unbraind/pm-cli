@@ -457,14 +457,16 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
 
 - `source` (default) runs in the source checkout and exposes its read-only
   source-context environment, preserving existing linked-test behavior.
-- `isolated` still runs in the source checkout so self-sandboxing repository
-  gates remain available, but removes `PM_SOURCE_WORKSPACE_ROOT`,
-  `PM_SOURCE_PM_PATH`, and the source-context access declaration.
+- `isolated` runs from an empty disposable directory and removes
+  `PM_SOURCE_WORKSPACE_ROOT`, `PM_SOURCE_PM_PATH`, and the source-context access
+  declaration. Use it only for commands that do not require checkout files.
 - `snapshot` copies the workspace into the linked-test sandbox, runs from that
   copy, and binds its `.agents/pm` path to the selected temporary tracker.
-  `.git`, `.agents`, and `node_modules` are not copied; an existing
-  `node_modules` is linked read-only by convention. Writes therefore land in
-  the disposable snapshot rather than the source checkout.
+  `.git`, `.agents`, `node_modules`, coverage output, and common cache
+  directories are excluded at every directory depth; an existing top-level
+  `node_modules` is linked read-only by convention. Built output remains
+  available so linked commands such as `node dist/cli.js` keep working. Writes
+  therefore land in the disposable snapshot rather than the source checkout.
 
 Every result reports the requested/effective workspace mode, working
 directory, exposed source root, and trust decision. Recorded `test_runs` retain
@@ -477,6 +479,10 @@ execution boundary. New command entries record author, creation time, source
 branch when available, and whether the item merge driver introduced the entry.
 Locally created commands keep their previous run behavior. Commands marked as
 merge-unioned or carrying a different source ref fail before process creation.
+Malformed provenance is preserved as an invalid sentinel and receives the same
+fail-closed treatment; it is never normalized into a trusted legacy command.
+These pre-execution refusals use the `trust_refusal` failure category, separate
+from command or assertion failures.
 
 Choose one explicit recovery:
 

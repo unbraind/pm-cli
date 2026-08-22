@@ -121,10 +121,7 @@ import {
   looksLikeStructuredLinkedTestEntry,
   normalizeStructuredLinkedTestEntry,
 } from "../test/entry.js";
-import {
-  attachLinkedTestProvenance,
-  resolveLinkedTestSourceRef,
-} from "../test/trust.js";
+import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
@@ -2733,11 +2730,10 @@ export async function runCreate(
   );
   const files = parseFiles(resolvedOptions.file);
   const tests = parseTests(resolvedOptions.test);
-  tests.values = attachLinkedTestProvenance(
+  tests.values = await attachLinkedTestMutationProvenance(
     tests.values,
     author,
     nowValue,
-    await resolveLinkedTestSourceRef(),
   );
   const docs = parseDocs(resolvedOptions.doc);
   const reminders = parseReminders(resolvedOptions.reminder, nowValue);

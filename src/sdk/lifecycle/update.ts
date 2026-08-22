@@ -121,10 +121,7 @@ import {
   parseTests,
   requireStringOption,
 } from "./create.js";
-import {
-  attachLinkedTestProvenance,
-  resolveLinkedTestSourceRef,
-} from "../test/trust.js";
+import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
@@ -3228,11 +3225,10 @@ async function runUpdateWithContext(
   );
   const fileUpdates = parseFiles(options.file);
   const testUpdates = parseTests(options.test);
-  testUpdates.values = attachLinkedTestProvenance(
+  testUpdates.values = await attachLinkedTestMutationProvenance(
     testUpdates.values,
     author,
     nowIso,
-    await resolveLinkedTestSourceRef(),
   );
   const docUpdates = parseDocs(options.doc);
   const workflowTransitionWarnings: string[] = [];

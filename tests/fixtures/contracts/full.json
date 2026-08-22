@@ -32733,6 +32733,16 @@
       "description": "List, add, remove, or run linked tests for a pm item.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "acknowledgeLinkedTests",
+                "run"
+              ]
+            }
+          }
+        ],
         "properties": {
           "acknowledgeLinkedTests": {
             "description": "Record clone-local trust for the item's current linked commands without executing them.",
@@ -50884,6 +50894,16 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "acknowledgeLinkedTests",
+                "run"
+              ]
+            }
+          }
+        ],
         "properties": {
           "acknowledgeLinkedTests": {
             "description": "Record clone-local trust for the item's current linked commands without executing them.",

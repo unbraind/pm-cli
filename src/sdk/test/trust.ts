@@ -15,6 +15,7 @@ import {
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
+import { isTimestampLiteral } from "../../core/shared/time.js";
 import { getRuntimePath } from "../../core/store/paths.js";
 import type { LinkedTest } from "../../types/index.js";
 
@@ -39,6 +40,7 @@ export interface LinkedTestTrustDecision {
     | "local_mutation"
     | "local_source_ref"
     | "acknowledged"
+    | "invalid_provenance"
     | "foreign_source_ref";
   /** Source ref recorded when the command entered tracker data. */
   source_ref?: string;
@@ -104,6 +106,38 @@ export async function resolveLinkedTestSourceRef(
   }
 }
 
+/** Resolve the source checkout shared by linked-test provenance and execution. */
+export function resolveLinkedTestSourceWorkspaceRoot(
+  cwd = process.cwd(),
+): string {
+  return process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || cwd;
+}
+
+function hasValidLinkedTestProvenance(
+  provenance: LinkedTest["provenance"],
+): boolean {
+  if (provenance === null || typeof provenance !== "object") return false;
+  return (
+    typeof provenance.author === "string" &&
+    provenance.author.trim().length > 0 &&
+    typeof provenance.created_at === "string" &&
+    isTimestampLiteral(provenance.created_at) &&
+    (provenance.source_kind === "local_mutation" ||
+      provenance.source_kind === "merge_union")
+  );
+}
+
+/** Build the optional ref portion shared by clone-local trust decisions. */
+function linkedTestTrustRefs(
+  sourceRef: string | undefined,
+  currentSourceRef: string | undefined,
+): Pick<LinkedTestTrustDecision, "source_ref" | "current_source_ref"> {
+  return {
+    ...(sourceRef ? { source_ref: sourceRef } : {}),
+    ...(currentSourceRef ? { current_source_ref: currentSourceRef } : {}),
+  };
+}
+
 /** Attach immutable author/time/ref provenance to newly stored commands. */
 export function attachLinkedTestProvenance(
   tests: LinkedTest[] | undefined,
@@ -123,6 +157,22 @@ export function attachLinkedTestProvenance(
           },
         }
       : test,
+  );
+}
+
+/** Attach provenance while avoiding Git inspection for an empty mutation. */
+export async function attachLinkedTestMutationProvenance(
+  tests: LinkedTest[] | undefined,
+  author: string,
+  createdAt: string,
+): Promise<LinkedTest[] | undefined> {
+  if (!tests || tests.length === 0) return tests;
+  const sourceWorkspaceRoot = resolveLinkedTestSourceWorkspaceRoot();
+  return attachLinkedTestProvenance(
+    tests,
+    author,
+    createdAt,
+    await resolveLinkedTestSourceRef(sourceWorkspaceRoot),
   );
 }
 
@@ -157,8 +207,16 @@ function resolveLinkedTestTrustFromLedger(
 ): LinkedTestTrustDecision {
   const fingerprint = linkedTestTrustFingerprint(test);
   const sourceRef = test.provenance?.source_ref;
-  if (!test.provenance) {
+  if (test.provenance === undefined) {
     return { fingerprint, trusted: true, reason: "legacy" };
+  }
+  if (!hasValidLinkedTestProvenance(test.provenance)) {
+    return {
+      fingerprint,
+      trusted: false,
+      reason: "invalid_provenance",
+      ...linkedTestTrustRefs(undefined, currentSourceRef),
+    };
   }
   if (
     test.provenance.source_kind === "local_mutation" &&
@@ -168,13 +226,12 @@ function resolveLinkedTestTrustFromLedger(
       fingerprint,
       trusted: true,
       reason: "local_mutation",
-      ...(currentSourceRef ? { current_source_ref: currentSourceRef } : {}),
+      ...linkedTestTrustRefs(undefined, currentSourceRef),
     };
   }
   if (
     test.provenance.source_kind === "local_mutation" &&
-    sourceRef &&
-    currentSourceRef &&
+    sourceRef !== undefined &&
     sourceRef === currentSourceRef
   ) {
     return {
@@ -190,16 +247,14 @@ function resolveLinkedTestTrustFromLedger(
       fingerprint,
       trusted: true,
       reason: "acknowledged",
-      ...(sourceRef ? { source_ref: sourceRef } : {}),
-      ...(currentSourceRef ? { current_source_ref: currentSourceRef } : {}),
+      ...linkedTestTrustRefs(sourceRef, currentSourceRef),
     };
   }
   return {
     fingerprint,
     trusted: false,
     reason: "foreign_source_ref",
-    ...(sourceRef ? { source_ref: sourceRef } : {}),
-    ...(currentSourceRef ? { current_source_ref: currentSourceRef } : {}),
+    ...linkedTestTrustRefs(sourceRef, currentSourceRef),
   };
 }
 

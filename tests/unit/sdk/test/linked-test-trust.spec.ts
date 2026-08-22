@@ -11,9 +11,11 @@ import {
 } from "../../../../src/sdk/test/parsers.js";
 import {
   acknowledgeLinkedTests,
+  attachLinkedTestMutationProvenance,
   attachLinkedTestProvenance,
   linkedTestTrustFingerprint,
   resolveLinkedTestSourceRef,
+  resolveLinkedTestSourceWorkspaceRoot,
   resolveLinkedTestTrust,
   resolveLinkedTestTrustBatch,
 } from "../../../../src/sdk/test/trust.js";
@@ -87,6 +89,37 @@ describe("linked-test trust", () => {
     });
   });
 
+  it("skips source-ref inspection for empty mutations", async () => {
+    await expect(
+      attachLinkedTestMutationProvenance(
+        undefined,
+        "maintainer",
+        "2026-08-22T12:00:00.000Z",
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      attachLinkedTestMutationProvenance(
+        [],
+        "maintainer",
+        "2026-08-22T12:00:00.000Z",
+      ),
+    ).resolves.toEqual([]);
+    vi.stubEnv("GITHUB_HEAD_REF", "feature/trust");
+    await expect(
+      attachLinkedTestMutationProvenance(
+        [{ command: "pnpm test", scope: "project" }],
+        "maintainer",
+        "2026-08-22T12:00:00.000Z",
+      ),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        provenance: expect.objectContaining({
+          source_ref: "feature/trust",
+        }),
+      }),
+    ]);
+  });
+
   it("binds fingerprints to command, context, and provenance", () => {
     const fingerprint = linkedTestTrustFingerprint(localTest);
     expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
@@ -105,6 +138,12 @@ describe("linked-test trust", () => {
   });
 
   it("resolves hosted, Git, and absent source refs without a shell", async () => {
+    vi.stubEnv("PM_SOURCE_WORKSPACE_ROOT", "/source/workspace");
+    expect(resolveLinkedTestSourceWorkspaceRoot("/fallback")).toBe(
+      "/source/workspace",
+    );
+    vi.stubEnv("PM_SOURCE_WORKSPACE_ROOT", "");
+    expect(resolveLinkedTestSourceWorkspaceRoot("/fallback")).toBe("/fallback");
     vi.stubEnv("GITHUB_HEAD_REF", "hosted/feature");
     expect(await resolveLinkedTestSourceRef("/missing")).toBe("hosted/feature");
     vi.stubEnv("GITHUB_HEAD_REF", "");
@@ -209,6 +248,41 @@ describe("linked-test trust", () => {
         trusted: false,
         reason: "foreign_source_ref",
       });
+      await expect(
+        resolveLinkedTestTrust(
+          pmRoot,
+          {
+            command: "node --version",
+            scope: "project",
+            provenance: {
+              source_kind: "merge_union",
+            } as LinkedTest["provenance"],
+          },
+          "main",
+        ),
+      ).resolves.toMatchObject({
+        trusted: false,
+        reason: "invalid_provenance",
+        current_source_ref: "main",
+      });
+      for (const provenance of [null, "tampered"]) {
+        const invalidWithoutCurrentRef = await resolveLinkedTestTrust(
+          pmRoot,
+          {
+            command: "node --version",
+            scope: "project",
+            provenance: provenance as unknown as LinkedTest["provenance"],
+          },
+          undefined,
+        );
+        expect(invalidWithoutCurrentRef).toMatchObject({
+          trusted: false,
+          reason: "invalid_provenance",
+        });
+        expect(invalidWithoutCurrentRef).not.toHaveProperty(
+          "current_source_ref",
+        );
+      }
 
       await mkdir(getRuntimePath(pmRoot), { recursive: true });
       await writeFile(
@@ -302,7 +376,7 @@ describe("linked-test trust", () => {
     ).toThrow(/must be one of/);
     expect(
       parseLinkedTestJsonEntries(
-        '{"command":"node --version","workspace_context_mode":"isolated"}',
+        '{"command":"node --version","workspace_context_mode":" ISOLATED "}',
         "--add-json",
       )[0]?.workspace_context_mode,
     ).toBe("isolated");

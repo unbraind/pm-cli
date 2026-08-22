@@ -716,21 +716,10 @@ function parseLinkedTestJsonEntry(
       `field "pm_context_mode" must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`,
     );
   }
-  const workspaceContextModeValue = readJsonEntryString(
-    entry,
-    "workspace_context_mode",
-    fail,
+  const workspaceContextModeValue = parseLinkedTestWorkspaceContextMode(
+    readJsonEntryString(entry, "workspace_context_mode", fail),
+    `${optionName} ${label}`,
   );
-  if (
-    workspaceContextModeValue !== undefined &&
-    !(LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES as readonly string[]).includes(
-      workspaceContextModeValue,
-    )
-  ) {
-    throw fail(
-      `field "workspace_context_mode" must be one of: ${LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES.join(", ")}`,
-    );
-  }
   const noteValue = readJsonEntryString(entry, "note", fail);
   return {
     command,

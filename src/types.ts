@@ -808,6 +808,7 @@ export interface ItemTestRunExecution {
     | "local_mutation"
     | "local_source_ref"
     | "acknowledged"
+    | "invalid_provenance"
     | "foreign_source_ref";
 }
 

@@ -1092,6 +1092,14 @@
       ],
       "package_version": "2026.8.22",
       "reason": "Extend linked-test trust and workspace-context contracts across SDK entrypoints"
+    },
+    {
+      "changes": [
+        "signature ./sdk:LinkedTestFailureCategory",
+        "signature ./sdk:LinkedTestTrustDecision"
+      ],
+      "package_version": "2026.8.22",
+      "reason": "Add explicit trust-refusal and invalid-provenance classifications required by linked-test execution safety"
     }
   ],
   "entrypoints": {
@@ -7984,7 +7992,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "LinkedTestFailureCategory",
-          "signature": "export type LinkedTestFailureCategory = \"infra_collision\" | \"assertion_failure\" | \"empty_run\" | \"timeout\" | \"max_buffer\" | \"spawn_error\" | \"signal\";"
+          "signature": "export type LinkedTestFailureCategory = \"infra_collision\" | \"trust_refusal\" | \"assertion_failure\" | \"empty_run\" | \"timeout\" | \"max_buffer\" | \"spawn_error\" | \"signal\";"
         },
         {
           "classification": "advanced_export",
@@ -7996,7 +8004,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedTestTrustDecision",
-          "signature": "export interface LinkedTestTrustDecision { fingerprint: string; trusted: boolean; reason: \"legacy\" | \"local_mutation\" | \"local_source_ref\" | \"acknowledged\" | \"foreign_source_ref\"; source_ref?: string; current_source_ref?: string; }"
+          "signature": "export interface LinkedTestTrustDecision { fingerprint: string; trusted: boolean; reason: \"legacy\" | \"local_mutation\" | \"local_source_ref\" | \"acknowledged\" | \"invalid_provenance\" | \"foreign_source_ref\"; source_ref?: string; current_source_ref?: string; }"
         },
         {
           "classification": "advanced_export",

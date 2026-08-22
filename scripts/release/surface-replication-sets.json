@@ -454,11 +454,11 @@
     },
     {
       "path": "src/cli/register-operations.ts",
-      "expected_count": 6,
+      "expected_count": 7,
       "rule_ownership": "all_occurrences",
       "owner": "pm-185870",
       "disposition": "transport_validation",
-      "reason": "Telemetry and workspace positional refusals moved to the shared SDK constructor; remaining interactive flags and shell-facing setup errors stay in the CLI adapter."
+      "reason": "Telemetry and workspace positional refusals moved to the shared SDK constructor; remaining interactive flags, foreground-only acknowledgement, and shell-facing setup errors stay in the CLI adapter."
     },
     {
       "path": "src/cli/main.ts",

@@ -198,6 +198,9 @@ describe("registration helpers", () => {
         sharedHostSafe: true,
         pmContext: "pm-w13j",
         overrideLinkedPmContext: true,
+        workspaceContext: "snapshot",
+        overrideLinkedWorkspaceContext: true,
+        allowUntrustedLinkedTests: true,
         failOnContextMismatch: true,
         failOnSkipped: true,
         failOnEmptyTestRun: true,
@@ -239,6 +242,10 @@ describe("registration helpers", () => {
       "--pm-context",
       "pm-w13j",
       "--override-linked-pm-context",
+      "--workspace-context",
+      "snapshot",
+      "--override-linked-workspace-context",
+      "--allow-untrusted-linked-tests",
       "--fail-on-context-mismatch",
       "--fail-on-skipped",
       "--fail-on-empty-test-run",
@@ -265,6 +272,9 @@ describe("registration helpers", () => {
         sharedHostSafe: true,
         pmContext: "pm-w13j",
         overrideLinkedPmContext: true,
+        workspaceContext: "snapshot",
+        overrideLinkedWorkspaceContext: true,
+        allowUntrustedLinkedTests: true,
         failOnContextMismatch: true,
         failOnSkipped: true,
         failOnEmptyTestRun: true,
@@ -292,6 +302,10 @@ describe("registration helpers", () => {
       "--pm-context",
       "pm-w13j",
       "--override-linked-pm-context",
+      "--workspace-context",
+      "snapshot",
+      "--override-linked-workspace-context",
+      "--allow-untrusted-linked-tests",
       "--fail-on-context-mismatch",
       "--fail-on-skipped",
       "--fail-on-empty-test-run",
@@ -867,10 +881,13 @@ describe("registration helpers", () => {
       compact: true,
       raw: true,
     });
+    expect(normalizeActivityOptions({ raw: true, full: true })).toMatchObject({
+      compact: false,
+      raw: true,
+    });
     expect(
-      normalizeActivityOptions({ raw: true, full: true }),
-    ).toMatchObject({ compact: false, raw: true });
-    expect(normalizeActivityOptions({ compact: false }).compact).toBeUndefined();
+      normalizeActivityOptions({ compact: false }).compact,
+    ).toBeUndefined();
     expect(normalizeActivityOptions({}).compact).toBeUndefined();
     expect(
       normalizeActivityOptions({
