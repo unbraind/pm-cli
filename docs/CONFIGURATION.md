@@ -29,6 +29,7 @@ pm config project export --json
 pm config project get item-format --json
 pm config project set item-format --format toon
 pm config project set test-result-tracking --policy enabled
+pm config project set untrusted-linked-test-execution --policy disabled
 ```
 
 `config set <key> <value>` also accepts the value as a positional argument; pm routes
@@ -85,6 +86,7 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | `history.compact_policy.max_entries`       | when the policy is enabled, the entry count above which a stream is flagged by `pm health` and the default `pm history-compact --all-over` threshold (default `500`)                                  |
 | `history.compact_policy.trigger`           | policy intent when enabled: `health_warn` (advisory only) or `auto` (scheduled sweeps expected)                                                                                                       |
 | `testing.record_results_to_items`          | persist bounded linked-test summaries                                                                                                                                                                 |
+| `testing.allow_untrusted_linked_tests`     | permit the explicit `pm test --allow-untrusted-linked-tests` one-run override (default `false`; does not trust or execute commands by itself)                                                         |
 | `validation.sprint_release_format`         | `warn` or `strict_error`                                                                                                                                                                              |
 | `validation.parent_reference`              | `warn` or `strict_error` (`strict_error` is the built-in default; `pm create --allow-missing-parent` is the explicit escape hatch)                                                                    |
 | `item_types.definitions[]`                 | custom item types and type options                                                                                                                                                                    |
@@ -115,6 +117,7 @@ pm config project set schema_unknown_field_policy reject   # (schema.unknown_fie
 pm config project set governance-duplicate-detection-mode strict         # (governance.duplicate_detection_mode) off | advisory | strict
 pm config project set governance-duplicate-detection-threshold 0.8       # (governance.duplicate_detection_threshold) ratio 0..1
 pm config project set governance-duplicate-detection-limit 3             # (governance.duplicate_detection_limit) integer 0..20
+pm config project set untrusted-linked-test-execution disabled            # (testing.allow_untrusted_linked_tests) enabled | disabled
 ```
 
 Duplicate governance uses the shared SDK scorer and bounded metadata query
@@ -227,6 +230,7 @@ pm config project set sprint-release-format-policy --policy warn
 pm config project set parent-reference-policy --policy strict_error
 pm config project set history-missing-stream-policy --policy auto_create
 pm config project set test-result-tracking --policy enabled
+pm config project set untrusted-linked-test-execution --policy disabled
 ```
 
 Use standalone checks when validating a repository:

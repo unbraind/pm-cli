@@ -1183,6 +1183,9 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
       record_results_to_items:
         settings.testing?.record_results_to_items ??
         defaults.testing.record_results_to_items,
+      allow_untrusted_linked_tests:
+        settings.testing?.allow_untrusted_linked_tests ??
+        defaults.testing.allow_untrusted_linked_tests,
     },
     telemetry: buildTelemetrySettings(settings, defaults),
     agent_guidance: normalizeAgentGuidanceSettings(
@@ -1303,6 +1306,7 @@ function orderSerializedSettingsSections(
   ]);
   ordered.testing = orderObject(ordered.testing as Record<string, unknown>, [
     "record_results_to_items",
+    "allow_untrusted_linked_tests",
   ]);
   ordered.telemetry = orderObject(
     ordered.telemetry as Record<string, unknown>,

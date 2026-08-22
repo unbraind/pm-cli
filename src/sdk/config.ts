@@ -301,6 +301,10 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
     "governance_force_required_for_stale_lock",
   ],
   test_result_tracking: ["test-result-tracking", "test_result_tracking"],
+  untrusted_linked_test_execution: [
+    "untrusted-linked-test-execution",
+    "untrusted_linked_test_execution",
+  ],
   telemetry_tracking: ["telemetry-tracking", "telemetry_tracking"],
   agent_identity_vocabulary: [
     "agent-identity-vocabulary",
@@ -360,6 +364,8 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   governance_force_required_for_stale_lock:
     "Governance stale-lock force policy (enabled|disabled).",
   test_result_tracking: "Item-level linked test result persistence policy.",
+  untrusted_linked_test_execution:
+    "Permit an explicit per-run override for commands not trusted by this clone.",
   telemetry_tracking: "Telemetry usage reporting policy.",
   agent_identity_vocabulary:
     "Versioned exact legacy-author interpretation vocabulary (summary only).",
@@ -397,6 +403,7 @@ const CRITERIA_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
 ]);
 const TRACKING_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "test_result_tracking",
+  "untrusted_linked_test_execution",
   "telemetry_tracking",
 ]);
 const GOVERNANCE_BOOLEAN_CONFIG_KEYS: ReadonlySet<ConfigKey> =
@@ -540,12 +547,19 @@ function normalizeHistoryMissingStreamPolicy(
 function normalizeTestResultTrackingPolicy(
   value: string | undefined,
 ): TestResultTrackingPolicy {
+  return normalizeEnabledDisabledPolicy(value, "test-result-tracking");
+}
+
+function normalizeEnabledDisabledPolicy(
+  value: string | undefined,
+  key: string,
+): TestResultTrackingPolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "enabled" || normalized === "disabled") {
     return normalized;
   }
   throw new PmCliError(
-    "Config set test-result-tracking requires --policy with one of: enabled, disabled",
+    `Config set ${key} requires --policy with one of: enabled, disabled`,
     EXIT_CODE.USAGE,
   );
 }
@@ -697,10 +711,21 @@ function normalizeGovernanceRequireCloseReasonPolicy(
   );
 }
 
+const ENABLED_DISABLED_CONFLICT_POLICY_KEYS: Partial<
+  Record<ConfigKey, string>
+> = {
+  test_result_tracking: "test-result-tracking",
+  untrusted_linked_test_execution: "untrusted-linked-test-execution",
+};
+
 function normalizePolicyForConflict(
   key: ConfigKey | undefined,
   value: string,
 ): string {
+  const enabledDisabledKey = ENABLED_DISABLED_CONFLICT_POLICY_KEYS[key!];
+  if (enabledDisabledKey) {
+    return normalizeEnabledDisabledPolicy(value, enabledDisabledKey);
+  }
   switch (key) {
     case "history_missing_stream_policy":
       return normalizeHistoryMissingStreamPolicy(value);
@@ -726,8 +751,6 @@ function normalizePolicyForConflict(
       return normalizeGovernanceWorkflowEnforcement(value);
     case "governance_force_required_for_stale_lock":
       return normalizeGovernanceForceRequiredForStaleLockPolicy(value);
-    case "test_result_tracking":
-      return normalizeTestResultTrackingPolicy(value);
     case "telemetry_tracking":
       return normalizeTelemetryTrackingPolicy(value);
     default:
@@ -929,6 +952,8 @@ const CONFIG_VALUE_READERS: Readonly<
     settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
   test_result_tracking: (settings) =>
     settings.testing.record_results_to_items ? "enabled" : "disabled",
+  untrusted_linked_test_execution: (settings) =>
+    settings.testing.allow_untrusted_linked_tests ? "enabled" : "disabled",
   telemetry_tracking: (settings) =>
     settings.telemetry.enabled ? "enabled" : "disabled",
   agent_identity_vocabulary: (settings) =>
@@ -1204,11 +1229,11 @@ function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
             ]
           : candidate === "agent_identity_vocabulary"
             ? ["--policy", "--value", "--criterion"]
-          : isCriteriaConfigKey(candidate)
-            ? ["--criterion", "--clear-criteria"]
-            : candidate === "item_format"
-              ? ["--format"]
-              : ["--policy"],
+            : isCriteriaConfigKey(candidate)
+              ? ["--criterion", "--clear-criteria"]
+              : candidate === "item_format"
+                ? ["--format"]
+                : ["--policy"],
       summary: CONFIG_KEY_SUMMARIES[candidate],
       value: readConfigValue(context.settings, candidate),
     }),
@@ -1221,9 +1246,7 @@ function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
       kind: descriptor.kind,
       value: readNestedSettingValue(context.settings, descriptor),
       summary: descriptor.summary,
-      ...(descriptor.choices
-        ? { choices: [...descriptor.choices] }
-        : {}),
+      ...(descriptor.choices ? { choices: [...descriptor.choices] } : {}),
       ...(descriptor.min === undefined ? {} : { min: descriptor.min }),
       ...(descriptor.max === undefined ? {} : { max: descriptor.max }),
     }));
@@ -1895,6 +1918,29 @@ async function setTrackingConfig(
       changed,
     );
   }
+  if (key === "untrusted_linked_test_execution") {
+    const nextPolicy = normalizeEnabledDisabledPolicy(
+      options.policy,
+      "untrusted-linked-test-execution",
+    );
+    const nextEnabled = nextPolicy === "enabled";
+    const changed =
+      context.settings.testing.allow_untrusted_linked_tests !== nextEnabled;
+    context.settings.testing.allow_untrusted_linked_tests = nextEnabled;
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:untrusted_linked_test_execution",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.testing.allow_untrusted_linked_tests
+        ? "enabled"
+        : "disabled",
+      changed,
+    );
+  }
   const nextPolicy = normalizeTelemetryTrackingPolicy(options.policy);
   const nextEnabled = nextPolicy === "enabled";
   const changed =
@@ -1945,9 +1991,10 @@ async function setDefinitionOfDoneConfig(
   );
 }
 
-function parseAgentIdentityVocabularyOperation(
-  raw: string | undefined,
-): { operation: "add" | "remove" | "clear"; dryRun: boolean } {
+function parseAgentIdentityVocabularyOperation(raw: string | undefined): {
+  operation: "add" | "remove" | "clear";
+  dryRun: boolean;
+} {
   const policy = raw?.trim().toLowerCase().replaceAll("_", "-");
   const dryRun = policy?.startsWith("preview-") === true;
   const operation = dryRun ? policy!.slice("preview-".length) : policy;
@@ -2018,10 +2065,7 @@ async function setAgentIdentityVocabularyConfig(
       },
     );
   } catch (error) {
-    throw new PmCliError(
-      (error as Error).message,
-      EXIT_CODE.USAGE,
-    );
+    throw new PmCliError((error as Error).message, EXIT_CODE.USAGE);
   }
 
   if (planned.preview.changed && !dryRun) {

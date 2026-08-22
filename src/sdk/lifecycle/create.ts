@@ -115,11 +115,13 @@ import {
   parseLinkedTestMinLines,
   parseLinkedTestRegexList,
   parseLinkedTestStringList,
+  parseLinkedTestWorkspaceContextMode,
 } from "../test/parsers.js";
 import {
   looksLikeStructuredLinkedTestEntry,
   normalizeStructuredLinkedTestEntry,
 } from "../test/entry.js";
+import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
@@ -674,6 +676,10 @@ export function parseTests(raw: string[] | undefined): {
         ? parseOptionalNumber(timeoutRaw, "timeout_seconds")
         : undefined,
       pm_context_mode: parseLinkedTestContextMode(kv.pm_context_mode, "--test"),
+      workspace_context_mode: parseLinkedTestWorkspaceContextMode(
+        kv.workspace_context_mode,
+        "--test",
+      ),
       env_set: parseLinkedTestEnvSet(kv.env_set, "--test"),
       env_clear: parseLinkedTestEnvClear(kv.env_clear, "--test"),
       shared_host_safe: parseLinkedTestBoolean(
@@ -2724,6 +2730,11 @@ export async function runCreate(
   );
   const files = parseFiles(resolvedOptions.file);
   const tests = parseTests(resolvedOptions.test);
+  tests.values = await attachLinkedTestMutationProvenance(
+    tests.values,
+    author,
+    nowValue,
+  );
   const docs = parseDocs(resolvedOptions.doc);
   const reminders = parseReminders(resolvedOptions.reminder, nowValue);
   const events = parseEvents(resolvedOptions.event, nowValue);

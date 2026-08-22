@@ -403,6 +403,13 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   ignoreGlobal: { type: "boolean" },
   pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
   overrideLinkedPmContext: { type: "boolean" },
+  workspaceContext: {
+    type: "string",
+    enum: ["source", "isolated", "snapshot"],
+  },
+  overrideLinkedWorkspaceContext: { type: "boolean" },
+  allowUntrustedLinkedTests: { type: "boolean" },
+  acknowledgeLinkedTests: { type: "boolean" },
   failOnContextMismatch: { type: "boolean" },
   failOnSkipped: { type: "boolean" },
   failOnEmptyTestRun: { type: "boolean" },
@@ -1495,6 +1502,23 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   overrideLinkedPmContext: {
     description:
       "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
+  },
+  workspaceContext: {
+    description:
+      "Source-workspace mode: source preserves read-only source context, isolated omits it for self-sandboxing commands, and snapshot runs from a temporary workspace paired with the selected tracker sandbox.",
+    examples: ["source", "isolated", "snapshot"],
+  },
+  overrideLinkedWorkspaceContext: {
+    description:
+      "Force run-level --workspace-context over per-linked-test workspace_context_mode metadata.",
+  },
+  allowUntrustedLinkedTests: {
+    description:
+      "Explicitly execute commands not yet trusted by this clone when testing.allow_untrusted_linked_tests is also enabled.",
+  },
+  acknowledgeLinkedTests: {
+    description:
+      "Record clone-local trust for the item's current linked commands without executing them.",
   },
   failOnContextMismatch: {
     description:

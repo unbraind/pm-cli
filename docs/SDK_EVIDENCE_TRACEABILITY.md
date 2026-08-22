@@ -111,7 +111,7 @@ pair pre-redaction item content with post-redaction history during validation.
 
 ## Operational receipts
 
-Linked tests recognize compound acquisition failures such as “could not acquire … lock” together with contention context such as “already running” or “held by another” as `infra_collision`. Generic assertion text mentioning a lock or timeout remains `assertion_failure`, preventing false infrastructure classifications.
+Linked tests recognize compound acquisition failures such as “could not acquire … lock” together with contention context such as “already running” or “held by another” as `infra_collision`. Generic assertion text mentioning a lock or timeout remains `assertion_failure`, preventing false infrastructure classifications. A command refused by clone-local provenance policy is classified separately as `trust_refusal`, so reports do not misstate a pre-execution safety decision as an assertion failure.
 
 Telemetry flush receipts distinguish progress from completion:
 

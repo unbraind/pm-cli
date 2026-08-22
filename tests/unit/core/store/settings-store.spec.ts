@@ -263,7 +263,7 @@ describe("core/store/settings", () => {
         "duplicate_detection_limit",
       ]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
-      expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
+      expectOrderedObjectKeys(parsed.testing, ["record_results_to_items", "allow_untrusted_linked_tests"]);
       expectOrderedObjectKeys(parsed.telemetry, [
         "enabled",
         "first_run_prompt_completed",

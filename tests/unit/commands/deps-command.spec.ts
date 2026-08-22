@@ -20,6 +20,7 @@ import {
   withTempPmPath,
   type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
+import { overwriteTaskTests } from "../../helpers/pmWorkspace.js";
 
 /** Render the disclosed dependency envelope used by CLI and SDK consumers. */
 function formatDepsOutput(result: unknown, format: "json" | "toon"): string {
@@ -1112,18 +1113,9 @@ describe("runDeps", () => {
 
       // Legacy stores can hold linked tests with a path but no command, or
       // with neither; the pointer projection falls back and then skips.
-      const located = await locateItem(context.pmPath, rootId);
-      expect(located).not.toBeNull();
-      if (!located) return;
-      const { raw } = await readLocatedItem(located);
-      await writeFile(
-        located.itemPath,
-        raw.replace(
-          "tests[1]{command,scope}:\n  echo ok,project",
-          "tests[1]{path,scope}:\n  tests/example.spec.ts,project",
-        ),
-        "utf8",
-      );
+      await overwriteTaskTests(context, rootId, [
+        { path: "tests/example.spec.ts", scope: "project" },
+      ]);
       const pathOnly = await runDeps(
         rootId,
         { format: "context" },
@@ -1132,14 +1124,7 @@ describe("runDeps", () => {
       expect(pathOnly.context?.evidence).toContain(
         "test:tests/example.spec.ts",
       );
-      await writeFile(
-        located.itemPath,
-        raw.replace(
-          "tests[1]{command,scope}:\n  echo ok,project",
-          "tests[1]{scope}:\n  project",
-        ),
-        "utf8",
-      );
+      await overwriteTaskTests(context, rootId, [{ scope: "project" }]);
       const pointerless = await runDeps(
         rootId,
         { format: "context" },

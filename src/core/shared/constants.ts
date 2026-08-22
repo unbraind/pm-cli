@@ -269,6 +269,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   testing: {
     record_results_to_items: false,
+    allow_untrusted_linked_tests: false,
   },
   telemetry: {
     enabled: true,

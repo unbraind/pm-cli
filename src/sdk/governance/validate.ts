@@ -73,6 +73,7 @@ import {
   type StaleLinkOwnerInput,
 } from "../../core/validate/missing-link-owners.js";
 import type {
+  LinkedTest,
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
@@ -101,6 +102,12 @@ import {
 import { runDocs } from "../docs.js";
 import { runFiles } from "../files.js";
 import { extractReferencedPmItemIdsFromCommand } from "../test/linked-command-detection.js";
+import {
+  resolveLinkedTestSourceRef,
+  resolveLinkedTestSourceWorkspaceRoot,
+  resolveLinkedTestTrustBatch,
+  type LinkedTestTrustDecision,
+} from "../test/trust.js";
 import {
   readValidateItems,
   type ValidateItem,
@@ -2839,27 +2846,47 @@ async function buildFilesCheck(
 }
 /* c8 ignore stop */
 
-/* c8 ignore start -- command preview truncation formatting is covered by command-reference integration fixtures */
+/** Collapse a linked command to the bounded preview used in validation rows. */
+function summarizeCommandPreview(command: string): string {
+  const normalizedCommand = command.trim().replaceAll(/\s+/g, " ");
+  return normalizedCommand.length > 120
+    ? `${normalizedCommand.slice(0, 117)}...`
+    : normalizedCommand;
+}
+
+/** Join command-reference identity and its bounded preview for diagnostics. */
 function summarizeCommandReferenceRow(
   ownerId: string,
   referencedId: string,
   command: string,
 ): string {
-  const normalizedCommand = command.trim().replaceAll(/\s+/g, " ");
-  const commandPreview =
-    normalizedCommand.length > 120
-      ? `${normalizedCommand.slice(0, 117)}...`
-      : normalizedCommand;
-  return `${ownerId}:${referencedId}:${commandPreview}`;
+  return `${ownerId}:${referencedId}:${summarizeCommandPreview(command)}`;
 }
-/* c8 ignore stop */
+
+/** Render portable diagnostics for linked tests that this clone has not trusted. */
+function buildUntrustedLinkedTestRows(
+  linkedTests: Array<{ item: ItemWithBody; linkedTest: LinkedTest }>,
+  trustDecisions: LinkedTestTrustDecision[],
+): string[] {
+  const rows: string[] = [];
+  linkedTests.forEach(({ item, linkedTest }, index) => {
+    const trust = trustDecisions[index];
+    if (trust.trusted) return;
+    const command = summarizeCommandPreview(linkedTest.command ?? "");
+    rows.push(
+      `${item.id}:${trust.source_ref ?? "unknown"}->${trust.current_source_ref ?? "unknown"}:${command}`,
+    );
+  });
+  return rows;
+}
 
 /* c8 ignore start -- command-reference discovery/stale-id permutations are covered by linked-test integration suites */
-function buildCommandReferencesCheck(
+async function buildCommandReferencesCheck(
   items: ItemWithBody[],
   idPrefix: string,
   verboseDiagnostics: boolean,
-): { check: ValidateCheck; warnings: string[] } {
+  pmRoot: string,
+): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const knownIds = new Set(items.map((item) => item.id.toLowerCase()));
   let linkedCommandsScanned = 0;
   let referencedPmIdCount = 0;
@@ -2868,6 +2895,18 @@ function buildCommandReferencesCheck(
 
   const linkedTests = items.flatMap((item) =>
     (item.tests ?? []).map((linkedTest) => ({ item, linkedTest })),
+  );
+  const currentSourceRef = await resolveLinkedTestSourceRef(
+    resolveLinkedTestSourceWorkspaceRoot(),
+  );
+  const trustDecisions = await resolveLinkedTestTrustBatch(
+    pmRoot,
+    linkedTests.map(({ linkedTest }) => linkedTest),
+    currentSourceRef,
+  );
+  const untrustedRows = buildUntrustedLinkedTestRows(
+    linkedTests,
+    trustDecisions,
   );
   for (const { item, linkedTest } of linkedTests) {
     if (
@@ -2907,12 +2946,17 @@ function buildCommandReferencesCheck(
   ]
     .filter((value) => value.length > 0)
     .sort((left, right) => left.localeCompare(right));
-  const warnings =
-    uniqueStaleReferenceRows.length > 0
-      ? [
-          `validate_command_references_stale_pm_ids:${uniqueStaleReferenceRows.length}`,
-        ]
-      : [];
+  const warnings: string[] = [];
+  if (uniqueStaleReferenceRows.length > 0) {
+    warnings.push(
+      `validate_command_references_stale_pm_ids:${uniqueStaleReferenceRows.length}`,
+    );
+  }
+  if (untrustedRows.length > 0) {
+    warnings.push(
+      `validate_linked_test_trust_unacknowledged:${untrustedRows.length}`,
+    );
+  }
   const diagnosticLimit = verboseDiagnostics
     ? Number.POSITIVE_INFINITY
     : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
@@ -2925,6 +2969,7 @@ function buildCommandReferencesCheck(
     [...referencedPmIds].sort((left, right) => left.localeCompare(right)),
     diagnosticLimit,
   );
+  const summarizedUntrustedRows = summarizeList(untrustedRows, diagnosticLimit);
 
   return {
     check: {
@@ -2938,6 +2983,10 @@ function buildCommandReferencesCheck(
         unique_referenced_pm_ids_count: referencedPmIds.size,
         unique_referenced_pm_ids: summarizedReferencedPmIds.values,
         unique_referenced_pm_ids_truncated: summarizedReferencedPmIds.truncated,
+        linked_test_trust_current_source_ref: currentSourceRef ?? null,
+        untrusted_linked_tests_count: untrustedRows.length,
+        untrusted_linked_tests: summarizedUntrustedRows.values,
+        untrusted_linked_tests_truncated: summarizedUntrustedRows.truncated,
         stale_pm_id_references_count: uniqueStaleReferenceRows.length,
         stale_pm_ids_count: stalePmIds.length,
         stale_pm_ids: summarizedStalePmIds.values,
@@ -3405,10 +3454,11 @@ async function executeRequestedValidateChecks(params: {
   if (params.requestedChecks.has("command_references")) {
     recordValidateCheck(
       state,
-      buildCommandReferencesCheck(
+      await buildCommandReferencesCheck(
         params.items,
         params.settings.id_prefix,
         fullDiagnostics,
+        params.pmRoot,
       ),
       fixHintsEnabled,
     );

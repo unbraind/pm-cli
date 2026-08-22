@@ -328,6 +328,18 @@ export interface LinkedFile {
   note?: string;
 }
 
+/** Valid immutable provenance captured when a linked command enters tracker data. */
+export interface LinkedTestProvenance {
+  /** Author identity recorded by the originating mutation. */
+  author: string;
+  /** ISO 8601 time at which the command entered tracker data. */
+  created_at: string;
+  /** Mutation path that introduced the command. */
+  source_kind: "local_mutation" | "merge_union";
+  /** Best-effort Git branch or hosted head ref of the originating mutation. */
+  source_ref?: string;
+}
+
 /** Documents the linked test payload exchanged by command, SDK, and package integrations. */
 export interface LinkedTest {
   /** Value that configures or reports command for this contract. */
@@ -340,6 +352,12 @@ export interface LinkedTest {
   timeout_seconds?: number;
   /** Strategy used to control pm context behavior. */
   pm_context_mode?: "schema" | "tracker" | "auto";
+  /** Strategy used for source-workspace visibility and command working directory. */
+  workspace_context_mode?: "source" | "isolated" | "snapshot";
+  /** Immutable provenance captured when the linked command enters tracker data. */
+  provenance?: LinkedTestProvenance;
+  /** Explicit fail-closed marker retained when stored provenance is malformed. */
+  provenance_invalid?: true;
   /** Value that configures or reports env set for this contract. */
   env_set?: Record<string, string>;
   /** Value that configures or reports env clear for this contract. */
@@ -787,6 +805,16 @@ export interface ItemTestRunExecution {
   requested_pm_context_mode?: "schema" | "tracker" | "auto";
   /** Effective context mode used by the linked command. */
   pm_context_mode?: "schema" | "tracker" | "auto";
+  /** Effective source-workspace mode used by the linked command. */
+  workspace_context_mode?: "source" | "isolated" | "snapshot";
+  /** Trust classification applied before execution. */
+  trust_reason?:
+    | "legacy"
+    | "local_mutation"
+    | "local_source_ref"
+    | "acknowledged"
+    | "invalid_provenance"
+    | "foreign_source_ref";
 }
 
 /** Documents the item test run summary payload exchanged by command, SDK, and package integrations. */
@@ -1404,6 +1432,8 @@ export interface PmSettings {
   /** Value that configures or reports testing for this contract. */
   testing: {
     record_results_to_items: boolean;
+    /** Permit explicit one-shot execution of commands not yet trusted by this clone. */
+    allow_untrusted_linked_tests: boolean;
   };
   /** Value that configures or reports telemetry for this contract. */
   telemetry: {

@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon), [pm-xa3t0o](../.agents/pm/issues/pm-xa3t0o.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon), [pm-xa3t0o](../.agents/pm/issues/pm-xa3t0o.toon), [pm-e97jyf](../.agents/pm/issues/pm-e97jyf.toon), [pm-efkvdy](../.agents/pm/issues/pm-efkvdy.toon), and [pm-ed28wi](../.agents/pm/issues/pm-ed28wi.toon).
 
 ## Agent Quick Context
 
@@ -444,6 +444,69 @@ into constrained temporary storage.
 Capacity, permission, and resource failures while seeding a required tracker
 surface as typed, path-redacted host-environment refusals with recovery steps.
 
+## Source Workspace Modes
+
+Linked tests have a separate source-workspace contract. Store a default on one
+entry with `workspace_context_mode`, or choose a run-level mode with
+`--workspace-context`:
+
+```bash
+pm test <item-id> --add-json '{"command":"pnpm quality:static","workspace_context_mode":"isolated"}'
+pm test <item-id> --run --workspace-context snapshot --override-linked-workspace-context
+```
+
+- `source` (default) runs in the source checkout and exposes its read-only
+  source-context environment, preserving existing linked-test behavior.
+- `isolated` runs from an empty disposable directory and removes
+  `PM_SOURCE_WORKSPACE_ROOT`, `PM_SOURCE_PM_PATH`, and the source-context access
+  declaration. Use it only for commands that do not require checkout files.
+- `snapshot` copies the workspace into the linked-test sandbox, runs from that
+  copy, and binds its `.agents/pm` path to the selected temporary tracker.
+  `.git`, `.agents`, `node_modules`, coverage output, and common cache
+  directories are excluded at every directory depth; an existing top-level
+  `node_modules` is linked read-only by convention. Built output remains
+  available so linked commands such as `node dist/cli.js` keep working. Writes
+  therefore land in the disposable snapshot rather than the source checkout.
+
+Every result reports the requested/effective workspace mode, working
+directory, exposed source root, and trust decision. Recorded `test_runs` retain
+the effective workspace mode and trust reason beside the command.
+
+## Linked-Test Command Trust
+
+Linked commands are stored shell programs, so merge-unioned tracker data is an
+execution boundary. New command entries record author, creation time, source
+branch when available, and whether the item merge driver introduced the entry.
+Locally created commands keep their previous run behavior. Commands marked as
+merge-unioned or carrying a different source ref fail before process creation.
+Malformed provenance is sanitized to the additive `provenance_invalid` marker
+and receives the same fail-closed treatment; it is never normalized into a
+trusted legacy command.
+These pre-execution refusals use the `trust_refusal` failure category, separate
+from command or assertion failures.
+
+Choose one explicit recovery:
+
+```bash
+# Review and trust the item's current command fingerprints in this clone.
+pm test <item-id> --acknowledge-linked-tests
+
+# Or permit a single reviewed run. Both controls are required.
+pm config project set untrusted-linked-test-execution enabled
+pm test <item-id> --run --allow-untrusted-linked-tests
+```
+
+Acknowledgments live in the clone-local ignored runtime directory and bind to
+the full command, tracker/workspace context, environment controls, host-safety
+mode, and provenance fingerprint; editing any of those fields requires a new
+review. Enabling the project policy alone never executes
+an untrusted command, and the per-run flag alone is also refused. Inspect all
+unacknowledged entries without executing them with:
+
+```bash
+pm validate --check-command-references --verbose-diagnostics
+```
+
 Use explicit modes when needed:
 
 ```bash
@@ -496,8 +559,9 @@ pm test <item-id> --metric-below coverage=100 --metric-diff p95_latency
 Measurements are stored on the producing `test_runs` row, retained with the
 bounded run history, and exposed consistently by CLI, SDK, MCP, and contracts.
 Each recorded row also keeps a bounded `executions` list with the exact linked
-command plus its requested and effective `pm_context_mode`, so tracker-backed
-verification remains attributable after the transient process logs are gone.
+command, requested/effective `pm_context_mode`, effective workspace mode, and
+trust reason, so tracker-backed verification remains attributable after the
+transient process logs are gone.
 
 ## Linked-Test Assertions
 

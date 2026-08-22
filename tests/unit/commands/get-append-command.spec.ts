@@ -159,12 +159,16 @@ describe("runGet and runAppend", () => {
         { path: "README.md", scope: "project", note: "doc-link" },
       ]);
       expect(linkedResult.linked.tests).toEqual([
-        {
+        expect.objectContaining({
           command: "node --version",
           scope: "project",
           timeout_seconds: 15,
           note: "test-link",
-        },
+          provenance: expect.objectContaining({
+            author: "test-author",
+            source_kind: "local_mutation",
+          }),
+        }),
       ]);
 
       const plainId = createTask(context, {

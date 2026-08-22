@@ -124,6 +124,12 @@ function validateBackgroundTestOptions(
   if (options.run !== true) {
     throw new PmCliError("--background requires --run", EXIT_CODE.USAGE);
   }
+  if (options.acknowledgeLinkedTests === true) {
+    throw new PmCliError(
+      "--background cannot be combined with --acknowledge-linked-tests; acknowledgement is a non-executing foreground operation",
+      EXIT_CODE.USAGE,
+    );
+  }
   if (
     values.addValues.length > 0 ||
     values.addJsonValues.length > 0 ||
@@ -200,6 +206,15 @@ function buildRunTestOptions(
     pmContext:
       typeof options.pmContext === "string" ? options.pmContext : undefined,
     overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
+    workspaceContext:
+      typeof options.workspaceContext === "string"
+        ? options.workspaceContext
+        : undefined,
+    overrideLinkedWorkspaceContext: Boolean(
+      options.overrideLinkedWorkspaceContext,
+    ),
+    allowUntrustedLinkedTests: Boolean(options.allowUntrustedLinkedTests),
+    acknowledgeLinkedTests: Boolean(options.acknowledgeLinkedTests),
     failOnContextMismatch: Boolean(options.failOnContextMismatch),
     failOnSkipped: Boolean(options.failOnSkipped),
     failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
@@ -218,6 +233,13 @@ function buildRunTestOptions(
       typeof options.metricDiff === "string" ? options.metricDiff : undefined,
   };
 }
+
+/** Public contract for test-only operation adapter coverage. */
+export const _testOnlyRegisterOperations = {
+  buildRunTestOptions,
+  buildRunTestAllOptions,
+  validateBackgroundTestOptions,
+};
 
 async function runForegroundLinkedTests(
   id: string,
@@ -322,26 +344,7 @@ async function runTestAllAction(
     return;
   }
   const result = await runTestAll(
-    {
-      status: readOptionString(options, "status"),
-      limit: readOptionString(options, "limit"),
-      offset: readOptionString(options, "offset"),
-      timeout: readOptionString(options, "timeout"),
-      progress: Boolean(options.progress),
-      envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
-      envClear: Array.isArray(options.envClear)
-        ? (options.envClear as string[])
-        : [],
-      sharedHostSafe: Boolean(options.sharedHostSafe),
-      pmContext: readOptionString(options, "pmContext"),
-      overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
-      failOnContextMismatch: Boolean(options.failOnContextMismatch),
-      failOnSkipped: Boolean(options.failOnSkipped),
-      failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
-      requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
-      checkContext: Boolean(options.checkContext),
-      autoPmContext: Boolean(options.autoPmContext),
-    },
+    buildRunTestAllOptions(options),
     globalOptions,
   );
   await invalidateSearchCachesForMutation(globalOptions, {
@@ -354,6 +357,34 @@ async function runTestAllAction(
   if (globalOptions.profile) {
     printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
   }
+}
+
+function buildRunTestAllOptions(options: Record<string, unknown>) {
+  return {
+    status: readOptionString(options, "status"),
+    limit: readOptionString(options, "limit"),
+    offset: readOptionString(options, "offset"),
+    timeout: readOptionString(options, "timeout"),
+    progress: Boolean(options.progress),
+    envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
+    envClear: Array.isArray(options.envClear)
+      ? (options.envClear as string[])
+      : [],
+    sharedHostSafe: Boolean(options.sharedHostSafe),
+    pmContext: readOptionString(options, "pmContext"),
+    overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
+    workspaceContext: readOptionString(options, "workspaceContext"),
+    overrideLinkedWorkspaceContext: Boolean(
+      options.overrideLinkedWorkspaceContext,
+    ),
+    allowUntrustedLinkedTests: Boolean(options.allowUntrustedLinkedTests),
+    failOnContextMismatch: Boolean(options.failOnContextMismatch),
+    failOnSkipped: Boolean(options.failOnSkipped),
+    failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
+    requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
+    checkContext: Boolean(options.checkContext),
+    autoPmContext: Boolean(options.autoPmContext),
+  };
 }
 
 async function runTelemetryAction(
@@ -875,6 +906,18 @@ function addLinkedTestExecutionOptions(command: Command): Command {
       "Force run-level --pm-context to override per-linked-test pm_context_mode metadata",
     )
     .option(
+      "--workspace-context <mode>",
+      "Source-workspace mode: source|isolated|snapshot (default: source)",
+    )
+    .option(
+      "--override-linked-workspace-context",
+      "Force run-level --workspace-context over per-linked-test metadata",
+    )
+    .option(
+      "--allow-untrusted-linked-tests",
+      "Execute untrusted linked commands when project policy also permits it",
+    )
+    .option(
       "--fail-on-context-mismatch",
       "Fail linked PM commands when context item counts differ",
     )
@@ -937,6 +980,10 @@ export function registerOperationCommands(program: Command): void {
       "Run only the 1-based linked-test index from --list order",
     )
     .option("--only-last", "Run only the most recently added linked test");
+  testCommand.option(
+    "--acknowledge-linked-tests",
+    "Trust the item's current linked commands in this clone without executing them",
+  );
   addLinkedTestExecutionOptions(testCommand)
     .option(
       "--measure <value>",

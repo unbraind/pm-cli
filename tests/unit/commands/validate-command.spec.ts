@@ -56,6 +56,10 @@ import {
   summarizeStaleLinkedPathClassifications,
 } from "../../../src/core/validate/stale-file-classification.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
+import {
+  loadTaskMetadata,
+  overwriteTaskTests,
+} from "../../helpers/pmWorkspace.js";
 import type { TempPmContext } from "../../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -2146,37 +2150,12 @@ describe("runValidate", () => {
         expect(linked.code).toBe(0);
       }
 
-      const itemPath = path.join(context.pmPath, "tasks", `${ownerId}.toon`);
-      const before = await readFile(itemPath, "utf8");
-      const testsHeaderPattern = /tests\[(\d+)\](\{[^}]+\}:)/m;
-      const headerMatch = before.match(testsHeaderPattern);
-      expect(headerMatch).not.toBeNull();
-      const currentCount = Number(headerMatch?.[1] ?? "0");
-      const afterCount = currentCount + 1;
-      const afterWithHeader = before.replace(
-        testsHeaderPattern,
-        `tests[${afterCount}]${headerMatch?.[2] ?? "{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:"}`,
-      );
-      const testFields = (headerMatch?.[2] ?? "{command,path,scope}:")
-        .replace(/^\{/, "")
-        .replace(/\}:$/, "")
-        .split(",")
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0);
-      const legacyPathOnlyRow = testFields
-        .map((field) => {
-          if (field === "command") return "null";
-          if (field === "path") return "tests/path-only.spec.ts";
-          if (field === "scope") return "project";
-          return "null";
-        })
-        .join(",");
-      const after = afterWithHeader.replace(
-        /\nbody:/m,
-        `\n  ${legacyPathOnlyRow}\nbody:`,
-      );
-      expect(after).not.toBe(before);
-      await writeFile(itemPath, after, "utf8");
+      const metadata = await loadTaskMetadata(context, ownerId);
+      await overwriteTaskTests(context, ownerId, [
+        ...((metadata.tests as Array<Record<string, unknown>> | undefined) ??
+          []),
+        { path: "tests/path-only.spec.ts", scope: "project" },
+      ]);
 
       const result = await runValidate(
         { checkCommandReferences: true },

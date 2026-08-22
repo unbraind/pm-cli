@@ -12,6 +12,7 @@ import type {
   ItemDocument,
   ItemMetadata,
   RuntimeSchemaSettings,
+  ItemTestRunExecution,
   ItemTestRunSummary,
   LinkedDoc,
   LinkedFile,
@@ -62,6 +63,19 @@ const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set([
   "schema",
   "tracker",
   "auto",
+]);
+const LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES = new Set([
+  "source",
+  "isolated",
+  "snapshot",
+]);
+const LINKED_TEST_TRUST_REASON_VALUES = new Set([
+  "legacy",
+  "local_mutation",
+  "local_source_ref",
+  "acknowledged",
+  "invalid_provenance",
+  "foreign_source_ref",
 ]);
 const ITEM_TEST_RUN_STATUS_VALUES = new Set([
   "passed",
@@ -1001,6 +1015,16 @@ function normalizeTestRunMeasurements(
 }
 
 /** Normalize and bound command/context provenance retained for a test run. */
+function normalizeTestRunEnum<TValue extends string>(
+  value: unknown,
+  allowedValues: ReadonlySet<string>,
+): TValue | undefined {
+  return typeof value === "string" && allowedValues.has(value)
+    ? (value as TValue)
+    : undefined;
+}
+
+/** Normalize and bound command/context provenance retained for a test run. */
 function normalizeTestRunExecutions(
   values: ItemTestRunSummary["executions"],
 ): ItemTestRunSummary["executions"] {
@@ -1015,18 +1039,24 @@ function normalizeTestRunExecutions(
     .slice(0, 32)
     .map((execution) => ({
       command: execution.command.trim(),
-      requested_pm_context_mode:
-        execution.requested_pm_context_mode === "schema" ||
-        execution.requested_pm_context_mode === "tracker" ||
-        execution.requested_pm_context_mode === "auto"
-          ? execution.requested_pm_context_mode
-          : undefined,
-      pm_context_mode:
-        execution.pm_context_mode === "schema" ||
-        execution.pm_context_mode === "tracker" ||
-        execution.pm_context_mode === "auto"
-          ? execution.pm_context_mode
-          : undefined,
+      requested_pm_context_mode: normalizeTestRunEnum<
+        NonNullable<ItemTestRunExecution["requested_pm_context_mode"]>
+      >(
+        execution.requested_pm_context_mode,
+        LINKED_TEST_PM_CONTEXT_MODE_VALUES,
+      ),
+      pm_context_mode: normalizeTestRunEnum<
+        NonNullable<ItemTestRunExecution["pm_context_mode"]>
+      >(execution.pm_context_mode, LINKED_TEST_PM_CONTEXT_MODE_VALUES),
+      workspace_context_mode: normalizeTestRunEnum<
+        NonNullable<ItemTestRunExecution["workspace_context_mode"]>
+      >(
+        execution.workspace_context_mode,
+        LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES,
+      ),
+      trust_reason: normalizeTestRunEnum<
+        NonNullable<ItemTestRunExecution["trust_reason"]>
+      >(execution.trust_reason, LINKED_TEST_TRUST_REASON_VALUES),
     }));
   return executions.length > 0 ? executions : undefined;
 }
@@ -1143,6 +1173,56 @@ function normalizeLinkedTestContextMode(
   return normalized as LinkedTest["pm_context_mode"];
 }
 
+function normalizeLinkedTestWorkspaceContextMode(
+  value: string | undefined,
+): LinkedTest["workspace_context_mode"] | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (
+    !normalized ||
+    !LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES.has(normalized)
+  ) {
+    return undefined;
+  }
+  return normalized as LinkedTest["workspace_context_mode"];
+}
+
+function normalizeLinkedTestProvenance(
+  value: LinkedTest["provenance"],
+  invalid: LinkedTest["provenance_invalid"],
+): Pick<LinkedTest, "provenance" | "provenance_invalid"> {
+  if (invalid === true) {
+    return { provenance_invalid: true };
+  }
+  if (value === undefined) {
+    return {};
+  }
+  if (!isPlainObjectRecord(value)) {
+    return { provenance_invalid: true };
+  }
+  const author = trimStringOrUndefined(value.author);
+  const createdAt = trimStringOrUndefined(value.created_at);
+  const sourceKind = value.source_kind;
+  if (
+    !author ||
+    !createdAt ||
+    !isTimestampLiteral(createdAt) ||
+    (sourceKind !== "local_mutation" && sourceKind !== "merge_union")
+  ) {
+    // Preserve malformed provenance as an explicit runtime sentinel. Dropping
+    // it would make a tampered entry indistinguishable from a trusted legacy
+    // command in the clone-local trust resolver.
+    return { provenance_invalid: true };
+  }
+  return {
+    provenance: {
+      author,
+      created_at: createdAt,
+      source_kind: sourceKind,
+      source_ref: trimStringOrUndefined(value.source_ref),
+    },
+  };
+}
+
 function normalizeLinkedTest(value: LinkedTest): LinkedTest {
   const test: LinkedTest = {
     command: value.command?.trim() || undefined,
@@ -1155,6 +1235,13 @@ function normalizeLinkedTest(value: LinkedTest): LinkedTest {
         ? value.timeout_seconds
         : undefined,
     pm_context_mode: normalizeLinkedTestContextMode(value.pm_context_mode),
+    workspace_context_mode: normalizeLinkedTestWorkspaceContextMode(
+      value.workspace_context_mode,
+    ),
+    ...normalizeLinkedTestProvenance(
+      value.provenance,
+      value.provenance_invalid,
+    ),
     env_set: normalizeStringRecord(value.env_set),
     env_clear: normalizeTrimmedStringList(value.env_clear),
     shared_host_safe: value.shared_host_safe === true ? true : undefined,

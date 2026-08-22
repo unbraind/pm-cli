@@ -1070,6 +1070,44 @@
       ],
       "package_version": "2026.8.22",
       "reason": "pm-c0lrdm pm-yds9dt pm-xam9bt: add adapter/config receipts and widen incorrect fixed recovery-budget literals to measured number or explicit null/unbounded"
+    },
+    {
+      "changes": [
+        "signature ./sdk:LinkedTest",
+        "signature ./sdk:PmSettings",
+        "signature ./sdk:TestAllCommandOptions",
+        "signature ./sdk:TestCommandOptions",
+        "signature ./sdk:TestRunResult",
+        "signature ./sdk/core:PmSettings",
+        "signature ./sdk/runtime:LinkedTest",
+        "signature ./sdk/runtime:PmSettings"
+      ],
+      "package_version": "2026.8.22",
+      "reason": "Extend linked-test trust and workspace-context contracts across SDK entrypoints"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.8.22",
+      "reason": "Extend linked-test trust and workspace-context contracts across SDK entrypoints"
+    },
+    {
+      "changes": [
+        "signature ./sdk:LinkedTestFailureCategory",
+        "signature ./sdk:LinkedTestTrustDecision"
+      ],
+      "package_version": "2026.8.22",
+      "reason": "Add explicit trust-refusal and invalid-provenance classifications required by linked-test execution safety"
+    },
+    {
+      "changes": [
+        "signature ./sdk:LinkedTest",
+        "signature ./sdk/runtime:LinkedTest"
+      ],
+      "package_version": "2026.8.22",
+      "reason": "Additive optional provenance_invalid marker preserves fail-closed storage state without widening the existing provenance source_kind union; two trust helpers are newly exported for CLI-consumer parity."
     }
   ],
   "entrypoints": {
@@ -1183,6 +1221,12 @@
           "kind": "function",
           "name": "acceptAssuranceProposals",
           "signature": "(pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "acknowledgeLinkedTests",
+          "signature": "(pmRoot: string, tests: LinkedTest[], acknowledgedAt: string) => Promise<{ acknowledged: number; fingerprints: string[]; }> | calls: (pmRoot: string, tests: LinkedTest[], acknowledgedAt: string) => Promise<{ acknowledged: number; fingerprints: string[]; }>"
         },
         {
           "classification": "supported",
@@ -2437,6 +2481,18 @@
           "kind": "function",
           "name": "attachContextIntentReceipt",
           "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; } | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "attachLinkedTestMutationProvenance",
+          "signature": "(tests: LinkedTest[] | undefined, author: string, createdAt: string) => Promise<LinkedTest[] | undefined> | calls: (tests: LinkedTest[] | undefined, author: string, createdAt: string) => Promise<LinkedTest[] | undefined>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "attachLinkedTestProvenance",
+          "signature": "(tests: LinkedTest[] | undefined, author: string, createdAt: string, sourceRef: string | undefined) => LinkedTest[] | undefined | calls: (tests: LinkedTest[] | undefined, author: string, createdAt: string, sourceRef: string | undefined) => LinkedTest[] | undefined"
         },
         {
           "classification": "advanced_export",
@@ -7888,6 +7944,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES",
+          "signature": "readonly [\"source\", \"isolated\", \"snapshot\"]"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "type",
           "name": "LinkedArtifact",
           "signature": "export type LinkedArtifact = { path: string; scope: LinkScope; note?: string; };"
@@ -7938,19 +8000,37 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedTest",
-          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\"; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
+          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
         },
         {
           "classification": "advanced_export",
           "kind": "type",
           "name": "LinkedTestFailureCategory",
-          "signature": "export type LinkedTestFailureCategory = \"infra_collision\" | \"assertion_failure\" | \"empty_run\" | \"timeout\" | \"max_buffer\" | \"spawn_error\" | \"signal\";"
+          "signature": "export type LinkedTestFailureCategory = \"infra_collision\" | \"trust_refusal\" | \"assertion_failure\" | \"empty_run\" | \"timeout\" | \"max_buffer\" | \"spawn_error\" | \"signal\";"
         },
         {
           "classification": "advanced_export",
           "kind": "type",
           "name": "LinkedTestPmContextMode",
           "signature": "export type LinkedTestPmContextMode = (typeof LINKED_TEST_PM_CONTEXT_MODE_VALUES)[number];"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LinkedTestTrustDecision",
+          "signature": "export interface LinkedTestTrustDecision { fingerprint: string; trusted: boolean; reason: \"legacy\" | \"local_mutation\" | \"local_source_ref\" | \"acknowledged\" | \"invalid_provenance\" | \"foreign_source_ref\"; source_ref?: string; current_source_ref?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "linkedTestTrustFingerprint",
+          "signature": "(test: LinkedTest) => string | calls: (test: LinkedTest) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "LinkedTestWorkspaceContextMode",
+          "signature": "export type LinkedTestWorkspaceContextMode = (typeof LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES)[number];"
         },
         {
           "classification": "supported",
@@ -9347,6 +9427,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "parseLinkedTestWorkspaceContextMode",
+          "signature": "(raw: string | undefined, optionName: string) => LinkedTest[\"workspace_context_mode\"] | undefined | calls: (raw: string | undefined, optionName: string) => LinkedTest[\"workspace_context_mode\"] | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "parseMigrateEntries",
           "signature": "(raw: string[] | undefined) => PathMigration[] | calls: (raw: string[] | undefined) => PathMigration[]"
         },
@@ -10098,7 +10184,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.8.0\""
+          "signature": "\"4.9.0\""
         },
         {
           "classification": "contract_data",
@@ -11058,7 +11144,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "advanced_export",
@@ -13291,6 +13377,30 @@
           "kind": "function",
           "name": "resolveLinkedTestFailureExitCode",
           "signature": "(execution: Pick<LinkedTestExecutionResult, \"exitCode\" | \"maxBufferExceeded\" | \"timedOut\">) => number | calls: (execution: Pick<LinkedTestExecutionResult, \"exitCode\" | \"timedOut\" | \"maxBufferExceeded\">) => number"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveLinkedTestSourceRef",
+          "signature": "(cwd?: string) => Promise<string | undefined> | calls: (cwd?: string) => Promise<string | undefined>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveLinkedTestSourceWorkspaceRoot",
+          "signature": "(cwd?: string) => string | calls: (cwd?: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveLinkedTestTrust",
+          "signature": "(pmRoot: string, test: LinkedTest, currentSourceRef?: string) => Promise<LinkedTestTrustDecision> | calls: (pmRoot: string, test: LinkedTest, currentSourceRef?: string) => Promise<LinkedTestTrustDecision>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveLinkedTestTrustBatch",
+          "signature": "(pmRoot: string, tests: LinkedTest[], currentSourceRef?: string) => Promise<LinkedTestTrustDecision[]> | calls: (pmRoot: string, tests: LinkedTest[], currentSourceRef?: string) => Promise<LinkedTestTrustDecision[]>"
         },
         {
           "classification": "supported",
@@ -15930,7 +16040,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestAllCommandOptions",
-          "signature": "export interface TestAllCommandOptions { author?: string; status?: string; limit?: string; offset?: string; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; }"
+          "signature": "export interface TestAllCommandOptions { author?: string; status?: string; limit?: string; offset?: string; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; workspaceContext?: string; overrideLinkedWorkspaceContext?: boolean; allowUntrustedLinkedTests?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -15948,7 +16058,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestCommandOptions",
-          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
+          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; workspaceContext?: string; overrideLinkedWorkspaceContext?: boolean; allowUntrustedLinkedTests?: boolean; acknowledgeLinkedTests?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
         },
         {
           "classification": "supported",
@@ -15972,7 +16082,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestRunResult",
-          "signature": "export interface TestRunResult { command?: string; path?: string; status: \"passed\" | \"failed\" | \"skipped\"; exit_code?: number; failure_category?: LinkedTestFailureCategory; execution_context?: { requested_pm_context_mode: LinkedTestPmContextMode; pm_context_mode: LinkedTestPmContextMode; auto_pm_context_applied: boolean; is_pm_command: boolean; is_pm_tracker_read_command: boolean; source_project_pm_path: string; sandbox_project_pm_path: string; source_global_pm_path: string; sandbox_global_pm_path: string; source_project_item_count: number; sandbox_project_item_count: number; source_global_item_count: number; sandbox_global_item_count: number; mismatch_detected: boolean; project_extensions_seeded: boolean; global_extensions_seeded: boolean; }; stdout?: string; stderr?: string; error?: string; }"
+          "signature": "export interface TestRunResult { command?: string; path?: string; status: \"passed\" | \"failed\" | \"skipped\"; exit_code?: number; failure_category?: LinkedTestFailureCategory; execution_context?: { requested_pm_context_mode: LinkedTestPmContextMode; pm_context_mode: LinkedTestPmContextMode; auto_pm_context_applied: boolean; is_pm_command: boolean; is_pm_tracker_read_command: boolean; source_project_pm_path: string; sandbox_project_pm_path: string; source_global_pm_path: string; sandbox_global_pm_path: string; source_project_item_count: number; sandbox_project_item_count: number; source_global_item_count: number; sandbox_global_item_count: number; mismatch_detected: boolean; project_extensions_seeded: boolean; global_extensions_seeded: boolean; requested_workspace_context_mode: LinkedTestWorkspaceContextMode; workspace_context_mode: LinkedTestWorkspaceContextMode; working_directory: string; source_workspace_root: string; trust: LinkedTestTrustDecision; }; stdout?: string; stderr?: string; error?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -19536,7 +19646,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.8.0\""
+          "signature": "\"4.9.0\""
         },
         {
           "classification": "contract_data",
@@ -21642,7 +21752,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",
@@ -27696,7 +27806,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedTest",
-          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\"; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
+          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
         },
         {
           "classification": "supported",
@@ -28308,7 +28418,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",

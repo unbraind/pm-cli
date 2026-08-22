@@ -2,23 +2,28 @@ id: pm-efkvdy
 title: Allow linked tests to opt out of source-workspace injection for self-sandboxing repo-wide gates
 description: "pm test always exports PM_SOURCE_WORKSPACE_ROOT in schema, tracker, and auto modes. Repo-wide test runners that intentionally create their own isolated PM roots therefore change file-governance and merge-receipt semantics when linked, even though the identical direct gate passes."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,context-parity,linked-tests,test-safety
 created_at: "2026-07-27T19:42:44.895Z"
-updated_at: "2026-08-07T11:20:19.890Z"
+updated_at: "2026-08-22T23:27:16.727Z"
+closed_at: "2026-08-22T23:27:16.120Z"
+completed_at: "2026-08-22T23:27:16.120Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: A documented linked-test context mode or scoped safe control can omit source-workspace injection without allowing PM_PATH or PM_GLOBAL_PATH escape; repo-wide run-tests coverage passes both directly and as a linked test; execution_context reports the opt-out explicitly
 definition_of_ready: Preserve protected tracker-root isolation and add adversarial tests proving linked metadata cannot override protected paths.
 parent: pm-92if
 risk: medium
-confidence: 85
+confidence: high
+release: v2026.8.23
 severity: medium
 environment: pm test linked runner wrapping node scripts/run-tests.mjs coverage
 repro_steps: "Link node scripts/run-tests.mjs coverage to an item and run pm test <id> --run; validate file-governance tests scan PM_SOURCE_WORKSPACE_ROOT and fail, while the same command directly passes 100/100/100/100."
-expected_result: A self-sandboxing repository gate can be recorded and executed through pm without inherited source-workspace semantics.
-actual_result: All supported modes inject PM_SOURCE_WORKSPACE_ROOT; auto resolves to schema for non-PM commands and protected env directives cannot clear it.
+resolution: "Shipped isolated and protected snapshot workspace modes with no source-path leakage or writeback, explicit context receipts, and focused/manual/full-coverage verification."
+expected_result: "Self-sandboxing repository gates can select an isolated or protected snapshot workspace without receiving real tracker or source-workspace paths, and execution receipts expose the effective mode."
+actual_result: "Before the fix, every linked run injected PM_SOURCE_WORKSPACE_ROOT and could alter otherwise self-contained repository gate semantics."
+fixed_version: v2026.8.23
 component: linked-test-runtime
 regression: false
 customer_impact: Agents cannot record certain authoritative whole-repository gates as passing linked evidence without changing their semantics.
@@ -33,6 +38,62 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-ei6x66,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
   pm-x2vx,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-27T19:42:44.895Z","harness:codex","Duplicate check: searched all 2,136 items for linked-test context none, source-workspace opt-out, file governance, coverage, and validation. Reused pm-vrsn as canonical implemented lineage; no existing item covers an explicit no-source-workspace mode. Discovered while closing PR #777 review evidence; direct coverage passed all 6,428 tests at 100/100/100/100, while two linked attempts deterministically failed validate file-scan and merge-receipt fixtures because execution_context retained the source workspace."
+  "2026-08-22T16:34:36.185Z","harness:codex","Implementation start 2026-08-22: actively implementing the explicit source-workspace isolation half of the coupled linked-test context/trust tranche. This item is claimed because its metadata and runtime surface will change; unrelated quality items remain open and unclaimed."
+  "2026-08-22T18:26:48.315Z","harness:codex","Verification evidence 2026-08-22: isolated mode strips PM_SOURCE_* injection while retaining the source cwd; snapshot mode copies the source tree into the protected sandbox, excludes tracker/Git state, binds the sandbox tracker, and leaves the original checkout unchanged. Focused integration tests and the manual temporary-workspace proof passed; full suite passed 7,794 tests at exact 100/100/100/100."
+  "2026-08-22T22:49:43.124Z","harness:codex","Final continuation evidence 2026-08-23: isolated mode now executes from an empty temporary workspace instead of the source checkout; snapshot mode excludes protected and generated directories at every depth and cannot write back to the source. A clean temporary Git/PM consumer proved isolated and snapshot single-item runs, test-all snapshot override, requested/effective receipts, and no snapshot writeback. The linked isolation suite and exact full coverage passed."
+  "2026-08-22T23:25:59.589Z","harness:codex","Review remediation evidence: isolated-workspace integration now proves the child sees false:false:false for PM_PATH, PM_GLOBAL_PATH, and PM_SOURCE_WORKSPACE_ROOT while retaining the effective-context receipt. Focused integration and full exact-coverage gates passed."
+files[13]{path,scope,note}:
+  src/cli/register-operations.ts,project,source-workspace isolation and snapshot behavior
+  src/core/item/item-format.ts,project,requested and effective workspace receipt serialization
+  src/sdk/cli-contracts/flag-contracts.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/cli-contracts/tool-schema.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/flag-invocation-contracts.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/test/batch.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/test/entry.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/test/execution.ts,project,source-workspace isolation and snapshot behavior
+  src/sdk/test/parsers.ts,project,source-workspace isolation and snapshot behavior
+  src/types.ts,project,source-workspace isolation and snapshot behavior
+  tests/fixtures/contracts/full.json,project,generated workspace context contract
+  tests/integration/linked-test-context-trust.integration.spec.ts,project,source-workspace isolation and snapshot behavior
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts,project,300,"harness:codex","2026-08-22T17:47:46.833Z",local_mutation,codex/linked-test-context-trust,Source isolated and snapshot workspace behavior
+test_runs[2]:
+  - run_id: test-local-mt4o9i5g-pxpd2i
+    kind: test
+    status: passed
+    started_at: "2026-08-22T17:48:26.972Z"
+    finished_at: "2026-08-22T17:48:36.772Z"
+    recorded_at: "2026-08-22T17:48:36.772Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt4yzoty-n2resf
+    kind: test
+    status: passed
+    started_at: "2026-08-22T22:48:40.309Z"
+    finished_at: "2026-08-22T22:48:54.645Z"
+    recorded_at: "2026-08-22T22:48:54.645Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project,workspace evidence receipt traceability
+  docs/SDK.md,project,isolated and snapshot workspace semantics
+  docs/TESTING.md,project,source workspace modes and isolation semantics
+close_reason: "Self-sandboxing linked tests now have isolated and protected snapshot workspace modes with no source-root injection or writeback, verified by child stdout and full coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-efkvdy
+  gate_id: linked-test-source-workspace-isolation
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts
+  local_checks[3]: focused source isolation and snapshot integration,manual snapshot no-writeback proof,exact full coverage 100/100/100/100
+  hosted_checks[3]: CI / Gates (static),CI / Tests (coverage),CI / Windows regression (Node 24)
 body: ""

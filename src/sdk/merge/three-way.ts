@@ -27,6 +27,7 @@ import type {
   HistoryEntry,
   ItemDocument,
   ItemMetadata,
+  LinkedTest,
 } from "../../types/index.js";
 
 /** Restricts which side of a three-way merge wins an unresolvable conflict. */
@@ -481,6 +482,69 @@ function unionCollection(
   return merged;
 }
 
+function linkedTestDefinitionIdentity(value: unknown): string {
+  /* c8 ignore start -- canonical item parsing normalizes linked-test entries to object records */
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return stableStringify(value);
+  }
+  /* c8 ignore stop */
+  const { provenance: _provenance, ...definition } = value as Record<
+    string,
+    unknown
+  >;
+  return stableStringify(definition);
+}
+
+function markMergedLinkedTest(value: unknown): unknown {
+  /* c8 ignore start -- canonical item parsing normalizes linked-test entries to object records */
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return value;
+  }
+  /* c8 ignore stop */
+  const test = value as LinkedTest;
+  if (!test.provenance) {
+    return {
+      ...test,
+      // Legacy entries contributed by another branch must not regain implicit
+      // local trust. This incomplete merge marker is preserved by normalization
+      // and refused until an operator acknowledges it in the receiving clone.
+      provenance: { source_kind: "merge_union" } as LinkedTest["provenance"],
+    };
+  }
+  return {
+    ...test,
+    provenance: {
+      ...test.provenance,
+      source_kind: "merge_union" as const,
+    },
+  };
+}
+
+function unionLinkedTests(
+  base: unknown,
+  ours: unknown,
+  theirs: unknown,
+): unknown[] {
+  const toEntries = (value: unknown): unknown[] =>
+    Array.isArray(value) ? value : [];
+  const baseIds = new Set(toEntries(base).map(linkedTestDefinitionIdentity));
+  const oursEntries = toEntries(ours);
+  const oursIds = new Set(oursEntries.map(linkedTestDefinitionIdentity));
+  const theirsEntries = toEntries(theirs);
+  const theirsIds = new Set(theirsEntries.map(linkedTestDefinitionIdentity));
+  const merged = oursEntries.filter((entry) => {
+    const identity = linkedTestDefinitionIdentity(entry);
+    return !baseIds.has(identity) || theirsIds.has(identity);
+  });
+  for (const entry of theirsEntries) {
+    const identity = linkedTestDefinitionIdentity(entry);
+    if (!oursIds.has(identity) && !baseIds.has(identity)) {
+      merged.push(markMergedLinkedTest(entry));
+    }
+  }
+  return merged;
+}
+
 function latestTimestamp(ours: unknown, theirs: unknown): unknown {
   return compareTimestampStrings(String(ours), String(theirs)) >= 0
     ? ours
@@ -567,6 +631,62 @@ interface ItemMetadataMergeAccumulator {
   conflictDecisions: ItemMergeConflictDecision[];
 }
 
+/** Merge one collection field and report whether the field was handled. */
+function mergeItemUnionField(params: {
+  field: string;
+  baseValue: unknown;
+  oursValue: unknown;
+  theirsValue: unknown;
+  unionFieldSet: ReadonlySet<string>;
+  accumulator: ItemMetadataMergeAccumulator;
+}): boolean {
+  if (!params.unionFieldSet.has(params.field)) return false;
+  const union =
+    params.field === "tests"
+      ? unionLinkedTests(params.baseValue, params.oursValue, params.theirsValue)
+      : unionCollection(params.baseValue, params.oursValue, params.theirsValue);
+  params.accumulator.merged[params.field] = union;
+  if (!jsonEquals(union, params.oursValue)) {
+    params.accumulator.unionFields.push(params.field);
+  }
+  return true;
+}
+
+/** Merge one scalar field while preserving conflict evidence. */
+function mergeItemScalarField(params: {
+  field: string;
+  baseValue: unknown;
+  oursValue: unknown;
+  theirsValue: unknown;
+  preferred: MergePreferredSide;
+  conflictResolution: "preferred_side" | "stable_value_order";
+  accumulator: ItemMetadataMergeAccumulator;
+}): void {
+  const outcome = mergeItemScalarThreeWay(
+    params.baseValue,
+    params.oursValue,
+    params.theirsValue,
+    params.preferred,
+    params.conflictResolution,
+  );
+  if (outcome.value !== undefined) {
+    params.accumulator.merged[params.field] = outcome.value;
+  }
+  if (outcome.conflict) {
+    params.accumulator.conflictFields.push(params.field);
+    params.accumulator.conflictDecisions.push({
+      field: params.field,
+      base: params.baseValue,
+      ours: params.oursValue,
+      theirs: params.theirsValue,
+      retained: outcome.value,
+      discarded: outcome.from_theirs ? params.oursValue : params.theirsValue,
+    });
+  } else if (outcome.from_theirs) {
+    params.accumulator.fieldsFromTheirs.push(params.field);
+  }
+}
+
 function mergeItemMetadataRecords(
   baseRecord: Record<string, unknown>,
   oursRecord: Record<string, unknown>,
@@ -591,44 +711,34 @@ function mergeItemMetadataRecords(
     const baseValue = baseRecord[field];
     const oursValue = oursRecord[field];
     const theirsValue = theirsRecord[field];
-    if (unionFieldSet.has(field)) {
-      const union = unionCollection(baseValue, oursValue, theirsValue);
+    if (
+      mergeItemUnionField({
+        field,
+        baseValue,
+        oursValue,
+        theirsValue,
+        unionFieldSet,
+        accumulator,
+      })
+    ) {
       // `fieldNames` is derived from both records' own keys, so a collection
       // reached here is declared by at least one side. Preserve even an empty
       // result (`tags` is required) so serialization never drops it.
-      accumulator.merged[field] = union;
-      if (!jsonEquals(union, oursValue)) {
-        accumulator.unionFields.push(field);
-      }
       continue;
     }
     if (latestFieldSet.has(field)) {
       accumulator.merged[field] = latestTimestamp(oursValue, theirsValue);
       continue;
     }
-    const outcome = mergeItemScalarThreeWay(
+    mergeItemScalarField({
+      field,
       baseValue,
       oursValue,
       theirsValue,
       preferred,
       conflictResolution,
-    );
-    if (outcome.value !== undefined) {
-      accumulator.merged[field] = outcome.value;
-    }
-    if (outcome.conflict) {
-      accumulator.conflictFields.push(field);
-      accumulator.conflictDecisions.push({
-        field,
-        base: baseValue,
-        ours: oursValue,
-        theirs: theirsValue,
-        retained: outcome.value,
-        discarded: outcome.from_theirs ? oursValue : theirsValue,
-      });
-    } else if (outcome.from_theirs) {
-      accumulator.fieldsFromTheirs.push(field);
-    }
+      accumulator,
+    });
   }
   return accumulator;
 }

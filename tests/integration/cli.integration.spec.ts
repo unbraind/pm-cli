@@ -2697,10 +2697,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(replaceResult.code).toBe(0);
       expect((replaceResult.json as { changed_fields: string[] }).changed_fields).toContain("tests");
       expect((replaceResult.json as { item: { tests?: Array<Record<string, unknown>> } }).item.tests).toEqual([
-        {
+        expect.objectContaining({
           command: "node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts",
           scope: "project",
-        },
+          provenance: expect.objectContaining({
+            author: "integration-test",
+            source_kind: "local_mutation",
+          }),
+        }),
       ]);
     });
   });

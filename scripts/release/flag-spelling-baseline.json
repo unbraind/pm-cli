@@ -17820,6 +17820,34 @@
     },
     {
       "command": "test",
+      "canonical_flag": "--workspace-context",
+      "accepted_spellings": [
+        "--workspace-context"
+      ]
+    },
+    {
+      "command": "test",
+      "canonical_flag": "--override-linked-workspace-context",
+      "accepted_spellings": [
+        "--override-linked-workspace-context"
+      ]
+    },
+    {
+      "command": "test",
+      "canonical_flag": "--allow-untrusted-linked-tests",
+      "accepted_spellings": [
+        "--allow-untrusted-linked-tests"
+      ]
+    },
+    {
+      "command": "test",
+      "canonical_flag": "--acknowledge-linked-tests",
+      "accepted_spellings": [
+        "--acknowledge-linked-tests"
+      ]
+    },
+    {
+      "command": "test",
       "canonical_flag": "--fail-on-context-mismatch",
       "accepted_spellings": [
         "--fail-on-context-mismatch"
@@ -18111,6 +18139,27 @@
       "canonical_flag": "--override-linked-pm-context",
       "accepted_spellings": [
         "--override-linked-pm-context"
+      ]
+    },
+    {
+      "command": "test-all",
+      "canonical_flag": "--workspace-context",
+      "accepted_spellings": [
+        "--workspace-context"
+      ]
+    },
+    {
+      "command": "test-all",
+      "canonical_flag": "--override-linked-workspace-context",
+      "accepted_spellings": [
+        "--override-linked-workspace-context"
+      ]
+    },
+    {
+      "command": "test-all",
+      "canonical_flag": "--allow-untrusted-linked-tests",
+      "accepted_spellings": [
+        "--allow-untrusted-linked-tests"
       ]
     },
     {

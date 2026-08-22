@@ -1869,10 +1869,13 @@ describe("runUpdate", () => {
 
       expect(replaced.changed_fields).toContain("tests");
       expect((replaced.item as { tests?: Array<Record<string, unknown>> }).tests).toEqual([
-        {
+        expect.objectContaining({
           command: "node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts",
           scope: "project",
-        },
+          provenance: expect.objectContaining({
+            source_kind: "local_mutation",
+          }),
+        }),
       ]);
     });
   });

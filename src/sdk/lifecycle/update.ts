@@ -121,6 +121,7 @@ import {
   parseTests,
   requireStringOption,
 } from "./create.js";
+import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
@@ -949,9 +950,7 @@ function dependencyKey(
   value: Pick<Dependency, "id" | "kind" | "source_kind">,
 ): string {
   const sourceKind = value.source_kind?.trim().toLowerCase() ?? "";
-  return [value.id.trim().toLowerCase(), value.kind, sourceKind].join(
-    "\u0000",
-  );
+  return [value.id.trim().toLowerCase(), value.kind, sourceKind].join("\u0000");
 }
 
 /** Return the complete normalized identity of one stored dependency row. */
@@ -1091,9 +1090,12 @@ function docKey(value: Pick<LinkedDoc, "path" | "scope">): string {
 }
 
 function testKey(
-  value: Pick<LinkedTest, "command" | "path" | "scope" | "pm_context_mode">,
+  value: Pick<
+    LinkedTest,
+    "command" | "path" | "scope" | "pm_context_mode" | "workspace_context_mode"
+  >,
 ): string {
-  return `${value.command}::${value.path ?? ""}::${value.scope}::${value.pm_context_mode ?? ""}`;
+  return `${value.command}::${value.path ?? ""}::${value.scope}::${value.pm_context_mode ?? ""}::${value.workspace_context_mode ?? ""}`;
 }
 
 function matchesDependencySelector(
@@ -3223,6 +3225,11 @@ async function runUpdateWithContext(
   );
   const fileUpdates = parseFiles(options.file);
   const testUpdates = parseTests(options.test);
+  testUpdates.values = await attachLinkedTestMutationProvenance(
+    testUpdates.values,
+    author,
+    nowIso,
+  );
   const docUpdates = parseDocs(options.doc);
   const workflowTransitionWarnings: string[] = [];
   const parentReference = await resolveParentReferenceForUpdate({
