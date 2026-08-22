@@ -13,10 +13,13 @@ const repoRoot = path.resolve(
 const cliPath = path.join(repoRoot, "dist", "cli.js");
 const mcpPath = path.join(repoRoot, "dist", "mcp", "server.js");
 const CLOCK = "2026-08-22T12:00:00.000Z";
+const PROCESS_TIMEOUT_MS = 30_000;
 
 const temporaryRoots: string[] = [];
 
-function processEnvironment(seed = "process-conformance-seed"): NodeJS.ProcessEnv {
+function processEnvironment(
+  seed = "process-conformance-seed",
+): NodeJS.ProcessEnv {
   return {
     ...process.env,
     PM_CLOCK: CLOCK,
@@ -42,15 +45,30 @@ function runCli(
     cwd: repoRoot,
     encoding: "utf8",
     env,
+    timeout: PROCESS_TIMEOUT_MS,
+  });
+}
+
+function processDiagnostics(result: {
+  error?: Error;
+  stdout?: unknown;
+  stderr?: unknown;
+}): string {
+  return JSON.stringify({
+    error: result.error,
+    stdout: result.stdout,
+    stderr: result.stderr,
   });
 }
 
 function initializeTracker(pmRoot: string, env = processEnvironment()): void {
   const result = runCli(pmRoot, ["init", "--yes"], env);
-  expect(result.status, result.stderr).toBe(0);
+  expect(result.status, processDiagnostics(result)).toBe(0);
 }
 
-async function authoritativeSnapshot(pmRoot: string): Promise<Record<string, string>> {
+async function authoritativeSnapshot(
+  pmRoot: string,
+): Promise<Record<string, string>> {
   const snapshot: Record<string, string> = {};
   for (const folder of ["tasks", "history"]) {
     const folderPath = path.join(pmRoot, folder);
@@ -65,7 +83,11 @@ async function authoritativeSnapshot(pmRoot: string): Promise<Record<string, str
   return snapshot;
 }
 
-function createCliFixture(pmRoot: string, title: string, env = processEnvironment()): void {
+function createCliFixture(
+  pmRoot: string,
+  title: string,
+  env = processEnvironment(),
+): void {
   const result = runCli(
     pmRoot,
     [
@@ -82,7 +104,7 @@ function createCliFixture(pmRoot: string, title: string, env = processEnvironmen
     ],
     env,
   );
-  expect(result.status, result.stderr).toBe(0);
+  expect(result.status, processDiagnostics(result)).toBe(0);
 }
 
 function runMcpFixture(pmRoot: string, env = processEnvironment()) {
@@ -120,14 +142,15 @@ function runMcpFixture(pmRoot: string, env = processEnvironment()) {
     encoding: "utf8",
     env,
     input: `${requests.map((request) => JSON.stringify(request)).join("\n")}\n`,
+    timeout: PROCESS_TIMEOUT_MS,
   });
 }
 
 afterEach(async () => {
   await Promise.all(
-    temporaryRoots.splice(0).map((root) =>
-      rm(root, { force: true, recursive: true }),
-    ),
+    temporaryRoots
+      .splice(0)
+      .map((root) => rm(root, { force: true, recursive: true })),
   );
 });
 
@@ -176,17 +199,26 @@ describe("reproducible process transport contract", () => {
     for (const pmRoot of [firstRoot, secondRoot]) {
       initializeTracker(pmRoot);
       const result = runMcpFixture(pmRoot);
-      expect(result.status, result.stderr).toBe(0);
+      expect(result.status, processDiagnostics(result)).toBe(0);
       const responses = result.stdout
         .trim()
         .split("\n")
-        .map((line) => JSON.parse(line) as {
-          error?: unknown;
-          result?: { isError?: boolean };
-        });
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              error?: unknown;
+              result?: { isError?: boolean };
+            },
+        );
       expect(responses).toHaveLength(3);
-      expect(responses.every((response) => response.error === undefined)).toBe(true);
-      expect(responses.slice(1).every((response) => response.result?.isError !== true)).toBe(true);
+      expect(responses.every((response) => response.error === undefined)).toBe(
+        true,
+      );
+      expect(
+        responses
+          .slice(1)
+          .every((response) => response.result?.isError !== true),
+      ).toBe(true);
     }
 
     expect(await authoritativeSnapshot(firstRoot)).toEqual(
@@ -199,20 +231,28 @@ describe("reproducible process transport contract", () => {
     delete partialEnvironment.PM_SEED;
     delete partialEnvironment.PM_CLOCK_TICK_MS;
 
-    const cliResult = spawnSync(process.execPath, [cliPath, "--json", "--version"], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: partialEnvironment,
-    });
-    expect(cliResult.status).toBe(2);
+    const cliResult = spawnSync(
+      process.execPath,
+      [cliPath, "--json", "--version"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: partialEnvironment,
+        timeout: PROCESS_TIMEOUT_MS,
+      },
+    );
+    expect(cliResult.status, processDiagnostics(cliResult)).toBe(2);
     expect(JSON.parse(cliResult.stderr)).toMatchObject({
       code: "invalid_reproducible_process_environment",
       exit_code: 2,
       recovery: { missing_required_fields: ["PM_SEED"] },
     });
 
-    const mcpResult = runMcpFixture("unused-for-initialize", partialEnvironment);
-    expect(mcpResult.status, mcpResult.stderr).toBe(0);
+    const mcpResult = runMcpFixture(
+      "unused-for-initialize",
+      partialEnvironment,
+    );
+    expect(mcpResult.status, processDiagnostics(mcpResult)).toBe(0);
     const firstResponse = JSON.parse(mcpResult.stdout.split("\n")[0]) as {
       error?: { code?: number; data?: { code?: string; recovery?: unknown } };
     };

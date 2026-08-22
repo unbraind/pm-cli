@@ -6,6 +6,7 @@
  */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { isRfc3339DateTime } from "../../core/shared/time.js";
 import {
   createReproducibleExecutionRunner,
   validateReproducibleExecutionSettings,
@@ -43,7 +44,7 @@ function invalidProcessEnvironment(
     field,
     required: `${PM_REPRODUCIBLE_PROCESS_ENV.clock} and ${PM_REPRODUCIBLE_PROCESS_ENV.seed}; ${PM_REPRODUCIBLE_PROCESS_ENV.tickMs} is optional`,
     nextSteps: [
-      `Set ${PM_REPRODUCIBLE_PROCESS_ENV.clock} to an ISO-8601 instant and ${PM_REPRODUCIBLE_PROCESS_ENV.seed} to a non-empty reproducibility seed.`,
+      `Set ${PM_REPRODUCIBLE_PROCESS_ENV.clock} to an ISO-8601 instant with Z or a numeric UTC offset and ${PM_REPRODUCIBLE_PROCESS_ENV.seed} to a non-empty reproducibility seed.`,
       `Optionally set ${PM_REPRODUCIBLE_PROCESS_ENV.tickMs} to a non-negative integer; it defaults to 1.`,
       `Unset all three variables to retain normal wall-clock and cryptographic-random behavior.`,
     ],
@@ -52,9 +53,10 @@ function invalidProcessEnvironment(
       provided_fields: providedFields,
       missing_required_fields:
         reason === "incomplete"
-          ? [PM_REPRODUCIBLE_PROCESS_ENV.clock, PM_REPRODUCIBLE_PROCESS_ENV.seed].filter(
-              (name) => !providedFields.includes(name),
-            )
+          ? [
+              PM_REPRODUCIBLE_PROCESS_ENV.clock,
+              PM_REPRODUCIBLE_PROCESS_ENV.seed,
+            ].filter((name) => !providedFields.includes(name))
           : undefined,
     },
   });
@@ -95,16 +97,20 @@ export function resolveReproducibleProcessEnvironment(
       providedFields,
     );
   }
-  if (!Number.isFinite(Date.parse(clock))) {
+  if (!isRfc3339DateTime(clock)) {
     throw invalidProcessEnvironment(
-      `${PM_REPRODUCIBLE_PROCESS_ENV.clock} must be a valid ISO-8601 instant.`,
+      `${PM_REPRODUCIBLE_PROCESS_ENV.clock} must be a valid ISO-8601 instant with Z or a numeric UTC offset.`,
       "invalid_value",
       PM_REPRODUCIBLE_PROCESS_ENV.clock,
       providedFields,
     );
   }
   const tickMs = tick === undefined ? 1 : Number(tick);
-  if (tick?.trim().length === 0 || !Number.isSafeInteger(tickMs) || tickMs < 0) {
+  if (
+    tick?.trim().length === 0 ||
+    !Number.isSafeInteger(tickMs) ||
+    tickMs < 0
+  ) {
     throw invalidProcessEnvironment(
       `${PM_REPRODUCIBLE_PROCESS_ENV.tickMs} must be a non-negative integer.`,
       "invalid_value",

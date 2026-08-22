@@ -81,18 +81,20 @@ describe("reproducible process environment", () => {
   it.each([
     [{ PM_CLOCK: VALID_ENVIRONMENT.PM_CLOCK }, "incomplete", "PM_SEED"],
     [{ PM_SEED: VALID_ENVIRONMENT.PM_SEED }, "incomplete", "PM_CLOCK"],
+    [{ PM_CLOCK_TICK_MS: "1" }, "incomplete", "PM_CLOCK"],
+    [{ ...VALID_ENVIRONMENT, PM_SEED: "   " }, "invalid_value", "PM_SEED"],
     [
-      { PM_CLOCK_TICK_MS: "1" },
-      "incomplete",
+      { ...VALID_ENVIRONMENT, PM_CLOCK: "not-a-clock" },
+      "invalid_value",
       "PM_CLOCK",
     ],
     [
-      { ...VALID_ENVIRONMENT, PM_SEED: "   " },
+      { ...VALID_ENVIRONMENT, PM_CLOCK: "2026-08-22T12:00:00" },
       "invalid_value",
-      "PM_SEED",
+      "PM_CLOCK",
     ],
     [
-      { ...VALID_ENVIRONMENT, PM_CLOCK: "not-a-clock" },
+      { ...VALID_ENVIRONMENT, PM_CLOCK: "08/22/2026 12:00:00 UTC" },
       "invalid_value",
       "PM_CLOCK",
     ],

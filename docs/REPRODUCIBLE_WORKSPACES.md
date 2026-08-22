@@ -23,9 +23,7 @@ const recipe: WorkspaceRecipe = {
   seed: "example-fixture-v1",
   clock: "2026-07-28T10:00:00.000Z",
   tickMs: 1,
-  operations: [
-    { action: "create", input: { title: "Deterministic task" } },
-  ],
+  operations: [{ action: "create", input: { title: "Deterministic task" } }],
 };
 
 const results = await executeWorkspaceRecipe(
@@ -64,8 +62,10 @@ PM_SEED=example-fixture-v1 \
 pm create --title "Deterministic task" --type Task --json
 ```
 
-`PM_CLOCK` and `PM_SEED` are required together. `PM_CLOCK_TICK_MS` is optional,
-defaults to `1`, and must be a non-negative integer. Partial or invalid input
+`PM_CLOCK` and `PM_SEED` are required together. `PM_CLOCK` must be an ISO-8601
+instant with `Z` or a numeric UTC offset; timezone-less and non-ISO inputs are
+rejected so separate hosts cannot interpret the same configuration differently.
+`PM_CLOCK_TICK_MS` is optional, defaults to `1`, and must be a non-negative integer. Partial or invalid input
 fails before command dispatch with the stable
 `invalid_reproducible_process_environment` code and recovery that names the
 missing or invalid variable. Unset all three variables for normal interactive

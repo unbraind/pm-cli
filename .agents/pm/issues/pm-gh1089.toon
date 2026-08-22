@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-22T12:29:57.227Z"
-updated_at: "2026-08-22T13:41:55.511Z"
-closed_at: "2026-08-22T13:31:17.146Z"
-completed_at: "2026-08-22T13:31:17.146Z"
+updated_at: "2026-08-22T13:58:38.573Z"
+closed_at: "2026-08-22T13:58:37.911Z"
+completed_at: "2026-08-22T13:58:37.911Z"
 author: "harness:codex"
 acceptance_criteria: "PM_CLOCK plus PM_SEED opts CLI, embedded CLI, and MCP process dispatch into the SDK deterministic context; PM_CLOCK_TICK_MS is optional and validated as a non-negative integer; partial or invalid configuration fails with a stable typed error and executable recovery; identical process sequences in fresh workspaces produce byte-identical identifiers, timestamps, and history; no variables preserves current wall-clock and random-entropy behavior; the public SDK owns parsing, validation, constants, types, and execution"
 goal: project management = context management
@@ -25,10 +25,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
   pm-rbcvt2,discovered_from,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-22T12:29:57.227Z","harness:codex","Duplicate check 2026-08-22: certified full read covered 2534/2534 items across open closed and canceled with no omissions or unreadable records; exact,fuzzy,GitHub-number,process-environment,deterministic CLI/MCP,and parent-scope searches found the closed SDK-only owner pm-rbcvt2 and no process-transport owner. This item records the distinct post-close GH-1089 boundary gap."
   "2026-08-22T13:31:01.859Z","harness:codex","Implementation evidence: the public SDK now owns PM_CLOCK/PM_CLOCK_TICK_MS/PM_SEED constants, parsing, typed validation, one-shot execution, and process-lifetime runners; bundled CLI and MCP are thin boundary adapters. Default execution remains unchanged. Generated error and public-surface contracts are current. Verification: exact coverage 56,908/56,908 statements, 42,536/42,536 branches, 11,838/11,838 functions, and 54,860/54,860 lines; pnpm lint (ESLint, zero jscpd clones, full static quality), pnpm typecheck, graph composition, record integrity, package parity, contracts, SDK surface, and transport budgets all pass."
   "2026-08-22T13:41:55.511Z","harness:codex","Hosted exact-head evidence: CI / Gates (static) correctly blocked the initial PR head because this post-epoch terminal Issue lacked escape_class and gate_evidence. Classified the escaped behavior as production_defect and bound closure to the new reproducible-process-transport-conformance gate, with real CLI/MCP transport negative controls plus local and hosted checks."
+  "2026-08-22T13:50:09.688Z","harness:codex","Review remediation: the initial release occurred before expected_result and actual_result were appended. Reopened this canonical item, cleared and restored the complete validation fields through pm before renewed closure, and linked the generated CHANGELOG.md entry."
+  "2026-08-22T13:58:28.688Z","harness:codex","CodeRabbit remediation evidence: strict RFC 3339 PM_CLOCK validation now requires Z or a numeric UTC offset and rejects timezone-less plus parseable non-ISO inputs; operator docs name the cross-host invariant. Focused CLI/MCP/SDK verification passes 179/179 and the full corpus passes 559/559 files, 7,780/7,780 tests, with exact 56,908/56,908 statements, 42,536/42,536 branches, 11,838/11,838 functions, and 54,860/54,860 lines."
 files[8]{path,scope,note}:
   sdk/public-surface.json,project,Generated SDK surface contract
   src/cli/main.ts,project,Bundled CLI deterministic boundary
@@ -38,9 +40,10 @@ files[8]{path,scope,note}:
   src/sdk/index.ts,project,Published SDK exports
   src/sdk/reproducibility/process.ts,project,Public process environment and runner contract
   tests/fixtures/contracts/full.json,project,Typed error contract snapshot
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated Unreleased issue entry
   docs/REPRODUCIBLE_WORKSPACES.md,project,CLI and MCP environment operator contract
-close_reason: "SDK-owned PM_CLOCK/PM_CLOCK_TICK_MS/PM_SEED support now reaches built CLI, embedded CLI, direct MCP, and long-lived MCP transports with generated contracts, documentation, real-process acceptance, and exact 100% coverage."
+close_reason: "Strict RFC 3339 clock validation, bounded real-process tests, typed transport behavior, reviewed PM lifecycle evidence, generated docs, and exact 100% coverage satisfy GH-1089."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
