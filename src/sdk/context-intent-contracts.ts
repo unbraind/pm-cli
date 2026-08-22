@@ -359,6 +359,8 @@ export function resolveContextIntentContract(
       code: "unknown_context_intent",
       reason: "unknown_intent",
       field: "for",
+      flag: "--for",
+      value: normalizedIntent,
       required: `Use a declared ${normalizedCommand} intent.`,
       why: "Intent names are command-local contracts and cannot be inferred from output section names.",
       nextSteps: [suggestedCommand],
@@ -1069,22 +1071,23 @@ export function attachReadOutputContracts(
   result: unknown,
 ): unknown {
   const disclosedResult = attachOutputOmissionReceipt(command, result);
-  const projected = typeof disclosedResult === "object" &&
+  const projected =
+    typeof disclosedResult === "object" &&
     disclosedResult !== null &&
     !Array.isArray(disclosedResult)
-    ? applyReadOutputDimensions(
-        command ?? "",
-        options,
-        collapseContinuationMetadata(
+      ? applyReadOutputDimensions(
+          command ?? "",
           options,
-          attachContextIntentReceipt(
-            command ?? "",
+          collapseContinuationMetadata(
             options,
-            disclosedResult as Record<string, unknown>,
+            attachContextIntentReceipt(
+              command ?? "",
+              options,
+              disclosedResult as Record<string, unknown>,
+            ),
           ),
-        ),
-      )
-    : disclosedResult;
+        )
+      : disclosedResult;
   if (
     options.outputRowContract === true ||
     options.output_row_contract === true ||

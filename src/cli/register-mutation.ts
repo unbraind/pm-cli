@@ -14,6 +14,7 @@ import {
 } from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
+  MERGE_SUBCOMMAND_VALUES,
   PLAN_CREATE_METADATA_PARAMETER_KEYS,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   type CommanderOptionRegistrationContract,
@@ -1328,7 +1329,7 @@ async function runMergeAction(
       throw createUnknownSubcommandError({
         command_path: "merge",
         token: subcommand,
-        allowed: ["install", "reconcile", "report", "driver"],
+        allowed: MERGE_SUBCOMMAND_VALUES,
         display_name: "merge",
       });
   }
@@ -1438,7 +1439,7 @@ async function runSchemaAction(
       normalizedSubcommand as (typeof SCHEMA_SUBCOMMANDS)[number],
     ) &&
     typeName === undefined &&
-    !looksLikeSchemaSubcommandTypo(normalizedSubcommand)
+    !looksLikeSchemaSubcommandTypo(subcommand!)
   ) {
     typeName = subcommand;
     normalizedSubcommand = "add-type";
@@ -2982,7 +2983,7 @@ export function registerMutationCommands(
     .command("merge")
     .argument(
       "<subcommand>",
-      "Merge subcommand: install, reconcile, report, driver",
+      `Merge subcommand: ${MERGE_SUBCOMMAND_VALUES.join(", ")}`,
     )
     .argument(
       "[artifact]",

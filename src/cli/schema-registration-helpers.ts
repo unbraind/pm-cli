@@ -27,13 +27,22 @@ const SCHEMA_SHORTHAND_RESERVED_TOKENS = new Set([
   "types",
 ]);
 
-/** Return whether a shorthand token resembles a misspelled schema subcommand. */
+/**
+ * Return whether a token must remain on the schema-action refusal path.
+ *
+ * Bare custom-type shorthand is intentionally limited to PascalCase names.
+ * Lowercase tokens occupy the action namespace, so a misspelling such as
+ * `pm schema nonsense` cannot silently register a new type. Explicit
+ * `pm schema add-type <name>` remains available for every valid type name.
+ */
 export function looksLikeSchemaSubcommandTypo(value: string): boolean {
-  const normalized = value.trim().toLowerCase();
+  const trimmed = value.trim();
+  const normalized = trimmed.toLowerCase();
   if (normalized.length === 0) {
     return false;
   }
   return (
+    trimmed[0] === normalized[0] ||
     SCHEMA_SHORTHAND_RESERVED_TOKENS.has(normalized) ||
     SCHEMA_SHORTHAND_RESERVED_PREFIXES.some((prefix) =>
       normalized.startsWith(prefix),

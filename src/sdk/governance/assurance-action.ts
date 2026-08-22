@@ -61,6 +61,7 @@ import {
   type DefectChangeRiskReport,
 } from "./defect-recurrence.js";
 import { defectRecurrenceItemSignals } from "./defect-recurrence-signals.js";
+import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 
 /**
  * One bounded process-local recurrence index and its invalidation evidence.
@@ -198,17 +199,30 @@ function parseAction(value: string): AssuranceAction {
   if (ASSURANCE_ACTIONS.includes(value as AssuranceAction)) {
     return value as AssuranceAction;
   }
-  throw new PmCliError(
-    `Unknown assurance action ${value}. Expected: ${ASSURANCE_ACTIONS.join(", ")}`,
-    EXIT_CODE.USAGE,
-  );
+  throw createUnknownSubcommandError({
+    command_path: "assurance",
+    token: value,
+    allowed: ASSURANCE_ACTIONS,
+    display_name: "assurance action",
+  });
+}
+
+/** Throw the shared structured usage refusal for a missing assurance operand. */
+function missingAssuranceArgument(detail: string, example: string): never {
+  throw new PmCliError(detail, EXIT_CODE.USAGE, {
+    code: "missing_required_argument",
+    examples: [example],
+  });
 }
 
 function parseKind(value: string | undefined): AssuranceDeclarationKind {
-  if (
-    value &&
-    ASSURANCE_DECLARATION_KINDS.includes(value as AssuranceDeclarationKind)
-  ) {
+  if (!value) {
+    return missingAssuranceArgument(
+      `Assurance declaration kind is required. Expected: ${ASSURANCE_DECLARATION_KINDS.join(", ")}`,
+      "pm assurance list measurement",
+    );
+  }
+  if (ASSURANCE_DECLARATION_KINDS.includes(value as AssuranceDeclarationKind)) {
     return value as AssuranceDeclarationKind;
   }
   throw new PmCliError(
@@ -218,6 +232,12 @@ function parseKind(value: string | undefined): AssuranceDeclarationKind {
 }
 
 function parsePreset(value: string | undefined): AssurancePresetId {
+  if (!value) {
+    return missingAssuranceArgument(
+      `Assurance preset is required. Expected: ${ASSURANCE_PRESET_IDS.join(", ")}`,
+      "pm assurance apply software-delivery --owner <pm-item-id>",
+    );
+  }
   if (value && ASSURANCE_PRESET_IDS.includes(value as AssurancePresetId)) {
     return value as AssurancePresetId;
   }
@@ -394,9 +414,9 @@ async function runAdoptionAction(
     };
   }
   if (!input.id) {
-    throw new PmCliError(
+    return missingAssuranceArgument(
       "assurance promote requires an assertion id",
-      EXIT_CODE.USAGE,
+      "pm assurance promote <assertion-id> --enforcement warn",
     );
   }
   if (input.enforcement !== "warn" && input.enforcement !== "block") {
@@ -429,7 +449,10 @@ async function runGateAction(
   runtime: AssuranceActionRuntimeOptions,
 ): Promise<AssuranceGateVerdict> {
   if (!input.id) {
-    throw new PmCliError("assurance run requires a gate id", EXIT_CODE.USAGE);
+    return missingAssuranceArgument(
+      "assurance run requires a gate id",
+      "pm assurance run <gate-id> --trigger ci --dry-run",
+    );
   }
   const gateId = input.id;
   if (!input.trigger) {
@@ -610,7 +633,10 @@ export async function runAssuranceAction(
   const kind = parseKind(input.kind);
   if (action === "list") return listAssuranceDeclarations(pmRoot, kind);
   if (!input.id) {
-    throw new PmCliError(`assurance ${action} requires an id`, EXIT_CODE.USAGE);
+    return missingAssuranceArgument(
+      `assurance ${action} requires an id`,
+      `pm assurance ${action} ${kind} <id>`,
+    );
   }
   const id = input.id;
   if (action === "show") {

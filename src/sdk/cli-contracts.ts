@@ -47,6 +47,7 @@ export {
 // sites (sdk/index.ts, mcp/server.ts, commands/contracts.ts, completion.ts, …)
 // keep importing everything from "./cli-contracts.js" unchanged.
 export {
+  MERGE_SUBCOMMAND_VALUES,
   PM_EXTENSION_CAPABILITY_CONTRACTS,
   PM_EXTENSION_SERVICE_NAME_CONTRACTS,
   PM_EXTENSION_POLICY_MODE_CONTRACTS,
@@ -115,7 +116,10 @@ export type {
   ToolOptionFlagContract,
 } from "./cli-contracts/flag-contracts.js";
 export {
+  PM_COMMAND_POSITIONAL_CONTRACTS,
   PM_POSITIONAL_ACTION_CONTRACTS,
+  type PmCommandPositionalContract,
+  type PmCommandPositionalSlotContract,
   type PmPositionalActionContract,
 } from "./cli-contracts/grammar-contracts.js";
 export {

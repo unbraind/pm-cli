@@ -108,6 +108,38 @@ describe("agent output contracts", () => {
     ]);
   });
 
+  it("never truncates executable retry argv during recovery compaction", () => {
+    const suggestedRetryArgs = [
+      "get",
+      "pm-domain",
+      "--fields",
+      "id,title,status",
+      "--output-budget",
+      "unbounded",
+    ];
+    const projected = projectPmDiagnosticOutput(
+      {
+        code: "unknown_field_projection",
+        required: "Use declared fields and retry.",
+        detail: "detail ".repeat(4_000),
+        recovery: {
+          suggested_retry:
+            "pm get pm-domain --fields id,title,status --output-budget unbounded",
+          suggested_retry_args: suggestedRetryArgs,
+          allowed_values: Array.from(
+            { length: 200 },
+            (_, index) => `field_${index}`,
+          ),
+        },
+      },
+      { diagnosticClass: "recovery_bundle" },
+    );
+
+    expect(projected.recovery).toMatchObject({
+      suggested_retry_args: suggestedRetryArgs,
+    });
+  });
+
   it("keeps text diagnostics action-first at the smallest permitted budget", () => {
     const projected = projectPmDiagnosticText(
       `Error: Invalid value\n\nWhat happened:\n${"detail ".repeat(2_000)}`,
@@ -132,11 +164,9 @@ describe("agent output contracts", () => {
 
   it("keeps short default-budget text unchanged and repairs an empty action", () => {
     const short = projectPmDiagnosticText("Short diagnostic", "Retry.");
-    const repaired = projectPmDiagnosticText(
-      "detail ".repeat(2_000),
-      "   ",
-      { maxEstimatedTokens: 192 },
-    );
+    const repaired = projectPmDiagnosticText("detail ".repeat(2_000), "   ", {
+      maxEstimatedTokens: 192,
+    });
 
     expect(short).toMatchObject({
       output: "Short diagnostic",

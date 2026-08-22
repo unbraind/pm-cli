@@ -372,11 +372,14 @@ Diagnostic ceilings share the executable refusal gate:
 pnpm quality:recovery-closure
 ```
 
-The gate replays 22 refusal contracts and ratchets ten representative failure
-paths against `PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS`. Every diagnostic must fit
-its declared JSON ceiling and preserve a mechanically actionable correction;
-the missing-probe negative control proves that the diagnostic corpus cannot
-silently shrink.
+The gate replays 117 refusal contracts: 18 closed-domain rows, 88
+grammar-derived required-argument omissions, seven closed positional-action
+families, and four tracker-preflight states. It also ratchets ten representative
+failure paths against `PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS`. Every diagnostic
+must fit its declared JSON ceiling and preserve a mechanically actionable
+correction; executable retry argv is never collection-truncated. The
+missing-probe negative control and the authoritative tracker-state snapshot
+prove that the corpus cannot silently shrink or turn a refusal into a mutation.
 
 The gate derives every supported harness, model, session, and provenance
 environment key from the SDK-owned harness descriptor registry. It deletes

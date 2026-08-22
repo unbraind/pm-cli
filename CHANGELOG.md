@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Every instruction the product emits about its own next command is an unexecuted claim: the recovery vocabulary is generated, asserted as text, and run by nothing ([pm-h8tpeh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h8tpeh.toon))
+
+### Other
+
+- Diagnostic output budget: errors, warnings, and recovery bundles are the output an agent reads most and the only output with no declared ceiling ([pm-cha95z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cha95z.toon))
+
 ## 2026.8.22 - 2026-08-22
 
 ### Fixed

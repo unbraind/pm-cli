@@ -1211,6 +1211,10 @@ describe("error-guidance helper edge branches", () => {
       detail: "Minimal happened",
       required: "Minimal required",
       exit_code: 2,
+      refusal: {
+        surface: "command",
+        exit_code: 2,
+      },
     });
     expect(
       _testOnly.guidanceToClassification(minimalGuidance as never),

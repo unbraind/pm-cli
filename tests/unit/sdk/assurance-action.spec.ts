@@ -161,6 +161,17 @@ describe("assurance action transport", () => {
         runAssuranceAction({ action: "run" }, global),
       ).rejects.toThrow("gate id");
       await expect(
+        runAssuranceAction({ action: "apply" }, global),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "missing_required_argument",
+          examples: [
+            "pm assurance apply software-delivery --owner <pm-item-id>",
+          ],
+        },
+      });
+      await expect(
         runAssuranceAction({ action: "run", id: gate.id }, global),
       ).rejects.toThrow("requires a trigger");
       await expect(

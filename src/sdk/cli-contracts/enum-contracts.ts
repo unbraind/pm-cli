@@ -159,6 +159,17 @@ export const GRAPH_SUBCOMMAND_VALUES = [
 /** Restricts graph subcommand values accepted by command, SDK, and MCP contracts. */
 export type GraphSubcommand = (typeof GRAPH_SUBCOMMAND_VALUES)[number];
 
+/** Supported values accepted by the merge subcommand contract across CLI and SDK surfaces. */
+export const MERGE_SUBCOMMAND_VALUES = [
+  "install",
+  "reconcile",
+  "report",
+  "driver",
+] as const;
+
+/** Restricts merge subcommand values accepted by command and SDK contracts. */
+export type MergeSubcommand = (typeof MERGE_SUBCOMMAND_VALUES)[number];
+
 /** Nested lifecycle verbs flattened by SDK and MCP package actions. */
 export const PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS = [
   "init",
