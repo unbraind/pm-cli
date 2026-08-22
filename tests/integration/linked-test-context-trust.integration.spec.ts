@@ -184,8 +184,11 @@ describe("linked-test workspace and trust contracts", () => {
       const snapshotContext = (snapshot.json as TestEnvelope).execution_context;
       expect(snapshotContext).toMatchObject({
         workspace_context_mode: "snapshot",
-        trust: { trusted: true, reason: "local_mutation" },
+        trust: { trusted: true },
       });
+      expect(["local_mutation", "local_source_ref"]).toContain(
+        snapshotContext?.trust.reason,
+      );
       expect(snapshotContext?.working_directory).not.toBe(sourceRoot);
       expect(snapshotContext?.source_workspace_root).toBe(
         snapshotContext?.working_directory,

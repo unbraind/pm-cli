@@ -12,11 +12,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 12192,
-      "baseline_estimated_tokens": 3048,
+      "baseline_bytes": 12179,
+      "baseline_estimated_tokens": 3045,
       "baseline_lines": 106,
-      "max_bytes": 13412,
-      "max_estimated_tokens": 3353
+      "max_bytes": 13397,
+      "max_estimated_tokens": 3350
     },
     {
       "id": "search-help",
@@ -26,11 +26,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 7248,
-      "baseline_estimated_tokens": 1812,
-      "baseline_lines": 114,
-      "max_bytes": 7973,
-      "max_estimated_tokens": 1994
+      "baseline_bytes": 7125,
+      "baseline_estimated_tokens": 1782,
+      "baseline_lines": 112,
+      "max_bytes": 7838,
+      "max_estimated_tokens": 1960
     },
     {
       "id": "create-help",
@@ -54,11 +54,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 9052,
-      "baseline_estimated_tokens": 2263,
+      "baseline_bytes": 9019,
+      "baseline_estimated_tokens": 2255,
       "baseline_lines": 113,
-      "max_bytes": 9958,
-      "max_estimated_tokens": 2490
+      "max_bytes": 9921,
+      "max_estimated_tokens": 2481
     },
     {
       "id": "contracts-summary-json",
@@ -69,11 +69,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 16155,
-      "baseline_estimated_tokens": 4039,
-      "baseline_lines": 684,
-      "max_bytes": 17771,
-      "max_estimated_tokens": 4443
+      "baseline_bytes": 16331,
+      "baseline_estimated_tokens": 4083,
+      "baseline_lines": 691,
+      "max_bytes": 17965,
+      "max_estimated_tokens": 4492
     },
     {
       "id": "contracts-flags-json",
@@ -330,11 +330,11 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 2646,
-      "baseline_estimated_tokens": 662,
-      "baseline_lines": 104,
-      "max_bytes": 2911,
-      "max_estimated_tokens": 728,
+      "baseline_bytes": 2300,
+      "baseline_estimated_tokens": 575,
+      "baseline_lines": 93,
+      "max_bytes": 2530,
+      "max_estimated_tokens": 633,
       "command": "graph",
       "contract_max_estimated_tokens": 6000
     },
@@ -397,11 +397,11 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 5824,
-      "baseline_estimated_tokens": 1456,
-      "baseline_lines": 182,
-      "max_bytes": 6407,
-      "max_estimated_tokens": 1602,
+      "baseline_bytes": 6392,
+      "baseline_estimated_tokens": 1598,
+      "baseline_lines": 194,
+      "max_bytes": 7032,
+      "max_estimated_tokens": 1758,
       "command": "validate",
       "contract_max_estimated_tokens": 6000
     },

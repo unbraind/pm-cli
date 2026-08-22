@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:tests",environment-parity,linked-tests,regression
 created_at: "2026-08-04T09:30:07.005Z"
-updated_at: "2026-08-22T18:31:34.137Z"
+updated_at: "2026-08-22T19:13:36.528Z"
 closed_at: "2026-08-22T18:26:51.559Z"
 completed_at: "2026-08-22T18:26:51.559Z"
 author: "harness:codex"
@@ -24,22 +24,28 @@ expected_result: "Sandbox-safe commands produce the same assertions and performa
 actual_result: Direct merge tests pass 120/120 and direct scale gate passes; linked schema context produces merge-driver configuration warnings and scale token/latency threshold failures.
 fixed_version: 2026.8.22
 customer_impact: Agents cannot trust the canonical linked-test evidence loop and may misclassify orchestration-context failures as product regressions.
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,implements,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-oslr,verifies,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-uawujr,discovered_from,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-a8zm,discovered_from,"2026-08-22T07:27:58.306Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+  pm-ed28wi,verifies,"2026-08-22T19:13:03.735Z","harness:codex","cli:update:dep",detected
+  pm-gh1091,discovered_from,"2026-08-22T19:13:33.082Z","harness:codex","cli:update:dep",detected
+  pm-u5le,discovered_from,"2026-08-22T19:13:33.082Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-08-04T09:30:24.732Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for linked-test schema sandbox, PM_PATH merge-driver warnings, non-PM benchmark context drift, direct-versus-linked parity, and self-sandboxing repository commands. Closed pm-uawujr fixed package prepare source fallback; closed pm-oslr delivered linked execution; open pm-ed28wi owns trust/allowlisting. None owns the reproduced semantic parity failure for already-sandboxed non-PM commands."
   "2026-08-22T07:27:50.502Z","harness:codex","Recurrence evidence (2026-08-22): pnpm changelog:pm:check passed directly against the live project and reported CHANGELOG.md unchanged with 2,167 closed items. When linked with pm_context_mode=tracker, pm test copied all 2,534 tracker items into the sandbox but retained the source checkout as the output-file workspace; the extension generated from the sandbox tracker and compared against CHANGELOG.md, then falsely reported it out of date. This is the existing issue, so no duplicate was created. The tracker-quality assurance command did pass in tracker context, proving that per-test context metadata works when the command has no coupled source-workspace artifact."
   "2026-08-22T07:37:11.696Z","harness:codex","Hosted recurrence evidence (2026-08-22): the exact-head static gate correctly rejected a host-specific absolute checkout path in this item. pm history-redact preview found one historical and one projected-item occurrence with zero preexisting hash mismatch; the applied redaction replaced it with workspace-relative CHANGELOG.md, recomputed the chain, appended an audited history_redact marker, and verified the resulting stream."
   "2026-08-22T16:34:34.517Z","harness:codex","Implementation start 2026-08-22: actively delivering one coupled linked-test runtime tranche with explicit workspace context, self-sandboxing opt-out, trust provenance, merge-introduced command refusal, SDK/CLI/MCP contracts, generated surfaces, docs, tests, and temporary installed-consumer proof. Duplicate searches reused pm-efkvdy and pm-ed28wi; no new implementation item was created."
   "2026-08-22T18:26:47.821Z","harness:codex","Verification evidence 2026-08-22: explicit source|isolated|snapshot workspace contracts ship through SDK, CLI flags, generated tool schema 4.9.0, item serialization, background forwarding, and docs. Manual temporary Git workspace proved source_ref visibility, foreign-checkout refusal, dual-consent override, clone-local acknowledgment, and snapshot no-writeback. Full suite passed 563 files / 7,794 tests with exact 100/100/100/100 coverage; pnpm lint, typecheck, contract snapshots, SDK surface, and static-quality gates passed."
-files[26]{path,scope,note}:
+  "2026-08-22T19:03:33.792Z","harness:codex","Hosted CI remediation evidence: snapshot trust assertion now accepts both valid same-source states (local_mutation in a detached temp repo and local_source_ref when CI resolves the source checkout ref). Intentional linked-test help/contracts and validate trust-diagnostic growth are captured by regenerated governed token baselines; focused integration, agent token-surface, and release token-budget gates pass. The canonical GH-1091 PM item was linked to the existing manifest-authoring primitive pm-u5le, restoring graph structural resilience without loosening the graph bridge-edge ceiling; tracker-context-quality passes with no failed assertions."
+files[28]{path,scope,note}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,linked-test execution context contract
+  scripts/agent-token-surface-baseline.json,project,Hosted CLI help token-surface ratchet for linked-test flags
   scripts/release/flag-help-baseline.json,project,linked-test execution context contract
   scripts/release/flag-spelling-baseline.json,project,linked-test execution context contract
+  scripts/release/token-budgets.json,project,Hosted validate output-budget ratchet for trust diagnostics
   sdk/public-surface.json,project,linked-test execution context contract
   src/cli/register-operations.ts,project,linked-test execution context contract
   src/core/item/item-format.ts,project,linked-test execution context contract
