@@ -18,8 +18,8 @@
     },
     {
       "id": "failing-command",
-      "max_estimated_tokens": 200
+      "max_estimated_tokens": 219
     }
   ],
-  "composite_max_estimated_tokens": 2178
+  "composite_max_estimated_tokens": 2197
 }
