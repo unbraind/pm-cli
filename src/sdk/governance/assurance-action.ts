@@ -238,7 +238,7 @@ function parsePreset(value: string | undefined): AssurancePresetId {
       "pm assurance apply software-delivery --owner <pm-item-id>",
     );
   }
-  if (value && ASSURANCE_PRESET_IDS.includes(value as AssurancePresetId)) {
+  if (ASSURANCE_PRESET_IDS.includes(value as AssurancePresetId)) {
     return value as AssurancePresetId;
   }
   throw new PmCliError(
