@@ -366,6 +366,18 @@ The manifest records baseline bytes and estimated tokens for visible review
 deltas. Updating it cannot raise answer ceilings, which remain owned by
 `PM_COMMAND_OUTPUT_BUDGET_CONTRACTS`.
 
+Diagnostic ceilings share the executable refusal gate:
+
+```bash
+pnpm quality:recovery-closure
+```
+
+The gate replays 22 refusal contracts and ratchets ten representative failure
+paths against `PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS`. Every diagnostic must fit
+its declared JSON ceiling and preserve a mechanically actionable correction;
+the missing-probe negative control proves that the diagnostic corpus cannot
+silently shrink.
+
 The gate derives every supported harness, model, session, and provenance
 environment key from the SDK-owned harness descriptor registry. It deletes
 those host inputs before each fixture invocation, then supplies only the

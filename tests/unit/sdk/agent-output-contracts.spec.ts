@@ -2,10 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   PM_COMMAND_OUTPUT_BUDGET_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
+  PM_DIAGNOSTIC_DEGRADATION_STEPS,
+  PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS,
+  PM_DIAGNOSTIC_OUTPUT_CLASSES,
   PM_OUTPUT_DEGRADATION_STEPS,
   createPmCommandOutputBudget,
   definePmCommandOutputBudget,
   estimatePmOutputTokens,
+  projectPmDiagnosticOutput,
+  projectPmDiagnosticText,
+  resolvePmDiagnosticOutputBudget,
   resolvePmCommandOutputBudget,
 } from "../../../src/sdk/cli-contracts.js";
 
@@ -32,6 +38,172 @@ describe("agent output contracts", () => {
       expect(contract.token_estimate).toBe("ceil(utf8_bytes / 4)");
     }
   });
+
+  it("declares binding action-preserving budgets for every diagnostic family", () => {
+    expect(PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS).toHaveLength(
+      PM_DIAGNOSTIC_OUTPUT_CLASSES.length,
+    );
+    expect(
+      PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS.map(
+        ({ diagnostic_class: diagnosticClass }) => diagnosticClass,
+      ),
+    ).toEqual(PM_DIAGNOSTIC_OUTPUT_CLASSES);
+    for (const contract of PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS) {
+      expect(contract.degradation_ladder).toEqual(
+        PM_DIAGNOSTIC_DEGRADATION_STEPS,
+      );
+      expect(contract.corrective_action_paths).toContain("required");
+      expect(
+        contract.default_max_estimated_tokens_by_format.text,
+      ).toBeGreaterThanOrEqual(contract.minimum_max_estimated_tokens);
+      expect(
+        contract.default_max_estimated_tokens_by_format.json,
+      ).toBeGreaterThan(contract.default_max_estimated_tokens_by_format.text);
+    }
+  });
+
+  it("degrades oversized JSON diagnostics without dropping corrective action", () => {
+    const projected = projectPmDiagnosticOutput(
+      {
+        type: "urn:pm-cli:error:invalid_argument_value",
+        code: "invalid_argument_value",
+        title: "Invalid value",
+        detail: "x".repeat(4_000),
+        required: "Use --status open and retry.",
+        why: "y".repeat(4_000),
+        examples: Array.from({ length: 40 }, (_, index) => `pm demo ${index}`),
+        next_steps: [
+          "Run pm demo --status open",
+          ...Array(30).fill("inspect help"),
+        ],
+        recovery: {
+          attempted_command: `pm demo ${"z".repeat(2_000)}`,
+          normalized_args: Array(100).fill("argument"),
+          suggested_retry: "pm demo --status open",
+          allowed_values: Array(100).fill("open"),
+        },
+        exit_code: 2,
+      },
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(projected.required).toBe("Use --status open and retry.");
+    expect(projected.recovery).toMatchObject({
+      suggested_retry: "pm demo --status open",
+    });
+    expect(projected.diagnostic_output).toMatchObject({
+      diagnostic_class: "error",
+      format: "json",
+      budget: 192,
+      budget_source: "explicit",
+      truncated: true,
+    });
+    expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+    expect(Object.keys(projected).slice(0, 3)).toEqual([
+      "code",
+      "required",
+      "recovery",
+    ]);
+  });
+
+  it("keeps text diagnostics action-first at the smallest permitted budget", () => {
+    const projected = projectPmDiagnosticText(
+      `Error: Invalid value\n\nWhat happened:\n${"detail ".repeat(2_000)}`,
+      "Use --status open and retry.",
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(projected.output).toMatch(/^What is required:/u);
+    expect(projected.output).toContain("Use --status open and retry.");
+    expect(projected.diagnostic_output).toMatchObject({
+      budget: 192,
+      truncated: true,
+      format: "text",
+    });
+    expect(projected.diagnostic_output.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+    expect(resolvePmDiagnosticOutputBudget("recovery_bundle")).toMatchObject({
+      default_max_estimated_tokens_by_format: { text: 768, json: 2_000 },
+    });
+  });
+
+  it("keeps the minimum diagnostic ceiling binding when recovery itself is oversized", () => {
+    const projected = projectPmDiagnosticOutput(
+      {
+        code: "oversized_recovery",
+        required: "Inspect the legal domain and retry.",
+        recovery: { suggested_retry: `pm demo ${"value ".repeat(5_000)}` },
+        detail: "detail ".repeat(5_000),
+      },
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(projected.required).toBe("Inspect the legal domain and retry.");
+    expect(projected.recovery).toBeUndefined();
+    expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+  });
+
+  it("covers default degradation when only a next step can supply the action", () => {
+    const projected = projectPmDiagnosticOutput({
+      code: 42,
+      required: undefined,
+      recovery: {},
+      next_steps: ["Inspect the diagnostic code and retry."],
+      detail: "detail ".repeat(5_000),
+    });
+
+    expect(projected.code).toBe("diagnostic");
+    expect(projected.required).toBe(
+      "Inspect the diagnostic code and retry with corrected input.",
+    );
+    expect(projected.diagnostic_output).toMatchObject({
+      budget: 2_000,
+      budget_source: "default",
+      truncated: true,
+    });
+    expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
+      2_000,
+    );
+  });
+
+  it("truncates an oversized required action to the action-only ceiling", () => {
+    const projected = projectPmDiagnosticOutput(
+      {
+        code: "oversized_required_action",
+        required: "retry ".repeat(2_000),
+        detail: "detail ".repeat(5_000),
+      },
+      { maxEstimatedTokens: 192 },
+    );
+
+    expect(projected.required).toMatch(/\.\.\.$/u);
+    expect(String(projected.required).length).toBeLessThanOrEqual(160);
+    expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
+      192,
+    );
+  });
+
+  it.each([0, 191, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects an invalid explicit diagnostic budget (%s)",
+    (budget) => {
+      expect(() =>
+        projectPmDiagnosticOutput(
+          { code: "demo", required: "Retry." },
+          { maxEstimatedTokens: budget },
+        ),
+      ).toThrow("maxEstimatedTokens must be a safe integer >= 192");
+      expect(() =>
+        projectPmDiagnosticText("Diagnostic", "Retry.", {
+          maxEstimatedTokens: budget,
+        }),
+      ).toThrow("maxEstimatedTokens must be a safe integer >= 192");
+    },
+  );
 
   it("resolves root commands, rejects unknown commands, and estimates UTF-8 tokens", () => {
     expect(resolvePmCommandOutputBudget("extension install")).toMatchObject({

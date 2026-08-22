@@ -70,7 +70,7 @@
       {
         "path": "scripts/release/refusal-closure-gate.mjs",
         "disposition": "retained",
-        "reason": "Executes real closed-domain refusals and their advertised recovery commands in an isolated tracker.",
+        "reason": "Executes real closed-domain refusals and their advertised recovery commands in an isolated tracker, then measures the action-preserving diagnostic corpus against declared output budgets.",
         "negative_control": {
           "test": "tests/unit/scripts/refusal-closure-gate.spec.ts",
           "assertion": "proves real retries and blocks a seeded omission"

@@ -133,10 +133,12 @@ import {
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
   PM_COMMAND_ALIAS_CONTRACTS,
+  PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS,
   resolvePmCommandOutputBudget,
   type CliFlagContract,
   type CommanderOptionAliasContract,
   type PmCommandOutputBudgetContract,
+  type PmDiagnosticOutputBudgetContract,
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
 import { PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
@@ -376,6 +378,8 @@ export interface ContractsResult {
     budget: PmCommandOutputBudgetContract;
     envelope: PmCommandOutputEnvelopeContract;
   }>;
+  /** Binding ceilings and action-preserving degradation for diagnostic families. */
+  diagnostic_output_contracts?: readonly PmDiagnosticOutputBudgetContract[];
   /** Stable outcome vocabulary and exhaustive per-command process exit sets. */
   command_exit_contracts?: {
     vocabulary: readonly PmCommandExitOutcomeContract[];
@@ -3175,6 +3179,7 @@ export async function runContracts(
     result.error_codes = PM_ERROR_CODE_CATALOG;
     result.command_output_contracts =
       buildCommandOutputContracts(outputCommands);
+    result.diagnostic_output_contracts = PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS;
     result.command_exit_contracts = {
       vocabulary: PM_COMMAND_EXIT_OUTCOME_CONTRACTS,
       command_sets: buildCommandExitContractGroups(outputCommands),

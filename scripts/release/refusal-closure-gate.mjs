@@ -20,10 +20,22 @@ import {
   listTrackerPreflightRecoveryContracts,
   scoreTrackerPreflightRecoveryClosure,
 } from "../../dist/sdk/agent/tracker-preflight-contracts.js";
+import {
+  estimatePmOutputTokens,
+  resolvePmDiagnosticOutputBudget,
+} from "../../dist/sdk/cli-contracts.js";
 
 const REFUSAL_CLOSURE_BASELINE = JSON.parse(
   readFileSync(
     fileURLToPath(new URL("./refusal-closure-baseline.json", import.meta.url)),
+    "utf8",
+  ),
+);
+const DIAGNOSTIC_OUTPUT_BASELINE = JSON.parse(
+  readFileSync(
+    fileURLToPath(
+      new URL("./diagnostic-output-baseline.json", import.meta.url),
+    ),
     "utf8",
   ),
 );
@@ -90,8 +102,96 @@ function executeClosedDomainProbes(probes, spawn, environment) {
       suggested_retry_args: retryArguments,
       expected_suggested_retry_args: contract.suggested_retry_args,
       retry_succeeded: retry.status === 0,
+      diagnostic_output: envelope.diagnostic_output,
+      diagnostic_actual_estimated_tokens: estimatePmOutputTokens(
+        Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8"),
+      ),
+      corrective_action_present:
+        typeof envelope.required === "string" &&
+        envelope.required.trim().length > 0 &&
+        (retryArguments.length > 0 ||
+          stringArray(recovery.allowed_values).length > 0 ||
+          stringArray(envelope.next_steps).length > 0),
     };
   });
+}
+
+function scoreDiagnosticOutputCorpus(observations, baseline) {
+  const observationsById = new Map(
+    observations.map((observation) => [observation.probe_id, observation]),
+  );
+  const findings = [];
+  let originalEstimatedTokens = 0;
+  let estimatedTokens = 0;
+  let withinBudgetCount = 0;
+  let correctiveActionCount = 0;
+  for (const probeId of baseline.required_probe_ids) {
+    const observation = observationsById.get(probeId);
+    if (!observation) {
+      findings.push({
+        code: "diagnostic_probe_missing",
+        probe_id: probeId,
+        detail: `${probeId} is required by diagnostic-output baseline v${baseline.version}.`,
+      });
+      continue;
+    }
+    const {
+      budget,
+      reportedEstimatedTokens,
+      originalObservationEstimatedTokens,
+    } = diagnosticObservationMetrics(observation);
+    originalEstimatedTokens += originalObservationEstimatedTokens;
+    estimatedTokens += reportedEstimatedTokens;
+    if (
+      reportedEstimatedTokens <= budget &&
+      reportedEstimatedTokens === observation.diagnostic_actual_estimated_tokens
+    ) {
+      withinBudgetCount += 1;
+    } else {
+      findings.push({
+        code: "diagnostic_budget_mismatch",
+        probe_id: probeId,
+        detail: `${probeId} reported ${reportedEstimatedTokens}/${budget} tokens; measured ${observation.diagnostic_actual_estimated_tokens}.`,
+      });
+    }
+    if (observation.corrective_action_present) correctiveActionCount += 1;
+    else {
+      findings.push({
+        code: "diagnostic_corrective_action_missing",
+        probe_id: probeId,
+        detail: `${probeId} did not retain a mechanically actionable correction.`,
+      });
+    }
+  }
+  return {
+    ok: findings.length === 0,
+    baseline_version: baseline.version,
+    probe_count: baseline.required_probe_ids.length,
+    within_budget_count: withinBudgetCount,
+    corrective_action_count: correctiveActionCount,
+    original_estimated_tokens: originalEstimatedTokens,
+    estimated_tokens: estimatedTokens,
+    findings,
+  };
+}
+
+function diagnosticObservationMetrics(observation) {
+  const receipt = observation.diagnostic_output;
+  if (receipt && typeof receipt === "object") {
+    return {
+      budget: receipt.budget,
+      reportedEstimatedTokens: receipt.estimated_tokens,
+      originalObservationEstimatedTokens: receipt.original_estimated_tokens,
+    };
+  }
+  return {
+    budget:
+      resolvePmDiagnosticOutputBudget("error")
+        .default_max_estimated_tokens_by_format.json,
+    reportedEstimatedTokens: observation.diagnostic_actual_estimated_tokens,
+    originalObservationEstimatedTokens:
+      observation.diagnostic_actual_estimated_tokens,
+  };
 }
 
 function executeTrackerPreflightProbes(probes, root, spawn, environment) {
@@ -169,7 +269,8 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
         retry_succeeded: retry.status === 0,
         unsafe_init_recommended:
           contract.recovery_kind !== "initialize" &&
-          (retryArguments.includes("init") || refusal.stderr.includes("pm init")),
+          (retryArguments.includes("init") ||
+            refusal.stderr.includes("pm init")),
       };
     });
   } finally {
@@ -185,6 +286,7 @@ export function verifyExecutableRefusalClosure({
   probes,
   preflightProbes,
   baseline = REFUSAL_CLOSURE_BASELINE,
+  diagnosticBaseline,
   spawn = spawnSync,
   makeTemporaryDirectory = mkdtempSync,
   removeDirectory = rmSync,
@@ -240,6 +342,13 @@ export function verifyExecutableRefusalClosure({
       trackerPreflightProbes.length === 0
         ? { probe_count: 0, closed_probe_count: 0, findings: [] }
         : scoreTrackerPreflightRecoveryClosure(trackerPreflightObservations);
+    const effectiveDiagnosticBaseline =
+      diagnosticBaseline ??
+      (probes === undefined ? DIAGNOSTIC_OUTPUT_BASELINE : null);
+    const diagnosticOutputScore = resolveDiagnosticOutputScore(
+      observations,
+      effectiveDiagnosticBaseline,
+    );
     const probeIds = new Set(
       [...closedDomainProbes, ...trackerPreflightProbes].map(
         ({ probe_id: probeId }) => probeId,
@@ -264,6 +373,7 @@ export function verifyExecutableRefusalClosure({
     const findings = [
       ...closedDomainScore.findings,
       ...trackerPreflightScore.findings,
+      ...diagnosticOutputScore.findings,
       ...ratchetFindings,
     ].sort(
       (left, right) =>
@@ -284,11 +394,26 @@ export function verifyExecutableRefusalClosure({
       tracker_preflight_contract_count: trackerPreflightProbes.length,
       baseline_version: baseline.version,
       baseline_minimum_probe_count: baseline.minimum_probe_count,
+      diagnostic_output: diagnosticOutputScore,
       findings,
     };
   } finally {
     removeDirectory(root, { recursive: true, force: true });
   }
+}
+
+function resolveDiagnosticOutputScore(observations, baseline) {
+  if (baseline) return scoreDiagnosticOutputCorpus(observations, baseline);
+  return {
+    ok: true,
+    baseline_version: null,
+    probe_count: 0,
+    within_budget_count: 0,
+    corrective_action_count: 0,
+    original_estimated_tokens: 0,
+    estimated_tokens: 0,
+    findings: [],
+  };
 }
 
 /** Run the standalone repository gate. */

@@ -615,6 +615,7 @@ describe("structured mutation command registration", () => {
       code: "bad_input",
       detail: "Retry",
       exit_code: 2,
+      required: "A value",
     });
     const usage = JSON.parse(
       await formatCommanderUsageJson(
@@ -625,5 +626,6 @@ describe("structured mutation command registration", () => {
       ),
     ) as Record<string, unknown>;
     expect(usage).not.toHaveProperty("title");
+    expect(usage.required).toEqual(expect.any(String));
   });
 });

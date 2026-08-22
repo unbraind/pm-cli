@@ -15406,6 +15406,100 @@
       "token_budget": 1800
     }
   ],
+  "diagnostic_output_contracts": [
+    {
+      "corrective_action_paths": [
+        "required",
+        "recovery.suggested_retry",
+        "recovery.suggested_retry_args",
+        "recovery.next_best_command",
+        "next_steps[0]"
+      ],
+      "default_max_estimated_tokens_by_format": {
+        "json": 2000,
+        "text": 768
+      },
+      "degradation_ladder": [
+        "full",
+        "omit_explanation",
+        "limit_collections",
+        "compact_recovery",
+        "action_only"
+      ],
+      "diagnostic_class": "error",
+      "minimum_max_estimated_tokens": 192,
+      "token_estimate": "ceil(utf8_bytes / 4)"
+    },
+    {
+      "corrective_action_paths": [
+        "required",
+        "recovery.suggested_retry",
+        "recovery.suggested_retry_args",
+        "recovery.next_best_command",
+        "next_steps[0]"
+      ],
+      "default_max_estimated_tokens_by_format": {
+        "json": 2000,
+        "text": 768
+      },
+      "degradation_ladder": [
+        "full",
+        "omit_explanation",
+        "limit_collections",
+        "compact_recovery",
+        "action_only"
+      ],
+      "diagnostic_class": "warning",
+      "minimum_max_estimated_tokens": 192,
+      "token_estimate": "ceil(utf8_bytes / 4)"
+    },
+    {
+      "corrective_action_paths": [
+        "required",
+        "recovery.suggested_retry",
+        "recovery.suggested_retry_args",
+        "recovery.next_best_command",
+        "next_steps[0]"
+      ],
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "text": 1500
+      },
+      "degradation_ladder": [
+        "full",
+        "omit_explanation",
+        "limit_collections",
+        "compact_recovery",
+        "action_only"
+      ],
+      "diagnostic_class": "validation_summary",
+      "minimum_max_estimated_tokens": 192,
+      "token_estimate": "ceil(utf8_bytes / 4)"
+    },
+    {
+      "corrective_action_paths": [
+        "required",
+        "recovery.suggested_retry",
+        "recovery.suggested_retry_args",
+        "recovery.next_best_command",
+        "next_steps[0]"
+      ],
+      "default_max_estimated_tokens_by_format": {
+        "json": 2000,
+        "text": 768
+      },
+      "degradation_ladder": [
+        "full",
+        "omit_explanation",
+        "limit_collections",
+        "compact_recovery",
+        "action_only"
+      ],
+      "diagnostic_class": "recovery_bundle",
+      "minimum_max_estimated_tokens": 192,
+      "token_estimate": "ceil(utf8_bytes / 4)"
+    }
+  ],
   "error_codes": [
     {
       "aliases": [],

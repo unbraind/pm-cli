@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "required_probe_ids": [
+    "context-invalid-intent",
+    "get-invalid-field",
+    "get-mutually-exclusive-projection",
+    "list-invalid-field",
+    "list-invalid-intent",
+    "list-mutually-exclusive-projection",
+    "list-open-invalid-field",
+    "next-invalid-intent",
+    "search-invalid-field",
+    "search-mutually-exclusive-projection"
+  ]
+}
