@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.452Z"
-updated_at: "2026-08-10T15:57:57.974Z"
+updated_at: "2026-08-22T07:28:08.900Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: Never-block error contract holds across the command surface (recovery bundle with next steps on every failure path); agent-UX review findings closed or waived.
 goal: project management = context management
 objective: "Evolve the CLI command surface and lifecycle primitives for agent and human ergonomics (bulk ops, query filters, hierarchy views, history diffs)"
 value: "Faster, safer agent/human workflows over the core item lifecycle"
+why_now: The live agent-facing surface exposes 72 top-level commands and 178 declared command paths while recovery and output costs still vary by surface; simplification must land before aliases and automation dependencies harden further.
 parent: pm-doxj
 risk: low
 confidence: high

@@ -6,14 +6,14 @@ status: open
 priority: 0
 tags[6]: backlog,context-management,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:41:50.865Z"
-updated_at: "2026-08-16T10:35:33.608Z"
+updated_at: "2026-08-22T07:28:06.084Z"
 author: maintainer-agent
 estimated_minutes: 60
-acceptance_criteria: Living backlog reflects the entire ecosystem; every capability epic has defined acceptance and active children; periodic review passes keep zero orphan open items and zero untracked work streams.
+acceptance_criteria: "Every feature, issue, decision, story, task, chore, goal, test, documentation change, release concern, and discovered idea has one canonical item or an explicit duplicate/supersession disposition; every active item has acceptance, priority, risk, confidence, estimate, and a typed path to an outcome; all-status reads are complete and omission-aware; graph and history gates preserve zero active isolates, zero dangling references, zero drift, and evidence-backed relationships without synthetic density; horizon milestones remain measurable and are revised through immutable decisions as assumptions change; recurring defects and release failures aggregate into canonical families with prevention gates; tracker changes are made only through public pm SDK-backed surfaces."
 goal: project management = context management
 objective: "Deliver a universal, fully-customizable PM tool whose baseline primitives (via the pm SDK) adapt to any project"
 value: A discoverable forward backlog turns the tracker from a completed-work log into a living context map for humans and agents
-why_now: Tracker had 902 items but zero open/forward work; pm context returned empty. This milestone seeds the forward layer.
+why_now: "The live portfolio now spans 2,533 items, 53,059 immutable events, 307 active outcomes, and a 2036 continuity horizon; ongoing governance must keep that scale coherent as new commands, SDK primitives, releases, agents, and domains arrive."
 risk: low
 confidence: high
 dependencies[24]:
@@ -123,7 +123,7 @@ dependencies[24]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[32]:
+comments[33]:
   - created_at: "2026-07-04T20:56:30.024Z"
     author: codex-agent
     text: "Audit evidence 2026-07-04 continuation: inspected all statuses with pm list --status all, pm stats, pm aggregate, pm validate --check-resolution --check-history-drift, pm health --check-only --summary, pm next, active duplicate-title scan, active parent-link scan, and live gh issue/pr list. Live totals: 1506 pm items, 1514 history streams, 24446 history entries. Status distribution: 37 open, 13 in_progress, 1444 closed, 12 canceled, 0 blocked. Type distribution: 1 Milestone, 81 Epics, 286 Features, 286 Issues, 524 Tasks, 224 Chores, 17 Plans, 50 Decisions, 36 Stories, 1 Reminder. Active structure: 50 active items, zero active non-epic orphans, zero duplicate-looking active titles, pm next ready=36 blocked=0. GitHub cross-check: one open issue GH-427, already tracked by in_progress pm-lt6n; zero open PRs. Existing broad audit lineages pm-y904 and pm-osea are closed with evidence and remain canonical, so no duplicate audit item was created. Residual governance: validate reports validate_resolution_missing_fields:268 on closed historical items, already represented by open pm-e9zh; active metadata filter only flags claimed epic pm-4ak1 for missing estimate/reviewer/sprint/release metadata, noted there without taking over the claim."
@@ -221,6 +221,9 @@ comments[32]:
   - created_at: "2026-08-15T13:56:20.527Z"
     author: "harness:codex"
     text: "Typed-graph rationale: pm-doxj is the intentional hierarchy root and the living portfolio that coordinates the full roadmap through 2036. Adding implements -> pm-ljrh29 records that the roadmap operationalizes the multi-decade continuity outcome; it is not a density edge. Before this edge the sole active outcome-unreachable node was pm-doxj because its milestone connections were generic related links. The semantic edge also makes the root's historical children explainable through the same outcome path while preserving all prior relationships and immutable history."
+  - created_at: "2026-08-22T07:18:06.052Z"
+    author: "harness:codex"
+    text: "Portfolio organization 2026-08-22. The outcome ladder now reads as one continuous programme: agent-legible grammar by 2026-10, SDK-complete core by 2026-12, provable history by 2027-03, proven million-item scale by 2027-09, v1 stability by 2027-12, universal domain platform by 2028-06, measured self-improvement by 2029-12, federated thousand-agent operation by 2032-12, and multi-decade continuity by 2036-12. Existing epics remain the implementation owners; milestones define falsifiable outcomes and do not duplicate delivery scope. Ongoing portfolio governance must measure outcome reachability, canonical ownership, recurrence, value realization, token cost, and release evidence rather than count newly filed items.\n"
 notes[142]:
   - created_at: "2026-06-07T10:24:45.228Z"
     author: maintainer-agent

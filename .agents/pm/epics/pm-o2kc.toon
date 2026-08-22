@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[5]: "area:history","area:storage",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.941Z"
-updated_at: "2026-08-15T13:59:30.280Z"
+updated_at: "2026-08-22T07:28:13.340Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "History chain integrity gates stay green; gc, compact, redact, and repair flows verified on large workspaces; no open data-loss classes."
 goal: project management = context management
 objective: "Strengthen storage, append-only history, and durability primitives (compaction, integrity, gc, export/import)"
 value: "Trustworthy, portable, bounded-growth git-native storage"
+why_now: "The workspace already contains 53,059 immutable entries across 2,548 streams and is a merge substrate for many agents; every new writer, history operation, index, and format migration expands the proof and recovery surface that must remain independently verifiable for decades."
 parent: pm-doxj
 risk: low
 confidence: high

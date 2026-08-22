@@ -6,10 +6,11 @@ status: open
 priority: 1
 tags[4]: "area:tests",environment-parity,linked-tests,regression
 created_at: "2026-08-04T09:30:07.005Z"
-updated_at: "2026-08-14T10:15:01.796Z"
+updated_at: "2026-08-22T07:28:21.253Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Per-test execution context is explicit, persisted, and visible before command execution.; Self-sandboxing repository test and benchmark commands have parity between direct and linked execution without access to real tracker data.; Merge and scale regression fixtures cover schema, tracker-copy, and self-sandboxing modes with guided recovery.; The runner distinguishes assertion failure caused by execution context from an actual product gate regression."
+why_now: "The 2026-08-22 ecosystem review reproduced the same trust failure on current binaries: a real-tracker changelog check passed unchanged, while the identical linked command failed because PM_PATH selected a tracker snapshot but the workspace-relative CHANGELOG.md still pointed at the source checkout. The runner needs an explicit paired tracker-and-workspace snapshot contract for repository checks."
 parent: pm-92if
 risk: medium
 confidence: high
@@ -19,11 +20,13 @@ repro_steps: "Link the focused merge suite and pnpm benchmark:scale:check to a P
 expected_result: "Sandbox-safe commands produce the same assertions and performance contract directly and through pm test, with explicit context metadata where semantic differences are intentional."
 actual_result: Direct merge tests pass 120/120 and direct scale gate passes; linked schema context produces merge-driver configuration warnings and scale token/latency threshold failures.
 customer_impact: Agents cannot trust the canonical linked-test evidence loop and may misclassify orchestration-context failures as product regressions.
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,implements,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-oslr,verifies,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
   pm-uawujr,discovered_from,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-a8zm,discovered_from,"2026-08-22T07:27:58.306Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-08-04T09:30:24.732Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for linked-test schema sandbox, PM_PATH merge-driver warnings, non-PM benchmark context drift, direct-versus-linked parity, and self-sandboxing repository commands. Closed pm-uawujr fixed package prepare source fallback; closed pm-oslr delivered linked execution; open pm-ed28wi owns trust/allowlisting. None owns the reproduced semantic parity failure for already-sandboxed non-PM commands."
+  "2026-08-22T07:27:50.502Z","harness:codex","Recurrence evidence (2026-08-22): pnpm changelog:pm:check passed directly against the live project and reported CHANGELOG.md unchanged with 2,167 closed items. When linked with pm_context_mode=tracker, pm test copied all 2,534 tracker items into the sandbox but retained the source checkout as the output-file workspace; the extension generated from the sandbox tracker and compared against /home/steve/GITHUB_RELEASE/pm-cli/CHANGELOG.md, then falsely reported it out of date. This is the existing issue, so no duplicate was created. The tracker-quality assurance command did pass in tracker context, proving that per-test context metadata works when the command has no coupled source-workspace artifact."
 body: "Design a deterministic execution-context contract for linked tests. Detect commands that use scripts/run-tests.mjs or self-contained benchmark fixtures; do not inject an empty schema PM_PATH when it changes their meaning, or require and persist an explicit per-test context mode with a clear add-time diagnostic. The output must show the effective context before execution and recommend the correct bounded retry. Preserve the rule that tests never read or write real repository PM data."

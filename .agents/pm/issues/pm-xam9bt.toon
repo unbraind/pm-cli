@@ -1,0 +1,25 @@
+id: pm-xam9bt
+title: Budget recovery can recommend a smaller ceiling than the request that already truncated
+description: "A live unbounded contract inspection of 'pm contracts --command update --flags-only --json' showed an output_budget_truncation receipt with budget_source=default and budget_tokens=4500, restore_with='Increase --output-budget because no declared row collection can be continued', but recovery.cli='--output-budget 1200' and recovery_budget_multiplier=1. The prescribed retry is smaller than the effective budget that already omitted data, so an agent following the recovery can loop or lose more context. Define one SDK recovery-budget contract that is monotonic relative to the effective request and executable across every non-resumable bounded surface."
+type: Issue
+status: open
+priority: 1
+tags[7]: agent-ux,"area:sdk",contracts,output-contract,recovery,recurrence,token-efficiency
+created_at: "2026-08-22T07:15:23.785Z"
+updated_at: "2026-08-22T07:15:23.785Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "Recovery budgets are computed from the effective post-precedence budget and are strictly greater than it whenever the instruction says increase; the next budget is derived from measured encoded cost with documented rounding and safety margin, never from a smaller unrelated intent default; when no finite budget can make the response useful the envelope recommends an explicit unbounded or narrower query instead of a futile number; the emitted CLI, SDK, and MCP recovery bindings are executed and prove monotonic progress for default, intent, legacy, and explicit budgets; contracts, activity, history, graph, health, and every other non-resumable bounded producer are covered by a generated corpus; a seeded smaller-budget recommendation fails the recovery-reference assurance gate; repeated recovery either returns the requested complete projection or emits a strictly stronger, honest next action without cycles."
+goal: executable monotonic output recovery
+objective: Guarantee every non-resumable output-budget recovery increases the effective capacity enough to make progress or explicitly recommends an unbounded/query-narrowing alternative
+value: Agents never spend another turn following a recovery command that is provably weaker than the request that failed
+why_now: "The defect is reproducible on the current 2026.8.22 CLI after the general executable-recovery feature closed, making it a concrete recurrence and a gap in the producer-derived recovery corpus."
+parent: pm-5t33or
+risk: high
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-a8zm,discovered_from,"2026-08-22T07:15:23.785Z","harness:codex","cli:create:dep",detected
+  pm-h8tpeh,recurs_from,"2026-08-22T07:15:23.785Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-22T07:15:23.785Z","harness:codex","Duplicate check 2026-08-22: searched all statuses for contracts output-budget recovery smaller than default, recovery_budget_multiplier, restore_with increase, and executable recovery obligations. Closed pm-h8tpeh owns the general executed-reference contract, open pm-f05lsg owns recovery-closure measurement, and open pm-5t33or owns output budgets; none records this monotonic-budget recurrence, so this issue is filed as their narrow defect child rather than a new programme."
+body: ""

@@ -6,10 +6,14 @@ status: open
 priority: 2
 tags[5]: capability,code-scanning,dependabot,security,semgrep
 created_at: "2026-07-06T21:07:27.273Z"
-updated_at: "2026-08-04T09:23:03.025Z"
+updated_at: "2026-08-22T07:28:13.892Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: All code-scanning findings (Semgrep/CodeQL/dependabot/secrets) are tracked as pm issues under this epic with source links and triage state; recurring scanner imports parent their batch tasks here; epic stays OPEN as a living backlog even at 0 open children.
+goal: continuously enforced software supply-chain trust
+objective: "Convert every code, dependency, workflow, secret, provenance, and release-security signal into one triageable item and an executable prevention gate"
+value: "Security findings cannot disappear between providers or recur silently, and every released artifact carries reproducible evidence of the exact source and policy that produced it"
+why_now: "Closed history contains recurring scanner, dependency, token-permission, secret, and release-provenance findings while provider availability varies; the tracker must preserve a provider-independent canonical security record."
 parent: pm-doxj
 risk: high
 confidence: high

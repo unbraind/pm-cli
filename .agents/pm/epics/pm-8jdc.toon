@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[5]: "area:config","area:schema",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.016Z"
-updated_at: "2026-07-31T10:17:23.937Z"
+updated_at: "2026-08-22T07:28:12.217Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "Any project archetype can model its domain end-to-end with schema add/remove type, custom statuses, per-type workflows, and config keys without code changes; plan pm-z5nb completed."
 goal: project management = context management
 objective: "Make pm a universal PM tool: schema list/show/remove, custom statuses, per-type workflows, project archetype presets"
 value: Any project archetype (agile/ops/research) models its domain natively
+why_now: "The universal-domain milestone and RL/evaluation programme now depend on runtime-defined types, workflows, policies, relationships, and profiles; those capabilities must be SDK-native before domain packs multiply."
 parent: pm-doxj
 risk: low
 confidence: high

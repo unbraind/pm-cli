@@ -6,10 +6,14 @@ status: open
 priority: 1
 tags[5]: "area:concurrency","area:locking",backlog,living-map,pm-cli
 created_at: "2026-07-04T18:47:33.243Z"
-updated_at: "2026-08-15T13:58:35.219Z"
+updated_at: "2026-08-22T07:28:06.766Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "All findings from the 2026-07-03 concurrency review are resolved or explicitly waived: atomic claim test-and-set, bounded lock-wait retry, singleton-file locking, ID-allocation TOCTOU guard, stale-lock takeover race. Parallel multi-agent stress (mutations, claims, config writes) preserves item and history integrity with zero silent lost updates."
+goal: conflict-safe multi-agent convergence
+objective: "Make concurrent, retried, cross-process, cross-worktree, and cross-branch mutations converge deterministically without losing any acknowledged state"
+value: "Thousands of agents can coordinate through one tracker without silent last-writer-wins loss, global serialization, or manual history repair"
+why_now: "Parallel branches, immutable per-item streams, claim leases, and field-aware merge drivers are already production-critical; remaining duplicate-id, scalar-conflict, fresh-clone fence, and fleet-throughput gaps compound nonlinearly as agent count grows."
 parent: pm-doxj
 risk: medium
 confidence: high

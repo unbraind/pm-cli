@@ -6,21 +6,23 @@ status: open
 priority: 1
 tags[5]: branding,docs,growth,marketing,positioning
 created_at: "2026-07-13T09:28:19.572Z"
-updated_at: "2026-07-26T05:49:04.113Z"
+updated_at: "2026-08-22T07:28:15.063Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Category statement + brand architecture ratified via ADR before any public copy changes; all child workstreams either shipped or explicitly dispositioned; no public surface still leads with command counts or 'Git-native project management CLI' as the primary descriptor
+goal: category clarity and evidence-led adoption
+objective: "Position pm consistently as the repository-native project context engine across package, documentation, registry, plugin, and community surfaces"
 value: "Product maturity (1300+ commits, dozens of releases) far exceeds awareness (single-digit stars); positioning/distribution/proof gap, not a feature gap"
 outcome: "Every public surface leads with one consistent category, doctrine, and installation path; agents and humans understand what pm is within one screen"
 why_now: External strategy review 2026-07-13 identified category compression as the top growth blocker; further promotion before fixing positioning wastes attention
 parent: pm-doxj
 risk: medium
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-doxj,related,"2026-07-13T09:28:19.572Z",null,null
-  pm-t4d7nz,related,"2026-07-24T23:54:57.406Z",null,null
-  pm-xp1xsw,related,"2026-07-24T23:54:57.406Z",null,null
-  pm-xp1xsw,implements,"2026-07-26T05:49:03.876Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-doxj,related,"2026-07-13T09:28:19.572Z"
+  pm-t4d7nz,related,"2026-07-24T23:54:57.406Z"
+  pm-xp1xsw,related,"2026-07-24T23:54:57.406Z"
+  pm-xp1xsw,implements,"2026-07-26T05:49:03.876Z"
 notes[7]{created_at,author,text}:
   "2026-07-13T09:29:30.721Z",maintainer-agent,"(1) COMPETITIVE LANDSCAPE snapshot (research cutoff 2026-07-12; star counts move): Beads ~25.2k stars — owns \"persistent structured memory for coding agents\"; differentiate via ranked/evaluable context + evidence + plans + SDK governance, do NOT imitate the memory label. Task Master ~27.8k — strong distribution; its core/standard/full MCP tool tiers are worth adopting; its provider-heavy AI layer is not. Backlog.md ~6.1k, very active — leads with \"AI agents write the code. You review the tasks\" and human review checkpoints; match its clarity, differentiate on ranking/contracts/safety/evidence. CCPM ~8.3k — a simple process diagram (PRD->Epic->Task->Issue->Code) beats a feature list; pm needs an equally simple context lifecycle (the five stages). Vibe Kanban ~27.3k but sunsetting — hosted UI must not become the moat; keep pm Web optional. GitHub Spec Kit ~120k, OpenSpec ~60.3k, BMAD ~50.4k — specs are visible but do not preserve execution context; position pm as the execution-context layer that begins where spec workflows hand off (complement, never replace)."
   "2026-07-13T09:29:31.154Z",maintainer-agent,"(2) INDUSTRY TRENDS grounding the strategy (with sources): (a) agentic development is normal repo activity — studies across 128k+ projects and a 932k-agentic-PR dataset (arxiv 2601.18341) => agents are the hero audience, humans review/govern. (b) MCP is the common connection layer; official MCP Registry in preview (modelcontextprotocol.io/registry/about) => publish verified registry metadata, treat MCP as distribution infrastructure not identity. (c) portable Agent Skills (SKILL.md, agentskills.io) are a second distribution layer => derive Claude/Codex skills from ONE canonical portable source. (d) tool-selection accuracy degrades with tool-set size (arxiv 2606.30317, Jun 2026) => 28 tools should be the available maximum, not the default surface. (e) more context is not better — oversized/auto-generated instruction files can lower success and raise cost (arxiv 2606.15828); our own GH issue found repeated tags = ~43 percent of one real pm context brief => this IS the opening for \"retrieved and ranked on demand, not pasted wholesale\". (f) MCP does not solve trust/least-privilege (arxiv 2605.24248) => market existing capabilities/trust-modes/sandbox/preflight as \"extensible without becoming ungovernable\"."

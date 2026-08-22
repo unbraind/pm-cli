@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-08-15T14:19:32.213Z"
+updated_at: "2026-08-22T07:28:05.550Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -56,7 +56,7 @@ dependencies[11]:
     kind: verifies
     created_at: "2026-08-14T14:37:39.237Z"
     author: "harness:codex"
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-13T21:59:23.505Z",codex-root,"Duplicate check 2026-07-13: prior all-status audits are completed point-in-time reviews and pm-e9zh owns terminal resolution evidence; none owns a future resumable typed-relationship reconstruction program. This plan starts only after pm-6x7o."
   "2026-07-31T10:17:21.616Z","harness:codex","Live reconstruction input 2026-07-31: complete all-status/current-state and immutable-activity snapshots were reviewed before mutation; no active isolate, missing active endpoint, parent-scope duplicate, or active ordering cycle exists. Wave 1 received only evidence-backed active prerequisites and semantic implementation/verification/provenance edges. The remaining 11 graph findings are terminal-only information and stay in the dedicated changelog-safe waves; no closed item was rewritten opportunistically."
   "2026-08-01T20:21:49.469Z","harness:codex","Current reconstruction checkpoint 2026-08-01: live graph has 2,266 nodes including three historical missing endpoints, 10,495 deduplicated directed edges, one connected component, zero active isolates, and zero active degree-one nodes. Stored dependencies total 8,872: related 5,403, implements 2,147, discovered_from 291, parent 275, blocked_by 238, blocks 231, verifies 181, supersedes 56, related_to 40, child 8, incident_from 2. The 11 audit findings are informational terminal-only debt: one legacy duplicate class, one retired sentinel class, eight historical ordering-cycle components, and three dangling terminal references. Active enrichment can proceed with evidence-backed typed edges; terminal cleanup remains isolated in pm-hnc9w7, pm-lnrk, and pm-s5e04g so history and changelog truth are preserved."
@@ -67,6 +67,8 @@ comments[10]{created_at,author,text}:
   "2026-08-14T14:48:44.443Z","harness:codex","Verification checkpoint 2026-08-14: complete unbounded read returned 2,492 unique items with 343 open, 1 in progress, 2,134 closed, and 14 canceled before releasing this claim; 10,446 dependency rows had zero missing targets, self-links, or duplicate rows. The only exact normalized-title collision remains three already-canceled accidental probe records. Graph audit has zero findings across 12,272 deduplicated edges; all nodes form one acyclic component with 12 layers, critical path length 11, no active isolates or degree-one nodes, and 99.70 percent active outcome reachability. Strict unbounded validation is ok with no omissions, no lifecycle/active-cycle/stale-blocker/reference/history/storage errors; warnings remain the classified historical metadata, resolution, issue-code, and linked-path debt, not newly fabricated placeholders. Workspace hash-chain verification passed. pnpm build, direct pnpm changelog:pm:check, pnpm security:scan, full pm health, and published v2026.8.14 npm/npx/bunx/MCP verification passed. The changelog command was removed from linked schema-sandbox tests after correctly failing against an empty sandbox; the retained linked build and security tests pass."
   "2026-08-15T14:01:49.121Z","harness:codex","Verification checkpoint 2026-08-15: post-organization corpus has 2,496 unique items and 2,511 history streams. Graph audit has zero findings across 12,301 deduplicated directed edges, one connected acyclic component, 12 layers, critical path length 11, zero active isolates or sparse nodes, and 100 percent active outcome reachability after the evidence-backed roadmap-root edge. Strict validation is ok: zero dangling references, lifecycle errors, stale blockers, dependency/parent cycles, history drift, hash mismatch, storage failure, or merge-fence error; the 295 historical missing-resolution warnings remain assigned debt and were not placeholder-filled. Full health has no warning. Linked build and security tests pass; changelog check is unchanged; exact published consumers npm, npx, and bunx all resolve 2026.8.15. The sole GitHub release remains isImmutable:false, now tracked by deduplicated issue pm-k9m6wc rather than treated as a successful immutable proof. Scheduled Auto Release failed and manual recovery succeeded without duplicate publication, so aggregate reliability and schedule-window owners remain open with fresh evidence."
   "2026-08-15T14:19:31.504Z","harness:codex","Hosted feedback correction 2026-08-15: exact-head CI run 31889148328 found two deterministic tracker-context-quality ratchet breaches introduced by this organization: redundant ordering edges rose 67 -> 69 and generic related-family edges rose 6,053 -> 6,054. Graph redundancy identified the exact transitive prerequisites, so direct pm-o2kc edges were removed while preserving deeper typed paths through pm-4k6b and pm-dj98; the optional generic pm-k9m6wc -> pm-gydv edge was removed while retaining parent, discovered_from, implements, and verifies lineage. Post-correction redundancy is 67, graph edges 12,298, active outcome reachability remains 100 percent, and the full 40-assertion tracker-context-quality CI gate passes locally with no failed assertions. The hosted health-telemetry observation was enforcement=warn and local remeasurement is clear; no ratchet was weakened."
+  "2026-08-22T07:18:05.502Z","harness:codex","Ecosystem review evidence 2026-08-22. The strict unbounded all-status read returned 2,533 unique items with total=2,533, has_more=false, truncated=false, no omitted field groups, and completeness=complete: 307 open, 2,212 closed, and 14 canceled; no item is currently in progress. The corpus contains 2,548 history streams and 53,059 immutable entries. Validation scanned every item and stream: zero unreadable items or directories, missing or unreadable streams, hash or chain mismatches, workspace-state mismatches, dangling references, active lifecycle defects, stale blockers, dependency cycles, parent cycles, storage failures, merge-fence defects, or pending merge decisions. The known historical debt remains explicit: 295 terminal records lack complete resolution evidence and seven terminal-only hierarchy rows preserve divergent legacy storage; both are warnings with canonical owners, not fabricated repairs.\n\nGraph evidence: 2,533 nodes, 12,474 deduplicated directed edges, one connected component, zero orphans, 12 layers, critical path length 11, zero active isolates or degree-one nodes, and 100 percent outcome reachability for all 307 active and all 2,226 terminal records. Kind totals are parent 2,357, implements 2,691, discovered_from 619, blocked_by 612, verifies 298, blocks 205, supersedes 87, recurs_from 26, incident_from 11, and related 5,568. The graph is connected but not finished: related still represents 44.6 percent of directed edges, semantic edges are 8.35 percent, and 67 ordering edges are transitively redundant. This review adds no generic relationship and does not mutate terminal history for density. Exact normalized-title inspection found only the three already-canceled accidental probe records. The all-status fuzzy sweep correctly refused at its one-million-pair safety ceiling; pm-pshhry remains the scalability owner, so no exhaustive fuzzy-uniqueness claim is made.\n\nPortfolio reconciliation found canonical owners for every requested theme: grammar pm-n7rr, output budgets pm-5t33or, SDK-first architecture pm-usfg, context algorithms pm-4k6b, graph maturity pm-96h7, immutable restoration pm-w7ccmv, multi-agent convergence pm-dj98, RL/eval environments pm-klxax7, recursive improvement pm-o0sqz5, provenance pm-c0lrdm, release/skills/CI pm-u9d0, and horizons through 2036. One narrow new recurrence, pm-xam9bt, records the live smaller-than-current output-budget recovery defect after all-status duplicate checks. Strategic owners received missing goal, objective, value, or why-now metadata; pm-olcoon received the only missing active acceptance/risk/confidence/estimate set and moved from the portfolio root to the CLI ergonomics capability. This is evidence-backed organization, not synthetic graph inflation.\n"
+  "2026-08-22T07:27:51.075Z","harness:codex","Final verification evidence (2026-08-22): the linked suite now passes pnpm build, pnpm security:scan, and pnpm quality:tracker-measurements. The assurance gate evaluated all 2,534 items with 41 blocking assertions, verdict pass, and negative_control_proven=true for every assertion. pnpm changelog:pm:check also passes directly against the complete real tracker and reports CHANGELOG.md unchanged with 2,167 closed items. An attempted linked changelog check reproduced the canonical workspace/tracker parity issue pm-e97jyf; it was removed from the linked suite because its current sandbox contract compares a copied tracker to the source workspace artifact, and recurrence evidence was appended to that existing item rather than creating a duplicate."
 notes[2]:
   - created_at: "2026-07-25T00:00:23.513Z"
     author: maintainer-agent
@@ -79,13 +81,86 @@ learnings[3]{created_at,author,text}:
   "2026-08-14T14:41:35.887Z","harness:codex","Completeness claims at repository scale require reading the JSON envelope, not only increasing row limits: an apparently large limit can still return has_more or a null continuation under a bounded output budget. Use --output-budget unbounded for evidence sweeps, record the envelope, and treat an algorithmic safety refusal such as the duplicate all-pairs bound as a product finding rather than evidence of uniqueness."
   "2026-08-14T14:41:36.544Z","harness:codex","Graph quality is semantic and evidence-gated, not a density target. Preserve historical ambiguity, prefer implements/verifies/blocked_by/discovered_from/supersedes edges, and add long-horizon outcomes only when existing execution programmes lack a measurable destination; generic related edges should be migrated only with explicit evidence."
   "2026-08-15T14:01:49.707Z","harness:codex","A release can be unique, exact-head, and package-consistent while still lacking platform immutability. Release assurance must independently prove uniqueness, workflow success, registry/consumer identity, GitHub immutable state, and attestation; success in one dimension cannot stand in for another."
-tests[2]{command,scope,timeout_seconds}:
-  pnpm build,project,240
-  "pnpm security:scan",project,240
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-mst29vtd-0ebv7l,test,failed,"2026-08-14T14:47:16.591Z","2026-08-14T14:47:34.993Z","2026-08-14T14:47:34.993Z",2,1,0
-  test-local-mst2al7t-tsvxg0,test,passed,"2026-08-14T14:47:53.994Z","2026-08-14T14:48:07.913Z","2026-08-14T14:48:07.913Z",2,0,0
-  test-local-msug20tl-wyfb9i,test,passed,"2026-08-15T14:00:58.440Z","2026-08-15T14:01:09.033Z","2026-08-15T14:01:09.033Z",2,0,0
+tests[3]:
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:tracker-measurements"
+    scope: project
+    timeout_seconds: 240
+    pm_context_mode: tracker
+test_runs[6]:
+  - run_id: test-local-mst29vtd-0ebv7l
+    kind: test
+    status: failed
+    started_at: "2026-08-14T14:47:16.591Z"
+    finished_at: "2026-08-14T14:47:34.993Z"
+    recorded_at: "2026-08-14T14:47:34.993Z"
+    passed: 2
+    failed: 1
+    skipped: 0
+  - run_id: test-local-mst2al7t-tsvxg0
+    kind: test
+    status: passed
+    started_at: "2026-08-14T14:47:53.994Z"
+    finished_at: "2026-08-14T14:48:07.913Z"
+    recorded_at: "2026-08-14T14:48:07.913Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msug20tl-wyfb9i
+    kind: test
+    status: passed
+    started_at: "2026-08-15T14:00:58.440Z"
+    finished_at: "2026-08-15T14:01:09.033Z"
+    recorded_at: "2026-08-15T14:01:09.033Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt41xdtw-o81xug
+    kind: test
+    status: failed
+    started_at: "2026-08-22T07:23:00.274Z"
+    finished_at: "2026-08-22T07:23:19.747Z"
+    recorded_at: "2026-08-22T07:23:19.747Z"
+    passed: 2
+    failed: 2
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode}:
+      pnpm build,schema,schema
+      "pnpm security:scan",schema,schema
+      "pnpm quality:tracker-measurements",schema,schema
+      "pnpm changelog:pm:check",schema,schema
+  - run_id: test-local-mt41zzj9-jqikt4
+    kind: test
+    status: failed
+    started_at: "2026-08-22T07:23:42.300Z"
+    finished_at: "2026-08-22T07:25:21.188Z"
+    recorded_at: "2026-08-22T07:25:21.188Z"
+    passed: 3
+    failed: 1
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode}:
+      pnpm build,schema,schema
+      "pnpm security:scan",schema,schema
+      "pnpm quality:tracker-measurements",tracker,tracker
+      "pnpm changelog:pm:check",tracker,tracker
+  - run_id: test-local-mt4229c5-ena308
+    kind: test
+    status: passed
+    started_at: "2026-08-22T07:25:38.645Z"
+    finished_at: "2026-08-22T07:27:07.205Z"
+    recorded_at: "2026-08-22T07:27:07.205Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode}:
+      pnpm build,schema,schema
+      "pnpm security:scan",schema,schema
+      "pnpm quality:tracker-measurements",tracker,tracker
 plan_mode: approved
 plan_resume_context: "Post-organization checkpoint 2026-08-15: 2,496 items; graph has 12,301 deduplicated edges, one connected acyclic component, 12 layers, zero findings, and 100 percent active outcome reachability. Canonical programmes now contain detailed designs for noun-verb command consolidation, session token economics and recoverable bounded reads, SDK-first provenance, adaptive context ranking, append-only time travel, deterministic multi-agent merge, decentralized federation, recursive improvement, RL/eval environments, recurrence-derived CI, and long-horizon outcomes through 2036. New issue pm-k9m6wc uniquely owns GitHub immutable-release enforcement after live isImmutable:false evidence. Scheduled reliability pm-e70zh5 and schedule-window pm-44u3wt remain open with fresh evidence. Next execution begins at plan-step-003, then plan-step-004; preserve every compatibility feature, use SDK contracts first, require negative controls and population adequacy, and add only evidence-backed typed relationships. Complete all-status fuzzy duplicate comparison still fails closed above the million-pair guard under pm-pshhry; exact duplicates remain only the canceled invalid probe trio."
 plan_validation[3]{text,command,expected}:

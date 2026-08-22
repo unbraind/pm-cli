@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",context-management,contracts,output-contract,token-efficiency
 created_at: "2026-07-24T23:45:26.200Z"
-updated_at: "2026-08-22T02:49:34.516Z"
+updated_at: "2026-08-22T07:28:20.639Z"
 author: maintainer-agent
 estimated_minutes: 1800
 acceptance_criteria: "The contract table declares a default output token budget per command and per output format, generated rather than hand-maintained; Commands exceeding their budget apply the shared degradation ladder (projection narrowing, then bounded truncation) and disclose what was dropped in the envelope; A budget override flag and a no-budget escape hatch exist for human and pipeline use, and are documented as non-default; The token-cost corpus gate is extended to assert every command against its declared budget, failing on regression; Degradation never changes machine-readable field names or breaks the scripting contract"
@@ -22,7 +22,7 @@ confidence: medium
 resolution: delivered
 expected_result: "Every command and output format declares an enforced default token ceiling, degrades deterministically with complete receipts, and offers explicit bounded or unbounded recovery without changing machine field names."
 actual_result: "The SDK-owned universal output contract now binds generated per-command ceilings at runtime, preserves explicit overrides and complete-read intent, rebases compacted cursors, publishes transport-parity recovery, and passes the token corpus gate."
-dependencies[24]:
+dependencies[25]:
   - id: pm-4k6b
     kind: related
     created_at: "2026-07-24T23:45:26.200Z"
@@ -113,6 +113,12 @@ dependencies[24]:
   - id: pm-srns
     kind: implements
     created_at: "2026-08-14T08:26:29.790Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xam9bt
+    kind: blocked_by
+    created_at: "2026-08-22T07:15:56.869Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
