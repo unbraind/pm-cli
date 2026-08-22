@@ -7288,6 +7288,18 @@
           "flag": "--override-linked-pm-context"
         },
         {
+          "flag": "--workspace-context"
+        },
+        {
+          "flag": "--override-linked-workspace-context"
+        },
+        {
+          "flag": "--allow-untrusted-linked-tests"
+        },
+        {
+          "flag": "--acknowledge-linked-tests"
+        },
+        {
           "flag": "--fail-on-context-mismatch"
         },
         {
@@ -7362,6 +7374,15 @@
         },
         {
           "flag": "--override-linked-pm-context"
+        },
+        {
+          "flag": "--workspace-context"
+        },
+        {
+          "flag": "--override-linked-workspace-context"
+        },
+        {
+          "flag": "--allow-untrusted-linked-tests"
         },
         {
           "flag": "--fail-on-context-mismatch"
@@ -32713,6 +32734,10 @@
       "input_schema": {
         "additionalProperties": true,
         "properties": {
+          "acknowledgeLinkedTests": {
+            "description": "Record clone-local trust for the item's current linked commands without executing them.",
+            "type": "boolean"
+          },
           "add": {
             "description": "Add.",
             "items": {
@@ -32738,6 +32763,10 @@
                 "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
               ]
             ]
+          },
+          "allowUntrustedLinkedTests": {
+            "description": "Explicitly execute commands not yet trusted by this clone when testing.allow_untrusted_linked_tests is also enabled.",
+            "type": "boolean"
           },
           "author": {
             "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
@@ -32881,6 +32910,10 @@
             "description": "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
             "type": "boolean"
           },
+          "overrideLinkedWorkspaceContext": {
+            "description": "Force run-level --workspace-context over per-linked-test workspace_context_mode metadata.",
+            "type": "boolean"
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -32982,6 +33015,20 @@
           "tokenAccounting": {
             "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
             "type": "boolean"
+          },
+          "workspaceContext": {
+            "description": "Source-workspace mode: source preserves read-only source context, isolated omits it for self-sandboxing commands, and snapshot runs from a temporary workspace paired with the selected tracker sandbox.",
+            "enum": [
+              "source",
+              "isolated",
+              "snapshot"
+            ],
+            "examples": [
+              "source",
+              "isolated",
+              "snapshot"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -50838,6 +50885,10 @@
       {
         "additionalProperties": false,
         "properties": {
+          "acknowledgeLinkedTests": {
+            "description": "Record clone-local trust for the item's current linked commands without executing them.",
+            "type": "boolean"
+          },
           "action": {
             "const": "test",
             "description": "Tool action to execute."
@@ -50867,6 +50918,10 @@
                 "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
               ]
             ]
+          },
+          "allowUntrustedLinkedTests": {
+            "description": "Explicitly execute commands not yet trusted by this clone when testing.allow_untrusted_linked_tests is also enabled.",
+            "type": "boolean"
           },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
@@ -51006,6 +51061,10 @@
             "description": "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
             "type": "boolean"
           },
+          "overrideLinkedWorkspaceContext": {
+            "description": "Force run-level --workspace-context over per-linked-test workspace_context_mode metadata.",
+            "type": "boolean"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -51110,6 +51169,20 @@
           "tokenAccounting": {
             "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
+          },
+          "workspaceContext": {
+            "description": "Source-workspace mode: source preserves read-only source context, isolated omits it for self-sandboxing commands, and snapshot runs from a temporary workspace paired with the selected tracker sandbox.",
+            "enum": [
+              "source",
+              "isolated",
+              "snapshot"
+            ],
+            "examples": [
+              "source",
+              "isolated",
+              "snapshot"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -51125,6 +51198,10 @@
           "action": {
             "const": "test-all",
             "description": "Tool action to execute."
+          },
+          "allowUntrustedLinkedTests": {
+            "description": "Explicitly execute commands not yet trusted by this clone when testing.allow_untrusted_linked_tests is also enabled.",
+            "type": "boolean"
           },
           "autoPmContext": {
             "description": "Auto-remediate PM tracker-read linked commands by routing those entries through tracker context regardless of linked-test pm_context_mode overrides.",
@@ -51223,6 +51300,10 @@
             "description": "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
             "type": "boolean"
           },
+          "overrideLinkedWorkspaceContext": {
+            "description": "Force run-level --workspace-context over per-linked-test workspace_context_mode metadata.",
+            "type": "boolean"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -51301,6 +51382,20 @@
           "tokenAccounting": {
             "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
+          },
+          "workspaceContext": {
+            "description": "Source-workspace mode: source preserves read-only source context, isolated omits it for self-sandboxing commands, and snapshot runs from a temporary workspace paired with the selected tracker sandbox.",
+            "enum": [
+              "source",
+              "isolated",
+              "snapshot"
+            ],
+            "examples": [
+              "source",
+              "isolated",
+              "snapshot"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -54982,10 +55077,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.8.0"
+    "x-schema-version": "4.9.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.8.0",
+  "schema_version": "4.9.0",
   "selected": {
     "action": null,
     "availability_only": false,

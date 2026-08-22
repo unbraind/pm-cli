@@ -82,7 +82,10 @@ export interface ParsedSettings {
   /** Value that configures or reports workflow for this contract. */
   workflow?: { definition_of_done: string[] };
   /** Value that configures or reports testing for this contract. */
-  testing?: { record_results_to_items: boolean };
+  testing?: {
+    record_results_to_items: boolean;
+    allow_untrusted_linked_tests?: boolean;
+  };
   /** Value that configures or reports telemetry for this contract. */
   telemetry?: {
     enabled: boolean;
@@ -576,7 +579,12 @@ const settingsCheck = vObject({
   ),
   governance: governanceSettings,
   workflow: vOptional(vObject({ definition_of_done: vArray(vString) })),
-  testing: vOptional(vObject({ record_results_to_items: vBoolean })),
+  testing: vOptional(
+    vObject({
+      record_results_to_items: vBoolean,
+      allow_untrusted_linked_tests: vOptional(vBoolean),
+    }),
+  ),
   telemetry: vOptional(
     vObject({
       enabled: vBoolean,

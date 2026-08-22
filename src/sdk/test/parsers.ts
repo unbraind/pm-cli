@@ -50,6 +50,15 @@ export const LINKED_TEST_PM_CONTEXT_MODE_VALUES = [
 /** Restricts linked test pm context mode values accepted by command, SDK, and storage contracts. */
 export type LinkedTestPmContextMode =
   (typeof LINKED_TEST_PM_CONTEXT_MODE_VALUES)[number];
+/** Supported values accepted by the linked test workspace context contract. */
+export const LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES = [
+  "source",
+  "isolated",
+  "snapshot",
+] as const;
+/** Restricts source-workspace modes accepted by command and storage contracts. */
+export type LinkedTestWorkspaceContextMode =
+  (typeof LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES)[number];
 
 /** Implements parse linked test env set for the public runtime surface of this module. */
 export function parseLinkedTestEnvSet(
@@ -169,6 +178,28 @@ export function parseLinkedTestContextMode(
   }
   throw new PmCliError(
     `${optionName} pm_context_mode must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+/** Parse one linked-test source-workspace context mode. */
+export function parseLinkedTestWorkspaceContextMode(
+  raw: string | undefined,
+  optionName: string,
+): LinkedTest["workspace_context_mode"] | undefined {
+  if (!raw) {
+    return undefined;
+  }
+  const value = raw.trim().toLowerCase();
+  if (
+    (LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES as readonly string[]).includes(
+      value,
+    )
+  ) {
+    return value as LinkedTest["workspace_context_mode"];
+  }
+  throw new PmCliError(
+    `${optionName} workspace_context_mode must be one of: ${LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES.join(", ")}`,
     EXIT_CODE.USAGE,
   );
 }
@@ -685,6 +716,21 @@ function parseLinkedTestJsonEntry(
       `field "pm_context_mode" must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`,
     );
   }
+  const workspaceContextModeValue = readJsonEntryString(
+    entry,
+    "workspace_context_mode",
+    fail,
+  );
+  if (
+    workspaceContextModeValue !== undefined &&
+    !(LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES as readonly string[]).includes(
+      workspaceContextModeValue,
+    )
+  ) {
+    throw fail(
+      `field "workspace_context_mode" must be one of: ${LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES.join(", ")}`,
+    );
+  }
   const noteValue = readJsonEntryString(entry, "note", fail);
   return {
     command,
@@ -693,6 +739,8 @@ function parseLinkedTestJsonEntry(
     scope: readJsonEntryScope(entry, fail),
     timeout_seconds: readJsonEntryTimeoutSeconds(entry, fail),
     pm_context_mode: pmContextModeValue as LinkedTest["pm_context_mode"],
+    workspace_context_mode:
+      workspaceContextModeValue as LinkedTest["workspace_context_mode"],
     env_set: readJsonEntryEnvSet(entry, fail),
     env_clear: readJsonEntryEnvClear(entry, fail),
     shared_host_safe: readJsonEntryBoolean(entry, "shared_host_safe", fail),

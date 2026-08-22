@@ -5,7 +5,15 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
-import { cp, mkdir, mkdtemp, open, readdir, rm } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  open,
+  readdir,
+  rm,
+  symlink,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
@@ -56,7 +64,9 @@ import {
   parseLinkedTestMinLines,
   parseLinkedTestRegexList,
   parseLinkedTestStringList,
+  parseLinkedTestWorkspaceContextMode,
   type LinkedTestPmContextMode,
+  type LinkedTestWorkspaceContextMode,
 } from "./parsers.js";
 import {
   parseOnlyIndexValue,
@@ -78,6 +88,13 @@ import {
 } from "./measurements.js";
 import { withHostEnvironmentBoundary } from "../environment/host-environment-errors.js";
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
+import {
+  acknowledgeLinkedTests,
+  attachLinkedTestProvenance,
+  resolveLinkedTestSourceRef,
+  resolveLinkedTestTrust,
+  type LinkedTestTrustDecision,
+} from "./trust.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
@@ -85,6 +102,7 @@ const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS = 5000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
 type ResolvedLinkedTestPmContextMode = Exclude<LinkedTestPmContextMode, "auto">;
+type ResolvedLinkedTestWorkspaceContextMode = LinkedTestWorkspaceContextMode;
 const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set([
   "locks",
   "extensions",
@@ -230,6 +248,14 @@ export interface TestCommandOptions {
   pmContext?: string;
   /** Value that configures or reports override linked pm context for this contract. */
   overrideLinkedPmContext?: boolean;
+  /** Source-workspace visibility and working-directory mode. */
+  workspaceContext?: string;
+  /** Force the run-level workspace mode over per-test metadata. */
+  overrideLinkedWorkspaceContext?: boolean;
+  /** Explicitly permit an untrusted linked command when project policy also permits it. */
+  allowUntrustedLinkedTests?: boolean;
+  /** Record clone-local acknowledgement for the item's current linked tests. */
+  acknowledgeLinkedTests?: boolean;
   /** Value that configures or reports fail on context mismatch for this contract. */
   failOnContextMismatch?: boolean;
   /** Value that configures or reports fail on skipped for this contract. */
@@ -296,6 +322,11 @@ export interface TestRunResult {
     mismatch_detected: boolean;
     project_extensions_seeded: boolean;
     global_extensions_seeded: boolean;
+    requested_workspace_context_mode: LinkedTestWorkspaceContextMode;
+    workspace_context_mode: LinkedTestWorkspaceContextMode;
+    working_directory: string;
+    source_workspace_root: string;
+    trust: LinkedTestTrustDecision;
   };
   /** Value that configures or reports stdout for this contract. */
   stdout?: string;
@@ -421,6 +452,31 @@ function parsePmContextMode(raw: string | undefined): LinkedTestPmContextMode {
   throw new PmCliError(
     `Invalid --pm-context value "${raw}". Expected one of: ${PM_CONTEXT_MODE_VALUES.join(", ")}`,
     EXIT_CODE.USAGE,
+  );
+}
+
+function parseWorkspaceContextMode(
+  raw: string | undefined,
+): LinkedTestWorkspaceContextMode {
+  return parseLinkedTestWorkspaceContextMode(
+    raw ?? "source",
+    "--workspace-context",
+  )!;
+}
+
+function resolveLinkedTestWorkspaceContextMode(
+  linkedTest: LinkedTest,
+  runLevelMode: LinkedTestWorkspaceContextMode,
+  overrideLinkedMode: boolean,
+): ResolvedLinkedTestWorkspaceContextMode {
+  if (overrideLinkedMode) {
+    return runLevelMode;
+  }
+  return (
+    parseLinkedTestWorkspaceContextMode(
+      linkedTest.workspace_context_mode,
+      "linked test",
+    ) ?? runLevelMode
   );
 }
 
@@ -862,6 +918,10 @@ function parseAddEntry(entry: string): LinkedTest {
       trimLinkedTestEntryField(kv.pm_context_mode),
       "--add",
     ),
+    workspace_context_mode: parseLinkedTestWorkspaceContextMode(
+      trimLinkedTestEntryField(kv.workspace_context_mode),
+      "--add",
+    ),
     env_set: parseLinkedTestEnvSetValue(
       trimLinkedTestEntryField(kv.env_set),
       "--add",
@@ -1290,9 +1350,10 @@ function createLinkedTestChild(
   env: NodeJS.ProcessEnv,
   stdoutFd: number,
   stderrFd: number,
+  cwd: string,
 ): ReturnType<typeof spawn> {
   return spawn(command, {
-    cwd: process.cwd(),
+    cwd,
     env,
     shell: true,
     windowsHide: true,
@@ -1330,6 +1391,7 @@ async function runLinkedTestCommand(
   env: NodeJS.ProcessEnv,
   progressContext: LinkedTestProgressContext,
   progressMode: LinkedTestProgressMode,
+  cwd = process.cwd(),
 ): Promise<LinkedTestExecutionResult> {
   const startedAt = Date.now();
   const captureRoot = await mkdtemp(
@@ -1349,6 +1411,7 @@ async function runLinkedTestCommand(
         env,
         stdoutHandle.fd,
         stderrHandle.fd,
+        cwd,
       );
     } finally {
       await Promise.all([stdoutHandle.close(), stderrHandle.close()]);
@@ -2014,6 +2077,11 @@ interface RunLinkedTestsOptions {
   requireAssertionsForPm?: boolean;
   checkContext?: boolean;
   autoPmContext?: boolean;
+  workspaceContext?: string;
+  overrideLinkedWorkspaceContext?: boolean;
+  pmRoot?: string;
+  allowUntrustedLinkedTests?: boolean;
+  untrustedLinkedTestsPolicyEnabled?: boolean;
 }
 
 interface LinkedTestSandboxLayout {
@@ -2022,6 +2090,7 @@ interface LinkedTestSandboxLayout {
   schemaGlobalPmPath: string;
   trackerProjectPmPath: string;
   trackerGlobalPmPath: string;
+  workspaceSnapshotRoot: string;
 }
 
 interface LinkedTestSandboxCounts {
@@ -2059,7 +2128,66 @@ function createLinkedTestSandboxLayout(
       "pm",
     ),
     trackerGlobalPmPath: path.join(sandboxRoot, "tracker", "global"),
+    workspaceSnapshotRoot: path.join(sandboxRoot, "workspace", "project"),
   };
+}
+
+function linkedTestsRequireWorkspaceSnapshot(
+  tests: LinkedTest[],
+  runLevelMode: LinkedTestWorkspaceContextMode,
+  overrideLinkedMode: boolean,
+): boolean {
+  return tests.some(
+    (linkedTest) =>
+      resolveLinkedTestWorkspaceContextMode(
+        linkedTest,
+        runLevelMode,
+        overrideLinkedMode,
+      ) === "snapshot",
+  );
+}
+
+async function seedLinkedTestWorkspaceSnapshot(
+  layout: LinkedTestSandboxLayout,
+  sourceWorkspaceRoot: string,
+): Promise<void> {
+  const excludedRoots = new Set([".agents", ".git", "node_modules"]);
+  await mkdir(path.dirname(layout.workspaceSnapshotRoot), { recursive: true });
+  await cp(sourceWorkspaceRoot, layout.workspaceSnapshotRoot, {
+    recursive: true,
+    force: true,
+    filter(source) {
+      const relative = path.relative(sourceWorkspaceRoot, source);
+      if (!relative) {
+        return true;
+      }
+      const [rootSegment] = relative.split(path.sep);
+      return !excludedRoots.has(rootSegment);
+    },
+  });
+  const sourceNodeModules = path.join(sourceWorkspaceRoot, "node_modules");
+  if (await pathExists(sourceNodeModules)) {
+    await symlink(
+      sourceNodeModules,
+      path.join(layout.workspaceSnapshotRoot, "node_modules"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+  }
+}
+
+async function bindSnapshotTracker(
+  snapshotRoot: string,
+  sandboxPmPath: string,
+): Promise<void> {
+  const agentsRoot = path.join(snapshotRoot, ".agents");
+  const target = path.join(agentsRoot, "pm");
+  await mkdir(agentsRoot, { recursive: true });
+  await rm(target, { recursive: true, force: true });
+  await symlink(
+    sandboxPmPath,
+    target,
+    process.platform === "win32" ? "junction" : "dir",
+  );
 }
 
 async function initializeLinkedTestSandboxes(
@@ -2183,6 +2311,9 @@ function buildLinkedTestExecutionContext(params: {
   requestedPmContextMode: LinkedTestPmContextMode;
   effectivePmContextMode: ResolvedLinkedTestPmContextMode;
   autoPmContextApplied: boolean;
+  workspaceContextMode: LinkedTestWorkspaceContextMode;
+  sourceWorkspaceRoot: string;
+  trust: LinkedTestTrustDecision;
 }): NonNullable<TestRunResult["execution_context"]> {
   const trackerMode = params.effectivePmContextMode === "tracker";
   const selectedSandboxProjectPmPath = trackerMode
@@ -2197,6 +2328,12 @@ function buildLinkedTestExecutionContext(params: {
   const selectedSandboxGlobalItemCount = trackerMode
     ? params.counts.trackerGlobalItemCount
     : params.counts.schemaGlobalItemCount;
+  const workingDirectory =
+    params.workspaceContextMode === "snapshot"
+      ? params.layout.workspaceSnapshotRoot
+      : params.sourceWorkspaceRoot;
+  const exposedSourceWorkspaceRoot =
+    params.workspaceContextMode === "isolated" ? "" : workingDirectory;
   return {
     requested_pm_context_mode: params.requestedPmContextMode,
     pm_context_mode: params.effectivePmContextMode,
@@ -2218,17 +2355,25 @@ function buildLinkedTestExecutionContext(params: {
         params.counts.sourceGlobalItemCount !== selectedSandboxGlobalItemCount),
     project_extensions_seeded: Boolean(params.sourceRoots),
     global_extensions_seeded: Boolean(params.sourceRoots),
+    requested_workspace_context_mode: params.workspaceContextMode,
+    workspace_context_mode: params.workspaceContextMode,
+    working_directory: workingDirectory,
+    source_workspace_root: exposedSourceWorkspaceRoot,
+    trust: params.trust,
   };
 }
 
-function resolveLinkedTestCommandContext(params: {
+async function resolveLinkedTestCommandContext(params: {
   linkedTest: LinkedTest;
   layout: LinkedTestSandboxLayout;
   counts: LinkedTestSandboxCounts;
   sourceRoots: LinkedTestSandboxSourceRoots | undefined;
   runLevelPmContextMode: LinkedTestPmContextMode;
   options: RunLinkedTestsOptions | undefined;
-}): LinkedTestCommandContext {
+  workspaceContextMode: LinkedTestWorkspaceContextMode;
+  currentSourceRef: string | undefined;
+  sourceWorkspaceRoot: string;
+}): Promise<LinkedTestCommandContext> {
   const linkedOverridePmContextMode =
     typeof params.linkedTest.pm_context_mode === "string" &&
     params.linkedTest.pm_context_mode.trim().length > 0
@@ -2257,6 +2402,27 @@ function resolveLinkedTestCommandContext(params: {
     requestedPmContextMode,
     isPmTrackerReadCommand,
   );
+  const selectedSandboxProjectPmPath =
+    effectivePmContextMode === "tracker"
+      ? params.layout.trackerProjectPmPath
+      : params.layout.schemaProjectPmPath;
+  if (params.workspaceContextMode === "snapshot") {
+    await bindSnapshotTracker(
+      params.layout.workspaceSnapshotRoot,
+      selectedSandboxProjectPmPath,
+    );
+  }
+  const trust = params.options?.pmRoot
+    ? await resolveLinkedTestTrust(
+        params.options.pmRoot,
+        params.linkedTest,
+        params.currentSourceRef,
+      )
+    : await resolveLinkedTestTrust(
+        params.layout.root,
+        params.linkedTest,
+        params.currentSourceRef,
+      );
   return {
     linkedOverridePmContextMode,
     executionContext: buildLinkedTestExecutionContext({
@@ -2268,6 +2434,9 @@ function resolveLinkedTestCommandContext(params: {
       requestedPmContextMode,
       effectivePmContextMode,
       autoPmContextApplied,
+      workspaceContextMode: params.workspaceContextMode,
+      sourceWorkspaceRoot: params.sourceWorkspaceRoot,
+      trust,
     }),
   };
 }
@@ -2304,12 +2473,31 @@ function buildLinkedTestAssertionFailureResult(
   };
 }
 
-function resolveLinkedTestPreflightResult(params: {
+/** Build the fail-closed result for a command this clone has not trusted. */
+function resolveLinkedTestTrustPreflightResult(params: {
   linkedTest: LinkedTest;
   executionContext: NonNullable<TestRunResult["execution_context"]>;
-  runLevelPmContextMode: LinkedTestPmContextMode;
-  linkedOverridePmContextMode: LinkedTestPmContextMode | undefined;
   options: RunLinkedTestsOptions | undefined;
+}): TestRunResult | null {
+  if (params.executionContext.trust.trusted) return null;
+  const overrideRequested = params.options?.allowUntrustedLinkedTests === true;
+  const policyEnabled =
+    params.options?.untrustedLinkedTestsPolicyEnabled === true;
+  if (overrideRequested && policyEnabled) return null;
+  const recovery = policyEnabled
+    ? "Retry with --allow-untrusted-linked-tests for this invocation, or acknowledge the current commands with --acknowledge-linked-tests."
+    : "Set testing.allow_untrusted_linked_tests=true, then retry with --allow-untrusted-linked-tests; alternatively acknowledge the current commands with --acknowledge-linked-tests.";
+  return buildLinkedTestAssertionFailureResult(
+    params.linkedTest,
+    params.executionContext,
+    `Linked test command is not trusted by this clone (source_ref=${params.executionContext.trust.source_ref ?? "unknown"}, current_ref=${params.executionContext.trust.current_source_ref ?? "unknown"}). ${recovery}`,
+  );
+}
+
+/** Resolve missing-command and runtime-safety skips before policy checks. */
+function resolveLinkedTestSafetyPreflightResult(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
 }): TestRunResult | null {
   if (!params.linkedTest.command) {
     return buildLinkedTestSkippedResult(
@@ -2321,13 +2509,26 @@ function resolveLinkedTestPreflightResult(params: {
   const runtimeSafetySkipReason = getRuntimeSafetySkipReason(
     params.linkedTest.command,
   );
-  if (runtimeSafetySkipReason) {
-    return buildLinkedTestSkippedResult(
-      params.linkedTest,
-      params.executionContext,
-      runtimeSafetySkipReason,
-    );
-  }
+  return runtimeSafetySkipReason
+    ? buildLinkedTestSkippedResult(
+        params.linkedTest,
+        params.executionContext,
+        runtimeSafetySkipReason,
+      )
+    : null;
+}
+
+function resolveLinkedTestPreflightResult(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  runLevelPmContextMode: LinkedTestPmContextMode;
+  linkedOverridePmContextMode: LinkedTestPmContextMode | undefined;
+  options: RunLinkedTestsOptions | undefined;
+}): TestRunResult | null {
+  const safetyFailure = resolveLinkedTestSafetyPreflightResult(params);
+  if (safetyFailure) return safetyFailure;
+  const trustFailure = resolveLinkedTestTrustPreflightResult(params);
+  if (trustFailure) return trustFailure;
   const failOnMismatchByDefault =
     params.executionContext.pm_context_mode === "schema" &&
     params.executionContext.is_pm_tracker_read_command &&
@@ -2391,11 +2592,19 @@ function buildLinkedTestExecutionEnv(params: {
   executionEnv.FORCE_COLOR = "0";
   executionEnv.PM_PATH = params.executionContext.sandbox_project_pm_path;
   executionEnv.PM_GLOBAL_PATH = params.executionContext.sandbox_global_pm_path;
-  executionEnv.PM_SOURCE_WORKSPACE_ROOT =
-    process.env.PM_SOURCE_WORKSPACE_ROOT ?? process.cwd();
-  executionEnv.PM_SOURCE_PM_PATH =
-    params.executionContext.source_project_pm_path;
-  executionEnv[SOURCE_CONTEXT_ACCESS_ENV] = "read_only";
+  if (params.executionContext.workspace_context_mode === "isolated") {
+    delete executionEnv.PM_SOURCE_WORKSPACE_ROOT;
+    delete executionEnv.PM_SOURCE_PM_PATH;
+    delete executionEnv[SOURCE_CONTEXT_ACCESS_ENV];
+  } else {
+    executionEnv.PM_SOURCE_WORKSPACE_ROOT =
+      params.executionContext.source_workspace_root;
+    executionEnv.PM_SOURCE_PM_PATH =
+      params.executionContext.workspace_context_mode === "snapshot"
+        ? params.executionContext.sandbox_project_pm_path
+        : params.executionContext.source_project_pm_path;
+    executionEnv[SOURCE_CONTEXT_ACCESS_ENV] = "read_only";
+  }
   return executionEnv;
 }
 
@@ -2515,6 +2724,7 @@ async function runSingleLinkedTest(params: {
       command,
     },
     params.progressMode,
+    params.executionContext.working_directory,
   );
   const passed =
     execution.exitCode === 0 &&
@@ -2535,6 +2745,9 @@ export async function runLinkedTests(
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const layout = createLinkedTestSandboxLayout(sandboxRoot);
   const runLevelPmContextMode = parsePmContextMode(options?.pmContext);
+  const runLevelWorkspaceContextMode = parseWorkspaceContextMode(
+    options?.workspaceContext,
+  );
   const progressMode: LinkedTestProgressMode =
     options?.progress === true ? "always" : "auto";
   const runtimeDirectives = resolveRuntimeDirectives(
@@ -2543,11 +2756,20 @@ export async function runLinkedTests(
     options?.sharedHostSafe,
   );
   const sourceRoots = options?.sourceRoots;
+  const sourceWorkspaceRoot =
+    process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
   const includeTrackerData = linkedTestsRequireTrackerData(
     tests,
     runLevelPmContextMode,
     options,
   );
+  const includeWorkspaceSnapshot = linkedTestsRequireWorkspaceSnapshot(
+    tests,
+    runLevelWorkspaceContextMode,
+    options?.overrideLinkedWorkspaceContext === true,
+  );
+  const currentSourceRef =
+    await resolveLinkedTestSourceRef(sourceWorkspaceRoot);
 
   try {
     await initializeLinkedTestSandboxes(layout, runInit, includeTrackerData);
@@ -2556,17 +2778,28 @@ export async function runLinkedTests(
       sourceRoots,
       includeTrackerData,
     );
+    if (includeWorkspaceSnapshot) {
+      await seedLinkedTestWorkspaceSnapshot(layout, sourceWorkspaceRoot);
+    }
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
 
     for (let index = 0; index < tests.length; index += 1) {
       const linkedTest = tests[index];
-      const commandContext = resolveLinkedTestCommandContext({
+      const workspaceContextMode = resolveLinkedTestWorkspaceContextMode(
+        linkedTest,
+        runLevelWorkspaceContextMode,
+        options?.overrideLinkedWorkspaceContext === true,
+      );
+      const commandContext = await resolveLinkedTestCommandContext({
         linkedTest,
         layout,
         counts,
         sourceRoots,
         runLevelPmContextMode,
         options,
+        workspaceContextMode,
+        currentSourceRef,
+        sourceWorkspaceRoot,
       });
       const preflightResult = resolveLinkedTestPreflightResult({
         linkedTest,
@@ -2653,7 +2886,8 @@ function linkedTestsHaveSameIdentity(
     left.command === right.command &&
     left.path === right.path &&
     left.scope === right.scope &&
-    left.pm_context_mode === right.pm_context_mode
+    left.pm_context_mode === right.pm_context_mode &&
+    left.workspace_context_mode === right.workspace_context_mode
   );
 }
 
@@ -2704,25 +2938,34 @@ function applyLinkedTestMutations(
 }
 
 function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
-  return (
-    (options.envSet?.length ?? 0) > 0 ||
-    (options.envClear?.length ?? 0) > 0 ||
-    options.sharedHostSafe === true ||
-    options.pmContext !== undefined ||
-    options.overrideLinkedPmContext === true ||
-    options.failOnContextMismatch === true ||
-    options.failOnSkipped === true ||
-    options.failOnEmptyTestRun === true ||
-    options.requireAssertionsForPm === true ||
-    options.checkContext === true ||
-    options.autoPmContext === true
-  );
+  return [
+    (options.envSet?.length ?? 0) > 0,
+    (options.envClear?.length ?? 0) > 0,
+    options.sharedHostSafe === true,
+    options.pmContext !== undefined,
+    options.overrideLinkedPmContext === true,
+    options.failOnContextMismatch === true,
+    options.failOnSkipped === true,
+    options.failOnEmptyTestRun === true,
+    options.requireAssertionsForPm === true,
+    options.checkContext === true,
+    options.autoPmContext === true,
+    options.workspaceContext !== undefined,
+    options.overrideLinkedWorkspaceContext === true,
+    options.allowUntrustedLinkedTests === true,
+  ].some(Boolean);
 }
 
 function assertTestRunFlagUsage(options: TestCommandOptions): void {
   if (hasTestRuntimeDirectiveFlags(options) && options.run !== true) {
     throw new PmCliError(
-      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
+      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --workspace-context, --override-linked-workspace-context, --allow-untrusted-linked-tests, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (options.acknowledgeLinkedTests === true && options.run === true) {
+    throw new PmCliError(
+      "--acknowledge-linked-tests records trust without executing commands; run it separately before --run",
       EXIT_CODE.USAGE,
     );
   }
@@ -2855,6 +3098,7 @@ async function executeSelectedLinkedTests(params: {
   options: TestCommandOptions;
   runOptions: ResolvedTestRunOptions;
   pmRoot: string;
+  untrustedLinkedTestsPolicyEnabled: boolean;
 }): Promise<TestRunResult[]> {
   const { options, runOptions, pmRoot } = params;
   if (options.run !== true) {
@@ -2875,6 +3119,12 @@ async function executeSelectedLinkedTests(params: {
       requireAssertionsForPm: options.requireAssertionsForPm,
       checkContext: options.checkContext,
       autoPmContext: options.autoPmContext,
+      workspaceContext: options.workspaceContext,
+      overrideLinkedWorkspaceContext: options.overrideLinkedWorkspaceContext,
+      pmRoot,
+      allowUntrustedLinkedTests: options.allowUntrustedLinkedTests,
+      untrustedLinkedTestsPolicyEnabled:
+        params.untrustedLinkedTestsPolicyEnabled,
       sourceRoots: {
         projectPmRoot: pmRoot,
         globalPmRoot: resolveGlobalPmRoot(process.cwd()),
@@ -2950,6 +3200,9 @@ function buildTrackedTestRunSummary(params: {
         requested_pm_context_mode:
           result.execution_context?.requested_pm_context_mode,
         pm_context_mode: result.execution_context?.pm_context_mode,
+        workspace_context_mode:
+          result.execution_context?.workspace_context_mode,
+        trust_reason: result.execution_context?.trust.reason,
       })),
   };
 }
@@ -3038,6 +3291,16 @@ function buildTestMeasurementProjection(
   };
 }
 
+/** Acknowledge current linked commands only when the dedicated mode is active. */
+async function maybeAcknowledgeLinkedTests(
+  options: TestCommandOptions,
+  pmRoot: string,
+  tests: LinkedTest[],
+): Promise<{ acknowledged: number; fingerprints: string[] } | undefined> {
+  if (options.acknowledgeLinkedTests !== true) return undefined;
+  return acknowledgeLinkedTests(pmRoot, tests, nowIso());
+}
+
 /** Implements run test for the public runtime surface of this module. */
 export async function runTest(
   id: string,
@@ -3066,10 +3329,17 @@ export async function runTest(
     options.remove,
     "--remove",
   );
-  const adds = [
+  const parsedAdds = [
     ...parseAddEntries(resolvedAdds),
     ...parseAddJsonEntries(resolvedAddJsons),
   ];
+  const adds =
+    attachLinkedTestProvenance(
+      parsedAdds,
+      resolveAuthor(options.author, settings.author_default),
+      nowIso(),
+      await resolveLinkedTestSourceRef(),
+    ) ?? [];
   const removes = parseRemoveEntries(resolvedRemoves);
   const removeIndexes = parseRemoveIndexes(options.removeIndex);
   const item = await resolveLinkedTestItem({
@@ -3083,11 +3353,18 @@ export async function runTest(
     removeIndexes,
   });
   const runOptions = resolveTestRunOptions(options, item.tests);
+  const trustAcknowledgement = await maybeAcknowledgeLinkedTests(
+    options,
+    pmRoot,
+    item.tests,
+  );
   const runStartedAt = options.run === true ? nowIso() : undefined;
   const runResults = await executeSelectedLinkedTests({
     options,
     runOptions,
     pmRoot,
+    untrustedLinkedTestsPolicyEnabled:
+      settings.testing.allow_untrusted_linked_tests,
   });
   const failureCategories = countFailureCategories(runResults);
   const failOnSkippedTriggered =
@@ -3099,6 +3376,11 @@ export async function runTest(
     runOptions.runSelection,
     runResults,
   );
+  if (trustAcknowledgement) {
+    warnings.push(
+      `linked_test_trust_acknowledged:${trustAcknowledgement.acknowledged}`,
+    );
+  }
   const recordedRun = await recordTestRunSummary({
     options,
     pmRoot,

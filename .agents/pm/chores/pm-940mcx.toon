@@ -1,0 +1,41 @@
+id: pm-940mcx
+title: Update ESLint to compatible 10.9.0 release
+description: Refresh the compatible ESLint development dependency and lockfile while preserving the repository's zero-warning lint and full verification contracts.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-08-22T17:47:07.479Z"
+updated_at: "2026-08-22T18:27:06.869Z"
+closed_at: "2026-08-22T18:26:55.296Z"
+completed_at: "2026-08-22T18:26:55.296Z"
+author: "harness:codex"
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve ESLint 10.9.0; lint, typecheck, security audit, and full coverage remain green"
+parent: pm-92if
+resolution: Updated the compatible ESLint dependency and lockfile to 10.9.0 with zero-warning lint and full verification.
+expected_result: "ESLint 10.9.0 resolves without changing lint, type, coverage, or security outcomes."
+actual_result: ESLint 10.9.0 resolves; lint and typecheck pass; full coverage is exact; audit and secret scan are clean.
+comments[2]{created_at,author,text}:
+  "2026-08-22T17:47:07.479Z","harness:codex","Duplicate check: exact all-status search for ESLint 10.9.0 dependency update returned zero items; broader all-status eslint dependency search found no matching version-update item, so this child is net-new under the canonical code-quality lineage."
+  "2026-08-22T18:26:49.319Z","harness:codex","Verification evidence 2026-08-22: ESLint resolves to 10.9.0; pnpm lint:eslint and typecheck passed, the full 7,794-test suite passed with exact 100/100/100/100 coverage, pnpm audit reports no known vulnerabilities, and the tracked-secret scan is clean. pnpm outdated now reports only the separately governed incompatible majors npm-package-arg 14 and TypeScript 7."
+files[2]{path,scope,note}:
+  package.json,project,ESLint 10.9.0 compatible dev dependency
+  pnpm-lock.yaml,project,verified dependency resolution
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "pnpm lint:eslint",project,300,"harness:codex","2026-08-22T17:47:47.337Z",local_mutation,codex/linked-test-context-trust,ESLint 10.9.0 zero-warning verification
+  pnpm typecheck,project,300,"harness:codex","2026-08-22T17:47:47.337Z",local_mutation,codex/linked-test-context-trust,Dependency compatibility type verification
+test_runs[1]:
+  - run_id: test-local-mt4oakuh-cqjxts
+    kind: test
+    status: passed
+    started_at: "2026-08-22T17:48:37.204Z"
+    finished_at: "2026-08-22T17:49:26.921Z"
+    recorded_at: "2026-08-22T17:49:26.921Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+close_reason: "ESLint 10.9.0 is resolved in package and lockfile with lint, typecheck, audit, and exact full coverage passing."
+body: ""

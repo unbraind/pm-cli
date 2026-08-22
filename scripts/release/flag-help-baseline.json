@@ -9,9 +9,9 @@
     },
     {
       "command": "config",
-      "help_bytes": 4107,
-      "estimated_tokens": 1027,
-      "maximum_tokens": 1027
+      "help_bytes": 4188,
+      "estimated_tokens": 1047,
+      "maximum_tokens": 1047
     },
     {
       "command": "extension",
@@ -231,9 +231,9 @@
     },
     {
       "command": "update",
-      "help_bytes": 8346,
-      "estimated_tokens": 2087,
-      "maximum_tokens": 2087
+      "help_bytes": 8313,
+      "estimated_tokens": 2079,
+      "maximum_tokens": 2079
     },
     {
       "command": "update-many",
@@ -309,15 +309,15 @@
     },
     {
       "command": "test",
-      "help_bytes": 3474,
-      "estimated_tokens": 869,
-      "maximum_tokens": 869
+      "help_bytes": 4664,
+      "estimated_tokens": 1166,
+      "maximum_tokens": 1166
     },
     {
       "command": "test-all",
-      "help_bytes": 2177,
-      "estimated_tokens": 545,
-      "maximum_tokens": 545
+      "help_bytes": 3064,
+      "estimated_tokens": 766,
+      "maximum_tokens": 766
     },
     {
       "command": "telemetry",

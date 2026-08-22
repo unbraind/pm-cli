@@ -411,6 +411,17 @@ function pushSharedBackgroundTestCommandArgs(
     "--override-linked-pm-context",
     options.overrideLinkedPmContext,
   );
+  pushOptionalValueFlag(args, "--workspace-context", options.workspaceContext);
+  pushOptionalBooleanFlag(
+    args,
+    "--override-linked-workspace-context",
+    options.overrideLinkedWorkspaceContext,
+  );
+  pushOptionalBooleanFlag(
+    args,
+    "--allow-untrusted-linked-tests",
+    options.allowUntrustedLinkedTests,
+  );
   pushOptionalBooleanFlag(
     args,
     "--fail-on-context-mismatch",

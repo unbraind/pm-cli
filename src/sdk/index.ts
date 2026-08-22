@@ -1236,6 +1236,7 @@ export {
 export {
   LINKED_TEST_ENV_NAME_PATTERN,
   LINKED_TEST_PM_CONTEXT_MODE_VALUES,
+  LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES,
   LINKED_TEST_PROTECTED_ENV_KEYS,
   parseLinkedTestAssertionEqualsMap,
   parseLinkedTestAssertionGteMap,
@@ -1247,8 +1248,19 @@ export {
   parseLinkedTestMinLines,
   parseLinkedTestRegexList,
   parseLinkedTestStringList,
+  parseLinkedTestWorkspaceContextMode,
   type LinkedTestPmContextMode,
+  type LinkedTestWorkspaceContextMode,
 } from "./test/parsers.js";
+export {
+  acknowledgeLinkedTests,
+  attachLinkedTestProvenance,
+  linkedTestTrustFingerprint,
+  resolveLinkedTestSourceRef,
+  resolveLinkedTestTrust,
+  resolveLinkedTestTrustBatch,
+  type LinkedTestTrustDecision,
+} from "./test/trust.js";
 export {
   runStartBackgroundRun,
   runTestRunsWorker,

@@ -17,6 +17,7 @@ export const STRUCTURED_LINKED_TEST_KEYS = [
   "timeout",
   "timeout_seconds",
   "pm_context_mode",
+  "workspace_context_mode",
   "env_set",
   "env_clear",
   "shared_host_safe",

@@ -55,6 +55,12 @@ export interface TestAllCommandOptions {
   pmContext?: string;
   /** Value that configures or reports override linked pm context for this contract. */
   overrideLinkedPmContext?: boolean;
+  /** Source-workspace visibility and working-directory mode. */
+  workspaceContext?: string;
+  /** Force run-level source-workspace mode over linked metadata. */
+  overrideLinkedWorkspaceContext?: boolean;
+  /** Explicitly permit untrusted commands when project policy also permits them. */
+  allowUntrustedLinkedTests?: boolean;
   /** Value that configures or reports fail on context mismatch for this contract. */
   failOnContextMismatch?: boolean;
   /** Value that configures or reports fail on skipped for this contract. */
@@ -263,6 +269,13 @@ const normalizePmContextModeSignature = (
   return normalized && normalized.length > 0 ? normalized : "none";
 };
 
+const normalizeWorkspaceContextModeSignature = (
+  value: LinkedTest["workspace_context_mode"],
+): string => {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && normalized.length > 0 ? normalized : "source";
+};
+
 /** Sorts and deduplicates optional assertion string lists. */
 const normalizeAssertionStrings = (values: string[] | undefined): string[] =>
   [...new Set(values ?? [])].sort((left, right) => left.localeCompare(right));
@@ -315,9 +328,12 @@ const buildLinkedTestKey = (test: LinkedTest): string => {
   const envSet = normalizeEnvSetSignature(test.env_set);
   const envClear = normalizeEnvClearSignature(test.env_clear);
   const pmContextMode = normalizePmContextModeSignature(test.pm_context_mode);
+  const workspaceContextMode = normalizeWorkspaceContextModeSignature(
+    test.workspace_context_mode,
+  );
   const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
   const assertions = normalizeAssertionSignature(test);
-  return `${resolveLinkedTestTargetSignature(test)}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
+  return `${resolveLinkedTestTargetSignature(test)}:${envSet}:${envClear}:${pmContextMode}:${workspaceContextMode}:${sharedHostSafe}:${assertions}`;
 };
 
 const maxTimeoutSeconds = (
@@ -489,6 +505,13 @@ const runTestAllItem = async (
           requireAssertionsForPm: context.options.requireAssertionsForPm,
           checkContext: context.options.checkContext,
           autoPmContext: context.options.autoPmContext,
+          workspaceContext: context.options.workspaceContext,
+          overrideLinkedWorkspaceContext:
+            context.options.overrideLinkedWorkspaceContext,
+          pmRoot: context.pmRoot,
+          allowUntrustedLinkedTests: context.options.allowUntrustedLinkedTests,
+          untrustedLinkedTestsPolicyEnabled:
+            context.settings.testing.allow_untrusted_linked_tests,
         })
       : [];
   let executedIndex = 0;
@@ -591,6 +614,9 @@ const appendTestAllItemTracking = async (
             requested_pm_context_mode:
               result.execution_context?.requested_pm_context_mode,
             pm_context_mode: result.execution_context?.pm_context_mode,
+            workspace_context_mode:
+              result.execution_context?.workspace_context_mode,
+            trust_reason: result.execution_context?.trust.reason,
           })),
       },
     });

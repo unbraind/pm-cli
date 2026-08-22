@@ -6,13 +6,20 @@
 
 - Every instruction the product emits about its own next command is an unexecuted claim: the recovery vocabulary is generated, asserted as text, and run by nothing ([pm-h8tpeh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h8tpeh.toon))
 
+### Changed
+
+- Update ESLint to compatible 10.9.0 release ([pm-940mcx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-940mcx.toon))
+
 ### Fixed
 
+- Allow linked tests to opt out of source-workspace injection for self-sandboxing repo-wide gates ([pm-efkvdy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-efkvdy.toon))
+- Linked-test schema context changes non-PM repository checks, so commands that pass directly fail when recorded and run through pm test ([pm-e97jyf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e97jyf.toon))
 - GH-1089: expose reproducible execution through supported CLI and MCP process configuration ([pm-gh1089](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1089.toon))
 - Budget recovery can recommend a smaller ceiling than the request that already truncated ([pm-xam9bt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xam9bt.toon))
 
 ### Security
 
+- Linked-test commands are merge-unioned workspace data executed with shell:true — no provenance, allowlist, or confirmation boundary ([pm-ed28wi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ed28wi.toon))
 - Cross-harness provenance adapters: automatically resolve native model, version, and effort signals beyond Claude without identity flags ([pm-c0lrdm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-c0lrdm.toon))
 
 ### Other

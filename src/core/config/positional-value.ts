@@ -75,6 +75,7 @@ export type ConfigKey =
   | "governance_metadata_validation_profile"
   | "governance_force_required_for_stale_lock"
   | "test_result_tracking"
+  | "untrusted_linked_test_execution"
   | "telemetry_tracking"
   | "agent_identity_vocabulary"
   | "context";
@@ -106,6 +107,7 @@ const POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "governance_metadata_validation_profile",
   "governance_force_required_for_stale_lock",
   "test_result_tracking",
+  "untrusted_linked_test_execution",
   "telemetry_tracking",
   "agent_identity_vocabulary",
 ]);
@@ -116,6 +118,7 @@ const ENABLED_DISABLED_POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>(
     "governance_require_close_reason",
     "governance_force_required_for_stale_lock",
     "test_result_tracking",
+    "untrusted_linked_test_execution",
     "telemetry_tracking",
   ],
 );

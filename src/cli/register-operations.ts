@@ -200,6 +200,15 @@ function buildRunTestOptions(
     pmContext:
       typeof options.pmContext === "string" ? options.pmContext : undefined,
     overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
+    workspaceContext:
+      typeof options.workspaceContext === "string"
+        ? options.workspaceContext
+        : undefined,
+    overrideLinkedWorkspaceContext: Boolean(
+      options.overrideLinkedWorkspaceContext,
+    ),
+    allowUntrustedLinkedTests: Boolean(options.allowUntrustedLinkedTests),
+    acknowledgeLinkedTests: Boolean(options.acknowledgeLinkedTests),
     failOnContextMismatch: Boolean(options.failOnContextMismatch),
     failOnSkipped: Boolean(options.failOnSkipped),
     failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
@@ -218,6 +227,11 @@ function buildRunTestOptions(
       typeof options.metricDiff === "string" ? options.metricDiff : undefined,
   };
 }
+
+/** Public contract for test-only operation adapter coverage. */
+export const _testOnlyRegisterOperations = {
+  buildRunTestOptions,
+};
 
 async function runForegroundLinkedTests(
   id: string,
@@ -875,6 +889,18 @@ function addLinkedTestExecutionOptions(command: Command): Command {
       "Force run-level --pm-context to override per-linked-test pm_context_mode metadata",
     )
     .option(
+      "--workspace-context <mode>",
+      "Source-workspace mode: source|isolated|snapshot (default: source)",
+    )
+    .option(
+      "--override-linked-workspace-context",
+      "Force run-level --workspace-context over per-linked-test metadata",
+    )
+    .option(
+      "--allow-untrusted-linked-tests",
+      "Execute untrusted linked commands when project policy also permits it",
+    )
+    .option(
       "--fail-on-context-mismatch",
       "Fail linked PM commands when context item counts differ",
     )
@@ -937,6 +963,10 @@ export function registerOperationCommands(program: Command): void {
       "Run only the 1-based linked-test index from --list order",
     )
     .option("--only-last", "Run only the most recently added linked test");
+  testCommand.option(
+    "--acknowledge-linked-tests",
+    "Trust the item's current linked commands in this clone without executing them",
+  );
   addLinkedTestExecutionOptions(testCommand)
     .option(
       "--measure <value>",
