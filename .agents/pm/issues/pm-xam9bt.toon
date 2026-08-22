@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:sdk",contracts,output-contract,recovery,recurrence,token-efficiency
 created_at: "2026-08-22T07:15:23.785Z"
-updated_at: "2026-08-22T10:34:32.493Z"
-closed_at: "2026-08-22T10:34:31.844Z"
-completed_at: "2026-08-22T10:34:31.844Z"
+updated_at: "2026-08-22T10:52:48.035Z"
+closed_at: "2026-08-22T10:52:47.366Z"
+completed_at: "2026-08-22T10:52:47.366Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Recovery budgets are computed from the effective post-precedence budget and are strictly greater than it whenever the instruction says increase; the next budget is derived from measured encoded cost with documented rounding and safety margin, never from a smaller unrelated intent default; when no finite budget can make the response useful the envelope recommends an explicit unbounded or narrower query instead of a futile number; the emitted CLI, SDK, and MCP recovery bindings are executed and prove monotonic progress for default, intent, legacy, and explicit budgets; contracts, activity, history, graph, health, and every other non-resumable bounded producer are covered by a generated corpus; a seeded smaller-budget recommendation fails the recovery-reference assurance gate; repeated recovery either returns the requested complete projection or emits a strictly stronger, honest next action without cycles."
@@ -21,15 +21,16 @@ risk: high
 confidence: high
 resolution: Shipped a public monotonic recovery-budget contract derived from effective and measured costs with explicit unbounded fallback.
 expected_result: "Every non-resumable bounded recovery recommends a strictly stronger finite budget or an honest unbounded alternative across CLI, SDK, and MCP."
-actual_result: "Generated contract tests and packed SDK execution prove 25 percent margin/100-token rounding, monotonicity, unsafe fallback, and transport parity."
+actual_result: "Generated contract tests, packed SDK execution, and hosted defect-evidence governance prove 25 percent margin/100-token rounding, monotonicity, unsafe fallback, and transport parity."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-a8zm,discovered_from,"2026-08-22T07:15:23.785Z","harness:codex","cli:create:dep",detected
   pm-h8tpeh,recurs_from,"2026-08-22T07:15:23.785Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-22T07:15:23.785Z","harness:codex","Duplicate check 2026-08-22: searched all statuses for contracts output-budget recovery smaller than default, recovery_budget_multiplier, restore_with increase, and executable recovery obligations. Closed pm-h8tpeh owns the general executed-reference contract, open pm-f05lsg owns recovery-closure measurement, and open pm-5t33or owns output budgets; none records this monotonic-budget recurrence, so this issue is filed as their narrow defect child rather than a new programme."
   "2026-08-22T08:03:17.538Z","harness:codex","Implementation start 2026-08-22: coupled into the SDK boundary tranche after reproducing the live contracts receipt that recommends --output-budget 1200 after an effective 4500-token truncation. Scope is producer-independent monotonic recovery computation, executable CLI/SDK/MCP bindings, generated negative controls, and documentation."
   "2026-08-22T08:27:33.156Z","harness:codex","Implementation evidence 2026-08-22: replaced the hard-coded 1200 retry with resolveReadOutputRecoveryBudget, derived from max(binding+1, measured pre-compaction cost), 25 percent safety margin, and 100-token rounding. Non-resumable CLI/SDK/MCP recovery bindings share the same strictly larger finite budget or explicit unbounded fallback. Focused recovery plus full read-output contract tests pass 33/33."
   "2026-08-22T10:34:13.678Z","harness:codex","Final evidence 2026-08-22: linked recovery tests passed 35/35; exact full coverage passed 7,759 tests at 100/100/100/100. Packed SDK consumption caught and fixed the missing public export, then proved a measured 100/260-token case recommends 400 and an unsafe integer case recommends explicit unbounded. CLI and MCP package paths also passed."
+  "2026-08-22T10:52:32.986Z","harness:codex","Exact-head CI remediation 2026-08-22: PR #1088 run 32568168758 correctly blocked static quality because this terminal production defect lacked structured gate evidence. Added gate_strengthened evidence binding the former 1200-token negative control to the generated monotonic producer corpus and local/hosted static, coverage, and Windows gates; no waiver is used."
 learnings[1]{created_at,author,text}:
   "2026-08-22T10:34:14.431Z","harness:codex",A contract is not SDK-first until a clean installed consumer can import it from the published entrypoint; source-local usage and declaration snapshots alone can miss an unexported executable helper.
 files[4]{path,scope,note}:
@@ -53,5 +54,13 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-recovery-budget.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema
 docs[1]{path,scope,note}:
   docs/READ_OUTPUT_CONTRACTS.md,project,Monotonic finite retry and unbounded fallback documentation
-close_reason: "Completed monotonic public recovery-budget contract with generated cross-transport coverage, exact coverage, and installed SDK verification."
+close_reason: Reclosed after hosted defect-evidence classification bound the monotonic recovery negative control to local and hosted gates.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-xam9bt
+  gate_id: non-resumable-recovery-monotonicity
+  negative_control: replace the measured recovery with the former 1200-token constant; tests/unit/sdk/recovery/read-output-recovery-budget.spec.ts must fail the generated producer corpus
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-recovery-budget.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,node scripts/release/defect-evidence-gate.mjs --json,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""

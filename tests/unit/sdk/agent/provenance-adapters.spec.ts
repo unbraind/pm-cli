@@ -207,7 +207,7 @@ describe("agent provenance adapters", () => {
     const wideRoot = path.join(wideHome, ".codex", "sessions");
     await mkdir(wideRoot, { recursive: true });
     await Promise.all(
-      Array.from({ length: 511 }, (_, index) =>
+      Array.from({ length: 512 }, (_, index) =>
         writeFile(path.join(wideRoot, `z-unrelated-${index}.jsonl`), "{}"),
       ),
     );
