@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-22T12:29:57.227Z"
-updated_at: "2026-08-22T13:31:28.585Z"
+updated_at: "2026-08-22T13:41:55.511Z"
 closed_at: "2026-08-22T13:31:17.146Z"
 completed_at: "2026-08-22T13:31:17.146Z"
 author: "harness:codex"
@@ -25,9 +25,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
   pm-rbcvt2,discovered_from,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-22T12:29:57.227Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-22T12:29:57.227Z","harness:codex","Duplicate check 2026-08-22: certified full read covered 2534/2534 items across open closed and canceled with no omissions or unreadable records; exact,fuzzy,GitHub-number,process-environment,deterministic CLI/MCP,and parent-scope searches found the closed SDK-only owner pm-rbcvt2 and no process-transport owner. This item records the distinct post-close GH-1089 boundary gap."
   "2026-08-22T13:31:01.859Z","harness:codex","Implementation evidence: the public SDK now owns PM_CLOCK/PM_CLOCK_TICK_MS/PM_SEED constants, parsing, typed validation, one-shot execution, and process-lifetime runners; bundled CLI and MCP are thin boundary adapters. Default execution remains unchanged. Generated error and public-surface contracts are current. Verification: exact coverage 56,908/56,908 statements, 42,536/42,536 branches, 11,838/11,838 functions, and 54,860/54,860 lines; pnpm lint (ESLint, zero jscpd clones, full static quality), pnpm typecheck, graph composition, record integrity, package parity, contracts, SDK surface, and transport budgets all pass."
+  "2026-08-22T13:41:55.511Z","harness:codex","Hosted exact-head evidence: CI / Gates (static) correctly blocked the initial PR head because this post-epoch terminal Issue lacked escape_class and gate_evidence. Classified the escaped behavior as production_defect and bound closure to the new reproducible-process-transport-conformance gate, with real CLI/MCP transport negative controls plus local and hosted checks."
 files[8]{path,scope,note}:
   sdk/public-surface.json,project,Generated SDK surface contract
   src/cli/main.ts,project,Bundled CLI deterministic boundary
@@ -40,4 +41,12 @@ files[8]{path,scope,note}:
 docs[1]{path,scope,note}:
   docs/REPRODUCIBLE_WORKSPACES.md,project,CLI and MCP environment operator contract
 close_reason: "SDK-owned PM_CLOCK/PM_CLOCK_TICK_MS/PM_SEED support now reaches built CLI, embedded CLI, direct MCP, and long-lived MCP transports with generated contracts, documentation, real-process acceptance, and exact 100% coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1089
+  gate_id: reproducible-process-transport-conformance
+  negative_control: Remove the bundled CLI or MCP reproducible-process boundary; tests/integration/reproducible-process.integration.spec.ts and the direct boundary tests must fail.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""
