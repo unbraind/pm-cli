@@ -273,6 +273,11 @@ export {
   resolveClaimPrincipal,
   runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
+  BUILTIN_AGENT_PROVENANCE_ADAPTERS,
+  listAgentProvenanceAdapters,
+  normalizeAgentProvenanceAdapterValue,
+  registerAgentProvenanceAdapters,
+  type AgentProvenanceAdapter,
   type AgentClientInfo,
   writeAuthorEnvironment,
 } from "../core/shared/author.js";

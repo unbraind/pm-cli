@@ -9,7 +9,13 @@ import { PmCliError } from "../core/shared/errors.js";
 import {
   compactReadOutputToBudget,
   estimateReadOutputTokens,
+  resolveReadOutputRecoveryBudget,
   updateReadOutputReceiptEstimate,
+} from "./read-output-budget.js";
+export { resolveReadOutputRecoveryBudget } from "./read-output-budget.js";
+export type {
+  PmReadOutputRecoveryBudget,
+  PmReadOutputRecoveryBudgetInput,
 } from "./read-output-budget.js";
 import { resolvePmCommandOutputBudget } from "./cli-contracts/agent-output-contracts.js";
 import {
@@ -229,7 +235,7 @@ export interface PmReadOutputTruncationDisclosure {
   /** Whether at least one declared row collection can be resumed within the budget. */
   continuation_available: boolean;
   /** Maximum next-page useful-result budget relative to the current budget. */
-  recovery_budget_multiplier: 1;
+  recovery_budget_multiplier: number | null;
   /** Bounded continuation instructions for every compacted declared row path. */
   continuations: PmReadOutputContinuation[];
   /** Executable recovery instruction for retrieving the complete result. */
@@ -248,8 +254,8 @@ export interface PmReadOutputTruncationDisclosure {
       }
     | {
         cli: string;
-        sdk: { outputBudget: number };
-        mcp: { outputBudget: number };
+        sdk: { outputBudget: number | "unbounded" };
+        mcp: { outputBudget: number | "unbounded" };
       };
 }
 
@@ -1642,6 +1648,7 @@ function attachReadOutputTruncationDisclosure(
     tokens: number;
   },
   continuationCursorRebased: boolean,
+  measuredResultTokens: number,
   collectionsBeforeBudget: ReadonlyMap<
     string,
     { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
@@ -1683,6 +1690,10 @@ function attachReadOutputTruncationDisclosure(
     },
   );
   const primary = continuations[0];
+  const recoveryBudget = resolveReadOutputRecoveryBudget({
+    effective_budget_tokens: bindingBudget.tokens,
+    measured_result_tokens: measuredResultTokens,
+  });
   if (primary && typeof projected.next_cursor !== "string") {
     projected.next_cursor = primary.cursor;
   }
@@ -1699,11 +1710,13 @@ function attachReadOutputTruncationDisclosure(
     compacted_row_paths: receipt.compacted_row_paths!,
     continuation_cursor_rebased: continuationCursorRebased,
     continuation_available: continuations.length > 0,
-    recovery_budget_multiplier: 1,
+    recovery_budget_multiplier: primary
+      ? 1
+      : recoveryBudget.recovery_budget_multiplier,
     continuations,
     restore_with: primary
       ? "Use recovery binding."
-      : "Increase --output-budget because no declared row collection can be continued.",
+      : `Retry with --output-budget ${recoveryBudget.output_budget} because no declared row collection can be continued.`,
     recovery: primary
       ? {
           cursor: primary.cursor,
@@ -1712,9 +1725,9 @@ function attachReadOutputTruncationDisclosure(
           mcp: "outputCursor",
         }
       : {
-          cli: "--output-budget 1200",
-          sdk: { outputBudget: 1200 },
-          mcp: { outputBudget: 1200 },
+          cli: `--output-budget ${recoveryBudget.output_budget}`,
+          sdk: { outputBudget: recoveryBudget.output_budget },
+          mcp: { outputBudget: recoveryBudget.output_budget },
         },
   };
 }
@@ -1823,6 +1836,7 @@ function compactReadOutputProjection(
   },
   session: PmReadOutputSessionState | undefined,
   continuationState: ReadOutputContinuationState,
+  measuredResultTokens: number,
 ): Record<string, unknown> {
   const assuranceMinimumRows =
     resolved.command === "assurance" && Array.isArray(projected.assertions)
@@ -1850,6 +1864,7 @@ function compactReadOutputProjection(
     receipt,
     bindingBudget,
     continuationCursorRebased,
+    measuredResultTokens,
     continuationState.collectionsBeforeBudget,
   );
   if (session !== undefined) {
@@ -1929,6 +1944,7 @@ export function applyReadOutputDimensions<
     bindingBudget !== undefined &&
     receipt.estimated_tokens > bindingBudget.tokens
   ) {
+    const measuredResultTokens = receipt.estimated_tokens;
     projected = compactReadOutputProjection(
       projected,
       resolved,
@@ -1936,6 +1952,7 @@ export function applyReadOutputDimensions<
       bindingBudget,
       session,
       continuationState,
+      measuredResultTokens,
     );
   }
   if (

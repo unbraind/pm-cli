@@ -41,6 +41,39 @@ describe("MCP dynamic package actions", () => {
       } | undefined)?.result;
       expect(telemetryResult?.policy).toBe("disabled");
       expect(telemetryResult?.changed).toBe(true);
+
+      const vocabulary = await handleRequest({
+        jsonrpc: "2.0",
+        id: 11,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "config",
+            configAction: "set",
+            key: "agent-identity-vocabulary",
+            options: {
+              policy: "preview-add",
+              value: "Legacy MCP=codex",
+              criterion: ["Legacy MCP", "Private Author"],
+            },
+          },
+        },
+      });
+
+      expect(vocabulary?.isError).not.toBe(true);
+      const vocabularyResult = (vocabulary?.structuredContent as {
+        result?: {
+          changed?: boolean;
+          vocabulary_mutation?: { residual_author_count?: number };
+        };
+      } | undefined)?.result;
+      expect(vocabularyResult).toMatchObject({
+        changed: false,
+        vocabulary_mutation: { residual_author_count: 1 },
+      });
+      expect(JSON.stringify(vocabularyResult)).not.toContain("Legacy MCP");
     });
   });
 

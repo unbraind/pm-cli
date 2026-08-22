@@ -214,7 +214,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(24);
+      expect(result.count).toBe(25);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -239,6 +239,7 @@ describe("runConfig", () => {
         "governance_force_required_for_stale_lock",
         "test_result_tracking",
         "telemetry_tracking",
+        "agent_identity_vocabulary",
         "context",
       ]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
@@ -274,6 +275,7 @@ describe("runConfig", () => {
       const result = await runConfig("project", "export", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
       expect(result.values).toEqual({
+        agent_identity_vocabulary: { version: 1, alias_count: 0 },
         definition_of_done: ["tests pass"],
         item_format: "toon",
         history_missing_stream_policy: "auto_create",

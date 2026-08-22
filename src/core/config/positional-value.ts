@@ -76,6 +76,7 @@ export type ConfigKey =
   | "governance_force_required_for_stale_lock"
   | "test_result_tracking"
   | "telemetry_tracking"
+  | "agent_identity_vocabulary"
   | "context";
 
 const FORMAT_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>(["item_format"]);
@@ -106,6 +107,7 @@ const POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "governance_force_required_for_stale_lock",
   "test_result_tracking",
   "telemetry_tracking",
+  "agent_identity_vocabulary",
 ]);
 
 /** Policy keys whose only valid values are enabled/disabled. For these we accept the intuitive synonyms off/on/true/false. Other policy keys pass through unchanged so their own validators report the precise allowed set. */

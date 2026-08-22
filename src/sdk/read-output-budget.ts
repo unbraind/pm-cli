@@ -17,6 +17,69 @@ interface StringCompactionState {
 
 const MAX_ESTIMATE_ITERATIONS = 8;
 const MAX_COMPACTION_ITERATIONS = 64;
+const RECOVERY_MARGIN_NUMERATOR = 5;
+const RECOVERY_MARGIN_DENOMINATOR = 4;
+const RECOVERY_ROUNDING_TOKENS = 100;
+
+/** Input to the deterministic finite-retry recommendation contract. */
+export interface PmReadOutputRecoveryBudgetInput {
+  /** Ceiling that already bound and truncated the response. */
+  effective_budget_tokens: number;
+  /** Measured cost of the useful result before row compaction. */
+  measured_result_tokens: number;
+}
+
+/** Executable next-budget recommendation shared by CLI, SDK, and MCP. */
+export interface PmReadOutputRecoveryBudget {
+  /** Rounded finite retry ceiling, or the only truthful safe fallback. */
+  output_budget: number | "unbounded";
+  /** Ratio to the binding request, absent when finite arithmetic is unsafe. */
+  recovery_budget_multiplier: number | null;
+  /** Stable algorithm revision for consumers and fixtures. */
+  rule_version: "v1";
+}
+
+/**
+ * Recommend a retry that is strictly larger than both the binding request and
+ * the pre-compaction result, with a 25% envelope margin rounded to 100 tokens.
+ */
+export function resolveReadOutputRecoveryBudget(
+  input: PmReadOutputRecoveryBudgetInput,
+): PmReadOutputRecoveryBudget {
+  const binding = Math.trunc(input.effective_budget_tokens);
+  const measured = Math.trunc(input.measured_result_tokens);
+  if (
+    !Number.isSafeInteger(binding) ||
+    binding <= 0 ||
+    !Number.isSafeInteger(measured) ||
+    measured <= 0
+  ) {
+    return {
+      output_budget: "unbounded",
+      recovery_budget_multiplier: null,
+      rule_version: "v1",
+    };
+  }
+  const baseline = Math.max(binding + 1, measured);
+  const withMargin = Math.ceil(
+    (baseline * RECOVERY_MARGIN_NUMERATOR) / RECOVERY_MARGIN_DENOMINATOR,
+  );
+  const rounded =
+    Math.ceil(withMargin / RECOVERY_ROUNDING_TOKENS) *
+    RECOVERY_ROUNDING_TOKENS;
+  if (!Number.isSafeInteger(rounded)) {
+    return {
+      output_budget: "unbounded",
+      recovery_budget_multiplier: null,
+      rule_version: "v1",
+    };
+  }
+  return {
+    output_budget: rounded,
+    recovery_budget_multiplier: rounded / binding,
+    rule_version: "v1",
+  };
+}
 
 /** Estimate the conservative token cost of a JSON-shaped result. */
 export function estimateReadOutputTokens(result: unknown): number {

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1784,
+    "covered_symbols": 1793,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1785
+    "required_symbols": 1794
   },
   "breaking_acknowledgements": [
     {
@@ -1060,6 +1060,16 @@
       ],
       "package_version": "2026.8.21",
       "reason": "Correct projected diagnostic types to model deterministic field omission and disclose bounded omission overflow."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ConfigResult",
+        "signature ./sdk:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/contracts:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/runtime:ConfigResult"
+      ],
+      "package_version": "2026.8.22",
+      "reason": "pm-c0lrdm pm-yds9dt pm-xam9bt: add adapter/config receipts and widen incorrect fixed recovery-budget literals to measured number or explicit null/unbounded"
     }
   ],
   "entrypoints": {
@@ -1343,6 +1353,42 @@
           "signature": "export interface AgentEpisodeIdentity { id: string; label?: string; parent_id?: string; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AgentIdentityVocabulary",
+          "signature": "export interface AgentIdentityVocabulary { version: number; aliases: Record<string, string>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AgentIdentityVocabularyMutationInput",
+          "signature": "export interface AgentIdentityVocabularyMutationInput { operation: AgentIdentityVocabularyOperation; legacy_author?: string; canonical_harness?: string; observed_authors?: readonly string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AgentIdentityVocabularyMutationPlan",
+          "signature": "export interface AgentIdentityVocabularyMutationPlan { vocabulary: AgentIdentityVocabulary; preview: AgentIdentityVocabularyMutationPreview; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AgentIdentityVocabularyMutationPreview",
+          "signature": "export interface AgentIdentityVocabularyMutationPreview { operation: AgentIdentityVocabularyOperation; changed: boolean; version_before: number; version_after: number; alias_count: number; residual_author_count: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "AgentIdentityVocabularyOperation",
+          "signature": "export type AgentIdentityVocabularyOperation = \"add\" | \"remove\" | \"clear\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AgentIdentityVocabularySummary",
+          "signature": "export interface AgentIdentityVocabularySummary { version: number; alias_count: number; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "AgentModelProvenanceCoverage",
@@ -1365,6 +1411,12 @@
           "kind": "type",
           "name": "AgentProvenanceAbsenceReason",
           "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceAdapter",
+          "signature": "export interface AgentProvenanceAdapter { contract_version: 1; adapter_version: string; priority: number; harness: string; descriptor: HarnessSignalDescriptor; supported_dimensions: readonly string[]; native_sources: readonly (\"environment\" | \"argv\" | \"mcp_client\" | \"session_file\")[]; probe_policy: { max_bytes: number; max_lines: number; network_access: false; subprocess_access: false; }; normalization: { model_family: \"v1\"; effort: \"v1\"; preserve_raw: true; }; confidence: \"high\" | \"medium\" | \"low\"; waivers?: Readonly<Record<string, string>>; }"
         },
         {
           "classification": "supported",
@@ -2729,6 +2781,12 @@
           "signature": "(items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot | calls: (items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BUILTIN_AGENT_PROVENANCE_ADAPTERS",
+          "signature": "readonly AgentProvenanceAdapter[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "BUILTIN_CORPUS_SHAPES",
@@ -3542,7 +3600,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ConfigResult",
-          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Record<ConfigKey, ConfigValue>; count?: number; context_settings?: ContextConfigValue; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
+          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Record<ConfigKey, ConfigValue>; count?: number; context_settings?: ContextConfigValue; identity_vocabulary?: AgentIdentityVocabularySummary; vocabulary_mutation?: AgentIdentityVocabularyMutationPreview; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -7949,6 +8007,12 @@
           "signature": "readonly [\"asc\", \"desc\"]"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "listAgentProvenanceAdapters",
+          "signature": "() => readonly AgentProvenanceAdapter[] | calls: () => readonly AgentProvenanceAdapter[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "listAliasPluralKeys",
@@ -8639,6 +8703,12 @@
           "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; }; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeAgentProvenanceAdapterValue",
+          "signature": "(dimension: \"effort\" | \"model\", value: string) => NormalizedAgentProvenanceAdapterValue | calls: (dimension: \"model\" | \"effort\", value: string) => NormalizedAgentProvenanceAdapterValue"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "normalizeAnnotationTransportOptions",
@@ -8661,6 +8731,12 @@
           "kind": "function",
           "name": "normalizeBootstrapInvocation",
           "signature": "(argv: string[]) => BootstrapInvocationNormalizationResult | calls: (argv: string[]) => BootstrapInvocationNormalizationResult"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NormalizedAgentProvenanceAdapterValue",
+          "signature": "export interface NormalizedAgentProvenanceAdapterValue { raw: string; normalized: string; vocabulary: \"v1\"; }"
         },
         {
           "classification": "supported",
@@ -9477,6 +9553,12 @@
           "kind": "value",
           "name": "PLAN_TEMPLATE_NAMES",
           "signature": "readonly [\"bug-investigation\", \"feature-implementation\", \"refactoring-sprint\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "planAgentIdentityVocabularyMutation",
+          "signature": "(current: AgentIdentityVocabulary | undefined, input: AgentIdentityVocabularyMutationInput) => AgentIdentityVocabularyMutationPlan | calls: (current: AgentIdentityVocabulary | undefined, input: AgentIdentityVocabularyMutationInput) => AgentIdentityVocabularyMutationPlan"
         },
         {
           "classification": "advanced_export",
@@ -10757,6 +10839,18 @@
           "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputRecoveryBudget",
+          "signature": "export interface PmReadOutputRecoveryBudget { output_budget: number | \"unbounded\"; recovery_budget_multiplier: number | null; rule_version: \"v1\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputRecoveryBudgetInput",
+          "signature": "export interface PmReadOutputRecoveryBudgetInput { effective_budget_tokens: number; measured_result_tokens: number; }"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
@@ -10808,7 +10902,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
-          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: 1; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number; }; mcp: { outputBudget: number; }; }; }"
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: number | null; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number | \"unbounded\"; }; mcp: { outputBudget: number | \"unbounded\"; }; }; }"
         },
         {
           "classification": "advanced_export",
@@ -11913,6 +12007,12 @@
           "kind": "function",
           "name": "refreshSearchArtifactsForMutation",
           "signature": "(pmRoot: string, itemIds: string[], options?: RefreshSearchArtifactsForMutationOptions) => Promise<SearchMutationArtifactRefreshResult> | calls: (pmRoot: string, itemIds: string[], options?: RefreshSearchArtifactsForMutationOptions) => Promise<SearchMutationArtifactRefreshResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "registerAgentProvenanceAdapters",
+          "signature": "(adapters: readonly AgentProvenanceAdapter[]) => () => void | calls: (adapters: readonly AgentProvenanceAdapter[]) => () => void"
         },
         {
           "classification": "supported",
@@ -13329,6 +13429,12 @@
           "kind": "function",
           "name": "resolveReadOutputEncoding",
           "signature": "(command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined | calls: (command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveReadOutputRecoveryBudget",
+          "signature": "(input: PmReadOutputRecoveryBudgetInput) => PmReadOutputRecoveryBudget | calls: (input: PmReadOutputRecoveryBudgetInput) => PmReadOutputRecoveryBudget"
         },
         {
           "classification": "supported",
@@ -15531,6 +15637,12 @@
           "kind": "interface",
           "name": "SubscribeMutationEventsOptions",
           "signature": "export interface SubscribeMutationEventsOptions extends ListMutationEventsOptions { intervalMs?: number; signal?: AbortSignal; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "summarizeAgentIdentityVocabulary",
+          "signature": "(vocabulary: AgentIdentityVocabulary | undefined) => AgentIdentityVocabularySummary | calls: (vocabulary: AgentIdentityVocabulary | undefined) => AgentIdentityVocabularySummary"
         },
         {
           "classification": "supported",
@@ -19854,6 +19966,18 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputRecoveryBudget",
+          "signature": "export interface PmReadOutputRecoveryBudget { output_budget: number | \"unbounded\"; recovery_budget_multiplier: number | null; rule_version: \"v1\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputRecoveryBudgetInput",
+          "signature": "export interface PmReadOutputRecoveryBudgetInput { effective_budget_tokens: number; measured_result_tokens: number; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResult",
           "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
@@ -19892,7 +20016,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
-          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: 1; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number; }; mcp: { outputBudget: number; }; }; }"
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: number | null; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number | \"unbounded\"; }; mcp: { outputBudget: number | \"unbounded\"; }; }; }"
         },
         {
           "classification": "contract_data",
@@ -20175,6 +20299,12 @@
           "kind": "function",
           "name": "resolveReadOutputEncoding",
           "signature": "(command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined | calls: (command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveReadOutputRecoveryBudget",
+          "signature": "(input: PmReadOutputRecoveryBudgetInput) => PmReadOutputRecoveryBudget | calls: (input: PmReadOutputRecoveryBudgetInput) => PmReadOutputRecoveryBudget"
         },
         {
           "classification": "contract_data",
@@ -20581,6 +20711,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "AgentProvenanceAdapter",
+          "signature": "export interface AgentProvenanceAdapter { contract_version: 1; adapter_version: string; priority: number; harness: string; descriptor: HarnessSignalDescriptor; supported_dimensions: readonly string[]; native_sources: readonly (\"environment\" | \"argv\" | \"mcp_client\" | \"session_file\")[]; probe_policy: { max_bytes: number; max_lines: number; network_access: false; subprocess_access: false; }; normalization: { model_family: \"v1\"; effort: \"v1\"; preserve_raw: true; }; confidence: \"high\" | \"medium\" | \"low\"; waivers?: Readonly<Record<string, string>>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "AgentProvenanceDescriptorCoverage",
           "signature": "export interface AgentProvenanceDescriptorCoverage { dimension: string; harnesses: string[]; covered: boolean; }"
         },
@@ -20727,6 +20863,12 @@
           "kind": "function",
           "name": "boundAgentEpisodeIdentity",
           "signature": "(value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined | calls: (value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BUILTIN_AGENT_PROVENANCE_ADAPTERS",
+          "signature": "readonly AgentProvenanceAdapter[]"
         },
         {
           "classification": "supported",
@@ -21187,6 +21329,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "listAgentProvenanceAdapters",
+          "signature": "() => readonly AgentProvenanceAdapter[] | calls: () => readonly AgentProvenanceAdapter[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "listAllComplete",
           "signature": "(options?: PmCompleteListOptions, clientOptions?: PmClientOptions) => Promise<PmCompleteListResult> | calls: (options?: PmCompleteListOptions, clientOptions?: PmClientOptions) => Promise<PmCompleteListResult>"
         },
@@ -21219,6 +21367,18 @@
           "kind": "interface",
           "name": "NextResult",
           "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeAgentProvenanceAdapterValue",
+          "signature": "(dimension: \"effort\" | \"model\", value: string) => NormalizedAgentProvenanceAdapterValue | calls: (dimension: \"model\" | \"effort\", value: string) => NormalizedAgentProvenanceAdapterValue"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NormalizedAgentProvenanceAdapterValue",
+          "signature": "export interface NormalizedAgentProvenanceAdapterValue { raw: string; normalized: string; vocabulary: \"v1\"; }"
         },
         {
           "classification": "supported",
@@ -21483,6 +21643,12 @@
           "kind": "interface",
           "name": "RecurrenceReceipt",
           "signature": "export interface RecurrenceReceipt { reason: string; from_status: string; to_status: string; previous_terminal: PreviousTerminalEvidence; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "registerAgentProvenanceAdapters",
+          "signature": "(adapters: readonly AgentProvenanceAdapter[]) => () => void | calls: (adapters: readonly AgentProvenanceAdapter[]) => () => void"
         },
         {
           "classification": "supported",
@@ -26768,7 +26934,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ConfigResult",
-          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Record<ConfigKey, ConfigValue>; count?: number; context_settings?: ContextConfigValue; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
+          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Record<ConfigKey, ConfigValue>; count?: number; context_settings?: ContextConfigValue; identity_vocabulary?: AgentIdentityVocabularySummary; vocabulary_mutation?: AgentIdentityVocabularyMutationPreview; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
         },
         {
           "classification": "supported",

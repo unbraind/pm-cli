@@ -10,7 +10,10 @@ Implementation lineage:
 resolution and patch-free historical reads implemented by
 [pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
 [pm-v8gfi7](../.agents/pm/issues/pm-v8gfi7.toon), and
-[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon).
+[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon). Cross-harness adapters and
+operator-managed probe/vocabulary controls are tracked by
+[pm-c0lrdm](../.agents/pm/features/pm-c0lrdm.toon) and
+[pm-yds9dt](../.agents/pm/chores/pm-yds9dt.toon).
 
 Status: accepted amendment to
 [pm-qwuber](../.agents/pm/decisions/pm-qwuber.toon). The original stable-author
@@ -51,10 +54,13 @@ Provenance values are descriptive context, never authentication or
 authorization principals. Values are trimmed, length-bounded, and obtained only
 from literal descriptor keys, trusted caller data, or a named bounded resolver.
 Detection does not spawn processes, traverse process trees, evaluate user
-regexes, or access the network. The built-in Claude resolver may read only the
-tail of the current session's harness-owned JSONL file to recover its recorded
-model/version. It caps file bytes, lines, and line length, extracts only those
-two allow-listed values, and fails closed. `agent_identity.probes_enabled` or
+regexes, or access the network. The built-in Claude and Codex resolvers read
+only bounded windows of the current session's harness-owned JSONL file. Claude
+uses the recent tail to recover its recorded model/version. Codex uses the
+recent tail plus a bounded initial-head fallback for oversized sessions to
+recover allow-listed `turn_context.model` and `turn_context.effort` values.
+Both cap traversal, file bytes, lines, and line length, ignore all other fields,
+never follow symlinks, and fail closed. `agent_identity.probes_enabled` or
 `PM_AGENT_PROBES=off` disables every local resolver without disabling ordinary
 environment, argv, client, or host detection.
 
@@ -113,6 +119,11 @@ fabricate precision that was never captured.
 The aggregate and core SDK entrypoints export:
 
 - `AGENT_PROVENANCE_DIMENSIONS`;
+- `BUILTIN_AGENT_PROVENANCE_ADAPTERS`,
+  `listAgentProvenanceAdapters()`, and
+  `registerAgentProvenanceAdapters()`;
+- `normalizeAgentProvenanceAdapterValue()` for stable model-family and effort
+  vocabulary projections that retain the bounded raw observation;
 - `detectAgentIdentity()` and `detectHarnessIdentity()`;
 - `analyzeAgentProvenanceDescriptorCoverage()` for the descriptor capability
   matrix and negative controls;
@@ -137,6 +148,31 @@ Legacy author interpretation is workspace-owned data under
 `version` and exact literal-to-harness `aliases`. Reads disclose both the
 version and whether a harness was `recorded`, resolved by `vocabulary`, or
 remains `unresolved`; immutable authors and hashes are never rewritten.
+
+`pm config get agent-identity-vocabulary`, `config list`, and `config export`
+publish only its `version` and `alias_count`. Typed mutations use the existing
+config transport:
+
+```bash
+pm config set agent-identity-probes-enabled false
+pm config set agent-identity-vocabulary --policy preview-add \
+  --value "Legacy Codex=codex" --criterion "Legacy Codex" --criterion "Alice"
+pm config set agent-identity-vocabulary --policy add \
+  --value "Legacy Codex=codex"
+pm config set agent-identity-vocabulary --policy remove --value "Legacy Codex"
+```
+
+`preview-*` policies perform no write and report the exact residual unique
+author count without returning author spellings. Real add/remove/clear changes
+bump the vocabulary revision once; identical adds and absent removes are
+idempotent. Aliases for already canonical `harness:<name>` authors fail closed.
+
+Every built-in interactive harness has a contract-versioned adapter with an
+implementation version, priority, covered dimensions, source classes,
+normalization revisions, confidence, waivers, and immutable probe bounds.
+Packages may register a new namespace or explicitly replace a built-in only at
+a higher priority. Equal-priority ambiguity and descriptor mismatch fail
+closed, and the disposer restores the prior adapter.
 
 The SDK/CLI matrix classifies every input as shared, positional, transport,
 presentation, local adapter, scope selector, compatibility alias, or SDK-native.

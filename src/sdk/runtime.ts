@@ -3121,18 +3121,19 @@ function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
     readString(ctx.args, "configAction") ??
     readString(ctx.options, "configAction") ??
     readString(ctx.options, "action");
-  if (configAction === undefined) {
+  if (configAction === undefined)
     throw new PmCliError("Missing required argument: configAction", 64);
-  }
+  const value = readString(ctx.args, "value") ?? readString(ctx.options, "value");
+  const options = readString(ctx.options, "policy") !== undefined && value !== undefined ? { ...ctx.options, value } : ctx.options;
   return runConfig(
     readString(ctx.args, "scope") ??
       readString(ctx.options, "scope") ??
       "project",
     configAction,
     readString(ctx.args, "key") ?? readString(ctx.options, "key"),
-    ctx.options,
+    options,
     ctx.global,
-    readString(ctx.args, "value") ?? readString(ctx.options, "value"),
+    readString(ctx.options, "policy") === undefined ? value : undefined,
   );
 }
 

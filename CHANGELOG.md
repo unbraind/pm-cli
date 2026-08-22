@@ -6,8 +6,17 @@
 
 - Every instruction the product emits about its own next command is an unexecuted claim: the recovery vocabulary is generated, asserted as text, and run by nothing ([pm-h8tpeh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h8tpeh.toon))
 
+### Fixed
+
+- Budget recovery can recommend a smaller ceiling than the request that already truncated ([pm-xam9bt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xam9bt.toon))
+
+### Security
+
+- Cross-harness provenance adapters: automatically resolve native model, version, and effort signals beyond Claude without identity flags ([pm-c0lrdm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-c0lrdm.toon))
+
 ### Other
 
+- Expose agent probe controls and versioned legacy-author vocabulary through pm config and SDK mutation APIs ([pm-yds9dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yds9dt.toon))
 - Diagnostic output budget: errors, warnings, and recovery bundles are the output an agent reads most and the only output with no declared ceiling ([pm-cha95z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cha95z.toon))
 
 ## 2026.8.22 - 2026-08-22
