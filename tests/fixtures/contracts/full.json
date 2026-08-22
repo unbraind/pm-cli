@@ -18477,6 +18477,7 @@
         "cli/main.ts",
         "cli/register-mutation.ts",
         "core/telemetry/observability.ts",
+        "sdk/governance/assurance-action.ts",
         "sdk/history-redact.ts",
         "sdk/invocation-author.ts"
       ],
@@ -19072,6 +19073,108 @@
         "sdk/graph/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "refusal_allowed_values_mismatch",
+      "class": "generic_failure",
+      "code": "refusal_allowed_values_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Refusal allowed values mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "refusal_error_code_mismatch",
+      "class": "generic_failure",
+      "code": "refusal_error_code_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Refusal error code mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "refusal_exit_code_mismatch",
+      "class": "generic_failure",
+      "code": "refusal_exit_code_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Refusal exit code mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "refusal_mutated_state",
+      "class": "generic_failure",
+      "code": "refusal_mutated_state",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Refusal mutated state condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "refusal_probe_missing",
+      "class": "generic_failure",
+      "code": "refusal_probe_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Refusal probe missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "refusal_recovery_failed",
+      "class": "generic_failure",
+      "code": "refusal_recovery_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Refusal recovery failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -19893,6 +19996,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/flag-invocation-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "unexpected_refusal_probe",
+      "class": "generic_failure",
+      "code": "unexpected_refusal_probe",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Unexpected refusal probe condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/agent/refusal-corpus-contracts.ts"
       ],
       "stability": "provisional"
     },

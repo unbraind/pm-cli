@@ -58,6 +58,15 @@ estimates, applied stages, and omitted top-level fields. Minimal fallbacks bound
 the named omission list and disclose any additional count through
 `omitted_fields_overflow_count`.
 
+Structured CLI refusals also include a compact `refusal` identity with the
+failing command/flag/operand surface, rejected scalar when observable, complete
+legal domain when one exists, and the process exit code. Recovery-bearing
+errors use the `recovery_bundle` diagnostic class. Collection degradation may
+compact explanatory domains inside `recovery`, but `refusal.legal_domain`
+remains complete and `recovery.suggested_retry_args` is atomic: the projector
+either retains the executable argv or removes the recovery rather than slicing
+it into a dead command.
+
 The deterministic ladder is:
 
 1. full diagnostic;
@@ -73,8 +82,12 @@ envelope.
 
 ## Executable Assurance
 
-`pnpm quality:recovery-closure` builds the current CLI and replays 22 refusal
-contracts in isolated trackers. Ten representative, high-frequency failure
+`pnpm quality:recovery-closure` builds the current CLI and replays 117 refusal
+contracts in isolated trackers: 18 closed-domain rows, 88 required-argument
+omissions derived from core executable positional signatures, seven
+closed-action families, and four tracker-preflight states. Package-owned
+commands enter executable coverage when their package runtime is active rather
+than being misreported as core. Ten representative, high-frequency failure
 paths are also ratcheted by
 `scripts/release/diagnostic-output-baseline.json`. The gate requires every row
 to remain within the SDK-declared JSON ceiling and retain a mechanically
@@ -85,6 +98,10 @@ The baseline is a coverage ratchet, not permission to weaken a ceiling. Its
 negative control requires a missing baseline probe to fail. The existing
 refusal-closure negative controls independently prove that incomplete domains,
 broken retries, and malformed recovery envelopes remain blocking findings.
+The grammar corpus additionally hashes authoritative tracker state around each
+refusal; schema, items, history, settings, and package state must not change.
+Ephemeral runtime lock/cache directories are excluded from that semantic
+snapshot.
 
 Run the focused proof with:
 

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1782,
+    "covered_symbols": 1784,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1783
+    "required_symbols": 1785
   },
   "breaking_acknowledgements": [
     {
@@ -8111,6 +8111,18 @@
           "signature": "(availableTools: readonly string[], profile: Exclude<PmMcpToolProfile, \"custom\">) => string[] | calls: (availableTools: readonly string[], profile: Exclude<PmMcpToolProfile, \"custom\">) => string[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listPmRequiredArgumentRefusalContracts",
+          "signature": "(contracts?: readonly PmCommandPositionalContract[]) => PmRequiredArgumentRefusalContract[] | calls: (contracts?: readonly PmCommandPositionalContract[]) => PmRequiredArgumentRefusalContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listPmSubcommandRefusalContracts",
+          "signature": "(contracts?: readonly PmCommandPositionalContract[]) => PmSubcommandRefusalContract[] | calls: (contracts?: readonly PmCommandPositionalContract[]) => PmSubcommandRefusalContract[]"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "listProfiles",
@@ -8327,6 +8339,12 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "MERGE_SUBCOMMAND_VALUES",
+          "signature": "readonly [\"install\", \"reconcile\", \"report\", \"driver\"]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "mergeAdditiveTags",
@@ -8463,6 +8481,12 @@
           "kind": "function",
           "name": "mergeSortedWarnings",
           "signature": "(...warningGroups: Array<string[] | undefined>) => string[] | calls: (...warningGroups: Array<string[] | undefined>) => string[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "MergeSubcommand",
+          "signature": "export type MergeSubcommand = (typeof MERGE_SUBCOMMAND_VALUES)[number];"
         },
         {
           "classification": "advanced_export",
@@ -10507,6 +10531,36 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "PmGrammarRefusalClosureReport",
+          "signature": "export interface PmGrammarRefusalClosureReport { ok: boolean; probe_count: number; closed_probe_count: number; findings: PmGrammarRefusalFinding[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmGrammarRefusalContract",
+          "signature": "export interface PmGrammarRefusalContract { probe_id: string; command: string; refusal_args: readonly string[]; recovery_args: readonly string[]; error_code: \"invalid_argument_value\" | \"missing_lifecycle_target\" | \"missing_required_argument\" | \"unknown_subcommand\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmGrammarRefusalFinding",
+          "signature": "export interface PmGrammarRefusalFinding { code: PmGrammarRefusalFindingCode; probe_id: string; detail: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmGrammarRefusalFindingCode",
+          "signature": "export type PmGrammarRefusalFindingCode = \"refusal_allowed_values_mismatch\" | \"refusal_error_code_mismatch\" | \"refusal_exit_code_mismatch\" | \"refusal_mutated_state\" | \"refusal_probe_missing\" | \"refusal_recovery_failed\" | \"unexpected_refusal_probe\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmGrammarRefusalObservation",
+          "signature": "export interface PmGrammarRefusalObservation { probe_id: string; error_code: string; exit_code: number; allowed_values: readonly string[]; recovery_succeeded: boolean; refusal_mutated_state: boolean; mutated_paths?: readonly string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "PmMcpPromptArgumentContract",
           "signature": "export interface PmMcpPromptArgumentContract { name: string; description: string; required: boolean; }"
         },
@@ -10877,6 +10931,12 @@
           "signature": "export interface PmRefusalStateContract { state: string; probe_id: string; entrypoints: string[]; expected_exit_class: PmErrorCodeClass; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRequiredArgumentRefusalContract",
+          "signature": "export interface PmRequiredArgumentRefusalContract extends PmGrammarRefusalContract { missing_argument: string; missing_argument_index: number; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmResolvedReadOutputDimension",
@@ -10893,6 +10953,12 @@
           "kind": "interface",
           "name": "PmSettings",
           "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmSubcommandRefusalContract",
+          "signature": "export interface PmSubcommandRefusalContract extends PmGrammarRefusalContract { rejected_value: string; allowed_values: readonly string[]; }"
         },
         {
           "classification": "contract_data",
@@ -14745,6 +14811,12 @@
           "kind": "function",
           "name": "scoreItemSimilarity",
           "signature": "(leftTitle: string, rightTitle: string) => ItemSimilarityScore | calls: (leftTitle: string, rightTitle: string) => ItemSimilarityScore"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "scorePmGrammarRefusalClosure",
+          "signature": "(contracts: readonly (PmRequiredArgumentRefusalContract | PmSubcommandRefusalContract)[], observations: readonly PmGrammarRefusalObservation[]) => PmGrammarRefusalClosureReport | calls: (contracts: readonly (PmRequiredArgumentRefusalContract | PmSubcommandRefusalContract)[], observations: readonly PmGrammarRefusalObservation[]) => PmGrammarRefusalClosureReport"
         },
         {
           "classification": "contract_data",
@@ -18963,6 +19035,18 @@
           "kind": "value",
           "name": "MERGE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "MERGE_SUBCOMMAND_VALUES",
+          "signature": "readonly [\"install\", \"reconcile\", \"report\", \"driver\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "MergeSubcommand",
+          "signature": "export type MergeSubcommand = (typeof MERGE_SUBCOMMAND_VALUES)[number];"
         },
         {
           "classification": "contract_data",
@@ -30012,6 +30096,12 @@
     "read_output_cursor_stale",
     "recovery_kind_mismatch",
     "redundant_edge",
+    "refusal_allowed_values_mismatch",
+    "refusal_error_code_mismatch",
+    "refusal_exit_code_mismatch",
+    "refusal_mutated_state",
+    "refusal_probe_missing",
+    "refusal_recovery_failed",
     "reindex_already_running",
     "removed_canonical_spelling",
     "removed_compatibility_spelling",
@@ -30058,6 +30148,7 @@
     "type_duplicate",
     "type_invalid",
     "undeclared_observation",
+    "unexpected_refusal_probe",
     "unknown_command",
     "unknown_context_intent",
     "unknown_error",

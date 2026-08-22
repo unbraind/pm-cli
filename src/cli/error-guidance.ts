@@ -36,6 +36,18 @@ interface GuidanceMessage {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
+/** Compact refusal identity embedded in every structured error envelope. */
+export interface PmRefusalEnvelope {
+  /** Command, flag, or missing operand that rejected the invocation. */
+  surface: string;
+  /** Supplied scalar rejected by a closed domain, when available. */
+  rejected_value?: string;
+  /** Complete legal domain advertised by the refusal, when applicable. */
+  legal_domain?: string[];
+  /** Process exit code paired with the refusal. */
+  exit_code: number;
+}
+
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
   /** Schema type that determines the shape and validation rules for this value. */
@@ -70,6 +82,8 @@ export interface JsonErrorEnvelope {
   >;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
+  /** Stable compact identity of the failing surface and legal recovery domain. */
+  refusal: PmRefusalEnvelope;
   /** Binding output-budget receipt for this diagnostic. */
   diagnostic_output?: PmDiagnosticOutputReceipt;
 }
@@ -612,6 +626,63 @@ function attachStructuredGuidanceDetails<
   return payload;
 }
 
+function resolveRefusalCandidateFlag(
+  message: GuidanceMessage,
+  normalizedArgs: readonly string[],
+): string | undefined {
+  if (message.flag) return message.flag;
+  return message.recovery?.provided_fields?.find(
+    (field) =>
+      field !== "--json" &&
+      field !== "--quiet" &&
+      normalizedArgs.includes(field),
+  );
+}
+
+function resolveRefusalRejectedValue(
+  message: GuidanceMessage,
+  normalizedArgs: readonly string[],
+  candidateFlag: string | undefined,
+): string | undefined {
+  if (message.value !== undefined) return message.value;
+  if (candidateFlag) {
+    return normalizedArgs[normalizedArgs.indexOf(candidateFlag) + 1];
+  }
+  const allowedValues = message.recovery?.allowed_values;
+  if (!allowedValues?.length) return undefined;
+  return normalizedArgs.find(
+    (argument, index) =>
+      index > 0 &&
+      !argument.startsWith("-") &&
+      !allowedValues.includes(argument),
+  );
+}
+
+function buildRefusalEnvelope(
+  message: GuidanceMessage,
+  exitCode: number,
+): PmRefusalEnvelope {
+  const normalizedArgs = message.recovery?.normalized_args ?? [];
+  const candidateFlag = resolveRefusalCandidateFlag(message, normalizedArgs);
+  const rejectedValue = resolveRefusalRejectedValue(
+    message,
+    normalizedArgs,
+    candidateFlag,
+  );
+  return {
+    surface:
+      candidateFlag ??
+      message.recovery?.missing?.[0] ??
+      inferCommandNameFromRecovery(message.recovery) ??
+      "command",
+    ...(rejectedValue !== undefined ? { rejected_value: rejectedValue } : {}),
+    ...(message.recovery?.allowed_values?.length
+      ? { legal_domain: message.recovery.allowed_values }
+      : {}),
+    exit_code: exitCode,
+  };
+}
+
 function guidanceToJsonEnvelope(
   message: GuidanceMessage,
   exitCode: number,
@@ -624,9 +695,26 @@ function guidanceToJsonEnvelope(
       detail: message.happened,
       required: message.required,
       exit_code: exitCode,
+      refusal: buildRefusalEnvelope(message, exitCode),
     },
     message,
   );
+}
+
+function projectJsonErrorGuidance(
+  guidance: GuidanceMessage,
+  exitCode: number,
+): ProjectedJsonErrorEnvelope {
+  const recovery = guidance.recovery;
+  const hasActionableRecovery =
+    Boolean(recovery?.suggested_retry) ||
+    Boolean(recovery?.suggested_retry_args?.length) ||
+    Boolean(recovery?.allowed_values?.length) ||
+    Boolean(recovery?.candidate_commands?.length) ||
+    Boolean(guidance.nextSteps?.length);
+  return projectPmDiagnosticOutput(guidanceToJsonEnvelope(guidance, exitCode), {
+    diagnosticClass: hasActionableRecovery ? "recovery_bundle" : "error",
+  });
 }
 
 function guidanceToClassification(
@@ -766,8 +854,11 @@ function applyPmCliErrorContext(
     guidance.code === "command_failed" && context.code
       ? buildFallbackTitleFromMessage(normalizedRawMessage)
       : undefined;
+  const contextRecovery = normalizeRecoveryPayload(context.recovery);
   const recovery =
-    normalizeRecoveryPayload(context.recovery) ?? guidance.recovery;
+    contextRecovery && guidance.recovery
+      ? normalizeRecoveryPayload({ ...guidance.recovery, ...contextRecovery })
+      : (contextRecovery ?? guidance.recovery);
   return {
     ...guidance,
     code,
@@ -1027,6 +1118,10 @@ function buildInvalidArgumentGuidance(
     ? `pm ${commandName} --help`
     : "pm <command> --help";
   const allowedValues = inferAllowedValuesFromMessage(message);
+  const enrichedRecovery = normalizeRecoveryPayload({
+    ...recovery,
+    allowed_values: recovery?.allowed_values ?? allowedValues,
+  });
   const retryExample = buildAllowedValueRetryCommand(recovery, allowedValues);
   const examples = retryExample
     ? [retryExample, helpExample]
@@ -1049,6 +1144,7 @@ function buildInvalidArgumentGuidance(
       why: "Validation protects data consistency and deterministic behavior across commands.",
       examples,
       nextSteps,
+      recovery: enrichedRecovery,
     }),
     rawMessage,
     context,
@@ -1806,11 +1902,9 @@ export function formatPmCliErrorForJson(
   exitCode: number,
   context?: PmCliErrorContext,
 ): ProjectedJsonErrorEnvelope {
-  return projectPmDiagnosticOutput(
-    guidanceToJsonEnvelope(
-      buildPmCliErrorGuidance(rawMessage, context),
-      exitCode,
-    ),
+  return projectJsonErrorGuidance(
+    buildPmCliErrorGuidance(rawMessage, context),
+    exitCode,
   );
 }
 
@@ -1853,16 +1947,9 @@ export function formatCommanderErrorForJson(
   exitCode: number,
   context?: CommanderGuidanceContext,
 ): ProjectedJsonErrorEnvelope {
-  return projectPmDiagnosticOutput(
-    guidanceToJsonEnvelope(
-      buildCommanderErrorGuidance(
-        rawMessage,
-        commandName,
-        allowedTypes,
-        context,
-      ),
-      exitCode,
-    ),
+  return projectJsonErrorGuidance(
+    buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context),
+    exitCode,
   );
 }
 
@@ -1872,7 +1959,7 @@ export function formatUnknownErrorForJson(
   exitCode: number,
 ): ProjectedJsonErrorEnvelope {
   const guidance = buildUnknownErrorGuidance(rawMessage);
-  return projectPmDiagnosticOutput(guidanceToJsonEnvelope(guidance, exitCode));
+  return projectJsonErrorGuidance(guidance, exitCode);
 }
 
 function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {

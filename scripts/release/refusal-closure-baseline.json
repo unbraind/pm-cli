@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "minimum_probe_count": 22,
+  "version": 2,
+  "minimum_probe_count": 117,
   "required_probe_ids": [
     "context-invalid-intent",
     "get-invalid-field",

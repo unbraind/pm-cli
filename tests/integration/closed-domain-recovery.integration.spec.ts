@@ -60,10 +60,31 @@ describe("closed-domain recovery envelopes", () => {
             suggested_retry: string;
             suggested_retry_args: string[];
           };
+          refusal: {
+            surface: string;
+            rejected_value?: string;
+            legal_domain?: string[];
+            exit_code: number;
+          };
         };
         expect(envelope.code).toBe(contract.error_code);
+        expect(envelope.refusal.exit_code).toBe(2);
+        expect(
+          contract.rejected_value
+            .split("+")
+            .includes(envelope.refusal.rejected_value ?? ""),
+          contract.probe_id,
+        ).toBe(true);
+        if (contract.allowed_values_required !== false) {
+          expect(envelope.refusal.legal_domain).toEqual(
+            contract.allowed_values,
+          );
+        }
         expect(envelope.recovery.allowed_values ?? []).toEqual(
-          contract.allowed_values,
+          contract.allowed_values.slice(
+            0,
+            envelope.recovery.allowed_values?.length ?? 0,
+          ),
         );
         expect(envelope.recovery.suggested_retry_args).toEqual(
           contract.suggested_retry_args,

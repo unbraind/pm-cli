@@ -571,6 +571,7 @@ export type {
   PmExtensionSandboxProfileContract,
   PmExtensionServiceNameContract,
   PmExtensionTrustModeContract,
+  MergeSubcommand,
   PmToolAction,
   SdkCliActionParameterCoverage,
   SdkCliCompletenessContractSource,
@@ -704,6 +705,8 @@ export * from "./generated-error-code-catalog.js";
 export * from "./agent/refusal-reachability.js";
 export * from "./agent/refusal-closure.js";
 export * from "./agent/closed-domain-contracts.js";
+export * from "./agent/refusal-corpus-contracts.js";
+export { MERGE_SUBCOMMAND_VALUES } from "./cli-contracts.js";
 export * from "./agent/tracker-preflight-contracts.js";
 export * from "./agent/subcommand-recovery.js";
 export * from "./flag-invocation-contracts.js";

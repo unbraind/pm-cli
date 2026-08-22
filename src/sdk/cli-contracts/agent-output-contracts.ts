@@ -378,8 +378,10 @@ function compactDiagnosticRecovery(
     "retry_after_ms",
   ]) {
     const candidate = value[key];
-    if (Array.isArray(candidate)) compact[key] = candidate.slice(0, 3);
-    else if (candidate !== undefined) compact[key] = candidate;
+    if (Array.isArray(candidate)) {
+      compact[key] =
+        key === "suggested_retry_args" ? candidate : candidate.slice(0, 3);
+    } else if (candidate !== undefined) compact[key] = candidate;
   }
   return Object.keys(compact).length > 0 ? compact : undefined;
 }
@@ -566,14 +568,8 @@ function createMinimalDiagnosticFallback(
       ? recoveryCandidate
       : undefined;
   const candidate: Record<string, unknown> = {
-    code: truncateDiagnosticUtf8Text(
-      String(projected.code),
-      320,
-    ),
-    required: truncateDiagnosticUtf8Text(
-      String(projected.required),
-      320,
-    ),
+    code: truncateDiagnosticUtf8Text(String(projected.code), 320),
+    required: truncateDiagnosticUtf8Text(String(projected.required), 320),
     ...(recovery ? { recovery } : {}),
     ...(projected.exit_code !== undefined
       ? { exit_code: projected.exit_code }

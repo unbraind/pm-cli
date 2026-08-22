@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,13 +64,16 @@ describe("executable refusal closure gate", () => {
     () => {
       expect(verifyExecutableRefusalClosure()).toMatchObject({
         ok: true,
-        probe_count: 22,
-        closed_probe_count: 22,
+        probe_count: 117,
+        closed_probe_count: 117,
         closure_fraction: 1,
-        contract_count: 22,
+        contract_count: 117,
         closed_domain_contract_count: 18,
+        grammar_refusal_contract_count: 95,
+        required_argument_contract_count: 88,
+        subcommand_contract_count: 7,
         tracker_preflight_contract_count: 4,
-        baseline_version: 1,
+        baseline_version: 2,
         diagnostic_output: {
           ok: true,
           baseline_version: 1,
@@ -232,7 +241,7 @@ describe("executable refusal closure gate", () => {
         ],
       });
     },
-    60_000,
+    240_000,
   );
 
   it("fails setup closed and normalizes malformed refusal recovery", () => {
@@ -480,6 +489,56 @@ describe("executable refusal closure gate", () => {
         expect.objectContaining({ code: "exit_code_mismatch" }),
       ]),
     });
+  });
+
+  it("fails closed for malformed grammar refusals against a non-directory tracker fixture", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "pm-refusal-grammar-unit-"));
+    const results = [
+      { status: 0, stderr: "" },
+      { status: 0, stderr: "" },
+      { status: null, stderr: JSON.stringify({ code: 7 }) },
+      { status: 0, stderr: "" },
+    ];
+    try {
+      expect(
+        verifyExecutableRefusalClosure({
+          probes: [],
+          grammarProbes: [
+            {
+              probe_id: "malformed-grammar-refusal",
+              command: "synthetic",
+              refusal_args: ["synthetic"],
+              recovery_args: ["synthetic", "--help"],
+              error_code: "missing_required_argument",
+              missing_argument: "id",
+              missing_argument_index: 0,
+            },
+          ],
+          preflightProbes: [],
+          baseline: EMPTY_BASELINE,
+          makeTemporaryDirectory: () => root,
+          removeDirectory: () => {},
+          spawn: (
+            _executable: string,
+            _arguments: string[],
+            options: { env: NodeJS.ProcessEnv },
+          ) => {
+            if (results.length === 4) {
+              writeFileSync(options.env.PM_PATH, "not a directory", "utf8");
+            }
+            return results.shift();
+          },
+        }),
+      ).toMatchObject({
+        ok: false,
+        findings: expect.arrayContaining([
+          expect.objectContaining({ code: "refusal_error_code_mismatch" }),
+          expect.objectContaining({ code: "refusal_exit_code_mismatch" }),
+        ]),
+      });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("reports standalone success and negative-control exit status", () => {

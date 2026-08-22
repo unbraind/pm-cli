@@ -5,10 +5,13 @@ import {
   chmodSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -16,6 +19,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { scorePmRefusalClosure } from "../../dist/sdk/agent/refusal-closure.js";
 import { listCoreClosedDomainContracts } from "../../dist/sdk/agent/closed-domain-contracts.js";
+import {
+  listPmRequiredArgumentRefusalContracts,
+  listPmSubcommandRefusalContracts,
+  scorePmGrammarRefusalClosure,
+} from "../../dist/sdk/agent/refusal-corpus-contracts.js";
 import {
   listTrackerPreflightRecoveryContracts,
   scoreTrackerPreflightRecoveryClosure,
@@ -74,6 +82,34 @@ function strictStringArray(value) {
     : [];
 }
 
+function snapshotDirectory(root) {
+  const hash = createHash("sha256");
+  const entries = new Map();
+  const visit = (directory, prefix) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true }).sort(
+      (left, right) => left.name.localeCompare(right.name),
+    )) {
+      // Runtime locks and caches are explicitly non-authoritative. Refusals
+      // must preserve schema, items, history, settings, and package state.
+      if (prefix === "" && entry.name === "runtime") continue;
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const absolutePath = path.join(directory, entry.name);
+      hash.update(`${entry.isDirectory() ? "d" : "f"}:${relativePath}\0`);
+      if (entry.isDirectory()) {
+        entries.set(relativePath, "directory");
+        visit(absolutePath, relativePath);
+      } else {
+        const content = readFileSync(absolutePath);
+        const contentHash = createHash("sha256").update(content).digest("hex");
+        entries.set(relativePath, contentHash);
+        hash.update(content);
+      }
+    }
+  };
+  if (statSync(root).isDirectory()) visit(root, "");
+  return { digest: hash.digest("hex"), entries };
+}
+
 function executeClosedDomainProbes(probes, spawn, environment) {
   return probes.map((contract) => {
     const { probe_id: probeId, refusal_args: args } = contract;
@@ -90,7 +126,9 @@ function executeClosedDomainProbes(probes, spawn, environment) {
       entrypoint: `pm ${args.join(" ")}`,
       exit_code: refusal.status ?? 1,
       rejected_value: contract.rejected_value,
-      allowed_values: stringArray(recovery.allowed_values),
+      allowed_values: stringArray(
+        envelope.refusal?.legal_domain ?? recovery.allowed_values,
+      ),
       expected_allowed_values: contract.allowed_values,
       allowed_values_required: contract.allowed_values_required,
       error_code: typeof envelope.code === "string" ? envelope.code : "",
@@ -117,6 +155,42 @@ function executeClosedDomainProbes(probes, spawn, environment) {
           stringArray(envelope.next_steps).some(
             (entry) => entry.trim().length > 0,
           )),
+    };
+  });
+}
+
+function executeGrammarRefusalProbes(probes, spawn, environment) {
+  return probes.map((contract) => {
+    const before = snapshotDirectory(environment.PM_PATH);
+    const refusal = runCli(
+      spawn,
+      [...contract.refusal_args, "--json"],
+      environment,
+    );
+    const after = snapshotDirectory(environment.PM_PATH);
+    const envelope = parseProblemEnvelope(refusal);
+    const recovery = runCli(
+      spawn,
+      [...contract.recovery_args, "--json"],
+      environment,
+    );
+    return {
+      probe_id: contract.probe_id,
+      error_code: typeof envelope.code === "string" ? envelope.code : "",
+      exit_code: refusal.status ?? 1,
+      allowed_values: strictStringArray(
+        (envelope.recovery ?? {}).allowed_values,
+      ),
+      recovery_succeeded: recovery.status === 0,
+      refusal_mutated_state: before.digest !== after.digest,
+      mutated_paths: [
+        ...new Set([...before.entries.keys(), ...after.entries.keys()]),
+      ]
+        .filter(
+          (entryPath) =>
+            before.entries.get(entryPath) !== after.entries.get(entryPath),
+        )
+        .sort(),
     };
   });
 }
@@ -312,10 +386,51 @@ function executeTrackerPreflightProbes(probes, root, spawn, environment) {
   }
 }
 
+function defaultGrammarRefusalProbes(closedDomainProbes) {
+  if (closedDomainProbes !== undefined) return [];
+  return [
+    ...listPmRequiredArgumentRefusalContracts(),
+    ...listPmSubcommandRefusalContracts(),
+  ];
+}
+
+function warmExtensionRegistry(probes, spawn, environment) {
+  if (!probes.some(({ command }) => command.startsWith("extension "))) return;
+  requireSuccessfulSetup(
+    runCli(spawn, ["extension", "list", "--json"], environment),
+    "extension registry warmup",
+  );
+}
+
+function scoreTrackerPreflightCorpus(probes, observations) {
+  return probes.length === 0
+    ? { probe_count: 0, closed_probe_count: 0, findings: [] }
+    : scoreTrackerPreflightRecoveryClosure(observations);
+}
+
+function buildRefusalRatchetFindings(baseline, probeIds, contractCount) {
+  const findings = baseline.required_probe_ids
+    .filter((probeId) => !probeIds.has(probeId))
+    .map((probeId) => ({
+      code: "required_probe_missing",
+      probe_id: probeId,
+      detail: `${probeId} is required by refusal-closure baseline v${baseline.version}.`,
+    }));
+  if (contractCount < baseline.minimum_probe_count) {
+    findings.push({
+      code: "minimum_probe_count_regressed",
+      probe_id: "corpus",
+      detail: `${contractCount} probes are below the ratcheted minimum ${baseline.minimum_probe_count}.`,
+    });
+  }
+  return findings;
+}
+
 /** Execute the real core CLI refusal corpus in an isolated tracker. */
 export function verifyExecutableRefusalClosure({
   injectMismatch = false,
   probes,
+  grammarProbes,
   preflightProbes,
   baseline = REFUSAL_CLOSURE_BASELINE,
   diagnosticBaseline,
@@ -328,6 +443,8 @@ export function verifyExecutableRefusalClosure({
   const trackerPreflightProbes =
     preflightProbes ??
     (probes === undefined ? listTrackerPreflightRecoveryContracts() : []);
+  const grammarRefusalProbes =
+    grammarProbes ?? defaultGrammarRefusalProbes(probes);
   const root = makeTemporaryDirectory(
     path.join(tmpdir(), "pm-refusal-closure-"),
   );
@@ -357,6 +474,7 @@ export function verifyExecutableRefusalClosure({
       environment,
     );
     requireSuccessfulSetup(seeded, "item setup");
+    warmExtensionRegistry(grammarRefusalProbes, spawn, environment);
     const observations = executeClosedDomainProbes(
       closedDomainProbes,
       spawn,
@@ -364,16 +482,25 @@ export function verifyExecutableRefusalClosure({
     );
     if (injectMismatch) observations[0].allowed_values = [];
     const closedDomainScore = scorePmRefusalClosure(observations);
+    const grammarObservations = executeGrammarRefusalProbes(
+      grammarRefusalProbes,
+      spawn,
+      environment,
+    );
+    const grammarRefusalScore = scorePmGrammarRefusalClosure(
+      grammarRefusalProbes,
+      grammarObservations,
+    );
     const trackerPreflightObservations = executeTrackerPreflightProbes(
       trackerPreflightProbes,
       root,
       spawn,
       environment,
     );
-    const trackerPreflightScore =
-      trackerPreflightProbes.length === 0
-        ? { probe_count: 0, closed_probe_count: 0, findings: [] }
-        : scoreTrackerPreflightRecoveryClosure(trackerPreflightObservations);
+    const trackerPreflightScore = scoreTrackerPreflightCorpus(
+      trackerPreflightProbes,
+      trackerPreflightObservations,
+    );
     const effectiveDiagnosticBaseline =
       diagnosticBaseline ??
       (probes === undefined ? DIAGNOSTIC_OUTPUT_BASELINE : null);
@@ -382,28 +509,24 @@ export function verifyExecutableRefusalClosure({
       effectiveDiagnosticBaseline,
     );
     const probeIds = new Set(
-      [...closedDomainProbes, ...trackerPreflightProbes].map(
-        ({ probe_id: probeId }) => probeId,
-      ),
+      [
+        ...closedDomainProbes,
+        ...grammarRefusalProbes,
+        ...trackerPreflightProbes,
+      ].map(({ probe_id: probeId }) => probeId),
     );
-    const ratchetFindings = baseline.required_probe_ids
-      .filter((probeId) => !probeIds.has(probeId))
-      .map((probeId) => ({
-        code: "required_probe_missing",
-        probe_id: probeId,
-        detail: `${probeId} is required by refusal-closure baseline v${baseline.version}.`,
-      }));
     const contractCount =
-      closedDomainProbes.length + trackerPreflightProbes.length;
-    if (contractCount < baseline.minimum_probe_count) {
-      ratchetFindings.push({
-        code: "minimum_probe_count_regressed",
-        probe_id: "corpus",
-        detail: `${contractCount} probes are below the ratcheted minimum ${baseline.minimum_probe_count}.`,
-      });
-    }
+      closedDomainProbes.length +
+      grammarRefusalProbes.length +
+      trackerPreflightProbes.length;
+    const ratchetFindings = buildRefusalRatchetFindings(
+      baseline,
+      probeIds,
+      contractCount,
+    );
     const findings = [
       ...closedDomainScore.findings,
+      ...grammarRefusalScore.findings,
       ...trackerPreflightScore.findings,
       ...diagnosticOutputScore.findings,
       ...ratchetFindings,
@@ -414,6 +537,7 @@ export function verifyExecutableRefusalClosure({
     );
     const closedProbeCount =
       closedDomainScore.closed_probe_count +
+      grammarRefusalScore.closed_probe_count +
       trackerPreflightScore.closed_probe_count;
     return {
       ok: findings.length === 0,
@@ -423,6 +547,13 @@ export function verifyExecutableRefusalClosure({
         contractCount === 0 ? 1 : closedProbeCount / contractCount,
       contract_count: contractCount,
       closed_domain_contract_count: closedDomainProbes.length,
+      grammar_refusal_contract_count: grammarRefusalProbes.length,
+      required_argument_contract_count: grammarRefusalProbes.filter(
+        (contract) => Object.hasOwn(contract, "missing_argument"),
+      ).length,
+      subcommand_contract_count: grammarRefusalProbes.filter((contract) =>
+        Object.hasOwn(contract, "allowed_values"),
+      ).length,
       tracker_preflight_contract_count: trackerPreflightProbes.length,
       baseline_version: baseline.version,
       baseline_minimum_probe_count: baseline.minimum_probe_count,
