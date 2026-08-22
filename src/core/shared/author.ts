@@ -351,10 +351,15 @@ const CODEX_PROVENANCE_PROBE_POLICY = Object.freeze({
   ...PROVENANCE_PROBE_POLICY,
   max_bytes: 4_194_304,
 });
+const HARNESS_NAMESPACE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
 function buildBuiltinProvenanceAdapter(
   descriptor: HarnessSignalDescriptor,
 ): AgentProvenanceAdapter {
+  const unavailableDimensions =
+    normalizeHarnessSignalDescriptor(
+      descriptor,
+    ).provenance_unavailable_dimensions;
   const dimensions = new Set([
     "model",
     "version",
@@ -390,9 +395,10 @@ function buildBuiltinProvenanceAdapter(
     confidence: "high" as const,
     waivers: Object.freeze(
       Object.fromEntries(
-        descriptor.provenance_unavailable_dimensions!.map(
-          (dimension) => [dimension, "Harness does not expose this dimension."],
-        ),
+        unavailableDimensions.map((dimension) => [
+          dimension,
+          "Harness does not expose this dimension.",
+        ]),
       ),
     ),
   });
@@ -427,8 +433,6 @@ const registeredHarnessSignalDescriptors = new Map<
   string,
   RegisteredHarnessSignalDescriptor
 >();
-
-const HARNESS_NAMESPACE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
 function nonBlank(value: unknown): string | undefined {
   const trimmed = typeof value === "string" ? value.trim() : undefined;
@@ -527,9 +531,11 @@ function currentHarnessSignalDescriptors(
   localDescriptors: readonly HarnessSignalDescriptor[] = [],
 ): readonly NormalizedHarnessSignalDescriptor[] {
   const adapterDescriptors = new Map(
-    BUILTIN_AGENT_PROVENANCE_ADAPTERS.map((adapter) => [
-      adapter.harness,
-      normalizeHarnessSignalDescriptor(adapter.descriptor),
+    BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.filter(
+      (descriptor) => descriptor.harness !== "ci",
+    ).map((descriptor) => [
+      descriptor.harness,
+      normalizeHarnessSignalDescriptor(descriptor),
     ]),
   );
   for (const { adapter } of registeredAgentProvenanceAdapters.values()) {
@@ -648,6 +654,7 @@ const codexProvenanceSnapshotCache = new Map<
   string,
   Readonly<Record<string, string | undefined>>
 >();
+const EMPTY_CODEX_PROVENANCE_SNAPSHOT = Object.freeze({});
 
 function parseClaudeProvenanceLine(
   line: string,
@@ -693,6 +700,7 @@ function readClaudeSessionProvenance(
       fs.readSync(file, tail, 0, tailLength, Math.max(0, size - tailLength));
       const lines = tail.toString("utf8").split("\n").reverse().slice(0, 4_096);
       for (const line of lines) {
+        if (line.length === 0 || line.length > 262_144) continue;
         const value = parseClaudeProvenanceLine(line, dimension);
         if (value) return value;
       }
@@ -723,10 +731,7 @@ function findCodexSessionFile(
       visited += 1;
       if (visited > 512) return undefined;
       const entryPath = path.join(directory, entry.name);
-      if (
-        entry.isFile() &&
-        entry.name.endsWith(`-${session}.jsonl`)
-      ) {
+      if (entry.isFile() && entry.name.endsWith(`-${session}.jsonl`)) {
         return entryPath;
       }
       if (entry.isDirectory()) {
@@ -816,7 +821,10 @@ function readCodexSessionProvenance(
   const cached = codexProvenanceSnapshotCache.get(cacheKey);
   if (cached) return cached[dimension];
   const sessionPath = findCodexSessionFile(sessionsRoot, session);
-  if (!sessionPath) return undefined;
+  if (!sessionPath) {
+    codexProvenanceSnapshotCache.set(cacheKey, EMPTY_CODEX_PROVENANCE_SNAPSHOT);
+    return undefined;
+  }
   try {
     const file = fs.openSync(sessionPath, "r");
     try {
@@ -828,6 +836,7 @@ function readCodexSessionProvenance(
       fs.closeSync(file);
     }
   } catch {
+    codexProvenanceSnapshotCache.set(cacheKey, EMPTY_CODEX_PROVENANCE_SNAPSHOT);
     return undefined;
   }
 }
@@ -1158,7 +1167,9 @@ function normalizeAgentProvenanceAdapter(
     throw new Error(`Provenance adapter "${harness}" requires a version.`);
   }
   if (!Number.isSafeInteger(adapter.priority)) {
-    throw new Error(`Provenance adapter "${harness}" requires an integer priority.`);
+    throw new Error(
+      `Provenance adapter "${harness}" requires an integer priority.`,
+    );
   }
   if (
     adapter.probe_policy.network_access !== false ||
@@ -1235,9 +1246,7 @@ export function registerAgentProvenanceAdapters(
   const seen = new Set<string>();
   for (const adapter of normalized) {
     if (seen.has(adapter.harness)) {
-      throw new Error(
-        `Provenance adapter collision for "${adapter.harness}".`,
-      );
+      throw new Error(`Provenance adapter collision for "${adapter.harness}".`);
     }
     const builtin = builtins.get(adapter.harness);
     if (builtin && adapter.priority <= builtin.priority) {
@@ -1250,9 +1259,7 @@ export function registerAgentProvenanceAdapters(
       registered &&
       JSON.stringify(registered.adapter) !== JSON.stringify(adapter)
     ) {
-      throw new Error(
-        `Provenance adapter collision for "${adapter.harness}".`,
-      );
+      throw new Error(`Provenance adapter collision for "${adapter.harness}".`);
     }
     seen.add(adapter.harness);
   }

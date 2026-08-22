@@ -67,7 +67,7 @@ const MAX_OBSERVED_AUTHORS = 10_000;
 
 function requireLegacyAuthor(value: string | undefined): string {
   const author = value?.trim();
-  if (!author || author.length > MAX_AUTHOR_LENGTH) {
+  if (!author || author === "__proto__" || author.length > MAX_AUTHOR_LENGTH) {
     throw new Error(
       `A legacy author must contain 1-${MAX_AUTHOR_LENGTH} characters.`,
     );
@@ -85,9 +85,13 @@ function requireCanonicalHarness(value: string | undefined): string {
   return harness;
 }
 
-function orderedAliases(aliases: Readonly<Record<string, string>>): Record<string, string> {
+function orderedAliases(
+  aliases: Readonly<Record<string, string>>,
+): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(aliases).sort(([left], [right]) => left.localeCompare(right)),
+    Object.entries(aliases).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
   );
 }
 

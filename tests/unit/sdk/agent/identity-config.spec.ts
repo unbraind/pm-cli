@@ -128,6 +128,15 @@ describe("agent identity config contracts", () => {
         }),
       ).toThrow(/legacy author/u);
     }
+    for (const operation of ["add", "remove"] as const) {
+      expect(() =>
+        planAgentIdentityVocabularyMutation(undefined, {
+          operation,
+          legacy_author: "__proto__",
+          ...(operation === "add" ? { canonical_harness: "codex" } : {}),
+        }),
+      ).toThrow(/legacy author/u);
+    }
     expect(() =>
       planAgentIdentityVocabularyMutation(undefined, {
         operation: "add",

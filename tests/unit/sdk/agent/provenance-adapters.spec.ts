@@ -1,7 +1,8 @@
-import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import fs from "node:fs";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHistoryEntry } from "../../../../src/core/history/history.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../../../src/core/shared/constants.js";
 import {
@@ -18,6 +19,7 @@ import type { AgentProvenanceAdapter } from "../../../../src/core/shared/author.
 const roots: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
   );
@@ -30,7 +32,9 @@ describe("agent provenance adapters", () => {
     )!;
 
   it("publishes one versioned privacy-bounded adapter for every supported agent harness", () => {
-    expect(BUILTIN_AGENT_PROVENANCE_ADAPTERS.map((entry) => entry.harness)).toEqual([
+    expect(
+      BUILTIN_AGENT_PROVENANCE_ADAPTERS.map((entry) => entry.harness),
+    ).toEqual([
       "aider",
       "claude-code",
       "codex",
@@ -58,9 +62,11 @@ describe("agent provenance adapters", () => {
     expect(
       normalizeAgentProvenanceAdapterValue("model", "gpt-5.6-sol"),
     ).toEqual({ raw: "gpt-5.6-sol", normalized: "gpt-5.6", vocabulary: "v1" });
-    expect(
-      normalizeAgentProvenanceAdapterValue("effort", "XHIGH"),
-    ).toEqual({ raw: "XHIGH", normalized: "xhigh", vocabulary: "v1" });
+    expect(normalizeAgentProvenanceAdapterValue("effort", "XHIGH")).toEqual({
+      raw: "XHIGH",
+      normalized: "xhigh",
+      vocabulary: "v1",
+    });
     expect(
       normalizeAgentProvenanceAdapterValue("effort", "experimental"),
     ).toEqual({
@@ -68,7 +74,9 @@ describe("agent provenance adapters", () => {
       normalized: "experimental",
       vocabulary: "v1",
     });
-    expect(normalizeAgentProvenanceAdapterValue("model", "claude-sonnet")).toEqual({
+    expect(
+      normalizeAgentProvenanceAdapterValue("model", "claude-sonnet"),
+    ).toEqual({
       raw: "claude-sonnet",
       normalized: "claude-sonnet",
       vocabulary: "v1",
@@ -76,7 +84,9 @@ describe("agent provenance adapters", () => {
   });
 
   it("reuses one Codex tail snapshot across model and effort dimensions", async () => {
-    const home = await mkdtemp(path.join(os.tmpdir(), "pm-codex-version-probe-"));
+    const home = await mkdtemp(
+      path.join(os.tmpdir(), "pm-codex-version-probe-"),
+    );
     roots.push(home);
     const sessions = path.join(home, ".codex", "sessions", "2026", "08", "22");
     await mkdir(sessions, { recursive: true });
@@ -99,6 +109,53 @@ describe("agent provenance adapters", () => {
       model: { value: "gpt-5.6-sol", source: "probe" },
       effort: { value: "high", source: "probe" },
     });
+  });
+
+  it("caches a missing Codex session across provenance dimensions", async () => {
+    const home = await mkdtemp(
+      path.join(os.tmpdir(), "pm-codex-missing-cache-"),
+    );
+    roots.push(home);
+    const readdir = vi.spyOn(fs, "readdirSync");
+    const identity = diagnoseAgentIdentity({
+      env: { CODEX_THREAD_ID: "missing-cache-probe" },
+      home_dir: home,
+      argv: [],
+    });
+    expect(identity.provenance).toMatchObject({ model: null, effort: null });
+    expect(readdir).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves declared harness precedence when signals overlap", () => {
+    expect(
+      diagnoseAgentIdentity({
+        env: { CLAUDE_CODE: "1", AIDER_MODEL: "model" },
+        argv: [],
+      }).harness,
+    ).toBe("claude-code");
+  });
+
+  it("bounds Claude session lines before parsing", async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), "pm-claude-line-bound-"));
+    roots.push(home);
+    const cwd = path.join(home, "workspace");
+    const encodedWorkspace = path
+      .resolve(cwd)
+      .replaceAll(/[^A-Za-z0-9-]/gu, "-");
+    const sessions = path.join(home, ".claude", "projects", encodedWorkspace);
+    await mkdir(sessions, { recursive: true });
+    await writeFile(
+      path.join(sessions, "line-bound.jsonl"),
+      `${JSON.stringify({ type: "assistant", message: { model: "claude-opus-5" } })}\nnot-json\n${"x".repeat(262_145)}\n`,
+    );
+    expect(
+      diagnoseAgentIdentity({
+        env: { CLAUDE_CODE: "1", CLAUDE_CODE_SESSION_ID: "line-bound" },
+        home_dir: home,
+        cwd,
+        argv: [],
+      }).model,
+    ).toBe("claude-opus-5");
   });
 
   it("falls back to the bounded session head when recent records fill the tail", async () => {
@@ -124,7 +181,9 @@ describe("agent provenance adapters", () => {
   });
 
   it("fails closed for missing, malformed, unrelated, and unreadable Codex sessions", async () => {
-    const missingHome = await mkdtemp(path.join(os.tmpdir(), "pm-codex-missing-"));
+    const missingHome = await mkdtemp(
+      path.join(os.tmpdir(), "pm-codex-missing-"),
+    );
     roots.push(missingHome);
     expect(
       diagnoseAgentIdentity({
@@ -139,15 +198,9 @@ describe("agent provenance adapters", () => {
         "malformed-probe",
         'not-json\nnull\n[]\n{"type":"turn_context","payload":null}',
       ],
-      [
-        "unrelated-probe",
-        '{"type":"other","nested":{"type":"turn_context"}}',
-      ],
+      ["unrelated-probe", '{"type":"other","nested":{"type":"turn_context"}}'],
       ["empty-payload-probe", '{"type":"turn_context","payload":{}}'],
-      [
-        "oversized-probe",
-        `${"x".repeat(262_145)}{"type":"turn_context"}`,
-      ],
+      ["oversized-probe", `${"x".repeat(262_145)}{"type":"turn_context"}`],
     ] as const) {
       const home = await mkdtemp(path.join(os.tmpdir(), "pm-codex-invalid-"));
       roots.push(home);
@@ -174,7 +227,9 @@ describe("agent provenance adapters", () => {
       unreadable,
       JSON.stringify({ type: "turn_context", payload: { model: "private" } }),
     );
-    await chmod(unreadable, 0o000);
+    const open = vi.spyOn(fs, "openSync").mockImplementationOnce(() => {
+      throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+    });
     expect(
       diagnoseAgentIdentity({
         env: { CODEX_THREAD_ID: "unreadable-probe" },
@@ -182,6 +237,7 @@ describe("agent provenance adapters", () => {
         argv: [],
       }).provenance?.model,
     ).toBeNull();
+    expect(open).toHaveBeenCalledWith(unreadable, "r");
   });
 
   it("honors Codex discovery depth and entry-count bounds", async () => {
@@ -211,7 +267,10 @@ describe("agent provenance adapters", () => {
         writeFile(path.join(wideRoot, `z-unrelated-${index}.jsonl`), "{}"),
       ),
     );
-    await mkdir(path.join(wideRoot, "a-directory"));
+    await writeFile(
+      path.join(wideRoot, "rollout-wide-probe.jsonl"),
+      JSON.stringify({ type: "turn_context", payload: { model: "private" } }),
+    );
     expect(
       diagnoseAgentIdentity({
         env: { CODEX_THREAD_ID: "wide-probe" },
@@ -345,9 +404,9 @@ describe("agent provenance adapters", () => {
         ]),
       ).toThrow();
     }
-    expect(() => registerAgentProvenanceAdapters([{ ...base, priority: 0 }])).toThrow(
-      /priority greater/u,
-    );
+    expect(() =>
+      registerAgentProvenanceAdapters([{ ...base, priority: 0 }]),
+    ).toThrow(/priority greater/u);
 
     const override = {
       ...base,
