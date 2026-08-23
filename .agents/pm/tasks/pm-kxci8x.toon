@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-23T11:54:37.235Z"
-closed_at: "2026-08-23T11:54:36.696Z"
-completed_at: "2026-08-23T11:54:36.696Z"
+updated_at: "2026-08-23T12:01:24.155Z"
+closed_at: "2026-08-23T12:01:23.556Z"
+completed_at: "2026-08-23T12:01:23.556Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; Every command declares exactly one noun (capability family) in the same contract record as its tier, and every declared noun has at least one command, checked in both directions against the command registration rather than against a list kept beside it; A test asserts no surface maintains its own independent visibility list; Agent-facing routing surfaces - skills, guide topics, and generated docs - derive their capability map from the declared noun field rather than hand-authoring one; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier and a noun through the same fields, so extensions cannot bypass tiering or routing"
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[22]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -101,6 +101,7 @@ comments[22]{created_at,author,text}:
   "2026-08-23T11:06:56.833Z","harness:codex","Exact-head review remediation evidence: CodeRabbit findings 3838291647, 3838291652, 3838291654, 3838291657, 3838291666, 3838291670, plus the outside-diff positional projection finding are addressed. Descriptor-less extension roots default to standard while declared internal descendants remain internal; all lifecycle aliases retain direct help; descriptor fixtures satisfy the complete runtime type; all four tiers cross every capability family; the grammar harness types the registered seed parameter and validates core-only parents against the core command set; positional action projection retains four-argument compatibility. Focused tests pass 153/153. Final exact coverage passes 7,845 tests across 566 files at statements 57,368/57,368, branches 42,913/42,913, functions 11,948/11,948, and lines 55,299/55,299. pnpm lint passes with zero ESLint warnings, zero clones, and every static assurance gate."
   "2026-08-23T11:32:41.965Z","harness:codex","Review recurrence start: terminal CodeRabbit findings 3838390703, 3838390704, 3838390705, 3838390709, 3838390710, and 3838390711 are accepted for bounded remediation on PR #1096 exact head."
   "2026-08-23T11:54:35.664Z","harness:codex","Terminal review remediation evidence: CodeRabbit findings 3838390703, 3838390704, 3838390705, 3838390709, 3838390710, and 3838390711 are addressed. Runtime dispatcher traversal isolates action-help failures across assurance, plan, and workspace snapshot; every generated extension namespace receives descendant-derived metadata while built-ins remain isolated; capability-family types now derive from one canonical alias with explicit unchanged-literal SDK acknowledgement; rejection guidance derives from the tuple; the 13-row versus 12-canonical-group ratchet distinction is documented; and tests assert catalog arithmetic instead of total size. Focused tests pass 189/189, full coverage passes 7,847 tests across 566 files at exact 100/100/100/100, TypeScript and generated surfaces pass, and lint/static assurance pass twice."
+  "2026-08-23T12:01:20.305Z","harness:codex","Hosted parity remediation: the exact CI pnpm changelog:pm:check command rejected CHANGELOG.md because the prior local generator included non-canonical --include-links and --item-ref-style toon flags. Regenerated through the repository-owned pnpm changelog:pm contract and will verify the identical check before push."
 files[40]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
@@ -183,5 +184,5 @@ docs[10]{path,scope,note}:
   docs/SDK.md,project,Generated routing and package author guidance
   docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,Visibility and enumeration contract guide
   packages/pm-command-kit/README.md,project,Generated routing and package author guidance
-close_reason: "Closed terminal substantive review recurrence: grammar traversal, synthetic namespace metadata, canonical capability typing, synchronized validation, and refusal ratchet assertions are corrected with exact coverage and full static evidence."
+close_reason: Restored generated changelog parity with the exact repository-owned CI command.
 body: ""
