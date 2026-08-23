@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-23T11:07:12.100Z"
-closed_at: "2026-08-23T11:07:11.473Z"
-completed_at: "2026-08-23T11:07:11.473Z"
+updated_at: "2026-08-23T11:54:38.616Z"
+closed_at: "2026-08-23T11:54:37.876Z"
+completed_at: "2026-08-23T11:54:37.876Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The gate runner records a structured failure document naming the failing gate, its exit status, and its captured verdict, at a path supplied by the environment; The blocked-release issue renders its cause from that document when it exists, including the blocking issue identifiers and the per-issue reason the gate assigned; The preflight configuration detection is retained only as the fallback used when no failure document was produced; No part of the mechanism classifies failures by matching patterns against log or message text; A negative control proves the rendered cause changes when the recorded gate verdict changes, and that a missing document still yields the preflight fallback"
@@ -24,7 +24,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-dqtzva,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-23T06:39:18.191Z","harness:codex","Implementation start 2026-08-23: live GH-1095 reproduced the residual exactly: the 2026.8.23 tag exists, GitHub/npm artifacts do not, npm publish returned E404, and the alert still emitted failing_stage=unrecorded. This tranche extends the existing structured recorder across downstream publish and verification stages without log-text classification."
   "2026-08-23T07:03:27.150Z","harness:codex","Progress: Auto Release now records downstream GitHub Release failures from structured run/job/step conclusions and records discovery/GitHub Release/npm verification stages before exiting; the current npm publish incident would resolve to release-workflow plus Build, Test, Publish / Publish to npm instead of unrecorded."
   "2026-08-23T07:10:42.447Z","harness:codex","Focused verification: release-failure record and CI workflow contract suites passed 37/37; structured negative controls classify only GitHub job/step conclusions and preserve preflight fallback when no record exists."
@@ -34,18 +34,21 @@ comments[9]{created_at,author,text}:
   "2026-08-23T09:12:49.247Z","harness:codex","Windows root cause and fix: the expanded Auto Release step exceeded the Windows command-line transport ceiling when the acceptance harness passed it through bash -c, truncating the script at line 144 inside a quoted string. The harness now sends identical Bash source over stdin, removing argv-length dependence while preserving the production script and fake-command environment."
   "2026-08-23T10:17:06.128Z","harness:codex","Review remediation evidence: CodeRabbit findings 3838168889, 3838168890, and 3838168891 are addressed by reopening the item, claiming it before edits, linking the cross-platform release-automation contract test before closure, and rerunning the evidence. release-failure-record, CI workflow, and release-automation focused tests passed 24/24. Full coverage passed 7,845 tests across 566 files at exact 100% statements, branches, functions, and lines. pnpm lint and pnpm quality:static passed."
   "2026-08-23T11:06:57.286Z","harness:codex","Exact-head review remediation evidence: CodeRabbit finding 3838291644 is addressed at the canonical source. The PM title now states the public outcome, Structured release-failure causes are preserved in blocked-release alerts, so generated release notes no longer expose internal incident wording. CHANGELOG.md is linked as reviewed documentation. The final focused, TypeScript, static, lint, grammar, generated-surface, and exact-coverage gates pass."
+  "2026-08-23T11:32:42.551Z","harness:codex","Review recurrence start: terminal CodeRabbit finding 3838390701 is accepted; preserve the original downstream Release watcher status through all Auto Release caller exits."
+  "2026-08-23T11:54:36.145Z","harness:codex","Terminal review remediation evidence: CodeRabbit finding 3838390701 is addressed at all three Auto Release watcher callers. Each now propagates the original gh run watch status while the structured recorder retains the same status, and the workflow contract asserts exactly three preserving calls. Focused release/CI tests pass within 189/189; full coverage is exact across 7,847 tests, and lint/static assurance pass."
 files[5]{path,scope,note}:
   .github/workflows/auto-release.yml,project,"Alert step renders the recorded cause, preflight retained as fallback"
   scripts/release/release-failure-record.mjs,project,"Structured failure document: records and renders the failing gate verdict"
   tests/integration/ci-workflow-contract.spec.ts,project,Structured downstream Release workflow failure capture
   tests/integration/release-automation-contract.spec.ts,project,Cross-platform same-day release workflow simulation and actionable child-process diagnostics
   tests/unit/scripts/release/release-failure-record.spec.ts,project,Unit proof including the negative control
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-08-23T07:03:37.399Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-08-23T09:31:59.044Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-08-23T11:54:35.153Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated public release note for structured release-failure behavior
-close_reason: "Closed exact-head public-release-note recurrence: the canonical item title now generates an outcome-focused changelog entry while the structured release-failure implementation and negative controls remain fully verified."
+close_reason: "Closed terminal substantive review recurrence: downstream Release watcher failures preserve their original exit status at all three Auto Release call sites, with workflow contract proof and full verification."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

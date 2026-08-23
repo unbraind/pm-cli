@@ -54,6 +54,8 @@ describe("extension command visibility metadata", () => {
         handler: () => undefined,
         family: "miscellaneous" as never,
       }),
-    ).toThrow("definition.family must be workspace");
+    ).toThrow(
+      `definition.family must be one of: ${EXTENSION_COMMAND_CAPABILITY_FAMILIES.join(", ")}`,
+    );
   });
 });

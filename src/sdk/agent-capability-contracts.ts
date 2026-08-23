@@ -5,22 +5,13 @@
  * surfaces from one public SDK contract.
  */
 import { PM_CORE_COMMAND_NAMES } from "./cli-contracts/enum-contracts.js";
+import type { ExtensionCommandCapabilityFamily } from "../core/extensions/command-metadata-contract.js";
 
 /** Visibility tiers shared by CLI help, completions, docs, extensions, and MCP. */
 export type PmCommandVisibilityTier = "core" | "standard" | "full" | "internal";
 
 /** Stable capability families shared by every agent-facing command surface. */
-export type PmCommandCapabilityFamily =
-  | "workspace"
-  | "intake"
-  | "context"
-  | "lifecycle"
-  | "evidence"
-  | "graph"
-  | "quality"
-  | "automation"
-  | "extensions"
-  | "internal";
+export type PmCommandCapabilityFamily = ExtensionCommandCapabilityFamily;
 
 /** One command's canonical agent-surface visibility declaration. */
 export interface PmCommandVisibilityContract {

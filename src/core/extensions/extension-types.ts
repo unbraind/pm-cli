@@ -35,6 +35,8 @@ import type {
   WorkspaceTransactionCommitResult,
 } from "../../sdk/workspace-transaction.js";
 import type { KnownItemFieldType } from "./item-field-types.js";
+import type { ExtensionCommandCapabilityFamily } from "./command-metadata-contract.js";
+export type { ExtensionCommandCapabilityFamily } from "./command-metadata-contract.js";
 
 /** Public contract for known extension capabilities, shared by SDK and presentation-layer consumers. */
 export const KNOWN_EXTENSION_CAPABILITIES = [
@@ -832,19 +834,6 @@ export interface ExtensionCommandArgumentDefinition {
   /** Value that configures or reports description for this contract. */
   description?: string;
 }
-
-/** Capability family an extension command contributes to agent routing. */
-export type ExtensionCommandCapabilityFamily =
-  | "workspace"
-  | "intake"
-  | "context"
-  | "lifecycle"
-  | "evidence"
-  | "graph"
-  | "quality"
-  | "automation"
-  | "extensions"
-  | "internal";
 
 /** Documents the command definition payload exchanged by command, SDK, and package integrations. */
 export interface CommandDefinition {

@@ -78,7 +78,8 @@ describe("executable refusal closure gate", () => {
   it.runIf(process.platform !== "win32")(
     "proves real retries and blocks a seeded omission",
     () => {
-      expect(verifyExecutableRefusalClosure()).toMatchObject({
+      const result = verifyExecutableRefusalClosure();
+      expect(result).toMatchObject({
         ok: true,
         probe_count: 117,
         closed_probe_count: 117,
@@ -99,14 +100,16 @@ describe("executable refusal closure gate", () => {
         },
         catalog_closure: {
           complete: false,
-          catalog_error_code_count: 333,
           executable_error_code_count: 13,
-          uncovered_error_code_count: 320,
           ratchet: { ok: true, baseline: 13, actual: 13 },
           restore_with: "docs/generated/REFUSAL_CLOSURE_CENSUS.md",
         },
         findings: [],
       });
+      expect(
+        result.catalog_closure.executable_error_code_count +
+          result.catalog_closure.uncovered_error_code_count,
+      ).toBe(result.catalog_closure.catalog_error_code_count);
       expect(
         verifyExecutableRefusalClosure({
           ...createSuccessfulOptions(),

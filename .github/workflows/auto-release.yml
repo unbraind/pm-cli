@@ -257,9 +257,7 @@ jobs:
               echo "Existing Release workflow ${RELEASE_RUN_ID} for ${EXISTING_RELEASE_TAG} already proved successful immutable publication."
             elif [[ -n "${RELEASE_RUN_ID}" && "${RELEASE_RUN_STATUS}" != "completed" ]]; then
               echo "Waiting for active exact-tag Release workflow ${RELEASE_RUN_ID}."
-              if ! watch_release_workflow "${RELEASE_RUN_ID}"; then
-                exit 1
-              fi
+              watch_release_workflow "${RELEASE_RUN_ID}" || exit "$?"
             else
               dispatch_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               gh workflow run release.yml --ref "${DEFAULT_BRANCH}" -f tag="${EXISTING_RELEASE_TAG}"
@@ -283,9 +281,7 @@ jobs:
                 record_failure_stage release-workflow-discovery 1
                 exit 1
               fi
-              if ! watch_release_workflow "${RELEASE_RUN_ID}"; then
-                exit 1
-              fi
+              watch_release_workflow "${RELEASE_RUN_ID}" || exit "$?"
             fi
 
             if ! verified_release_tag="$(gh release view "${EXISTING_RELEASE_TAG}" --json tagName,isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false) | .tagName')"; then
@@ -372,9 +368,7 @@ jobs:
             record_failure_stage release-workflow-discovery 1
             exit 1
           fi
-          if ! watch_release_workflow "${RELEASE_RUN_ID}"; then
-            exit 1
-          fi
+          watch_release_workflow "${RELEASE_RUN_ID}" || exit "$?"
           PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"
           echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
           echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"

@@ -48,10 +48,10 @@ export interface PmRefusalClosureCensusReport {
   rows: PmRefusalClosureCensusRow[];
 }
 
-/** Reviewed executable-code floor; raise only with new real probe evidence. */
+/** Reviewed floor of 13 catalog rows; includes one alias across 12 canonical groups. */
 export const PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE = 13;
 
-/** Reviewed canonical compatibility groups that must retain executable evidence. */
+/** Twelve canonical compatibility groups that must retain executable evidence. */
 export const PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE =
   Object.freeze([
     "invalid_argument_value",

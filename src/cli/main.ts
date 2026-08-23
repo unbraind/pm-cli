@@ -2058,19 +2058,17 @@ function attachDynamicExtensionHelp(
 /* v8 ignore stop */
 
 /* c8 ignore start */
-/** Apply the most-visible descendant tier to each new extension command root. */
+/** Apply descendant-derived visibility to every generated extension namespace. */
 function applyDynamicExtensionRootHelpVisibility(
   rootProgram: Command,
   preexistingTopLevelCommands: ReadonlySet<string>,
   descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): void {
   const tierRank = { core: 0, standard: 1, full: 2, internal: 3 } as const;
-  for (const command of rootProgram.commands) {
-    if (preexistingTopLevelCommands.has(command.name())) {
-      continue;
-    }
+  const applyVisibility = (command: Command, pathParts: string[]): void => {
+    const commandPath = pathParts.join(" ");
     const matchingDescriptors = [...descriptors.entries()]
-      .filter(([path]) => path.split(" ")[0] === command.name())
+      .filter(([path]) => path === commandPath || path.startsWith(`${commandPath} `))
       .map(([, descriptor]) => descriptor);
     const tier = matchingDescriptors.length === 0
       ? "standard"
@@ -2079,6 +2077,14 @@ function applyDynamicExtensionRootHelpVisibility(
           "internal",
         );
     setPmCommandHelpVisibilityTier(command, tier);
+    for (const child of command.commands) {
+      applyVisibility(child, [...pathParts, child.name()]);
+    }
+  };
+  for (const command of rootProgram.commands) {
+    if (!preexistingTopLevelCommands.has(command.name())) {
+      applyVisibility(command, [command.name()]);
+    }
   }
 }
 

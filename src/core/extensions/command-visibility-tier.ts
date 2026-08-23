@@ -17,7 +17,7 @@ function assertCommandCapabilityFamily(family: unknown): void {
     !COMMAND_CAPABILITY_FAMILIES.has(String(family))
   ) {
     throw new Error(
-      "registerCommand definition.family must be workspace, intake, context, lifecycle, evidence, graph, quality, automation, extensions, or internal",
+      `registerCommand definition.family must be one of: ${EXTENSION_COMMAND_CAPABILITY_FAMILIES.join(", ")}`,
     );
   }
 }

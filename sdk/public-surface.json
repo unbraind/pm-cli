@@ -1119,6 +1119,13 @@
       ],
       "package_version": "2026.8.23",
       "reason": "Add optional tier and family metadata while preserving existing consumer call shapes; expose additive explicit-registry projections and refusal-census contracts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCommandCapabilityFamily"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Capability-family literals are unchanged; the public alias now derives from the canonical extension metadata contract to prevent type drift."
     }
   ],
   "entrypoints": {
@@ -10399,7 +10406,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "PmCommandCapabilityFamily",
-          "signature": "export type PmCommandCapabilityFamily = \"workspace\" | \"intake\" | \"context\" | \"lifecycle\" | \"evidence\" | \"graph\" | \"quality\" | \"automation\" | \"extensions\" | \"internal\";"
+          "signature": "export type PmCommandCapabilityFamily = ExtensionCommandCapabilityFamily;"
         },
         {
           "classification": "contract_data",

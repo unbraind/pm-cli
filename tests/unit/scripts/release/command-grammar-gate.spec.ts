@@ -258,6 +258,33 @@ describe("command grammar gate", () => {
     expect(loadHelp).toHaveBeenCalledWith(["package", "search"]);
   });
 
+  it("continues across action-specific help failures in every runtime dispatcher", async () => {
+    const { module } = await runGrammarGate(liveCommandSummaries);
+    const failedActions = new Set([
+      "assurance run",
+      "plan create",
+      "workspace snapshot create",
+    ]);
+    const loadHelp = vi.fn((commandPath: string[] = []) => {
+      const command = commandPath.join(" ");
+      if (failedActions.has(command)) {
+        throw new Error(`Synthetic action help failure for ${command}`);
+      }
+      return { arguments: [], subcommands: [] };
+    });
+
+    expect(() =>
+      module.collectLiveCliCommandPaths(
+        loadHelp,
+        [],
+        ["assurance", "plan", "workspace snapshot"],
+      ),
+    ).not.toThrow();
+    expect(loadHelp).toHaveBeenCalledWith(["assurance", "verdicts"]);
+    expect(loadHelp).toHaveBeenCalledWith(["plan", "show"]);
+    expect(loadHelp).toHaveBeenCalledWith(["workspace", "snapshot", "list"]);
+  });
+
   it("fails closed for MCP action and narrow-tool drift", async () => {
     const { module } = await runGrammarGate(liveCommandSummaries);
     const result = module.verifyMcpGrammar(

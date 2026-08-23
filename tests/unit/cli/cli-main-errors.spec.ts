@@ -4484,6 +4484,59 @@ describe("CLI error guidance helpers", () => {
 });
 
 describe("CLI Commander usage recovery helpers", () => {
+  it("marks every generated extension namespace without changing built-in commands", () => {
+    const program = new Command().name("pm");
+    const builtIn = program.command("built-in");
+    builtIn.command("child");
+    const automation = program.command("automation");
+    const jobs = automation.command("jobs");
+    const run = jobs.command("run");
+    const descriptorless = program.command("descriptorless");
+    const descriptors = new Map<string, ExtensionCommandHelpDescriptor>([
+      [
+        "automation jobs run",
+        {
+          command: "automation jobs run",
+          action: "automation-jobs-run",
+          description: "Run an automation job.",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+          tier: "full",
+          family: "automation",
+        },
+      ],
+      [
+        "built-in child",
+        {
+          command: "built-in child",
+          action: "built-in-child",
+          description: "Built-in child.",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+          tier: "internal",
+          family: "internal",
+        },
+      ],
+    ]);
+
+    _testOnly.applyDynamicExtensionRootHelpVisibility(
+      program,
+      new Set(["built-in"]),
+      descriptors,
+    );
+
+    expect(getPmCommandHelpVisibilityTier(automation)).toBe("full");
+    expect(getPmCommandHelpVisibilityTier(jobs)).toBe("full");
+    expect(getPmCommandHelpVisibilityTier(run)).toBe("full");
+    expect(getPmCommandHelpVisibilityTier(descriptorless)).toBe("standard");
+    expect(getPmCommandHelpVisibilityTier(builtIn)).toBeUndefined();
+    expect(getPmCommandHelpVisibilityTier(builtIn.commands[0]!)).toBeUndefined();
+  });
+
   it("collects runtime command paths from Commander and extension descriptors while skipping internals", () => {
     const program = new Command().name("pm");
     program.command("list").alias("ls").description("List items");

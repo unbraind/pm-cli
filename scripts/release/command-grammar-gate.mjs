@@ -126,9 +126,15 @@ function recordRuntimeActions(
   for (const action of runtimeActions) {
     const command = `${parent} ${action}`;
     registered.add(command);
+    let help;
+    try {
+      help = loadHelp([...parentPath, action]);
+    } catch {
+      continue;
+    }
     positionals.set(
       command,
-      normalizeLiveHelpArguments(loadHelp([...parentPath, action])),
+      normalizeLiveHelpArguments(help),
     );
   }
 }

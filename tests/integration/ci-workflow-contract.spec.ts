@@ -906,6 +906,11 @@ describe("GitHub workflow contract", () => {
       "gh issue create --title",
       "gh issue comment",
     ]);
+    expect(
+      autoReleaseWorkflow.match(
+        /watch_release_workflow "\$\{RELEASE_RUN_ID\}" \|\| exit "\$\?"/gu,
+      ),
+    ).toHaveLength(3);
     expect(autoReleaseWorkflow).not.toContain("gh run rerun");
     expect(autoReleaseWorkflow).not.toContain(
       'gh run list --workflow Release --event push --branch "${EXISTING_RELEASE_TAG}"',
