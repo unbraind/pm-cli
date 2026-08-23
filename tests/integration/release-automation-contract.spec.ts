@@ -416,36 +416,32 @@ exit "\${NPM_STATUS}"
         issueComments: string,
         overrides: NodeJS.ProcessEnv = {},
       ) =>
-        spawnSync(
-          "bash",
-          [],
-          {
-            cwd: repoRoot,
-            encoding: "utf8",
-            input: prependFakeBinForBash(autoReleaseScript ?? ""),
-            env: {
-              ...process.env,
-              FAKE_BIN: tempRoot,
-              GH_FAKE_LOG: ghLog,
-              NPM_FAKE_LOG: npmLog,
-              NPM_STATUS: "0",
-              GH_RELEASE_STATUS: "0",
-              GITHUB_EVENT_NAME: "issues",
-              ISSUE_CREATED_AT: `${currentDay}T08:00:00Z`,
-              ISSUE_NUMBER: "1017",
-              ISSUE_COMMENTS: issueComments,
-              EXISTING_RELEASE_TAG: releaseTag,
-              EXISTING_RELEASE_SHA: releaseSha,
-              RELEASE_TAG_OUTPUT: releaseTag,
-              RELEASE_VERSION: releaseTag.slice(1),
-              RELEASE_RUNS_JSON: releaseRuns,
-              GITHUB_OUTPUT: githubOutput,
-              RUNNER_TEMP: tempRoot,
-              DEFAULT_BRANCH: "main",
-              ...overrides,
-            },
+        spawnSync("bash", [], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          input: prependFakeBinForBash(autoReleaseScript ?? ""),
+          env: {
+            ...process.env,
+            FAKE_BIN: tempRoot,
+            GH_FAKE_LOG: ghLog,
+            NPM_FAKE_LOG: npmLog,
+            NPM_STATUS: "0",
+            GH_RELEASE_STATUS: "0",
+            GITHUB_EVENT_NAME: "issues",
+            ISSUE_CREATED_AT: `${currentDay}T08:00:00Z`,
+            ISSUE_NUMBER: "1017",
+            ISSUE_COMMENTS: issueComments,
+            EXISTING_RELEASE_TAG: releaseTag,
+            EXISTING_RELEASE_SHA: releaseSha,
+            RELEASE_TAG_OUTPUT: releaseTag,
+            RELEASE_VERSION: releaseTag.slice(1),
+            RELEASE_RUNS_JSON: releaseRuns,
+            GITHUB_OUTPUT: githubOutput,
+            RUNNER_TEMP: tempRoot,
+            DEFAULT_BRANCH: "main",
+            ...overrides,
           },
-        );
+        });
 
       await writeFile(ghLog, "", "utf8");
       await writeFile(npmLog, "", "utf8");
@@ -1006,6 +1002,16 @@ printf '%s' "\${UNEXPECTED_PATHS}"
     expect(workflow).not.toContain("secrets.NPM_TOKEN");
     expect(workflow).toContain('NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}"');
     expect(workflow).toContain('NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}"');
+    expect(workflow).toContain("name: Verify npm trusted publisher exchange");
+    expect(workflow).toContain(
+      "npm publish --dry-run --ignore-scripts --loglevel verbose --tag latest",
+    );
+    expect(workflow).toContain(
+      'grep -Fq "oidc Successfully retrieved and set token"',
+    );
+    expect(
+      workflow.indexOf("name: Verify npm trusted publisher exchange"),
+    ).toBeLessThan(workflow.indexOf("name: Test with coverage gate"));
     expect(workflow).not.toContain("registry-url:");
     expect(workflow).not.toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");

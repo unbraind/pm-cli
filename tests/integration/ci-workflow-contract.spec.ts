@@ -161,9 +161,7 @@ describe("GitHub workflow contract", () => {
       | Record<string, unknown>
       | undefined;
 
-    expect(benchmarkJob?.name).toBe(
-      "Run benchmarks (Ubuntu 22.04, Node 24)",
-    );
+    expect(benchmarkJob?.name).toBe("Run benchmarks (Ubuntu 22.04, Node 24)");
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
     expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
     expect(codSpeedStep?.uses).toBe(
@@ -646,6 +644,10 @@ describe("GitHub workflow contract", () => {
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
       'NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}"',
       'NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}"',
+      "name: Verify npm trusted publisher exchange",
+      "npm publish --dry-run --ignore-scripts --loglevel verbose --tag latest",
+      'grep -Fq "oidc Successfully retrieved and set token"',
+      "npm trusted publisher OIDC exchange failed before release gates.",
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
       'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
@@ -660,6 +662,9 @@ describe("GitHub workflow contract", () => {
     expect(releaseWorkflow).not.toContain(
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
     );
+    expect(
+      releaseWorkflow.indexOf("name: Verify npm trusted publisher exchange"),
+    ).toBeLessThan(releaseWorkflow.indexOf("name: Test with coverage gate"));
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       1,
     );
@@ -839,12 +844,12 @@ describe("GitHub workflow contract", () => {
       "Waiting for tag-push Release workflow for ${NEW_TAG}.",
       'gh run list --workflow Release --event push --branch "${NEW_TAG}"',
       'gh run watch "${run_id}" --compact --exit-status --interval 30',
-      'watch_release_workflow() {',
+      "watch_release_workflow() {",
       'gh run view "${run_id}" --json databaseId,status,conclusion,headSha,headBranch,event,jobs',
       'release-failure-record.mjs record-workflow "${RELEASE_FAILURE_RECORD}" release-workflow "${watch_status}"',
-      'record_failure_stage github-release-verification 1',
-      'record_failure_stage npm-publication-verification 1',
-      'record_failure_stage release-workflow-discovery 1',
+      "record_failure_stage github-release-verification 1",
+      "record_failure_stage npm-publication-verification 1",
+      "record_failure_stage release-workflow-discovery 1",
       "retry_skip_reason=no_new_pushed_release_tag",
       "id: auto_release",
       'PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"',
