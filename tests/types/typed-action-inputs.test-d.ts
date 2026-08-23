@@ -92,7 +92,7 @@ void closeReasonLeak;
 const updateManyOptions: PmUpdateManyActionOptions = {
   filterStatus: "open",
   filterTag: "cleanup",
-  ids: "pm-a,pm-b",
+  ids: ["pm-a", "pm-b"],
   status: "closed",
   dryRun: true,
   noCheckpoint: false,
@@ -100,7 +100,7 @@ const updateManyOptions: PmUpdateManyActionOptions = {
 void updateManyOptions;
 
 const closeManyOptions: PmCloseManyActionOptions = {
-  ids: "pm-a,pm-b",
+  ids: ["pm-a", "pm-b"],
   reason: "batch closure",
   resolution: "fixed",
   rollback: false,

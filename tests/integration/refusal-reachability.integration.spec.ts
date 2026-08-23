@@ -147,6 +147,47 @@ describe("real-entrypoint refusal reachability", () => {
         }
       >([
         [
+          "bulk-ids-stdin-empty",
+          {
+            entrypoint: "update-many",
+            run: () =>
+              context.runCli(
+                ["update-many", "--ids", "-", "--tags", "probe", "--json"],
+                { input: "\n,\n" },
+              ),
+          },
+        ],
+        [
+          "bulk-ids-file-path-missing",
+          {
+            entrypoint: "update-many",
+            run: () =>
+              context.runCli([
+                "update-many",
+                "--ids",
+                "@",
+                "--tags",
+                "probe",
+                "--json",
+              ]),
+          },
+        ],
+        [
+          "bulk-ids-file-unreadable",
+          {
+            entrypoint: "update-many",
+            run: () =>
+              context.runCli([
+                "update-many",
+                "--ids",
+                `@${path.join(context.tempRoot, "missing-ids.txt")}`,
+                "--tags",
+                "probe",
+                "--json",
+              ]),
+          },
+        ],
+        [
           "tracker-root-missing",
           {
             entrypoint: "list",
@@ -263,7 +304,7 @@ describe("real-entrypoint refusal reachability", () => {
       }
       expect(
         verifyPmRefusalReachability(PM_ERROR_CODE_CATALOG, observations),
-      ).toMatchObject({ ok: true, declared_probe_count: 9 });
+      ).toMatchObject({ ok: true, declared_probe_count: 12 });
     });
     },
   );

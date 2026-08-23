@@ -312,10 +312,7 @@ export function registerAnnotationCommands(
       "--stdin",
       "Read comment text from stdin (supports multiline markdown)",
     )
-    .option(
-      "--file <path>",
-      "Read comment text from file (supports multiline markdown)",
-    )
+    .option("--file <path>", "Read comment text from a file or stdin (-)")
     .option(
       "--edit <index>",
       "Replace the comment at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
@@ -358,7 +355,7 @@ export function registerAnnotationCommands(
     .option("--note <text>", "Alias for --add")
     .option("--add-json <json>", "Append a merge-safe JSON event")
     .option("--stdin", "Read note text from stdin")
-    .option("--file <path>", "Read note text from a UTF-8 file")
+    .option("--file <path>", "Read note from file or stdin (-)")
     .option(
       "--edit <index>",
       "Replace a 1-based note using the selected text input",
@@ -398,10 +395,7 @@ export function registerAnnotationCommands(
       "--stdin",
       "Read learning text from stdin (supports multiline markdown)",
     )
-    .option(
-      "--file <path>",
-      "Read learning text from file (supports multiline markdown)",
-    )
+    .option("--file <path>", "Read learning text from a file or stdin (-)")
     .option(
       "--edit <index>",
       "Replace the learning at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",

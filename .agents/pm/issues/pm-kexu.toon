@@ -2,11 +2,13 @@ id: pm-kexu
 title: update-many --dry-run should allow filter-only preview for review and bulk-selection workflows
 description: "During the 2026-07-06/07 all-status ecosystem review, 'pm update-many --filter-status open --filter-metadata-missing --dry-run --limit 200 --json' failed because no mutation flags were provided. That is defensible for mutation execution, but dry-run is also the natural safe preview for bulk-selection filters. Duplicate check: searched all statuses for update-many dry-run no mutation flags filter-only review; only closed pm-twtu covers the generic error message, while no open item tracks filter-only dry-run preview support."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,"area:cli",bulk-ops,review
 created_at: "2026-07-06T22:29:52.125Z"
-updated_at: "2026-07-26T05:57:18.736Z"
+updated_at: "2026-08-23T22:19:23.468Z"
+closed_at: "2026-08-23T22:05:34.556Z"
+completed_at: "2026-08-23T22:05:34.556Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: "update-many --dry-run can return the matched item set/count when only filters are provided, without requiring a dummy mutation flag; output is bounded and scriptable in json/toon; existing mutation-required behavior remains for non-dry-run execution; tests cover no-mutation dry-run, no-mutation real run, and at least one metadata filter."
@@ -17,10 +19,61 @@ why_now: "Audits and bulk backfill planning need safe, exact previews before mut
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-plwm,related,"2026-07-14T17:05:06.423Z",null,null
-  pm-ik19,related,"2026-07-24T23:54:00.039Z",null,null
-  pm-mpbb,related,"2026-07-24T23:54:00.039Z",null,null
-  pm-psy1,related,"2026-07-24T23:54:00.039Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:57:18.501Z",null,null
+resolution: Filter-only update-many dry runs now return bounded selection previews; live mutation still requires an operation.
+expected_result: Agents can inspect the exact bulk selection safely without inventing a dummy mutation.
+actual_result: "Dry-run returns the matched set/count without writes, while non-dry filter-only calls retain the mutation-required refusal."
+dependencies[6]:
+  - id: pm-plwm
+    kind: related
+    created_at: "2026-07-14T17:05:06.423Z"
+  - id: pm-ik19
+    kind: related
+    created_at: "2026-07-24T23:54:00.039Z"
+  - id: pm-mpbb
+    kind: related
+    created_at: "2026-07-24T23:54:00.039Z"
+  - id: pm-psy1
+    kind: related
+    created_at: "2026-07-24T23:54:00.039Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T05:57:18.501Z"
+  - id: pm-m9xv
+    kind: implements
+    created_at: "2026-08-23T20:29:29.780Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[2]{created_at,author,text}:
+  "2026-08-23T20:29:27.350Z","harness:codex","Implementation start 2026-08-23: implement filter-only update-many --dry-run as a bounded/scriptable preview while retaining mutation-required refusal for live execution; exercise the public SDK, CLI, and MCP adapters in the combined composability tranche."
+  "2026-08-23T22:05:18.993Z","harness:codex","Verification evidence 2026-08-24: update-many permits mutation-free execution only with --dry-run, returns the normal bounded selection preview without writing, and still refuses filter-only live execution with executable guidance. CLI, public typed SDK, MCP-normalized action input, command tests, scripting docs, and disposable-tracker acceptance cover the behavior. Final proof is 7,858 tests at exact 100% statements/branches/functions/lines plus typecheck, security scan, lint, static assurance, contracts, and tracker governance."
+files[2]{path,scope,note}:
+  src/cli/register-mutation.ts,project,CLI filter-only preview adapter
+  src/sdk/lifecycle/update-many.ts,project,Filter-only dry-run preview contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts,project,240,"harness:codex","2026-08-23T20:53:29.964Z",local_mutation,codex/bulk-input-composability-contracts
+test_runs[1]:
+  - run_id: test-local-mt6btlq6-wlkpgd
+    kind: test
+    status: passed
+    started_at: "2026-08-23T21:35:40.235Z"
+    finished_at: "2026-08-23T21:35:51.870Z"
+    recorded_at: "2026-08-23T21:35:51.870Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release entry
+  docs/SCRIPTING.md,project,Filter-only preview and apply refusal semantics
+close_reason: "Implemented filter-only update-many dry-run preview while preserving fail-closed live mutation behavior, with SDK CLI MCP tests and exact 100% coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-kexu
+  gate_id: filter-only-update-many-preview-contract
+  negative_control: Remove the dry-run exception from runUpdateMany; tests/unit/commands/update-many-command.spec.ts and tests/integration/bulk-input-composability.integration.spec.ts must reject the regression.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""

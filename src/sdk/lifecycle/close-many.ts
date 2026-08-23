@@ -111,7 +111,7 @@ interface CloseManyPlanContext {
   force: boolean;
   listed: Awaited<ReturnType<typeof runList>>;
   matched: ListedItem[];
-  unmatchedIds: string[];
+  unmatchedIds: string[] | undefined;
   planRows: CloseManyPlanRow[];
 }
 
@@ -575,7 +575,21 @@ async function buildCloseManyPlanContext(params: {
         .filter((entry) => entry.length > 0),
     ),
   ];
-  const matchedIds = new Set(matched.map((item) => item.id));
+  const existenceItems =
+    requestedIds.length === 0
+      ? []
+      : (
+          await runList(
+            undefined,
+            {
+              ids: requestedIds.join(","),
+              noTruncate: true,
+              full: true,
+            },
+            params.global,
+          )
+        ).items;
+  const existingIds = new Set(existenceItems.map((item) => item.id));
   const closePlannedIds = resolveCloseManyPlannedIds(
     matched,
     statusRegistry,
@@ -590,7 +604,10 @@ async function buildCloseManyPlanContext(params: {
     force,
     listed,
     matched,
-    unmatchedIds: requestedIds.filter((id) => !matchedIds.has(id)),
+    unmatchedIds:
+      requestedIds.length === 0
+        ? undefined
+        : requestedIds.filter((id) => !existingIds.has(id)),
     planRows: planCloseManyRows(
       matched,
       childrenByParent,
@@ -617,7 +634,7 @@ function buildCloseManyDryRunResult(
       : {}),
     item_plans: context.planRows,
     ids: [],
-    ...(context.unmatchedIds.length > 0
+    ...(context.unmatchedIds !== undefined
       ? {
           unmatched_ids: context.unmatchedIds,
           unmatched_count: context.unmatchedIds.length,
@@ -724,7 +741,7 @@ export async function runCloseMany(
       applied: closedCount,
       skipped: skippedCount,
       failed: failedCount,
-      unmatched: context.unmatchedIds.length,
+      unmatched: context.unmatchedIds?.length ?? 0,
     }),
     mode: "apply",
     matched_count: context.matched.length,
@@ -740,7 +757,7 @@ export async function runCloseMany(
     failed_count: failedCount,
     rows,
     ids: closedIds,
-    ...(context.unmatchedIds.length > 0
+    ...(context.unmatchedIds !== undefined
       ? {
           unmatched_ids: context.unmatchedIds,
           unmatched_count: context.unmatchedIds.length,

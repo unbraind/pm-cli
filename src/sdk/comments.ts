@@ -104,19 +104,25 @@ async function resolveCommentTextSource(
   if (!filePath) {
     throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
   }
+  if (filePath === "-") {
+    return {
+      value: (await stdinResolver.resolveValue("-", "--file")) ?? "",
+      emptyFlag: "--file",
+    };
+  }
   try {
     const fileInput = await readFile(filePath, "utf8");
     return { value: fileInput, emptyFlag: "--file" };
   } catch (error: unknown) {
     if (isErrnoError(error) && isFileAbsentError(error)) {
       throw new PmCliError(
-        `--file path not found: ${filePath}`,
+        `--file path not found: ${filePath}. Use --file - to read stdin.`,
         EXIT_CODE.USAGE,
       );
     }
     const detail = error instanceof Error ? error.message : String(error);
     throw new PmCliError(
-      `Failed to read --file path "${filePath}": ${detail}`,
+      `Failed to read --file path "${filePath}": ${detail}. Use --file - to read stdin.`,
       EXIT_CODE.USAGE,
     );
   }

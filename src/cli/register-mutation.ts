@@ -7,6 +7,7 @@ import type { Command } from "commander";
 import {
   type GlobalOptions,
   resolveBodyFileContent,
+  resolveCliBulkIdsInput,
   EXIT_CODE,
   splitCommaList,
   PmCliError,
@@ -923,6 +924,7 @@ async function runCloseManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  options.ids = await resolveCliBulkIdsInput(readOptionString(options, "ids"));
   const result = await runCloseMany(
     {
       status: readOptionString(options, "filterStatus"),
@@ -966,6 +968,7 @@ async function runUpdateManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  options.ids = await resolveCliBulkIdsInput(readOptionString(options, "ids"));
   const result = await runUpdateMany(
     {
       status: readOptionString(options, "filterStatus"),
@@ -1345,8 +1348,10 @@ async function runHistoryCompactAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const ids =
-    typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
+  const idsValue = await resolveCliBulkIdsInput(
+    readOptionString(options, "ids"),
+  );
+  const ids = idsValue === undefined ? undefined : splitCommaList(idsValue);
   const allOver = parseNonNegativeIntFlag(options.allOver, "--all-over");
   const minEntries = parseNonNegativeIntFlag(
     options.minEntries,
@@ -1979,7 +1984,7 @@ export function registerMutationCommands(
     )
     .option(
       "--body-file <path>",
-      "Load the item markdown body from a file (mutually exclusive with --body)",
+      "Load body from a file or stdin (-); conflicts with --body",
     )
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
@@ -2039,7 +2044,7 @@ export function registerMutationCommands(
     )
     .option(
       "--body-file <path>",
-      "Load the item markdown body from a file (mutually exclusive with --body)",
+      "Load body from a file or stdin (-); conflicts with --body",
     )
     .option(
       "--replace-deps",
@@ -2157,7 +2162,7 @@ export function registerMutationCommands(
   updateManyCommand
     .option(
       "--ids <value>",
-      "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)",
+      "Explicit ID allowlist: comma/newline text, - stdin, or @path file",
     )
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -2475,7 +2480,7 @@ export function registerMutationCommands(
   closeManyCommand
     .option(
       "--ids <value>",
-      "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)",
+      "Explicit ID allowlist: comma/newline text, - stdin, or @path file",
     )
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -2949,7 +2954,7 @@ export function registerMutationCommands(
     )
     .option(
       "--ids <value>",
-      "Bulk: compact an explicit comma-separated list of item ids",
+      "Bulk IDs: comma/newline text, - stdin, or @path file",
     )
     .option(
       "--all-over <n>",

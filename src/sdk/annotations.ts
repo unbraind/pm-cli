@@ -20,7 +20,7 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
@@ -297,18 +297,24 @@ async function resolveAnnotationTextSource(
   if (!filePath) {
     throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
   }
+  if (filePath === "-") {
+    return {
+      value: (await stdinResolver.resolveValue("-", "--file")) ?? "",
+      emptyFlag: "--file",
+    };
+  }
   try {
     return { value: await readFile(filePath, "utf8"), emptyFlag: "--file" };
   } catch (error: unknown) {
     if (isErrnoError(error) && isFileAbsentError(error)) {
       throw new PmCliError(
-        `--file path not found: ${filePath}`,
+        `--file path not found: ${filePath}. Use --file - to read stdin.`,
         EXIT_CODE.USAGE,
       );
     }
     const detail = error instanceof Error ? error.message : String(error);
     throw new PmCliError(
-      `Failed to read --file path "${filePath}": ${detail}`,
+      `Failed to read --file path "${filePath}": ${detail}. Use --file - to read stdin.`,
       EXIT_CODE.USAGE,
     );
   }

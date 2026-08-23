@@ -1,7 +1,8 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { resolveBodyFileContent } from "../../../../src/core/io/body-file.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 
@@ -11,6 +12,10 @@ async function expectRejectionCode(promise: Promise<unknown>, code: string): Pro
 }
 
 describe("resolveBodyFileContent (GH-214 --body-file)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("reads file content via an injected reader", async () => {
     const seen: string[] = [];
     const result = await resolveBodyFileContent("notes.md", undefined, async (p) => {
@@ -47,6 +52,19 @@ describe("resolveBodyFileContent (GH-214 --body-file)", () => {
     await expectRejectionCode(
       resolveBodyFileContent("   ", undefined, async () => "unused"),
       "body_file_missing_path",
+    );
+  });
+
+  it("reads stdin through the default resolver for --body-file -", async () => {
+    const stdin = new PassThrough();
+    stdin.end("body from default stdin reader");
+    Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+    vi.spyOn(process, "stdin", "get").mockReturnValue(
+      stdin as unknown as NodeJS.ReadStream & { fd: 0 },
+    );
+
+    await expect(resolveBodyFileContent("-", undefined)).resolves.toBe(
+      "body from default stdin reader",
     );
   });
 

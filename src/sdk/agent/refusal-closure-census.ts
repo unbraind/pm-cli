@@ -48,12 +48,15 @@ export interface PmRefusalClosureCensusReport {
   rows: PmRefusalClosureCensusRow[];
 }
 
-/** Reviewed floor of 13 catalog rows; includes one alias across 12 canonical groups. */
-export const PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE = 13;
+/** Reviewed floor of 16 catalog rows; includes one alias across 15 canonical groups. */
+export const PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE = 16;
 
-/** Twelve canonical compatibility groups that must retain executable evidence. */
+/** Fifteen canonical compatibility groups that must retain executable evidence. */
 export const PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE =
   Object.freeze([
+    "bulk_ids_input_empty",
+    "bulk_ids_input_missing_path",
+    "bulk_ids_input_unreadable",
     "invalid_argument_value",
     "missing_lifecycle_target",
     "missing_required_argument",
@@ -178,7 +181,7 @@ export function buildPmRefusalClosureCensus(
         probe_ids: probeIds,
       };
     })
-    .sort((left, right) => left.code < right.code ? -1 : 1);
+    .sort((left, right) => (left.code < right.code ? -1 : 1));
   const uncoveredErrorCodes = rows
     .filter(({ disposition }) => disposition === "uncovered")
     .map(({ code }) => code);

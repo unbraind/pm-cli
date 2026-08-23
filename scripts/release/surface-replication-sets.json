@@ -115,10 +115,40 @@
             "omission_receipt"
           ]
         },
-        "src/sdk/comments.ts",
-        "src/sdk/notes.ts",
-        "src/sdk/learnings.ts",
-        "src/cli/register-annotations.ts",
+        {
+          "path": "src/sdk/comments.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "fullHistory",
+            "mutation_receipt",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/sdk/notes.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "fullHistory",
+            "mutation_receipt",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/sdk/learnings.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "fullHistory",
+            "mutation_receipt",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/cli/register-annotations.ts",
+          "changed_lines_contain_any": [
+            "--full-history",
+            "fullHistory: options.fullHistory"
+          ]
+        },
         {
           "path": "src/sdk/cli-contracts/flag-contracts.ts",
           "changed_lines_contain_any": ["--full-history"]

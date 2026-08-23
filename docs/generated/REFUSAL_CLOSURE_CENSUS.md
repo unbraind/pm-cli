@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 333
-- Executable error codes: 13
-- Executable-code ratchet floor: 13
-- Required executable canonical codes: `invalid_argument_value`, `missing_lifecycle_target`, `missing_required_argument`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
+- Catalog error codes: 336
+- Executable error codes: 16
+- Executable-code ratchet floor: 16
+- Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `missing_lifecycle_target`, `missing_required_argument`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
 - Uncovered error codes: 320
-- Coverage fraction: 0.039039
+- Coverage fraction: 0.047619
 - Closed-domain probes: 18
 - Grammar probes: 95
 
@@ -33,6 +33,9 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `body_file_missing_path` | `body_file_missing_path` | uncovered | none | 0 |
 | `body_file_unreadable` | `body_file_unreadable` | uncovered | none | 0 |
 | `budget_exceeded` | `budget_exceeded` | uncovered | none | 0 |
+| `bulk_ids_input_empty` | `bulk_ids_input_empty` | executable | owned_state | 1 |
+| `bulk_ids_input_missing_path` | `bulk_ids_input_missing_path` | executable | owned_state | 1 |
+| `bulk_ids_input_unreadable` | `bulk_ids_input_unreadable` | executable | owned_state | 1 |
 | `bundle_integrity_torn_install` | `bundle_integrity_torn_install` | uncovered | none | 0 |
 | `capability_undeclared` | `capability_undeclared` | uncovered | none | 0 |
 | `capability_unused` | `capability_unused` | uncovered | none | 0 |

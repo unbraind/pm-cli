@@ -17,6 +17,7 @@ import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";
+import { normalizeBulkIdsValue } from "../core/io/bulk-ids-input.js";
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
 export function readRuntimeString(
@@ -138,6 +139,7 @@ const ARRAY_TO_CSV_FIELDS = new Set([
   "blocked_by",
   "skills",
   "fields",
+  "ids",
 ]);
 
 /** Fields whose scalar MCP values promote into the CLI's repeatable arrays. */
@@ -427,7 +429,9 @@ export function mutationListOptions(
     updatedBefore: readRuntimeScalarString(options, "filterUpdatedBefore"),
     createdAfter: readRuntimeScalarString(options, "filterCreatedAfter"),
     createdBefore: readRuntimeScalarString(options, "filterCreatedBefore"),
-    ids: readRuntimeScalarStringAllowBlank(options, "ids"),
+    ids: normalizeBulkIdsValue(
+      options.ids as string | readonly string[] | undefined,
+    ),
     assignee: readRuntimeScalarString(options, "filterAssignee"),
     assigneeFilter:
       readRuntimeScalarString(options, "filterAssigneeFilter") ??

@@ -85,6 +85,14 @@ export {
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
 export {
+  normalizeBulkIdsValue,
+  parseBulkIdsText,
+  resolveCliBulkIdsInput,
+  type BulkIdsFileReader,
+  type BulkIdsInputReaders,
+  type BulkIdsStdinReader,
+} from "../core/io/bulk-ids-input.js";
+export {
   type HistoryDiffValueEntry,
   computeHistoryDiff,
   patchPathToChangedField,

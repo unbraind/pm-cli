@@ -695,6 +695,21 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
       anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
     },
   },
+  "update-many": {
+    ids: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+  },
+  "close-many": {
+    ids: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+  },
+  "history-compact": {
+    ids: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+  },
   events: {
     since: { type: "string", minLength: 1 },
     type: {

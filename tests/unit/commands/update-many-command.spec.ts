@@ -898,23 +898,23 @@ describe("runUpdateMany", () => {
     });
   });
 
-  it("returns actionable mutation-flag guidance when no update flags are provided", async () => {
+  it("allows filter-only previews but returns mutation guidance for apply mode", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "bulk-no-mutation-guidance");
-      await expect(
-        runUpdateMany(
-          {
-            list: {
-              tag: "update-many,unit",
-            },
-            update: {},
-            dryRun: true,
+      const preview = await runUpdateMany(
+        {
+          list: {
+            tag: "update-many,unit",
           },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("--status"),
+          update: {},
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(preview).toMatchObject({
+        mode: "dry_run",
+        planned_update_options: {},
+        item_plans: [expect.objectContaining({ changes: [] })],
       });
       await expect(
         runUpdateMany(
@@ -923,12 +923,12 @@ describe("runUpdateMany", () => {
               tag: "update-many,unit",
             },
             update: {},
-            dryRun: true,
           },
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({
-        message: expect.stringContaining("--replace-tests"),
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringMatching(/--status.*--replace-tests/),
       });
     });
   });

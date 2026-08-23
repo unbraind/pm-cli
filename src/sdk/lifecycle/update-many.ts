@@ -1252,9 +1252,9 @@ export const runUpdateMany = async (
       updateSummary,
     });
   }
-  if (!hasAnyUpdateMutationInput(options.update)) {
+  if (!hasAnyUpdateMutationInput(options.update) && options.dryRun !== true) {
     throw new PmCliError(
-      `No update-many mutation flags provided. Add at least one mutation flag (for example: ${UPDATE_MANY_MUTATION_FLAG_GUIDANCE}).`,
+      `No update-many mutation flags provided. Add at least one mutation flag (for example: ${UPDATE_MANY_MUTATION_FLAG_GUIDANCE}), or pass --dry-run for a filter-only preview.`,
       EXIT_CODE.USAGE,
     );
   }

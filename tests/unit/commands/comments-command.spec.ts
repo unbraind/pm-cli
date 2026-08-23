@@ -21,7 +21,6 @@ import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
 function createTask(context: TempPmContext, title: string): string {
   return createTestItemId(context, {
     title,
@@ -404,6 +403,9 @@ describe("runComments", () => {
 
     const stdinInput = await mockedRunComments("pm-stdin-flag", { stdin: true }, {} as never);
     expect((stdinInput as unknown as { value?: string }).value).toBe("");
+
+    const fileStdinInput = await mockedRunComments("pm-stdin-file", { file: "-" }, {} as never);
+    expect((fileStdinInput as unknown as { value?: string }).value).toBe("");
 
     vi.doUnmock("../../../src/core/item/parse.js");
     vi.doUnmock("../../../src/sdk/annotations.js");

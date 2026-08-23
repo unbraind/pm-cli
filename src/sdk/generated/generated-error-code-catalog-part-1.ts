@@ -242,6 +242,54 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "bulk_ids_input_empty",
+    meaning: "Bulk ids input empty condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/io/bulk-ids-input.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "bulk_ids_input_empty",
+    aliases: [],
+    owned_states: [
+      { state: "bulk_ids_stdin_contains_no_nonempty_ids", probe_id: "bulk-ids-stdin-empty", entrypoints: ["update-many"], expected_exit_class: "usage" },
+    ],
+  },
+  {
+    code: "bulk_ids_input_missing_path",
+    meaning: "Bulk ids input missing path condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/io/bulk-ids-input.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "bulk_ids_input_missing_path",
+    aliases: [],
+    owned_states: [
+      { state: "bulk_ids_file_token_omits_its_path", probe_id: "bulk-ids-file-path-missing", entrypoints: ["update-many"], expected_exit_class: "usage" },
+    ],
+  },
+  {
+    code: "bulk_ids_input_unreadable",
+    meaning: "Bulk ids input unreadable condition.",
+    stability: "provisional",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/io/bulk-ids-input.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "bulk_ids_input_unreadable",
+    aliases: [],
+    owned_states: [
+      { state: "bulk_ids_file_path_cannot_be_read", probe_id: "bulk-ids-file-unreadable", entrypoints: ["update-many"], expected_exit_class: "not_found" },
+    ],
+  },
+  {
     code: "bundle_integrity_torn_install",
     meaning: "Bundle integrity torn install condition.",
     stability: "stable",
@@ -2160,32 +2208,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_cli_flag",
-    aliases: [],
-  },
-  {
-    code: "missing_destination",
-    meaning: "Missing destination condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_destination",
-    aliases: [],
-  },
-  {
-    code: "missing_directory",
-    meaning: "Missing directory condition.",
-    stability: "stable",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_directory",
     aliases: [],
   },
 ];

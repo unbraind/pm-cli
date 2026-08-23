@@ -42,7 +42,35 @@ describe("CLI flag invocation contracts", () => {
       }),
     ).toMatchObject({
       takes_value: true,
-      input_sources: ["argv", "file"],
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+    });
+    expect(
+      enrichCliFlagInvocationContract("update-many", {
+        flag: "--ids",
+        value_name: "value",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+    });
+    expect(
+      enrichCliFlagInvocationContract("history-compact", {
+        flag: "--ids",
+        value_name: "value",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+    });
+    expect(
+      enrichCliFlagInvocationContract("comments", {
+        flag: "--file",
+        value_name: "path",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
     });
   });
 

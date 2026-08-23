@@ -5,6 +5,7 @@
  * maintenance engines without duplicating their selection or integrity policy.
  */
 import type { HistoryCompactScope } from "../core/history/history-compact-bulk.js";
+import { parseBulkIdsText } from "../core/io/bulk-ids-input.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -52,12 +53,9 @@ export function runMcpHistoryCompactAction(
 ): Promise<HistoryCompactResult | HistoryCompactBulkResult> {
   const idsSource = context.options.ids;
   const ids = Array.isArray(idsSource)
-    ? idsSource.map(String).filter((value) => value.trim().length > 0)
+    ? parseBulkIdsText(idsSource.map(String).join("\n"))
     : typeof idsSource === "string"
-      ? idsSource
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean)
+      ? parseBulkIdsText(idsSource)
       : undefined;
   const allOver = parseRuntimeInteger(
     context.options.allOver ?? context.options.all_over,

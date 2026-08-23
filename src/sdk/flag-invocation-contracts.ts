@@ -108,6 +108,17 @@ const STDIN_VALUE_COMMANDS = new Set([
   "update",
 ]);
 
+const FILE_OR_STDIN_COMMAND_FLAGS = new Set([
+  "close-many:--ids",
+  "comments:--file",
+  "create:--body-file",
+  "history-compact:--ids",
+  "learnings:--file",
+  "notes:--file",
+  "update:--body-file",
+  "update-many:--ids",
+]);
+
 const BOOLEAN_FLAG_PREFIXES = [
   "--allow-",
   "--check-",
@@ -276,6 +287,9 @@ function resolveFlagInputSources(
   flag: string,
 ): CliFlagInputSource[] {
   if (flag === "--stdin" || flag === "--stdin-json") return ["stdin"];
+  if (FILE_OR_STDIN_COMMAND_FLAGS.has(`${command}:${flag}`)) {
+    return ["argv", "file", "stdin"];
+  }
   if (flag.endsWith("-file")) return ["argv", "file"];
   if (STDIN_TOKEN_FLAGS.has(flag) && STDIN_VALUE_COMMANDS.has(command)) {
     return ["argv", "stdin"];

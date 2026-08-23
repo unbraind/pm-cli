@@ -1,6 +1,30 @@
 {
   "schema_version": 1,
   "codes": {
+    "bulk_ids_input_empty": [
+      {
+        "state": "bulk_ids_stdin_contains_no_nonempty_ids",
+        "probe_id": "bulk-ids-stdin-empty",
+        "entrypoints": ["update-many"],
+        "expected_exit_class": "usage"
+      }
+    ],
+    "bulk_ids_input_missing_path": [
+      {
+        "state": "bulk_ids_file_token_omits_its_path",
+        "probe_id": "bulk-ids-file-path-missing",
+        "entrypoints": ["update-many"],
+        "expected_exit_class": "usage"
+      }
+    ],
+    "bulk_ids_input_unreadable": [
+      {
+        "state": "bulk_ids_file_path_cannot_be_read",
+        "probe_id": "bulk-ids-file-unreadable",
+        "entrypoints": ["update-many"],
+        "expected_exit_class": "not_found"
+      }
+    ],
     "tracker_not_initialized": [
       {
         "state": "selected_tracker_root_exists_without_settings",

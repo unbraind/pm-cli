@@ -497,10 +497,24 @@ describe("surface replication gate", () => {
     const unrelated = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: [
+        "src/sdk/comments.ts",
+        "src/sdk/notes.ts",
+        "src/sdk/learnings.ts",
+        "src/cli/register-annotations.ts",
         "src/sdk/cli-contracts/tool-schema.ts",
         "src/sdk/cli-contracts/flag-contracts.ts",
       ],
       changedLines: {
+        "src/sdk/comments.ts": [
+          '"--file path not found; use --file - for stdin"',
+        ],
+        "src/sdk/notes.ts": ["Read note text from a UTF-8 file or stdin."],
+        "src/sdk/learnings.ts": [
+          "Read learning text from a UTF-8 file or stdin.",
+        ],
+        "src/cli/register-annotations.ts": [
+          '"Read entry text from a file or stdin (-)"',
+        ],
         "src/sdk/cli-contracts/tool-schema.ts": ['  "outputCursor",'],
         "src/sdk/cli-contracts/flag-contracts.ts": [
           '  { flag: "--normalize-provenance" },',

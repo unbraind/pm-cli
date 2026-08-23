@@ -1132,6 +1132,22 @@
       ],
       "package_version": "2026.8.23",
       "reason": "Capability-family literals are unchanged; the public alias now derives from the canonical extension metadata contract to prevent type drift."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmBulkMutationFilterOptions",
+        "signature ./sdk/contracts:PmBulkMutationFilterOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Bulk mutation ids now also accept source-compatible readonly string arrays."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE",
+        "signature ./sdk:PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Refusal closure ratchets now include three executable bulk ID input states."
     }
   ],
   "entrypoints": {
@@ -2907,6 +2923,24 @@
           "kind": "type",
           "name": "BuiltinCorpusShapeName",
           "signature": "export type BuiltinCorpusShapeName = \"scratch\" | \"representative\" | \"deep-graph\" | \"multi-decade\" | \"disconnected-archive\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkIdsFileReader",
+          "signature": "export type BulkIdsFileReader = (path: string) => Promise<string>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "BulkIdsInputReaders",
+          "signature": "export interface BulkIdsInputReaders { readFile?: BulkIdsFileReader; readStdin?: BulkIdsStdinReader; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkIdsStdinReader",
+          "signature": "export type BulkIdsStdinReader = (optionName: string) => Promise<string>;"
         },
         {
           "classification": "advanced_export",
@@ -8849,6 +8883,12 @@
           "signature": "(argv: string[]) => BootstrapInvocationNormalizationResult | calls: (argv: string[]) => BootstrapInvocationNormalizationResult"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "normalizeBulkIdsValue",
+          "signature": "(value: string | readonly string[] | undefined) => string | undefined | calls: (value: string | readonly string[] | undefined) => string | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "NormalizedAgentProvenanceAdapterValue",
@@ -9303,6 +9343,12 @@
           "kind": "function",
           "name": "parseBootstrapTypeValue",
           "signature": "(argv: string[]) => string | undefined | calls: (argv: string[]) => string | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "parseBulkIdsText",
+          "signature": "(raw: string) => string[] | calls: (raw: string) => string[]"
         },
         {
           "classification": "supported",
@@ -10178,13 +10224,13 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE",
-          "signature": "readonly [\"invalid_argument_value\", \"missing_lifecycle_target\", \"missing_required_argument\", \"projection_options_mutually_exclusive\", \"tracker_not_initialized\", \"tracker_root_missing\", \"tracker_root_not_directory\", \"tracker_root_unreadable\", \"unknown_context_intent\", \"unknown_field_projection\", \"unknown_option\", \"unknown_subcommand\"]"
+          "signature": "readonly [\"bulk_ids_input_empty\", \"bulk_ids_input_missing_path\", \"bulk_ids_input_unreadable\", \"invalid_argument_value\", \"missing_lifecycle_target\", \"missing_required_argument\", \"projection_options_mutually_exclusive\", \"tracker_not_initialized\", \"tracker_root_missing\", \"tracker_root_not_directory\", \"tracker_root_unreadable\", \"unknown_context_intent\", \"unknown_field_projection\", \"unknown_option\", \"unknown_subcommand\"]"
         },
         {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE",
-          "signature": "13"
+          "signature": "16"
         },
         {
           "classification": "advanced_export",
@@ -10286,7 +10332,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
-          "signature": "export type PmBulkMutationFilterOptions = OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>;"
+          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | readonly string[]; };"
         },
         {
           "classification": "supported",
@@ -13233,6 +13279,12 @@
           "kind": "function",
           "name": "resolveClaimPrincipal",
           "signature": "(author: string) => string | calls: (author: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveCliBulkIdsInput",
+          "signature": "(value: string | undefined, optionName?: string, readers?: BulkIdsInputReaders) => Promise<string | undefined> | calls: (value: string | undefined, optionName?: string, readers?: BulkIdsInputReaders) => Promise<string | undefined>"
         },
         {
           "classification": "advanced_export",
@@ -19760,7 +19812,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
-          "signature": "export type PmBulkMutationFilterOptions = OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>;"
+          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | readonly string[]; };"
         },
         {
           "classification": "contract_data",
@@ -30303,6 +30355,9 @@
     "body_file_missing_path",
     "body_file_unreadable",
     "budget_exceeded",
+    "bulk_ids_input_empty",
+    "bulk_ids_input_missing_path",
+    "bulk_ids_input_unreadable",
     "bundle_integrity_torn_install",
     "capability_undeclared",
     "capability_unused",
