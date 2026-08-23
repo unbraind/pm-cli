@@ -1113,12 +1113,18 @@
       "changes": [
         "signature ./sdk:CommandDefinition",
         "signature ./sdk:RegisteredExtensionCommandDefinition",
+        "signature ./sdk/authoring:CommandDefinition"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Add optional tier and family metadata to extension command definitions while preserving existing producer call shapes; expose additive explicit-registry projections and refusal-census contracts."
+    },
+    {
+      "changes": [
         "signature ./sdk:WorkspaceExtensionCommandContract",
-        "signature ./sdk/authoring:CommandDefinition",
         "signature ./sdk/runtime:WorkspaceExtensionCommandContract"
       ],
       "package_version": "2026.8.23",
-      "reason": "Add optional tier and family metadata while preserving existing consumer call shapes; expose additive explicit-registry projections and refusal-census contracts."
+      "reason": "Require tier and family metadata on projected workspace extension command contracts so every consumer receives explicit visibility and capability routing."
     },
     {
       "changes": [

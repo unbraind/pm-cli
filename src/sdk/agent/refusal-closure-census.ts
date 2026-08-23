@@ -136,6 +136,8 @@ export function buildPmRefusalClosureCensus(
     ]),
   );
   const evidence = new Map<string, MutableEvidence>();
+  let closedDomainProbeCount = 0;
+  let grammarProbeCount = 0;
   for (const contract of catalog) {
     const target = evidenceFor(
       evidence,
@@ -149,6 +151,7 @@ export function buildPmRefusalClosureCensus(
   for (const contract of closedDomains) {
     const canonical = canonicalByCode.get(contract.error_code);
     if (canonical === undefined) continue;
+    closedDomainProbeCount += 1;
     const target = evidenceFor(evidence, canonical);
     target.kinds.add("closed_domain");
     target.probeIds.add(contract.probe_id);
@@ -156,6 +159,7 @@ export function buildPmRefusalClosureCensus(
   for (const contract of grammar) {
     const canonical = canonicalByCode.get(contract.error_code);
     if (canonical === undefined) continue;
+    grammarProbeCount += 1;
     const target = evidenceFor(evidence, canonical);
     target.kinds.add("grammar");
     target.probeIds.add(contract.probe_id);
@@ -185,8 +189,8 @@ export function buildPmRefusalClosureCensus(
     executable_error_code_count: executableCount,
     uncovered_error_code_count: uncoveredErrorCodes.length,
     coverage_fraction: rows.length === 0 ? 1 : executableCount / rows.length,
-    closed_domain_probe_count: closedDomains.length,
-    grammar_probe_count: grammar.length,
+    closed_domain_probe_count: closedDomainProbeCount,
+    grammar_probe_count: grammarProbeCount,
     uncovered_error_codes: uncoveredErrorCodes,
     rows,
   };

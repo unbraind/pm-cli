@@ -182,6 +182,8 @@ describe("refusal closure census", () => {
       catalog_error_code_count: 2,
       executable_error_code_count: 2,
       coverage_fraction: 1,
+      closed_domain_probe_count: 1,
+      grammar_probe_count: 1,
     });
     expect(report.rows).toEqual([
       {

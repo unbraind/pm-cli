@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-23T13:11:31.170Z"
-closed_at: "2026-08-23T13:11:30.639Z"
-completed_at: "2026-08-23T13:11:30.639Z"
+updated_at: "2026-08-23T13:47:08.708Z"
+closed_at: "2026-08-23T13:47:08.159Z"
+completed_at: "2026-08-23T13:47:08.159Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; Every command declares exactly one noun (capability family) in the same contract record as its tier, and every declared noun has at least one command, checked in both directions against the command registration rather than against a list kept beside it; A test asserts no surface maintains its own independent visibility list; Agent-facing routing surfaces - skills, guide topics, and generated docs - derive their capability map from the declared noun field rather than hand-authoring one; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier and a noun through the same fields, so extensions cannot bypass tiering or routing"
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[25]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -104,6 +104,8 @@ comments[25]{created_at,author,text}:
   "2026-08-23T12:01:20.305Z","harness:codex","Hosted parity remediation: the exact CI pnpm changelog:pm:check command rejected CHANGELOG.md because the prior local generator included non-canonical --include-links and --item-ref-style toon flags. Regenerated through the repository-owned pnpm changelog:pm contract and will verify the identical check before push."
   "2026-08-23T12:34:39.724Z","harness:codex","Review recurrence start: CodeRabbit findings 3838502157 and 3838502162 are accepted after live validation; link referenced runnable test files and mark generated descendants below preexisting built-in roots without marking the roots."
   "2026-08-23T13:11:30.074Z","harness:codex","Final review evidence: linked the two referenced runnable contract/gate tests and added a core-prefix collision negative control. The suggested plan export run namespace is intentionally rejected by the existing extension ownership contract: live registration emits extension_command_collision with core_owner=pm-cli:plan and preserves the built-in root, so speculative descendant grafting was not implemented. Focused tests, pnpm lint/static assurance, and final exact coverage all pass: 566 files, 7,848 tests, 100/100/100/100."
+  "2026-08-23T13:35:11.493Z","harness:codex","Terminal review recurrence start: CodeRabbit finding 3838625131 is accepted; the published SDK breaking acknowledgement must distinguish optional extension-definition metadata from required workspace-contract fields."
+  "2026-08-23T13:47:07.599Z","harness:codex","Terminal review evidence: sdk/public-surface.json now separates optional tier/family metadata on CommandDefinition and RegisteredExtensionCommandDefinition from required tier/family fields on WorkspaceExtensionCommandContract in both SDK namespaces. The SDK snapshot check reports zero classified drift; focused tests pass 31/31; full exact coverage and pnpm lint/static assurance pass."
 files[42]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
@@ -188,5 +190,5 @@ docs[10]{path,scope,note}:
   docs/SDK.md,project,Generated routing and package author guidance
   docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,Visibility and enumeration contract guide
   packages/pm-command-kit/README.md,project,Generated routing and package author guidance
-close_reason: "Completed contract-derived surfaces and final review recurrence with runnable PM paths, collision-boundary proof, static assurance, and exact full coverage."
+close_reason: Completed terminal review recurrence with precise producer migration acknowledgement and full exact verification.
 body: ""
