@@ -1004,8 +1004,10 @@ printf '%s' "\${UNEXPECTED_PATHS}"
     expect(workflow).not.toContain("@unbrained/pm-cli");
     expect(workflow).toContain("env -u NODE_AUTH_TOKEN -u NPM_TOKEN");
     expect(workflow).not.toContain("secrets.NPM_TOKEN");
-    expect(workflow).toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
-    expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
+    expect(workflow).toContain('NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}"');
+    expect(workflow).toContain('NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}"');
+    expect(workflow).not.toContain("registry-url:");
+    expect(workflow).not.toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
     expect(workflow).toContain(
       "DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}",

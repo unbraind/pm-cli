@@ -644,8 +644,8 @@ describe("GitHub workflow contract", () => {
       "Main-source exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
       "Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication.",
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
-      'npm_config_userconfig="${PUBLIC_NPMRC}"',
-      'npm_config_cache="${PUBLIC_NPM_CACHE}"',
+      'NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}"',
+      'NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}"',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
       'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
@@ -656,6 +656,10 @@ describe("GitHub workflow contract", () => {
       "if-no-files-found: ignore",
     ]);
     expect(releaseWorkflow).not.toContain("secrets.NPM_TOKEN");
+    expect(releaseWorkflow).not.toContain("registry-url:");
+    expect(releaseWorkflow).not.toContain(
+      'npm_config_userconfig="${PUBLIC_NPMRC}"',
+    );
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       1,
     );

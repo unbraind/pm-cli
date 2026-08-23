@@ -60,7 +60,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
       - name: Select exact-tag recovery source
         if: github.event_name == 'workflow_dispatch'
@@ -81,9 +80,9 @@ jobs:
               ;;
           esac
 
-          if env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
-            npm_config_userconfig="${probe_npmrc}" \
-            npm_config_cache="${probe_cache}" \
+          if env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u npm_config_userconfig -u npm_config_cache \
+            NPM_CONFIG_USERCONFIG="${probe_npmrc}" \
+            NPM_CONFIG_CACHE="${probe_cache}" \
             npm view "${NPM_PACKAGE}@${VERSION}" version --json >"${probe_output}" 2>&1; then
             echo "Exact ${NPM_PACKAGE}@${VERSION} exists; recovery will use reviewed ${DEFAULT_BRANCH} source and cannot republish it."
             echo "RECOVERY_SOURCE_MODE=main" >> "${GITHUB_ENV}"
@@ -264,16 +263,16 @@ jobs:
           : > "${PUBLIC_NPMRC}"
 
           anonymous_npm_view() {
-            env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
-              npm_config_userconfig="${PUBLIC_NPMRC}" \
-              npm_config_cache="${PUBLIC_NPM_CACHE}" \
+            env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u npm_config_userconfig -u npm_config_cache \
+              NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}" \
+              NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}" \
               npm view "$1" "$2" --json >/dev/null 2>&1
           }
 
           publish_release() {
-            env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
-              npm_config_userconfig="${PUBLIC_NPMRC}" \
-              npm_config_cache="${PUBLIC_NPM_CACHE}" \
+            env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u npm_config_userconfig -u npm_config_cache \
+              NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}" \
+              NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}" \
               npm publish --access public --provenance --tag latest
           }
 
