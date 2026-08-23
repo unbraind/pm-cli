@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-23T08:44:50.224Z"
+updated_at: "2026-08-23T08:50:10.418Z"
 closed_at: "2026-08-23T08:44:25.365Z"
 completed_at: "2026-08-23T08:44:25.365Z"
 author: "harness:claude-code"
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -95,6 +95,7 @@ comments[16]{created_at,author,text}:
   "2026-08-23T07:10:41.427Z","harness:codex","Manual acceptance (fresh /tmp/tmp.E0NPSYwToe): initialized an empty tracker, installed local pm-guide-shell and pm-command-kit packages, rendered 42-line root help with guide visible and completion hidden, observed guide core/context and command-kit standard/extensions through JSON help, resolved guide capabilities, and executed command-kit echo with two deterministic HELLO lines."
   "2026-08-23T07:20:17.847Z","harness:codex","Compatibility evidence: preserved existing public function call signatures by adding separate explicit-registry projection helpers. The SDK surface snapshot records only optional command metadata plus additive helpers/census APIs, with an explicit compatibility acknowledgement; the former root-help tests now assert core projection plus direct access to wider commands."
   "2026-08-23T08:42:00.383Z","harness:codex","Verification evidence: exact full-source coverage passed at 100/100/100/100 across 566 files and 7,845 tests; pnpm lint passed including zero ESLint warnings, zero jscpd clones, 100% source/export/member docstrings, contract-derived live grammar 167/167, 117/117 executable refusal probes, tracker-context, graph-composition, and record-integrity; package artifact, secret scan, docs/skills, generated surfaces, and TypeScript package/example checks passed."
+  "2026-08-23T08:50:10.418Z","harness:codex","Reviewed delivery: PR #1096 https://github.com/unbraind/pm-cli/pull/1096 carries the closed command-tier/capability-family implementation, generated changelog entry, exact coverage, and manual package acceptance evidence."
 files[37]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
