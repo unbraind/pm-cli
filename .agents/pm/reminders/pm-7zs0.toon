@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-08-23T15:27:41.081Z"
+updated_at: "2026-08-23T15:37:21.147Z"
 reminders[1]{at,text}:
   "2026-07-31T06:00:00.000Z","Verify the 2026-07-31 daily auto-release: npm latest advanced or a documented skip reason,git tag exists,npx and bunx both run the published artifact,exactly one cut for the day. Then re-arm this reminder for the next day,because reminders do not re-arm on fire."
 assignee: "harness:codex"
@@ -60,7 +60,7 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[152]{created_at,author,text}:
+comments[153]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -213,6 +213,7 @@ comments[152]{created_at,author,text}:
   "2026-08-22T07:19:15.349Z","harness:codex","Release-health evidence 2026-08-22: workflow-dispatch Auto Release run 32545649142 published v2026.8.22; tag-driven Release run 32546288241 succeeded at exact tag SHA d7b6f18ce912ccf84d754cf5e539b4090c62c98b. The later scheduled Auto Release run 32548773304 detected the immutable same-day automatic target, skipped analyzer/build/publish steps, and completed successfully, so there was one published v2026.8.22 despite both a manual trigger and the schedule. GitHub release count for the exact tag is one, npm latest is 2026.8.22, and fresh npx plus bunx both report 2026.8.22. GitHub isImmutable remains false and stays owned by pm-k9m6wc; this is current release-path success, not proof of the thirty-day reliability SLO."
   "2026-08-23T15:19:13.928Z","harness:codex","Duplicate check: reused the standing release-health lineage after all-status search found this canonical reminder. Evidence: Release run 32647119087 passed every source, test, coverage, static, assurance, compatibility, reliability, packaging, and dogfood gate, then npm 11.17.0 signed provenance but returned E404 while the publish step exported the stale NPM_TOKEN as NODE_AUTH_TOKEN. Implementing a reviewed workflow correction so publish runs with OIDC and no long-lived token."
   "2026-08-23T15:27:41.081Z","harness:codex","Implementation evidence: release.yml no longer exposes secrets.NPM_TOKEN to source selection or publication. Exact-version probes and npm publish both use explicit empty npmrc/cache contexts with NODE_AUTH_TOKEN and NPM_TOKEN unset, leaving GitHub OIDC as the publish credential. Updated release documentation and fail-closed workflow contracts. Verification passed: focused 37/37, build, typecheck, lint with zero clones, repository static-quality assurance, docs links, graph composition, and record integrity."
+  "2026-08-23T15:37:21.147Z","harness:codex","Review feedback: Sourcery correctly identified that trusted-publisher OIDC cannot authorize npm access set. Removed the now-impossible access-recovery branch; non-public package metadata now fails closed with an explicit manual visibility-recovery instruction. Documented the one-time public-package prerequisite and extended executable contracts. Focused workflow suite remains 37/37; build and typecheck pass."
 notes[8]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."

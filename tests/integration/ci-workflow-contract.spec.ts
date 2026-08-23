@@ -641,10 +641,7 @@ describe("GitHub workflow contract", () => {
       "npm publish --access public --provenance --tag latest",
       "is publicly available; skipping npm publish.",
       "Main-source exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
-      "attempting access recovery before immutable publication.",
-      'npm access set status=public "${NPM_PACKAGE}"',
-      "grep -Eq 'E404|404 Not Found|Package not found'",
-      "refusing immutable publication.",
+      "Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication.",
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
       'npm_config_cache="${PUBLIC_NPM_CACHE}"',
@@ -692,8 +689,8 @@ describe("GitHub workflow contract", () => {
       "Exact-tag recovery is restoring public package access before anonymous probes.",
     );
     expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
-    const accessRecoveryIndex = releaseWorkflow.indexOf(
-      "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication.",
+    const publicAccessRefusalIndex = releaseWorkflow.indexOf(
+      "Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication.",
     );
     const exactVersionProbeIndex = releaseWorkflow.indexOf(
       'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
@@ -704,13 +701,13 @@ describe("GitHub workflow contract", () => {
     const packageProbeIndex = releaseWorkflow.indexOf(
       'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
     );
-    expect(accessRecoveryIndex).toBeGreaterThanOrEqual(0);
+    expect(publicAccessRefusalIndex).toBeGreaterThanOrEqual(0);
     expect(exactVersionProbeIndex).toBeGreaterThanOrEqual(0);
     expect(publicationRefusalIndex).toBeGreaterThanOrEqual(0);
     expect(packageProbeIndex).toBeGreaterThanOrEqual(0);
     expect(exactVersionProbeIndex).toBeLessThan(publicationRefusalIndex);
     expect(publicationRefusalIndex).toBeLessThan(packageProbeIndex);
-    expect(packageProbeIndex).toBeLessThan(accessRecoveryIndex);
+    expect(packageProbeIndex).toBeLessThan(publicAccessRefusalIndex);
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
