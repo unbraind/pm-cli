@@ -81,10 +81,12 @@ import {
 import {
   ROOT_HELP_BUNDLE,
   attachRichHelpText,
+  getPmCommandHelpVisibilityTier,
   normalizeHelpCommandPath,
   resolveHelpBundleForPath,
   resolveHelpDetailMode,
   resolveHelpNarrative,
+  setPmCommandHelpVisibilityTier,
 } from "../../../src/cli/help-content.js";
 import {
   buildLinkedTestQuotedRetryCommand,
@@ -2709,6 +2711,7 @@ export default {
       await _testOnly.registerDynamicExtensionCommandPaths(root, ["--pm-path", context.pmPath, "tools", "--help"]);
 
       expect(findCommandByPath(root, ["ghost"])?.name()).toBe("ghost");
+      expect(getPmCommandHelpVisibilityTier(findCommandByPath(root, ["ghost"]))).toBe("standard");
     });
   });
 
@@ -4481,6 +4484,59 @@ describe("CLI error guidance helpers", () => {
 });
 
 describe("CLI Commander usage recovery helpers", () => {
+  it("marks every generated extension namespace without changing built-in commands", () => {
+    const program = new Command().name("pm");
+    const builtIn = program.command("built-in");
+    builtIn.command("child");
+    const automation = program.command("automation");
+    const jobs = automation.command("jobs");
+    const run = jobs.command("run");
+    const descriptorless = program.command("descriptorless");
+    const descriptors = new Map<string, ExtensionCommandHelpDescriptor>([
+      [
+        "automation jobs run",
+        {
+          command: "automation jobs run",
+          action: "automation-jobs-run",
+          description: "Run an automation job.",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+          tier: "full",
+          family: "automation",
+        },
+      ],
+      [
+        "built-in child",
+        {
+          command: "built-in child",
+          action: "built-in-child",
+          description: "Built-in child.",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+          tier: "internal",
+          family: "internal",
+        },
+      ],
+    ]);
+
+    _testOnly.applyDynamicExtensionRootHelpVisibility(
+      program,
+      new Set(["built-in"]),
+      descriptors,
+    );
+
+    expect(getPmCommandHelpVisibilityTier(automation)).toBe("full");
+    expect(getPmCommandHelpVisibilityTier(jobs)).toBe("full");
+    expect(getPmCommandHelpVisibilityTier(run)).toBe("full");
+    expect(getPmCommandHelpVisibilityTier(descriptorless)).toBe("standard");
+    expect(getPmCommandHelpVisibilityTier(builtIn)).toBeUndefined();
+    expect(getPmCommandHelpVisibilityTier(builtIn.commands[0]!)).toBeUndefined();
+  });
+
   it("collects runtime command paths from Commander and extension descriptors while skipping internals", () => {
     const program = new Command().name("pm");
     program.command("list").alias("ls").description("List items");
@@ -5426,7 +5482,8 @@ describe("CLI rich help content", () => {
 
   it("uses fallback compact examples when extension descriptor omits examples", async () => {
     const program = new Command().name("pm").option("--json", "JSON output");
-    program.command("known").description("Known");
+    const known = program.command("known").description("Known");
+    setPmCommandHelpVisibilityTier(known, "core");
     const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     try {
       await expect(
@@ -5435,15 +5492,17 @@ describe("CLI rich help content", () => {
           ["--json", "known", "--help"],
           new Map([
             [
-              "known",
+              "known child",
               {
-                command: "known",
-                action: "known",
+                command: "known child",
+                action: "known-child",
                 description: "Known",
                 examples: [],
                 failure_hints: [],
                 arguments: [],
                 flags: [],
+                tier: "core",
+                family: "automation",
               },
             ],
           ]),
@@ -5452,6 +5511,8 @@ describe("CLI rich help content", () => {
       const payload = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
       expect(Array.isArray(payload.examples)).toBe(true);
       expect(payload.examples.length).toBeGreaterThan(0);
+      expect(payload.visibility_tier).toBe("core");
+      expect(payload.capability_family).toBe("automation");
     } finally {
       stdoutSpy.mockRestore();
     }

@@ -4,7 +4,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 
 | Command | Minimum visibility tier | Capability family |
 | --- | --- | --- |
-| `init` | full | workspace |
+| `init` | core | workspace |
 | `config` | standard | workspace |
 | `extension` | full | extensions |
 | `package` | full | extensions |

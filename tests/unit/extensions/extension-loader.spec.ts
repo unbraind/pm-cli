@@ -2991,6 +2991,7 @@ describe("extension loader", () => {
       {
         layer: "project",
         name: "command-schema-metadata",
+        source_package: undefined,
         command: "migrate-asset",
         action: "migrate-asset",
         description: "Migrate asset descriptors between schema versions.",
@@ -3014,6 +3015,8 @@ describe("extension loader", () => {
             description: "Optional tags to annotate migration output.",
           },
         ],
+        tier: "standard",
+        family: "extensions",
       },
     ]);
     expect(activation.registrations.flags).toEqual([

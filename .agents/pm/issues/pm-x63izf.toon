@@ -1,26 +1,62 @@
 id: pm-x63izf
-title: "The blocked-release alert derives its cause from configuration preflight, so it discards the failing gate's own machine-readable verdict and reports read the logs on every real failure"
+title: Structured release-failure causes are preserved in blocked-release alerts
 description: "The scheduled Auto Release workflow opens or updates a blocker issue on every failed daily cut, and that issue is the only channel through which a red release becomes visible, because no tracker surface can see one. The issue body carries a field named detected_cause. That field is computed exclusively from four preflight environment booleans: whether push was requested, whether the run was a dry run, whether the release token secret is configured, and whether the Sentry admin token secret is configured. Two branches set a specific cause, one for each missing secret. Every other failure falls through to a fixed literal string instructing the reader to inspect the failed workflow logs for the exact failing command.\n\nThe consequence is that the alert is informative exactly when the failure is a missing secret, and uninformative in every case where the pipeline actually ran and a gate returned a verdict. That is the common case. Over the forty most recent scheduled runs, eleven failed, and the configuration preflight was correct on all of them, so all eleven produced the fallback string.\n\nThe failing run for the current UTC day is the reference instance. The gate runner printed a fully machine-readable verdict on standard output before exiting: a line naming the failing gate, then the gate's own JSON document containing the blocking issue short identifiers, the blocking issue titles, and a per-issue reason field classifying each one. The alert step ran afterward in the same job, had that output available, and reported that the reader should go and find it. The diagnosis was in hand and was discarded.\n\nThis is not a request for better prose in the fallback. It is the observation that the failure summary is derived from the preconditions of the run rather than from the run's own recorded output, so the summary can never name a cause that only the run could know. A gate verdict, a publish rejection from the registry, and a post-publish verification mismatch are three different failures that the channel renders identically.\n\nThe fix is structural and must not reintroduce prose matching, which this project has already ruled against for the reliability gate itself. The gate runner already holds the failing gate name and the failed step's captured output at the point where it raises. It should record a structured failure document at a path supplied by the environment, and the workflow should render the alert from that document, falling back to the current preflight detection only when no document exists. Pattern matching over log text is explicitly out of scope as a mechanism.\n\nDiscovered while verifying release health for the current day. The shape is the same as the changelog drift refusal that reports staleness without naming what drifted, which is why that item is cited as the origin rather than this being filed as an unrelated defect."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-14T10:15:08.284Z"
+updated_at: "2026-08-23T13:11:32.797Z"
+closed_at: "2026-08-23T13:11:32.197Z"
+completed_at: "2026-08-23T13:11:32.197Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The gate runner records a structured failure document naming the failing gate, its exit status, and its captured verdict, at a path supplied by the environment; The blocked-release issue renders its cause from that document when it exists, including the blocking issue identifiers and the per-issue reason the gate assigned; The preflight configuration detection is retained only as the fallback used when no failure document was produced; No part of the mechanism classifies failures by matching patterns against log or message text; A negative control proves the rendered cause changes when the recorded gate verdict changes, and that a missing document still yields the preflight fallback"
 parent: pm-u9d0
 risk: high
 confidence: high
+resolution: "Fixed by recording structured gate failure documents and rendering blocker causes from the recorded failing gate, exit status, and verdict, with configuration preflight retained only when no record exists."
+expected_result: A release gate failure produces a machine-readable record and the blocked-release issue names the gate and structured verdict without log-text classification; absence of a record uses the preflight fallback.
+actual_result: "The release runner writes the structured failure record, the workflow renders it into the blocker issue, negative controls prove verdict-sensitive rendering and fallback behavior, and the canonical public title now generates an outcome-focused release note."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-2f80fn,discovered_from,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-dqtzva,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
-files[3]{path,scope,note}:
+comments[13]{created_at,author,text}:
+  "2026-08-23T06:39:18.191Z","harness:codex","Implementation start 2026-08-23: live GH-1095 reproduced the residual exactly: the 2026.8.23 tag exists, GitHub/npm artifacts do not, npm publish returned E404, and the alert still emitted failing_stage=unrecorded. This tranche extends the existing structured recorder across downstream publish and verification stages without log-text classification."
+  "2026-08-23T07:03:27.150Z","harness:codex","Progress: Auto Release now records downstream GitHub Release failures from structured run/job/step conclusions and records discovery/GitHub Release/npm verification stages before exiting; the current npm publish incident would resolve to release-workflow plus Build, Test, Publish / Publish to npm instead of unrecorded."
+  "2026-08-23T07:10:42.447Z","harness:codex","Focused verification: release-failure record and CI workflow contract suites passed 37/37; structured negative controls classify only GitHub job/step conclusions and preserve preflight fallback when no record exists."
+  "2026-08-23T08:42:01.480Z","harness:codex","Verification evidence: exact full-source coverage passed 100/100/100/100; workflow failure recording is covered through structured job/step, sparse, malformed, stage, and negative-control inputs; lint, package, secrets, docs, generated-surface, and live repository assurance gates passed."
+  "2026-08-23T08:50:10.880Z","harness:codex","Reviewed delivery: PR #1096 https://github.com/unbraind/pm-cli/pull/1096 carries the structured Auto Release failure record, negative controls, generated changelog entry, and workflow contract proof."
+  "2026-08-23T08:59:59.102Z","harness:codex","Hosted static remediation: CI correctly rejected closure without post-epoch defect taxonomy. Classified the escaped release-alert behavior as production_defect and bound it to strengthened gate auto-release-structured-failure-cause with verdict-changing and missing-record negative controls. Windows independently exposed status 2 in the same-day shell simulation; the assertion now includes captured stdout/stderr so any recurrence is actionable rather than opaque."
+  "2026-08-23T09:12:49.247Z","harness:codex","Windows root cause and fix: the expanded Auto Release step exceeded the Windows command-line transport ceiling when the acceptance harness passed it through bash -c, truncating the script at line 144 inside a quoted string. The harness now sends identical Bash source over stdin, removing argv-length dependence while preserving the production script and fake-command environment."
+  "2026-08-23T10:17:06.128Z","harness:codex","Review remediation evidence: CodeRabbit findings 3838168889, 3838168890, and 3838168891 are addressed by reopening the item, claiming it before edits, linking the cross-platform release-automation contract test before closure, and rerunning the evidence. release-failure-record, CI workflow, and release-automation focused tests passed 24/24. Full coverage passed 7,845 tests across 566 files at exact 100% statements, branches, functions, and lines. pnpm lint and pnpm quality:static passed."
+  "2026-08-23T11:06:57.286Z","harness:codex","Exact-head review remediation evidence: CodeRabbit finding 3838291644 is addressed at the canonical source. The PM title now states the public outcome, Structured release-failure causes are preserved in blocked-release alerts, so generated release notes no longer expose internal incident wording. CHANGELOG.md is linked as reviewed documentation. The final focused, TypeScript, static, lint, grammar, generated-surface, and exact-coverage gates pass."
+  "2026-08-23T11:32:42.551Z","harness:codex","Review recurrence start: terminal CodeRabbit finding 3838390701 is accepted; preserve the original downstream Release watcher status through all Auto Release caller exits."
+  "2026-08-23T11:54:36.145Z","harness:codex","Terminal review remediation evidence: CodeRabbit finding 3838390701 is addressed at all three Auto Release watcher callers. Each now propagates the original gh run watch status while the structured recorder retains the same status, and the workflow contract asserts exactly three preserving calls. Focused release/CI tests pass within 189/189; full coverage is exact across 7,847 tests, and lint/static assurance pass."
+  "2026-08-23T12:34:40.249Z","harness:codex","Review recurrence start: CodeRabbit finding 3838502159 is accepted after live validation; blank and whitespace-only workflow statuses must remain unreported rather than normalize to zero."
+  "2026-08-23T13:11:31.635Z","harness:codex","Final review evidence: integerStatus now rejects empty and whitespace-only workflow statuses instead of coercing them to zero; unit negative controls cover both forms. Focused release-failure tests, pnpm lint/static assurance, and final exact coverage all pass: 566 files, 7,848 tests, 100/100/100/100."
+files[5]{path,scope,note}:
   .github/workflows/auto-release.yml,project,"Alert step renders the recorded cause, preflight retained as fallback"
   scripts/release/release-failure-record.mjs,project,"Structured failure document: records and renders the failing gate verdict"
+  tests/integration/ci-workflow-contract.spec.ts,project,Structured downstream Release workflow failure capture
+  tests/integration/release-automation-contract.spec.ts,project,Cross-platform same-day release workflow simulation and actionable child-process diagnostics
   tests/unit/scripts/release/release-failure-record.spec.ts,project,Unit proof including the negative control
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-08-23T07:03:37.399Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-08-23T09:31:59.044Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-08-23T11:54:35.153Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated public release note for structured release-failure behavior
+close_reason: Completed structured release-failure preservation including blank-status normalization hardening and exact negative-control coverage.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-x63izf
+  gate_id: auto-release-structured-failure-cause
+  negative_control: Change the recorded gate verdict or remove the structured failure record; release-failure-record tests must detect changed cause rendering and retained preflight fallback.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,node scripts/release/defect-evidence-gate.mjs --json,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""

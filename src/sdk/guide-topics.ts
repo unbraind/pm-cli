@@ -3,6 +3,8 @@
  *
  * Provides CLI runtime support for Guide Topics.
  */
+import { listPmCommandCapabilityGroups } from "./agent-capability-contracts.js";
+
 /** Describes one documentation file surfaced by a progressive-disclosure guide topic. */
 export interface GuideDocReference {
   /** Filesystem path used for path resolution. */
@@ -52,6 +54,30 @@ function normalizeTopicToken(value: string): string {
 }
 
 const GUIDE_TOPICS: GuideTopicDefinition[] = [
+  {
+    id: "capabilities",
+    aliases: ["capability-map", "families", "routing"],
+    title: "Generated Capability Routing",
+    summary:
+      "Route work through command families generated from the canonical agent capability contract.",
+    intent:
+      "Use this as the drift-free entrypoint when selecting a CLI, MCP, completion, documentation, or extension command surface.",
+    commands: listPmCommandCapabilityGroups().flatMap(({ commands }) =>
+      commands.map((command) => `pm ${command}`),
+    ),
+    workflows: [],
+    docs: [
+      {
+        path: "docs/generated/AGENT_CAPABILITY_ROUTING.md",
+        purpose: "Generated command-to-family routing table.",
+      },
+      {
+        path: "docs/generated/AGENT_COMMAND_SURFACE.md",
+        purpose: "Generated visibility-tier and family table.",
+      },
+    ],
+    related: ["commands", "workflows", "extensions"],
+  },
   {
     id: "quickstart",
     aliases: ["start", "getting-started", "bootstrap"],

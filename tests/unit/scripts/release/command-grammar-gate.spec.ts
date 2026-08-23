@@ -51,6 +51,7 @@ async function runGrammarGate(
         disableExtensions?: boolean,
       ) => unknown,
       activePackageCommands?: string[],
+      registeredCommandSeeds?: string[],
     ) => string[];
     verifyMcpGrammar: (
       actions: string[],
@@ -93,13 +94,21 @@ async function runGrammarGate(
     const budgetIndex = args.indexOf("--output-budget");
     const parentPath = args.slice(helpIndex + 1, budgetIndex);
     const parent = parentPath.join(" ");
+    const helpCommands = args.includes("--no-extensions")
+      ? coreRuntimeCommands
+      : runtimeCommands;
+    if (
+      parent.length > 0 &&
+      !helpCommands.some(
+        (command) => command === parent || command.startsWith(`${parent} `),
+      )
+    ) {
+      throw new Error(`Synthetic missing command ${parent}`);
+    }
     if (options.helpFailures?.includes(parent) === true) {
       throw new Error(`Synthetic help failure for ${parent}`);
     }
     const prefix = parent.length > 0 ? `${parent} ` : "";
-    const helpCommands = args.includes("--no-extensions")
-      ? coreRuntimeCommands
-      : runtimeCommands;
     const subcommands: unknown[] = [
       ...new Set(
         helpCommands.flatMap((command) => {
@@ -147,6 +156,7 @@ async function runGrammarGate(
         disableExtensions?: boolean,
       ) => unknown,
       activePackageCommands?: string[],
+      registeredCommandSeeds?: string[],
     ) => string[];
     verifyMcpGrammar: (
       actions: string[],
@@ -246,6 +256,33 @@ describe("command grammar gate", () => {
       module.collectLiveCliCommandPaths(loadHelp, ["package search"]),
     ).toEqual(["h", "help", "package search"]);
     expect(loadHelp).toHaveBeenCalledWith(["package", "search"]);
+  });
+
+  it("continues across action-specific help failures in every runtime dispatcher", async () => {
+    const { module } = await runGrammarGate(liveCommandSummaries);
+    const failedActions = new Set([
+      "assurance run",
+      "plan create",
+      "workspace snapshot create",
+    ]);
+    const loadHelp = vi.fn((commandPath: string[] = []) => {
+      const command = commandPath.join(" ");
+      if (failedActions.has(command)) {
+        throw new Error(`Synthetic action help failure for ${command}`);
+      }
+      return { arguments: [], subcommands: [] };
+    });
+
+    expect(() =>
+      module.collectLiveCliCommandPaths(
+        loadHelp,
+        [],
+        ["assurance", "plan", "workspace snapshot"],
+      ),
+    ).not.toThrow();
+    expect(loadHelp).toHaveBeenCalledWith(["assurance", "verdicts"]);
+    expect(loadHelp).toHaveBeenCalledWith(["plan", "show"]);
+    expect(loadHelp).toHaveBeenCalledWith(["workspace", "snapshot", "list"]);
   });
 
   it("fails closed for MCP action and narrow-tool drift", async () => {

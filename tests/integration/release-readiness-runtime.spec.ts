@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { listPmCommandsForTier } from "../../src/sdk/agent-capability-contracts.js";
 import {
   expectJsonErrorEnvelope,
   parseJsonErrorEnvelope,
@@ -109,48 +110,7 @@ function isValidCalendarDate(
   );
 }
 
-const CORE_COMMANDS = [
-  "init",
-  "config",
-  "extension",
-  "package",
-  "install",
-  "upgrade",
-  "create",
-  "list",
-  "context",
-  "search",
-  "get",
-  "history",
-  "history-compact",
-  "history-redact",
-  "activity",
-  "restore",
-  "update",
-  "update-many",
-  "close",
-  "delete",
-  "append",
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "docs",
-  "deps",
-  "test",
-  "test-all",
-  "telemetry",
-  "stats",
-  "health",
-  "validate",
-  "gc",
-  "contracts",
-  "claim",
-  "release",
-  "start-task",
-  "pause-task",
-  "close-task",
-];
+const CORE_COMMANDS = listPmCommandsForTier("core");
 
 const REQUIRED_CREATE_FLAGS = [
   "--title",

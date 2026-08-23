@@ -6,11 +6,11 @@ command-facing SDK registration APIs in their smallest complete form.
 
 ## What it demonstrates
 
-| API | What the exemplar does |
-| --- | --- |
-| `api.registerCommand(definition)` | Registers `pm command-kit echo` with a FULL `CommandDefinition`: `name`, `action`, `description`, `intent`, `arguments` (required variadic positional), `flags`, `examples`, `failure_hints`, and a pure `run` handler. |
-| `api.registerParser(command, override)` | Preprocesses parsed options before the handler runs: rewrites the deprecated `--shout` alias to `--upper`, coerces `--repeat` to a positive integer, and trims/dedupes `--decorations` values. The override returns a delta (`{ options }`) that is merged over the parsed input. |
-| `api.registerFlags(targetCommand, flags)` | Injects an inert, namespaced `--kit-note <text>` flag into the EXISTING core `pm list` command — the pattern for augmenting commands you do not own. |
+| API                                       | What the exemplar does                                                                                                                                                                                                                                                            |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api.registerCommand(definition)`         | Registers `pm command-kit echo` with a FULL `CommandDefinition`: `name`, `action`, `tier`, `family`, `description`, `intent`, `arguments` (required variadic positional), `flags`, `examples`, `failure_hints`, and a pure `run` handler.                                         |
+| `api.registerParser(command, override)`   | Preprocesses parsed options before the handler runs: rewrites the deprecated `--shout` alias to `--upper`, coerces `--repeat` to a positive integer, and trims/dedupes `--decorations` values. The override returns a delta (`{ options }`) that is merged over the parsed input. |
+| `api.registerFlags(targetCommand, flags)` | Injects an inert, namespaced `--kit-note <text>` flag into the EXISTING core `pm list` command — the pattern for augmenting commands you do not own.                                                                                                                              |
 
 ## Install
 
@@ -49,16 +49,14 @@ packages/pm-command-kit/
 ├── README.md
 └── extensions/command-kit/
     ├── manifest.json                  # capabilities, trusted, sandbox_profile, permissions
-    ├── index.ts                       # TypeScript source (type-only SDK imports)
-    └── index.js                       # hand-maintained runtime module (import-free)
+    └── index.ts                       # authored and loaded directly with type stripping
 ```
 
 Key conventions for authors:
 
-- `index.js` is what actually runs. It is **import-free** so the extension loads in
-  extension-only installs without SDK module resolution. `index.ts` mirrors it with
-  `import type { ... } from` the SDK for editor/typecheck support; type-only imports are
-  erased and keep the shipped `.js` dependency-free.
+- `index.ts` is both the authored source and the runtime entrypoint. pm strips types
+  when loading it, so there is no duplicate compiled module to keep synchronized.
+  Type-only SDK imports retain editor/typecheck support without adding runtime imports.
 - The module's `manifest.capabilities` literal must match `manifest.json` exactly
   (`commands` for `registerCommand`, `schema` for flag definitions/`registerFlags`,
   `parser` for `registerParser`).

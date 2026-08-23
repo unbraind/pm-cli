@@ -91,7 +91,10 @@ import {
   validateLooseCommandOptionsWithFlagDefinitions,
   type LooseCommandFlagDefinition,
 } from "./extension-command-options.js";
-import { attachRichHelpText } from "./help-content.js";
+import {
+  attachRichHelpText,
+  setPmCommandHelpVisibilityTier,
+} from "./help-content.js";
 import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
 import {
   extractProvidedOptionFlags,
@@ -2055,6 +2058,36 @@ function attachDynamicExtensionHelp(
 /* v8 ignore stop */
 
 /* c8 ignore start */
+/** Apply descendant-derived visibility to every generated extension namespace. */
+function applyDynamicExtensionRootHelpVisibility(
+  rootProgram: Command,
+  preexistingTopLevelCommands: ReadonlySet<string>,
+  descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+): void {
+  const tierRank = { core: 0, standard: 1, full: 2, internal: 3 } as const;
+  const applyVisibility = (command: Command, pathParts: string[]): void => {
+    const commandPath = pathParts.join(" ");
+    const matchingDescriptors = [...descriptors.entries()]
+      .filter(([path]) => path === commandPath || path.startsWith(`${commandPath} `))
+      .map(([, descriptor]) => descriptor);
+    const tier = matchingDescriptors.length === 0
+      ? "standard"
+      : matchingDescriptors.reduce<"core" | "standard" | "full" | "internal">(
+          (selected, descriptor) => tierRank[descriptor.tier] < tierRank[selected] ? descriptor.tier : selected,
+          "internal",
+        );
+    setPmCommandHelpVisibilityTier(command, tier);
+    for (const child of command.commands) {
+      applyVisibility(child, [...pathParts, child.name()]);
+    }
+  };
+  for (const command of rootProgram.commands) {
+    if (!preexistingTopLevelCommands.has(command.name())) {
+      applyVisibility(command, [command.name()]);
+    }
+  }
+}
+
 async function registerDynamicExtensionCommandPaths(rootProgram: Command, invocationArgv: string[]): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
@@ -2107,6 +2140,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     snapshot.commandDescriptors,
     snapshot.commandAliases,
     (warning) => reportExtensionCommandCollision(snapshot.activationWarnings, printError, warning),
+  );
+  const preexistingTopLevelCommands = new Set(
+    rootProgram.commands.map((command) => command.name()),
   );
   const registerCommandPath = (commandPath: string): void => {
     const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
@@ -2167,6 +2203,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   for (const commandPath of commandPaths) {
     registerCommandPath(commandPath);
   }
+  applyDynamicExtensionRootHelpVisibility(
+    rootProgram,
+    preexistingTopLevelCommands,
+    snapshot.commandDescriptors,
+  );
 }
 /* c8 ignore stop */
 
@@ -3172,6 +3213,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   activationCommandMatchesProbe,
+  applyDynamicExtensionRootHelpVisibility,
   bootstrapProfileEnabled,
   buildBootstrapActivationProbe,
   buildPostActionTelemetryOutcome,

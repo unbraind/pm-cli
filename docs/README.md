@@ -50,6 +50,8 @@ pm guide release --json
 - [Output Token Accounting](OUTPUT_TOKEN_ACCOUNTING.md) - opt-in CLI/MCP byte attribution, bounded receipt overhead, and release-level tokens-per-task baselines.
 - [SDK Context Platform](SDK_CONTEXT.md) - task-oriented entry point for authoritative reads, ranking, package workflows, diagnostics, recovery, and verification.
 - [Self-Describing Context Contracts](SELF_DESCRIBING_CONTEXT_CONTRACTS.md) - intent-scoped reads, semantic flag invocation metadata, visibility parity, and generated error vocabulary.
+- [Generated Agent Capability Routing](generated/AGENT_CAPABILITY_ROUTING.md) - contract-derived command families shared by help, guide, skills, completion, MCP, and extensions.
+- [Generated Refusal Closure Census](generated/REFUSAL_CLOSURE_CENSUS.md) - complete error-catalog join to executable refusal evidence and explicit uncovered obligations.
 - [Universal Read Output Contracts](READ_OUTPUT_CONTRACTS.md) - cross-command include, amount, cost, and encoding controls for CLI, SDK, MCP, and packages.
 - [Diagnostic Output Contracts](DIAGNOSTIC_OUTPUT_CONTRACTS.md) - action-first error budgets, deterministic degradation, SDK projection, and executable refusal assurance.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.

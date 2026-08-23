@@ -4,6 +4,144 @@ import { _testOnly } from "../../../src/cli/help-json-payload.js";
 import { hasSubcommandFlagContractsForCommand } from "../../../src/sdk/index.js";
 
 describe("structured help command-path resolution", () => {
+  it("derives synthetic extension parents from their most visible descendants", () => {
+    const descriptors = new Map([
+      [
+        "automation hidden",
+        {
+          command: "automation hidden",
+          action: "automation-hidden",
+          description: "Hidden automation",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+          tier: "internal" as const,
+          family: "automation" as const,
+        },
+      ],
+      [
+        "automation visible",
+        {
+          command: "automation visible",
+          action: "automation-visible",
+          description: "Visible extension",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+          tier: "standard" as const,
+          family: "extensions" as const,
+        },
+      ],
+    ]);
+
+    expect(
+      _testOnly.resolveExtensionCommandSurface(
+        "automation hidden",
+        descriptors,
+      ),
+    ).toMatchObject({
+      tier: "internal",
+      family: "automation",
+    });
+    expect(
+      _testOnly.resolveExtensionCommandSurface("automation", descriptors),
+    ).toEqual({
+      tier: "standard",
+      family: "extensions",
+    });
+    expect(
+      _testOnly.resolveExtensionCommandSurface("missing", descriptors),
+    ).toBeUndefined();
+    expect(
+      _testOnly.resolveExtensionCommandSurface(
+        "automation",
+        descriptors,
+        false,
+      ),
+    ).toBeUndefined();
+
+    const root = new Command("pm");
+    const automation = root.command("automation");
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        automation,
+        ["automation", "--help", "--json"],
+        ["automation"],
+        new Map([
+          [
+            "automation",
+            {
+              command: "automation",
+              action: "automation",
+              description: "Automate work",
+              examples: ["pm automation run"],
+              failure_hints: [],
+              arguments: [],
+              flags: [],
+              tier: "standard",
+              family: "automation",
+            },
+          ],
+        ]),
+      ).examples,
+    ).toEqual(["pm automation run"]);
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        automation,
+        ["automation", "--help", "--json"],
+        ["automation"],
+        new Map([
+          [
+            "automation",
+            {
+              command: "automation",
+              action: "automation",
+              description: "Automate work",
+              examples: [],
+              failure_hints: [],
+              arguments: [],
+              flags: [],
+              tier: "standard",
+              family: "automation",
+            },
+          ],
+        ]),
+      ).examples,
+    ).toEqual(["pm init"]);
+
+    const plan = root.command("plan").description("Plan work");
+    const planPayload = _testOnly.buildJsonHelpPayload(
+      root,
+      plan,
+      ["plan", "--help", "--json"],
+      ["plan"],
+      new Map([
+        [
+          "plan export",
+          {
+            command: "plan export",
+            action: "plan-export",
+            description: "Export a plan",
+            examples: [],
+            failure_hints: [],
+            arguments: [],
+            flags: [],
+            tier: "internal",
+            family: "extensions",
+          },
+        ],
+      ]),
+    );
+    expect(planPayload).toMatchObject({
+      visibility_tier: "core",
+      capability_family: "graph",
+    });
+  });
+
   it("resolves exact, implicit, and contract-backed positional command paths", () => {
     const root = new Command("pm");
     const workspace = root.command("workspace");

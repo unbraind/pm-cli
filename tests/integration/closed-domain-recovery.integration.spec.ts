@@ -20,12 +20,11 @@ describe("closed-domain recovery envelopes", () => {
             tier: "core",
             family: "context",
           }),
-          expect.objectContaining({
-            name: "graph",
-            tier: "standard",
-            family: "graph",
-          }),
+          expect.objectContaining({ name: "init", tier: "core" }),
         ]),
+      );
+      expect(rootPayload.subcommands.some(({ name }) => name === "graph")).toBe(
+        false,
       );
       const contextHelp = context.runCli(["context", "--help", "--json"], {
         expectJson: true,
@@ -33,6 +32,13 @@ describe("closed-domain recovery envelopes", () => {
       expect(contextHelp.json).toMatchObject({
         visibility_tier: "core",
         capability_family: "context",
+      });
+      expect(
+        context.runCli(["graph", "--help", "--json"], { expectJson: true })
+          .json,
+      ).toMatchObject({
+        visibility_tier: "standard",
+        capability_family: "graph",
       });
     });
   });

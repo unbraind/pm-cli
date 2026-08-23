@@ -25,7 +25,7 @@ import type {
 export const manifest = {
   name: "builtin-command-kit",
   version: "0.1.0",
-  entry: "./index.js",
+  entry: "./index.ts",
   priority: 0,
   capabilities: ["commands", "schema", "parser"],
   activation: { commands: ["command-kit echo", "list"] },
@@ -145,6 +145,8 @@ export function buildEchoCommandDefinition(): CommandDefinition {
   return {
     name: ECHO_COMMAND,
     action: "command-kit-echo",
+    tier: "standard",
+    family: "extensions",
     description:
       "Echo a message as structured output (commands-capability exemplar).",
     intent:

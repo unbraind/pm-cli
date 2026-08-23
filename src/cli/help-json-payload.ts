@@ -27,6 +27,7 @@ import {
   commandAliases,
 } from "./extension-command-help.js";
 import {
+  getPmCommandHelpVisibilityTier,
   normalizeHelpCommandPath,
   resolveHelpDetailMode,
   resolveHelpNarrative,
@@ -82,6 +83,44 @@ export interface HelpSubcommandSummary {
   tier: PmCommandVisibilityTier;
   /** Shared command capability family. */
   family: PmCommandCapabilityFamily;
+}
+
+type ExtensionCommandSurface = Pick<
+  ExtensionCommandHelpDescriptor,
+  "tier" | "family"
+>;
+
+const EXTENSION_TIER_ORDER = {
+  core: 0,
+  standard: 1,
+  full: 2,
+  internal: 3,
+} as const;
+
+function resolveExtensionCommandSurface(
+  commandPath: string,
+  descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  allowDescendants = true,
+): ExtensionCommandSurface | undefined {
+  const exact = descriptors.get(commandPath);
+  if (exact) return exact;
+  if (!allowDescendants) return undefined;
+  const descendants = [...descriptors.entries()]
+    .filter(([path]) => path.startsWith(`${commandPath} `))
+    .map(([, descriptor]) => descriptor);
+  if (descendants.length === 0) return undefined;
+  const tier = descendants.reduce<ExtensionCommandHelpDescriptor["tier"]>(
+    (selected, descriptor) =>
+      EXTENSION_TIER_ORDER[descriptor.tier] < EXTENSION_TIER_ORDER[selected]
+        ? descriptor.tier
+        : selected,
+    "internal",
+  );
+  const families = new Set(descendants.map(({ family }) => family));
+  return {
+    tier,
+    family: families.size === 1 ? descendants[0]!.family : "extensions",
+  };
 }
 
 function resolveCommandFromPathTokens(
@@ -318,20 +357,33 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
 
 function buildHelpSubcommandSummaries(
   command: Command,
+  extensionDescriptors: ReadonlyMap<
+    string,
+    ExtensionCommandHelpDescriptor
+  > = new Map(),
 ): HelpSubcommandSummary[] {
   return command
     .createHelp()
     .visibleCommands(command)
     .filter((entry) => entry.name() !== "help" || command.parent === null)
     .map((entry) => {
-      const rootCommand = normalizeHelpCommandPath(getCommandPath(entry))
-        .split(" ")[0]!;
+      const commandPath = normalizeHelpCommandPath(getCommandPath(entry));
+      const rootCommand = commandPath.split(" ")[0]!;
+      const extensionDescriptor = resolveExtensionCommandSurface(
+        commandPath,
+        extensionDescriptors,
+        getPmCommandHelpVisibilityTier(entry) !== undefined,
+      );
       return {
         name: entry.name().trim(),
         aliases: commandAliases(entry),
         description: entry.description().trim(),
-        tier: resolvePmCommandVisibilityTier(rootCommand),
-        family: resolvePmCommandCapabilityFamily(rootCommand),
+        tier:
+          extensionDescriptor?.tier ??
+          resolvePmCommandVisibilityTier(rootCommand),
+        family:
+          extensionDescriptor?.family ??
+          resolvePmCommandCapabilityFamily(rootCommand),
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -370,6 +422,27 @@ function buildJsonHelpNarrative(
   };
 }
 
+function resolveJsonHelpVisibilityTier(
+  rootCommandPath: string | undefined,
+  extensionDescriptor: ExtensionCommandSurface | undefined,
+): ReturnType<typeof resolvePmCommandVisibilityTier> | null {
+  if (rootCommandPath === undefined) return null;
+  return (
+    extensionDescriptor?.tier ?? resolvePmCommandVisibilityTier(rootCommandPath)
+  );
+}
+
+function resolveJsonHelpCapabilityFamily(
+  rootCommandPath: string | undefined,
+  extensionDescriptor: ExtensionCommandSurface | undefined,
+): ReturnType<typeof resolvePmCommandCapabilityFamily> | null {
+  if (rootCommandPath === undefined) return null;
+  return (
+    extensionDescriptor?.family ??
+    resolvePmCommandCapabilityFamily(rootCommandPath)
+  );
+}
+
 interface PositionalActionHelpProjection {
   arguments: HelpArgumentSummary[];
   options: HelpOptionSummary[];
@@ -383,10 +456,17 @@ function buildPositionalActionHelpProjection(
   targetCommand: Command,
   resolvedPath: string,
   allOptions: HelpOptionSummary[],
+  extensionDescriptors: ReadonlyMap<
+    string,
+    ExtensionCommandHelpDescriptor
+  > = new Map(),
 ): PositionalActionHelpProjection {
   if (!action) {
     const argumentsList = buildHelpArgumentSummaries(targetCommand);
-    const registeredSubcommands = buildHelpSubcommandSummaries(targetCommand);
+    const registeredSubcommands = buildHelpSubcommandSummaries(
+      targetCommand,
+      extensionDescriptors,
+    );
     const registeredSubcommandNames = new Set(
       registeredSubcommands.map(({ name }) => name),
     );
@@ -403,9 +483,7 @@ function buildPositionalActionHelpProjection(
           aliases: [],
           description,
           tier: resolvePmCommandVisibilityTier(resolvedPath.split(" ")[0]!),
-          family: resolvePmCommandCapabilityFamily(
-            resolvedPath.split(" ")[0]!,
-          ),
+          family: resolvePmCommandCapabilityFamily(resolvedPath.split(" ")[0]!),
         })),
       ].sort((left, right) => left.name.localeCompare(right.name)),
       usage: [
@@ -477,6 +555,13 @@ function buildJsonHelpPayload(
   const extensionDescriptor = commandPath
     ? extensionDescriptors.get(commandPath)
     : undefined;
+  const extensionSurface = commandPath
+    ? resolveExtensionCommandSurface(
+        commandPath,
+        extensionDescriptors,
+        getPmCommandHelpVisibilityTier(targetCommand) !== undefined,
+      )
+    : undefined;
   const narrative = buildJsonHelpNarrative(
     detailMode,
     fallbackNarrative,
@@ -493,6 +578,7 @@ function buildJsonHelpPayload(
     targetCommand,
     projectedPath,
     allOptionSummaries,
+    extensionDescriptors,
   );
   return {
     format: "pm_help_v1",
@@ -501,14 +587,14 @@ function buildJsonHelpPayload(
     requested_path: requestedPath,
     resolved_path:
       projectedPath.length > 0 ? projectedPath : rootProgram.name(),
-    visibility_tier:
-      rootCommandPath === undefined
-        ? null
-        : resolvePmCommandVisibilityTier(rootCommandPath),
-    capability_family:
-      rootCommandPath === undefined
-        ? null
-        : resolvePmCommandCapabilityFamily(rootCommandPath),
+    visibility_tier: resolveJsonHelpVisibilityTier(
+      rootCommandPath,
+      extensionSurface,
+    ),
+    capability_family: resolveJsonHelpCapabilityFamily(
+      rootCommandPath,
+      extensionSurface,
+    ),
     description: positionalAction?.description ?? targetCommand.description(),
     usage: projection.usage,
     intent: positionalAction?.description ?? narrative.intent,
@@ -791,4 +877,5 @@ export const _testOnly = {
   compactHelpOptionAliases,
   readOptionAttributeName,
   resolveCommandFromPathTokens,
+  resolveExtensionCommandSurface,
 };

@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import {
   main,
   runIfMain,
+  scorePmRefusalCatalogClosure,
   verifyExecutableRefusalClosure,
 } from "../../../scripts/release/refusal-closure-gate.mjs";
 
@@ -59,10 +60,26 @@ function createSuccessfulOptions(errorEnvelope = {}) {
 }
 
 describe("executable refusal closure gate", () => {
+  it("fails the catalog ratchet when executable evidence regresses", () => {
+    expect(scorePmRefusalCatalogClosure([])).toMatchObject({
+      catalogRatchet: { ok: false, baseline: 13, actual: 0 },
+      catalogRatchetFindings: expect.arrayContaining([
+        expect.objectContaining({
+          code: "executable_error_code_count_regressed",
+          probe_id: "catalog-census",
+        }),
+        expect.objectContaining({
+          code: "executable_error_code_identity_regressed",
+        }),
+      ]),
+    });
+  });
+
   it.runIf(process.platform !== "win32")(
     "proves real retries and blocks a seeded omission",
     () => {
-      expect(verifyExecutableRefusalClosure()).toMatchObject({
+      const result = verifyExecutableRefusalClosure();
+      expect(result).toMatchObject({
         ok: true,
         probe_count: 117,
         closed_probe_count: 117,
@@ -81,8 +98,18 @@ describe("executable refusal closure gate", () => {
           within_budget_count: 10,
           corrective_action_count: 10,
         },
+        catalog_closure: {
+          complete: false,
+          executable_error_code_count: 13,
+          ratchet: { ok: true, baseline: 13, actual: 13 },
+          restore_with: "docs/generated/REFUSAL_CLOSURE_CENSUS.md",
+        },
         findings: [],
       });
+      expect(
+        result.catalog_closure.executable_error_code_count +
+          result.catalog_closure.uncovered_error_code_count,
+      ).toBe(result.catalog_closure.catalog_error_code_count);
       expect(
         verifyExecutableRefusalClosure({
           ...createSuccessfulOptions(),
@@ -94,6 +121,23 @@ describe("executable refusal closure gate", () => {
           expect.objectContaining({
             code: "missing_allowed_values",
             probe_id: "context-invalid-intent",
+          }),
+        ]),
+      });
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions(),
+          errorCodeCatalog: [],
+        }),
+      ).toMatchObject({
+        ok: false,
+        catalog_closure: {
+          ratchet: { ok: false, baseline: 13, actual: 0 },
+        },
+        findings: expect.arrayContaining([
+          expect.objectContaining({
+            code: "executable_error_code_count_regressed",
+            probe_id: "catalog-census",
           }),
         ]),
       });

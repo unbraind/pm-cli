@@ -1108,6 +1108,30 @@
       ],
       "package_version": "2026.8.22",
       "reason": "Additive optional provenance_invalid marker preserves fail-closed storage state without widening the existing provenance source_kind union; two trust helpers are newly exported for CLI-consumer parity."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CommandDefinition",
+        "signature ./sdk:RegisteredExtensionCommandDefinition",
+        "signature ./sdk/authoring:CommandDefinition"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Add optional tier and family metadata to extension command definitions while preserving existing producer call shapes; expose additive explicit-registry projections and refusal-census contracts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:WorkspaceExtensionCommandContract",
+        "signature ./sdk/runtime:WorkspaceExtensionCommandContract"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Require tier and family metadata on projected workspace extension command contracts so every consumer receives explicit visibility and capability routing."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCommandCapabilityFamily"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Capability-family literals are unchanged; the public alias now derives from the canonical extension metadata contract to prevent type drift."
     }
   ],
   "entrypoints": {
@@ -2789,6 +2813,12 @@
           "signature": "(action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown> | calls: (action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildPmRefusalClosureCensus",
+          "signature": "(catalog: readonly PmErrorCodeContract[], closedDomains: readonly PmClosedDomainContract[], grammar: readonly PmGrammarRefusalContract[]) => PmRefusalClosureCensusReport | calls: (catalog: readonly PmErrorCodeContract[], closedDomains: readonly PmClosedDomainContract[], grammar: readonly PmGrammarRefusalContract[]) => PmRefusalClosureCensusReport"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "buildRelationshipContext",
@@ -3356,7 +3386,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
-          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "contract_data",
@@ -10147,6 +10177,18 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE",
+          "signature": "readonly [\"invalid_argument_value\", \"missing_lifecycle_target\", \"missing_required_argument\", \"projection_options_mutually_exclusive\", \"tracker_not_initialized\", \"tracker_root_missing\", \"tracker_root_not_directory\", \"tracker_root_unreadable\", \"unknown_context_intent\", \"unknown_field_projection\", \"unknown_option\", \"unknown_subcommand\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE",
+          "signature": "13"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_REPRODUCIBLE_PROCESS_ENV",
           "signature": "Readonly<{ readonly clock: \"PM_CLOCK\"; readonly tickMs: \"PM_CLOCK_TICK_MS\"; readonly seed: \"PM_SEED\"; }>"
         },
@@ -10370,7 +10412,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "PmCommandCapabilityFamily",
-          "signature": "export type PmCommandCapabilityFamily = \"workspace\" | \"intake\" | \"context\" | \"lifecycle\" | \"evidence\" | \"graph\" | \"quality\" | \"automation\" | \"extensions\" | \"internal\";"
+          "signature": "export type PmCommandCapabilityFamily = ExtensionCommandCapabilityFamily;"
         },
         {
           "classification": "contract_data",
@@ -11081,6 +11123,18 @@
           "signature": "export type PmRecoveryReferenceSemantics = \"recovery\" | \"replacement\" | \"behavior_preserving\";"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRefusalClosureCensusReport",
+          "signature": "export interface PmRefusalClosureCensusReport { ok: boolean; catalog_error_code_count: number; executable_error_code_count: number; uncovered_error_code_count: number; coverage_fraction: number; closed_domain_probe_count: number; grammar_probe_count: number; uncovered_error_codes: string[]; rows: PmRefusalClosureCensusRow[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRefusalClosureCensusRow",
+          "signature": "export interface PmRefusalClosureCensusRow { code: string; canonical_code: string; disposition: \"executable\" | \"uncovered\"; evidence_kinds: PmRefusalEvidenceKind[]; probe_ids: string[]; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmRefusalClosureFinding",
@@ -11097,6 +11151,12 @@
           "kind": "interface",
           "name": "PmRefusalClosureReport",
           "signature": "export interface PmRefusalClosureReport { ok: boolean; probe_count: number; closed_probe_count: number; closure_fraction: number; findings: readonly PmRefusalClosureFinding[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmRefusalEvidenceKind",
+          "signature": "export type PmRefusalEvidenceKind = \"owned_state\" | \"closed_domain\" | \"grammar\";"
         },
         {
           "classification": "advanced_export",
@@ -12146,7 +12206,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "RegisteredExtensionCommandDefinition",
-          "signature": "export interface RegisteredExtensionCommandDefinition { layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+          "signature": "export interface RegisteredExtensionCommandDefinition { layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "supported",
@@ -13005,6 +13065,12 @@
           "kind": "function",
           "name": "renderPmFlagLexiconMarkdown",
           "signature": "() => string | calls: () => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "renderPmRefusalClosureCensusMarkdown",
+          "signature": "(report: PmRefusalClosureCensusReport) => string | calls: (report: PmRefusalClosureCensusReport) => string"
         },
         {
           "classification": "advanced_export",
@@ -16819,6 +16885,18 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "verifyPmRefusalClosureIdentityRatchet",
+          "signature": "(report: PmRefusalClosureCensusReport, requiredCanonicalCodes?: readonly string[]) => { ok: boolean; required_canonical_codes: string[]; missing_required_canonical_codes: string[]; } | calls: (report: PmRefusalClosureCensusReport, requiredCanonicalCodes?: readonly string[]) => { ok: boolean; required_canonical_codes: string[]; missing_required_canonical_codes: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "verifyPmRefusalClosureRatchet",
+          "signature": "(report: PmRefusalClosureCensusReport, baseline?: number) => { ok: boolean; baseline: number; actual: number; } | calls: (report: PmRefusalClosureCensusReport, baseline?: number) => { ok: boolean; baseline: number; actual: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "verifyPmRefusalReachability",
           "signature": "(catalog: readonly PmErrorCodeContract[], observations: readonly PmRefusalProbeObservation[]) => PmRefusalReachabilityReport | calls: (catalog: readonly PmErrorCodeContract[], observations: readonly PmRefusalProbeObservation[]) => PmRefusalReachabilityReport"
         },
@@ -16892,7 +16970,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceExtensionCommandContract",
-          "signature": "export interface WorkspaceExtensionCommandContract { command: string; action: string; arguments: Array<{ name: string; required: boolean; variadic: boolean; description?: string; }>; description?: string; tier: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+          "signature": "export interface WorkspaceExtensionCommandContract { command: string; action: string; arguments: Array<{ name: string; required: boolean; variadic: boolean; description?: string; }>; description?: string; tier: \"core\" | \"standard\" | \"full\" | \"internal\"; family: PmCommandCapabilityFamily; }"
         },
         {
           "classification": "advanced_export",
@@ -17276,7 +17354,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
-          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "supported",
@@ -29600,7 +29678,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceExtensionCommandContract",
-          "signature": "export interface WorkspaceExtensionCommandContract { command: string; action: string; arguments: Array<{ name: string; required: boolean; variadic: boolean; description?: string; }>; description?: string; tier: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+          "signature": "export interface WorkspaceExtensionCommandContract { command: string; action: string; arguments: Array<{ name: string; required: boolean; variadic: boolean; description?: string; }>; description?: string; tier: \"core\" | \"standard\" | \"full\" | \"internal\"; family: PmCommandCapabilityFamily; }"
         },
         {
           "classification": "advanced_export",

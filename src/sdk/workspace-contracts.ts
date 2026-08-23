@@ -4,6 +4,7 @@
  * Declares live workspace customization metadata for SDK and MCP consumers.
  */
 import type { RegisteredExtensionCommandDefinition } from "../core/extensions/extension-types.js";
+import type { PmCommandCapabilityFamily } from "./agent-capability-contracts.js";
 import {
   runtimeFieldOptionTarget,
   type RuntimeFieldDefinitionResolved,
@@ -51,6 +52,8 @@ export interface WorkspaceExtensionCommandContract {
   description?: string;
   /** Minimum agent surface tier requested by the extension. */
   tier: "core" | "standard" | "full" | "internal";
+  /** Capability family declared by the extension. */
+  family: PmCommandCapabilityFamily;
 }
 
 /** Project resolved custom-field definitions into the public workspace shape. */
@@ -84,5 +87,6 @@ export function buildWorkspaceExtensionCommandContracts(
     })),
     description: definition.description,
     tier: definition.tier ?? "standard",
+    family: definition.family ?? "extensions",
   }));
 }

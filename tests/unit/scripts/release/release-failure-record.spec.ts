@@ -17,11 +17,13 @@ import {
   MAX_RENDERED_BLOCKERS,
   RECORD_SCHEMA,
   collectBlockingSummaries,
+  collectWorkflowFailureSummaries,
   describeFailureRecord,
   main,
   parseGateVerdict,
   readFailureRecord,
   recordGateFailure,
+  recordWorkflowFailure,
   renderFailureOutputs,
 } from "../../../../scripts/release/release-failure-record.mjs";
 
@@ -58,6 +60,118 @@ afterEach(async () => {
       await rm(root, { recursive: true, force: true });
     }
   }
+});
+
+describe("recordWorkflowFailure", () => {
+  it("records failed jobs and steps from GitHub's structured run response", async () => {
+    const root = await fixtureRoot();
+    const target = path.join(root, "workflow-record.json");
+
+    const document = recordWorkflowFailure(
+      {
+        stage: "release-workflow",
+        status: 1,
+        run: {
+          databaseId: 32615543095,
+          status: "completed",
+          conclusion: "failure",
+          jobs: [
+            {
+              name: "Build, Test, Publish",
+              conclusion: "failure",
+              steps: [
+                { name: "Build", conclusion: "success" },
+                { name: "Publish to npm", conclusion: "failure" },
+              ],
+            },
+          ],
+        },
+      },
+      target,
+    );
+
+    expect(document).toMatchObject({
+      kind: "workflow",
+      stage: "release-workflow",
+      workflow_run: {
+        database_id: 32615543095,
+        conclusion: "failure",
+        failed_steps: [
+          { job: "Build, Test, Publish", step: "Publish to npm" },
+        ],
+      },
+    });
+    expect(JSON.parse(await readFile(target, "utf8"))).toEqual(document);
+  });
+
+  it("retains a failed job when GitHub provides no failed step", () => {
+    expect(
+      collectWorkflowFailureSummaries({
+        jobs: [{ name: "Publish", conclusion: "failure", steps: [] }],
+      }),
+    ).toEqual([{ job: "Publish", step: "" }]);
+  });
+
+  it("ignores success, skipped, malformed, and prose-only fields", () => {
+    expect(
+      collectWorkflowFailureSummaries({
+        jobs: [
+          {
+            name: "Publish",
+            conclusion: "success",
+            steps: [{ name: "npm publish failed", conclusion: "success" }],
+          },
+          { name: "Skipped", conclusion: "skipped", steps: [] },
+          null,
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it("covers sparse and malformed structured workflow fields without reading prose", async () => {
+    const root = await fixtureRoot();
+    const target = path.join(root, "sparse-workflow.json");
+    vi.stubEnv("RELEASE_FAILURE_RECORD", target);
+
+    expect(recordWorkflowFailure({ stage: 42, status: "1", run: null })).toMatchObject({
+      stage: "",
+      status: null,
+      workflow_run: {
+        database_id: null,
+        status: "",
+        conclusion: "",
+        head_sha: "",
+        head_branch: "",
+        event: "",
+        failed_steps: [],
+      },
+    });
+    expect(recordWorkflowFailure({ run: "not-an-object" }, target)?.workflow_run).toMatchObject({
+      database_id: null,
+      failed_steps: [],
+    });
+    vi.stubEnv("RELEASE_FAILURE_RECORD", " ");
+    expect(recordWorkflowFailure({ run: {} })).toBeNull();
+
+    expect(collectWorkflowFailureSummaries({ jobs: "invalid" })).toEqual([]);
+    expect(
+      collectWorkflowFailureSummaries({
+        jobs: [
+          7,
+          { name: " ", conclusion: "failure" },
+          {
+            name: "Publish",
+            conclusion: "failure",
+            steps: [null, 4, { name: "", conclusion: "failure" }, { name: "ok", conclusion: "success" }],
+          },
+          { name: "Verify", conclusion: "failure", steps: "invalid" },
+        ],
+      }),
+    ).toEqual([
+      { job: "Publish", step: "" },
+      { job: "Verify", step: "" },
+    ]);
+  });
 });
 
 describe("recordGateFailure", () => {
@@ -222,6 +336,54 @@ describe("describeFailureRecord", () => {
     expect(describeFailureRecord({ schema: "other/1", stage: "coverage" })).toBeNull();
     expect(describeFailureRecord({ schema: RECORD_SCHEMA, stage: "   " })).toBeNull();
   });
+
+  it("renders downstream workflow failures from job and step fields", () => {
+    expect(
+      describeFailureRecord({
+        schema: RECORD_SCHEMA,
+        kind: "workflow",
+        stage: "release-workflow",
+        status: 1,
+        workflow_run: {
+          database_id: 32615543095,
+          conclusion: "failure",
+          failed_steps: [
+            { job: "Build, Test, Publish", step: "Publish to npm" },
+          ],
+        },
+      }),
+    ).toEqual({
+      stage: "release-workflow",
+      cause:
+        "Workflow release-workflow run 32615543095 failed with status 1. " +
+        "Failed: Build, Test, Publish / Publish to npm.",
+    });
+  });
+
+  it("renders sparse workflow failures and ignores malformed failed-step rows", () => {
+    expect(
+      describeFailureRecord({
+        schema: RECORD_SCHEMA,
+        kind: "workflow",
+        stage: "npm-verification",
+        workflow_run: {
+          database_id: "not-an-integer",
+          failed_steps: [null, 7, { job: "" }, { job: "Publish", step: "" }],
+        },
+      })?.cause,
+    ).toBe(
+      "Workflow npm-verification failed with an unreported status. Failed: Publish.",
+    );
+    expect(
+      describeFailureRecord({
+        schema: RECORD_SCHEMA,
+        kind: "workflow",
+        stage: "release-discovery",
+        status: 1,
+        workflow_run: null,
+      })?.cause,
+    ).toBe("Workflow release-discovery failed with status 1.");
+  });
 });
 
 describe("readFailureRecord", () => {
@@ -290,6 +452,72 @@ describe("renderFailureOutputs and main", () => {
     const write = vi.spyOn(process.stdout, "write").mockReturnValue(true);
     expect(main([])).toBe("");
     write.mockRestore();
+  });
+
+  it("records workflow and stage failures through both structured CLI modes", async () => {
+    const root = await fixtureRoot();
+    const stageTarget = path.join(root, "stage.json");
+    const workflowTarget = path.join(root, "workflow.json");
+    const blankWorkflowTarget = path.join(root, "blank-workflow.json");
+    const whitespaceWorkflowTarget = path.join(root, "whitespace-workflow.json");
+    const malformedTarget = path.join(root, "malformed.json");
+
+    expect(main(["record-stage", stageTarget, "release-discovery", "7"])).toBe("");
+    expect(readFailureRecord(stageTarget)).toMatchObject({
+      stage: "release-discovery",
+      status: 7,
+    });
+    expect(main(["record-stage"])).toBe("");
+    expect(
+      main(
+        ["record-workflow", workflowTarget, "release-workflow", "not-an-integer"],
+        () => JSON.stringify({
+          databaseId: 17,
+          jobs: [{ name: "Publish", conclusion: "failure", steps: [] }],
+        }),
+      ),
+    ).toBe("");
+    expect(readFailureRecord(workflowTarget)).toMatchObject({
+      stage: "release-workflow",
+      status: null,
+      workflow_run: {
+        database_id: 17,
+        failed_steps: [{ job: "Publish", step: "" }],
+      },
+    });
+    expect(
+      main(
+        ["record-workflow", blankWorkflowTarget, "release-workflow", ""],
+        () => "{}",
+      ),
+    ).toBe("");
+    expect(readFailureRecord(blankWorkflowTarget)).toMatchObject({
+      stage: "release-workflow",
+      status: null,
+    });
+    expect(
+      main(
+        ["record-workflow", whitespaceWorkflowTarget, "release-workflow", "  "],
+        () => "{}",
+      ),
+    ).toBe("");
+    expect(readFailureRecord(whitespaceWorkflowTarget)).toMatchObject({
+      stage: "release-workflow",
+      status: null,
+    });
+    expect(
+      main(["record-workflow", malformedTarget], () => "{not-json"),
+    ).toBe("");
+    expect(readFailureRecord(malformedTarget)).toMatchObject({
+      stage: "",
+      workflow_run: { failed_steps: [] },
+    });
+    const scalarTarget = path.join(root, "scalar-input.json");
+    expect(main(["record-workflow", scalarTarget], () => "null")).toBe("");
+    expect(readFailureRecord(scalarTarget)).toMatchObject({
+      workflow_run: { failed_steps: [] },
+    });
+    expect(main(["record-workflow"], () => "{}")).toBe("");
   });
 
   it("negative control: the rendered cause tracks the recorded verdict", async () => {

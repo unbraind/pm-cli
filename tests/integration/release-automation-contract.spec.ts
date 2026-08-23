@@ -418,10 +418,11 @@ exit "\${NPM_STATUS}"
       ) =>
         spawnSync(
           "bash",
-          ["-c", prependFakeBinForBash(autoReleaseScript ?? "")],
+          [],
           {
             cwd: repoRoot,
             encoding: "utf8",
+            input: prependFakeBinForBash(autoReleaseScript ?? ""),
             env: {
               ...process.env,
               FAKE_BIN: tempRoot,
@@ -450,7 +451,10 @@ exit "\${NPM_STATUS}"
       await writeFile(npmLog, "", "utf8");
       await writeFile(githubOutput, "", "utf8");
       const recovered = runScenario("");
-      expect(recovered.status).toBe(0);
+      expect(
+        recovered.status,
+        `stdout:\n${recovered.stdout}\nstderr:\n${recovered.stderr}`,
+      ).toBe(0);
       expect(recovered.stdout).toContain(
         "already proved successful immutable publication",
       );

@@ -126,9 +126,15 @@ function recordRuntimeActions(
   for (const action of runtimeActions) {
     const command = `${parent} ${action}`;
     registered.add(command);
+    let help;
+    try {
+      help = loadHelp([...parentPath, action]);
+    } catch {
+      continue;
+    }
     positionals.set(
       command,
-      normalizeLiveHelpArguments(loadHelp([...parentPath, action])),
+      normalizeLiveHelpArguments(help),
     );
   }
 }
@@ -160,17 +166,31 @@ function recordHelpSubcommands(
 }
 
 /** Walk canonical Commander paths and retain alias edges and namespace parents. */
-function collectRegisteredCliCommands(loadHelp) {
+function collectRegisteredCliCommands(loadHelp, registeredCommandSeeds = []) {
   const registered = new Set();
   const parents = new Set();
   const aliases = new Map();
   const positionals = new Map();
-  const queue = [[]];
+  const queue = [
+    [],
+    ...registeredCommandSeeds
+      .filter((command) => command !== "help")
+      .map((command) => command.split(" ")),
+  ];
+  const visited = new Set();
   while (queue.length > 0) {
     const parentPath = queue.shift();
     const parent = parentPath.join(" ");
-    const help = loadHelp(parentPath);
+    if (visited.has(parent)) continue;
+    visited.add(parent);
+    let help;
+    try {
+      help = loadHelp(parentPath);
+    } catch {
+      continue;
+    }
     if (parent.length > 0) {
+      registered.add(parent);
       positionals.set(parent, normalizeLiveHelpArguments(help));
     }
     const runtimeActions = RUNTIME_POSITIONAL_ACTIONS.get(parent);
@@ -226,20 +246,28 @@ function expandRegisteredCommandAliases(registered, aliases, positionals) {
 export function collectLiveCliCommandPaths(
   loadHelp = readLiveCliHelp,
   activePackageCommands = [],
+  registeredCommandSeeds = [],
 ) {
-  return collectLiveCliCommandSurface(loadHelp, activePackageCommands).commands;
+  return collectLiveCliCommandSurface(
+    loadHelp,
+    activePackageCommands,
+    registeredCommandSeeds,
+  ).commands;
 }
 
 /** Collect independently observed destinations and live positional structures. */
 function collectLiveCliCommandSurface(
   loadHelp = readLiveCliHelp,
   activePackageCommands = [],
+  registeredCommandSeeds = [],
 ) {
   const coreTopLevelCommands = new Set(
-    normalizeLiveHelpSubcommands(loadHelp([], true)).map(({ name }) => name),
+    registeredCommandSeeds.length > 0
+      ? registeredCommandSeeds.filter((command) => !command.includes(" "))
+      : normalizeLiveHelpSubcommands(loadHelp([], true)).map(({ name }) => name),
   );
   const { registered, parents, aliases, positionals } =
-    collectRegisteredCliCommands(loadHelp);
+    collectRegisteredCliCommands(loadHelp, registeredCommandSeeds);
   expandRegisteredCommandAliases(registered, aliases, positionals);
   const helpFailures = [];
   for (const command of activePackageCommands) {
@@ -450,6 +478,13 @@ const packageOwnedCommandSet = new Set(
   ).map(({ command }) => command),
 );
 const hasCommandSummaries = Array.isArray(contracts.command_summaries);
+const registeredCommandSeeds = hasCommandSummaries
+  ? contracts.command_summaries.flatMap((summary) =>
+      Object(summary) === summary && typeof summary.command === "string"
+        ? [summary.command]
+        : [],
+    )
+  : [];
 const activePackageCommands = hasCommandSummaries
   ? contracts.command_summaries.flatMap((summary) =>
       Object(summary) === summary &&
@@ -462,6 +497,7 @@ const activePackageCommands = hasCommandSummaries
 const liveCliSurface = collectLiveCliCommandSurface(
   readLiveCliHelp,
   activePackageCommands,
+  registeredCommandSeeds,
 );
 const commands = liveCliSurface.commands;
 const grammarReport = verifyPmCliGrammar(commands, PM_COMMAND_ALIAS_CONTRACTS);

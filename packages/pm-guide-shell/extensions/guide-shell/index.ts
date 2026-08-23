@@ -93,6 +93,8 @@ function guideCommand(): CommandDefinition {
   return {
     name: "guide",
     action: "guide",
+    tier: "core",
+    family: "context",
     description: "Show migration and usage guidance for pm command families.",
     intent: "Read focused local guidance for one pm workflow.",
     arguments: [
@@ -108,6 +110,8 @@ function completionCommand(): CommandDefinition {
   return {
     name: "completion",
     action: "completion",
+    tier: "standard",
+    family: "automation",
     description: "Generate shell completion scripts for bash, zsh, and fish.",
     intent: "Generate a completion script for the selected shell.",
     arguments: [
@@ -127,6 +131,8 @@ function completionTagsCommand(): CommandDefinition {
   return {
     name: "completion-tags",
     action: "completion-tags",
+    tier: "internal",
+    family: "internal",
     description: "Print known tags for completion filters.",
     intent: "List tag values for lazy shell completion.",
     run: async (context) => runCompletionTagsPackage(context.global),
@@ -137,6 +143,8 @@ function completionStatusesCommand(): CommandDefinition {
   return {
     name: "completion-statuses",
     action: "completion-statuses",
+    tier: "internal",
+    family: "internal",
     description: "Print runtime status IDs for completion filters.",
     intent: "List runtime status values for shell completion.",
     run: async (context) => runCompletionStatusesPackage(context.global),
@@ -147,6 +155,8 @@ function completionTypesCommand(): CommandDefinition {
   return {
     name: "completion-types",
     action: "completion-types",
+    tier: "internal",
+    family: "internal",
     description: "Print runtime item type IDs for completion filters.",
     intent: "List runtime item types for shell completion.",
     run: async (context) => runCompletionTypesPackage(context.global),

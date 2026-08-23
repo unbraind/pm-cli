@@ -35,6 +35,8 @@ import type {
   WorkspaceTransactionCommitResult,
 } from "../../sdk/workspace-transaction.js";
 import type { KnownItemFieldType } from "./item-field-types.js";
+import type { ExtensionCommandCapabilityFamily } from "./command-metadata-contract.js";
+export type { ExtensionCommandCapabilityFamily } from "./command-metadata-contract.js";
 
 /** Public contract for known extension capabilities, shared by SDK and presentation-layer consumers. */
 export const KNOWN_EXTENSION_CAPABILITIES = [
@@ -859,6 +861,8 @@ export interface CommandDefinition {
   flags?: FlagDefinition[];
   /** Minimum agent surface tier that should advertise this command. */
   tier?: "core" | "standard" | "full" | "internal";
+  /** Capability family used by generated agent routing surfaces. */
+  family?: ExtensionCommandCapabilityFamily;
 }
 
 /**
@@ -913,8 +917,7 @@ export type ExporterArtifactOutputContract =
     };
 
 /** Exporter command metadata plus its optional artifact-delivery contract. */
-export interface ExporterRegistrationOptions
-  extends ImportExportRegistrationOptions {
+export interface ExporterRegistrationOptions extends ImportExportRegistrationOptions {
   /** Declaration for artifact bytes and the host receipt. */
   output?: ExporterArtifactOutputContract;
 }
@@ -1524,6 +1527,8 @@ export interface RegisteredExtensionCommandDefinition {
   arguments: ExtensionCommandArgumentDefinition[];
   /** Minimum agent surface tier that should advertise this command. */
   tier?: "core" | "standard" | "full" | "internal";
+  /** Capability family used by generated agent routing surfaces. */
+  family?: ExtensionCommandCapabilityFamily;
 }
 
 /** Documents the registered extension schema field definitions payload exchanged by command, SDK, and package integrations. */
