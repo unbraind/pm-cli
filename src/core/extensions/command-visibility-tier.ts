@@ -6,6 +6,27 @@
 import type { CommandDefinition } from "./extension-types.js";
 import { assertOptionalStringField } from "./registration-validation.js";
 
+const COMMAND_CAPABILITY_FAMILIES = new Set([
+  "workspace",
+  "intake",
+  "context",
+  "lifecycle",
+  "evidence",
+  "graph",
+  "quality",
+  "automation",
+  "extensions",
+  "internal",
+]);
+
+function assertCommandCapabilityFamily(family: unknown): void {
+  if (family !== undefined && !COMMAND_CAPABILITY_FAMILIES.has(String(family))) {
+    throw new Error(
+      "registerCommand definition.family must be workspace, intake, context, lifecycle, evidence, graph, quality, automation, extensions, or internal",
+    );
+  }
+}
+
 /** Validate optional command metadata strings and the closed visibility tier. */
 export function assertCommandDefinitionMetadataStrings(
   definition: CommandDefinition,
@@ -13,6 +34,10 @@ export function assertCommandDefinitionMetadataStrings(
   assertOptionalStringField(
     "registerCommand definition.action",
     definition.action,
+  );
+  assertOptionalStringField(
+    "registerCommand definition.family",
+    definition.family,
   );
   assertOptionalStringField(
     "registerCommand definition.description",
@@ -38,4 +63,5 @@ export function assertCommandDefinitionMetadataStrings(
       "registerCommand definition.tier must be core, standard, full, or internal",
     );
   }
+  assertCommandCapabilityFamily(definition.family);
 }

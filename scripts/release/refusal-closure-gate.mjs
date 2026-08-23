@@ -25,6 +25,11 @@ import {
   scorePmGrammarRefusalClosure,
 } from "../../dist/sdk/agent/refusal-corpus-contracts.js";
 import {
+  buildPmRefusalClosureCensus,
+  verifyPmRefusalClosureRatchet,
+} from "../../dist/sdk/agent/refusal-closure-census.js";
+import { PM_ERROR_CODE_CATALOG } from "../../dist/sdk/generated-error-code-catalog.js";
+import {
   listTrackerPreflightRecoveryContracts,
   scoreTrackerPreflightRecoveryClosure,
 } from "../../dist/sdk/agent/tracker-preflight-contracts.js";
@@ -426,6 +431,34 @@ function buildRefusalRatchetFindings(baseline, probeIds, contractCount) {
   return findings;
 }
 
+/** Score complete-catalog refusal evidence and its executable-code ratchet. */
+export function scorePmRefusalCatalogClosure(
+  errorCodeCatalog = PM_ERROR_CODE_CATALOG,
+) {
+  const catalogClosure = buildPmRefusalClosureCensus(
+    errorCodeCatalog,
+    listCoreClosedDomainContracts(),
+    [
+      ...listPmRequiredArgumentRefusalContracts(),
+      ...listPmSubcommandRefusalContracts(),
+    ],
+  );
+  const catalogRatchet = verifyPmRefusalClosureRatchet(catalogClosure);
+  return {
+    catalogClosure,
+    catalogRatchet,
+    catalogRatchetFindings: catalogRatchet.ok
+      ? []
+      : [
+          {
+            code: "executable_error_code_count_regressed",
+            probe_id: "catalog-census",
+            detail: `${catalogRatchet.actual} executable error codes are below the ratcheted minimum ${catalogRatchet.baseline}.`,
+          },
+        ],
+  };
+}
+
 /** Execute the real core CLI refusal corpus in an isolated tracker. */
 export function verifyExecutableRefusalClosure({
   injectMismatch = false,
@@ -437,6 +470,7 @@ export function verifyExecutableRefusalClosure({
   spawn = spawnSync,
   makeTemporaryDirectory = mkdtempSync,
   removeDirectory = rmSync,
+  errorCodeCatalog = PM_ERROR_CODE_CATALOG,
 } = {}) {
   const closedDomainProbes = probes ?? listCoreClosedDomainContracts();
   // Preserve injected closed-domain-only tests: preflights default only with the production corpus.
@@ -524,12 +558,20 @@ export function verifyExecutableRefusalClosure({
       probeIds,
       contractCount,
     );
+    const {
+      catalogClosure,
+      catalogRatchet,
+      catalogRatchetFindings,
+    } = scorePmRefusalCatalogClosure(
+      errorCodeCatalog,
+    );
     const findings = [
       ...closedDomainScore.findings,
       ...grammarRefusalScore.findings,
       ...trackerPreflightScore.findings,
       ...diagnosticOutputScore.findings,
       ...ratchetFindings,
+      ...catalogRatchetFindings,
     ].sort(
       (left, right) =>
         left.probe_id.localeCompare(right.probe_id) ||
@@ -558,6 +600,16 @@ export function verifyExecutableRefusalClosure({
       baseline_version: baseline.version,
       baseline_minimum_probe_count: baseline.minimum_probe_count,
       diagnostic_output: diagnosticOutputScore,
+      catalog_closure: {
+        complete: catalogClosure.ok,
+        catalog_error_code_count: catalogClosure.catalog_error_code_count,
+        executable_error_code_count:
+          catalogClosure.executable_error_code_count,
+        uncovered_error_code_count: catalogClosure.uncovered_error_code_count,
+        coverage_fraction: catalogClosure.coverage_fraction,
+        ratchet: catalogRatchet,
+        restore_with: "docs/generated/REFUSAL_CLOSURE_CENSUS.md",
+      },
       findings,
     };
   } finally {

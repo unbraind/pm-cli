@@ -145,6 +145,8 @@ export function buildEchoCommandDefinition(): CommandDefinition {
   return {
     name: ECHO_COMMAND,
     action: "command-kit-echo",
+    tier: "standard",
+    family: "extensions",
     description:
       "Echo a message as structured output (commands-capability exemplar).",
     intent:

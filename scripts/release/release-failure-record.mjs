@@ -65,6 +65,71 @@ export function recordGateFailure(failure, recordPath) {
   return document;
 }
 
+/**
+ * Select failed jobs and steps from GitHub's structured workflow-run payload.
+ *
+ * Names are presentation fields, but classification is based exclusively on
+ * each job and step's declared `conclusion`. Log text and error prose never
+ * participate in the decision.
+ */
+export function collectWorkflowFailureSummaries(run) {
+  const summaries = [];
+  const jobs = Array.isArray(run?.jobs) ? run.jobs : [];
+  for (const job of jobs) {
+    if (job === null || typeof job !== "object" || job.conclusion !== "failure") {
+      continue;
+    }
+    const jobName = trimmedString(job.name);
+    if (jobName === "") {
+      continue;
+    }
+    const failedSteps = (Array.isArray(job.steps) ? job.steps : []).filter(
+      (step) =>
+        step !== null &&
+        typeof step === "object" &&
+        step.conclusion === "failure" &&
+        trimmedString(step.name) !== "",
+    );
+    if (failedSteps.length === 0) {
+      summaries.push({ job: jobName, step: "" });
+      continue;
+    }
+    for (const step of failedSteps) {
+      summaries.push({ job: jobName, step: trimmedString(step.name) });
+    }
+  }
+  return summaries;
+}
+
+/** Write a downstream GitHub workflow failure from its structured run payload. */
+export function recordWorkflowFailure(failure, recordPath) {
+  const target = trimmedString(recordPath ?? process.env.RELEASE_FAILURE_RECORD);
+  if (target === "") {
+    return null;
+  }
+  const run =
+    failure?.run !== null && typeof failure?.run === "object" ? failure.run : {};
+  const databaseId = Number.isInteger(run.databaseId) ? run.databaseId : null;
+  const document = {
+    schema: RECORD_SCHEMA,
+    kind: "workflow",
+    stage: trimmedString(failure?.stage),
+    status: Number.isInteger(failure?.status) ? failure.status : null,
+    workflow_run: {
+      database_id: databaseId,
+      status: trimmedString(run.status),
+      conclusion: trimmedString(run.conclusion),
+      head_sha: trimmedString(run.headSha),
+      head_branch: trimmedString(run.headBranch),
+      event: trimmedString(run.event),
+      failed_steps: collectWorkflowFailureSummaries(run),
+    },
+  };
+  mkdirSync(path.dirname(path.resolve(target)), { recursive: true });
+  writeFileSync(target, `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  return document;
+}
+
 /** Parse a gate's captured stdout as its JSON verdict, or null when it is not one. */
 export function parseGateVerdict(stdout) {
   const text = trimmedString(stdout);
@@ -123,6 +188,28 @@ export function collectBlockingSummaries(verdict) {
   return summaries;
 }
 
+function describeWorkflowFailureRecord(document, stage, exit) {
+  const run = document.workflow_run;
+  const runId = Number.isInteger(run?.database_id)
+    ? ` run ${run.database_id}`
+    : "";
+  const rows = Array.isArray(run?.failed_steps) ? run.failed_steps : [];
+  const failures = rows
+    .map((row) => {
+      const job = trimmedString(row?.job);
+      const step = trimmedString(row?.step);
+      if (job === "") return "";
+      return step === "" ? job : `${job} / ${step}`;
+    })
+    .filter((row) => row !== "")
+    .slice(0, MAX_RENDERED_BLOCKERS);
+  const failed = failures.length === 0 ? "" : ` Failed: ${failures.join(", ")}.`;
+  return {
+    stage,
+    cause: `Workflow ${stage}${runId} failed with ${exit}.${failed}`,
+  };
+}
+
 /**
  * Describe a failure document as a stage plus a single-line cause.
  *
@@ -139,6 +226,9 @@ export function describeFailureRecord(document) {
   }
   const status = Number.isInteger(document?.status) ? document.status : null;
   const exit = status === null ? "an unreported status" : `status ${status}`;
+  if (document?.kind === "workflow") {
+    return describeWorkflowFailureRecord(document, stage, exit);
+  }
   const blockers = collectBlockingSummaries(parseGateVerdict(document?.stdout));
   const shown = blockers.slice(0, MAX_RENDERED_BLOCKERS);
   const omitted = blockers.length - shown.length;
@@ -185,8 +275,48 @@ export function renderFailureOutputs(recordPath) {
   return `failure_stage=${described.stage}\nfailure_cause=${described.cause}\n`;
 }
 
-/** CLI entrypoint: print step outputs for the document named by the first argument. */
-export function main(argv = process.argv.slice(2)) {
+function integerStatus(value) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+/**
+ * CLI entrypoint.
+ *
+ * `record-workflow <path> <stage> <status>` consumes a structured `gh run
+ * view --json ...` response from standard input. The legacy `<path>` form
+ * renders step outputs for the workflow.
+ */
+export function main(
+  argv = process.argv.slice(2),
+  /* c8 ignore next -- the workflow process exercises the real fd-0 transport;
+   * unit tests inject deterministic stdin without replacing a process file descriptor. */
+  readStandardInput = () => readFileSync(0, "utf8"),
+) {
+  if (argv[0] === "record-stage") {
+    recordGateFailure(
+      { gate: argv[2] ?? "", status: integerStatus(argv[3]) },
+      argv[1] ?? "",
+    );
+    return "";
+  }
+  if (argv[0] === "record-workflow") {
+    const input = readStandardInput();
+    let run = {};
+    try {
+      const parsed = JSON.parse(input);
+      if (parsed !== null && typeof parsed === "object") {
+        run = parsed;
+      }
+    } catch {
+      run = {};
+    }
+    recordWorkflowFailure(
+      { stage: argv[2] ?? "", status: integerStatus(argv[3]), run },
+      argv[1] ?? "",
+    );
+    return "";
+  }
   const rendered = renderFailureOutputs(argv[0] ?? "");
   process.stdout.write(rendered);
   return rendered;

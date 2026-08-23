@@ -67,28 +67,16 @@ pm release <ID>
 
 ## Capability Map
 
-Each family below has one entry command and one guide topic. Expand a family
-only when the task enters it.
+Capability families and their commands are generated from the public SDK
+contract. Start with `pm guide capabilities`, expand only the family the task
+enters, and use these drift-gated references:
 
-| Family                | Entry                              | Guide topic  |
-| --------------------- | ---------------------------------- | ------------ |
-| Selection and context | `pm next`, `pm context`, `pm focus`| `quickstart` |
-| Query                 | `pm list`, `pm search`, `pm get`   | `commands`   |
-| Lifecycle             | `pm create/update/close/claim`     | `workflows`  |
-| Annotation evidence   | `pm comments/notes/learnings/files/docs/test` | `workflows` |
-| Relationships         | `pm deps`, `pm graph <verb>`       | `graph`      |
-| Output cost control   | `--output-*`, `--token-accounting` | `tokens`     |
-| Declared invariants   | `pm assurance`, `pm validate`      | `assurance`  |
-| Branch and fleet      | `pm merge`, `pm claim/release`     | `merge`      |
-| History and proof     | `pm history`, `pm activity`, `pm restore` | `assurance` |
-| Aggregation           | `pm aggregate`, `pm stats`         | `commands`   |
-| Customization         | `pm schema`, `pm config`           | `commands`   |
-| Packages              | `pm package`, `pm install`         | `extensions` |
-| Contracts             | `pm contracts`                     | `commands`   |
+- [Capability routing](../../../docs/generated/AGENT_CAPABILITY_ROUTING.md)
+- [Visibility tiers and families](../../../docs/generated/AGENT_COMMAND_SURFACE.md)
 
-The command surface is tiered. `pm help` shows the core tier; the full tier is
-reachable through `pm contracts --summary` and `pm <command> --help --json`.
-The generated tier table is [docs/generated/AGENT_COMMAND_SURFACE.md](../../../docs/generated/AGENT_COMMAND_SURFACE.md).
+`pm help` shows the bounded core tier. Use `pm guide capabilities`, `pm
+contracts --summary`, or `pm <command> --help --json` for progressive
+disclosure into the wider surface.
 
 ## Token Discipline
 

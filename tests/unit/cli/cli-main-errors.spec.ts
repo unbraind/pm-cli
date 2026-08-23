@@ -5435,15 +5435,17 @@ describe("CLI rich help content", () => {
           ["--json", "known", "--help"],
           new Map([
             [
-              "known",
+              "known child",
               {
-                command: "known",
-                action: "known",
+                command: "known child",
+                action: "known-child",
                 description: "Known",
                 examples: [],
                 failure_hints: [],
                 arguments: [],
                 flags: [],
+                tier: "core",
+                family: "automation",
               },
             ],
           ]),
@@ -5452,6 +5454,8 @@ describe("CLI rich help content", () => {
       const payload = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
       expect(Array.isArray(payload.examples)).toBe(true);
       expect(payload.examples.length).toBeGreaterThan(0);
+      expect(payload.visibility_tier).toBe("core");
+      expect(payload.capability_family).toBe("automation");
     } finally {
       stdoutSpy.mockRestore();
     }

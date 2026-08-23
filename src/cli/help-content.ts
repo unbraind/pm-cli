@@ -10,6 +10,21 @@ import {
   PM_POSITIONAL_ACTION_CONTRACTS,
   resolvePmPositionalActionContract,
 } from "../sdk/cli-contracts/grammar-contracts.js";
+import {
+  listPmCommandsForTier,
+  PM_CORE_HELP_OPTION_FLAGS,
+  type PmCommandVisibilityTier,
+} from "../sdk/agent-capability-contracts.js";
+
+const COMMAND_HELP_VISIBILITY_TIERS = new WeakMap<Command, PmCommandVisibilityTier>();
+
+/** Attach a package command's declared tier to its Commander presentation node. */
+export function setPmCommandHelpVisibilityTier(
+  command: Command,
+  tier: PmCommandVisibilityTier,
+): void {
+  COMMAND_HELP_VISIBILITY_TIERS.set(command, tier);
+}
 
 /** Documents the help bundle payload exchanged by command, SDK, and package integrations. */
 export interface HelpBundle {
@@ -944,6 +959,30 @@ export function attachRichHelpText(
   program: Command,
   argv: string[] = process.argv.slice(2),
 ): void {
+  const baselineHelp = program.createHelp();
+  const coreCommands = new Set(listPmCommandsForTier("core"));
+  const coreOptions = new Set(PM_CORE_HELP_OPTION_FLAGS);
+  program.configureHelp({
+    visibleCommands(command) {
+      const visible = baselineHelp.visibleCommands(command);
+      if (command !== program) {
+        return visible;
+      }
+      return visible.filter((candidate) => {
+        const declaredTier = COMMAND_HELP_VISIBILITY_TIERS.get(candidate);
+        if (declaredTier !== undefined) {
+          return declaredTier === "core";
+        }
+        return candidate.name() === "help" || coreCommands.has(candidate.name());
+      });
+    },
+    visibleOptions(command) {
+      const visible = baselineHelp.visibleOptions(command);
+      return command === program
+        ? visible.filter((option) => coreOptions.has(option.flags))
+        : visible;
+    },
+  });
   const detailMode = resolveHelpDetailMode(argv);
   program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE, detailMode));
   for (const [commandPath, bundle] of Object.entries(HELP_BY_COMMAND_PATH)) {

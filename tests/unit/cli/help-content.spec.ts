@@ -6,6 +6,7 @@ import {
   attachRichHelpText,
   firstExampleOrEmpty,
   resolveHelpNarrative,
+  setPmCommandHelpVisibilityTier,
 } from "../../../src/cli/help-content.js";
 
 describe("help-content.firstExampleOrEmpty", () => {
@@ -122,5 +123,43 @@ describe("help-content rendering helpers", () => {
     assurance.configureOutput({ writeOut: (text) => (flaglessHelp += text) });
     assurance.outputHelp();
     expect(flaglessHelp).toContain("Applicable flags: none.");
+  });
+
+  it("keeps root help to the core contract while preserving nested help", () => {
+    const program = new Command("pm");
+    program.description("Project management");
+    program.command("context").description("Orient to current work");
+    const graph = program
+      .command("graph")
+      .description("Inspect relationships")
+      .option("--scope <value>", "Graph scope");
+    graph.command("validate").description("Validate the graph");
+    program.command("health").description("Run health checks");
+    const extensionCore = program
+      .command("extension-core")
+      .description("A package-declared core command");
+    setPmCommandHelpVisibilityTier(extensionCore, "core");
+    attachRichHelpText(program, ["--help"]);
+
+    let rootHelp = "";
+    program.configureOutput({ writeOut: (text) => (rootHelp += text) });
+    program.outputHelp();
+    expect(rootHelp).toContain("context");
+    expect(rootHelp).not.toContain("health");
+    expect(rootHelp).not.toContain("graph");
+    expect(rootHelp).toContain("extension-core");
+
+    let graphHelp = "";
+    graph.configureOutput({ writeOut: (text) => (graphHelp += text) });
+    graph.outputHelp();
+    expect(graphHelp).toContain("validate");
+
+    const configuredHelp = program.configureHelp();
+    expect(configuredHelp.visibleCommands?.(graph).map((command) => command.name())).toContain(
+      "validate",
+    );
+    expect(configuredHelp.visibleOptions?.(graph).map((option) => option.long)).toContain(
+      "--scope",
+    );
   });
 });

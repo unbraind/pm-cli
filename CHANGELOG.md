@@ -4,7 +4,12 @@
 
 ### Fixed
 
+- The blocked-release alert derives its cause from configuration preflight, so it discards the failing gate's own machine-readable verdict and reports read the logs on every real failure ([pm-x63izf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x63izf.toon))
 - A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
+
+### Other
+
+- Single source of surface tiering: one contract-declared tier per command drives CLI help, MCP tool profiles, completions, and docs together ([pm-kxci8x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kxci8x.toon))
 
 ## 2026.8.23 - 2026-08-23
 

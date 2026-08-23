@@ -91,7 +91,10 @@ import {
   validateLooseCommandOptionsWithFlagDefinitions,
   type LooseCommandFlagDefinition,
 } from "./extension-command-options.js";
-import { attachRichHelpText } from "./help-content.js";
+import {
+  attachRichHelpText,
+  setPmCommandHelpVisibilityTier,
+} from "./help-content.js";
 import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
 import {
   extractProvidedOptionFlags,
@@ -2055,6 +2058,33 @@ function attachDynamicExtensionHelp(
 /* v8 ignore stop */
 
 /* c8 ignore start */
+/** Apply the most-visible descendant tier to each new extension command root. */
+function applyDynamicExtensionRootHelpVisibility(
+  rootProgram: Command,
+  preexistingTopLevelCommands: ReadonlySet<string>,
+  descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+): void {
+  const tierRank = { core: 0, standard: 1, full: 2, internal: 3 } as const;
+  for (const command of rootProgram.commands) {
+    if (preexistingTopLevelCommands.has(command.name())) {
+      continue;
+    }
+    const matchingDescriptors = [...descriptors.entries()]
+      .filter(([path]) => path.split(" ")[0] === command.name())
+      .map(([, descriptor]) => descriptor);
+    const tier = matchingDescriptors.reduce<
+      "core" | "standard" | "full" | "internal"
+    >(
+      (selected, descriptor) =>
+        tierRank[descriptor.tier] < tierRank[selected]
+          ? descriptor.tier
+          : selected,
+      "internal",
+    );
+    setPmCommandHelpVisibilityTier(command, tier);
+  }
+}
+
 async function registerDynamicExtensionCommandPaths(rootProgram: Command, invocationArgv: string[]): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
@@ -2107,6 +2137,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     snapshot.commandDescriptors,
     snapshot.commandAliases,
     (warning) => reportExtensionCommandCollision(snapshot.activationWarnings, printError, warning),
+  );
+  const preexistingTopLevelCommands = new Set(
+    rootProgram.commands.map((command) => command.name()),
   );
   const registerCommandPath = (commandPath: string): void => {
     const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
@@ -2167,6 +2200,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   for (const commandPath of commandPaths) {
     registerCommandPath(commandPath);
   }
+  applyDynamicExtensionRootHelpVisibility(
+    rootProgram,
+    preexistingTopLevelCommands,
+    snapshot.commandDescriptors,
+  );
 }
 /* c8 ignore stop */
 

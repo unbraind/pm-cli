@@ -2396,7 +2396,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
         examples,
         failure_hints: failureHints,
         arguments: argumentsDefinition,
-        tier: definition.tier,
+        tier: definition.tier ?? "standard",
+        family: definition.family ?? "extensions",
       };
       if (description) {
         registration.description = description;

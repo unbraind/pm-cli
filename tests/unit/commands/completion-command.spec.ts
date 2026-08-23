@@ -1522,12 +1522,13 @@ describe("pm completion CLI command", () => {
     });
   });
 
-  it("completion command appears in --help output", async () => {
+  it("keeps completion out of core help while preserving direct help", async () => {
     await withTempPmPath(async (context) => {
       installGuideShellPackage(context);
       const help = context.runCli(["--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout).toContain("completion");
+      expect(help.stdout).not.toContain("completion");
+      expect(context.runCli(["completion", "--help"]).code).toBe(0);
     });
   });
 

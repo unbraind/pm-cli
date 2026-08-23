@@ -36,6 +36,14 @@ export interface PmCommandCapabilityContract extends PmCommandVisibilityContract
   family: PmCommandCapabilityFamily;
 }
 
+/** One generated family route shared by guides, skills, and documentation. */
+export interface PmCommandCapabilityGroup {
+  /** Stable capability family. */
+  family: PmCommandCapabilityFamily;
+  /** Non-internal commands owned by the family. */
+  commands: readonly string[];
+}
+
 const CORE_COMMANDS = new Set([
   "claim",
   "close",
@@ -43,6 +51,7 @@ const CORE_COMMANDS = new Set([
   "create",
   "get",
   "help",
+  "init",
   "list",
   "next",
   "plan",
@@ -213,6 +222,44 @@ export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContra
 export const PM_COMMAND_VISIBILITY_CONTRACTS: readonly PmCommandVisibilityContract[] =
   PM_COMMAND_CAPABILITY_CONTRACTS;
 
+/** Bounded compact-help contract: one conventional terminal screen. */
+export const PM_CORE_HELP_BUDGET = Object.freeze({
+  max_lines: 50,
+  max_utf8_bytes: 6000,
+});
+
+/** Root options retained in the compact progressive-disclosure help screen. */
+export const PM_CORE_HELP_OPTION_FLAGS: readonly string[] = Object.freeze([
+  "-V, --version",
+  "--json",
+  "--output-include <fields>",
+  "--output-limit <count>",
+  "--output-budget <tokens|unbounded>",
+  "--output-cursor <cursor>",
+  "--pm-path <dir>",
+  "--no-extensions",
+  "--no-pager",
+  "--explain",
+  "-h, --help",
+]);
+
+/** Measure rendered core help against its line and byte ceilings. */
+export function measurePmCoreHelp(text: string): {
+  lines: number;
+  utf8_bytes: number;
+  within_budget: boolean;
+} {
+  const lines = text === "" ? 0 : text.split(/\r?\n/).length;
+  const utf8Bytes = Buffer.byteLength(text, "utf8");
+  return {
+    lines,
+    utf8_bytes: utf8Bytes,
+    within_budget:
+      lines <= PM_CORE_HELP_BUDGET.max_lines &&
+      utf8Bytes <= PM_CORE_HELP_BUDGET.max_utf8_bytes,
+  };
+}
+
 const TIER_ORDER: Readonly<Record<PmCommandVisibilityTier, number>> = {
   core: 0,
   standard: 1,
@@ -238,8 +285,19 @@ export function resolvePmCommandVisibilityTier(
 export function listPmCommandsForTier(
   tier: Exclude<PmCommandVisibilityTier, "internal">,
 ): string[] {
+  return listPmCommandsForTierFromContracts(
+    tier,
+    PM_COMMAND_CAPABILITY_CONTRACTS,
+  );
+}
+
+/** Project an explicit command registry into one visibility tier. */
+export function listPmCommandsForTierFromContracts(
+  tier: Exclude<PmCommandVisibilityTier, "internal">,
+  contracts: readonly PmCommandCapabilityContract[],
+): string[] {
   const maximum = TIER_ORDER[tier];
-  return PM_COMMAND_VISIBILITY_CONTRACTS.filter(
+  return contracts.filter(
     (entry) => entry.tier !== "internal" && TIER_ORDER[entry.tier] <= maximum,
   ).map((entry) => entry.command);
 }
@@ -248,9 +306,59 @@ export function listPmCommandsForTier(
 export function listPmCommandsForFamily(
   family: PmCommandCapabilityFamily,
 ): string[] {
-  return PM_COMMAND_CAPABILITY_CONTRACTS.filter(
+  return listPmCommandsForFamilyFromContracts(
+    family,
+    PM_COMMAND_CAPABILITY_CONTRACTS,
+  );
+}
+
+/** Project an explicit command registry into one capability family. */
+export function listPmCommandsForFamilyFromContracts(
+  family: PmCommandCapabilityFamily,
+  contracts: readonly PmCommandCapabilityContract[],
+): string[] {
+  return contracts.filter(
     (entry) => entry.family === family,
   ).map((entry) => entry.command);
+}
+
+const CAPABILITY_FAMILY_ORDER: readonly PmCommandCapabilityFamily[] = [
+  "workspace",
+  "intake",
+  "context",
+  "lifecycle",
+  "evidence",
+  "graph",
+  "quality",
+  "automation",
+  "extensions",
+  "internal",
+];
+
+const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
+  "item-reopen",
+  "list-all",
+  "list-blocked",
+  "list-canceled",
+  "list-closed",
+  "list-draft",
+  "list-in-progress",
+  "list-open",
+]);
+
+/** Group the command registry for progressive-disclosure routing surfaces. */
+export function listPmCommandCapabilityGroups(
+  contracts: readonly PmCommandCapabilityContract[] =
+    PM_COMMAND_CAPABILITY_CONTRACTS,
+): PmCommandCapabilityGroup[] {
+  return CAPABILITY_FAMILY_ORDER.map((family) => ({
+    family,
+    commands: listPmCommandsForFamilyFromContracts(family, contracts).filter(
+      (command) =>
+        contracts.find((entry) => entry.command === command)?.tier !== "internal" &&
+        !CAPABILITY_ROUTING_EXCLUDED_ALIASES.has(command),
+    ),
+  })).filter(({ commands }) => commands.length > 0);
 }
 
 /** MCP profile names accepted by the server and embedding hosts. */
@@ -297,8 +405,23 @@ export function listPmMcpToolsForProfile(
   availableTools: readonly string[],
   profile: Exclude<PmMcpToolProfile, "custom">,
 ): string[] {
+  return listPmMcpToolsForProfileFromContracts(
+    availableTools,
+    profile,
+    PM_COMMAND_CAPABILITY_CONTRACTS,
+  );
+}
+
+/** Project an explicit command registry into one MCP tool profile. */
+export function listPmMcpToolsForProfileFromContracts(
+  availableTools: readonly string[],
+  profile: Exclude<PmMcpToolProfile, "custom">,
+  contracts: readonly PmCommandCapabilityContract[],
+): string[] {
   if (profile === "full") return [...availableTools];
-  const visibleCommands = new Set(listPmCommandsForTier(profile));
+  const visibleCommands = new Set(
+    listPmCommandsForTierFromContracts(profile, contracts),
+  );
   return availableTools.filter((tool) => {
     const command = PM_MCP_TOOL_COMMAND_CONTRACTS[tool];
     return command !== undefined && visibleCommands.has(command);
@@ -429,7 +552,16 @@ export const PM_MCP_PROMPT_CONTRACTS: readonly PmMcpPromptContract[] =
 
 /** Render the generated command visibility reference used by docs drift gates. */
 export function renderPmCommandVisibilityMarkdown(): string {
-  const rows = PM_COMMAND_CAPABILITY_CONTRACTS.map(
+  return renderPmCommandVisibilityMarkdownFromContracts(
+    PM_COMMAND_CAPABILITY_CONTRACTS,
+  );
+}
+
+/** Render an explicit registry for mutation-sensitivity and host tooling. */
+export function renderPmCommandVisibilityMarkdownFromContracts(
+  contracts: readonly PmCommandCapabilityContract[],
+): string {
+  const rows = contracts.map(
     ({ command, tier, family }) => `| \`${command}\` | ${tier} | ${family} |`,
   );
   return [
@@ -439,6 +571,29 @@ export function renderPmCommandVisibilityMarkdown(): string {
     "",
     "| Command | Minimum visibility tier | Capability family |",
     "| --- | --- | --- |",
+    ...rows,
+    "",
+  ].join("\n");
+}
+
+/** Render family routing for generated docs and skill progressive disclosure. */
+export function renderPmCapabilityRoutingMarkdown(
+  contracts: readonly PmCommandCapabilityContract[] =
+    PM_COMMAND_CAPABILITY_CONTRACTS,
+): string {
+  const rows = listPmCommandCapabilityGroups(contracts).map(
+    ({ family, commands }) =>
+      `| ${family} | ${commands.map((command) => `\`${command}\``).join(", ")} |`,
+  );
+  return [
+    "# Generated agent capability routing",
+    "",
+    "Tracker: `pm-kxci8x`.",
+    "",
+    "This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it manually.",
+    "",
+    "| Capability family | Commands |",
+    "| --- | --- |",
     ...rows,
     "",
   ].join("\n");

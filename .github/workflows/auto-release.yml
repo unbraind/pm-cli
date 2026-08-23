@@ -160,6 +160,31 @@ jobs:
           RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
         run: |
           set -euo pipefail
+          render_recorded_failure() {
+            node scripts/release/release-failure-record.mjs "${RELEASE_FAILURE_RECORD}" >> "${GITHUB_OUTPUT}"
+          }
+          record_failure_stage() {
+            node scripts/release/release-failure-record.mjs record-stage "${RELEASE_FAILURE_RECORD}" "$1" "${2:-1}"
+            render_recorded_failure
+          }
+          watch_release_workflow() {
+            local run_id="$1"
+            local watch_status
+            set +e
+            gh run watch "${run_id}" --compact --exit-status --interval 30
+            watch_status=$?
+            set -e
+            if [[ "${watch_status}" -eq 0 ]]; then
+              return 0
+            fi
+            if ! gh run view "${run_id}" --json databaseId,status,conclusion,headSha,headBranch,event,jobs \
+              | node scripts/release/release-failure-record.mjs record-workflow "${RELEASE_FAILURE_RECORD}" release-workflow "${watch_status}"; then
+              printf '{}\n' \
+                | node scripts/release/release-failure-record.mjs record-workflow "${RELEASE_FAILURE_RECORD}" release-workflow "${watch_status}"
+            fi
+            render_recorded_failure
+            return "${watch_status}"
+          }
           current_day="$(date -u +%F)"
           if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
             issue_created_day="${ISSUE_CREATED_AT%%T*}"
@@ -232,7 +257,9 @@ jobs:
               echo "Existing Release workflow ${RELEASE_RUN_ID} for ${EXISTING_RELEASE_TAG} already proved successful immutable publication."
             elif [[ -n "${RELEASE_RUN_ID}" && "${RELEASE_RUN_STATUS}" != "completed" ]]; then
               echo "Waiting for active exact-tag Release workflow ${RELEASE_RUN_ID}."
-              gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+              if ! watch_release_workflow "${RELEASE_RUN_ID}"; then
+                exit 1
+              fi
             else
               dispatch_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               gh workflow run release.yml --ref "${DEFAULT_BRANCH}" -f tag="${EXISTING_RELEASE_TAG}"
@@ -253,17 +280,22 @@ jobs:
               done
               if [[ -z "${RELEASE_RUN_ID}" ]]; then
                 echo "Current-workflow recovery run for ${EXISTING_RELEASE_TAG} did not become visible in time."
+                record_failure_stage release-workflow-discovery 1
                 exit 1
               fi
-              gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+              if ! watch_release_workflow "${RELEASE_RUN_ID}"; then
+                exit 1
+              fi
             fi
 
             if ! verified_release_tag="$(gh release view "${EXISTING_RELEASE_TAG}" --json tagName,isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false) | .tagName')"; then
               echo "Existing release ${EXISTING_RELEASE_TAG} could not be verified through public GitHub Release metadata."
+              record_failure_stage github-release-verification 1
               exit 1
             fi
             if [[ "${verified_release_tag}" != "${EXISTING_RELEASE_TAG}" ]]; then
               echo "Existing release ${EXISTING_RELEASE_TAG} lacks public non-draft GitHub Release metadata."
+              record_failure_stage github-release-verification 1
               exit 1
             fi
             release_version="${EXISTING_RELEASE_TAG#v}"
@@ -272,10 +304,12 @@ jobs:
             : > "${public_npmrc}"
             if ! verified_npm_version="$(env -u NODE_AUTH_TOKEN -u NPM_TOKEN npm_config_userconfig="${public_npmrc}" npm_config_cache="${RUNNER_TEMP}/same-day-npm-cache" npm view "${npm_package}@${release_version}" version --json | node -e 'let input=""; process.stdin.on("data", (chunk) => { input += chunk; }); process.stdin.on("end", () => { const parsed=JSON.parse(input); process.stdout.write(typeof parsed === "string" ? parsed : ""); });')"; then
               echo "Existing release ${EXISTING_RELEASE_TAG} could not be verified through the public npm registry."
+              record_failure_stage npm-publication-verification 1
               exit 1
             fi
             if [[ "${verified_npm_version}" != "${release_version}" ]]; then
               echo "Existing release ${EXISTING_RELEASE_TAG} is not publicly available from npm at the exact version."
+              record_failure_stage npm-publication-verification 1
               exit 1
             fi
             echo "Verified same-day GitHub Release and npm publication for ${EXISTING_RELEASE_TAG} at ${EXISTING_RELEASE_SHA}."
@@ -335,9 +369,12 @@ jobs:
           done
           if [[ -z "${RELEASE_RUN_ID}" ]]; then
             echo "Tag-push Release workflow for ${NEW_TAG} did not become visible in time."
+            record_failure_stage release-workflow-discovery 1
             exit 1
           fi
-          gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+          if ! watch_release_workflow "${RELEASE_RUN_ID}"; then
+            exit 1
+          fi
           PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"
           echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
           echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"

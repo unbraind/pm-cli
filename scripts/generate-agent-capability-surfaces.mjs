@@ -6,7 +6,20 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { renderPmCommandVisibilityMarkdown } from "../dist/sdk/agent-capability-contracts.js";
+import {
+  renderPmCapabilityRoutingMarkdown,
+  renderPmCommandVisibilityMarkdown,
+} from "../dist/sdk/agent-capability-contracts.js";
+import { listCoreClosedDomainContracts } from "../dist/sdk/agent/closed-domain-contracts.js";
+import {
+  buildPmRefusalClosureCensus,
+  renderPmRefusalClosureCensusMarkdown,
+} from "../dist/sdk/agent/refusal-closure-census.js";
+import {
+  listPmRequiredArgumentRefusalContracts,
+  listPmSubcommandRefusalContracts,
+} from "../dist/sdk/agent/refusal-corpus-contracts.js";
+import { PM_ERROR_CODE_CATALOG } from "../dist/sdk/generated-error-code-catalog.js";
 import { renderPmFlagLexiconMarkdown } from "../dist/sdk/cli-contracts/flag-lexicon-contracts.js";
 
 const repositoryRoot = path.resolve(
@@ -17,9 +30,22 @@ export async function main(
   root = repositoryRoot,
   args = process.argv.slice(2),
 ) {
+  const refusalClosureCensus = buildPmRefusalClosureCensus(
+    PM_ERROR_CODE_CATALOG,
+    listCoreClosedDomainContracts(),
+    [
+      ...listPmRequiredArgumentRefusalContracts(),
+      ...listPmSubcommandRefusalContracts(),
+    ],
+  );
   const outputs = [
     ["AGENT_COMMAND_SURFACE.md", renderPmCommandVisibilityMarkdown()],
+    ["AGENT_CAPABILITY_ROUTING.md", renderPmCapabilityRoutingMarkdown()],
     ["FLAG_LEXICON_BUDGETS.md", renderPmFlagLexiconMarkdown()],
+    [
+      "REFUSAL_CLOSURE_CENSUS.md",
+      renderPmRefusalClosureCensusMarkdown(refusalClosureCensus),
+    ],
   ];
   if (args.includes("--check")) {
     for (const [filename, expected] of outputs) {

@@ -2046,6 +2046,8 @@ export default defineExtension({
     api.registerCommand({
       name: "hello",
       action: "hello",
+      tier: "standard",
+      family: "extensions",
       description: "Return a deterministic hello payload.",
       intent: "verify SDK extension activation",
       examples: ["pm hello"],
@@ -2099,6 +2101,12 @@ For pure command packages, keep `trusted: true`, `sandbox_profile: "strict"`, an
 For a complete commands-capability package that combines `registerCommand`,
 `registerFlags`, and `registerParser`, see the first-party
 [pm-command-kit exemplar](../packages/pm-command-kit/README.md).
+
+Every command definition can declare its agent-surface `tier` (`core`,
+`standard`, `full`, or `internal`) and capability `family`. These are the same
+fields projected into CLI help, completion, MCP profiles, workspace contracts,
+and generated routing documentation. Omitted package values normalize to
+`standard` and `extensions`.
 
 For a generated starter, use `pm package init ./my-package`. Pass
 `--capability hooks` to scaffold a command plus an `afterCommand` lifecycle

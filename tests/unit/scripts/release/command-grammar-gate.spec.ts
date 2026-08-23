@@ -51,6 +51,7 @@ async function runGrammarGate(
         disableExtensions?: boolean,
       ) => unknown,
       activePackageCommands?: string[],
+      registeredCommandSeeds?: string[],
     ) => string[];
     verifyMcpGrammar: (
       actions: string[],
@@ -93,6 +94,14 @@ async function runGrammarGate(
     const budgetIndex = args.indexOf("--output-budget");
     const parentPath = args.slice(helpIndex + 1, budgetIndex);
     const parent = parentPath.join(" ");
+    if (
+      parent.length > 0 &&
+      !runtimeCommands.some(
+        (command) => command === parent || command.startsWith(`${parent} `),
+      )
+    ) {
+      throw new Error(`Synthetic missing command ${parent}`);
+    }
     if (options.helpFailures?.includes(parent) === true) {
       throw new Error(`Synthetic help failure for ${parent}`);
     }

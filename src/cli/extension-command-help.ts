@@ -9,6 +9,10 @@ import {
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
 } from "../sdk/runtime-primitives.js";
+import type {
+  PmCommandCapabilityFamily,
+  PmCommandVisibilityTier,
+} from "../sdk/agent-capability-contracts.js";
 /** Documents the extension command argument help descriptor payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandArgumentHelpDescriptor {
   /** Value that configures or reports name for this contract. */
@@ -39,6 +43,10 @@ export interface ExtensionCommandHelpDescriptor {
   arguments: ExtensionCommandArgumentHelpDescriptor[];
   /** Value that configures or reports flags for this contract. */
   flags: FlagDefinition[];
+  /** Minimum agent surface tier declared by the package. */
+  tier: PmCommandVisibilityTier;
+  /** Capability family declared by the package. */
+  family: PmCommandCapabilityFamily;
   /** Value that configures or reports source for this contract. */
   source?: {
     layer: "global" | "project";
@@ -386,6 +394,8 @@ function collectExtensionDefinitionsByCommand(
       ),
       arguments: normalizeExtensionCommandArguments(definition.arguments),
       flags: [],
+      tier: definition.tier ?? "standard",
+      family: definition.family ?? "extensions",
       source: {
         layer: definition.layer,
         name: definition.name,
@@ -493,6 +503,8 @@ export function collectExtensionCommandHelpDescriptors(
       failure_hints: [],
       arguments: [],
       flags,
+      tier: "standard",
+      family: "extensions",
     });
   }
 

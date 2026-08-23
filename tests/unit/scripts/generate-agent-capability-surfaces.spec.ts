@@ -21,10 +21,22 @@ describe("generate agent capability surfaces", () => {
       expect(generated).toContain("PM_COMMAND_CAPABILITY_CONTRACTS");
       expect(
         await readFile(
+          path.join(root, "docs", "generated", "AGENT_CAPABILITY_ROUTING.md"),
+          "utf8",
+        ),
+      ).toContain("PM_COMMAND_CAPABILITY_CONTRACTS");
+      expect(
+        await readFile(
           path.join(root, "docs", "generated", "FLAG_LEXICON_BUDGETS.md"),
           "utf8",
         ),
       ).toContain("listPmFlagLexicon()");
+      expect(
+        await readFile(
+          path.join(root, "docs", "generated", "REFUSAL_CLOSURE_CENSUS.md"),
+          "utf8",
+        ),
+      ).toContain("Every catalog code is listed");
       await expect(main(root, ["--check"])).resolves.toBeUndefined();
     } finally {
       await rm(root, { recursive: true, force: true });

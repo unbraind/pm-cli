@@ -2,11 +2,13 @@ id: pm-kxci8x
 title: "Single source of surface tiering: one contract-declared tier per command drives CLI help, MCP tool profiles, completions, and docs together"
 description: "Four separate efforts each decide, independently, which part of pm's surface an agent sees first: tiered CLI help, MCP tool profiles capping the exposed tool count, hiding completion helper entrypoints, and hiding the internal test-runs worker. Each is correct on its own and all four answer the same question — what tier is this command in — with four mechanisms that will drift apart the moment one is edited without the others. Declare the tier once, as a field on the command contract, and derive all four surfaces from it. The tiers themselves are the decision: a core tier an agent must know to work, a standard tier it reaches for by name, a full tier that exists and is documented, and an internal tier that is reachable but never advertised. Deriving everything from one field also makes the one-screen claim testable rather than aspirational, because the core tier's rendered size is a number the gate can check."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-18T21:13:57.092Z"
+updated_at: "2026-08-23T08:44:50.224Z"
+closed_at: "2026-08-23T08:44:25.365Z"
+completed_at: "2026-08-23T08:44:25.365Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; Every command declares exactly one noun (capability family) in the same contract record as its tier, and every declared noun has at least one command, checked in both directions against the command registration rather than against a list kept beside it; A test asserts no surface maintains its own independent visibility list; Agent-facing routing surfaces - skills, guide topics, and generated docs - derive their capability map from the declared noun field rather than hand-authoring one; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier and a noun through the same fields, so extensions cannot bypass tiering or routing"
@@ -18,6 +20,9 @@ outcome: "Raising or lowering a command's visibility is a one-field change that 
 parent: pm-n7rr
 risk: low
 confidence: 75
+resolution: Unified command capability metadata is now SDK-owned and contract-derived across every advertised surface.
+expected_result: "One command tier and capability-family declaration controls CLI help, MCP profiles, completions, guides, generated documentation, and package command routing within a mechanically enforced compact-help budget."
+actual_result: All built-ins and package commands use the shared contract; root help is 42 lines/3356 bytes; generated and runtime conformance gates pass; exact repository coverage is 100%.
 dependencies[15]:
   - id: pm-1kxs
     kind: related
@@ -73,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[11]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -85,27 +90,80 @@ comments[11]{created_at,author,text}:
   "2026-08-16T10:44:19.101Z","harness:claude-code","Grammar ruling AC (recorded on pm-pbyu 2026-08-16) places the capability-family declaration here, beside the tier, because both are the same kind of contract data and both are consumed by the same four surfaces. Measured basis: PM_COMMAND_VISIBILITY_CONTRACTS declares a tier per command and nothing declares a family, so rewriting the four agent skill bundles for progressive disclosure required hand-authoring a thirteen-family map across .agents/skills. That map is prose, nothing compares it to the 75 commands it claims to partition, and a new command joins no family without any check noticing. pm-yy8rmx already measures the inverse direction - 14 of 76 canonical commands have no declared home in the target grammar - which is the same conformance clause failing from the other side."
   "2026-08-18T19:18:16.663Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:38.298Z","harness:codex","Tranche evidence: every built-in command now receives one validated capability family beside its tier; SDK resolution/listing, MCP capability projections, JSON help, and generated agent docs expose the shared tier/family contract with bidirectional coverage tests. Remaining acceptance: route human CLI help, skills/guide topics, completions, and package-contributed family declarations exclusively through the same record, add the one-screen budget, and prove one-field four-surface regeneration. Returning open and releasing ownership."
-files[10]{path,scope,note}:
+  "2026-08-23T06:39:14.688Z","harness:codex","Implementation start 2026-08-23: active in a broad SDK-first contract-derived surface tranche. Live duplicate search covered all 2,538 items across open, closed, and canceled states; this canonical task retains the remaining human-help, guide/skill routing, extension-declaration, one-screen-budget, and one-field multi-surface snapshot acceptance."
+  "2026-08-23T07:03:25.954Z","harness:codex","Progress: core human help now measures 41 lines/3103 UTF-8 bytes within the public one-screen budget; package command tier/family fields project through help JSON and workspace contracts; guide capabilities and generated routing derive from PM_COMMAND_CAPABILITY_CONTRACTS."
+  "2026-08-23T07:10:41.427Z","harness:codex","Manual acceptance (fresh /tmp/tmp.E0NPSYwToe): initialized an empty tracker, installed local pm-guide-shell and pm-command-kit packages, rendered 42-line root help with guide visible and completion hidden, observed guide core/context and command-kit standard/extensions through JSON help, resolved guide capabilities, and executed command-kit echo with two deterministic HELLO lines."
+  "2026-08-23T07:20:17.847Z","harness:codex","Compatibility evidence: preserved existing public function call signatures by adding separate explicit-registry projection helpers. The SDK surface snapshot records only optional command metadata plus additive helpers/census APIs, with an explicit compatibility acknowledgement; the former root-help tests now assert core projection plus direct access to wider commands."
+  "2026-08-23T08:42:00.383Z","harness:codex","Verification evidence: exact full-source coverage passed at 100/100/100/100 across 566 files and 7,845 tests; pnpm lint passed including zero ESLint warnings, zero jscpd clones, 100% source/export/member docstrings, contract-derived live grammar 167/167, 117/117 executable refusal probes, tracker-context, graph-composition, and record-integrity; package artifact, secret scan, docs/skills, generated surfaces, and TypeScript package/example checks passed."
+files[37]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
+  packages/pm-command-kit/extensions/command-kit/index.ts,project,Contract-derived command surface implementation and proof
+  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,Contract-derived command surface implementation and proof
   scripts/generate-agent-capability-surfaces.mjs,project,generated surface drift gate
+  scripts/release/command-grammar-gate.mjs,project,Keeps complete grammar assurance independent from compact root help by validating live contract-derived command seeds
+  sdk/public-surface.json,project,Updated compatibility and progressive-disclosure contract proof
   src/cli/commands/completion.ts,project,completion commands derive from shared tier contracts
   src/cli/commands/contracts.ts,project,Tier and canonical command metadata across contract surfaces
+  src/cli/extension-command-help.ts,project,Contract-derived command surface implementation and proof
+  src/cli/help-content.ts,project,Contract-derived command surface implementation and proof
   src/cli/help-json-payload.ts,project,Active command contract and recovery conformance implementation
+  src/cli/main.ts,project,Contract-derived command surface implementation and proof
   src/core/extensions/command-visibility-tier.ts,project,extension command tier validation
+  src/core/extensions/extension-types.ts,project,Contract-derived command surface implementation and proof
+  src/core/extensions/loader.ts,project,Contract-derived command surface implementation and proof
   src/sdk/agent-capability-contracts.ts,project,single command visibility and MCP profile contract
+  src/sdk/guide-topics.ts,project,Contract-derived command surface implementation and proof
+  src/sdk/index.ts,project,Contract-derived command surface implementation and proof
+  src/sdk/workspace-contracts.ts,project,Contract-derived command surface implementation and proof
   tests/fixtures/contracts/full.json,project,Visibility contract projection snapshot
+  tests/integration/closed-domain-recovery.integration.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/integration/contract-command-enumeration.integration.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/integration/help-runtime.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/integration/release-readiness-runtime.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/integration/task-lifecycle-aliases.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/unit/cli/cli-main-errors.spec.ts,project,Contract-derived command surface implementation and proof
+  tests/unit/cli/extension-command-help.spec.ts,project,Contract-derived command surface implementation and proof
+  tests/unit/cli/help-content.spec.ts,project,Contract-derived command surface implementation and proof
+  tests/unit/commands/completion-command.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/unit/core/extensions/command-visibility-tier.spec.ts,project,Validates the closed extension tier and capability-family contract with positive and negative controls
+  tests/unit/extensions/extension-loader.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
   tests/unit/mcp/runtime-capabilities.spec.ts,project,Active command contract and recovery conformance implementation
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/scripts/generate-agent-capability-surfaces.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/mcp/runtime-capabilities.spec.ts,project,240
-  "pnpm contracts:agent-surfaces:check",project,240
+  tests/unit/scripts/generate-agent-capability-surfaces.spec.ts,project,Contract-derived command surface implementation and proof
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Proves contract-seeded live grammar traversal and missing-registration failure behavior
+  tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
+  tests/unit/sdk/agent/agent-capability-contracts.spec.ts,project,Contract-derived command surface implementation and proof
+tests[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/scripts/generate-agent-capability-surfaces.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/mcp/runtime-capabilities.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm contracts:agent-surfaces:check"
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/unit/cli/help-content.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/mcp/runtime-capabilities.spec.ts tests/unit/scripts/generate-agent-capability-surfaces.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-23T07:03:36.412Z"
+      source_kind: local_mutation
+      source_ref: codex/contract-derived-surfaces-and-release-failures
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms3jox6g-0ih7dn,test,passed,"2026-07-27T18:12:58.332Z","2026-07-27T18:13:09.496Z","2026-07-27T18:13:09.496Z",1,0,0
   test-local-ms76fu2c-19g9u3,test,passed,"2026-07-30T07:12:53.064Z","2026-07-30T07:13:15.252Z","2026-07-30T07:13:15.252Z",2,0,0
   test-local-msz5t0a6-txpqnb,test,passed,"2026-08-18T21:12:30.640Z","2026-08-18T21:13:03.150Z","2026-08-18T21:13:03.150Z",3,0,0
-docs[3]{path,scope,note}:
+docs[9]{path,scope,note}:
+  .agents/skills/pm-developer/SKILL.md,project,Generated routing and package author guidance
+  docs/EXTENSIONS.md,project,Generated routing and package author guidance
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Generated routing and package author guidance
   docs/generated/AGENT_COMMAND_SURFACE.md,project,generated tier reference
   docs/MCP_CAPABILITY_SURFACES.md,project,visibility tier guidance
+  docs/README.md,project,Generated routing and package author guidance
+  docs/SDK.md,project,Generated routing and package author guidance
   docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,Visibility and enumeration contract guide
+  packages/pm-command-kit/README.md,project,Generated routing and package author guidance
+close_reason: "Completed the single-source command tier and capability-family contract across built-in and package commands. CLI help, MCP projections, completions, guide/skill routing, generated docs, and extension metadata now derive from the shared contract; compact root help is mechanically bounded at 50 lines/6000 bytes and accepted at 42 lines/3356 bytes; exact coverage and all repository gates pass."
 body: ""

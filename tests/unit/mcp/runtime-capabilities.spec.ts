@@ -208,6 +208,17 @@ describe("runtime MCP capabilities", () => {
             { name: "mode" },
           ],
         },
+        {
+          layer: "project",
+          name: "declared-surface",
+          command: "deploy preview",
+          action: "deploy-preview",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          tier: "core",
+          family: "automation",
+        },
       ]),
     ).toEqual([
       {
@@ -229,6 +240,15 @@ describe("runtime MCP capabilities", () => {
         ],
         description: undefined,
         tier: "standard",
+        family: "extensions",
+      },
+      {
+        command: "deploy preview",
+        action: "deploy-preview",
+        arguments: [],
+        description: undefined,
+        tier: "core",
+        family: "automation",
       },
     ]);
   });

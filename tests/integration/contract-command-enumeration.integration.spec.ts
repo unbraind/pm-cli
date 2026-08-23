@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listPmCommandsForTier } from "../../src/sdk/agent-capability-contracts.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 interface CommandFlagRow {
@@ -60,9 +61,12 @@ describe("contract command enumeration", () => {
       ].sort();
 
       expect(enumeratedRoots).toEqual(resolvedRoots);
-      expect(helpCommands).toEqual(enumeratedRoots);
+      expect(helpCommands).toEqual(
+        [...listPmCommandsForTier("core"), "ctx"].sort(),
+      );
       for (const required of ["context", "search", "list"]) {
         expect(enumeratedRoots).toContain(required);
+        expect(helpCommands).toContain(required);
       }
       for (const compatibilityAlias of [
         "list-all",

@@ -8,7 +8,7 @@ command-facing SDK registration APIs in their smallest complete form.
 
 | API | What the exemplar does |
 | --- | --- |
-| `api.registerCommand(definition)` | Registers `pm command-kit echo` with a FULL `CommandDefinition`: `name`, `action`, `description`, `intent`, `arguments` (required variadic positional), `flags`, `examples`, `failure_hints`, and a pure `run` handler. |
+| `api.registerCommand(definition)` | Registers `pm command-kit echo` with a FULL `CommandDefinition`: `name`, `action`, `tier`, `family`, `description`, `intent`, `arguments` (required variadic positional), `flags`, `examples`, `failure_hints`, and a pure `run` handler. |
 | `api.registerParser(command, override)` | Preprocesses parsed options before the handler runs: rewrites the deprecated `--shout` alias to `--upper`, coerces `--repeat` to a positive integer, and trims/dedupes `--decorations` values. The override returns a delta (`{ options }`) that is merged over the parsed input. |
 | `api.registerFlags(targetCommand, flags)` | Injects an inert, namespaced `--kit-note <text>` flag into the EXISTING core `pm list` command — the pattern for augmenting commands you do not own. |
 

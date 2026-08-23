@@ -11,13 +11,14 @@ function createTask(context: TempPmContext, title: string): string {
 }
 
 describe("task lifecycle aliases", () => {
-  it("exposes lifecycle aliases in top-level help", async () => {
+  it("keeps lifecycle aliases out of core help while preserving direct help", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout).toContain("start-task");
-      expect(help.stdout).toContain("pause-task");
-      expect(help.stdout).toContain("close-task");
+      expect(help.stdout).not.toContain("start-task");
+      expect(help.stdout).not.toContain("pause-task");
+      expect(help.stdout).not.toContain("close-task");
+      expect(context.runCli(["start-task", "--help"]).code).toBe(0);
     });
   });
 

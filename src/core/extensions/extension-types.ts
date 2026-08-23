@@ -833,6 +833,19 @@ export interface ExtensionCommandArgumentDefinition {
   description?: string;
 }
 
+/** Capability family an extension command contributes to agent routing. */
+export type ExtensionCommandCapabilityFamily =
+  | "workspace"
+  | "intake"
+  | "context"
+  | "lifecycle"
+  | "evidence"
+  | "graph"
+  | "quality"
+  | "automation"
+  | "extensions"
+  | "internal";
+
 /** Documents the command definition payload exchanged by command, SDK, and package integrations. */
 export interface CommandDefinition {
   /** Value that configures or reports name for this contract. */
@@ -859,6 +872,8 @@ export interface CommandDefinition {
   flags?: FlagDefinition[];
   /** Minimum agent surface tier that should advertise this command. */
   tier?: "core" | "standard" | "full" | "internal";
+  /** Capability family used by generated agent routing surfaces. */
+  family?: ExtensionCommandCapabilityFamily;
 }
 
 /**
@@ -1524,6 +1539,8 @@ export interface RegisteredExtensionCommandDefinition {
   arguments: ExtensionCommandArgumentDefinition[];
   /** Minimum agent surface tier that should advertise this command. */
   tier?: "core" | "standard" | "full" | "internal";
+  /** Capability family used by generated agent routing surfaces. */
+  family?: ExtensionCommandCapabilityFamily;
 }
 
 /** Documents the registered extension schema field definitions payload exchanged by command, SDK, and package integrations. */

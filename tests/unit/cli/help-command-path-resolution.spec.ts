@@ -4,6 +4,88 @@ import { _testOnly } from "../../../src/cli/help-json-payload.js";
 import { hasSubcommandFlagContractsForCommand } from "../../../src/sdk/index.js";
 
 describe("structured help command-path resolution", () => {
+  it("derives synthetic extension parents from their most visible descendants", () => {
+    const descriptors = new Map([
+      [
+        "automation hidden",
+        {
+          command: "automation hidden",
+          description: "Hidden automation",
+          tier: "internal" as const,
+          family: "automation" as const,
+        },
+      ],
+      [
+        "automation visible",
+        {
+          command: "automation visible",
+          description: "Visible extension",
+          tier: "standard" as const,
+          family: "extensions" as const,
+        },
+      ],
+    ]);
+
+    expect(_testOnly.resolveExtensionCommandSurface("automation hidden", descriptors)).toMatchObject({
+      tier: "internal",
+      family: "automation",
+    });
+    expect(_testOnly.resolveExtensionCommandSurface("automation", descriptors)).toEqual({
+      tier: "standard",
+      family: "extensions",
+    });
+    expect(_testOnly.resolveExtensionCommandSurface("missing", descriptors)).toBeUndefined();
+
+    const root = new Command("pm");
+    const automation = root.command("automation");
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        automation,
+        ["automation", "--help", "--json"],
+        ["automation"],
+        new Map([
+          [
+            "automation",
+            {
+              command: "automation",
+              description: "Automate work",
+              examples: ["pm automation run"],
+              failure_hints: [],
+              arguments: [],
+              flags: [],
+              tier: "standard",
+              family: "automation",
+            },
+          ],
+        ]),
+      ).examples,
+    ).toEqual(["pm automation run"]);
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        automation,
+        ["automation", "--help", "--json"],
+        ["automation"],
+        new Map([
+          [
+            "automation",
+            {
+              command: "automation",
+              description: "Automate work",
+              examples: [],
+              failure_hints: [],
+              arguments: [],
+              flags: [],
+              tier: "standard",
+              family: "automation",
+            },
+          ],
+        ]),
+      ).examples,
+    ).toEqual(["pm init"]);
+  });
+
   it("resolves exact, implicit, and contract-backed positional command paths", () => {
     const root = new Command("pm");
     const workspace = root.command("workspace");

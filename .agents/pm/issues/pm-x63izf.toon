@@ -2,25 +2,39 @@ id: pm-x63izf
 title: "The blocked-release alert derives its cause from configuration preflight, so it discards the failing gate's own machine-readable verdict and reports read the logs on every real failure"
 description: "The scheduled Auto Release workflow opens or updates a blocker issue on every failed daily cut, and that issue is the only channel through which a red release becomes visible, because no tracker surface can see one. The issue body carries a field named detected_cause. That field is computed exclusively from four preflight environment booleans: whether push was requested, whether the run was a dry run, whether the release token secret is configured, and whether the Sentry admin token secret is configured. Two branches set a specific cause, one for each missing secret. Every other failure falls through to a fixed literal string instructing the reader to inspect the failed workflow logs for the exact failing command.\n\nThe consequence is that the alert is informative exactly when the failure is a missing secret, and uninformative in every case where the pipeline actually ran and a gate returned a verdict. That is the common case. Over the forty most recent scheduled runs, eleven failed, and the configuration preflight was correct on all of them, so all eleven produced the fallback string.\n\nThe failing run for the current UTC day is the reference instance. The gate runner printed a fully machine-readable verdict on standard output before exiting: a line naming the failing gate, then the gate's own JSON document containing the blocking issue short identifiers, the blocking issue titles, and a per-issue reason field classifying each one. The alert step ran afterward in the same job, had that output available, and reported that the reader should go and find it. The diagnosis was in hand and was discarded.\n\nThis is not a request for better prose in the fallback. It is the observation that the failure summary is derived from the preconditions of the run rather than from the run's own recorded output, so the summary can never name a cause that only the run could know. A gate verdict, a publish rejection from the registry, and a post-publish verification mismatch are three different failures that the channel renders identically.\n\nThe fix is structural and must not reintroduce prose matching, which this project has already ruled against for the reliability gate itself. The gate runner already holds the failing gate name and the failed step's captured output at the point where it raises. It should record a structured failure document at a path supplied by the environment, and the workflow should render the alert from that document, falling back to the current preflight detection only when no document exists. Pattern matching over log text is explicitly out of scope as a mechanism.\n\nDiscovered while verifying release health for the current day. The shape is the same as the changelog drift refusal that reports staleness without naming what drifted, which is why that item is cited as the origin rather than this being filed as an unrelated defect."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-14T10:15:08.284Z"
+updated_at: "2026-08-23T08:44:50.714Z"
+closed_at: "2026-08-23T08:44:26.513Z"
+completed_at: "2026-08-23T08:44:26.513Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The gate runner records a structured failure document naming the failing gate, its exit status, and its captured verdict, at a path supplied by the environment; The blocked-release issue renders its cause from that document when it exists, including the blocking issue identifiers and the per-issue reason the gate assigned; The preflight configuration detection is retained only as the fallback used when no failure document was produced; No part of the mechanism classifies failures by matching patterns against log or message text; A negative control proves the rendered cause changes when the recorded gate verdict changes, and that a missing document still yields the preflight fallback"
 parent: pm-u9d0
 risk: high
 confidence: high
+resolution: Blocked-release reporting now preserves the structured verdict of the failing gate or downstream workflow stage.
+expected_result: "The blocked-release issue names the machine-readable failing stage/status and gate blockers when available, falling back to preflight only when no record exists, without log-text classification."
+actual_result: "The auto-release workflow records gate, workflow job/step, discovery, GitHub Release verification, and npm verification failures; rendering and negative controls pass."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-2f80fn,discovered_from,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-dqtzva,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
-files[3]{path,scope,note}:
+comments[4]{created_at,author,text}:
+  "2026-08-23T06:39:18.191Z","harness:codex","Implementation start 2026-08-23: live GH-1095 reproduced the residual exactly: the 2026.8.23 tag exists, GitHub/npm artifacts do not, npm publish returned E404, and the alert still emitted failing_stage=unrecorded. This tranche extends the existing structured recorder across downstream publish and verification stages without log-text classification."
+  "2026-08-23T07:03:27.150Z","harness:codex","Progress: Auto Release now records downstream GitHub Release failures from structured run/job/step conclusions and records discovery/GitHub Release/npm verification stages before exiting; the current npm publish incident would resolve to release-workflow plus Build, Test, Publish / Publish to npm instead of unrecorded."
+  "2026-08-23T07:10:42.447Z","harness:codex","Focused verification: release-failure record and CI workflow contract suites passed 37/37; structured negative controls classify only GitHub job/step conclusions and preserve preflight fallback when no record exists."
+  "2026-08-23T08:42:01.480Z","harness:codex","Verification evidence: exact full-source coverage passed 100/100/100/100; workflow failure recording is covered through structured job/step, sparse, malformed, stage, and negative-control inputs; lint, package, secrets, docs, generated-surface, and live repository assurance gates passed."
+files[4]{path,scope,note}:
   .github/workflows/auto-release.yml,project,"Alert step renders the recorded cause, preflight retained as fallback"
   scripts/release/release-failure-record.mjs,project,"Structured failure document: records and renders the failing gate verdict"
+  tests/integration/ci-workflow-contract.spec.ts,project,Structured downstream Release workflow failure capture
   tests/unit/scripts/release/release-failure-record.spec.ts,project,Unit proof including the negative control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-08-23T07:03:37.399Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
+close_reason: "Completed structured blocked-release failure capture. Gate verdicts, downstream workflow job/step conclusions, discovery failures, GitHub Release verification, and npm verification now record machine-readable stage/status evidence; issue rendering consumes that record with preflight only as fallback, without log-text classification; negative controls and workflow contract tests pass."
 body: ""

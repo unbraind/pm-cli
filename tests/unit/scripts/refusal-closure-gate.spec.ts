@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import {
   main,
   runIfMain,
+  scorePmRefusalCatalogClosure,
   verifyExecutableRefusalClosure,
 } from "../../../scripts/release/refusal-closure-gate.mjs";
 
@@ -59,6 +60,18 @@ function createSuccessfulOptions(errorEnvelope = {}) {
 }
 
 describe("executable refusal closure gate", () => {
+  it("fails the catalog ratchet when executable evidence regresses", () => {
+    expect(scorePmRefusalCatalogClosure([])).toMatchObject({
+      catalogRatchet: { ok: false, baseline: 13, actual: 0 },
+      catalogRatchetFindings: [
+        expect.objectContaining({
+          code: "executable_error_code_count_regressed",
+          probe_id: "catalog-census",
+        }),
+      ],
+    });
+  });
+
   it.runIf(process.platform !== "win32")(
     "proves real retries and blocks a seeded omission",
     () => {
@@ -81,6 +94,14 @@ describe("executable refusal closure gate", () => {
           within_budget_count: 10,
           corrective_action_count: 10,
         },
+        catalog_closure: {
+          complete: false,
+          catalog_error_code_count: 333,
+          executable_error_code_count: 13,
+          uncovered_error_code_count: 320,
+          ratchet: { ok: true, baseline: 13, actual: 13 },
+          restore_with: "docs/generated/REFUSAL_CLOSURE_CENSUS.md",
+        },
         findings: [],
       });
       expect(
@@ -94,6 +115,23 @@ describe("executable refusal closure gate", () => {
           expect.objectContaining({
             code: "missing_allowed_values",
             probe_id: "context-invalid-intent",
+          }),
+        ]),
+      });
+      expect(
+        verifyExecutableRefusalClosure({
+          ...createSuccessfulOptions(),
+          errorCodeCatalog: [],
+        }),
+      ).toMatchObject({
+        ok: false,
+        catalog_closure: {
+          ratchet: { ok: false, baseline: 13, actual: 0 },
+        },
+        findings: expect.arrayContaining([
+          expect.objectContaining({
+            code: "executable_error_code_count_regressed",
+            probe_id: "catalog-census",
           }),
         ]),
       });
