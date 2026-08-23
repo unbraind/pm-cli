@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-23T08:50:10.880Z"
+updated_at: "2026-08-23T08:59:59.102Z"
 closed_at: "2026-08-23T08:44:26.513Z"
 completed_at: "2026-08-23T08:44:26.513Z"
 author: "harness:claude-code"
@@ -24,18 +24,28 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-dqtzva,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-23T06:39:18.191Z","harness:codex","Implementation start 2026-08-23: live GH-1095 reproduced the residual exactly: the 2026.8.23 tag exists, GitHub/npm artifacts do not, npm publish returned E404, and the alert still emitted failing_stage=unrecorded. This tranche extends the existing structured recorder across downstream publish and verification stages without log-text classification."
   "2026-08-23T07:03:27.150Z","harness:codex","Progress: Auto Release now records downstream GitHub Release failures from structured run/job/step conclusions and records discovery/GitHub Release/npm verification stages before exiting; the current npm publish incident would resolve to release-workflow plus Build, Test, Publish / Publish to npm instead of unrecorded."
   "2026-08-23T07:10:42.447Z","harness:codex","Focused verification: release-failure record and CI workflow contract suites passed 37/37; structured negative controls classify only GitHub job/step conclusions and preserve preflight fallback when no record exists."
   "2026-08-23T08:42:01.480Z","harness:codex","Verification evidence: exact full-source coverage passed 100/100/100/100; workflow failure recording is covered through structured job/step, sparse, malformed, stage, and negative-control inputs; lint, package, secrets, docs, generated-surface, and live repository assurance gates passed."
   "2026-08-23T08:50:10.880Z","harness:codex","Reviewed delivery: PR #1096 https://github.com/unbraind/pm-cli/pull/1096 carries the structured Auto Release failure record, negative controls, generated changelog entry, and workflow contract proof."
-files[4]{path,scope,note}:
+  "2026-08-23T08:59:59.102Z","harness:codex","Hosted static remediation: CI correctly rejected closure without post-epoch defect taxonomy. Classified the escaped release-alert behavior as production_defect and bound it to strengthened gate auto-release-structured-failure-cause with verdict-changing and missing-record negative controls. Windows independently exposed status 2 in the same-day shell simulation; the assertion now includes captured stdout/stderr so any recurrence is actionable rather than opaque."
+files[5]{path,scope,note}:
   .github/workflows/auto-release.yml,project,"Alert step renders the recorded cause, preflight retained as fallback"
   scripts/release/release-failure-record.mjs,project,"Structured failure document: records and renders the failing gate verdict"
   tests/integration/ci-workflow-contract.spec.ts,project,Structured downstream Release workflow failure capture
+  tests/integration/release-automation-contract.spec.ts,project,Cross-platform same-day release workflow simulation and actionable child-process diagnostics
   tests/unit/scripts/release/release-failure-record.spec.ts,project,Unit proof including the negative control
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-08-23T07:03:37.399Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
 close_reason: "Completed structured blocked-release failure capture. Gate verdicts, downstream workflow job/step conclusions, discovery failures, GitHub Release verification, and npm verification now record machine-readable stage/status evidence; issue rendering consumes that record with preflight only as fallback, without log-text classification; negative controls and workflow contract tests pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-x63izf
+  gate_id: auto-release-structured-failure-cause
+  negative_control: Change the recorded gate verdict or remove the structured failure record; release-failure-record tests must detect changed cause rendering and retained preflight fallback.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,node scripts/release/defect-evidence-gate.mjs --json,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""

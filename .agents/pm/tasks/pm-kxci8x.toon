@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-23T08:50:10.418Z"
+updated_at: "2026-08-23T08:59:58.490Z"
 closed_at: "2026-08-23T08:44:25.365Z"
 completed_at: "2026-08-23T08:44:25.365Z"
 author: "harness:claude-code"
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[17]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -96,11 +96,13 @@ comments[17]{created_at,author,text}:
   "2026-08-23T07:20:17.847Z","harness:codex","Compatibility evidence: preserved existing public function call signatures by adding separate explicit-registry projection helpers. The SDK surface snapshot records only optional command metadata plus additive helpers/census APIs, with an explicit compatibility acknowledgement; the former root-help tests now assert core projection plus direct access to wider commands."
   "2026-08-23T08:42:00.383Z","harness:codex","Verification evidence: exact full-source coverage passed at 100/100/100/100 across 566 files and 7,845 tests; pnpm lint passed including zero ESLint warnings, zero jscpd clones, 100% source/export/member docstrings, contract-derived live grammar 167/167, 117/117 executable refusal probes, tracker-context, graph-composition, and record-integrity; package artifact, secret scan, docs/skills, generated surfaces, and TypeScript package/example checks passed."
   "2026-08-23T08:50:10.418Z","harness:codex","Reviewed delivery: PR #1096 https://github.com/unbraind/pm-cli/pull/1096 carries the closed command-tier/capability-family implementation, generated changelog entry, exact coverage, and manual package acceptance evidence."
-files[37]{path,scope,note}:
+  "2026-08-23T08:59:58.489Z","harness:codex","Hosted smoke remediation: CI correctly detected the intentional compact root-help projection as stale token-surface baseline data. Refreshed only the measured surface baseline: root help falls from 14,060 to 3,692 bytes and the advertised per-command surface from 357,934 to 247,705 bytes; complete command discovery remains enforced separately by contract-seeded grammar 167/167."
+files[38]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
   packages/pm-command-kit/extensions/command-kit/index.ts,project,Contract-derived command surface implementation and proof
   packages/pm-guide-shell/extensions/guide-shell/index.ts,project,Contract-derived command surface implementation and proof
+  scripts/agent-token-surface-baseline.json,project,Ratcheted the intentional compact root-help and progressive-disclosure token surface
   scripts/generate-agent-capability-surfaces.mjs,project,generated surface drift gate
   scripts/release/command-grammar-gate.mjs,project,Keeps complete grammar assurance independent from compact root help by validating live contract-derived command seeds
   sdk/public-surface.json,project,Updated compatibility and progressive-disclosure contract proof
