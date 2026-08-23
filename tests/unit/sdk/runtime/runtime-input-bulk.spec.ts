@@ -14,6 +14,10 @@ describe("bulk runtime input normalization", () => {
     expect(mutationListOptions({ ids: ["pm-a", "pm-b\npm-c"] })).toMatchObject({
       ids: "pm-a,pm-b,pm-c",
     });
+    expect(mutationListOptions({ ids: 123 })).toMatchObject({ ids: "123" });
+    expect(mutationListOptions({ ids: Number.NaN })).toMatchObject({
+      ids: undefined,
+    });
     expect(
       updateManyOptionsFromFlat({
         ids: ["pm-a", "pm-b"],
@@ -21,6 +25,16 @@ describe("bulk runtime input normalization", () => {
       }),
     ).toMatchObject({
       list: expect.objectContaining({ ids: "pm-a,pm-b" }),
+      update: {},
+      dryRun: true,
+    });
+    expect(
+      updateManyOptionsFromFlat({
+        ids: 123,
+        dryRun: true,
+      }),
+    ).toMatchObject({
+      list: expect.objectContaining({ ids: "123" }),
       update: {},
       dryRun: true,
     });

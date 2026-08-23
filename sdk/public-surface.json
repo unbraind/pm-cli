@@ -1156,6 +1156,15 @@
       ],
       "package_version": "2026.8.23",
       "reason": "Expose the optional file_token_prefix metadata field for @path CLI inputs; existing consumers remain source-compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:normalizeBulkIdsValue",
+        "signature ./sdk:PmBulkMutationFilterOptions",
+        "signature ./sdk/contracts:PmBulkMutationFilterOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Restore source-compatible numeric scalar IDs while retaining transport-native ID arrays"
     }
   ],
   "entrypoints": {
@@ -8894,7 +8903,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "normalizeBulkIdsValue",
-          "signature": "(value: string | readonly string[] | undefined) => string | undefined | calls: (value: string | readonly string[] | undefined) => string | undefined"
+          "signature": "(value: string | number | readonly string[] | undefined) => string | undefined | calls: (value: string | number | readonly string[] | undefined) => string | undefined"
         },
         {
           "classification": "supported",
@@ -10340,7 +10349,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
-          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | readonly string[]; };"
+          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | number | readonly string[]; };"
         },
         {
           "classification": "supported",
@@ -19820,7 +19829,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
-          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | readonly string[]; };"
+          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | number | readonly string[]; };"
         },
         {
           "classification": "contract_data",

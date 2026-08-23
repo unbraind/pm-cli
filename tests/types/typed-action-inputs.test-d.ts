@@ -99,6 +99,9 @@ const updateManyOptions: PmUpdateManyActionOptions = {
 };
 void updateManyOptions;
 
+const numericUpdateManyOptions: PmUpdateManyActionOptions = { ids: 123 };
+void numericUpdateManyOptions;
+
 const closeManyOptions: PmCloseManyActionOptions = {
   ids: ["pm-a", "pm-b"],
   reason: "batch closure",
@@ -106,6 +109,9 @@ const closeManyOptions: PmCloseManyActionOptions = {
   rollback: false,
 };
 void closeManyOptions;
+
+const numericCloseManyOptions: PmCloseManyActionOptions = { ids: 123 };
+void numericCloseManyOptions;
 
 // @ts-expect-error close-many: item-content mutation keys (body) are not part of the closure contract
 const closeManyWrongKey: PmCloseManyActionOptions = { body: "not allowed" };

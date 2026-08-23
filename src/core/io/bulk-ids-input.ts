@@ -44,10 +44,13 @@ export function parseBulkIdsText(raw: string): string[] {
 
 /** Normalize SDK/MCP scalar-or-array ID input into the list query's CSV form. */
 export function normalizeBulkIdsValue(
-  value: string | readonly string[] | undefined,
+  value: string | number | readonly string[] | undefined,
 ): string | undefined {
   if (value === undefined) {
     return undefined;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? String(value) : undefined;
   }
   const ids = Array.isArray(value)
     ? parseBulkIdsText(value.join("\n"))

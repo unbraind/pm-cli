@@ -430,7 +430,7 @@ export function mutationListOptions(
     createdAfter: readRuntimeScalarString(options, "filterCreatedAfter"),
     createdBefore: readRuntimeScalarString(options, "filterCreatedBefore"),
     ids: normalizeBulkIdsValue(
-      options.ids as string | readonly string[] | undefined,
+      options.ids as string | number | readonly string[] | undefined,
     ),
     assignee: readRuntimeScalarString(options, "filterAssignee"),
     assigneeFilter:

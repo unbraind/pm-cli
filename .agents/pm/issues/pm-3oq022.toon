@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: agent-ergonomics,bulk-ops,composability
 created_at: "2026-08-01T13:04:26.421Z"
-updated_at: "2026-08-23T23:08:07.341Z"
-closed_at: "2026-08-23T23:08:06.808Z"
-completed_at: "2026-08-23T23:08:06.808Z"
+updated_at: "2026-08-23T23:26:21.539Z"
+closed_at: "2026-08-23T23:26:21.021Z"
+completed_at: "2026-08-23T23:26:21.021Z"
 author: "harness:claude-code"
 estimated_minutes: 210
 acceptance_criteria: "--ids accepts - to read a newline or comma delimited id stream from stdin, and @path to read the same from a file, on every bulk selector that declares --ids; close-many reports unmatched_ids and unmatched_count in both the default encoding and json, matching update-many exactly; A bulk mutation whose matched_count is zero while unmatched_count is greater than zero exits non-zero, with the tolerant behavior reachable only through an explicit opt-in flag; The declared miss policy is identical across update-many and close-many and is stated once in the scripting contract; A regression test pipes ids from a read command through jq into a bulk mutation and asserts the mutation applied, with a negative control asserting the non-zero exit on a total miss"
@@ -28,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-ukml,related,"2026-08-01T13:04:26.421Z","harness:claude-code","cli:create:dep",detected
   pm-hqa8g1,blocked_by,"2026-08-01T13:10:31.232Z","harness:claude-code","cli:update:dep",detected
   pm-m9xv,implements,"2026-08-23T20:29:28.761Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-08-23T20:29:25.711Z","harness:codex","Implementation start 2026-08-23: selected after complete 2,538-item all-status inventory, live blocker verification, focused duplicate searches, and full metadata/comments/notes/relationship reads. This branch implements one coupled SDK/CLI/MCP composability tranche: newline/comma stdin and @path bulk-id selectors, close/update unmatched receipt parity, no/partial-effect exits, and an executable read-to-jq-to-write pipeline. Canonical lineage is reused; no duplicate item was created."
   "2026-08-23T22:05:18.038Z","harness:codex","Verification evidence 2026-08-24: bulk update/close IDs accept inline comma/newline text, readonly SDK arrays, stdin via '-', and @path files through one SDK-owned resolver with stable trim/dedupe. Explicit-ID close receipts now match update-many unmatched semantics, including empty unmatched arrays when all requested IDs exist, while existing-but-filtered IDs are not mislabeled missing. A disposable tracker proved list | jq | update-many --ids -, filter-only preview, body stdin, and cleanup. Final proof: 570 files / 7,858 tests pass; exact coverage is statements 57,420/57,420, branches 42,968/42,968, functions 11,955/11,955, lines 55,350/55,350; pnpm typecheck, secret scan, full lint/static assurance, contract snapshots, SDK surface, graph composition, record integrity, and PM governance all pass."
   "2026-08-23T22:06:25.447Z","harness:codex","Changelog evidence: installed pm-changelog 2026.8.17, regenerated package-owned CHANGELOG.md after closure, and the deterministic check passes."
@@ -39,7 +39,9 @@ comments[10]{created_at,author,text}:
   "2026-08-23T22:48:44.684Z","harness:codex","Review-fix evidence 2026-08-24: every create, update, update-many, and close-many invocation counts stdin-consuming tokens before any read. --ids - combined with --body -, --description -, --body-file -, structured fields, or --stdin-json now fails deterministically with usage exit 2. Bulk ID invocation contracts explicitly publish file_token_prefix=@ for update-many, close-many, and history-compact. Focused real-process/unit proof passes, and the final full run passes 570 files / 7,858 tests with exact coverage: statements 57,427/57,427, branches 42,973/42,973, functions 11,954/11,954, lines 55,356/55,356."
   "2026-08-23T22:59:18.745Z","harness:codex","Security re-review finding: the downstream bulk-ID resolver trims its sentinel, but the command preflight compared raw values, so --ids ' - ' could bypass single-consumer enforcement. Normalize scalar and repeated values before counting and retain a real-process negative control."
   "2026-08-23T23:08:02.970Z","harness:codex","Second review-fix evidence 2026-08-24: scalar and repeated stdin tokens are trimmed before the pre-read ownership count, exactly matching bulk-ID and shared stdin resolver semantics. --ids ' - ' plus --body - now exits 2 in a real process. All linked tests pass with local_source_ref trust and zero failure categories; full proof remains 570 files / 7,858 tests with exact coverage statements 57,427/57,427, branches 42,977/42,977, functions 11,954/11,954, lines 55,356/55,356."
-files[13]{path,scope,note}:
+  "2026-08-23T23:19:04.323Z","harness:codex","Bugbot final re-review finding: the typed ids override narrowed the historical string|number scalar to string|array, while normalizeBulkIdsValue assumed every scalar had split(). Restore finite numeric scalar compatibility in the public type and normalizer, and add compile/runtime regressions."
+  "2026-08-23T23:26:20.494Z","harness:codex","Final compatibility evidence 2026-08-24: PmBulkMutationFilterOptions again accepts the historical finite numeric scalar ID alongside string and readonly string arrays; normalizeBulkIdsValue coerces finite numbers and returns undefined for non-finite values, avoiding raw TypeError. Type tests, direct runtime/updateMany dispatch regressions, isolated linked tests, and the full 570-file / 7,858-test suite pass. Exact coverage: statements 57,429/57,429, branches 42,981/42,981, functions 11,954/11,954, lines 55,358/55,358."
+files[14]{path,scope,note}:
   sdk/public-surface.json,project,Bulk ID composability contract
   src/cli/register-mutation.ts,project,Bulk ID composability contract
   src/core/io/bulk-ids-input.ts,project,Bulk ID composability contract
@@ -50,13 +52,14 @@ files[13]{path,scope,note}:
   src/sdk/runtime-input.ts,project,Bulk ID composability contract
   src/sdk/runtime-primitives.ts,project,Bulk ID composability contract
   tests/integration/bulk-input-composability.integration.spec.ts,project,End-to-end CLI composability and unmatched-id parity coverage
+  tests/types/typed-action-inputs.test-d.ts,project,Public numeric bulk-ID compatibility type proof
   tests/unit/core/io/bulk-ids-input.spec.ts,project,Bulk ID source parser unit coverage
   tests/unit/sdk/runtime/history-mcp.spec.ts,project,MCP history transport regression coverage for this delivery
   tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,project,SDK bulk input normalization contract coverage
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/integration/command-exit-effect-contract.spec.ts tests/unit/core/io/bulk-ids-input.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,project,240,"harness:codex","2026-08-23T20:53:23.588Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/history-mcp.spec.ts,project,240,"harness:codex","2026-08-23T21:34:40.467Z",local_mutation,codex/bulk-input-composability-contracts
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mt6bsrc6-w425yw
     kind: test
     status: passed
@@ -69,10 +72,22 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/integration/command-exit-effect-contract.spec.ts tests/unit/core/io/bulk-ids-input.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/history-mcp.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt6fktit-m8q4vb
+    kind: test
+    status: passed
+    started_at: "2026-08-23T23:20:43.866Z"
+    finished_at: "2026-08-23T23:21:00.533Z"
+    recorded_at: "2026-08-23T23:21:00.533Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/integration/command-exit-effect-contract.spec.ts tests/unit/core/io/bulk-ids-input.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/history-mcp.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release entry
   docs/SCRIPTING.md,project,Executable read-selector-write recipes
-close_reason: "Implemented composable bulk selectors with normalized pre-read stdin ownership, parity receipts/effect exits, and exact full-suite proof."
+close_reason: "Implemented composable bulk inputs while preserving numeric scalar SDK compatibility, normalized stdin ownership, receipt parity, and exact full-suite proof."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
