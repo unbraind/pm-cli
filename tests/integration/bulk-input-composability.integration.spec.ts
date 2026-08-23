@@ -182,7 +182,7 @@ describe("bulk and file input composability", () => {
           "--description",
           "-",
           "--body-file",
-          "-",
+          " - ",
           "--json",
         ],
         { input: "one stream cannot supply two fields" },
@@ -193,7 +193,7 @@ describe("bulk and file input composability", () => {
       );
 
       const bulkConflict = context.runCli(
-        ["update-many", "--ids", "-", "--body", "-", "--json"],
+        ["update-many", "--ids", " - ", "--body", "-", "--json"],
         { input: "pm-stdin-files" },
       );
       expect(bulkConflict.code).toBe(2);

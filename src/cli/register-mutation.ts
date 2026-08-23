@@ -824,10 +824,12 @@ function assertSingleMutationStdinConsumer(
   const stdinFlags = STRUCTURED_STDIN_CONFLICT_KEYS.flatMap((key) => {
     const value = options[key];
     const count =
-      value === "-"
+      typeof value === "string" && value.trim() === "-"
         ? 1
         : Array.isArray(value)
-          ? value.filter((entry) => entry === "-").length
+          ? value.filter(
+              (entry) => typeof entry === "string" && entry.trim() === "-",
+            ).length
           : 0;
     const flag = `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
     return Array.from({ length: count }, () => flag);

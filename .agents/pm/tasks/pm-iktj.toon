@@ -1,14 +1,14 @@
 id: pm-iktj
-title: "Uniform stdin convention: every --*-file flag (body-file, close --reason-file, etc.) accepts '-' for stdin, matching the annotation --add - convention"
+title: "Uniform stdin convention: body-file and annotation --file flags accept '-' for stdin"
 description: "Standardize stdin handling so every file-valued flag that accepts external content can use '-' for stdin, giving scripts and agents one predictable convention for generated bodies, reasons, and documents."
 type: Task
 status: closed
 priority: 3
 tags[3]: agent-ux,"area:cli",composability
 created_at: "2026-07-06T22:10:15.407Z"
-updated_at: "2026-08-23T22:48:47.232Z"
-closed_at: "2026-08-23T22:48:46.718Z"
-completed_at: "2026-08-23T22:48:46.718Z"
+updated_at: "2026-08-23T23:08:08.492Z"
+closed_at: "2026-08-23T23:08:07.913Z"
+completed_at: "2026-08-23T23:08:07.913Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: All file-reading flags across commands accept '-' to read stdin (inventory taken from contracts); behavior documented in the scripting contract (pm-psy1); error message for unreadable paths mentions the '-' option; tests cover piped heredoc usage; no behavior change for real paths
@@ -23,12 +23,15 @@ dependencies[4]{id,kind,created_at}:
   pm-gknu,related,"2026-07-16T05:45:22.382Z"
   pm-m9xv,implements,"2026-07-25T06:28:02.305Z"
   pm-fs8q9x,implements,"2026-07-26T05:59:31.644Z"
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-23T20:29:26.533Z","harness:codex","Implementation start 2026-08-23: contract-derived census and shared SDK file-or-stdin primitive will cover every external-content --*-file surface, preserve real-path behavior, improve unreadable-path recovery, and prove piped heredoc use. Canonical pm-iktj is reused after all-status duplicate verification."
   "2026-08-23T21:57:50.433Z","harness:codex","Tracker repair evidence: removed only the newly added duplicate pm-m9xv implements row by its exact created_at signature; the canonical 2026-07-25 relationship remains intact."
   "2026-08-23T22:05:18.542Z","harness:codex","Verification evidence 2026-08-24: every external-content file flag in this scope accepts '-' as stdin through the shared SDK token resolver: update/close --body-file plus comments, notes, and learnings --file. Real paths retain prior behavior and unreadable/missing input produces structured recovery. CLI invocation contracts now declare argv/file/stdin modes and the docs include heredoc/pipeline examples. Focused linked tests, the disposable-tracker body-stdin check, 7,858-test exact 100% coverage, typecheck, security scan, and the complete lint/static stack pass. The duplicate relationship added during reconciliation was removed by exact signature; the canonical historical implements edge remains."
   "2026-08-23T22:39:08.695Z","harness:codex","Review finding: --body-file - creates an isolated stdin resolver after --description - or --stdin-json can consume the stream, causing unsettled-await exit/hang. Add an up-front command-wide single-consumer refusal and real-process regression proof."
   "2026-08-23T22:48:45.194Z","harness:codex","Review-fix evidence 2026-08-24: command-wide stdin ownership is validated before --stdin-json, --description -, --body-file -, or bulk --ids - can read. Competing consumers fail with usage exit 2 rather than an unsettled second read; real-process negative controls and registration/contract unit tests pass. All three linked-test groups pass in isolated schema trackers with local_source_ref trust and zero trust, assertion, or infrastructure failures. Final full proof passes 570 files / 7,858 tests at exact 100/100/100/100 coverage."
+  "2026-08-23T22:59:19.204Z","harness:codex","Security re-review finding: resolveBodyFileContent trims its path before recognizing '-', but the command preflight compared the raw value. --description - with --body-file ' - ' could still reach a second read. Normalize the preflight and prove whitespace-token refusal in a real process."
+  "2026-08-23T23:07:40.344Z","harness:codex","Bugbot re-review finding: the generated changelog inherited the item's illustrative close --reason-file wording even though no such option exists. Narrow the canonical title to the implemented body-file and annotation --file surfaces, then regenerate package-owned release notes."
+  "2026-08-23T23:08:03.430Z","harness:codex","Second review-fix evidence 2026-08-24: --description - plus --body-file ' - ' now refuses before any read with exit 2, closing the whitespace normalization bypass. The canonical title and generated release note are narrowed to implemented body-file and annotation --file surfaces. Linked tests and the full 7,858-test exact-coverage run pass."
 notes[1]{created_at,author,text}:
   "2026-07-15T19:27:03.514Z",maintainer-agent,"Dogfood confirmation 2026-07-15 (review pass #89): pm create --body-file - fails ENOENT body_file_unreadable (tries to open a file literally named \"-\"), forcing a scratch-file workaround mid-review. The error's own next_steps suggest \"ls -l \\\"-\\\"\" — the recovery bundle does not know stdin is the intent. This is exactly the convention gap this item owns; --body-file should be first on the flag list when implementing."
 files[7]{path,scope,note}:
@@ -43,7 +46,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,project,240,"harness:codex","2026-08-23T20:53:27.774Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,project,240,"harness:codex","2026-08-23T21:34:41.269Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,project,240,"harness:codex","2026-08-23T22:42:49.991Z",local_mutation,codex/bulk-input-composability-contracts
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mt6btbef-ori5yr
     kind: test
     status: passed
@@ -69,8 +72,21 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt6ewodd-5um5rm
+    kind: test
+    status: passed
+    started_at: "2026-08-23T23:01:39.159Z"
+    finished_at: "2026-08-23T23:02:14.113Z"
+    recorded_at: "2026-08-23T23:02:14.113Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release entry
   docs/SCRIPTING.md,project,File-reading stdin convention and examples
-close_reason: Implemented uniform external-content stdin inputs with deterministic command-wide single-consumer enforcement and exact full-suite proof.
+close_reason: Implemented truthful file/stdin surfaces with whitespace-safe single-consumer enforcement and review-correct generated release notes.
 body: "Found in review #15 follow-up: pm update --body-file - fails with ENOENT (tries to open a file literally named '-'), while pm notes --add - reads stdin. Agents composing bodies from heredocs/pipes (the grep/jq/heredoc composability principle) hit this asymmetry and fall back to temp files. Inventory every --*-file flag via pm contracts, route them through a shared read-file-or-stdin helper, and record the convention in the scripting contract. Related-not-duplicate: pm-kipd (GH-438 full-item JSON on stdin), pm-a2h3 (notes/learnings --stdin parity)."
