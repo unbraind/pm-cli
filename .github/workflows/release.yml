@@ -61,6 +61,32 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - name: Verify npm trusted publisher exchange
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          OIDC_LOG="$(mktemp)"
+          OIDC_NPMRC="$(mktemp)"
+          OIDC_CACHE="${RUNNER_TEMP}/npm-cache-oidc-preflight"
+          trap 'rm -f "${OIDC_LOG}" "${OIDC_NPMRC}"' EXIT
+
+          set +e
+          env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u npm_config_userconfig -u npm_config_cache \
+            NPM_CONFIG_USERCONFIG="${OIDC_NPMRC}" \
+            NPM_CONFIG_CACHE="${OIDC_CACHE}" \
+            npm publish --dry-run --ignore-scripts --loglevel verbose --tag latest >"${OIDC_LOG}" 2>&1
+          preflight_status=$?
+          set -e
+
+          if grep -Fq "oidc Successfully retrieved and set token" "${OIDC_LOG}"; then
+            echo "npm trusted publisher OIDC exchange succeeded; dry-run status ${preflight_status}."
+            exit 0
+          fi
+
+          echo "npm trusted publisher OIDC exchange failed before release gates." >&2
+          grep -E "npm (verbose|error) (oidc|code|need auth)" "${OIDC_LOG}" >&2 || true
+          exit 1
+
       - name: Select exact-tag recovery source
         if: github.event_name == 'workflow_dispatch'
         run: |
