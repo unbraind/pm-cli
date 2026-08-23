@@ -92,7 +92,7 @@ jobs:
             probe_status=$?
           fi
           if ! grep -Eq 'E404|ETARGET|404 Not Found|No match found for version' "${probe_output}"; then
-            echo "Authenticated exact-version probe failed without a definitive missing-version response (status ${probe_status})." >&2
+            echo "Anonymous exact-version probe failed without a definitive missing-version response (status ${probe_status})." >&2
             exit "${probe_status}"
           fi
 

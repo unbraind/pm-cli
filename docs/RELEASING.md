@@ -65,7 +65,7 @@ pnpm version:check
 - Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
-- Keep npm publishing compatible with provenance. The release workflow must keep `id-token: write`, a GitHub-hosted runner, Node 24 or newer, npm 11.5.1 or newer, a valid `NPM_TOKEN`, and `npm publish --access public --provenance`.
+- Keep npm publishing compatible with provenance. The release workflow must keep `id-token: write`, a GitHub-hosted runner, Node 24 or newer, npm 11.5.1 or newer, tokenless public metadata probes, and `npm publish --access public --provenance` through the configured Trusted Publisher.
 
 ## Automated Daily Driver
 
@@ -345,7 +345,7 @@ git push origin v<version>
 `.github/workflows/release.yml` runs on `v*.*.*` tags and handles:
 
 - full-history checkout
-- manual `workflow_dispatch` by tag for recovery. An authenticated exact-version probe keeps already-published access recovery on the reviewed dispatch-time `main` source; when the immutable tag exists but npm publication never completed, recovery checks out that exact tagged source and retains the original version guard
+- manual `workflow_dispatch` by tag for recovery. An isolated anonymous exact-version probe keeps already-published recovery on the reviewed dispatch-time `main` source; when the immutable tag exists but npm publication never completed, recovery checks out that exact tagged source and retains the original version guard
 - pnpm install with frozen lockfile
 - version policy and tag guard
 - secret scan
@@ -371,13 +371,12 @@ git push origin v<version>
   dispatch may do so only when its source-selection preflight pinned the
   checkout to the requested immutable tag; reviewed-main recovery continues
   to refuse publication of a missing target. Only
-  when neither the target nor package metadata is anonymously visible does the
-  same-tag recovery path attempt to restore public package access, because a
-  hidden version can also return 404 to authenticated metadata reads. After a
-  successful access recovery it rechecks anonymous metadata, then either skips
-  the now-visible target or publishes the still-missing version. Permission,
-  authentication, and registry failures stop the workflow instead of risking
-  an immutable-version overwrite. The checked-out tag's `package.json` supplies
+  when neither the target nor package metadata is anonymously visible, the
+  same-tag recovery path fails closed and instructs the maintainer to restore
+  public package visibility outside the workflow. Trusted publishing does not
+  authorize package-access mutations. Permission, authentication, and registry
+  failures stop the workflow instead of risking an immutable-version overwrite.
+  The checked-out tag's `package.json` supplies
   the canonical package identity to both the publish guard and the
   post-publish npm/npx/bunx verifier so those identities cannot drift. The
   explicit stable dist-tag also preserves
@@ -435,8 +434,8 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   `workflow_dispatch` and `tag=v<version>` (or close the current bot-created
   blocker once to trigger the guarded exact-run recovery). The workflow skips
   duplicate npm publication for an anonymously visible version. Before
-  installing or running gates, dispatch performs an authenticated exact-version
-  probe. An
+  installing or running gates, dispatch performs an isolated anonymous
+  exact-version probe. An
   existing version keeps the reviewed dispatch-time `main` source and cannot
   be republished. A definitive missing-version response pins the checkout to
   the existing immutable tag, reapplies the version guard, installs the managed
@@ -448,12 +447,12 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
 - A manual exact-tag `workflow_dispatch` recovery uses isolated anonymous
-  registry probes before any account-level access mutation. A visible package
-  with a missing target version proceeds directly to exact-tag publication, so
-  a publish-capable automation token is not required to change package access.
-  Access recovery is reserved for the ambiguous case where neither the package
-  nor target version is anonymously visible. An already-visible immutable
-  version is still verified and never republished. Recovery starts from the
+  registry probes and never mutates package access. A visible package with a
+  missing target version proceeds directly to exact-tag OIDC publication. When
+  neither the package nor target version is anonymously visible, recovery fails
+  closed until a maintainer restores public visibility outside the workflow. An
+  already-visible immutable version is still verified and never republished.
+  Recovery starts from the
   dispatch-time commit SHA and fails unless the dispatch ref is the repository
   default branch (`main`). It remains on that reviewed source when the exact
   npm version exists. When the version is definitively absent, it switches to

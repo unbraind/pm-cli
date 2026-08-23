@@ -589,6 +589,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.setupNode,
       "node-version: 24",
       "name: Select exact-tag recovery source",
+      "Anonymous exact-version probe failed without a definitive missing-version response",
       'npm view "${NPM_PACKAGE}@${VERSION}" version --json',
       'git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}"',
       'git checkout --detach "${tag_commit}"',
