@@ -276,6 +276,12 @@ export function renderFailureOutputs(recordPath) {
 }
 
 function integerStatus(value) {
+  if (
+    typeof value !== "number" &&
+    (typeof value !== "string" || value.trim() === "")
+  ) {
+    return null;
+  }
   const parsed = Number(value);
   return Number.isInteger(parsed) ? parsed : null;
 }

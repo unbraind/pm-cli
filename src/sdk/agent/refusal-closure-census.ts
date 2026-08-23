@@ -174,7 +174,7 @@ export function buildPmRefusalClosureCensus(
         probe_ids: probeIds,
       };
     })
-    .sort((left, right) => left.code.localeCompare(right.code));
+    .sort((left, right) => left.code < right.code ? -1 : 1);
   const uncoveredErrorCodes = rows
     .filter(({ disposition }) => disposition === "uncovered")
     .map(({ code }) => code);

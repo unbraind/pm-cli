@@ -82,6 +82,7 @@ describe("dynamic extension Commander options", () => {
   it("filters colliding aliases and reports their package owner", () => {
     const program = new Command();
     program.command("get");
+    program.command("plan");
     const aliases = new Map([["get", "package get"]]);
     const descriptors = new Map([
       [
@@ -101,13 +102,16 @@ describe("dynamic extension Commander options", () => {
     expect(
       collectSafeExtensionCommandPaths(
         program,
-        ["", "get", "package probe", "package probe"],
+        ["", "get", "package probe", "package probe", "plan export run"],
         descriptors,
         aliases,
         (warning) => warnings.push(warning),
       ),
     ).toEqual(["package probe"]);
     expect(warnings[0]).toContain("extension_owner=example-package");
+    expect(warnings[1]).toContain(
+      "extension_command_collision:plan export run:core_owner=pm-cli:plan",
+    );
 
     const messages: string[] = [];
     reportExtensionCommandCollision(warnings, (message) => messages.push(message), "collision");

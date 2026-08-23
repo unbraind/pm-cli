@@ -64,6 +64,23 @@ describe("refusal closure census", () => {
     ]);
   });
 
+  it("sorts catalog codes by locale-independent code units", () => {
+    const catalog = ["aa", "z_code", "a_z"].map((code) => ({
+      code,
+      meaning: "Ordering fixture.",
+      stability: "provisional" as const,
+      exit_code: 1,
+      class: "generic_failure" as const,
+      recovery: "Inspect.",
+      sources: ["sdk"] as const,
+      emitting_commands: ["*"] as const,
+    }));
+
+    expect(
+      buildPmRefusalClosureCensus(catalog, [], []).rows.map(({ code }) => code),
+    ).toEqual(["a_z", "aa", "z_code"]);
+  });
+
   it("reports the complete live catalog and all generated refusal families", () => {
     const closedDomains = listCoreClosedDomainContracts();
     const grammar = [

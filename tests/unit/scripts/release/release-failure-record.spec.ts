@@ -458,6 +458,8 @@ describe("renderFailureOutputs and main", () => {
     const root = await fixtureRoot();
     const stageTarget = path.join(root, "stage.json");
     const workflowTarget = path.join(root, "workflow.json");
+    const blankWorkflowTarget = path.join(root, "blank-workflow.json");
+    const whitespaceWorkflowTarget = path.join(root, "whitespace-workflow.json");
     const malformedTarget = path.join(root, "malformed.json");
 
     expect(main(["record-stage", stageTarget, "release-discovery", "7"])).toBe("");
@@ -482,6 +484,26 @@ describe("renderFailureOutputs and main", () => {
         database_id: 17,
         failed_steps: [{ job: "Publish", step: "" }],
       },
+    });
+    expect(
+      main(
+        ["record-workflow", blankWorkflowTarget, "release-workflow", ""],
+        () => "{}",
+      ),
+    ).toBe("");
+    expect(readFailureRecord(blankWorkflowTarget)).toMatchObject({
+      stage: "release-workflow",
+      status: null,
+    });
+    expect(
+      main(
+        ["record-workflow", whitespaceWorkflowTarget, "release-workflow", "  "],
+        () => "{}",
+      ),
+    ).toBe("");
+    expect(readFailureRecord(whitespaceWorkflowTarget)).toMatchObject({
+      stage: "release-workflow",
+      status: null,
     });
     expect(
       main(["record-workflow", malformedTarget], () => "{not-json"),
