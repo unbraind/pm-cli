@@ -26,15 +26,31 @@ describe("structured help command-path resolution", () => {
       ],
     ]);
 
-    expect(_testOnly.resolveExtensionCommandSurface("automation hidden", descriptors)).toMatchObject({
+    expect(
+      _testOnly.resolveExtensionCommandSurface(
+        "automation hidden",
+        descriptors,
+      ),
+    ).toMatchObject({
       tier: "internal",
       family: "automation",
     });
-    expect(_testOnly.resolveExtensionCommandSurface("automation", descriptors)).toEqual({
+    expect(
+      _testOnly.resolveExtensionCommandSurface("automation", descriptors),
+    ).toEqual({
       tier: "standard",
       family: "extensions",
     });
-    expect(_testOnly.resolveExtensionCommandSurface("missing", descriptors)).toBeUndefined();
+    expect(
+      _testOnly.resolveExtensionCommandSurface("missing", descriptors),
+    ).toBeUndefined();
+    expect(
+      _testOnly.resolveExtensionCommandSurface(
+        "automation",
+        descriptors,
+        false,
+      ),
+    ).toBeUndefined();
 
     const root = new Command("pm");
     const automation = root.command("automation");
@@ -84,6 +100,29 @@ describe("structured help command-path resolution", () => {
         ]),
       ).examples,
     ).toEqual(["pm init"]);
+
+    const plan = root.command("plan").description("Plan work");
+    const planPayload = _testOnly.buildJsonHelpPayload(
+      root,
+      plan,
+      ["plan", "--help", "--json"],
+      ["plan"],
+      new Map([
+        [
+          "plan export",
+          {
+            command: "plan export",
+            description: "Export a plan",
+            tier: "internal",
+            family: "extensions",
+          },
+        ],
+      ]),
+    );
+    expect(planPayload).toMatchObject({
+      visibility_tier: "core",
+      capability_family: "graph",
+    });
   });
 
   it("resolves exact, implicit, and contract-backed positional command paths", () => {

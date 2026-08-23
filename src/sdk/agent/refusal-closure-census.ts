@@ -10,10 +10,7 @@ import type { PmClosedDomainContract } from "./closed-domain-contracts.js";
 import type { PmGrammarRefusalContract } from "./refusal-corpus-contracts.js";
 
 /** Evidence family that makes an error code executable. */
-export type PmRefusalEvidenceKind =
-  | "owned_state"
-  | "closed_domain"
-  | "grammar";
+export type PmRefusalEvidenceKind = "owned_state" | "closed_domain" | "grammar";
 
 /** One complete-catalog closure row. */
 export interface PmRefusalClosureCensusRow {
@@ -54,6 +51,23 @@ export interface PmRefusalClosureCensusReport {
 /** Reviewed executable-code floor; raise only with new real probe evidence. */
 export const PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE = 13;
 
+/** Reviewed canonical compatibility groups that must retain executable evidence. */
+export const PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE =
+  Object.freeze([
+    "invalid_argument_value",
+    "missing_lifecycle_target",
+    "missing_required_argument",
+    "projection_options_mutually_exclusive",
+    "tracker_not_initialized",
+    "tracker_root_missing",
+    "tracker_root_not_directory",
+    "tracker_root_unreadable",
+    "unknown_context_intent",
+    "unknown_field_projection",
+    "unknown_option",
+    "unknown_subcommand",
+  ] as const);
+
 /** Ratchet receipt that prevents catalog growth from erasing proven closure. */
 export function verifyPmRefusalClosureRatchet(
   report: PmRefusalClosureCensusReport,
@@ -63,6 +77,30 @@ export function verifyPmRefusalClosureRatchet(
     ok: report.executable_error_code_count >= baseline,
     baseline,
     actual: report.executable_error_code_count,
+  };
+}
+
+/** Ratchet canonical compatibility-group identities independently from counts. */
+export function verifyPmRefusalClosureIdentityRatchet(
+  report: PmRefusalClosureCensusReport,
+  requiredCanonicalCodes: readonly string[] = PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
+): {
+  ok: boolean;
+  required_canonical_codes: string[];
+  missing_required_canonical_codes: string[];
+} {
+  const executableCanonicalCodes = new Set(
+    report.rows
+      .filter(({ disposition }) => disposition === "executable")
+      .map(({ canonical_code: canonicalCode }) => canonicalCode),
+  );
+  const missingRequiredCanonicalCodes = requiredCanonicalCodes.filter(
+    (code) => !executableCanonicalCodes.has(code),
+  );
+  return {
+    ok: missingRequiredCanonicalCodes.length === 0,
+    required_canonical_codes: [...requiredCanonicalCodes],
+    missing_required_canonical_codes: missingRequiredCanonicalCodes,
   };
 }
 
@@ -77,7 +115,10 @@ function evidenceFor(
 ): MutableEvidence {
   const existing = evidence.get(canonicalCode);
   if (existing) return existing;
-  const created = { kinds: new Set<PmRefusalEvidenceKind>(), probeIds: new Set<string>() };
+  const created = {
+    kinds: new Set<PmRefusalEvidenceKind>(),
+    probeIds: new Set<string>(),
+  };
   evidence.set(canonicalCode, created);
   return created;
 }
@@ -169,6 +210,7 @@ export function renderPmRefusalClosureCensusMarkdown(
     `- Catalog error codes: ${report.catalog_error_code_count}`,
     `- Executable error codes: ${report.executable_error_code_count}`,
     `- Executable-code ratchet floor: ${PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE}`,
+    `- Required executable canonical codes: ${PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE.map((code) => `\`${code}\``).join(", ")}`,
     `- Uncovered error codes: ${report.uncovered_error_code_count}`,
     `- Coverage fraction: ${report.coverage_fraction.toFixed(6)}`,
     `- Closed-domain probes: ${report.closed_domain_probe_count}`,

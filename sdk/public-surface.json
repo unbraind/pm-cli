@@ -10164,6 +10164,12 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE",
+          "signature": "readonly [\"invalid_argument_value\", \"missing_lifecycle_target\", \"missing_required_argument\", \"projection_options_mutually_exclusive\", \"tracker_not_initialized\", \"tracker_root_missing\", \"tracker_root_not_directory\", \"tracker_root_unreadable\", \"unknown_context_intent\", \"unknown_field_projection\", \"unknown_option\", \"unknown_subcommand\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE",
           "signature": "13"
         },
@@ -16862,6 +16868,12 @@
           "kind": "function",
           "name": "verifyPmRecoveryReferences",
           "signature": "(obligations: readonly PmRecoveryReferenceObligation[], observations: readonly PmRecoveryReferenceObservation[]) => PmRecoveryReferenceReport | calls: (obligations: readonly PmRecoveryReferenceObligation[], observations: readonly PmRecoveryReferenceObservation[]) => PmRecoveryReferenceReport"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "verifyPmRefusalClosureIdentityRatchet",
+          "signature": "(report: PmRefusalClosureCensusReport, requiredCanonicalCodes?: readonly string[]) => { ok: boolean; required_canonical_codes: string[]; missing_required_canonical_codes: string[]; } | calls: (report: PmRefusalClosureCensusReport, requiredCanonicalCodes?: readonly string[]) => { ok: boolean; required_canonical_codes: string[]; missing_required_canonical_codes: string[]; }"
         },
         {
           "classification": "advanced_export",

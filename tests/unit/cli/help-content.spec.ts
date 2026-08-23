@@ -5,9 +5,14 @@ import {
   _testOnly,
   attachRichHelpText,
   firstExampleOrEmpty,
+  getPmCommandHelpVisibilityTier,
   resolveHelpNarrative,
   setPmCommandHelpVisibilityTier,
 } from "../../../src/cli/help-content.js";
+import {
+  measurePmCoreHelp,
+  PM_CORE_HELP_BUDGET,
+} from "../../../src/sdk/agent-capability-contracts.js";
 
 describe("help-content.firstExampleOrEmpty", () => {
   it("returns only the first example when examples are present", () => {
@@ -139,6 +144,13 @@ describe("help-content rendering helpers", () => {
       .command("extension-core")
       .description("A package-declared core command");
     setPmCommandHelpVisibilityTier(extensionCore, "core");
+    expect(getPmCommandHelpVisibilityTier(extensionCore)).toBe("core");
+    for (let index = 0; index < PM_CORE_HELP_BUDGET.max_lines; index += 1) {
+      const dynamic = program
+        .command(`dynamic-core-${index}`)
+        .description(`Dynamic core ${index} ${"description ".repeat(80)}`);
+      setPmCommandHelpVisibilityTier(dynamic, "core");
+    }
     attachRichHelpText(program, ["--help"]);
 
     let rootHelp = "";
@@ -148,6 +160,8 @@ describe("help-content rendering helpers", () => {
     expect(rootHelp).not.toContain("health");
     expect(rootHelp).not.toContain("graph");
     expect(rootHelp).toContain("extension-core");
+    expect(rootHelp).not.toContain("dynamic-core-49");
+    expect(measurePmCoreHelp(rootHelp)).toMatchObject({ within_budget: true });
 
     let graphHelp = "";
     graph.configureOutput({ writeOut: (text) => (graphHelp += text) });
@@ -155,11 +169,11 @@ describe("help-content rendering helpers", () => {
     expect(graphHelp).toContain("validate");
 
     const configuredHelp = program.configureHelp();
-    expect(configuredHelp.visibleCommands?.(graph).map((command) => command.name())).toContain(
-      "validate",
-    );
-    expect(configuredHelp.visibleOptions?.(graph).map((option) => option.long)).toContain(
-      "--scope",
-    );
+    expect(
+      configuredHelp.visibleCommands?.(graph).map((command) => command.name()),
+    ).toContain("validate");
+    expect(
+      configuredHelp.visibleOptions?.(graph).map((option) => option.long),
+    ).toContain("--scope");
   });
 });

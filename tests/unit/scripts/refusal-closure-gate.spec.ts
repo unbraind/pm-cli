@@ -63,12 +63,15 @@ describe("executable refusal closure gate", () => {
   it("fails the catalog ratchet when executable evidence regresses", () => {
     expect(scorePmRefusalCatalogClosure([])).toMatchObject({
       catalogRatchet: { ok: false, baseline: 13, actual: 0 },
-      catalogRatchetFindings: [
+      catalogRatchetFindings: expect.arrayContaining([
         expect.objectContaining({
           code: "executable_error_code_count_regressed",
           probe_id: "catalog-census",
         }),
-      ],
+        expect.objectContaining({
+          code: "executable_error_code_identity_regressed",
+        }),
+      ]),
     });
   });
 

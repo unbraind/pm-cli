@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { listCoreClosedDomainContracts } from "../../../../src/sdk/agent/closed-domain-contracts.js";
 import {
   buildPmRefusalClosureCensus,
+  PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
   PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
   renderPmRefusalClosureCensusMarkdown,
+  verifyPmRefusalClosureIdentityRatchet,
   verifyPmRefusalClosureRatchet,
 } from "../../../../src/sdk/agent/refusal-closure-census.js";
 import {
@@ -89,12 +91,36 @@ describe("refusal closure census", () => {
       baseline: PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
       actual: report.executable_error_code_count,
     });
+    expect(verifyPmRefusalClosureIdentityRatchet(report)).toEqual({
+      ok: true,
+      required_canonical_codes: [
+        ...PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
+      ],
+      missing_required_canonical_codes: [],
+    });
     expect(
       verifyPmRefusalClosureRatchet(
         { ...report, executable_error_code_count: 12 },
         PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
       ).ok,
     ).toBe(false);
+
+    const identityRegression = {
+      ...report,
+      rows: report.rows.map((row, index) =>
+        row.canonical_code === "invalid_argument_value"
+          ? { ...row, disposition: "uncovered" as const }
+          : index === 0 && row.disposition === "uncovered"
+            ? { ...row, disposition: "executable" as const }
+            : row,
+      ),
+    };
+    expect(
+      verifyPmRefusalClosureIdentityRatchet(identityRegression),
+    ).toMatchObject({
+      ok: false,
+      missing_required_canonical_codes: ["invalid_argument_value"],
+    });
   });
 
   it("joins aliases and every evidence family while ignoring foreign probe codes", () => {

@@ -297,9 +297,11 @@ export function listPmCommandsForTierFromContracts(
   contracts: readonly PmCommandCapabilityContract[],
 ): string[] {
   const maximum = TIER_ORDER[tier];
-  return contracts.filter(
-    (entry) => entry.tier !== "internal" && TIER_ORDER[entry.tier] <= maximum,
-  ).map((entry) => entry.command);
+  return contracts
+    .filter(
+      (entry) => entry.tier !== "internal" && TIER_ORDER[entry.tier] <= maximum,
+    )
+    .map((entry) => entry.command);
 }
 
 /** Return commands in one capability family, preserving contract order. */
@@ -317,9 +319,9 @@ export function listPmCommandsForFamilyFromContracts(
   family: PmCommandCapabilityFamily,
   contracts: readonly PmCommandCapabilityContract[],
 ): string[] {
-  return contracts.filter(
-    (entry) => entry.family === family,
-  ).map((entry) => entry.command);
+  return contracts
+    .filter((entry) => entry.family === family)
+    .map((entry) => entry.command);
 }
 
 const CAPABILITY_FAMILY_ORDER: readonly PmCommandCapabilityFamily[] = [
@@ -336,6 +338,7 @@ const CAPABILITY_FAMILY_ORDER: readonly PmCommandCapabilityFamily[] = [
 ];
 
 const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
+  "ctx",
   "item-reopen",
   "list-all",
   "list-blocked",
@@ -348,15 +351,14 @@ const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
 
 /** Group the command registry for progressive-disclosure routing surfaces. */
 export function listPmCommandCapabilityGroups(
-  contracts: readonly PmCommandCapabilityContract[] =
-    PM_COMMAND_CAPABILITY_CONTRACTS,
+  contracts: readonly PmCommandCapabilityContract[] = PM_COMMAND_CAPABILITY_CONTRACTS,
 ): PmCommandCapabilityGroup[] {
   return CAPABILITY_FAMILY_ORDER.map((family) => ({
     family,
     commands: listPmCommandsForFamilyFromContracts(family, contracts).filter(
       (command) =>
-        contracts.find((entry) => entry.command === command)?.tier !== "internal" &&
-        !CAPABILITY_ROUTING_EXCLUDED_ALIASES.has(command),
+        contracts.find((entry) => entry.command === command)?.tier !==
+          "internal" && !CAPABILITY_ROUTING_EXCLUDED_ALIASES.has(command),
     ),
   })).filter(({ commands }) => commands.length > 0);
 }
@@ -578,8 +580,7 @@ export function renderPmCommandVisibilityMarkdownFromContracts(
 
 /** Render family routing for generated docs and skill progressive disclosure. */
 export function renderPmCapabilityRoutingMarkdown(
-  contracts: readonly PmCommandCapabilityContract[] =
-    PM_COMMAND_CAPABILITY_CONTRACTS,
+  contracts: readonly PmCommandCapabilityContract[] = PM_COMMAND_CAPABILITY_CONTRACTS,
 ): string {
   const rows = listPmCommandCapabilityGroups(contracts).map(
     ({ family, commands }) =>

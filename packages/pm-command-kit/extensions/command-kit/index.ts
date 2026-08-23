@@ -25,7 +25,7 @@ import type {
 export const manifest = {
   name: "builtin-command-kit",
   version: "0.1.0",
-  entry: "./index.js",
+  entry: "./index.ts",
   priority: 0,
   capabilities: ["commands", "schema", "parser"],
   activation: { commands: ["command-kit echo", "list"] },

@@ -928,8 +928,7 @@ export type ExporterArtifactOutputContract =
     };
 
 /** Exporter command metadata plus its optional artifact-delivery contract. */
-export interface ExporterRegistrationOptions
-  extends ImportExportRegistrationOptions {
+export interface ExporterRegistrationOptions extends ImportExportRegistrationOptions {
   /** Declaration for artifact bytes and the host receipt. */
   output?: ExporterArtifactOutputContract;
 }

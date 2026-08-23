@@ -85,6 +85,7 @@ import {
   resolveHelpBundleForPath,
   resolveHelpDetailMode,
   resolveHelpNarrative,
+  setPmCommandHelpVisibilityTier,
 } from "../../../src/cli/help-content.js";
 import {
   buildLinkedTestQuotedRetryCommand,
@@ -5426,7 +5427,8 @@ describe("CLI rich help content", () => {
 
   it("uses fallback compact examples when extension descriptor omits examples", async () => {
     const program = new Command().name("pm").option("--json", "JSON output");
-    program.command("known").description("Known");
+    const known = program.command("known").description("Known");
+    setPmCommandHelpVisibilityTier(known, "core");
     const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     try {
       await expect(

@@ -26,6 +26,7 @@ import {
 } from "../../dist/sdk/agent/refusal-corpus-contracts.js";
 import {
   buildPmRefusalClosureCensus,
+  verifyPmRefusalClosureIdentityRatchet,
   verifyPmRefusalClosureRatchet,
 } from "../../dist/sdk/agent/refusal-closure-census.js";
 import { PM_ERROR_CODE_CATALOG } from "../../dist/sdk/generated-error-code-catalog.js";
@@ -443,19 +444,33 @@ export function scorePmRefusalCatalogClosure(
       ...listPmSubcommandRefusalContracts(),
     ],
   );
-  const catalogRatchet = verifyPmRefusalClosureRatchet(catalogClosure);
+  const catalogCountRatchet = verifyPmRefusalClosureRatchet(catalogClosure);
+  const catalogIdentityRatchet =
+    verifyPmRefusalClosureIdentityRatchet(catalogClosure);
+  const catalogRatchet = {
+    ...catalogCountRatchet,
+    ...catalogIdentityRatchet,
+    ok: catalogCountRatchet.ok && catalogIdentityRatchet.ok,
+  };
   return {
     catalogClosure,
     catalogRatchet,
-    catalogRatchetFindings: catalogRatchet.ok
-      ? []
-      : [
-          {
-            code: "executable_error_code_count_regressed",
-            probe_id: "catalog-census",
-            detail: `${catalogRatchet.actual} executable error codes are below the ratcheted minimum ${catalogRatchet.baseline}.`,
-          },
-        ],
+    catalogRatchetFindings: [
+      ...(catalogRatchet.actual < catalogRatchet.baseline
+        ? [
+            {
+              code: "executable_error_code_count_regressed",
+              probe_id: "catalog-census",
+              detail: `${catalogRatchet.actual} executable error codes are below the ratcheted minimum ${catalogRatchet.baseline}.`,
+            },
+          ]
+        : []),
+      ...catalogRatchet.missing_required_canonical_codes.map((code) => ({
+        code: "executable_error_code_identity_regressed",
+        probe_id: `catalog-census:${code}`,
+        detail: `Required canonical error code ${code} has no executable refusal evidence.`,
+      })),
+    ],
   };
 }
 
@@ -558,13 +573,8 @@ export function verifyExecutableRefusalClosure({
       probeIds,
       contractCount,
     );
-    const {
-      catalogClosure,
-      catalogRatchet,
-      catalogRatchetFindings,
-    } = scorePmRefusalCatalogClosure(
-      errorCodeCatalog,
-    );
+    const { catalogClosure, catalogRatchet, catalogRatchetFindings } =
+      scorePmRefusalCatalogClosure(errorCodeCatalog);
     const findings = [
       ...closedDomainScore.findings,
       ...grammarRefusalScore.findings,
@@ -603,8 +613,7 @@ export function verifyExecutableRefusalClosure({
       catalog_closure: {
         complete: catalogClosure.ok,
         catalog_error_code_count: catalogClosure.catalog_error_code_count,
-        executable_error_code_count:
-          catalogClosure.executable_error_code_count,
+        executable_error_code_count: catalogClosure.executable_error_code_count,
         uncovered_error_code_count: catalogClosure.uncovered_error_code_count,
         coverage_fraction: catalogClosure.coverage_fraction,
         ratchet: catalogRatchet,

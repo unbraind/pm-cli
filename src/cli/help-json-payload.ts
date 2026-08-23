@@ -27,6 +27,7 @@ import {
   commandAliases,
 } from "./extension-command-help.js";
 import {
+  getPmCommandHelpVisibilityTier,
   normalizeHelpCommandPath,
   resolveHelpDetailMode,
   resolveHelpNarrative,
@@ -99,9 +100,11 @@ const EXTENSION_TIER_ORDER = {
 function resolveExtensionCommandSurface(
   commandPath: string,
   descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  allowDescendants = true,
 ): ExtensionCommandSurface | undefined {
   const exact = descriptors.get(commandPath);
   if (exact) return exact;
+  if (!allowDescendants) return undefined;
   const descendants = [...descriptors.entries()]
     .filter(([path]) => path.startsWith(`${commandPath} `))
     .map(([, descriptor]) => descriptor);
@@ -354,8 +357,10 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
 
 function buildHelpSubcommandSummaries(
   command: Command,
-  extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor> =
-    new Map(),
+  extensionDescriptors: ReadonlyMap<
+    string,
+    ExtensionCommandHelpDescriptor
+  > = new Map(),
 ): HelpSubcommandSummary[] {
   return command
     .createHelp()
@@ -367,15 +372,18 @@ function buildHelpSubcommandSummaries(
       const extensionDescriptor = resolveExtensionCommandSurface(
         commandPath,
         extensionDescriptors,
+        getPmCommandHelpVisibilityTier(entry) !== undefined,
       );
       return {
         name: entry.name().trim(),
         aliases: commandAliases(entry),
         description: entry.description().trim(),
         tier:
-          extensionDescriptor?.tier ?? resolvePmCommandVisibilityTier(rootCommand),
+          extensionDescriptor?.tier ??
+          resolvePmCommandVisibilityTier(rootCommand),
         family:
-          extensionDescriptor?.family ?? resolvePmCommandCapabilityFamily(rootCommand),
+          extensionDescriptor?.family ??
+          resolvePmCommandCapabilityFamily(rootCommand),
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -420,8 +428,7 @@ function resolveJsonHelpVisibilityTier(
 ): ReturnType<typeof resolvePmCommandVisibilityTier> | null {
   if (rootCommandPath === undefined) return null;
   return (
-    extensionDescriptor?.tier ??
-    resolvePmCommandVisibilityTier(rootCommandPath)
+    extensionDescriptor?.tier ?? resolvePmCommandVisibilityTier(rootCommandPath)
   );
 }
 
@@ -473,9 +480,7 @@ function buildPositionalActionHelpProjection(
           aliases: [],
           description,
           tier: resolvePmCommandVisibilityTier(resolvedPath.split(" ")[0]!),
-          family: resolvePmCommandCapabilityFamily(
-            resolvedPath.split(" ")[0]!,
-          ),
+          family: resolvePmCommandCapabilityFamily(resolvedPath.split(" ")[0]!),
         })),
       ].sort((left, right) => left.name.localeCompare(right.name)),
       usage: [
@@ -548,7 +553,11 @@ function buildJsonHelpPayload(
     ? extensionDescriptors.get(commandPath)
     : undefined;
   const extensionSurface = commandPath
-    ? resolveExtensionCommandSurface(commandPath, extensionDescriptors)
+    ? resolveExtensionCommandSurface(
+        commandPath,
+        extensionDescriptors,
+        getPmCommandHelpVisibilityTier(targetCommand) !== undefined,
+      )
     : undefined;
   const narrative = buildJsonHelpNarrative(
     detailMode,

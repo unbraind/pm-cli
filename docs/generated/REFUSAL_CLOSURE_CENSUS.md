@@ -7,6 +7,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 - Catalog error codes: 333
 - Executable error codes: 13
 - Executable-code ratchet floor: 13
+- Required executable canonical codes: `invalid_argument_value`, `missing_lifecycle_target`, `missing_required_argument`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
 - Uncovered error codes: 320
 - Coverage fraction: 0.039039
 - Closed-domain probes: 18

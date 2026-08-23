@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-23T08:59:58.490Z"
-closed_at: "2026-08-23T08:44:25.365Z"
-completed_at: "2026-08-23T08:44:25.365Z"
+updated_at: "2026-08-23T10:18:02.793Z"
+closed_at: "2026-08-23T10:18:02.087Z"
+completed_at: "2026-08-23T10:18:02.087Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; Every command declares exactly one noun (capability family) in the same contract record as its tier, and every declared noun has at least one command, checked in both directions against the command registration rather than against a list kept beside it; A test asserts no surface maintains its own independent visibility list; Agent-facing routing surfaces - skills, guide topics, and generated docs - derive their capability map from the declared noun field rather than hand-authoring one; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier and a noun through the same fields, so extensions cannot bypass tiering or routing"
@@ -20,9 +20,9 @@ outcome: "Raising or lowering a command's visibility is a one-field change that 
 parent: pm-n7rr
 risk: low
 confidence: 75
-resolution: Unified command capability metadata is now SDK-owned and contract-derived across every advertised surface.
-expected_result: "One command tier and capability-family declaration controls CLI help, MCP profiles, completions, guides, generated documentation, and package command routing within a mechanically enforced compact-help budget."
-actual_result: All built-ins and package commands use the shared contract; root help is 42 lines/3356 bytes; generated and runtime conformance gates pass; exact repository coverage is 100%.
+resolution: "Completed by making visibility tier and capability family contract fields the shared source for CLI, MCP, completion, guide, generated-doc, and extension projections, with rendered help budgeting and regression gates."
+expected_result: "Every command and extension command declares one validated tier and capability family, and CLI help, MCP profiles, completions, guides, and generated docs derive their routing from those contracts within the enforced root-help budget."
+actual_result: "Contract-derived tier and family projections are active across CLI, MCP, completions, guides, docs, and extension packages; built-in metadata remains isolated, dynamic root help is budgeted from its rendered payload, and all focused, static, lint, compatibility, grammar, and exact-coverage gates pass."
 dependencies[15]:
   - id: pm-1kxs
     kind: related
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[18]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -97,7 +97,8 @@ comments[18]{created_at,author,text}:
   "2026-08-23T08:42:00.383Z","harness:codex","Verification evidence: exact full-source coverage passed at 100/100/100/100 across 566 files and 7,845 tests; pnpm lint passed including zero ESLint warnings, zero jscpd clones, 100% source/export/member docstrings, contract-derived live grammar 167/167, 117/117 executable refusal probes, tracker-context, graph-composition, and record-integrity; package artifact, secret scan, docs/skills, generated surfaces, and TypeScript package/example checks passed."
   "2026-08-23T08:50:10.418Z","harness:codex","Reviewed delivery: PR #1096 https://github.com/unbraind/pm-cli/pull/1096 carries the closed command-tier/capability-family implementation, generated changelog entry, exact coverage, and manual package acceptance evidence."
   "2026-08-23T08:59:58.489Z","harness:codex","Hosted smoke remediation: CI correctly detected the intentional compact root-help projection as stale token-surface baseline data. Refreshed only the measured surface baseline: root help falls from 14,060 to 3,692 bytes and the advertised per-command surface from 357,934 to 247,705 bytes; complete command discovery remains enforced separately by contract-seeded grammar 167/167."
-files[38]{path,scope,note}:
+  "2026-08-23T10:17:04.918Z","harness:codex","Review remediation evidence: CodeRabbit findings 3838168892, 3838168893, 3838168896, 3838168897, 3838168898, and 3838168904 are addressed. CHANGELOG.md is linked as reviewed documentation; command-kit anatomy now uses the executable index.ts entry; built-in help metadata is isolated from package descendants; runtime capability-family values have one canonical tuple with compile-time SDK parity; ctx is excluded from generated routing; and dynamic core help is projected against the exact rendered one-screen budget. Focused tests passed 193/193 plus cli-main-errors 129/129. Full coverage passed 7,845 tests across 566 files at statements 57,368/57,368, branches 42,912/42,912, functions 11,948/11,948, and lines 55,299/55,299. pnpm lint passed with zero ESLint warnings and zero jscpd clones; pnpm quality:static passed all gates."
+files[40]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
   packages/pm-command-kit/extensions/command-kit/index.ts,project,Contract-derived command surface implementation and proof
@@ -112,6 +113,7 @@ files[38]{path,scope,note}:
   src/cli/help-content.ts,project,Contract-derived command surface implementation and proof
   src/cli/help-json-payload.ts,project,Active command contract and recovery conformance implementation
   src/cli/main.ts,project,Contract-derived command surface implementation and proof
+  src/core/extensions/command-metadata-contract.ts,project,Canonical capability-family values shared by runtime validation and SDK projections
   src/core/extensions/command-visibility-tier.ts,project,extension command tier validation
   src/core/extensions/extension-types.ts,project,Contract-derived command surface implementation and proof
   src/core/extensions/loader.ts,project,Contract-derived command surface implementation and proof
@@ -127,6 +129,7 @@ files[38]{path,scope,note}:
   tests/integration/task-lifecycle-aliases.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
   tests/unit/cli/cli-main-errors.spec.ts,project,Contract-derived command surface implementation and proof
   tests/unit/cli/extension-command-help.spec.ts,project,Contract-derived command surface implementation and proof
+  tests/unit/cli/help-command-path-resolution.spec.ts,project,Built-in metadata isolation regression coverage
   tests/unit/cli/help-content.spec.ts,project,Contract-derived command surface implementation and proof
   tests/unit/commands/completion-command.spec.ts,project,Updated compatibility and progressive-disclosure contract proof
   tests/unit/core/extensions/command-visibility-tier.spec.ts,project,Validates the closed extension tier and capability-family contract with positive and negative controls
@@ -158,8 +161,9 @@ test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-ms3jox6g-0ih7dn,test,passed,"2026-07-27T18:12:58.332Z","2026-07-27T18:13:09.496Z","2026-07-27T18:13:09.496Z",1,0,0
   test-local-ms76fu2c-19g9u3,test,passed,"2026-07-30T07:12:53.064Z","2026-07-30T07:13:15.252Z","2026-07-30T07:13:15.252Z",2,0,0
   test-local-msz5t0a6-txpqnb,test,passed,"2026-08-18T21:12:30.640Z","2026-08-18T21:13:03.150Z","2026-08-18T21:13:03.150Z",3,0,0
-docs[9]{path,scope,note}:
+docs[10]{path,scope,note}:
   .agents/skills/pm-developer/SKILL.md,project,Generated routing and package author guidance
+  CHANGELOG.md,project,Generated reviewed delivery entry for the command-surface contract
   docs/EXTENSIONS.md,project,Generated routing and package author guidance
   docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Generated routing and package author guidance
   docs/generated/AGENT_COMMAND_SURFACE.md,project,generated tier reference
@@ -168,5 +172,5 @@ docs[9]{path,scope,note}:
   docs/SDK.md,project,Generated routing and package author guidance
   docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,Visibility and enumeration contract guide
   packages/pm-command-kit/README.md,project,Generated routing and package author guidance
-close_reason: "Completed the single-source command tier and capability-family contract across built-in and package commands. CLI help, MCP projections, completions, guide/skill routing, generated docs, and extension metadata now derive from the shared contract; compact root help is mechanically bounded at 50 lines/6000 bytes and accepted at 42 lines/3356 bytes; exact coverage and all repository gates pass."
+close_reason: "Completed the single-source command-surface contract and review remediation: tiers and capability families now drive CLI help, MCP profiles, completions, guides, generated docs, and extension packages; rendered root-help budgeting and built-in metadata isolation are regression-proven; focused, static, lint, grammar, compatibility, and exact 100% coverage gates pass."
 body: ""

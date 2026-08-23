@@ -5,22 +5,17 @@
  */
 import type { CommandDefinition } from "./extension-types.js";
 import { assertOptionalStringField } from "./registration-validation.js";
+import { EXTENSION_COMMAND_CAPABILITY_FAMILIES } from "./command-metadata-contract.js";
 
-const COMMAND_CAPABILITY_FAMILIES = new Set([
-  "workspace",
-  "intake",
-  "context",
-  "lifecycle",
-  "evidence",
-  "graph",
-  "quality",
-  "automation",
-  "extensions",
-  "internal",
-]);
+const COMMAND_CAPABILITY_FAMILIES = new Set<string>(
+  EXTENSION_COMMAND_CAPABILITY_FAMILIES,
+);
 
 function assertCommandCapabilityFamily(family: unknown): void {
-  if (family !== undefined && !COMMAND_CAPABILITY_FAMILIES.has(String(family))) {
+  if (
+    family !== undefined &&
+    !COMMAND_CAPABILITY_FAMILIES.has(String(family))
+  ) {
     throw new Error(
       "registerCommand definition.family must be workspace, intake, context, lifecycle, evidence, graph, quality, automation, extensions, or internal",
     );
@@ -47,10 +42,7 @@ export function assertCommandDefinitionMetadataStrings(
     "registerCommand definition.intent",
     definition.intent,
   );
-  assertOptionalStringField(
-    "registerCommand definition.tier",
-    definition.tier,
-  );
+  assertOptionalStringField("registerCommand definition.tier", definition.tier);
   const tier = definition.tier;
   if (
     tier !== undefined &&
