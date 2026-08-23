@@ -435,6 +435,7 @@ function readReleaseVersions(parentSha, sha, targetVersion) {
   }
   if (
     typeof previousVersion !== "string" ||
+    !STABLE_RELEASE_PATTERN.test(previousVersion) ||
     previousVersion === targetVersion ||
     candidateVersion !== targetVersion
   ) {
@@ -469,7 +470,10 @@ function validateGeneratedReleaseCommit(sha) {
   }
   const { parentSha, targetVersion, releaseDate } = identity;
   const manifests = readExpectedReleaseManifests(parentSha);
-  if (manifests === null || !hasExactReleasePathSet(parentSha, sha, manifests)) {
+  if (
+    manifests === null ||
+    !hasExactReleasePathSet(parentSha, sha, manifests)
+  ) {
     return null;
   }
   const previousVersion = readReleaseVersions(parentSha, sha, targetVersion);
@@ -576,15 +580,7 @@ function resolveReviewedAnalyzerEvidence(repository, sha, initialEvidence) {
     analyzedSha: sha,
     analysisSource: "exact_commit",
   };
-  const deepScanMissing =
-    !initialEvidence.deepScan.ok &&
-    initialEvidence.deepScan.reason.startsWith("DeepScan status is missing");
-  const codeFactorMissing =
-    !initialEvidence.codeFactor.ok &&
-    initialEvidence.codeFactor.reason.startsWith(
-      "CodeFactor check run is missing",
-    );
-  if (!deepScanMissing || !codeFactorMissing) {
+  if (!bothAnalyzersMissing(initialEvidence)) {
     return exact;
   }
   const reviewedHead = readReviewedPullRequestHead(repository, sha);

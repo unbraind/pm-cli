@@ -94,7 +94,12 @@ function reviewedPullRequestResponse(headSha = PARENT_SHA) {
 }
 
 /** Return successful parent evidence, empty candidate evidence, or repository discovery. */
-function analyzerEvidenceOrEmpty(target: string, analyzedSha = PARENT_SHA, status = 0) {
+function analyzerEvidenceOrEmpty(
+  args: string[],
+  analyzedSha = PARENT_SHA,
+  status = 0,
+) {
+  const target = String(args[1] ?? "");
   const analyzed = successfulAnalyzerResponse(target, analyzedSha, status);
   if (analyzed !== null) {
     return analyzed;
@@ -103,9 +108,16 @@ function analyzerEvidenceOrEmpty(target: string, analyzedSha = PARENT_SHA, statu
     return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
   }
   if (target.includes("/check-runs")) {
-    return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+    return {
+      status: 0,
+      stdout: JSON.stringify({ check_runs: [] }),
+      stderr: "",
+    };
   }
-  return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+  if (args[0] === "repo" && target === "view") {
+    return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+  }
+  return { status: 1, stdout: "", stderr: "unexpected command" };
 }
 
 interface SquashBaseControls {
@@ -120,7 +132,11 @@ interface SquashBaseControls {
 function squashBaseResponse(args: string[], controls: SquashBaseControls) {
   const target = String(args[1] ?? "");
   if (args[0] === "show") {
-    return { status: controls.messageStatus ?? 0, stdout: controls.message, stderr: "" };
+    return {
+      status: controls.messageStatus ?? 0,
+      stdout: controls.message,
+      stderr: "",
+    };
   }
   if (args[0] === "rev-parse") {
     if (target.endsWith("^2")) {
@@ -386,19 +402,29 @@ interface ReleaseCandidateFixture {
 }
 
 /** Resolve all successful fixture defaults before command routing. */
-function releaseCandidateFixture(controls: ReleaseCandidateControls): ReleaseCandidateFixture {
+function releaseCandidateFixture(
+  controls: ReleaseCandidateControls,
+): ReleaseCandidateFixture {
   return {
     message:
       controls.message ??
       `chore(release): cut ${RELEASE_VERSION}\n\nAutomate daily release preparation with strict quality, compatibility, and reliability gates.\n`,
     parentLine: controls.parentLine ?? `${SHA} ${PARENT_SHA}\n`,
-    trackedPaths: controls.trackedPaths ?? [...RELEASE_MANIFESTS, "CHANGELOG.md"],
+    trackedPaths: controls.trackedPaths ?? [
+      ...RELEASE_MANIFESTS,
+      "CHANGELOG.md",
+    ],
     changedEntries:
       controls.changedEntries ??
-      [...RELEASE_MANIFESTS, "CHANGELOG.md"].map((filePath) => `M\t${filePath}`),
-    parentManifest: controls.parentManifest ?? `{"version":"${PREVIOUS_VERSION}"}\n`,
-    candidateManifest: controls.candidateManifest ?? `{"version":"${RELEASE_VERSION}"}\n`,
-    parentChangelog: controls.parentChangelog ?? "# Changelog\n\n## Unreleased\n\nEntry.\n",
+      [...RELEASE_MANIFESTS, "CHANGELOG.md"].map(
+        (filePath) => `M\t${filePath}`,
+      ),
+    parentManifest:
+      controls.parentManifest ?? `{"version":"${PREVIOUS_VERSION}"}\n`,
+    candidateManifest:
+      controls.candidateManifest ?? `{"version":"${RELEASE_VERSION}"}\n`,
+    parentChangelog:
+      controls.parentChangelog ?? "# Changelog\n\n## Unreleased\n\nEntry.\n",
     candidateChangelog:
       controls.candidateChangelog ??
       `# Changelog\n\n## ${RELEASE_VERSION} - 2026-08-23\n\nEntry.\n`,
@@ -406,10 +432,15 @@ function releaseCandidateFixture(controls: ReleaseCandidateControls): ReleaseCan
 }
 
 /** Route rev-parse calls used by exact, merge, tree, and tag proof. */
-function releaseRevParseResponse(target: string, controls: ReleaseCandidateControls) {
+function releaseRevParseResponse(
+  target: string,
+  controls: ReleaseCandidateControls,
+) {
   if (target === "HEAD") return { status: 0, stdout: `${SHA}\n`, stderr: "" };
-  if (target.endsWith("^2")) return { status: 1, stdout: "", stderr: "not a merge" };
-  if (target.endsWith("^{tree}")) return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+  if (target.endsWith("^2"))
+    return { status: 1, stdout: "", stderr: "not a merge" };
+  if (target.endsWith("^{tree}"))
+    return { status: 0, stdout: `${SHA}\n`, stderr: "" };
   return {
     status: controls.tagStatus ?? 0,
     stdout: `${controls.tagSha ?? SHA}\n`,
@@ -424,7 +455,11 @@ function releaseShowResponse(
   controls: ReleaseCandidateControls,
 ) {
   if (args[1] === "--no-patch") {
-    return { status: controls.messageStatus ?? 0, stdout: fixture.message, stderr: "" };
+    return {
+      status: controls.messageStatus ?? 0,
+      stdout: fixture.message,
+      stderr: "",
+    };
   }
   const blob = String(args[1]);
   if (blob.endsWith(`:${controls.unreadableBlob}`)) {
@@ -457,10 +492,15 @@ function releaseGitResponse(
   fixture: ReleaseCandidateFixture,
   controls: ReleaseCandidateControls,
 ) {
-  if (args[0] === "rev-parse") return releaseRevParseResponse(String(args[1]), controls);
+  if (args[0] === "rev-parse")
+    return releaseRevParseResponse(String(args[1]), controls);
   if (args[0] === "show") return releaseShowResponse(args, fixture, controls);
   if (args[0] === "rev-list") {
-    return { status: controls.parentStatus ?? 0, stdout: fixture.parentLine, stderr: "" };
+    return {
+      status: controls.parentStatus ?? 0,
+      stdout: fixture.parentLine,
+      stderr: "",
+    };
   }
   if (args[0] === "ls-tree") {
     return {
@@ -480,7 +520,10 @@ function releaseGitResponse(
 }
 
 /** Route every GitHub-side policy and analyzer proof command. */
-function releaseApiResponse(args: string[], controls: ReleaseCandidateControls) {
+function releaseApiResponse(
+  args: string[],
+  controls: ReleaseCandidateControls,
+) {
   const target = String(args[1] ?? "");
   if (target.endsWith("/protection")) {
     return { status: 0, stdout: JSON.stringify(STRICT_PROTECTION), stderr: "" };
@@ -495,7 +538,10 @@ function releaseApiResponse(args: string[], controls: ReleaseCandidateControls) 
       stderr: "",
     };
   }
-  if (target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}/check-runs?per_page=100`) {
+  if (
+    target ===
+    `repos/unbraind/pm-cli/commits/${PARENT_SHA}/check-runs?per_page=100`
+  ) {
     return {
       status: 0,
       stdout: JSON.stringify(controls.parentChecks ?? SUCCESSFUL_CODEFACTOR),
@@ -506,19 +552,28 @@ function releaseApiResponse(args: string[], controls: ReleaseCandidateControls) 
     return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
   }
   if (target.includes("/check-runs")) {
-    return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+    return {
+      status: 0,
+      stdout: JSON.stringify({ check_runs: [] }),
+      stderr: "",
+    };
   }
   return { status: 1, stdout: "", stderr: "unexpected command" };
 }
 
 /** Install a compact generated-release fixture with independently corruptible proof layers. */
-function mockGeneratedReleaseCandidate(controls: ReleaseCandidateControls = {}) {
+function mockGeneratedReleaseCandidate(
+  controls: ReleaseCandidateControls = {},
+) {
   const fixture = releaseCandidateFixture(controls);
   const spawnSync = vi.fn((_command: string, args: string[]) => {
     if (args[0] === "repo") {
       return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
     }
-    return releaseGitResponse(args, fixture, controls) ?? releaseApiResponse(args, controls);
+    return (
+      releaseGitResponse(args, fixture, controls) ??
+      releaseApiResponse(args, controls)
+    );
   });
   vi.doMock("node:child_process", () => ({ spawnSync }));
   return spawnSync;
@@ -718,6 +773,10 @@ describe("scripts/release/hosted-analysis-gate", () => {
     {
       label: "malformed package manifest",
       controls: { parentManifest: "{" },
+    },
+    {
+      label: "invalid previous version",
+      controls: { parentManifest: '{"version":""}\n' },
     },
     {
       label: "unchanged version",
@@ -947,7 +1006,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
       ) {
         return reviewedPullRequestResponse(parentSha);
       }
-      return analyzerEvidenceOrEmpty(target, parentSha);
+      return analyzerEvidenceOrEmpty(args, parentSha);
     });
     vi.doMock("node:child_process", () => ({ spawnSync }));
 
@@ -1157,7 +1216,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
       ) {
         return { status: 0, stdout: "[]", stderr: "" };
       }
-      return analyzerEvidenceOrEmpty(target);
+      return analyzerEvidenceOrEmpty(args);
     });
     vi.doMock("node:child_process", () => ({ spawnSync }));
 
@@ -1207,7 +1266,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
           stderr: "",
         };
       }
-      return analyzerEvidenceOrEmpty(target);
+      return analyzerEvidenceOrEmpty(args);
     });
     vi.doMock("node:child_process", () => ({ spawnSync }));
 
@@ -1355,7 +1414,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
             stderr: "",
           };
         }
-        return analyzerEvidenceOrEmpty(target, PARENT_SHA, headEvidenceStatus);
+        return analyzerEvidenceOrEmpty(args, PARENT_SHA, headEvidenceStatus);
       });
       vi.doMock("node:child_process", () => ({ spawnSync }));
 
