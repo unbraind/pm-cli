@@ -456,7 +456,10 @@ function buildPositionalActionHelpProjection(
   targetCommand: Command,
   resolvedPath: string,
   allOptions: HelpOptionSummary[],
-  extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  extensionDescriptors: ReadonlyMap<
+    string,
+    ExtensionCommandHelpDescriptor
+  > = new Map(),
 ): PositionalActionHelpProjection {
   if (!action) {
     const argumentsList = buildHelpArgumentSummaries(targetCommand);

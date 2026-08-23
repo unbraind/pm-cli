@@ -19,6 +19,8 @@ describe("task lifecycle aliases", () => {
       expect(help.stdout).not.toContain("pause-task");
       expect(help.stdout).not.toContain("close-task");
       expect(context.runCli(["start-task", "--help"]).code).toBe(0);
+      expect(context.runCli(["pause-task", "--help"]).code).toBe(0);
+      expect(context.runCli(["close-task", "--help"]).code).toBe(0);
     });
   });
 

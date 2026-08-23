@@ -26,15 +26,17 @@ describe("extension command visibility metadata", () => {
       extensionTypeParity: true,
       sdkTypeParity: true,
     });
-    for (const family of EXTENSION_COMMAND_CAPABILITY_FAMILIES) {
-      expect(() =>
-        assertCommandDefinitionMetadataStrings({
-          command: "inspect",
-          handler: () => undefined,
-          tier: "full",
-          family,
-        }),
-      ).not.toThrow();
+    for (const tier of ["core", "standard", "full", "internal"] as const) {
+      for (const family of EXTENSION_COMMAND_CAPABILITY_FAMILIES) {
+        expect(() =>
+          assertCommandDefinitionMetadataStrings({
+            command: "inspect",
+            handler: () => undefined,
+            tier,
+            family,
+          }),
+        ).not.toThrow();
+      }
     }
   });
 

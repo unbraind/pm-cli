@@ -94,9 +94,12 @@ async function runGrammarGate(
     const budgetIndex = args.indexOf("--output-budget");
     const parentPath = args.slice(helpIndex + 1, budgetIndex);
     const parent = parentPath.join(" ");
+    const helpCommands = args.includes("--no-extensions")
+      ? coreRuntimeCommands
+      : runtimeCommands;
     if (
       parent.length > 0 &&
-      !runtimeCommands.some(
+      !helpCommands.some(
         (command) => command === parent || command.startsWith(`${parent} `),
       )
     ) {
@@ -106,9 +109,6 @@ async function runGrammarGate(
       throw new Error(`Synthetic help failure for ${parent}`);
     }
     const prefix = parent.length > 0 ? `${parent} ` : "";
-    const helpCommands = args.includes("--no-extensions")
-      ? coreRuntimeCommands
-      : runtimeCommands;
     const subcommands: unknown[] = [
       ...new Set(
         helpCommands.flatMap((command) => {
@@ -156,6 +156,7 @@ async function runGrammarGate(
         disableExtensions?: boolean,
       ) => unknown,
       activePackageCommands?: string[],
+      registeredCommandSeeds?: string[],
     ) => string[];
     verifyMcpGrammar: (
       actions: string[],

@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-23T10:18:02.793Z"
-closed_at: "2026-08-23T10:18:02.087Z"
-completed_at: "2026-08-23T10:18:02.087Z"
+updated_at: "2026-08-23T11:07:10.879Z"
+closed_at: "2026-08-23T11:07:10.304Z"
+completed_at: "2026-08-23T11:07:10.304Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; Every command declares exactly one noun (capability family) in the same contract record as its tier, and every declared noun has at least one command, checked in both directions against the command registration rather than against a list kept beside it; A test asserts no surface maintains its own independent visibility list; Agent-facing routing surfaces - skills, guide topics, and generated docs - derive their capability map from the declared noun field rather than hand-authoring one; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier and a noun through the same fields, so extensions cannot bypass tiering or routing"
@@ -22,7 +22,7 @@ risk: low
 confidence: 75
 resolution: "Completed by making visibility tier and capability family contract fields the shared source for CLI, MCP, completion, guide, generated-doc, and extension projections, with rendered help budgeting and regression gates."
 expected_result: "Every command and extension command declares one validated tier and capability family, and CLI help, MCP profiles, completions, guides, and generated docs derive their routing from those contracts within the enforced root-help budget."
-actual_result: "Contract-derived tier and family projections are active across CLI, MCP, completions, guides, docs, and extension packages; built-in metadata remains isolated, dynamic root help is budgeted from its rendered payload, and all focused, static, lint, compatibility, grammar, and exact-coverage gates pass."
+actual_result: "Contract-derived tier and family projections are active across CLI, MCP, completions, guides, docs, and extension packages; descriptor-less dynamic roots default to standard visibility, core-only grammar validation uses the active command set, and focused, static, lint, grammar, TypeScript, generated-surface, and exact-coverage gates pass."
 dependencies[15]:
   - id: pm-1kxs
     kind: related
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -98,6 +98,7 @@ comments[19]{created_at,author,text}:
   "2026-08-23T08:50:10.418Z","harness:codex","Reviewed delivery: PR #1096 https://github.com/unbraind/pm-cli/pull/1096 carries the closed command-tier/capability-family implementation, generated changelog entry, exact coverage, and manual package acceptance evidence."
   "2026-08-23T08:59:58.489Z","harness:codex","Hosted smoke remediation: CI correctly detected the intentional compact root-help projection as stale token-surface baseline data. Refreshed only the measured surface baseline: root help falls from 14,060 to 3,692 bytes and the advertised per-command surface from 357,934 to 247,705 bytes; complete command discovery remains enforced separately by contract-seeded grammar 167/167."
   "2026-08-23T10:17:04.918Z","harness:codex","Review remediation evidence: CodeRabbit findings 3838168892, 3838168893, 3838168896, 3838168897, 3838168898, and 3838168904 are addressed. CHANGELOG.md is linked as reviewed documentation; command-kit anatomy now uses the executable index.ts entry; built-in help metadata is isolated from package descendants; runtime capability-family values have one canonical tuple with compile-time SDK parity; ctx is excluded from generated routing; and dynamic core help is projected against the exact rendered one-screen budget. Focused tests passed 193/193 plus cli-main-errors 129/129. Full coverage passed 7,845 tests across 566 files at statements 57,368/57,368, branches 42,912/42,912, functions 11,948/11,948, and lines 55,299/55,299. pnpm lint passed with zero ESLint warnings and zero jscpd clones; pnpm quality:static passed all gates."
+  "2026-08-23T11:06:56.833Z","harness:codex","Exact-head review remediation evidence: CodeRabbit findings 3838291647, 3838291652, 3838291654, 3838291657, 3838291666, 3838291670, plus the outside-diff positional projection finding are addressed. Descriptor-less extension roots default to standard while declared internal descendants remain internal; all lifecycle aliases retain direct help; descriptor fixtures satisfy the complete runtime type; all four tiers cross every capability family; the grammar harness types the registered seed parameter and validates core-only parents against the core command set; positional action projection retains four-argument compatibility. Focused tests pass 153/153. Final exact coverage passes 7,845 tests across 566 files at statements 57,368/57,368, branches 42,913/42,913, functions 11,948/11,948, and lines 55,299/55,299. pnpm lint passes with zero ESLint warnings, zero clones, and every static assurance gate."
 files[40]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Active command contract and recovery conformance implementation
   package.json,project,mandatory generated surface check
@@ -172,5 +173,5 @@ docs[10]{path,scope,note}:
   docs/SDK.md,project,Generated routing and package author guidance
   docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,Visibility and enumeration contract guide
   packages/pm-command-kit/README.md,project,Generated routing and package author guidance
-close_reason: "Completed the single-source command-surface contract and review remediation: tiers and capability families now drive CLI help, MCP profiles, completions, guides, generated docs, and extension packages; rendered root-help budgeting and built-in metadata isolation are regression-proven; focused, static, lint, grammar, compatibility, and exact 100% coverage gates pass."
+close_reason: "Closed exact-head review recurrence: command and extension discovery surfaces now preserve standard defaults, declared internal visibility, complete direct alias help, typed fixtures, core-only grammar validation, and compatible positional projections; focused, exact coverage, lint, static, TypeScript, and generated contract gates pass."
 body: ""

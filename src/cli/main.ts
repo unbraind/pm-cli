@@ -2072,15 +2072,12 @@ function applyDynamicExtensionRootHelpVisibility(
     const matchingDescriptors = [...descriptors.entries()]
       .filter(([path]) => path.split(" ")[0] === command.name())
       .map(([, descriptor]) => descriptor);
-    const tier = matchingDescriptors.reduce<
-      "core" | "standard" | "full" | "internal"
-    >(
-      (selected, descriptor) =>
-        tierRank[descriptor.tier] < tierRank[selected]
-          ? descriptor.tier
-          : selected,
-      "internal",
-    );
+    const tier = matchingDescriptors.length === 0
+      ? "standard"
+      : matchingDescriptors.reduce<"core" | "standard" | "full" | "internal">(
+          (selected, descriptor) => tierRank[descriptor.tier] < tierRank[selected] ? descriptor.tier : selected,
+          "internal",
+        );
     setPmCommandHelpVisibilityTier(command, tier);
   }
 }
@@ -3210,6 +3207,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   activationCommandMatchesProbe,
+  applyDynamicExtensionRootHelpVisibility,
   bootstrapProfileEnabled,
   buildBootstrapActivationProbe,
   buildPostActionTelemetryOutcome,

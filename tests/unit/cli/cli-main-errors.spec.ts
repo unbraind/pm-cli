@@ -81,6 +81,7 @@ import {
 import {
   ROOT_HELP_BUNDLE,
   attachRichHelpText,
+  getPmCommandHelpVisibilityTier,
   normalizeHelpCommandPath,
   resolveHelpBundleForPath,
   resolveHelpDetailMode,
@@ -2710,6 +2711,7 @@ export default {
       await _testOnly.registerDynamicExtensionCommandPaths(root, ["--pm-path", context.pmPath, "tools", "--help"]);
 
       expect(findCommandByPath(root, ["ghost"])?.name()).toBe("ghost");
+      expect(getPmCommandHelpVisibilityTier(findCommandByPath(root, ["ghost"]))).toBe("standard");
     });
   });
 
