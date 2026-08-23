@@ -6,20 +6,26 @@ status: closed
 priority: 1
 tags[4]: "area:ci",gate,release,ux
 created_at: "2026-08-07T06:28:26.696Z"
-updated_at: "2026-08-17T15:21:48.120Z"
-closed_at: "2026-08-17T15:21:46.466Z"
-completed_at: "2026-08-17T15:21:46.466Z"
+updated_at: "2026-08-23T01:41:50.107Z"
+closed_at: "2026-08-23T01:41:49.581Z"
+completed_at: "2026-08-23T01:41:49.581Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The release pipeline reports, before it builds anything, whether the current head can satisfy the analyzer evidence requirement, and names the workflow rather than the missing external artifact when it cannot; A commit that reached the default branch without a pull request either has a declared path to analyzer evidence or is refused with that reason stated, and the choice is recorded as a decision; The precondition that a releasable commit arrives through a pull request is declared wherever the release contract is declared, not left to be discovered by a failed cut; A negative control proves an unanalyzed commit still cannot release, so declaring the precondition never becomes a way to skip the analyzers; Releasability of the default branch is continuously observable between release attempts, so a commit that cannot be released is reported when it lands rather than at the next scheduled cut"
 parent: pm-u9d0
 risk: high
 confidence: high
-resolution: "Made squash-merge provenance deterministic without weakening analyzer requirements: strict terminal PR subjects are accepted only after GitHub validates exact merge identity, main base, reviewed head, identical trees, and hosted evidence."
-expected_result: Every main candidate reports release analyzer readiness before expensive release work; reviewed candidates can be proven under both maintainer and restricted Actions tokens; direct unreviewed candidates are refused with an actionable workflow reason; no recovery path bypasses analyzer or candidate-tree evidence.
-actual_result: "The failed main SHA 41af793f9 now resolves to reviewed head ed16b76d9 through identical_tree_squash_pr_head even while GitHub's commit association is empty. The gate then truthfully refuses the candidate because DeepScan did not report on that reviewed head, rather than misclassifying it as direct-main work."
-affected_version: through 2026.8.14
-fixed_version: 2026.8.15
+severity: high
+environment: GitHub Actions main and release workflows
+repro_steps: Cut v2026.8.23 from reviewed main; auto-release pushes canonical release commit 52a1f8f88e9e842215220eb79d8c453d5fc98a7f; CI Release analyzer readiness rejects the release commit because its tree differs from reviewed parent 719ba4126f9a670cf7b9fb4faf21f077d78e95a2.
+resolution: "Extended the hosted analyzer gate with a fail-closed deterministic release transform proof, preserved explicit non-identical provenance in the receipt, documented the policy, and added exhaustive unit plus workflow-contract coverage."
+expected_result: "The exact immutable-tagged canonical version-and-changelog projection remains releasable through its reviewed parent analyzer evidence, while every other direct-main or mutated transform fails closed."
+actual_result: "The production v2026.8.23 release SHA is accepted only as deterministic_release_transform with exact_or_identical=false and reviewed parent analyzer provenance; exhaustive negative controls reject message, tag, parent, manifest, path, version, changelog, and analyzer deviations."
+affected_version: through 2026.8.23
+fixed_version: 2026.8.24
+component: release automation analyzer provenance
+regression: true
+customer_impact: A valid automatically generated release commit blocks merged-source CI and prevents the release pipeline from completing even though its parent has successful required analyzer evidence.
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-39cqqx,discovered_from,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
@@ -27,7 +33,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
   pm-q6n8sj,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
-comments[35]{created_at,author,text}:
+comments[38]{created_at,author,text}:
   "2026-08-11T13:52:31.175Z","harness:claude-code","Reproduced in production on 2026-08-11, and it blocked the scheduled daily cut.\n\nSequence, all times UTC:\n\n- 04:02:48 the scheduled Auto Release run 31457243436 checked out main. HEAD was 3791ff12f74ff3f09c6062adca92ab8848d57ba7, a single-parent commit with no associated pull request.\n- 04:02:52 pull request 972 merged as 39d60f244779e8c4a451948988a0facbc48df824, four seconds after the checkout.\n- 04:09:37 hosted-analysis-gate refused with reason \"DeepScan status is missing for the exact commit\". The candidate carried exactly one commit status, codecov/patch, and no DeepScan or CodeFactor check run. Both fallbacks were unavailable: no second parent, and no pull request whose tree matched.\n- 04:09:38 blocker issue 973 opened. RECORDED_FAILURE_STAGE was hosted-analysis-gate, so the pm-x63izf fix reported the gate's own verdict rather than the preflight guess.\n- 04:12:23 blocker 973 closed, retry run 31457749989 started, checked out 39d60f24, and the same gate passed through the matching-pull-request fallback.\n- 04:21:18 v2026.8.11 tagged. npm shows 2026.8.11 as latest, and all three npx and bunx dispatch forms run it.\n\nSo the release succeeded only because the candidate changed between the two attempts. Nothing about 3791ff12 became releasable, and nothing ever will.\n\nPopulation measured the same day against the commits API rather than a subject-line heuristic: of the 103 commits on main since 2026-08-04, 37 have no associated pull request. That is 36 percent. main's HEAD at the time of measurement, 250b4030b4d246bdb6cb5f3ffb1fd1949be013c5, is one of them, so the default branch was sitting in an unreleasable state in the middle of an ordinary working day with no surface reporting it.\n\nThat last point is the half this item's acceptance criteria did not yet cover. AC1 requires the release pipeline to report releasability before it builds, which is a check inside a release attempt. Between attempts there is a window of up to 24 hours in which main is unreleasable and the only thing that will ever say so is tomorrow's 04:02 run. A new criterion has been added for that.\n"
   "2026-08-15T04:14:50.218Z","harness:codex","Production reproduction 2026-08-15: scheduled Auto Release run 31861502082 on main 592e5918 failed after exact coverage, packed npx, and package-first dogfood because DeepScan status was missing for the exact commit. Blocker GH-1017 is the live external report. PR #1016 is now merged at 26feeed14; no v2026.8.15 tag/package exists, so same-day uniqueness remains intact while this canonical item is actively fixed."
   "2026-08-15T04:19:42.982Z","harness:codex","Implementation evidence: hosted-analysis now emits a structured reviewed_pull_request_analyzer_evidence contract, succeeds for merge commit 26feeed14809 via identical-tree reviewed head e7e9b86afd7c, and explicitly refuses failed direct-main SHA 592e5918ca36 before build. Auto Release performs the check before toolchain setup; CI exposes Release analyzer readiness (main) on every product-relevant push. Focused unit/integration suite passed 79/79."
@@ -63,6 +69,9 @@ comments[35]{created_at,author,text}:
   "2026-08-17T15:00:04.739Z","harness:codex","Verification evidence: focused hosted-analysis/workflow contracts pass 114/114. Full sandboxed coverage passes 515 files and 7,507 tests at statements 54,687/54,687, branches 40,815/40,815, functions 11,245/11,245, and lines 52,784/52,784. ESLint, zero-clone jscpd, repository static semantics, typecheck, docs/skills, secret scan, and production dependency audit pass. The local import-cost timing gate was not claimed green: unrelated desktop load averaged 10.75-14.20 and produced variable failures across different unchanged SDK entrypoints; the clean hosted gate remains mandatory."
   "2026-08-17T15:15:37.296Z","harness:codex","Review remediation: Sourcery identified that the deterministic squash fallback asserted provenance fields for success and missing DeepScan but not failing CodeFactor. Added a real failing CodeFactor check-run fixture and regression case asserting reason, analyzed_sha, and analysis_source. Focused hosted-analysis suite passes 91/91. PR #1057 will be updated and every review provider retriggered because the exact head changes."
   "2026-08-17T15:21:45.193Z","harness:codex","Hosted exact-head evidence after review remediation: CodSpeed passed on 6aa3ca496. The first CI attempt's source-executing jobs passed where reached; GitHub codeload 429/502/503 failures prevented three setup/download jobs. Static correctly failed for a repository-state reason: reopening this closed changelog-bearing item removed it from the generated closed-item view. Closing the completed remediation and regenerating CHANGELOG.md restores the deterministic contract before rerun."
+  "2026-08-23T00:57:06.251Z","harness:codex","Recurrence evidence: Auto Release run 32606735961 created immutable tag v2026.8.23 at release commit 52a1f8f88e9e842215220eb79d8c453d5fc98a7f after the reviewed merge 719ba4126. Main CI run 32607463137 failed only Release analyzer readiness because the generated release commit had no exact or identical-tree PR evidence; Docs, CodeQL, OSSF, CodSpeed, and Security workflows passed. The tag remains immutable. Separately, tag Release run 32607462886 and exact-tag recovery 32608310364 both passed every pre-publish gate but npm rejected the publish PUT with E404/permission, leaving npm latest at 2026.8.22."
+  "2026-08-23T01:21:49.985Z","harness:codex","Verification evidence for the 2026.8.23 recurrence repair: full lint and repository policy gates pass; canonical sandboxed coverage passes 563 files and 7,825 tests at statements 57,159/57,159, branches 42,760/42,760, functions 11,890/11,890, and lines 55,107/55,107. Typecheck, secret scan, production dependency audit, docs/skills, and documentation link checks pass. Live hosted-analysis execution accepts immutable release SHA 52a1f8f88e9e842215220eb79d8c453d5fc98a7f only as deterministic_release_transform, resolves reviewed analyzer SHA 64c333cc5634aba438fe03112358714ec80faceb through parent 719ba4126f9a670cf7b9fb4faf21f077d78e95a2, and reports exact_or_identical=false."
+  "2026-08-23T01:41:18.667Z","harness:codex","Linked-test acceptance evidence: the all-linked default schema run passed 6/8 and intentionally caused repository-static-quality plus lint to fail closed because their defect-evidence subgate cannot operate on an empty schema tracker. Re-running each with --pm-context tracker --override-linked-pm-context seeded all 2,538 source items, reported mismatch_detected=false, and passed. The two tracker-dependent linked entries now persist pm_context_mode=tracker, so future canonical runs select the correct isolated tracker context without a run-level override."
 files[7]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Pre-build release analyzer readiness
   .github/workflows/ci.yml,project,Continuous main-branch release readiness observability
@@ -71,23 +80,99 @@ files[7]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,Workflow ordering and continuous observability contract
   tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,Exact analyzer provenance positive and negative controls
   tests/unit/scripts/release/run-gates.spec.ts,project,Mandatory analyzer preflight ordering regressions
-tests[8]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,project,240
-  "pnpm quality:static",project,420
-  "pnpm dogfood:package-first",project,240
-  pnpm typecheck,project,120
-  "pnpm security:scan",project,120
-  node scripts/run-tests.mjs coverage,project,420
-  pnpm lint,project,420
-  "pnpm quality:docs-skills",project,120
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-msxaw85b-umrnba,test,passed,"2026-08-17T13:59:47.349Z","2026-08-17T13:59:59.039Z","2026-08-17T13:59:59.039Z",1,0,0
+tests[8]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm dogfood:package-first"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 420
+  - command: "pnpm quality:docs-skills"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 420
+    pm_context_mode: tracker
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-23T01:41:06.130Z"
+      source_kind: local_mutation
+      source_ref: codex/release-derived-provenance
+  - command: pnpm lint
+    scope: project
+    timeout_seconds: 420
+    pm_context_mode: tracker
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-23T01:41:07.122Z"
+      source_kind: local_mutation
+      source_ref: codex/release-derived-provenance
+test_runs[4]:
+  - run_id: test-local-msxaw85b-umrnba
+    kind: test
+    status: passed
+    started_at: "2026-08-17T13:59:47.349Z"
+    finished_at: "2026-08-17T13:59:59.039Z"
+    recorded_at: "2026-08-17T13:59:59.039Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mt54rtkq-m5oze7
+    kind: test
+    status: failed
+    started_at: "2026-08-23T01:21:53.010Z"
+    finished_at: "2026-08-23T01:30:45.242Z"
+    recorded_at: "2026-08-23T01:30:45.242Z"
+    passed: 6
+    failed: 2
+    skipped: 0
+    executions[8]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,legacy
+      "pnpm quality:static",schema,schema,source,legacy
+      "pnpm dogfood:package-first",schema,schema,source,legacy
+      pnpm typecheck,schema,schema,source,legacy
+      "pnpm security:scan",schema,schema,source,legacy
+      node scripts/run-tests.mjs coverage,schema,schema,source,legacy
+      pnpm lint,schema,schema,source,legacy
+      "pnpm quality:docs-skills",schema,schema,source,legacy
+  - run_id: test-local-mt54y9g0-pvoclo
+    kind: test
+    status: passed
+    started_at: "2026-08-23T01:31:17.474Z"
+    finished_at: "2026-08-23T01:35:45.744Z"
+    recorded_at: "2026-08-23T01:35:45.744Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,legacy
+  - run_id: test-local-mt554q26-v055nl
+    kind: test
+    status: passed
+    started_at: "2026-08-23T01:35:49.649Z"
+    finished_at: "2026-08-23T01:40:47.214Z"
+    recorded_at: "2026-08-23T01:40:47.214Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm lint,tracker,tracker,source,legacy
 docs[4]{path,scope,note}:
   AGENTS.md,project,Compact reviewed-delivery closeout guardrail
   CHANGELOG.md,project,Deterministic generated release closeout entry
   docs/AGENT_GUIDE.md,project,Agent workflow for post-merge evidence without direct-main mutation
   docs/RELEASING.md,project,Reviewed-PR arrival and direct-main refusal policy
-close_reason: "Completed review remediation: symmetric failing-CodeFactor provenance coverage passes 91/91 and exact-head hosted CodSpeed is green; regenerate the canonical closed-item changelog before the fresh CI round."
+close_reason: "Resolved the 2026.8.23 release-commit recurrence: the gate now proves the exact immutable-tagged canonical release transform from a reviewed analyzer-backed parent, reports non-identical provenance truthfully, and fails closed on exhaustive mutation controls. Full repository coverage is 100% across 7,825 tests; lint/static/tracker, typecheck, security, audit, docs, dogfood, and live production-SHA acceptance pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

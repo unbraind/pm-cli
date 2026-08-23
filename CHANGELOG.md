@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
+
 ## 2026.8.23 - 2026-08-23
 
 ### Added
@@ -109,7 +115,6 @@
 
 ### Fixed
 
-- A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 - GH-1052: typed fail-closed whole-list SDK primitive ([pm-y4aaol](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4aaol.toon))
 - Packed Bun SDK import fails on node:module stripTypeScriptTypes ([pm-ikj8ve](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikj8ve.toon))
 - GH-1051: package catalog rejects universal output-budget controls ([pm-2firut](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2firut.toon))

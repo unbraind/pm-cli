@@ -236,14 +236,19 @@ describe("release automation contract", () => {
   });
 
   it("reports analyzer releasability before auto-release build work and on every main push", async () => {
-    const autoReleaseWorkflow = await readFile(
-      path.join(repoRoot, ".github/workflows/auto-release.yml"),
-      "utf8",
-    );
-    const ciWorkflow = await readFile(
-      path.join(repoRoot, ".github/workflows/ci.yml"),
-      "utf8",
-    );
+    const [autoReleaseWorkflow, ciWorkflow, hostedAnalysisGate, releaseGuide] =
+      await Promise.all([
+        readFile(
+          path.join(repoRoot, ".github/workflows/auto-release.yml"),
+          "utf8",
+        ),
+        readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"),
+        readFile(
+          path.join(repoRoot, "scripts/release/hosted-analysis-gate.mjs"),
+          "utf8",
+        ),
+        readFile(path.join(repoRoot, "docs/RELEASING.md"), "utf8"),
+      ]);
     const registry = JSON.parse(
       await readFile(
         path.join(repoRoot, "scripts/release/gate-registry.json"),
@@ -275,6 +280,18 @@ describe("release automation contract", () => {
     expect(ciWorkflow).toContain("release-analyzer-readiness:");
     expect(ciWorkflow).toContain("if: github.event_name == 'push'");
     expect(ciWorkflow).toContain("name: Release analyzer readiness (main)");
+    expect(hostedAnalysisGate).toContain(
+      'analysisSource: "deterministic_release_transform"',
+    );
+    expect(hostedAnalysisGate).toContain(
+      "accept_only_exact_tagged_version_and_changelog_transform_from_analyzed_parent",
+    );
+    expect(releaseGuide).toContain(
+      "The automatic release commit is the sole non-identical-tree derivation",
+    );
+    expect(releaseGuide).toContain(
+      "Added, deleted, renamed, missing, or otherwise modified paths are refused",
+    );
     expect(registry.local_preflight.steps[0]?.id).toBe("hosted-analysis-gate");
   });
 
