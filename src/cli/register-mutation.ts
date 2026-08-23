@@ -801,6 +801,7 @@ function assertCreatePositionalTypeHasTitle(
 
 const STRUCTURED_STDIN_CONFLICT_KEYS = [
   "body",
+  "bodyFile",
   "description",
   "dep",
   "depRemove",
@@ -814,21 +815,29 @@ const STRUCTURED_STDIN_CONFLICT_KEYS = [
   "event",
   "typeOption",
   "field",
+  "ids",
 ] as const;
 
-function assertExclusiveStructuredStdin(
+function assertSingleMutationStdinConsumer(
   options: Record<string, unknown>,
 ): void {
-  const conflictingFlags = STRUCTURED_STDIN_CONFLICT_KEYS.filter((key) => {
+  const stdinFlags = STRUCTURED_STDIN_CONFLICT_KEYS.flatMap((key) => {
     const value = options[key];
-    return value === "-" || (Array.isArray(value) && value.includes("-"));
-  }).map(
-    (key) =>
-      `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
-  );
-  if (conflictingFlags.length > 0) {
+    const count =
+      value === "-"
+        ? 1
+        : Array.isArray(value)
+          ? value.filter((entry) => entry === "-").length
+          : 0;
+    const flag = `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+    return Array.from({ length: count }, () => flag);
+  });
+  if (options.stdinJson === true) {
+    stdinFlags.unshift("--stdin-json");
+  }
+  if (stdinFlags.length > 1) {
     throw new PmCliError(
-      `--stdin-json cannot be combined with other stdin consumers: ${conflictingFlags.join(", ")}`,
+      `Only one option may consume stdin per command invocation. Found: ${stdinFlags.join(", ")}.`,
       EXIT_CODE.USAGE,
     );
   }
@@ -842,8 +851,8 @@ async function runCreateAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  assertSingleMutationStdinConsumer(options);
   if (options.stdinJson === true) {
-    assertExclusiveStructuredStdin(options);
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",
@@ -924,6 +933,7 @@ async function runCloseManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  assertSingleMutationStdinConsumer(options);
   options.ids = await resolveCliBulkIdsInput(readOptionString(options, "ids"));
   const result = await runCloseMany(
     {
@@ -968,6 +978,7 @@ async function runUpdateManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  assertSingleMutationStdinConsumer(options);
   options.ids = await resolveCliBulkIdsInput(readOptionString(options, "ids"));
   const result = await runUpdateMany(
     {
@@ -1573,8 +1584,8 @@ async function runUpdateAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  assertSingleMutationStdinConsumer(options);
   if (options.stdinJson === true) {
-    assertExclusiveStructuredStdin(options);
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",

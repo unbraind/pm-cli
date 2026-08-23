@@ -26,6 +26,8 @@ export interface CliFlagInvocationContract extends CliFlagContract {
   input_sources: CliFlagInputSource[];
   /** Sentinel that redirects the argv value to stdin. */
   stdin_token?: "-";
+  /** Prefix that redirects the argv value to a file path. */
+  file_token_prefix?: "@";
 }
 
 /** Executable option arity observed from the registered Commander program. */
@@ -116,6 +118,12 @@ const FILE_OR_STDIN_COMMAND_FLAGS = new Set([
   "learnings:--file",
   "notes:--file",
   "update:--body-file",
+  "update-many:--ids",
+]);
+
+const AT_PATH_FILE_COMMAND_FLAGS = new Set([
+  "close-many:--ids",
+  "history-compact:--ids",
   "update-many:--ids",
 ]);
 
@@ -349,6 +357,9 @@ export function enrichCliFlagInvocationContract(
     contract.flag !== "--stdin" &&
     contract.flag !== "--stdin-json"
       ? { stdin_token: "-" as const }
+      : {}),
+    ...(AT_PATH_FILE_COMMAND_FLAGS.has(`${command}:${contract.flag}`)
+      ? { file_token_prefix: "@" as const }
       : {}),
   };
 }

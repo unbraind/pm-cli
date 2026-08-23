@@ -257,7 +257,7 @@ describe("structured mutation command registration", () => {
         from: "user",
       }),
     ).rejects.toThrow(
-      "--stdin-json cannot be combined with other stdin consumers: --body",
+      "Only one option may consume stdin per command invocation. Found: --stdin-json, --body.",
     );
 
     await expect(
@@ -266,7 +266,7 @@ describe("structured mutation command registration", () => {
         { from: "user" },
       ),
     ).rejects.toThrow(
-      "--stdin-json cannot be combined with other stdin consumers: --description",
+      "Only one option may consume stdin per command invocation. Found: --stdin-json, --description.",
     );
 
     const updateProgram = programWithGlobals();
@@ -286,7 +286,9 @@ describe("structured mutation command registration", () => {
         ],
         { from: "user" },
       ),
-    ).rejects.toThrow("other stdin consumers: --dep, --type-option, --field");
+    ).rejects.toThrow(
+      "Found: --stdin-json, --dep, --type-option, --field.",
+    );
   });
 
   it("previews and commits validated batches with every transaction control", async () => {

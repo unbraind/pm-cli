@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: agent-ergonomics,bulk-ops,composability
 created_at: "2026-08-01T13:04:26.421Z"
-updated_at: "2026-08-23T22:27:01.458Z"
-closed_at: "2026-08-23T22:25:06.775Z"
-completed_at: "2026-08-23T22:25:06.775Z"
+updated_at: "2026-08-23T22:48:46.213Z"
+closed_at: "2026-08-23T22:48:45.697Z"
+completed_at: "2026-08-23T22:48:45.697Z"
 author: "harness:claude-code"
 estimated_minutes: 210
 acceptance_criteria: "--ids accepts - to read a newline or comma delimited id stream from stdin, and @path to read the same from a file, on every bulk selector that declares --ids; close-many reports unmatched_ids and unmatched_count in both the default encoding and json, matching update-many exactly; A bulk mutation whose matched_count is zero while unmatched_count is greater than zero exits non-zero, with the tolerant behavior reachable only through an explicit opt-in flag; The declared miss policy is identical across update-many and close-many and is stated once in the scripting contract; A regression test pipes ids from a read command through jq into a bulk mutation and asserts the mutation applied, with a negative control asserting the non-zero exit on a total miss"
@@ -28,13 +28,15 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-ukml,related,"2026-08-01T13:04:26.421Z","harness:claude-code","cli:create:dep",detected
   pm-hqa8g1,blocked_by,"2026-08-01T13:10:31.232Z","harness:claude-code","cli:update:dep",detected
   pm-m9xv,implements,"2026-08-23T20:29:28.761Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-23T20:29:25.711Z","harness:codex","Implementation start 2026-08-23: selected after complete 2,538-item all-status inventory, live blocker verification, focused duplicate searches, and full metadata/comments/notes/relationship reads. This branch implements one coupled SDK/CLI/MCP composability tranche: newline/comma stdin and @path bulk-id selectors, close/update unmatched receipt parity, no/partial-effect exits, and an executable read-to-jq-to-write pipeline. Canonical lineage is reused; no duplicate item was created."
   "2026-08-23T22:05:18.038Z","harness:codex","Verification evidence 2026-08-24: bulk update/close IDs accept inline comma/newline text, readonly SDK arrays, stdin via '-', and @path files through one SDK-owned resolver with stable trim/dedupe. Explicit-ID close receipts now match update-many unmatched semantics, including empty unmatched arrays when all requested IDs exist, while existing-but-filtered IDs are not mislabeled missing. A disposable tracker proved list | jq | update-many --ids -, filter-only preview, body stdin, and cleanup. Final proof: 570 files / 7,858 tests pass; exact coverage is statements 57,420/57,420, branches 42,968/42,968, functions 11,955/11,955, lines 55,350/55,350; pnpm typecheck, secret scan, full lint/static assurance, contract snapshots, SDK surface, graph composition, record integrity, and PM governance all pass."
   "2026-08-23T22:06:25.447Z","harness:codex","Changelog evidence: installed pm-changelog 2026.8.17, regenerated package-owned CHANGELOG.md after closure, and the deterministic check passes."
   "2026-08-23T22:07:32.288Z","harness:codex","Self-review finding: history-compact also declares a bulk --ids selector. Extend the same SDK-owned scalar/array/newline/stdin/@path grammar to its CLI and MCP adapters and invocation contracts; do not ship the update/close-only gap."
   "2026-08-23T22:10:57.451Z","harness:codex","Self-review fix evidence: history-compact now resolves CLI --ids through the shared stdin/@path parser, MCP arrays use the same newline/comma stable-deduplicating grammar, action schemas accept string or array, and invocation contracts declare argv/file/stdin. Focused real-process and adapter tests pass 100/100."
   "2026-08-23T22:25:06.165Z","harness:codex","Final expanded-tree evidence 2026-08-24: real history-compact stdin transport is included. Exact full coverage passes 570 files / 7,858 tests at statements 57,419/57,419, branches 42,968/42,968, functions 11,953/11,953, and lines 55,349/55,349. Full pnpm lint passes ESLint, zero-clone detection, repository/static/contract/SDK gates, refusal closure, defect evidence, graph composition, and record integrity."
+  "2026-08-23T22:39:08.160Z","harness:codex","Review findings: Bugbot P1 on --ids - combined with other stdin mutation fields, plus P2 because file input metadata omitted the required @ prefix. Security review independently confirmed the availability risk. Fix at the command-wide stdin consumer and typed invocation-contract boundaries with real-process negative controls."
+  "2026-08-23T22:48:44.684Z","harness:codex","Review-fix evidence 2026-08-24: every create, update, update-many, and close-many invocation counts stdin-consuming tokens before any read. --ids - combined with --body -, --description -, --body-file -, structured fields, or --stdin-json now fails deterministically with usage exit 2. Bulk ID invocation contracts explicitly publish file_token_prefix=@ for update-many, close-many, and history-compact. Focused real-process/unit proof passes, and the final full run passes 570 files / 7,858 tests with exact coverage: statements 57,427/57,427, branches 42,973/42,973, functions 11,954/11,954, lines 55,356/55,356."
 files[13]{path,scope,note}:
   sdk/public-surface.json,project,Bulk ID composability contract
   src/cli/register-mutation.ts,project,Bulk ID composability contract
@@ -68,7 +70,7 @@ test_runs[1]:
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release entry
   docs/SCRIPTING.md,project,Executable read-selector-write recipes
-close_reason: "Implemented one SDK-owned bulk ID grammar across update-many, close-many, and history-compact; added explicit unmatched receipt parity and real read-to-write pipelines with exact 100% coverage and full assurance."
+close_reason: "Implemented composable bulk ID inputs, sibling unmatched receipts, effect exits, and pre-read single-owner stdin safety with exact full-suite proof."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

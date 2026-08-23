@@ -173,6 +173,33 @@ describe("bulk and file input composability", () => {
           ],
         },
       });
+
+      const createConflict = context.runCli(
+        [
+          "create",
+          "--title",
+          "conflicting stdin",
+          "--description",
+          "-",
+          "--body-file",
+          "-",
+          "--json",
+        ],
+        { input: "one stream cannot supply two fields" },
+      );
+      expect(createConflict.code).toBe(2);
+      expect(createConflict.stderr).toContain(
+        "Only one option may consume stdin per command invocation",
+      );
+
+      const bulkConflict = context.runCli(
+        ["update-many", "--ids", "-", "--body", "-", "--json"],
+        { input: "pm-stdin-files" },
+      );
+      expect(bulkConflict.code).toBe(2);
+      expect(bulkConflict.stderr).toContain(
+        "Only one option may consume stdin per command invocation",
+      );
     });
   });
 });

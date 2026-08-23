@@ -1148,6 +1148,14 @@
       ],
       "package_version": "2026.8.23",
       "reason": "Refusal closure ratchets now include three executable bulk ID input states."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CliFlagInvocationContract",
+        "signature ./sdk/contracts:CliFlagInvocationContract"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Expose the optional file_token_prefix metadata field for @path CLI inputs; existing consumers remain source-compatible"
     }
   ],
   "entrypoints": {
@@ -3192,7 +3200,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagInvocationContract",
-          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; file_token_prefix?: \"@\"; }"
         },
         {
           "classification": "contract_data",
@@ -18840,7 +18848,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagInvocationContract",
-          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; file_token_prefix?: \"@\"; }"
         },
         {
           "classification": "contract_data",
