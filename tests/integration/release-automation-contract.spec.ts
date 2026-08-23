@@ -418,10 +418,11 @@ exit "\${NPM_STATUS}"
       ) =>
         spawnSync(
           "bash",
-          ["-c", prependFakeBinForBash(autoReleaseScript ?? "")],
+          [],
           {
             cwd: repoRoot,
             encoding: "utf8",
+            input: prependFakeBinForBash(autoReleaseScript ?? ""),
             env: {
               ...process.env,
               FAKE_BIN: tempRoot,
