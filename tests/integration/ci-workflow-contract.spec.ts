@@ -589,7 +589,6 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.setupNode,
       "node-version: 24",
       "name: Select exact-tag recovery source",
-      "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
       'npm view "${NPM_PACKAGE}@${VERSION}" version --json',
       'git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}"',
       'git checkout --detach "${tag_commit}"',
@@ -634,7 +633,6 @@ describe("GitHub workflow contract", () => {
       "path: ${{ runner.temp }}/release-notes.md",
       "body_path: ${{ runner.temp }}/release-notes.md",
       PINNED_ACTIONS.setupBun,
-      "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
       'NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
       "export NPM_PACKAGE",
       'anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version',
@@ -659,6 +657,7 @@ describe("GitHub workflow contract", () => {
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
+    expect(releaseWorkflow).not.toContain("secrets.NPM_TOKEN");
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       1,
     );

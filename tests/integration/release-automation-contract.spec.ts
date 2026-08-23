@@ -1007,6 +1007,7 @@ printf '%s' "\${UNEXPECTED_PATHS}"
     expect(packageProbeIndex).toBeLessThan(accessRecoveryIndex);
     expect(workflow).not.toContain("@unbrained/pm-cli");
     expect(workflow).toContain("env -u NODE_AUTH_TOKEN -u NPM_TOKEN");
+    expect(workflow).not.toContain("secrets.NPM_TOKEN");
     expect(workflow).toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
     expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
@@ -1098,6 +1099,7 @@ esac
               RELEASE_TAG: "v2026.8.5",
               DEFAULT_BRANCH: "main",
               GITHUB_ENV: githubEnv,
+              RUNNER_TEMP: tempRoot,
               NPM_FAKE_LOG: npmLog,
               GIT_FAKE_LOG: gitLog,
               PROBE_STATUS: "0",

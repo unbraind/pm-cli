@@ -2,13 +2,15 @@ id: pm-7zs0
 title: Verify daily auto-release published to npm (release-health check)
 description: "Recurring release-health verification. The date-based daily auto-release has silently failed before (padded-month changelog match skip; publish/Sentry-gate step failing post-tag). After any merge to main, confirm the next daily release both tagged a new vYYYY.M.D AND advanced npm 'latest'."
 type: Reminder
-status: open
+status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-08-22T07:28:19.317Z"
+updated_at: "2026-08-23T15:27:41.081Z"
 reminders[1]{at,text}:
   "2026-07-31T06:00:00.000Z","Verify the 2026-07-31 daily auto-release: npm latest advanced or a documented skip reason,git tag exists,npx and bunx both run the published artifact,exactly one cut for the day. Then re-arm this reminder for the next day,because reminders do not re-arm on fire."
+assignee: "harness:codex"
+claim_principal: "harness:codex#4720f181bd0891e417f8ecfa"
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day."
@@ -58,7 +60,7 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[150]{created_at,author,text}:
+comments[152]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -209,6 +211,8 @@ comments[150]{created_at,author,text}:
   "2026-08-14T14:40:58.098Z","harness:codex","Release-health evidence 2026-08-14: exactly one immutable v2026.8.14 GitHub release is present and npm latest is 2026.8.14. The scheduled Auto Release run 31769746801 completed successfully after the earlier explicitly dispatched publication; it did not create a second daily tag. pnpm release:verify-published -- --version 2026.8.14 --json passed npm metadata/integrity, npx and bunx pm/default/MCP entrypoints, all negative controls, complete bin coverage, and the non-draft non-prerelease GitHub release."
   "2026-08-16T10:43:42.983Z","harness:claude-code","Release-health check 2026-08-16: last scheduled Auto Release run 31924312921 concluded success at 03:28Z and published v2026.8.16 (GitHub release 03:54Z). npm view @unbrained/pm-cli version = 2026.8.16 with dist-tags.latest = 2026.8.16. Cross-runtime execution of the published artifact verified: npx -y @unbrained/pm-cli@2026.8.16 --version and bunx @unbrained/pm-cli@2026.8.16 --version both print 2026.8.16. A bun install of the same version resolves every published entrypoint: ./sdk and the bare root each expose 1312 runtime exports, ./cli exposes runPmCli and _testOnly, and ./sdk/public-surface.json is readable from node_modules. That last check is what surfaced pm-suhxny."
   "2026-08-22T07:19:15.349Z","harness:codex","Release-health evidence 2026-08-22: workflow-dispatch Auto Release run 32545649142 published v2026.8.22; tag-driven Release run 32546288241 succeeded at exact tag SHA d7b6f18ce912ccf84d754cf5e539b4090c62c98b. The later scheduled Auto Release run 32548773304 detected the immutable same-day automatic target, skipped analyzer/build/publish steps, and completed successfully, so there was one published v2026.8.22 despite both a manual trigger and the schedule. GitHub release count for the exact tag is one, npm latest is 2026.8.22, and fresh npx plus bunx both report 2026.8.22. GitHub isImmutable remains false and stays owned by pm-k9m6wc; this is current release-path success, not proof of the thirty-day reliability SLO."
+  "2026-08-23T15:19:13.928Z","harness:codex","Duplicate check: reused the standing release-health lineage after all-status search found this canonical reminder. Evidence: Release run 32647119087 passed every source, test, coverage, static, assurance, compatibility, reliability, packaging, and dogfood gate, then npm 11.17.0 signed provenance but returned E404 while the publish step exported the stale NPM_TOKEN as NODE_AUTH_TOKEN. Implementing a reviewed workflow correction so publish runs with OIDC and no long-lived token."
+  "2026-08-23T15:27:41.081Z","harness:codex","Implementation evidence: release.yml no longer exposes secrets.NPM_TOKEN to source selection or publication. Exact-version probes and npm publish both use explicit empty npmrc/cache contexts with NODE_AUTH_TOKEN and NPM_TOKEN unset, leaving GitHub OIDC as the publish credential. Updated release documentation and fail-closed workflow contracts. Verification passed: focused 37/37, build, typecheck, lint with zero clones, repository static-quality assurance, docs links, graph composition, and record integrity."
 notes[8]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
@@ -242,7 +246,7 @@ files[20]{path,scope,note}:
   tests/unit/scripts/release/run-gates.spec.ts,project,"Regression coverage for release gate invoking pnpm quality:static"
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for updated sentry gate output/classification
   tests/unit/scripts/release/verify-published-release.spec.ts,project,Hermetic public-registry verifier regression coverage
-tests[17]:
+tests[18]:
   - command: node dist/cli.js package doctor --project --detail deep --json
     scope: project
     timeout_seconds: 180
@@ -300,6 +304,15 @@ tests[17]:
   - command: "pnpm quality:static"
     scope: project
     timeout_seconds: 180
+  - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-23T15:27:40.487Z"
+      source_kind: local_mutation
+      source_ref: codex/npm-oidc-publish-fix
+    note: Trusted-publisher token-isolation workflow contracts
 test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqw0pnxi-coga1f,test,passed,"2026-06-27T07:07:41.177Z","2026-06-27T07:07:45.894Z","2026-06-27T07:07:45.894Z",3,0,0
   test-local-mqwzntpx-bck9yj,test,passed,"2026-06-27T23:25:38.329Z","2026-06-27T23:26:06.645Z","2026-06-27T23:26:06.645Z",7,0,0

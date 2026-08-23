@@ -64,14 +64,14 @@ jobs:
 
       - name: Select exact-tag recovery source
         if: github.event_name == 'workflow_dispatch'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
           NPM_PACKAGE="$(node -p 'require("./package.json").name')"
           probe_output="$(mktemp)"
-          trap 'rm -f "${probe_output}"' EXIT
+          probe_npmrc="$(mktemp)"
+          probe_cache="${RUNNER_TEMP}/npm-cache-recovery-probe"
+          trap 'rm -f "${probe_output}" "${probe_npmrc}"' EXIT
 
           case "${RELEASE_TAG}" in
             v*.*.*) ;;
@@ -81,7 +81,10 @@ jobs:
               ;;
           esac
 
-          if npm view "${NPM_PACKAGE}@${VERSION}" version --json >"${probe_output}" 2>&1; then
+          if env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
+            npm_config_userconfig="${probe_npmrc}" \
+            npm_config_cache="${probe_cache}" \
+            npm view "${NPM_PACKAGE}@${VERSION}" version --json >"${probe_output}" 2>&1; then
             echo "Exact ${NPM_PACKAGE}@${VERSION} exists; recovery will use reviewed ${DEFAULT_BRANCH} source and cannot republish it."
             echo "RECOVERY_SOURCE_MODE=main" >> "${GITHUB_ENV}"
             exit 0
@@ -251,8 +254,6 @@ jobs:
 
       - name: Publish to npm
         timeout-minutes: 5
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
@@ -270,7 +271,10 @@ jobs:
           }
 
           publish_release() {
-            npm publish --access public --provenance --tag latest
+            env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
+              npm_config_userconfig="${PUBLIC_NPMRC}" \
+              npm_config_cache="${PUBLIC_NPM_CACHE}" \
+              npm publish --access public --provenance --tag latest
           }
 
           restore_public_access() {
