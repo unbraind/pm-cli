@@ -64,14 +64,14 @@ jobs:
 
       - name: Select exact-tag recovery source
         if: github.event_name == 'workflow_dispatch'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
           NPM_PACKAGE="$(node -p 'require("./package.json").name')"
           probe_output="$(mktemp)"
-          trap 'rm -f "${probe_output}"' EXIT
+          probe_npmrc="$(mktemp)"
+          probe_cache="${RUNNER_TEMP}/npm-cache-recovery-probe"
+          trap 'rm -f "${probe_output}" "${probe_npmrc}"' EXIT
 
           case "${RELEASE_TAG}" in
             v*.*.*) ;;
@@ -81,7 +81,10 @@ jobs:
               ;;
           esac
 
-          if npm view "${NPM_PACKAGE}@${VERSION}" version --json >"${probe_output}" 2>&1; then
+          if env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
+            npm_config_userconfig="${probe_npmrc}" \
+            npm_config_cache="${probe_cache}" \
+            npm view "${NPM_PACKAGE}@${VERSION}" version --json >"${probe_output}" 2>&1; then
             echo "Exact ${NPM_PACKAGE}@${VERSION} exists; recovery will use reviewed ${DEFAULT_BRANCH} source and cannot republish it."
             echo "RECOVERY_SOURCE_MODE=main" >> "${GITHUB_ENV}"
             exit 0
@@ -89,7 +92,7 @@ jobs:
             probe_status=$?
           fi
           if ! grep -Eq 'E404|ETARGET|404 Not Found|No match found for version' "${probe_output}"; then
-            echo "Authenticated exact-version probe failed without a definitive missing-version response (status ${probe_status})." >&2
+            echo "Anonymous exact-version probe failed without a definitive missing-version response (status ${probe_status})." >&2
             exit "${probe_status}"
           fi
 
@@ -251,8 +254,6 @@ jobs:
 
       - name: Publish to npm
         timeout-minutes: 5
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
@@ -270,11 +271,10 @@ jobs:
           }
 
           publish_release() {
-            npm publish --access public --provenance --tag latest
-          }
-
-          restore_public_access() {
-            access_output="$(npm access set status=public "${NPM_PACKAGE}" 2>&1)"
+            env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
+              npm_config_userconfig="${PUBLIC_NPMRC}" \
+              npm_config_cache="${PUBLIC_NPM_CACHE}" \
+              npm publish --access public --provenance --tag latest
           }
 
           if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then
@@ -286,30 +286,8 @@ jobs:
             echo "${NPM_PACKAGE} is publicly available but ${VERSION} is not; publishing."
             publish_release
           else
-            echo "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication."
-            if restore_public_access; then
-              printf '%s\n' "${access_output}"
-              echo "Restored public access for ${NPM_PACKAGE}."
-              if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then
-                echo "${NPM_PACKAGE}@${VERSION} became publicly available; skipping npm publish."
-              elif anonymous_npm_view "${NPM_PACKAGE}" name; then
-                echo "${NPM_PACKAGE} is public after access recovery but ${VERSION} is not; publishing."
-                publish_release
-              else
-                echo "Public-access recovery succeeded but anonymous package metadata is still unavailable; refusing immutable publication." >&2
-                exit 1
-              fi
-            else
-              access_status=$?
-              printf '%s\n' "${access_output}" >&2
-              if printf '%s\n' "${access_output}" | grep -Eq 'E404|404 Not Found|Package not found'; then
-                echo "${NPM_PACKAGE} does not exist for this credential; publishing ${VERSION}."
-                publish_release
-              else
-                echo "Public-access recovery failed without a definitive package-not-found response; refusing immutable publication." >&2
-                exit "${access_status}"
-              fi
-            fi
+            echo "${NPM_PACKAGE} is not publicly discoverable. Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication." >&2
+            exit 1
           fi
 
       - name: Verify published package on npm, npx, and bunx

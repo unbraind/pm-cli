@@ -589,7 +589,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.setupNode,
       "node-version: 24",
       "name: Select exact-tag recovery source",
-      "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
+      "Anonymous exact-version probe failed without a definitive missing-version response",
       'npm view "${NPM_PACKAGE}@${VERSION}" version --json',
       'git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}"',
       'git checkout --detach "${tag_commit}"',
@@ -634,7 +634,6 @@ describe("GitHub workflow contract", () => {
       "path: ${{ runner.temp }}/release-notes.md",
       "body_path: ${{ runner.temp }}/release-notes.md",
       PINNED_ACTIONS.setupBun,
-      "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
       'NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
       "export NPM_PACKAGE",
       'anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version',
@@ -643,10 +642,7 @@ describe("GitHub workflow contract", () => {
       "npm publish --access public --provenance --tag latest",
       "is publicly available; skipping npm publish.",
       "Main-source exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
-      "attempting access recovery before immutable publication.",
-      'npm access set status=public "${NPM_PACKAGE}"',
-      "grep -Eq 'E404|404 Not Found|Package not found'",
-      "refusing immutable publication.",
+      "Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication.",
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
       'npm_config_cache="${PUBLIC_NPM_CACHE}"',
@@ -659,6 +655,7 @@ describe("GitHub workflow contract", () => {
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
+    expect(releaseWorkflow).not.toContain("secrets.NPM_TOKEN");
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       1,
     );
@@ -693,8 +690,8 @@ describe("GitHub workflow contract", () => {
       "Exact-tag recovery is restoring public package access before anonymous probes.",
     );
     expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
-    const accessRecoveryIndex = releaseWorkflow.indexOf(
-      "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication.",
+    const publicAccessRefusalIndex = releaseWorkflow.indexOf(
+      "Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication.",
     );
     const exactVersionProbeIndex = releaseWorkflow.indexOf(
       'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
@@ -705,13 +702,13 @@ describe("GitHub workflow contract", () => {
     const packageProbeIndex = releaseWorkflow.indexOf(
       'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
     );
-    expect(accessRecoveryIndex).toBeGreaterThanOrEqual(0);
+    expect(publicAccessRefusalIndex).toBeGreaterThanOrEqual(0);
     expect(exactVersionProbeIndex).toBeGreaterThanOrEqual(0);
     expect(publicationRefusalIndex).toBeGreaterThanOrEqual(0);
     expect(packageProbeIndex).toBeGreaterThanOrEqual(0);
     expect(exactVersionProbeIndex).toBeLessThan(publicationRefusalIndex);
     expect(publicationRefusalIndex).toBeLessThan(packageProbeIndex);
-    expect(packageProbeIndex).toBeLessThan(accessRecoveryIndex);
+    expect(packageProbeIndex).toBeLessThan(publicAccessRefusalIndex);
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
