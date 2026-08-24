@@ -35,4 +35,46 @@ describe("MCP history adapters", () => {
       expect.any(Object),
     );
   });
+
+  it("normalizes a finite numeric scalar without broadening the target", async () => {
+    await runMcpHistoryCompactAction({
+      options: { ids: 42 },
+      global: { path: "/tmp/pm-history-mcp/.agents/pm" },
+    });
+
+    expect(mocks.assertHistoryCompactTarget).toHaveBeenCalledWith(undefined, {
+      ids: ["42"],
+      allOver: undefined,
+      scope: undefined,
+    });
+    expect(mocks.runHistoryCompactBulk).toHaveBeenCalledWith(
+      expect.objectContaining({ ids: ["42"] }),
+      expect.any(Object),
+    );
+  });
+
+  it.each([
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+    ["pm-history", Number.POSITIVE_INFINITY],
+    { id: "pm-history" },
+  ])(
+    "rejects an invalid explicit selector before target selection: %j",
+    (ids) => {
+      expect(() =>
+        runMcpHistoryCompactAction({
+          options: { ids, allOver: 1 },
+          global: { path: "/tmp/pm-history-mcp/.agents/pm" },
+        }),
+      ).toThrow(
+        expect.objectContaining({
+          exitCode: 2,
+          context: expect.objectContaining({ code: "bulk_ids_input_empty" }),
+        }),
+      );
+      expect(mocks.assertHistoryCompactTarget).not.toHaveBeenCalled();
+      expect(mocks.runHistoryCompactBulk).not.toHaveBeenCalled();
+    },
+  );
 });

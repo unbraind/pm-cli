@@ -15853,7 +15853,8 @@
       ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/io/bulk-ids-input.ts"
+        "core/io/bulk-ids-input.ts",
+        "sdk/history-mcp.ts"
       ],
       "stability": "provisional"
     },
@@ -45129,8 +45130,18 @@
                 "type": "string"
               },
               {
+                "type": "number"
+              },
+              {
                 "items": {
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
                 },
                 "type": "array"
               }
@@ -47597,8 +47608,18 @@
                 "type": "string"
               },
               {
+                "type": "number"
+              },
+              {
                 "items": {
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
                 },
                 "type": "array"
               }
@@ -48316,8 +48337,18 @@
                 "type": "string"
               },
               {
+                "type": "number"
+              },
+              {
                 "items": {
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
                 },
                 "type": "array"
               }

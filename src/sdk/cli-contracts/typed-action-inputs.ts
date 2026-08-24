@@ -79,8 +79,8 @@ export type PmBulkMutationFilterOptions = Omit<
   OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>,
   "ids"
 > & {
-  /** Explicit item allowlist supplied as CSV text, a numeric scalar, or transport-native IDs. */
-  ids?: string | number | readonly string[];
+  /** Explicit item allowlist supplied as CSV text, a finite numeric scalar, or transport-native string/number IDs. */
+  ids?: string | number | readonly (string | number)[];
 };
 
 /** Checkpoint/preview controls shared by the bulk mutation actions. Declared as an object type literal (not an interface) so the composed option bags keep their implicit index signature and stay assignable to the wide `Record`-based dispatch layer. */

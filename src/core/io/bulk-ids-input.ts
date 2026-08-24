@@ -25,6 +25,13 @@ export interface BulkIdsInputReaders {
   readStdin?: BulkIdsStdinReader;
 }
 
+/** Transport-native bulk ID shapes accepted by SDK and MCP adapters. */
+export type BulkIdsValue =
+  | string
+  | number
+  | readonly (string | number)[]
+  | undefined;
+
 const defaultFileReader: BulkIdsFileReader = (path) => readFile(path, "utf8");
 
 const defaultStdinReader: BulkIdsStdinReader = async (optionName) =>
@@ -42,10 +49,23 @@ export function parseBulkIdsText(raw: string): string[] {
   ];
 }
 
+function normalizeBulkIdsArray(value: readonly (string | number)[]): string {
+  const entries: string[] = [];
+  for (const entry of value) {
+    if (typeof entry === "string") {
+      entries.push(entry);
+    } else if (typeof entry === "number" && Number.isFinite(entry)) {
+      entries.push(String(entry));
+    } else {
+      return "";
+    }
+  }
+  const ids = parseBulkIdsText(entries.join("\n"));
+  return ids.length > 0 ? ids.join(",") : "";
+}
+
 /** Normalize SDK/MCP scalar-or-array ID input into the list query's CSV form. */
-export function normalizeBulkIdsValue(
-  value: string | number | readonly string[] | undefined,
-): string | undefined {
+export function normalizeBulkIdsValue(value: BulkIdsValue): string | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -56,9 +76,13 @@ export function normalizeBulkIdsValue(
     // every item matched by the remaining filters.
     return Number.isFinite(value) ? String(value) : "";
   }
-  const ids = Array.isArray(value)
-    ? parseBulkIdsText(value.join("\n"))
-    : parseBulkIdsText(value as string);
+  if (Array.isArray(value)) {
+    return normalizeBulkIdsArray(value);
+  }
+  if (typeof value !== "string") {
+    return "";
+  }
+  const ids = parseBulkIdsText(value);
   return ids.length > 0 ? ids.join(",") : "";
 }
 
@@ -108,7 +132,7 @@ export async function resolveCliBulkIdsInput(
         required: `Provide readable newline/comma-delimited IDs via ${optionName} -, ${optionName} @<path>, or inline argv text.`,
         nextSteps: [
           `Retry with inline IDs: ${optionName} pm-a1b2,pm-c3d4`,
-          `Or pipe IDs: pm list --id-only | <selector> | pm update-many ${optionName} - --dry-run`,
+          `Or pipe IDs: pm list --id-only | pm update-many ${optionName} - --dry-run`,
         ],
       },
     );

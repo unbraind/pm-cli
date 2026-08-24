@@ -162,8 +162,10 @@ empty `planned_update_options` object and empty per-row `changes`, which is a
 bounded way to validate a selector before choosing a mutation. The same
 filter-only invocation without `--dry-run` is rejected with exit `2`.
 
-Direct SDK and MCP callers should pass `ids` as either a string or an array;
-the SDK normalizes both shapes through the same stable-deduplicating parser:
+Direct SDK and MCP callers may pass `ids` as a string, a finite numeric scalar,
+or an array of string and finite numeric IDs. The SDK normalizes every accepted
+shape through the same stable-deduplicating parser; non-finite numbers and
+unsupported explicit selector values are rejected before target selection:
 
 ```ts
 import { PmClient } from "@unbrained/pm-cli/sdk";
@@ -186,6 +188,10 @@ create/update body, while `comments`, `notes`, and `learnings` accept
 generate_body | pm create --title "Generated plan" --body-file -
 render_review | pm comments pm-a1b2 --file -
 ```
+
+Each command invocation may consume stdin for only one option. Competing
+stdin-backed inputs such as `--description - --body-file -` are rejected before
+the stream is read.
 
 Use NDJSON for streaming row-by-row tools:
 

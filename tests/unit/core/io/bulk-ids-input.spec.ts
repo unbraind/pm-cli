@@ -25,10 +25,15 @@ describe("bulk ID input sources", () => {
     expect(normalizeBulkIdsValue(["pm-a,pm-b", "pm-a", "pm-c"])).toBe(
       "pm-a,pm-b,pm-c",
     );
+    expect(normalizeBulkIdsValue([123, "pm-a", 123])).toBe("123,pm-a");
+    expect(normalizeBulkIdsValue(123)).toBe("123");
     expect(normalizeBulkIdsValue(undefined)).toBeUndefined();
     expect(normalizeBulkIdsValue(" , \n ")).toBe("");
+    expect(normalizeBulkIdsValue([])).toBe("");
     expect(normalizeBulkIdsValue(Number.NaN)).toBe("");
     expect(normalizeBulkIdsValue(Number.POSITIVE_INFINITY)).toBe("");
+    expect(normalizeBulkIdsValue(Number.NEGATIVE_INFINITY)).toBe("");
+    expect(normalizeBulkIdsValue(["pm-a", Number.POSITIVE_INFINITY])).toBe("");
   });
 
   it("resolves stdin, @path, inline text, and an omitted selector", async () => {

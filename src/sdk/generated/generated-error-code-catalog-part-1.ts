@@ -249,7 +249,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/io/bulk-ids-input.ts"],
+    sources: ["core/io/bulk-ids-input.ts", "sdk/history-mcp.ts"],
     emitting_commands: ["*"],
     canonical_code: "bulk_ids_input_empty",
     aliases: [],
