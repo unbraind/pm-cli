@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
+- Dynamic-read continuation cursors are born stale: pm health emits a cursor that its next invocation rejects ([pm-oahhyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oahhyc.toon))
+- GH-1105: contracts must declare each command projection vocabulary before invocation ([pm-q4isdq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q4isdq.toon))
 - The outcome-milestone ladder is a sibling set rather than a layer: 1,024 terminal items reach the roadmap apex through 154 typed roots without traversing any outcome milestone ([pm-h6b73t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h6b73t.toon))
 
 ## 2026.8.24 - 2026-08-24
