@@ -8,6 +8,32 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "missing_allowed_values",
+    meaning: "Missing allowed values condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_allowed_values",
+    aliases: [],
+  },
+  {
+    code: "missing_budget",
+    meaning: "Missing budget condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_budget",
+    aliases: [],
+  },
+  {
     code: "missing_cli_flag",
     meaning: "Missing cli flag condition.",
     stability: "provisional",

@@ -290,15 +290,12 @@ describe("universal read-output transport contracts", () => {
         enableTelemetry.code,
         `${enableTelemetry.stdout}\n${enableTelemetry.stderr}`,
       ).toBe(0);
-      const globalSettingsPath = path.join(
-        env.PM_GLOBAL_PATH,
-        "settings.json",
-      );
+      const globalSettingsPath = path.join(env.PM_GLOBAL_PATH, "settings.json");
       const globalSettings = JSON.parse(
         await readFile(globalSettingsPath, "utf8"),
       ) as { telemetry?: Record<string, unknown> };
       globalSettings.telemetry = {
-        ...(globalSettings.telemetry ?? {}),
+        ...globalSettings.telemetry,
         endpoint: "http://127.0.0.1:9/v1/events",
       };
       await writeFile(
@@ -379,12 +376,7 @@ describe("universal read-output transport contracts", () => {
       });
       const queuedAfterFirstPage = (
         await readFile(
-          path.join(
-            env.PM_GLOBAL_PATH,
-            "runtime",
-            "telemetry",
-            "events.jsonl",
-          ),
+          path.join(env.PM_GLOBAL_PATH, "runtime", "telemetry", "events.jsonl"),
           "utf8",
         )
       )

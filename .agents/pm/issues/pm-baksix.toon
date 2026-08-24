@@ -6,36 +6,45 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-24T17:59:25.172Z"
-closed_at: "2026-08-24T16:39:46.425Z"
-completed_at: "2026-08-24T16:39:46.425Z"
+updated_at: "2026-08-24T21:59:35.509Z"
+closed_at: "2026-08-24T21:59:34.878Z"
+completed_at: "2026-08-24T21:59:34.878Z"
 author: "harness:codex"
 acceptance_criteria: A lossless pending merge receipt makes the health gate non-green with receipt-aware remediation; history-repair cannot clear the finding; pm merge reconcile settles it; lossy decision classification remains distinct
 parent: pm-dj98
 risk: medium
 confidence: high
-resolution: Separated pending lossless receipt health from lossy decision review while requiring reconciliation for both and preserving executable remediation.
-expected_result: Health distinguishes pending lossless receipts from pending lossy decisions but reports both as unreconciled until pm merge reconcile consumes the receipt.
-actual_result: "A pending lossless receipt now emits merge_receipts_pending:<n>, makes health non-green, and resolves through the registry-owned pm merge reconcile --dry-run guidance; history repair cannot hide it, reconciliation clears it, and lossy receipts remain merge_decisions_unreviewed."
+resolution: fixed
+expected_result: "Pending merge receipt evidence remains health-visible until exact reconciliation settles every trusted copy; malformed, divergent, stale, aliased, or partial-settlement evidence fails closed before history mutation."
+actual_result: "Health, validation, history repair, and merge reconciliation now share bounded receipt inspection and exact provenance proof. Divergent same-ID copies refuse before mutation; matching partial settlements remain pending until every copy is reconciled; lossless and lossy findings remain distinct."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
   "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
   "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
   "2026-08-24T17:59:25.172Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1108 at reviewed implementation head c855a5dd656c449a0fde5c0341dde0ff128f68d5."
-files[7]{path,scope,note}:
+  "2026-08-24T18:01:22.625Z","harness:codex","Hosted review recurrence: Sourcery correctly observed that GH-1104 requires receipt-attributable history_drift remediation itself to point at pm merge reconcile. Scope: correlate pending receipt item ids with drifted item ids, prioritize reconcile only on intersection, preserve history-repair for unrelated drift, and add a mixed-state negative control."
+  "2026-08-24T21:59:30.143Z","harness:codex","Final implementation evidence 2026-08-24: linked tests passed 26/26 and 58/58 with trusted local_source_ref provenance; global exact coverage passed 572 files / 7,902 tests at 100% statements, branches, functions, and lines with zero uncovered counts. Static quality direct report is clean (100% docstrings, no complexity/duplicate/orphan/SDK-boundary findings); repository assurance, package boundaries, SDK parity, surface replication, grammar/flags, 117 refusal probes, tracker context, graph composition, defect evidence, lint, zero-duplicate scan, and package artifact gates passed. The full wrapper reached only the CLI timing floor under host renderer contention; detached unchanged main reproduced the same get miss at 382ms, so the budget was preserved for hosted CI. Bugbot found no bugs and Security Review found no actionable findings on the exact final workspace. Negative controls prove malformed or divergent same-ID receipt evidence refuses before history mutation, and same-provenance partial settlement remains pending until both copies reconcile."
+files[13]{path,scope,note}:
   sdk/public-surface.json,project,Generated public pending-receipt error surface
   src/core/diagnostics/remediation.ts,project,Receipt-aware remediation
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public error-code contract
   src/sdk/governance/health.ts,project,Lossless pending receipt health finding
+  src/sdk/history-repair.ts,project,Exact receipt proof for history drift attribution
+  src/sdk/merge/receipt-file-boundary.ts,project,Bounded no-follow receipt file boundary
+  src/sdk/merge/receipts.ts,project,Strict receipt validation inspection and settlement
+  src/sdk/merge/reconcile.ts,project,Receipt-aware reconciliation settlement
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,History-repair and reconcile end-to-end controls
   tests/integration/remediation-registry.spec.ts,project,Executable remediation contract
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/sdk/merge-receipts.spec.ts,project,File-boundary and settlement negative controls
+  tests/unit/sdk/merge-reconcile.spec.ts,project,Reconciliation concurrency and refusal controls
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,project,300,"harness:codex","2026-08-24T15:28:37.602Z",local_mutation,codex/read-output-projection-snapshots
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,360,"harness:codex","2026-08-24T20:35:16.403Z",local_mutation,codex/read-output-projection-snapshots
+test_runs[4]:
   - run_id: test-local-mt7g64h9-seists
     kind: test
     status: passed
@@ -47,10 +56,45 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt7jqint-jswiqx
+    kind: test
+    status: passed
+    started_at: "2026-08-24T18:04:57.535Z"
+    finished_at: "2026-08-24T18:05:11.033Z"
+    recorded_at: "2026-08-24T18:05:11.033Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt7pul8t-bbojaw
+    kind: test
+    status: passed
+    started_at: "2026-08-24T20:55:29.701Z"
+    finished_at: "2026-08-24T20:56:18.701Z"
+    recorded_at: "2026-08-24T20:56:18.701Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt7s2uw2-oaamy2
+    kind: test
+    status: passed
+    started_at: "2026-08-24T21:57:49.657Z"
+    finished_at: "2026-08-24T21:58:43.682Z"
+    recorded_at: "2026-08-24T21:58:43.682Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated error-code coverage
   docs/MERGE_SAFETY.md,project,Pending lossless receipt gate semantics
-close_reason: "Pending lossless receipts now fail health with receipt-aware reconcile guidance, survive history repair until reconciled, and remain distinct from lossy decision review; temporary git-repository integration and exact coverage pass."
+close_reason: "Implemented and reviewed fail-closed pending merge receipt health, exact receipt-proven history attribution, bounded evidence inspection, pre-mutation invalid-evidence refusal, and retryable all-copy settlement; final linked tests and exact coverage pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

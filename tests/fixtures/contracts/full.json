@@ -17194,6 +17194,23 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_merge_receipt",
+      "class": "generic_failure",
+      "code": "history_drift_merge_receipt",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift merge receipt condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_missing_streams"
       ],
@@ -18393,6 +18410,24 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_receipt_evidence_invalid",
+      "class": "conflict",
+      "code": "merge_receipt_evidence_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge receipt evidence invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts",
+        "sdk/merge/reconcile.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_receipts_pending",
       "class": "generic_failure",
       "code": "merge_receipts_pending",
@@ -18422,6 +18457,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/merge/reconcile.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_reconcile_receipt_evidence_untrusted",
+      "class": "conflict",
+      "code": "merge_reconcile_receipt_evidence_untrusted",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge reconcile receipt evidence untrusted condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history-repair.ts"
       ],
       "stability": "provisional"
     },

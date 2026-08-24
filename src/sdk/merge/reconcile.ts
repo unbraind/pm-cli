@@ -7,19 +7,26 @@
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
 import {
   runHistoryRepair,
   runHistoryRepairAll,
   type HistoryRepairAllResult,
+  type HistoryRepairCommandOptions,
+  type HistoryRepairResult,
 } from "../history-repair.js";
 import { runValidate, type ValidateResult } from "../governance/validate.js";
 import {
-  listMergeReceipts,
+  inspectMergeReceiptEvidence,
   markMergeReceiptReconciled,
   partitionMergeReceipts,
   summarizeMergeReceipt,
   type MergeDecisionReceiptSummary,
 } from "./receipts.js";
+import { findGitWorkspaceRoot } from "./install.js";
+import { mapWithFixedConcurrency } from "../extension/concurrency.js";
+
+const RECEIPT_ONLY_REPAIR_CONCURRENCY = 4;
 
 /** Options for the audited post-merge reconciliation workflow. */
 export interface MergeReconcileOptions {
@@ -59,6 +66,108 @@ export interface MergeReconcileResult {
   generated_at: string;
 }
 
+async function runReceiptOnlyRepair(params: {
+  id: string;
+  dryRun: boolean;
+  options: MergeReconcileOptions;
+  global: GlobalOptions;
+  auditContext: Record<string, unknown> | undefined;
+  mergeReceiptProof: HistoryRepairCommandOptions["mergeReceiptProof"];
+}): Promise<PromiseSettledResult<HistoryRepairResult>> {
+  try {
+    return {
+      status: "fulfilled",
+      value: await runHistoryRepair(
+        params.id,
+        {
+          dryRun: params.dryRun,
+          author: params.options.author ?? params.global.author,
+          message:
+            params.options.message ??
+            "record field-aware branch merge provenance",
+          force: params.options.force,
+          auditOperation: "merge_reconcile",
+          auditContext: params.auditContext,
+          forceAuditEntry: true,
+          mergeReceiptProof: params.mergeReceiptProof,
+        },
+        params.global,
+      ),
+    };
+  } catch (reason) {
+    return { status: "rejected", reason };
+  }
+}
+
+function appendReceiptOnlyResults(params: {
+  receiptOnlyIds: string[];
+  results: Array<PromiseSettledResult<HistoryRepairResult>>;
+  repair: HistoryRepairAllResult;
+}): void {
+  params.results.forEach((settled, index) => {
+    const id = params.receiptOnlyIds[index];
+    if (settled.status === "fulfilled") {
+      const outcome = settled.value.changed ? "repaired" : "skipped_clean";
+      params.repair.streams.push({
+        id,
+        outcome,
+        entries_rehashed: settled.value.history.entries_rehashed,
+        entries_patch_repaired: settled.value.history.entries_patch_repaired,
+        reconciled_with_item: settled.value.history.reconciled_with_item,
+        ...(settled.value.merge_receipt_proof
+          ? { merge_receipt_proof: settled.value.merge_receipt_proof }
+          : {}),
+        warnings: settled.value.warnings,
+      });
+      params.repair.totals[outcome] += 1;
+      return;
+    }
+    params.repair.streams.push({
+      id,
+      outcome: "failed",
+      error:
+        settled.reason instanceof Error
+          ? settled.reason.message
+          : String(settled.reason),
+    });
+    params.repair.totals.failed += 1;
+  });
+}
+
+async function settleProvenReceipts(params: {
+  dryRun: boolean;
+  force: boolean;
+  pendingReceipts: Awaited<
+    ReturnType<typeof inspectMergeReceiptEvidence>
+  >["receipts"];
+  repair: HistoryRepairAllResult;
+  gitWorkspaceRoot: string | null;
+}): Promise<number> {
+  if (params.dryRun || params.repair.totals.failed > 0) return 0;
+  const trustedReceiptIds = new Set(
+    params.repair.streams.flatMap((stream) =>
+      stream.merge_receipt_proof?.trusted
+        ? stream.merge_receipt_proof.receipt_ids
+        : [],
+    ),
+  );
+  const receiptsToSettle = params.force
+    ? params.pendingReceipts
+    : params.pendingReceipts.filter((receipt) =>
+        trustedReceiptIds.has(receipt.id),
+      );
+  await Promise.all(
+    receiptsToSettle.map((receipt) =>
+      markMergeReceiptReconciled(
+        params.gitWorkspaceRoot ?? process.cwd(),
+        receipt,
+        { requireExisting: true },
+      ),
+    ),
+  );
+  return receiptsToSettle.length;
+}
+
 /**
  * Preview or apply post-merge history reconciliation and immediately validate
  * the two merge-critical invariants. The default remains explicit and safe:
@@ -70,9 +179,30 @@ export async function runMergeReconcile(
   global: GlobalOptions,
 ): Promise<MergeReconcileResult> {
   const dryRun = options.dryRun === true;
-  const pendingReceipts = await listMergeReceipts(process.cwd(), {
-    includeLossless: true,
-  });
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
+  const receiptEvidence = await inspectMergeReceiptEvidence(
+    gitWorkspaceRoot ?? process.cwd(),
+    {
+      includeLossless: true,
+      pmRoot,
+    },
+  );
+  if (receiptEvidence.invalid_evidence_count > 0) {
+    throw new PmCliError(
+      `Merge reconciliation refused ${receiptEvidence.invalid_evidence_count} invalid receipt evidence file(s).`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "merge_receipt_evidence_invalid",
+        required:
+          "Every clone-local and durable receipt candidate must pass bounded-file, schema, and identity validation.",
+        recovery: {
+          suggested_retry: "pm health --check-only --full",
+        },
+      },
+    );
+  }
+  const pendingReceipts = receiptEvidence.receipts;
   const { pendingDecisions: discardedReceipts } =
     partitionMergeReceipts(pendingReceipts);
   if (!dryRun && options.force !== true && discardedReceipts.length > 0) {
@@ -95,20 +225,26 @@ export async function runMergeReconcile(
       },
     );
   }
-  const receiptsByItem = pendingReceipts.reduce<
-    Record<string, typeof pendingReceipts>
-  >((groups, receipt) => {
-    (groups[receipt.item_id] ??= []).push(receipt);
-    return groups;
-  }, {});
+  const receiptsByItem = new Map<string, typeof pendingReceipts>();
+  for (const receipt of pendingReceipts) {
+    const receipts = receiptsByItem.get(receipt.item_id) ?? [];
+    receipts.push(receipt);
+    receiptsByItem.set(receipt.item_id, receipts);
+  }
   const auditContextById = Object.fromEntries(
-    Object.entries(receiptsByItem).map(([id, receipts]) => [
+    [...receiptsByItem].map(([id, receipts]) => [
       id,
       {
         merge: {
           receipts: receipts.map(summarizeMergeReceipt),
         },
       },
+    ]),
+  );
+  const mergeReceiptProofById = Object.fromEntries(
+    [...receiptsByItem].map(([id, receipts]) => [
+      id,
+      { gitWorkspaceRoot, receipts },
     ]),
   );
   const repair = await runHistoryRepairAll(
@@ -121,65 +257,39 @@ export async function runMergeReconcile(
       force: options.force,
       auditOperation: "merge_reconcile",
       auditContextById,
+      ...(pendingReceipts.length > 0 ? { mergeReceiptProofById } : {}),
     },
     global,
   );
   const representedIds = new Set(repair.streams.map((stream) => stream.id));
-  const receiptOnlyIds = Object.keys(receiptsByItem).filter(
+  const receiptOnlyIds = [...receiptsByItem.keys()].filter(
     (id) => !representedIds.has(id),
   );
-  const receiptOnlyResults = await Promise.allSettled(
-    receiptOnlyIds.map((id) =>
-      runHistoryRepair(
+  const receiptOnlyResults = await mapWithFixedConcurrency(
+    receiptOnlyIds,
+    RECEIPT_ONLY_REPAIR_CONCURRENCY,
+    (id) =>
+      runReceiptOnlyRepair({
         id,
-        {
-          dryRun,
-          author: options.author ?? global.author,
-          message:
-            options.message ?? "record field-aware branch merge provenance",
-          force: options.force,
-          auditOperation: "merge_reconcile",
-          auditContext: auditContextById[id],
-          forceAuditEntry: true,
-        },
+        dryRun,
+        options,
         global,
-      ),
-    ),
+        auditContext: auditContextById[id],
+        mergeReceiptProof: mergeReceiptProofById[id],
+      }),
   );
-  receiptOnlyResults.forEach((settled, index) => {
-    const id = receiptOnlyIds[index];
-    if (settled.status === "fulfilled") {
-      const outcome = settled.value.changed ? "repaired" : "skipped_clean";
-      repair.streams.push({
-        id,
-        outcome,
-        entries_rehashed: settled.value.history.entries_rehashed,
-        entries_patch_repaired: settled.value.history.entries_patch_repaired,
-        reconciled_with_item: settled.value.history.reconciled_with_item,
-        warnings: settled.value.warnings,
-      });
-      repair.totals[outcome] += 1;
-    } else {
-      repair.streams.push({
-        id,
-        outcome: "failed",
-        error:
-          settled.reason instanceof Error
-            ? settled.reason.message
-            : String(settled.reason),
-      });
-      repair.totals.failed += 1;
-    }
+  appendReceiptOnlyResults({
+    receiptOnlyIds,
+    results: receiptOnlyResults,
+    repair,
   });
-  let reconciledReceiptCount = 0;
-  if (!dryRun && repair.totals.failed === 0) {
-    await Promise.all(
-      pendingReceipts.map((receipt) =>
-        markMergeReceiptReconciled(process.cwd(), receipt),
-      ),
-    );
-    reconciledReceiptCount = pendingReceipts.length;
-  }
+  const reconciledReceiptCount = await settleProvenReceipts({
+    dryRun,
+    force: options.force === true,
+    pendingReceipts,
+    repair,
+    gitWorkspaceRoot,
+  });
   const validation = await runValidate(
     { checkHistoryDrift: true, checkStorageIntegrity: true },
     global,
@@ -187,7 +297,11 @@ export async function runMergeReconcile(
   const mergeChecksGreen = validation.checks.every(
     (check) => check.status === "ok",
   );
-  const ok = repair.totals.failed === 0 && mergeChecksGreen;
+  const receiptSettlementComplete = dryRun
+    ? pendingReceipts.length === 0
+    : reconciledReceiptCount === pendingReceipts.length;
+  const ok =
+    repair.totals.failed === 0 && mergeChecksGreen && receiptSettlementComplete;
   const guidance = dryRun
     ? [
         "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",

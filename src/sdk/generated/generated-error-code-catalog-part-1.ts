@@ -1265,6 +1265,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: ["validate_history_drift_hash_mismatches"],
   },
   {
+    code: "history_drift_merge_receipt",
+    meaning: "History drift merge receipt condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "history_drift_merge_receipt",
+    aliases: [],
+  },
+  {
     code: "history_drift_missing_stream",
     meaning: "History drift missing stream condition.",
     stability: "stable",
@@ -2172,6 +2185,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "merge_receipt_evidence_invalid",
+    meaning: "Merge receipt evidence invalid condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_receipt_evidence_invalid",
+    aliases: [],
+  },
+  {
     code: "merge_receipts_pending",
     meaning: "Merge receipts pending condition.",
     stability: "provisional",
@@ -2198,6 +2224,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "merge_reconcile_receipt_evidence_untrusted",
+    meaning: "Merge reconcile receipt evidence untrusted condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-repair.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_reconcile_receipt_evidence_untrusted",
+    aliases: [],
+  },
+  {
     code: "merge_root_not_found",
     meaning: "Merge root not found condition.",
     stability: "stable",
@@ -2208,32 +2247,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_root_not_found",
-    aliases: [],
-  },
-  {
-    code: "missing_allowed_values",
-    meaning: "Missing allowed values condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_allowed_values",
-    aliases: [],
-  },
-  {
-    code: "missing_budget",
-    meaning: "Missing budget condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_budget",
     aliases: [],
   },
 ];

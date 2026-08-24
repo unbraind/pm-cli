@@ -13,9 +13,11 @@ import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { parseItemDocument } from "../../core/item/item-format.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -228,12 +230,17 @@ export async function runMergeDriver(
     };
   } else if (artifact === "item") {
     const settings = await loadOptionalSettings(global);
+    const itemFormat = itemFormatForPath(
+      options.itemPath ?? outputPath,
+      settings,
+    );
+    const extensionFieldNames = collectRegisteredItemFieldNames(
+      getActiveExtensionRegistrations(),
+    );
     const itemMerge = mergeItemDocuments(baseRaw, oursRaw, theirsRaw, {
-      format: itemFormatForPath(options.itemPath ?? outputPath, settings),
+      format: itemFormat,
       schema: settings?.schema,
-      extensionFieldNames: collectRegisteredItemFieldNames(
-        getActiveExtensionRegistrations(),
-      ),
+      extensionFieldNames,
       preferred,
       conflictResolution: "stable_value_order",
     });
@@ -245,6 +252,22 @@ export async function runMergeDriver(
       conflict_resolution: "stable_value_order",
     };
     if (options.itemPath !== undefined) {
+      const mergedDocument = parseItemDocument(merged, {
+        format: itemFormat,
+        schema: settings?.schema,
+        extensionFieldNames,
+      });
+      const mergedMetadata = mergedDocument.metadata as unknown as Record<
+        string,
+        unknown
+      >;
+      const receiptFields = [
+        ...new Set([
+          ...itemMerge.fields_from_theirs,
+          ...itemMerge.union_fields,
+          ...itemMerge.conflict_decisions.map((decision) => decision.field),
+        ]),
+      ];
       receiptInput = {
         cwd: process.cwd(),
         itemPath: options.itemPath,
@@ -252,6 +275,16 @@ export async function runMergeDriver(
         conflictResolution: "stable_value_order",
         fieldsFromTheirs: itemMerge.fields_from_theirs,
         unionFields: itemMerge.union_fields,
+        mergedFieldHashes: Object.fromEntries(
+          receiptFields.map((field) => [
+            field,
+            sha256Hex(
+              stableStringify(
+                field === "body" ? mergedDocument.body : mergedMetadata[field],
+              ),
+            ),
+          ]),
+        ),
         decisions: itemMerge.conflict_decisions,
       };
     }

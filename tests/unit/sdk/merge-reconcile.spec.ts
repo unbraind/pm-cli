@@ -3,10 +3,12 @@ import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 
 const mocks = vi.hoisted(() => ({
   listMergeReceipts: vi.fn(),
+  invalidReceiptEvidenceCount: vi.fn(),
   markMergeReceiptReconciled: vi.fn(),
   runHistoryRepair: vi.fn(),
   runHistoryRepairAll: vi.fn(),
   runValidate: vi.fn(),
+  findGitWorkspaceRoot: vi.fn(),
 }));
 
 vi.mock("../../../src/sdk/history-repair.js", () => ({
@@ -16,9 +18,15 @@ vi.mock("../../../src/sdk/history-repair.js", () => ({
 vi.mock("../../../src/sdk/governance/validate.js", () => ({
   runValidate: mocks.runValidate,
 }));
+vi.mock("../../../src/sdk/merge/install.js", () => ({
+  findGitWorkspaceRoot: mocks.findGitWorkspaceRoot,
+}));
 vi.mock("../../../src/sdk/merge/receipts.js", async (importOriginal) => ({
   ...(await importOriginal()),
-  listMergeReceipts: mocks.listMergeReceipts,
+  inspectMergeReceiptEvidence: async (...args: unknown[]) => ({
+    receipts: await mocks.listMergeReceipts(...args),
+    invalid_evidence_count: mocks.invalidReceiptEvidenceCount(),
+  }),
   markMergeReceiptReconciled: mocks.markMergeReceiptReconciled,
   summarizeMergeReceipt: (receipt: { id: string; item_id: string }) => ({
     receipt_id: receipt.id,
@@ -35,8 +43,10 @@ describe("merge reconciliation SDK", () => {
     mocks.runHistoryRepairAll.mockReset();
     mocks.runValidate.mockReset();
     mocks.listMergeReceipts.mockReset().mockResolvedValue([]);
+    mocks.invalidReceiptEvidenceCount.mockReset().mockReturnValue(0);
     mocks.markMergeReceiptReconciled.mockReset();
     mocks.runHistoryRepair.mockReset();
+    mocks.findGitWorkspaceRoot.mockReset().mockResolvedValue("/workspace");
   });
 
   it("previews with default attribution and fails closed on validation warnings", async () => {
@@ -74,9 +84,25 @@ describe("merge reconciliation SDK", () => {
     expect(result.guidance[0]).toContain("Review repair.streams");
   });
 
+  it("refuses malformed receipt evidence before repair or validation", async () => {
+    mocks.invalidReceiptEvidenceCount.mockReturnValue(2);
+
+    await expect(
+      runMergeReconcile({ dryRun: true }, globalOptions),
+    ).rejects.toMatchObject({
+      exitCode: 4,
+      context: {
+        code: "merge_receipt_evidence_invalid",
+        recovery: { suggested_retry: "pm health --check-only --full" },
+      },
+    });
+    expect(mocks.runHistoryRepairAll).not.toHaveBeenCalled();
+    expect(mocks.runValidate).not.toHaveBeenCalled();
+  });
+
   it("applies explicit repair metadata and requires green verification", async () => {
     mocks.runHistoryRepairAll.mockResolvedValue({
-      streams: [],
+      streams: [{ id: "unproven" }],
       totals: { repaired: 0, skipped_clean: 0, failed: 0 },
     });
     mocks.runValidate.mockResolvedValue({
@@ -119,6 +145,46 @@ describe("merge reconciliation SDK", () => {
     ]);
   });
 
+  it("uses the process workspace fallback only when Git discovery is unavailable", async () => {
+    const receipt = { id: "receipt-fallback", item_id: "pm-fallback" };
+    mocks.findGitWorkspaceRoot.mockResolvedValue(null);
+    mocks.listMergeReceipts.mockResolvedValue([receipt]);
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runHistoryRepair.mockResolvedValue({
+      changed: false,
+      history: {
+        entries_rehashed: 0,
+        entries_patch_repaired: 0,
+        reconciled_with_item: false,
+      },
+      merge_receipt_proof: {
+        trusted: true,
+        reason: "trusted_clone_local_driver_evidence",
+        receipt_ids: [receipt.id],
+      },
+      warnings: [],
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "ok" }],
+      generated_at: "2026-07-21T00:02:30.000Z",
+    });
+
+    await runMergeReconcile({}, globalOptions);
+
+    expect(mocks.listMergeReceipts).toHaveBeenCalledWith(process.cwd(), {
+      includeLossless: true,
+      pmRoot: expect.any(String),
+    });
+    expect(mocks.markMergeReceiptReconciled).toHaveBeenCalledWith(
+      process.cwd(),
+      receipt,
+      { requireExisting: true },
+    );
+  });
+
   it("records clean receipt-bearing merges and marks receipts reconciled", async () => {
     const receipt = {
       id: "receipt-1",
@@ -136,6 +202,11 @@ describe("merge reconciliation SDK", () => {
         entries_rehashed: 0,
         entries_patch_repaired: 0,
         reconciled_with_item: false,
+      },
+      merge_receipt_proof: {
+        trusted: true,
+        reason: "trusted_clone_local_driver_evidence",
+        receipt_ids: ["receipt-1"],
       },
       warnings: [],
     });
@@ -155,12 +226,66 @@ describe("merge reconciliation SDK", () => {
       globalOptions,
     );
     expect(mocks.markMergeReceiptReconciled).toHaveBeenCalledWith(
-      process.cwd(),
+      "/workspace",
       receipt,
+      { requireExisting: true },
     );
     expect(result.receipts).toMatchObject({
       pending_before: 1,
       reconciled: 1,
+    });
+  });
+
+  it("settles only the individually proven receipt for a shared item", async () => {
+    const trustedReceipt = {
+      id: "receipt-trusted",
+      item_id: "pm-shared",
+      state: "pending",
+    };
+    const untrustedSibling = {
+      id: "receipt-untrusted",
+      item_id: "pm-shared",
+      state: "pending",
+    };
+    mocks.listMergeReceipts.mockResolvedValue([
+      trustedReceipt,
+      untrustedSibling,
+    ]);
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [
+        {
+          id: "pm-shared",
+          outcome: "repaired",
+          merge_receipt_proof: {
+            trusted: true,
+            reason: "trusted_clone_local_driver_evidence",
+            receipt_ids: ["receipt-trusted"],
+          },
+        },
+      ],
+      totals: { repaired: 1, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "warn" }],
+      generated_at: "2026-07-21T00:03:30.000Z",
+    });
+
+    const result = await runMergeReconcile({}, globalOptions);
+
+    expect(mocks.markMergeReceiptReconciled).toHaveBeenCalledTimes(1);
+    expect(mocks.markMergeReceiptReconciled).toHaveBeenCalledWith(
+      "/workspace",
+      trustedReceipt,
+      { requireExisting: true },
+    );
+    expect(mocks.markMergeReceiptReconciled).not.toHaveBeenCalledWith(
+      "/workspace",
+      untrustedSibling,
+      { requireExisting: true },
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      receipts: { pending_before: 2, reconciled: 1 },
     });
   });
 

@@ -4,6 +4,8 @@
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
+import { realpath } from "node:fs/promises";
+import path from "node:path";
 import jsonPatch from "fast-json-patch";
 import { patchPathToChangedField } from "../core/history/history-diff.js";
 import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
@@ -32,6 +34,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
+import { sha256Hex, stableStringify } from "../core/shared/serialization.js";
 import {
   getActiveExtensionRegistrations,
   runActiveOnWriteHooks,
@@ -40,7 +43,7 @@ import {
   listAllItemMetadataWithBody,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type {
   HistoryEntry,
@@ -48,6 +51,10 @@ import type {
   ItemMetadata,
 } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
+import {
+  summarizeMergeReceipt,
+  type MergeDecisionReceipt,
+} from "./merge/receipts.js";
 import {
   listInvalidProvenanceHistoryStreamIds,
   normalizeInvalidHistoryProvenance,
@@ -74,6 +81,19 @@ export interface HistoryRepairCommandOptions {
   forceAuditEntry?: boolean;
   /** Remove bounded-domain-invalid provenance observations and record an aggregate privacy-safe audit receipt. */
   normalizeProvenance?: boolean;
+  /** Internal receipt evidence revalidated against the exact item snapshot used by this repair. */
+  mergeReceiptProof?: {
+    gitWorkspaceRoot: string | null;
+    receipts: MergeDecisionReceipt[];
+  };
+  /** Internal per-item receipt proof index used by bounded bulk reconciliation. */
+  mergeReceiptProofById?: Record<
+    string,
+    {
+      gitWorkspaceRoot: string | null;
+      receipts: MergeDecisionReceipt[];
+    }
+  >;
 }
 
 /** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
@@ -113,10 +133,27 @@ export interface HistoryRepairResult {
   };
   /** Present when reconciling the chain with the on-disk item discards the replayed effect of earlier history events (GH-603): names the reverted fields and the authors whose mutations the reconciliation overwrites, so cross-author data loss after a lossy merge is loud instead of silent. */
   reconciliation?: HistoryRepairReconciliationReport;
+  /** Present when merge reconciliation supplied receipt evidence for this item. */
+  merge_receipt_proof?: MergeReceiptProofResult;
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
+}
+
+/** Fail-closed proof that clone-local driver receipts exactly cover the current reconciliation fields and values. */
+export interface MergeReceiptProofResult {
+  /** Whether exact receipt identity, path, field, and value-hash evidence proves the snapshot. */
+  trusted: boolean;
+  /** Stable explanation for the trust decision. */
+  reason:
+    | "trusted_clone_local_driver_evidence"
+    | "git_workspace_unavailable"
+    | "item_path_unavailable"
+    | "no_item_receipts"
+    | "no_receipt_set_proves_snapshot";
+  /** Exact receipt identities accepted as proof; empty when proof is refused. */
+  receipt_ids: string[];
 }
 
 /** Documents one history event attributed to fields changed by reconciliation. */
@@ -314,12 +351,189 @@ export function analyzeReconciliationDiscard(
   };
 }
 
+async function canonicalRealPath(value: string): Promise<string | null> {
+  try {
+    return await realpath(value);
+  } catch {
+    return null;
+  }
+}
+
+async function verifyReceiptAgainstSnapshot(params: {
+  receipt: MergeDecisionReceipt;
+  gitWorkspaceRoot: string;
+  currentPath: string;
+  currentItemReplay: ReplayDocument;
+}): Promise<{
+  receipt: MergeDecisionReceipt;
+  declaredFields: string[];
+} | null> {
+  if (params.receipt.evidence_source !== "clone_local") return null;
+  const receiptPath = await canonicalRealPath(
+    path.resolve(params.gitWorkspaceRoot, params.receipt.item_path),
+  );
+  if (receiptPath !== params.currentPath) return null;
+  const declaredFields = [
+    ...new Set([
+      ...params.receipt.fields_from_theirs,
+      ...params.receipt.union_fields,
+      ...params.receipt.decisions.map((decision) => decision.field),
+    ]),
+  ].sort((left, right) => left.localeCompare(right));
+  const hashes = params.receipt.merged_field_hashes;
+  if (!hashes || declaredFields.length === 0) return null;
+  const hashFields = Object.keys(hashes).sort((left, right) =>
+    left.localeCompare(right),
+  );
+  if (
+    declaredFields.length !== hashFields.length ||
+    declaredFields.some((field, index) => field !== hashFields[index])
+  ) {
+    return null;
+  }
+  const currentMetadata = params.currentItemReplay.metadata as Record<
+    string,
+    unknown
+  >;
+  const valuesMatch = declaredFields.every((field) => {
+    const value =
+      field === "body" ? params.currentItemReplay.body : currentMetadata[field];
+    return hashes[field] === sha256Hex(stableStringify(value));
+  });
+  return valuesMatch ? { receipt: params.receipt, declaredFields } : null;
+}
+
+async function verifyMergeReceiptProof(params: {
+  proof: NonNullable<HistoryRepairCommandOptions["mergeReceiptProof"]>;
+  id: string;
+  itemPath: string | null;
+  currentItemReplay: ReplayDocument | null;
+  reconciliation: HistoryRepairReconciliationReport | undefined;
+}): Promise<MergeReceiptProofResult> {
+  if (params.proof.gitWorkspaceRoot === null) {
+    return {
+      trusted: false,
+      reason: "git_workspace_unavailable",
+      receipt_ids: [],
+    };
+  }
+  if (params.itemPath === null || params.currentItemReplay === null) {
+    return {
+      trusted: false,
+      reason: "item_path_unavailable",
+      receipt_ids: [],
+    };
+  }
+  const itemReceipts = params.proof.receipts.filter(
+    (receipt) => receipt.item_id === params.id,
+  );
+  if (itemReceipts.length === 0) {
+    return { trusted: false, reason: "no_item_receipts", receipt_ids: [] };
+  }
+  const currentPath = await realpath(params.itemPath);
+  const trustedReceipts: Array<{
+    receipt: MergeDecisionReceipt;
+    declaredFields: string[];
+  }> = [];
+  for (const receipt of itemReceipts) {
+    const trusted = await verifyReceiptAgainstSnapshot({
+      receipt,
+      gitWorkspaceRoot: params.proof.gitWorkspaceRoot,
+      currentPath,
+      currentItemReplay: params.currentItemReplay,
+    });
+    if (trusted) trustedReceipts.push(trusted);
+  }
+  const trustedFields = new Set(
+    trustedReceipts.flatMap(({ declaredFields }) => declaredFields),
+  );
+  const reconciliationFields = params.reconciliation?.reconciled_fields;
+  if (
+    trustedReceipts.length > 0 &&
+    (reconciliationFields === undefined ||
+      (reconciliationFields.length > 0 &&
+        reconciliationFields.every((field) => trustedFields.has(field))))
+  ) {
+    return {
+      trusted: true,
+      reason: "trusted_clone_local_driver_evidence",
+      receipt_ids: trustedReceipts.map(({ receipt }) => receipt.id),
+    };
+  }
+  return {
+    trusted: false,
+    reason: "no_receipt_set_proves_snapshot",
+    receipt_ids: [],
+  };
+}
+
 interface HistoryRepairItemReplayContext {
   currentItemReplay: ReplayDocument | null;
   currentItemPath: string | null;
   matchedChainBefore: boolean | null;
   currentItemRawBeforeLock: string | null;
   loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
+}
+
+async function resolveHistoryRepairMergeEvidence(params: {
+  options: HistoryRepairCommandOptions;
+  subjectId: string;
+  itemReplayContext: HistoryRepairItemReplayContext;
+  reconciliation: HistoryRepairReconciliationReport | undefined;
+}): Promise<{
+  mergeReceiptProof: MergeReceiptProofResult | undefined;
+  effectiveAuditContext: Record<string, unknown> | undefined;
+}> {
+  const subjectMergeReceipts =
+    params.options.mergeReceiptProof?.receipts.filter(
+      (receipt) => receipt.item_id === params.subjectId,
+    ) ?? [];
+  const mergeReceiptProof = params.options.mergeReceiptProof
+    ? await verifyMergeReceiptProof({
+        proof: {
+          ...params.options.mergeReceiptProof,
+          receipts: subjectMergeReceipts,
+        },
+        id: params.subjectId,
+        itemPath: params.itemReplayContext.currentItemPath,
+        currentItemReplay: params.itemReplayContext.currentItemReplay,
+        reconciliation: params.reconciliation,
+      })
+    : undefined;
+  if (
+    mergeReceiptProof &&
+    !mergeReceiptProof.trusted &&
+    params.options.dryRun !== true &&
+    params.options.force !== true
+  ) {
+    throw new PmCliError(
+      `Merge receipt evidence for ${params.subjectId} does not prove the exact item snapshot (${mergeReceiptProof.reason}).`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "merge_reconcile_receipt_evidence_untrusted",
+        required:
+          "Use clone-local driver evidence whose canonical path, declared fields, and merged-value hashes match the current item, or review the mismatch and rerun with --force.",
+        recovery: { suggested_retry: "pm merge reconcile --dry-run" },
+      },
+    );
+  }
+  const provenMergeReceipts = mergeReceiptProof?.trusted
+    ? subjectMergeReceipts.filter((receipt) =>
+        mergeReceiptProof.receipt_ids.includes(receipt.id),
+      )
+    : [];
+  return {
+    mergeReceiptProof,
+    effectiveAuditContext:
+      provenMergeReceipts.length > 0 && params.options.force !== true
+        ? {
+            ...params.options.auditContext,
+            merge: {
+              receipts: provenMergeReceipts.map(summarizeMergeReceipt),
+            },
+          }
+        : params.options.auditContext,
+  };
 }
 
 async function loadHistoryRepairItemReplay(
@@ -553,7 +767,7 @@ export async function runHistoryRepair(
   const reconcileNeeded =
     itemReplayContext.currentItemReplay !== null &&
     replayHash(finalReplay, itemHashVersion) !==
-    replayHash(itemReplayContext.currentItemReplay, itemHashVersion);
+      replayHash(itemReplayContext.currentItemReplay, itemHashVersion);
   // GH-603: reconciling toward the on-disk item can silently overwrite the
   // replayed effect of other authors' events (classic after a lossy merge).
   // Surface exactly what is being discarded before any write happens.
@@ -565,6 +779,13 @@ export async function runHistoryRepair(
           itemReplayContext.currentItemReplay,
         )
       : undefined;
+  const { mergeReceiptProof, effectiveAuditContext } =
+    await resolveHistoryRepairMergeEvidence({
+      options,
+      subjectId: subject.id,
+      itemReplayContext,
+      reconciliation,
+    });
 
   const changed = [
     reanchor.entriesRehashed > 0,
@@ -593,10 +814,10 @@ export async function runHistoryRepair(
     auditOperation: options.auditOperation ?? "history_repair",
     auditContext: provenanceNormalization.receipt.changed
       ? {
-          ...options.auditContext,
+          ...effectiveAuditContext,
           provenance_normalization: provenanceNormalization.receipt,
         }
-      : options.auditContext,
+      : effectiveAuditContext,
     itemHashVersion,
     explicitItemHashVersion: reanchor.explicitItemHashVersion,
   });
@@ -666,6 +887,7 @@ export async function runHistoryRepair(
       ...provenanceNormalization.receipt,
     },
     ...(reconciliation ? { reconciliation } : {}),
+    ...(mergeReceiptProof ? { merge_receipt_proof: mergeReceiptProof } : {}),
     warnings: [...new Set(warnings)].sort((left, right) =>
       left.localeCompare(right),
     ),
@@ -687,6 +909,8 @@ export interface HistoryRepairAllStreamResult {
   reconciled_with_item?: boolean;
   /** Cross-author data-loss detail when reconciliation overwrites replayed mutations. */
   reconciliation?: HistoryRepairReconciliationReport;
+  /** Exact receipt proof used to authorize this stream, when supplied. */
+  merge_receipt_proof?: MergeReceiptProofResult;
   /** Stream-specific repair warnings retained by the bulk workflow. */
   warnings?: string[];
   /** Value that configures or reports error for this contract. */
@@ -778,6 +1002,10 @@ export async function runHistoryRepairAll(
           ...options,
           auditContext: options.auditContextById?.[driftedId],
           auditContextById: undefined,
+          mergeReceiptProof:
+            options.mergeReceiptProofById?.[driftedId] ??
+            options.mergeReceiptProof,
+          mergeReceiptProofById: undefined,
         },
         global,
       );
@@ -795,6 +1023,9 @@ export async function runHistoryRepairAll(
         reconciled_with_item: result.history.reconciled_with_item,
         ...(result.reconciliation
           ? { reconciliation: result.reconciliation }
+          : {}),
+        ...(result.merge_receipt_proof
+          ? { merge_receipt_proof: result.merge_receipt_proof }
           : {}),
         warnings: result.warnings,
       });

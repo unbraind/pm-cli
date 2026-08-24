@@ -14,6 +14,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
 import { createHistoryEntry } from "../../../src/core/history/history.js";
 import {
+  sha256Hex,
+  stableStringify,
+} from "../../../src/core/shared/serialization.js";
+import {
   historyEntriesToRaw,
   verifyHistoryChain,
 } from "../../../src/core/history/replay.js";
@@ -495,7 +499,10 @@ describe("public merge-safety SDK primitives", () => {
         ),
         writeFile(
           theirs,
-          serializeItemDocument(itemBase, { format: "json_markdown" }),
+          serializeItemDocument(
+            { ...itemBase, body: "theirs body" },
+            { format: "json_markdown" },
+          ),
           "utf8",
         ),
       ]);
@@ -542,6 +549,17 @@ describe("public merge-safety SDK primitives", () => {
         { path: path.join(workspace, "missing-pm") },
       );
       expect(conflictedItemResult.ok).toBe(false);
+      const conflictedMergedTitle = parseItemDocument(
+        await readFile(ours, "utf8"),
+        { format: "json_markdown" },
+      ).metadata.title;
+      expect(
+        (await listMergeReceipts(workspace)).find(
+          (receipt) => receipt.item_id === "pm-conflict",
+        )?.merged_field_hashes,
+      ).toMatchObject({
+        title: sha256Hex(stableStringify(conflictedMergedTitle)),
+      });
       expect(conflictedItemResult.guidance[0]).toContain(
         `receipt ${conflictedItemResult.receipt?.receipt_id} with item pm-conflict`,
       );

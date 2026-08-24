@@ -124,7 +124,30 @@ The preview reports every drifted stream and pending receipt without mutation.
 Lossless receipts do not become discarded-value decisions and reconcile without
 `--force`, but `pm health` reports `merge_receipts_pending:<n>` and remains
 non-green until the apply pass settles them. `pm history-repair` cannot clear
-that receipt finding. Receipts with discarded scalar values retain the distinct
+that receipt finding. When a drifted item also has a pending receipt, the
+`history_drift` remediation map prioritizes `pm merge reconcile --dry-run` only
+when canonical item path, changed-field, and merged-value hash evidence all
+attribute that finding to one or more receipts loaded from the clone-local Git
+evidence store. Every field declared by each receipt must match its current merged-value
+hash, even when only a subset appears in the history reconciliation diff.
+Disjoint valid receipts may collectively cover a multi-field reconciliation;
+the audit and settlement then retain every individually proven receipt id.
+Serialized source claims are ignored. Receipt readers validate the complete
+bounded schema, safe identifiers, filename and item-path identity, timestamps,
+and bounded decision structure before a sidecar enters health or
+reconciliation. Reads use size-preflighted, no-follow regular-file descriptors;
+durable decisions must retain hash-only values. Legacy or durable-only receipts,
+receipts whose declared fields disagree with their hashes, same-item tampering,
+and drift on unrelated items fail closed to the normal `pm history-repair`
+guidance. Health indexes clone-local evidence once by item and reconciliation
+uses the same per-item groups with a fixed receipt-only worker pool, so committed
+sidecars cannot amplify drift scans into unbounded parallel repair work.
+Apply-mode reconciliation repeats the same proof against the exact
+item snapshot used by the audited history rewrite. The audit event and
+settlement include only the individually proven receipt id, so one valid receipt
+cannot authorize an untrusted same-item sibling. Failed or unproven receipts
+remain pending unless the coordinator explicitly reviews and supplies `--force`.
+Receipts with discarded scalar values retain the distinct
 `merge_decisions_unreviewed:<n>` finding, and the apply pass refuses them unless
 the coordinator explicitly supplies `--force` after review. This prevents a
 routine history repair from hiding unfinished reconciliation or silently

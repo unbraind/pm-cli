@@ -1209,6 +1209,53 @@
       ],
       "package_version": "2026.8.24",
       "reason": "Replace unreleased broad telemetry-detail exclusion with fail-closed field-scoped continuation policy v3 after security review"
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeDecisionReceipt",
+        "signature ./sdk/merge:MergeDecisionReceipt"
+      ],
+      "package_version": "2026.8.24",
+      "reason": "Add optional merged-field hash proofs to the unreleased receipt-attribution contract so health fails closed on stale or forged evidence."
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryRepairCommandOptions",
+        "signature ./sdk:HistoryRepairResult",
+        "signature ./sdk:MergeDecisionReceipt",
+        "signature ./sdk/merge:MergeDecisionReceipt"
+      ],
+      "package_version": "2026.8.24",
+      "reason": "Add fail-closed clone-local receipt proof metadata and apply-boundary validation to the unreleased merge-reconciliation contract."
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryRepairAllStreamResult"
+      ],
+      "package_version": "2026.8.24",
+      "reason": "Expose receipt-scoped merge reconciliation proof in history repair stream contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryRepairCommandOptions"
+      ],
+      "package_version": "2026.8.24",
+      "reason": "Expose bounded per-item receipt proof indexing and receipt-scoped reconciliation results"
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeReceiptProofResult"
+      ],
+      "package_version": "2026.8.24",
+      "reason": "Expose exact receipt-id sets for bounded multi-receipt reconciliation proof"
+    },
+    {
+      "changes": [
+        "signature ./sdk:markMergeReceiptReconciled",
+        "signature ./sdk/merge:markMergeReceiptReconciled"
+      ],
+      "package_version": "2026.8.24",
+      "reason": "Add strict requireExisting settlement mode while preserving default idempotency"
     }
   ],
   "entrypoints": {
@@ -7375,13 +7422,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairAllStreamResult",
-          "signature": "export interface HistoryRepairAllStreamResult { id: string; outcome: \"repaired\" | \"skipped_clean\" | \"failed\"; entries_rehashed?: number; entries_patch_repaired?: number; reconciled_with_item?: boolean; reconciliation?: HistoryRepairReconciliationReport; warnings?: string[]; error?: string; }"
+          "signature": "export interface HistoryRepairAllStreamResult { id: string; outcome: \"repaired\" | \"skipped_clean\" | \"failed\"; entries_rehashed?: number; entries_patch_repaired?: number; reconciled_with_item?: boolean; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings?: string[]; error?: string; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairCommandOptions",
-          "signature": "export interface HistoryRepairCommandOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; }"
+          "signature": "export interface HistoryRepairCommandOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; }"
         },
         {
           "classification": "advanced_export",
@@ -7399,7 +7446,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -8563,7 +8610,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "markMergeReceiptReconciled",
-          "signature": "(cwd: string, receipt: MergeDecisionReceipt) => Promise<void> | calls: (cwd: string, receipt: MergeDecisionReceipt) => Promise<void>"
+          "signature": "(cwd: string, receipt: MergeDecisionReceipt, options?: { requireExisting?: boolean; }) => Promise<void> | calls: (cwd: string, receipt: MergeDecisionReceipt, options?: { requireExisting?: boolean; }) => Promise<void>"
         },
         {
           "classification": "advanced_export",
@@ -8635,7 +8682,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; preferred?: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; preferred?: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; merged_field_hashes?: Record<string, string>; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; evidence_source?: \"clone_local\" | \"durable\"; }"
         },
         {
           "classification": "supported",
@@ -8732,6 +8779,12 @@
           "kind": "type",
           "name": "MergePreferredSide",
           "signature": "export type MergePreferredSide = \"ours\" | \"theirs\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "MergeReceiptProofResult",
+          "signature": "export interface MergeReceiptProofResult { trusted: boolean; reason: \"trusted_clone_local_driver_evidence\" | \"git_workspace_unavailable\" | \"item_path_unavailable\" | \"no_item_receipts\" | \"no_receipt_set_proves_snapshot\"; receipt_ids: string[]; }"
         },
         {
           "classification": "supported",
@@ -25195,7 +25248,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "markMergeReceiptReconciled",
-          "signature": "(cwd: string, receipt: MergeDecisionReceipt) => Promise<void> | calls: (cwd: string, receipt: MergeDecisionReceipt) => Promise<void>"
+          "signature": "(cwd: string, receipt: MergeDecisionReceipt, options?: { requireExisting?: boolean; }) => Promise<void> | calls: (cwd: string, receipt: MergeDecisionReceipt, options?: { requireExisting?: boolean; }) => Promise<void>"
         },
         {
           "classification": "supported",
@@ -25207,7 +25260,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; preferred?: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; preferred?: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; merged_field_hashes?: Record<string, string>; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; evidence_source?: \"clone_local\" | \"durable\"; }"
         },
         {
           "classification": "supported",
@@ -30566,6 +30619,7 @@
     "history_author_acknowledge_target_unreadable",
     "history_drift_chain_mismatch",
     "history_drift_hash_mismatch",
+    "history_drift_merge_receipt",
     "history_drift_missing_stream",
     "history_drift_unreadable_stream",
     "history_merge_conflict_markers_detected",
@@ -30635,8 +30689,10 @@
     "merge_conflict_markers_detected",
     "merge_decisions_unreviewed",
     "merge_git_config_unwritable",
+    "merge_receipt_evidence_invalid",
     "merge_receipts_pending",
     "merge_reconcile_discards_require_acceptance",
+    "merge_reconcile_receipt_evidence_untrusted",
     "merge_root_not_found",
     "missing_allowed_values",
     "missing_budget",

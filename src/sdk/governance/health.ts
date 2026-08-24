@@ -109,9 +109,11 @@ import {
   findGitWorkspaceRoot,
 } from "../merge/install.js";
 import {
-  listMergeReceipts,
+  inspectMergeReceiptEvidence,
   partitionMergeReceipts,
+  type MergeDecisionReceipt,
 } from "../merge/receipts.js";
+import { runHistoryRepair } from "../history-repair.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import {
   analyzeHierarchyIntegrity,
@@ -676,13 +678,24 @@ function buildHierarchyIntegrityWarnings(
   ];
 }
 
+function buildMergeReceiptEvidenceWarnings(invalidEvidenceCount: number) {
+  return invalidEvidenceCount === 0
+    ? []
+    : [`merge_receipt_evidence_invalid:${invalidEvidenceCount}`];
+}
+
 async function buildIntegrityCheck(
   pmRoot: string,
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
   requireMergeDrivers: boolean,
   items: Array<ItemMetadata | ItemWithBody>,
-): Promise<{ check: HealthCheck; warnings: string[] }> {
+): Promise<
+  HealthCheckResult & {
+    gitWorkspaceRoot: string | null;
+    pendingMergeReceipts: MergeDecisionReceipt[];
+  }
+> {
   const itemScan = await scanItemIntegrity(pmRoot, typeToFolder, schema);
   const historyScan = await scanHistoryIntegrity(pmRoot);
   const formatVersionScan = scanItemFormatVersions(itemScan.formatVersions);
@@ -698,13 +711,14 @@ async function buildIntegrityCheck(
     gitWorkspaceRoot === null
       ? null
       : await auditMergeDriverConfiguration(gitWorkspaceRoot);
-  const pendingMergeReceipts =
-    gitWorkspaceRoot === null
-      ? []
-      : await listMergeReceipts(gitWorkspaceRoot, {
-          includeLossless: true,
-          pmRoot,
-        });
+  const mergeReceiptEvidence = await inspectMergeReceiptEvidence(
+    gitWorkspaceRoot ?? pmRoot,
+    {
+      includeLossless: true,
+      pmRoot,
+    },
+  );
+  const pendingMergeReceipts = mergeReceiptEvidence.receipts;
   const {
     pendingDecisions: pendingMergeDecisions,
     lossless: losslessMergeReceipts,
@@ -756,6 +770,9 @@ async function buildIntegrityCheck(
     ...(losslessMergeReceipts.length > 0
       ? [`merge_receipts_pending:${losslessMergeReceipts.length}`]
       : []),
+    ...buildMergeReceiptEvidenceWarnings(
+      mergeReceiptEvidence.invalid_evidence_count,
+    ),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),
@@ -793,6 +810,8 @@ async function buildIntegrityCheck(
                 mergeDriverAudit.drifted_keys.length,
           pending_merge_decisions: pendingMergeDecisions.length,
           lossless_merge_receipts: losslessMergeReceipts.length,
+          invalid_merge_receipt_evidence:
+            mergeReceiptEvidence.invalid_evidence_count,
         },
         item_unreadable: itemScan.unreadable,
         item_conflict_markers: itemScan.conflictMarkers,
@@ -831,6 +850,8 @@ async function buildIntegrityCheck(
       },
     },
     warnings: normalizedWarnings,
+    gitWorkspaceRoot,
+    pendingMergeReceipts,
   };
 }
 
@@ -1523,6 +1544,10 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     checked_items: details.checked_items,
     counts: details.counts,
     drifted_items: summarizeStringList(details.drifted_items, limit),
+    merge_receipt_attributed_items: summarizeStringList(
+      details.merge_receipt_attributed_items,
+      limit,
+    ),
     missing_streams: summarizeStringList(details.missing_streams, limit),
     unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
     hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
@@ -2995,7 +3020,9 @@ function rewriteBulkHealthRemediation(params: {
 }): void {
   if (params.check.name === "history_drift" && params.historyDriftedCount > 1) {
     for (const code of Object.keys(params.remediationMap)) {
-      params.remediationMap[code] = "pm history-repair --all";
+      if (code !== "history_drift_merge_receipt") {
+        params.remediationMap[code] = "pm history-repair --all";
+      }
     }
   }
   if (params.check.name === "storage" && params.overThresholdCount > 1) {
@@ -3025,6 +3052,83 @@ function attachHealthRemediationMaps(params: {
       check.details = { ...check.details, remediation_map: remediationMap };
     }
   }
+}
+
+async function correlateMergeReceiptHistoryDriftItems(params: {
+  gitWorkspaceRoot: string | null;
+  pendingMergeReceipts: MergeDecisionReceipt[];
+  historyDriftCheck: HealthCheckResult;
+  global: GlobalOptions;
+}): Promise<string[]> {
+  if (
+    params.gitWorkspaceRoot === null ||
+    params.pendingMergeReceipts.length === 0
+  ) {
+    return [];
+  }
+  const details = params.historyDriftCheck.check.details;
+  const hashMismatches = Array.isArray(details.hash_mismatches)
+    ? details.hash_mismatches.filter(
+        (entry): entry is string => typeof entry === "string",
+      )
+    : [];
+  const unsafeStreamIds = new Set(
+    [
+      details.missing_streams,
+      details.unreadable_streams,
+      details.chain_mismatches,
+    ].flatMap((value) => (Array.isArray(value) ? (value as string[]) : [])),
+  );
+  const cloneLocalReceiptsByItem = new Map<string, MergeDecisionReceipt[]>();
+  for (const receipt of params.pendingMergeReceipts) {
+    if (receipt.evidence_source !== "clone_local") continue;
+    const receipts = cloneLocalReceiptsByItem.get(receipt.item_id) ?? [];
+    receipts.push(receipt);
+    cloneLocalReceiptsByItem.set(receipt.item_id, receipts);
+  }
+  const attributed: string[] = [];
+  for (const id of hashMismatches) {
+    if (unsafeStreamIds.has(id)) continue;
+    const receipts = cloneLocalReceiptsByItem.get(id);
+    if (!receipts || receipts.length === 0) continue;
+    try {
+      const repair = await runHistoryRepair(
+        id,
+        {
+          dryRun: true,
+          mergeReceiptProof: {
+            gitWorkspaceRoot: params.gitWorkspaceRoot,
+            receipts,
+          },
+        },
+        params.global,
+      );
+      if (repair.merge_receipt_proof?.trusted) attributed.push(id);
+    } catch {
+      // Fail closed: generic history-repair guidance remains authoritative.
+    }
+  }
+  return [...new Set(attributed)].sort((left, right) =>
+    left.localeCompare(right),
+  );
+}
+
+function applyMergeReceiptHistoryDriftAttribution(
+  historyDriftCheck: HealthCheckResult,
+  attributedItems: string[],
+): void {
+  const attributed = new Set(attributedItems);
+  historyDriftCheck.warnings = [
+    ...historyDriftCheck.warnings.filter((warning) => {
+      if (!warning.startsWith("history_drift_hash_mismatch:")) return true;
+      return !attributed.has(warning.slice(warning.indexOf(":") + 1));
+    }),
+    ...attributedItems.map((id) => `history_drift_merge_receipt:${id}`),
+  ].sort((left, right) => left.localeCompare(right));
+  historyDriftCheck.check.details = {
+    ...historyDriftCheck.check.details,
+    merge_receipt_attributed_items: attributedItems,
+  };
 }
 
 function projectHealthResult(
@@ -3148,7 +3252,11 @@ export async function runHealth(
   const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
-    ? buildSkippedHealthCheck("integrity")
+    ? {
+        ...buildSkippedHealthCheck("integrity"),
+        gitWorkspaceRoot: null,
+        pendingMergeReceipts: [],
+      }
     : await buildIntegrityCheck(
         pmRoot,
         typeRegistry.type_to_folder,
@@ -3159,6 +3267,17 @@ export async function runHealth(
   const historyDriftCheck = skipPolicy.skipDrift
     ? buildSkippedHealthCheck("history_drift")
     : await buildHistoryDriftCheck(pmRoot, itemsWithBody);
+  const mergeReceiptAttributedHistoryDriftItems =
+    await correlateMergeReceiptHistoryDriftItems({
+      gitWorkspaceRoot: integrityCheck.gitWorkspaceRoot,
+      pendingMergeReceipts: integrityCheck.pendingMergeReceipts,
+      historyDriftCheck,
+      global,
+    });
+  applyMergeReceiptHistoryDriftAttribution(
+    historyDriftCheck,
+    mergeReceiptAttributedHistoryDriftItems,
+  );
   const vectorizationCheck = skipPolicy.skipVectors
     ? buildSkippedHealthCheck("vectorization")
     : await buildVectorizationCheck(
