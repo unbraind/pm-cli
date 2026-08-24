@@ -1,0 +1,40 @@
+id: pm-2ga1g7
+title: "GH-1109: tracker-context seeding writes an empty settings history document"
+description: "Track the reported linked-test tracker sandbox regression where seeding settings.json appends a _workspace settings:write history entry whose replayed document is empty, causing nested validate --check-history-drift --strict-exit to fail."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-24T22:37:40.571Z"
+updated_at: "2026-08-24T22:55:47.343Z"
+author: "harness:codex"
+parent: pm-doxj
+risk: high
+confidence: high
+severity: high
+repro_steps: "Create a fresh tracker with non-trivial settings, add a linked test running pm validate --check-history-drift --strict-exit with pm_context_mode=tracker, then run the linked test and observe _workspace settings.json drift."
+expected_result: Tracker-context seeding records the exact final settings.json document so nested history-drift validation passes.
+actual_result: "The seeded _workspace settings:write entry replays to an empty object while settings.json contains the copied tracker settings, producing workspace_state_mismatches for settings.json."
+affected_version: 2026.8.23
+component: linked-test tracker context
+regression: true
+customer_impact: Projects cannot combine pm test tracker context with the recommended strict history-drift governance gate without false failures.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8izv,discovered_from,"2026-08-24T22:37:40.571Z","harness:codex","cli:create:dep",detected
+comments[3]:
+  - created_at: "2026-08-24T22:37:40.571Z"
+    author: "harness:codex"
+    text: "text=Duplicate-check evidence: inspected live context and open/in-progress inventories, searched all statuses for GH-1109, tracker-context seeding, settings:write, _workspace history drift, and linked-test parity; no existing item covers this regression. GitHub source: https://github.com/unbraind/pm-cli/issues/1109"
+  - created_at: "2026-08-24T22:38:23.085Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: inspected live context and open/in-progress inventories and searched all statuses for GH-1109, tracker-context seeding, settings:write, _workspace history drift, and linked-test parity. No existing item covers this regression. Source: https://github.com/unbraind/pm-cli/issues/1109"
+  - created_at: "2026-08-24T22:46:42.378Z"
+    author: "harness:codex"
+    text: "Hosted static-gate remediation: removed a redundant generic related edge after tracker-context-quality correctly blocked a one-edge increase above the governed ceiling. The remaining typed discovered_from edge and roadmap parent preserve canonical provenance without duplicating graph semantics."
+    edited_at: "2026-08-24T22:55:47.343Z"
+files[2]{path,scope,note}:
+  src/sdk/test/execution.ts,project,Tracker-mode sandbox seeding implementation implicated by GH-1109
+  tests/unit/commands/test-command.spec.ts,project,Existing tracker-context sandbox regression suite and destination for focused coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,project,240,"harness:codex","2026-08-24T22:38:48.050Z",local_mutation,codex/gh-1109-tracker-intake
+body: ""
