@@ -371,7 +371,7 @@ export function optionsWithAuthor(
   for (const key of UNIVERSAL_READ_OUTPUT_OPTION_KEYS) {
     hoistKey(key);
   }
-  if (action !== undefined) {
+  if (action !== undefined && isMcpMutationTransportInput(args)) {
     assertMcpAnnotationFileUnavailable(action, baseOptions);
   }
   const options = normalizeMcpOptionsArrays(

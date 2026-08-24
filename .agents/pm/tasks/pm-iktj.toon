@@ -6,9 +6,9 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:cli",composability
 created_at: "2026-07-06T22:10:15.407Z"
-updated_at: "2026-08-24T08:44:26.007Z"
-closed_at: "2026-08-24T08:41:53.424Z"
-completed_at: "2026-08-24T08:41:53.424Z"
+updated_at: "2026-08-24T09:04:12.569Z"
+closed_at: "2026-08-24T09:04:11.754Z"
+completed_at: "2026-08-24T09:04:11.754Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: All file-reading flags across commands accept '-' to read stdin (inventory taken from contracts); behavior documented in the scripting contract (pm-psy1); error message for unreadable paths mentions the '-' option; tests cover piped heredoc usage; no behavior change for real paths
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at}:
   pm-gknu,related,"2026-07-16T05:45:22.382Z"
   pm-m9xv,implements,"2026-07-25T06:28:02.305Z"
   pm-fs8q9x,implements,"2026-07-26T05:59:31.644Z"
-comments[19]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-08-23T20:29:26.533Z","harness:codex","Implementation start 2026-08-23: contract-derived census and shared SDK file-or-stdin primitive will cover every external-content --*-file surface, preserve real-path behavior, improve unreadable-path recovery, and prove piped heredoc use. Canonical pm-iktj is reused after all-status duplicate verification."
   "2026-08-23T21:57:50.433Z","harness:codex","Tracker repair evidence: removed only the newly added duplicate pm-m9xv implements row by its exact created_at signature; the canonical 2026-07-25 relationship remains intact."
   "2026-08-23T22:05:18.542Z","harness:codex","Verification evidence 2026-08-24: every external-content file flag in this scope accepts '-' as stdin through the shared SDK token resolver: update/close --body-file plus comments, notes, and learnings --file. Real paths retain prior behavior and unreadable/missing input produces structured recovery. CLI invocation contracts now declare argv/file/stdin modes and the docs include heredoc/pipeline examples. Focused linked tests, the disposable-tracker body-stdin check, 7,858-test exact 100% coverage, typecheck, security scan, and the complete lint/static stack pass. The duplicate relationship added during reconciliation was removed by exact signature; the canonical historical implements edge remains."
@@ -43,9 +43,11 @@ comments[19]{created_at,author,text}:
   "2026-08-24T08:07:58.840Z","harness:codex","Exact-head security review at 50d1735b049ef6140cd2543f9cf2249c4115cc2b found a high-severity MCP boundary gap: annotation options.file accepted arbitrary server-local paths despite schema warnings. Reopened only this item to reject MCP annotation file sources at runtime while preserving CLI/direct SDK file behavior, with a real-process /etc/hostname negative regression."
   "2026-08-24T08:41:43.103Z","harness:codex","Evidence: closed the exact-head review findings by refusing comments/notes/learnings file input at the MCP boundary with mcp_annotation_file_unavailable while preserving CLI/direct SDK file support; a real MCP process with stdin kept open refused /etc/hostname, stored no annotation, and served a later Plan request. Atomic CLI JSON and MCP pm_mutate transactions now preserve structured description/body '-' values literally through parser, transaction overlays, and runtime option cloning, so the two-row transaction commits without a second stdin read or partial write. Verification: focused 69/69; full exact coverage 570 files and 7,880 tests at 100% statements (57,553/57,553), branches (43,079/43,079), functions (11,978/11,978), lines (55,474/55,474); pnpm typecheck passed; CI=1 pnpm quality:static passed all repository, refusal, package, SDK, graph, and record gates; 7/7 linked tests passed with local_source_ref trust and infra_collision=0, trust_refusal=0, assertion_failure=0, empty_run=0, timeout=0, max_buffer=0, spawn_error=0, signal=0."
   "2026-08-24T08:44:26.007Z","harness:codex","Closeout diagnostics: deterministic changelog generation/check remained unchanged at 2,181 items and 392,254 bytes; pm validate passed with history drift 0 and only the unchanged 295 legacy resolution warnings; pm health --check-only passed all 10 checks with 14 legacy hierarchy advisories. Item is closed and claim released."
+  "2026-08-24T08:49:11.254Z","harness:codex","Exact-head security re-review at aaa4dfe8a2a9bc9246390db982d9a9035f5667a9 found the annotation file refusal was applied in shared runtime normalization without checking the MCP marker, so public PmClient comments/notes/learnings file requests regressed despite low-level SDK support. Narrow the refusal to marked MCP transport inputs and add direct PmClient positive regressions alongside MCP negative controls."
+  "2026-08-24T09:04:10.931Z","harness:codex","Exact-head re-review fix evidence: mcp_annotation_file_unavailable is now gated by the explicit MCP transport marker. Spawned MCP options.file negative controls still refuse without reading server files, while public PmClient comments/notes/learnings successfully append the same local file content. Focused boundary proof passed 145/145; full exact coverage passed 570 files / 7,880 tests at 100% statements (57,553), branches (43,081), functions (11,978), and lines (55,474); typecheck, credential scan, and the complete static assurance chain passed. All 8 linked commands passed with local_source_ref trust and every failure category zero."
 notes[1]{created_at,author,text}:
   "2026-07-15T19:27:03.514Z",maintainer-agent,"Dogfood confirmation 2026-07-15 (review pass #89): pm create --body-file - fails ENOENT body_file_unreadable (tries to open a file literally named \"-\"), forcing a scratch-file workaround mid-review. The error's own next_steps suggest \"ls -l \\\"-\\\"\" — the recovery bundle does not know stdin is the intent. This is exactly the convention gap this item owns; --body-file should be first on the flag list when implementing."
-files[30]{path,scope,note}:
+files[31]{path,scope,note}:
   sdk/public-surface.json,project,Additive SDK stdin policy contract
   src/cli/register-annotations.ts,project,Uniform file-or-stdin input contract
   src/cli/register-mutation.ts,project,Mark body-file output as literal body data
@@ -76,7 +78,8 @@ files[30]{path,scope,note}:
   tests/unit/commands/comments-command.spec.ts,project,Direct stdin compatibility and MCP source resolver mock coverage
   tests/unit/core/item/parse-utils.spec.ts,project,Field-scoped body literal policy unit coverage
   tests/unit/sdk/flag-invocation-contracts.spec.ts,project,File and stdin invocation metadata regression coverage
-tests[7]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/sdk/sdk-context-primitives.spec.ts,project,Direct PmClient annotation file transport regression
+tests[8]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,project,240,"harness:codex","2026-08-23T20:53:27.774Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,project,240,"harness:codex","2026-08-23T21:34:41.269Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,project,240,"harness:codex","2026-08-23T22:42:49.991Z",local_mutation,codex/bulk-input-composability-contracts
@@ -84,7 +87,8 @@ tests[7]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T04:19:45.132Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T05:26:43.269Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,project,240,"harness:codex","2026-08-24T08:23:02.918Z",local_mutation,codex/bulk-input-composability-contracts
-test_runs[10]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T08:50:35.308Z",local_mutation,codex/bulk-input-composability-contracts
+test_runs[11]:
   - run_id: test-local-mt6btbef-ori5yr
     kind: test
     status: passed
@@ -229,9 +233,27 @@ test_runs[10]:
       node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt70eizc-gmbhmj
+    kind: test
+    status: passed
+    started_at: "2026-08-24T09:02:01.784Z"
+    finished_at: "2026-08-24T09:03:58.871Z"
+    recorded_at: "2026-08-24T09:03:58.871Z"
+    passed: 8
+    failed: 0
+    skipped: 0
+    executions[8]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release entry
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated MCP stdin refusal recovery census
   docs/SCRIPTING.md,project,File-reading stdin convention and examples
-close_reason: "Fixed MCP annotation file isolation and atomic structured-mutation literal provenance after exact-head review; full exact coverage, static assurance, and all seven trusted linked tests pass."
+close_reason: "Scoped annotation file refusal to marked MCP transport while preserving direct SDK file input; exact coverage, static assurance, and all eight trusted linked tests pass."
 body: "Found in review #15 follow-up: pm update --body-file - fails with ENOENT (tries to open a file literally named '-'), while pm notes --add - reads stdin. Agents composing bodies from heredocs/pipes (the grep/jq/heredoc composability principle) hit this asymmetry and fall back to temp files. Inventory every --*-file flag via pm contracts, route them through a shared read-file-or-stdin helper, and record the convention in the scripting contract. Related-not-duplicate: pm-kipd (GH-438 full-item JSON on stdin), pm-a2h3 (notes/learnings --stdin parity)."

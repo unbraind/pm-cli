@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -247,6 +248,23 @@ describe("SDK context-management primitives", () => {
           )
         ).learnings.at(-1)?.text,
       ).toBe("SDK learning");
+
+      const annotationPath = path.join(
+        context.tempRoot,
+        "sdk-annotation-input.txt",
+      );
+      await writeFile(annotationPath, "SDK file annotation", "utf8");
+      expect(
+        (await client.comments(id, { file: annotationPath })).comments.at(-1)
+          ?.text,
+      ).toBe("SDK file annotation");
+      expect(
+        (await client.notes(id, { file: annotationPath })).notes.at(-1)?.text,
+      ).toBe("SDK file annotation");
+      expect(
+        (await client.learnings(id, { file: annotationPath })).learnings.at(-1)
+          ?.text,
+      ).toBe("SDK file annotation");
 
       expect(
         (
