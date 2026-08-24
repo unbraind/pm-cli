@@ -217,6 +217,7 @@ import {
   extensionOptionsFromArgs,
   graphOptionsFromFlat,
   mutationListOptions,
+  mutationOptionsWithOverrides,
   normalizeActionName,
   normalizeCommandPath,
   normalizeMcpOptionsArrays,
@@ -902,7 +903,9 @@ export class PmClient {
   ): Promise<AppendResult> {
     return this.runTyped("append", {
       id,
-      ...splitFullClientMutationOptions({ ...options, body }),
+      ...splitFullClientMutationOptions(
+        mutationOptionsWithOverrides(options, { body }),
+      ),
     });
   }
 
@@ -1238,7 +1241,7 @@ export class PmClient {
       ...(id === undefined ? {} : { id }),
       ...(stepRef === undefined ? {} : { stepRef }),
       ...(reorderTo === undefined ? {} : { reorderTo }),
-      options: { ...options, subcommand },
+      options: mutationOptionsWithOverrides(options, { subcommand }),
     });
   }
 
@@ -3545,14 +3548,6 @@ async function runMcpRestoreAction(
   );
 }
 
-function withoutLifecycleAssigneeAlias(
-  options: Record<string, unknown>,
-): Record<string, unknown> {
-  const updateOptions = { ...options };
-  delete updateOptions.assignee;
-  return updateOptions;
-}
-
 async function runMcpStartTaskAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -3565,11 +3560,11 @@ async function runMcpStartTaskAction(
   const claimResult = await runClaim(id, ctx.force, ctx.global, ctx.options);
   const updateResult = await runUpdate(
     id,
-    {
-      ...withoutLifecycleAssigneeAlias(ctx.options),
-      status: inProgressStatus,
-      force: ctx.force,
-    },
+    mutationOptionsWithOverrides(
+      ctx.options,
+      { status: inProgressStatus, force: ctx.force },
+      ["assignee"],
+    ),
     ctx.global,
   );
   return { id, action: "start_task", claim: claimResult, update: updateResult };
@@ -3584,11 +3579,11 @@ async function runMcpPauseTaskAction(
   const openStatus = resolveRuntimeStatusRegistry(settings.schema).open_status;
   const updateResult = await runUpdate(
     id,
-    {
-      ...withoutLifecycleAssigneeAlias(ctx.options),
-      status: openStatus,
-      force: ctx.force,
-    },
+    mutationOptionsWithOverrides(
+      ctx.options,
+      { status: openStatus, force: ctx.force },
+      ["assignee"],
+    ),
     ctx.global,
   );
   const releaseResult = await runRelease(

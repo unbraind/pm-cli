@@ -22,6 +22,7 @@ import {
   type BulkIdsValue,
 } from "../core/io/bulk-ids-input.js";
 import {
+  overlayMutationStdinTokenPolicy,
   preserveMutationStdinTokenLiterals,
   transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
@@ -48,6 +49,23 @@ function preserveTransportLiteralOptions<T extends object>(
   return isMcpMutationTransportInput(source)
     ? preserveMutationStdinTokenLiterals(options)
     : transferMutationStdinTokenPolicy(source, options);
+}
+
+/** Clone mutation options with overrides while retaining stdin provenance. */
+export function mutationOptionsWithOverrides<
+  Source extends object,
+  Overrides extends object,
+>(
+  source: Source,
+  overrides: Overrides,
+  omittedKeys: readonly PropertyKey[] = [],
+): Source & Overrides {
+  const options = transferMutationStdinTokenPolicy(source, {
+    ...source,
+    ...overrides,
+  });
+  for (const key of omittedKeys) Reflect.deleteProperty(options, key);
+  return options;
 }
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
@@ -696,14 +714,18 @@ export function updateManyOptionsFromFlat(
     const updateSource = isRuntimeRecord(options.update)
       ? options.update
       : updateManyUpdateOptionsFromFlat(options);
+    const normalizedUpdate = preserveTransportLiteralOptions(
+      options,
+      normalizeMcpUpdateOptions(updateSource),
+    );
     return {
       status: readRuntimeScalarString(options, "filterStatus"),
       list: isRuntimeRecord(options.list)
         ? normalizeBulkMutationListOptions(options.list)
         : mutationListOptions(options),
-      update: preserveTransportLiteralOptions(
-        options,
-        normalizeMcpUpdateOptions(updateSource),
+      update: overlayMutationStdinTokenPolicy(
+        updateSource,
+        normalizedUpdate,
       ) as never,
       dryRun:
         options.dryRun === true || options.dry_run === true ? true : undefined,

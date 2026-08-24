@@ -6,6 +6,10 @@ import {
   normalizeMcpOptionsArrays,
   updateManyOptionsFromFlat,
 } from "../../../../src/sdk/runtime-input.js";
+import {
+  preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokens,
+} from "../../../../src/core/item/parse.js";
 
 describe("bulk runtime input normalization", () => {
   it("accepts transport-native ID arrays and preserves scalar compatibility", () => {
@@ -71,4 +75,15 @@ describe("bulk runtime input normalization", () => {
       ).toMatchObject({ list: { ids: "", type: "Task" } });
     },
   );
+
+  it("preserves a nested direct-SDK update stdin policy during normalization", () => {
+    const update = preserveMutationStdinTokenLiterals({ body: "-" });
+    const normalized = updateManyOptionsFromFlat({
+      list: { ids: ["pm-a"] },
+      update,
+    });
+
+    expect(normalized.update).toMatchObject({ body: "-" });
+    expect(shouldResolveMutationStdinTokens(normalized.update)).toBe(false);
+  });
 });

@@ -556,6 +556,30 @@ export function transferMutationStdinTokenPolicy<T extends object>(
   return target;
 }
 
+/** Add a source mutation stdin-token policy without weakening the target. */
+export function overlayMutationStdinTokenPolicy<T extends object>(
+  source: object,
+  target: T,
+): T {
+  const sourcePolicy = literalStdinTokenFields.get(source);
+  const targetPolicy = literalStdinTokenFields.get(target);
+  if (
+    sourcePolicy === undefined ||
+    targetPolicy === ALL_MUTATION_STDIN_FIELDS
+  ) {
+    return target;
+  }
+  if (sourcePolicy === ALL_MUTATION_STDIN_FIELDS) {
+    literalStdinTokenFields.set(target, sourcePolicy);
+    return target;
+  }
+  literalStdinTokenFields.set(
+    target,
+    new Set([...(targetPolicy ?? []), ...sourcePolicy]),
+  );
+  return target;
+}
+
 /** Report whether lifecycle input should interpret dash values as stdin tokens. */
 export function shouldResolveMutationStdinTokens(options: object): boolean {
   return literalStdinTokenFields.get(options) !== ALL_MUTATION_STDIN_FIELDS;

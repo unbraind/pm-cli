@@ -1,6 +1,12 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { Readable } from "node:stream";
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  PmClient,
+  preserveMutationStdinTokenLiterals,
+} from "../../src/sdk/index.js";
 
 import {
   withTempPmPath,
@@ -20,6 +26,56 @@ function expectCompetingStdinConsumers(
 }
 
 describe("bulk and file input composability", () => {
+  it("keeps nested direct-SDK update-many dash values literal", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli([
+        "create",
+        "--id",
+        "sdk-nested-literal",
+        "--title",
+        "SDK nested literal",
+        "--type",
+        "Task",
+        "--create-mode",
+        "progressive",
+        "--json",
+      ]);
+      expect(created.code).toBe(0);
+
+      const stdin = Readable.from(["UNEXPECTED_STDIN_CONTENT"]);
+      const stdinSpy = vi
+        .spyOn(process, "stdin", "get")
+        .mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+      try {
+        const client = new PmClient({
+          pmRoot: context.pmPath,
+          cwd: context.tempRoot,
+          author: "sdk-nested-literal-test",
+          noExtensions: true,
+        });
+        const update = preserveMutationStdinTokenLiterals({ body: "-" });
+        await client.run("update-many", {
+          options: {
+            list: { ids: ["pm-sdk-nested-literal"] },
+            update,
+          },
+        });
+      } finally {
+        stdinSpy.mockRestore();
+      }
+
+      const item = context.runCli([
+        "get",
+        "pm-sdk-nested-literal",
+        "--fields",
+        "body",
+        "--json",
+      ]);
+      expect(item.code).toBe(0);
+      expect(JSON.parse(item.stdout)).toMatchObject({ item: { body: "-" } });
+    });
+  });
+
   it("pipes IDs into update-many, reads @path in close-many, and previews filters without mutations", async () => {
     await withTempPmPath(async (context) => {
       for (const id of ["pipe-a", "pipe-b", "pipe-filtered-out"]) {

@@ -10,6 +10,7 @@ import {
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
+  overlayMutationStdinTokenPolicy,
   parseCsvKv,
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
@@ -78,6 +79,39 @@ describe("core/item/parse", () => {
       ...literalSource,
     });
     expect(shouldResolveMutationStdinTokens(literalClone)).toBe(false);
+  });
+
+  it("overlays nested stdin policies without weakening an outer policy", () => {
+    const unmarkedTarget = { body: "-" };
+    overlayMutationStdinTokenPolicy(
+      preserveMutationStdinTokenFields({ body: "-" }, ["body"]),
+      unmarkedTarget,
+    );
+    expect(
+      shouldResolveMutationStdinTokenField(unmarkedTarget, "body"),
+    ).toBe(false);
+
+    const selectedTarget = preserveMutationStdinTokenFields(
+      { body: "-", comment: ["-"] },
+      ["comment"],
+    );
+    overlayMutationStdinTokenPolicy(
+      preserveMutationStdinTokenFields({ body: "-" }, ["body"]),
+      selectedTarget,
+    );
+    expect(shouldResolveMutationStdinTokenField(selectedTarget, "body")).toBe(
+      false,
+    );
+    expect(
+      shouldResolveMutationStdinTokenField(selectedTarget, "comment"),
+    ).toBe(false);
+
+    const literalTarget = preserveMutationStdinTokenLiterals({ body: "-" });
+    overlayMutationStdinTokenPolicy(
+      preserveMutationStdinTokenFields({ comment: ["-"] }, ["comment"]),
+      literalTarget,
+    );
+    expect(shouldResolveMutationStdinTokens(literalTarget)).toBe(false);
   });
 
   it("refuses a repeated stdin token within one option before reading", () => {

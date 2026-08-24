@@ -2609,6 +2609,32 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
       );
       expect(create.code).toBe(0);
       const targetId = (create.json as { item: { id: string } }).item.id;
+      const pauseTarget = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "MCP pause-task target",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(pauseTarget.code).toBe(0);
+      const pauseTargetId = (
+        pauseTarget.json as { item: { id: string } }
+      ).item.id;
+      expect(
+        context.runCli([
+          "start-task",
+          pauseTargetId,
+          "--author",
+          "mcp-pause-setup",
+          "--json",
+        ]).code,
+      ).toBe(0);
       const distServerPath = path.join(
         process.cwd(),
         "dist",
@@ -2638,10 +2664,16 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
           }, 5_000);
           responses.on("line", (line) => {
             const response = JSON.parse(line) as Record<string, unknown>;
-            if (response.id === 40 || response.id === 41 || response.id === 42) {
+            if (
+              response.id === 40 ||
+              response.id === 41 ||
+              response.id === 42 ||
+              response.id === 43 ||
+              response.id === 44
+            ) {
               received.set(response.id, response);
             }
-            if (received.size === 3) {
+            if (received.size === 5) {
               clearTimeout(timeout);
               resolve(received);
             }
@@ -2651,7 +2683,7 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
             reject(error);
           });
           child.once("exit", (code, signal) => {
-            if (received.size === 3) return;
+            if (received.size === 5) return;
             clearTimeout(timeout);
             reject(
               new Error(
@@ -2672,6 +2704,38 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
               path: context.pmPath,
               id: targetId,
               options: { file: "/etc/hostname" },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 43,
+          method: "tools/call",
+          params: {
+            name: "pm_run",
+            arguments: {
+              action: "start-task",
+              path: context.pmPath,
+              id: targetId,
+              options: { body: "-" },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 44,
+          method: "tools/call",
+          params: {
+            name: "pm_run",
+            arguments: {
+              action: "pause-task",
+              path: context.pmPath,
+              id: pauseTargetId,
+              options: { body: "-" },
             },
           },
         })}\n`,
@@ -2748,6 +2812,10 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
             },
           },
         });
+        expect(received.get(43)?.error).toBeUndefined();
+        expect(received.get(43)?.result).toBeDefined();
+        expect(received.get(44)?.error).toBeUndefined();
+        expect(received.get(44)?.result).toBeDefined();
         const target = context.runCli(["get", targetId, "--json", "--full"], {
           expectJson: true,
         });
@@ -2755,6 +2823,24 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
         expect(
           (target.json as { item: { comments?: unknown[] } }).item.comments,
         ).toEqual([]);
+        expect(
+          (target.json as { item: { status?: string } }).item.status,
+        ).toBe("in_progress");
+        const paused = context.runCli(
+          ["get", pauseTargetId, "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(paused.code).toBe(0);
+        expect(
+          (
+            paused.json as {
+              item: { status?: string; assignee?: string };
+            }
+          ).item,
+        ).toMatchObject({ status: "open" });
+        expect(
+          (paused.json as { item: { assignee?: string } }).item.assignee,
+        ).toBeUndefined();
         const atomicFirst = context.runCli(
           ["get", "pm-mcp-atomic-literal-a", "--json", "--full"],
           { expectJson: true },
