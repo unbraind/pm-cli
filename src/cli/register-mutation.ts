@@ -59,6 +59,7 @@ import { runUpdate } from "./commands/update.js";
 import { runUpdateMany } from "./commands/update-many.js";
 import {
   createStdinTokenResolver,
+  preserveMutationStdinTokenFields,
   preserveMutationStdinTokenLiterals,
 } from "../sdk/runtime-primitives.js";
 import { resolveDescriptionStdin } from "./description-stdin.js";
@@ -891,14 +892,18 @@ async function runCreateAction(
   if (!stdinJsonConsumed) {
     await resolveDescriptionStdin(options);
   }
-  if (typeof options.bodyFile === "string") {
+  const bodyFileResolved = typeof options.bodyFile === "string";
+  if (bodyFileResolved) {
     options.body = await resolveBodyFileContent(
-      options.bodyFile,
+      String(options.bodyFile),
       options.body !== undefined ? String(options.body) : undefined,
     );
     delete options.bodyFile;
   }
   const normalized = normalizeCreateOptions(options, { requireType: false });
+  if (bodyFileResolved) {
+    preserveMutationStdinTokenFields(normalized, ["body"]);
+  }
   if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
   const result = await runCreate(normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
@@ -1607,14 +1612,18 @@ async function runUpdateAction(
   }
   // GH-214: resolve --body-file into the existing body field before
   // normalization so the rest of update is unchanged. CLI-only input alias.
-  if (typeof options.bodyFile === "string") {
+  const bodyFileResolved = typeof options.bodyFile === "string";
+  if (bodyFileResolved) {
     options.body = await resolveBodyFileContent(
-      options.bodyFile,
+      String(options.bodyFile),
       options.body !== undefined ? String(options.body) : undefined,
     );
     delete options.bodyFile;
   }
   const normalized = normalizeUpdateOptions(options);
+  if (bodyFileResolved) {
+    preserveMutationStdinTokenFields(normalized, ["body"]);
+  }
   if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
   const result = await runUpdate(id, normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);

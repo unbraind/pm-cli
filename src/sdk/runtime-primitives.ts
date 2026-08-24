@@ -171,7 +171,9 @@ export {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  preserveMutationStdinTokenFields,
   preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokenField,
   shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
 } from "../core/item/parse.js";

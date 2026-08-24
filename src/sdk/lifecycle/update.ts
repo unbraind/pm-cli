@@ -30,6 +30,7 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  shouldResolveMutationStdinTokenField,
   shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
   resolvePriority,
@@ -1508,31 +1509,40 @@ async function resolveStdinUpdateOptions(
   options: UpdateCommandOptions,
 ): Promise<UpdateCommandOptions> {
   const stdinResolver = createStdinTokenResolver();
-  return normalizeLegacyNoneUpdateOptions({
+  const resolved = {
     ...options,
-    body: await stdinResolver.resolveValue(options.body, "--body"),
-    dep: await stdinResolver.resolveList(options.dep, "--dep"),
-    depRemove: await stdinResolver.resolveList(
-      options.depRemove,
-      "--dep-remove",
+    body: await stdinResolver.resolveValue(
+      options.body,
+      "--body",
+      shouldResolveMutationStdinTokenField(options, "body"),
     ),
-    comment: await stdinResolver.resolveList(options.comment, "--comment"),
-    note: await stdinResolver.resolveList(options.note, "--note"),
-    learning: await stdinResolver.resolveList(options.learning, "--learning"),
-    file: await stdinResolver.resolveList(options.file, "--file"),
-    test: await stdinResolver.resolveList(options.test, "--test"),
-    doc: await stdinResolver.resolveList(options.doc, "--doc"),
-    reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
-    event: await stdinResolver.resolveList(options.event, "--event"),
-    typeOption: await stdinResolver.resolveList(
-      options.typeOption,
-      "--type-option",
-    ),
-    field: await stdinResolver.resolveList(options.field, "--field"),
-  });
+  };
+  const listFields = [
+    ["dep", "--dep"],
+    ["depRemove", "--dep-remove"],
+    ["comment", "--comment"],
+    ["note", "--note"],
+    ["learning", "--learning"],
+    ["file", "--file"],
+    ["test", "--test"],
+    ["doc", "--doc"],
+    ["reminder", "--reminder"],
+    ["event", "--event"],
+    ["typeOption", "--type-option"],
+    ["field", "--field"],
+  ] as const;
+  for (const [field, optionName] of listFields) {
+    resolved[field] = await stdinResolver.resolveList(
+      options[field],
+      optionName,
+      shouldResolveMutationStdinTokenField(options, field),
+    );
+  }
+  return normalizeLegacyNoneUpdateOptions(resolved);
 }
 
-async function resolveUpdateTransportOptions(
+/** Resolve update stdin tokens once while preserving transport-marked literals. */
+export async function resolveUpdateTransportOptions(
   options: UpdateCommandOptions,
 ): Promise<UpdateCommandOptions> {
   return shouldResolveMutationStdinTokens(options)

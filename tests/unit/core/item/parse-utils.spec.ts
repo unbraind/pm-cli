@@ -13,6 +13,10 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  preserveMutationStdinTokenFields,
+  preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokenField,
+  shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
 } from "../../../../src/core/item/parse.js";
 import { resolveEventEndAt } from "../../../../src/sdk/lifecycle/event-validation-messages.js";
@@ -29,6 +33,29 @@ afterEach(() => {
 });
 
 describe("core/item/parse", () => {
+  it("preserves all or selected mutation stdin tokens as literal data", async () => {
+    const options = { body: "-", comment: ["-"] };
+    preserveMutationStdinTokenFields(options, ["body"]);
+    expect(shouldResolveMutationStdinTokens(options)).toBe(true);
+    expect(shouldResolveMutationStdinTokenField(options, "body")).toBe(false);
+    expect(shouldResolveMutationStdinTokenField(options, "comment")).toBe(true);
+
+    const resolver = createStdinTokenResolver();
+    await expect(resolver.resolveValue("-", "--body", false)).resolves.toBe(
+      "-",
+    );
+    await expect(
+      resolver.resolveList(["-"], "--comment", false),
+    ).resolves.toEqual(["-"]);
+
+    preserveMutationStdinTokenLiterals(options);
+    preserveMutationStdinTokenFields(options, ["body"]);
+    expect(shouldResolveMutationStdinTokens(options)).toBe(false);
+    expect(shouldResolveMutationStdinTokenField(options, "comment")).toBe(
+      false,
+    );
+  });
+
   it("parses non-negative integer options without accepting fractional or negative values", () => {
     expect(parseOptionalNonNegativeInteger("0", "--estimate")).toBe(0);
     expect(parseOptionalNonNegativeInteger("42", "--estimate")).toBe(42);
@@ -638,9 +665,7 @@ describe("core/item/parse", () => {
       ).toEqual([]);
       expect(() =>
         applyAcceptanceCriteriaMutations([], ["first; second"], undefined),
-      ).toThrow(
-        'Acceptance criteria added with --add-ac cannot contain ";"',
-      );
+      ).toThrow('Acceptance criteria added with --add-ac cannot contain ";"');
     });
   });
 });

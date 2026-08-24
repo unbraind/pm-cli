@@ -504,27 +504,58 @@ export interface StdinTokenResolver {
   resolveValue(
     value: string | undefined,
     optionName: string,
+    resolveToken?: boolean,
   ): Promise<string | undefined>;
   /** Value that configures or reports resolve list for this contract. */
   resolveList(
     values: string[] | undefined,
     optionName: string,
+    resolveToken?: boolean,
   ): Promise<string[] | undefined>;
 }
 
-const literalStdinTokenOptions = new WeakSet<object>();
+const ALL_MUTATION_STDIN_FIELDS = Symbol("all-mutation-stdin-fields");
+const literalStdinTokenFields = new WeakMap<
+  object,
+  typeof ALL_MUTATION_STDIN_FIELDS | ReadonlySet<PropertyKey>
+>();
 
 /** Mark transport-decoded options whose dash values are data, not stdin tokens. */
 export function preserveMutationStdinTokenLiterals<T extends object>(
   options: T,
 ): T {
-  literalStdinTokenOptions.add(options);
+  literalStdinTokenFields.set(options, ALL_MUTATION_STDIN_FIELDS);
+  return options;
+}
+
+/** Mark selected mutation fields whose dash values are literal transport data. */
+export function preserveMutationStdinTokenFields<T extends object>(
+  options: T,
+  fields: readonly PropertyKey[],
+): T {
+  const current = literalStdinTokenFields.get(options);
+  if (current === ALL_MUTATION_STDIN_FIELDS) return options;
+  literalStdinTokenFields.set(
+    options,
+    new Set([...(current ?? []), ...fields]),
+  );
   return options;
 }
 
 /** Report whether lifecycle input should interpret dash values as stdin tokens. */
 export function shouldResolveMutationStdinTokens(options: object): boolean {
-  return !literalStdinTokenOptions.has(options);
+  return literalStdinTokenFields.get(options) !== ALL_MUTATION_STDIN_FIELDS;
+}
+
+/** Report whether one mutation field should interpret dash as a stdin token. */
+export function shouldResolveMutationStdinTokenField(
+  options: object,
+  field: PropertyKey,
+): boolean {
+  const literalFields = literalStdinTokenFields.get(options);
+  return (
+    literalFields !== ALL_MUTATION_STDIN_FIELDS && !literalFields?.has(field)
+  );
 }
 
 /** Implements create stdin token resolver for the public runtime surface of this module. */
@@ -549,7 +580,9 @@ export function createStdinTokenResolver(): StdinTokenResolver {
   const resolveValue = async (
     value: string | undefined,
     optionName: string,
+    resolveToken = true,
   ): Promise<string | undefined> => {
+    if (!resolveToken) return value;
     if (value === undefined) {
       return undefined;
     }
@@ -562,7 +595,9 @@ export function createStdinTokenResolver(): StdinTokenResolver {
   const resolveList = async (
     values: string[] | undefined,
     optionName: string,
+    resolveToken = true,
   ): Promise<string[] | undefined> => {
+    if (!resolveToken) return values;
     if (!values) {
       return undefined;
     }

@@ -70,6 +70,56 @@ describe("bulk and file input composability", () => {
         ],
       });
 
+      const bodyPreview = context.runCli(
+        [
+          "update-many",
+          "--filter-tag",
+          "piped",
+          "--body",
+          "-",
+          "--dry-run",
+          "--json",
+        ],
+        { input: "-" },
+      );
+      expect(bodyPreview.code).toBe(0);
+      expect(JSON.parse(bodyPreview.stdout)).toMatchObject({
+        mode: "dry_run",
+        matched_count: 2,
+        planned_update_options: { body: "-" },
+        item_plans: [
+          expect.objectContaining({
+            changes: expect.arrayContaining([
+              expect.objectContaining({ field: "body", after: "-" }),
+            ]),
+          }),
+          expect.objectContaining({
+            changes: expect.arrayContaining([
+              expect.objectContaining({ field: "body", after: "-" }),
+            ]),
+          }),
+        ],
+      });
+
+      const bodyApplied = context.runCli(
+        ["update-many", "--filter-tag", "piped", "--body", "-", "--json"],
+        { input: "-" },
+      );
+      expect(bodyApplied.code).toBe(0);
+      expect(JSON.parse(bodyApplied.stdout)).toMatchObject({
+        mode: "apply",
+        matched_count: 2,
+        updated_count: 2,
+        planned_update_options: { body: "-" },
+      });
+      for (const id of ["pm-pipe-a", "pm-pipe-b"]) {
+        const item = context.runCli(["get", id, "--fields", "body", "--json"]);
+        expect(item.code).toBe(0);
+        expect(JSON.parse(item.stdout)).toMatchObject({
+          item: { body: "-" },
+        });
+      }
+
       const compactPreview = context.runCli(
         ["history-compact", "--ids", "-", "--dry-run", "--json"],
         { input: "pm-pipe-a\npm-pipe-b\npm-pipe-a\n" },
@@ -161,6 +211,58 @@ describe("bulk and file input composability", () => {
         { input: "# Updated body\n\nfrom stdin" },
       );
       expect(updated.code).toBe(0);
+
+      const dashCreated = context.runCli(
+        [
+          "create",
+          "--id",
+          "dash-body-file",
+          "--title",
+          "dash body file",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--body-file",
+          "-",
+          "--json",
+        ],
+        { input: "-" },
+      );
+      expect(dashCreated.code).toBe(0);
+
+      const dashBodyPath = path.join(context.tempRoot, "dash-body.md");
+      await writeFile(dashBodyPath, "-", "utf8");
+      const dashUpdated = context.runCli(
+        [
+          "update",
+          "pm-dash-body-file",
+          "--body-file",
+          dashBodyPath,
+          "--comment",
+          "-",
+          "--json",
+        ],
+        { input: "comment still consumes stdin" },
+      );
+      expect(dashUpdated.code).toBe(0);
+
+      const dashItem = context.runCli([
+        "get",
+        "pm-dash-body-file",
+        "--fields",
+        "body,comments",
+        "--json",
+      ]);
+      expect(dashItem.code).toBe(0);
+      expect(JSON.parse(dashItem.stdout)).toMatchObject({
+        item: {
+          body: "-",
+          comments: [
+            expect.objectContaining({ text: "comment still consumes stdin" }),
+          ],
+        },
+      });
 
       for (const command of ["comments", "notes", "learnings"] as const) {
         const result = context.runCli(

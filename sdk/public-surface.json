@@ -11426,6 +11426,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "preserveMutationStdinTokenFields",
+          "signature": "<T extends object>(options: T, fields: readonly PropertyKey[]) => T | calls: <T extends object>(options: T, fields: readonly PropertyKey[]) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "preserveMutationStdinTokenLiterals",
           "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
         },
@@ -15658,6 +15664,12 @@
           "kind": "function",
           "name": "shouldPersistDurableGraphCache",
           "signature": "(itemCount: number, envelopeExists: boolean) => boolean | calls: (itemCount: number, envelopeExists: boolean) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "shouldResolveMutationStdinTokenField",
+          "signature": "(options: object, field: PropertyKey) => boolean | calls: (options: object, field: PropertyKey) => boolean"
         },
         {
           "classification": "advanced_export",
