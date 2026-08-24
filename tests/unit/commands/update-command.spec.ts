@@ -7,6 +7,7 @@ import { _testOnlyUpdateCommand, runUpdate, type UpdateCommandOptions } from "..
 import { runCreate } from "../../../src/cli/commands/create.js";
 import { runGet } from "../../../src/cli/commands/get.js";
 import { runDeps } from "../../../src/cli/commands/deps.js";
+import { preserveMutationStdinTokenLiterals } from "../../../src/sdk/runtime-primitives.js";
 import { setActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
@@ -476,6 +477,24 @@ describe("update command helper coverage", () => {
         "agent",
       ),
     ).toEqual({ changed: true, dependencies: undefined });
+  });
+});
+
+describe("runUpdate stdin token policy", () => {
+  it("preserves literal stdin tokens in transport-decoded options", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate({ title: "literal update seed", type: "Task" }, { path: context.pmPath });
+      await runUpdate(
+        created.item.id,
+        preserveMutationStdinTokenLiterals({ body: "-", note: ["-"] }),
+        { path: context.pmPath },
+      );
+      const stored = await runGet(created.item.id, { path: context.pmPath }, { full: true });
+      expect(stored.item).toMatchObject({
+        body: "-",
+        notes: expect.arrayContaining([expect.objectContaining({ text: "-" })]),
+      });
+    });
   });
 });
 

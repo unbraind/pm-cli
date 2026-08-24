@@ -171,6 +171,8 @@ export {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
 } from "../core/item/parse.js";
 export { resolvePriority } from "../core/item/priority.js";

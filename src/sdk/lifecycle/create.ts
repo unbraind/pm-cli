@@ -27,6 +27,7 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  shouldResolveMutationStdinTokens,
   resolvePriority,
   getFocusedItem,
   normalizeStatusInput,
@@ -1058,6 +1059,14 @@ async function resolveCreateStdinInputs(
     ),
     field: await stdinResolver.resolveList(options.field, "--field"),
   };
+}
+
+async function resolveCreateTransportInputs(
+  options: CreateCommandOptions,
+): Promise<CreateCommandOptions> {
+  return shouldResolveMutationStdinTokens(options)
+    ? await resolveCreateStdinInputs(options)
+    : options;
 }
 
 function resolveCreateMode(
@@ -2665,7 +2674,7 @@ export async function runCreate(
   global: GlobalOptions,
 ): Promise<CreateResult> {
   let resolvedOptions = normalizeLegacyNoneCreateOptions(
-    await resolveCreateStdinInputs(options),
+    await resolveCreateTransportInputs(options),
   );
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);

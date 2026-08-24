@@ -57,7 +57,10 @@ import { runRestore } from "./commands/restore.js";
 import * as schemaModule from "./commands/schema.js";
 import { runUpdate } from "./commands/update.js";
 import { runUpdateMany } from "./commands/update-many.js";
-import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
+import {
+  createStdinTokenResolver,
+  preserveMutationStdinTokenLiterals,
+} from "../sdk/runtime-primitives.js";
 import { resolveDescriptionStdin } from "./description-stdin.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
@@ -896,6 +899,7 @@ async function runCreateAction(
     delete options.bodyFile;
   }
   const normalized = normalizeCreateOptions(options, { requireType: false });
+  if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
   const result = await runCreate(normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
@@ -1610,11 +1614,9 @@ async function runUpdateAction(
     );
     delete options.bodyFile;
   }
-  const result = await runUpdate(
-    id,
-    normalizeUpdateOptions(options),
-    globalOptions,
-  );
+  const normalized = normalizeUpdateOptions(options);
+  if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
+  const result = await runUpdate(id, normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(
     await applyActiveCommandResultService(

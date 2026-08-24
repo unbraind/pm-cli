@@ -11424,6 +11424,12 @@
           "signature": "(value: string) => PreparedSimilarityText | calls: (value: string) => PreparedSimilarityText"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "preserveMutationStdinTokenLiterals",
+          "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "PreviousTerminalEvidence",
@@ -15652,6 +15658,12 @@
           "kind": "function",
           "name": "shouldPersistDurableGraphCache",
           "signature": "(itemCount: number, envelopeExists: boolean) => boolean | calls: (itemCount: number, envelopeExists: boolean) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "shouldResolveMutationStdinTokens",
+          "signature": "(options: object) => boolean | calls: (options: object) => boolean"
         },
         {
           "classification": "advanced_export",

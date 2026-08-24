@@ -30,6 +30,7 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
   resolvePriority,
   normalizeStatusInput,
@@ -1529,6 +1530,14 @@ async function resolveStdinUpdateOptions(
     ),
     field: await stdinResolver.resolveList(options.field, "--field"),
   });
+}
+
+async function resolveUpdateTransportOptions(
+  options: UpdateCommandOptions,
+): Promise<UpdateCommandOptions> {
+  return shouldResolveMutationStdinTokens(options)
+    ? await resolveStdinUpdateOptions(options)
+    : normalizeLegacyNoneUpdateOptions(options);
 }
 
 function buildClearCollectionDefinitions(
@@ -3120,7 +3129,7 @@ async function runUpdateWithContext(
   global: GlobalOptions,
   execution: UpdateExecutionContext = {},
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
-  options = await resolveStdinUpdateOptions(options);
+  options = await resolveUpdateTransportOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertUpdateTrackerInitialized(pmRoot);
   const settings = await readSettings(pmRoot);

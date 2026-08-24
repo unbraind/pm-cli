@@ -512,6 +512,21 @@ export interface StdinTokenResolver {
   ): Promise<string[] | undefined>;
 }
 
+const literalStdinTokenOptions = new WeakSet<object>();
+
+/** Mark transport-decoded options whose dash values are data, not stdin tokens. */
+export function preserveMutationStdinTokenLiterals<T extends object>(
+  options: T,
+): T {
+  literalStdinTokenOptions.add(options);
+  return options;
+}
+
+/** Report whether lifecycle input should interpret dash values as stdin tokens. */
+export function shouldResolveMutationStdinTokens(options: object): boolean {
+  return !literalStdinTokenOptions.has(options);
+}
+
 /** Implements create stdin token resolver for the public runtime surface of this module. */
 export function createStdinTokenResolver(): StdinTokenResolver {
   let stdinValuePromise: Promise<string> | undefined;
