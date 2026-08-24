@@ -2292,7 +2292,10 @@ function normalizePlanStepAliasInput(
   if (stepValues.length === 1 && !input.options.stepTitle?.trim()) {
     return {
       ...input,
-      options: { ...input.options, stepTitle: stepValues[0] },
+      options: transferMutationStdinTokenPolicy(input.options, {
+        ...input.options,
+        stepTitle: stepValues[0],
+      }),
     };
   }
   return input;

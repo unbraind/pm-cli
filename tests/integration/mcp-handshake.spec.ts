@@ -2635,6 +2635,21 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
           "--json",
         ]).code,
       ).toBe(0);
+      const materializePlan = context.runCli(
+        [
+          "plan",
+          "create",
+          "MCP materialize literal plan",
+          "--step",
+          "literal materialized step",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(materializePlan.code).toBe(0);
+      const materializePlanId = (
+        materializePlan.json as { plan: { id: string } }
+      ).plan.id;
       const distServerPath = path.join(
         process.cwd(),
         "dist",
@@ -2658,7 +2673,7 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
           const timeout = setTimeout(() => {
             reject(
               new Error(
-                "timed out waiting for MCP file refusal and literal mutation responses with open stdin",
+                "timed out waiting for MCP file refusal, materialization, and literal mutation responses with open stdin",
               ),
             );
           }, 5_000);
@@ -2669,11 +2684,12 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
               response.id === 41 ||
               response.id === 42 ||
               response.id === 43 ||
-              response.id === 44
+              response.id === 44 ||
+              response.id === 45
             ) {
               received.set(response.id, response);
             }
-            if (received.size === 5) {
+            if (received.size === 6) {
               clearTimeout(timeout);
               resolve(received);
             }
@@ -2683,7 +2699,7 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
             reject(error);
           });
           child.once("exit", (code, signal) => {
-            if (received.size === 5) return;
+            if (received.size === 6) return;
             clearTimeout(timeout);
             reject(
               new Error(
@@ -2704,6 +2720,27 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
               path: context.pmPath,
               id: targetId,
               options: { file: "/etc/hostname" },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 45,
+          method: "tools/call",
+          params: {
+            name: "pm_plan",
+            arguments: {
+              path: context.pmPath,
+              id: materializePlanId,
+              options: {
+                subcommand: "materialize",
+                steps: "plan-step-001",
+                step: "singular alias provenance probe",
+                field: ["body=-"],
+                materializeType: "Task",
+              },
             },
           },
         })}\n`,
@@ -2816,6 +2853,8 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
         expect(received.get(43)?.result).toBeDefined();
         expect(received.get(44)?.error).toBeUndefined();
         expect(received.get(44)?.result).toBeDefined();
+        expect(received.get(45)?.error).toBeUndefined();
+        expect(received.get(45)?.result).toBeDefined();
         const target = context.runCli(["get", targetId, "--json", "--full"], {
           expectJson: true,
         });
@@ -2855,6 +2894,24 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
         ).toBe("-");
         expect(
           (atomicSecond.json as { item: { body?: string } }).item.body,
+        ).toBe("-");
+        const materializedId = (
+          received.get(45) as {
+            result?: {
+              structuredContent?: {
+                result?: { materialized?: Array<{ id?: string }> };
+              };
+            };
+          }
+        ).result?.structuredContent?.result?.materialized?.[0]?.id;
+        expect(materializedId).toBeTruthy();
+        const materialized = context.runCli(
+          ["get", materializedId ?? "", "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(materialized.code).toBe(0);
+        expect(
+          (materialized.json as { item: { body?: string } }).item.body,
         ).toBe("-");
       } finally {
         responses.close();
