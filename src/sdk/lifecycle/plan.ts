@@ -2139,6 +2139,7 @@ async function createMaterializedStepItems(params: {
     } satisfies CreateCommandOptions;
     preservePlanCreateStdinPolicy(params.options, createOptions, [
       "description",
+      ...Object.keys(materializeFields),
     ]);
     const created = await runCreate(createOptions, {
       ...({} as GlobalOptions),

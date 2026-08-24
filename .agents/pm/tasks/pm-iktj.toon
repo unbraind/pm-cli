@@ -6,9 +6,9 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:cli",composability
 created_at: "2026-07-06T22:10:15.407Z"
-updated_at: "2026-08-24T11:01:13.915Z"
-closed_at: "2026-08-24T10:55:22.748Z"
-completed_at: "2026-08-24T10:55:22.748Z"
+updated_at: "2026-08-24T11:33:13.697Z"
+closed_at: "2026-08-24T11:20:22.181Z"
+completed_at: "2026-08-24T11:20:22.181Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: All file-reading flags across commands accept '-' to read stdin (inventory taken from contracts); behavior documented in the scripting contract (pm-psy1); error message for unreadable paths mentions the '-' option; tests cover piped heredoc usage; no behavior change for real paths
@@ -16,14 +16,14 @@ parent: pm-mpbb
 risk: low
 confidence: high
 resolution: fixed
-expected_result: "File-backed CLI inputs and structured SDK or MCP dash values retain one unambiguous source policy through normalization, cloning, aliasing, and composed mutation dispatch."
-actual_result: "Body-file and annotation file flags accept '-' stdin where supported; resolved and structured dash data remains literal through direct PmClient helpers, nested update-many, atomic transactions, Plan creation and singular-step materialization, and MCP lifecycle composition without consuming protocol stdin."
+expected_result: "File-backed CLI inputs and structured SDK or MCP dash values retain one unambiguous source policy through normalization, cloning, aliasing, field derivation, and composed mutation dispatch."
+actual_result: "Body-file and annotation file flags accept '-' stdin where supported; structured dash data remains literal through direct PmClient helpers, nested update-many, atomic transactions, Plan creation, singular-step aliases, and multi-step materialization without partial writes or protocol stdin consumption."
 dependencies[4]{id,kind,created_at}:
   pm-psy1,related,"2026-07-06T22:10:24.411Z"
   pm-gknu,related,"2026-07-16T05:45:22.382Z"
   pm-m9xv,implements,"2026-07-25T06:28:02.305Z"
   pm-fs8q9x,implements,"2026-07-26T05:59:31.644Z"
-comments[28]{created_at,author,text}:
+comments[31]{created_at,author,text}:
   "2026-08-23T20:29:26.533Z","harness:codex","Implementation start 2026-08-23: contract-derived census and shared SDK file-or-stdin primitive will cover every external-content --*-file surface, preserve real-path behavior, improve unreadable-path recovery, and prove piped heredoc use. Canonical pm-iktj is reused after all-status duplicate verification."
   "2026-08-23T21:57:50.433Z","harness:codex","Tracker repair evidence: removed only the newly added duplicate pm-m9xv implements row by its exact created_at signature; the canonical 2026-07-25 relationship remains intact."
   "2026-08-23T22:05:18.542Z","harness:codex","Verification evidence 2026-08-24: every external-content file flag in this scope accepts '-' as stdin through the shared SDK token resolver: update/close --body-file plus comments, notes, and learnings --file. Real paths retain prior behavior and unreadable/missing input produces structured recovery. CLI invocation contracts now declare argv/file/stdin modes and the docs include heredoc/pipeline examples. Focused linked tests, the disposable-tracker body-stdin check, 7,858-test exact 100% coverage, typecheck, security scan, and the complete lint/static stack pass. The duplicate relationship added during reconciliation was removed by exact signature; the canonical historical implements edge remains."
@@ -52,6 +52,9 @@ comments[28]{created_at,author,text}:
   "2026-08-24T10:45:31.826Z","harness:codex","Exact-head Bugbot finding at 09619ce1d95c300a3e3720891c860578529d92bd: normalizePlanStepAliasInput clones non-create Plan options without transferring the MCP literal-input policy. The singular step alias can derive body='-' and consume JSON-RPC stdin during materialization. Preserve policy through this clone and add a spawned open-stdin MCP materialize regression."
   "2026-08-24T10:55:22.174Z","harness:codex","Final Plan-alias fix evidence 2026-08-24: normalizePlanStepAliasInput now transfers the mutation stdin-token policy when deriving stepTitle. A spawned full-profile MCP server receives plan materialize with the singular step alias and field body=- while stdin remains open, returns the response, and stores the materialized body as literal '-'. Focused Plan/MCP proof passed 72/72; authoritative full coverage passed 570 files / 7,886 tests at exact 100% statements (57,569), branches (43,084), functions (11,980), and lines (55,488). All 8 linked commands passed with local_source_ref trust and every failure category zero."
   "2026-08-24T11:01:13.915Z","harness:codex","Terminal Plan-alias closeout: CI=1 pnpm quality:static exits 0 after recurrence closure across repository/package/API checks, command grammar, 2,838 flag declarations, 117 refusal probes, tracker-context, graph-composition, and record-integrity. pm health remains 10/10, history drift remains 0, and deterministic changelog generation/check remains unchanged at 2,181 items and 392,254 bytes."
+  "2026-08-24T11:11:04.714Z","harness:codex","Exact-head Bugbot finding at 33f7892a189c3055aa33a555fe1110dacc5a3fa8: Plan materialize parses --field body=- as derived structured data, but only description was marked literal on each create. With two steps, each child creates a fresh stdin resolver, allowing the first write before the second blocks/exits. Preserve materialize field provenance across every child and prove no partial materialization with stdin held open."
+  "2026-08-24T11:20:21.643Z","harness:codex","Final multi-step materialization evidence 2026-08-24: every value parsed from Plan --field name=value is now marked as derived literal data on each create option, so body=- cannot start a new stdin read for any child. The two-step --steps all regression creates and links both children and verifies each stored body is exactly '-'. Focused Plan/MCP proof passed 72/72; authoritative coverage passed 570 files / 7,886 tests at exact 100% statements (57,569), branches (43,084), functions (11,980), and lines (55,488). All 8 linked commands passed with local_source_ref trust and every failure category zero; typecheck, credential scan, and git diff check passed."
+  "2026-08-24T11:33:13.697Z","harness:codex","Terminal multi-step closeout: CI=1 pnpm quality:static exits 0 after recurrence closure across repository/package/API checks, command grammar, 2,838 flag declarations, 117 refusal probes, tracker-context, CLI transport, graph-composition, and record-integrity. pm health remains 10/10, history drift remains 0, and latest pm-changelog 2026.8.17 generation/check remains unchanged at 2,181 items and 392,254 bytes."
 notes[1]{created_at,author,text}:
   "2026-07-15T19:27:03.514Z",maintainer-agent,"Dogfood confirmation 2026-07-15 (review pass #89): pm create --body-file - fails ENOENT body_file_unreadable (tries to open a file literally named \"-\"), forcing a scratch-file workaround mid-review. The error's own next_steps suggest \"ls -l \\\"-\\\"\" — the recovery bundle does not know stdin is the intent. This is exactly the convention gap this item owns; --body-file should be first on the flag list when implementing."
 files[33]{path,scope,note}:
@@ -97,7 +100,7 @@ tests[8]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T05:26:43.269Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,project,240,"harness:codex","2026-08-24T08:23:02.918Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T08:50:35.308Z",local_mutation,codex/bulk-input-composability-contracts
-test_runs[14]:
+test_runs[15]:
   - run_id: test-local-mt6btbef-ori5yr
     kind: test
     status: passed
@@ -314,9 +317,27 @@ test_runs[14]:
       node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt758w4d-lkg5om
+    kind: test
+    status: passed
+    started_at: "2026-08-24T11:17:42.009Z"
+    finished_at: "2026-08-24T11:19:34.045Z"
+    recorded_at: "2026-08-24T11:19:34.045Z"
+    passed: 8
+    failed: 0
+    skipped: 0
+    executions[8]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release entry
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated MCP stdin refusal recovery census
   docs/SCRIPTING.md,project,File-reading stdin convention and examples
-close_reason: "Literal stdin provenance now survives every reviewed normalization, clone, alias, recursive, and composed SDK/MCP mutation boundary; exact coverage and all eight trusted linked tests pass."
+close_reason: "Derived Plan materialization fields now retain literal stdin-token provenance across every child create; multi-step regression, exact coverage, and all eight trusted linked tests pass."
 body: "Found in review #15 follow-up: pm update --body-file - fails with ENOENT (tries to open a file literally named '-'), while pm notes --add - reads stdin. Agents composing bodies from heredocs/pipes (the grep/jq/heredoc composability principle) hit this asymmetry and fall back to temp files. Inventory every --*-file flag via pm contracts, route them through a shared read-file-or-stdin helper, and record the convention in the scripting contract. Related-not-duplicate: pm-kipd (GH-438 full-item JSON on stdin), pm-a2h3 (notes/learnings --stdin parity)."
