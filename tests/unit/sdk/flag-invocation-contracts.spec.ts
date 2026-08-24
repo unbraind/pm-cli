@@ -42,6 +42,8 @@ describe("CLI flag invocation contracts", () => {
       }),
     ).toMatchObject({
       takes_value: true,
+      description:
+        "Read the item body from a file, or from stdin when set to -.",
       input_sources: ["argv", "file", "stdin"],
       stdin_token: "-",
     });

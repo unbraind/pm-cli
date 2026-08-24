@@ -854,7 +854,8 @@ async function runCreateAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertSingleMutationStdinConsumer(options);
-  if (options.stdinJson === true) {
+  const stdinJsonConsumed = options.stdinJson === true;
+  if (stdinJsonConsumed) {
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",
@@ -884,7 +885,9 @@ async function runCreateAction(
     options.title === undefined
   )
     options.title = positionals.positionalTitle;
-  await resolveDescriptionStdin(options);
+  if (!stdinJsonConsumed) {
+    await resolveDescriptionStdin(options);
+  }
   if (typeof options.bodyFile === "string") {
     options.body = await resolveBodyFileContent(
       options.bodyFile,
@@ -1587,14 +1590,17 @@ async function runUpdateAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertSingleMutationStdinConsumer(options);
-  if (options.stdinJson === true) {
+  const stdinJsonConsumed = options.stdinJson === true;
+  if (stdinJsonConsumed) {
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",
     );
     options = itemDocumentToMutationOptions(input ?? "", "update", options);
   }
-  await resolveDescriptionStdin(options);
+  if (!stdinJsonConsumed) {
+    await resolveDescriptionStdin(options);
+  }
   // GH-214: resolve --body-file into the existing body field before
   // normalization so the rest of update is unchanged. CLI-only input alias.
   if (typeof options.bodyFile === "string") {

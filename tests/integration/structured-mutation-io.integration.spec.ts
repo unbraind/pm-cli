@@ -211,6 +211,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           input: JSON.stringify({
             title: "Document title",
             type: "Feature",
+            description: "-",
             priority: 1,
             tags: ["json", "agent"],
             comments: [{ text: "Structured comment", author: "io-agent" }],
@@ -255,6 +256,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           expect.objectContaining({ path: "src/structured-proof.ts" }),
         ]),
       );
+      expect(envelope.item.description).toBe("-");
       envelope.item.description = "Round tripped";
       const updated = context.runCli(
         ["update", id, "--stdin-json", "--no-changed-fields", "--json"],

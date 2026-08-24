@@ -127,6 +127,34 @@ describe("structured mutation command registration", () => {
       expect.any(Object),
     );
 
+    const sentinelCreateProgram = programWithGlobals();
+    registerMutationCommands(sentinelCreateProgram);
+    mocks.stdin = JSON.stringify({
+      title: "Literal sentinel",
+      type: "Task",
+      description: "-",
+    });
+    await sentinelCreateProgram.parseAsync(["create", "--stdin-json"], {
+      from: "user",
+    });
+    expect(mocks.runCreate).toHaveBeenLastCalledWith(
+      expect.objectContaining({ description: "-" }),
+      expect.any(Object),
+    );
+
+    const sentinelUpdateProgram = programWithGlobals();
+    registerMutationCommands(sentinelUpdateProgram);
+    mocks.stdin = JSON.stringify({ item: { id: "pm-a", description: "-" } });
+    await sentinelUpdateProgram.parseAsync(
+      ["update", "pm-a", "--stdin-json"],
+      { from: "user" },
+    );
+    expect(mocks.runUpdate).toHaveBeenLastCalledWith(
+      "pm-a",
+      expect.objectContaining({ description: "-" }),
+      expect.any(Object),
+    );
+
     mocks.stdin = undefined;
     const emptyCreateProgram = programWithGlobals();
     registerMutationCommands(emptyCreateProgram);

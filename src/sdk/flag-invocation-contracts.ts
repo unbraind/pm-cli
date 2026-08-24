@@ -76,7 +76,7 @@ export interface CliFlagInvocationParityReport {
 
 const FLAG_DESCRIPTIONS: Readonly<Record<string, string>> = Object.freeze({
   "--body": "Set the item body.",
-  "--body-file": "Read the item body from a file.",
+  "--body-file": "Read the item body from a file, or from stdin when set to -.",
   "--description": "Set the item description.",
   "--stdin": "Read the value from stdin.",
   "--stdin-json": "Read a complete JSON document from stdin.",

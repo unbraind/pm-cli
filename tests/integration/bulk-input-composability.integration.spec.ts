@@ -2,7 +2,22 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../helpers/withTempPmPath.js";
+
+function expectCompetingStdinConsumers(
+  context: TempPmContext,
+  args: string[],
+  input: string,
+): void {
+  const result = context.runCli(args, { input });
+  expect(result.code).toBe(2);
+  expect(result.stderr).toContain(
+    "Only one option may consume stdin per command invocation",
+  );
+}
 
 describe("bulk and file input composability", () => {
   it("pipes IDs into update-many, reads @path in close-many, and previews filters without mutations", async () => {
@@ -174,7 +189,8 @@ describe("bulk and file input composability", () => {
         },
       });
 
-      const createConflict = context.runCli(
+      expectCompetingStdinConsumers(
+        context,
         [
           "create",
           "--title",
@@ -185,14 +201,11 @@ describe("bulk and file input composability", () => {
           " - ",
           "--json",
         ],
-        { input: "one stream cannot supply two fields" },
-      );
-      expect(createConflict.code).toBe(2);
-      expect(createConflict.stderr).toContain(
-        "Only one option may consume stdin per command invocation",
+        "one stream cannot supply two fields",
       );
 
-      const whitespaceDescriptionConflict = context.runCli(
+      expectCompetingStdinConsumers(
+        context,
         [
           "create",
           "--title",
@@ -203,20 +216,13 @@ describe("bulk and file input composability", () => {
           "-",
           "--json",
         ],
-        { input: "one stream still cannot supply two fields" },
-      );
-      expect(whitespaceDescriptionConflict.code).toBe(2);
-      expect(whitespaceDescriptionConflict.stderr).toContain(
-        "Only one option may consume stdin per command invocation",
+        "one stream still cannot supply two fields",
       );
 
-      const bulkConflict = context.runCli(
+      expectCompetingStdinConsumers(
+        context,
         ["update-many", "--ids", " - ", "--body", "-", "--json"],
-        { input: "pm-stdin-files" },
-      );
-      expect(bulkConflict.code).toBe(2);
-      expect(bulkConflict.stderr).toContain(
-        "Only one option may consume stdin per command invocation",
+        "pm-stdin-files",
       );
     });
   });
