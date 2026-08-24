@@ -127,7 +127,9 @@
             "has_omissions",
             "omitted_field_group_count",
             "omitted_field_groups",
-            "restore_with"
+            "name: string;",
+            "restore_with",
+            "normalized.full"
           ]
         },
         {

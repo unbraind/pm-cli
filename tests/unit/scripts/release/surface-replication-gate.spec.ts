@@ -494,20 +494,28 @@ describe("surface replication gate", () => {
         "has_omissions",
         "omitted_field_group_count",
         "omitted_field_groups",
+        "name: string;",
         "restore_with",
+        "normalized.full",
       ]),
     );
 
-    const report = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
-      changedFiles: ["src/sdk/annotations.ts"],
-      today: "2026-08-07",
-    });
+    for (const changedLine of [
+      "    name: string;",
+      "  delete normalized.full;",
+    ]) {
+      const report = await validateSurfaceReplication(config, {
+        repoRoot: path.resolve("."),
+        changedFiles: ["src/sdk/annotations.ts"],
+        changedLines: { "src/sdk/annotations.ts": [changedLine] },
+        today: "2026-08-07",
+      });
 
-    expect(report.ok).toBe(false);
-    expect(report.violations).toContain(
-      "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
-    );
+      expect(report.ok).toBe(false);
+      expect(report.violations).toContain(
+        "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
+      );
+    }
   }, 120_000);
 
   it("does not activate annotation replication for unrelated shared contract lines", async () => {
@@ -522,6 +530,7 @@ describe("surface replication gate", () => {
     const unrelated = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: [
+        "src/sdk/annotations.ts",
         "src/sdk/comments.ts",
         "src/sdk/notes.ts",
         "src/sdk/learnings.ts",
@@ -530,6 +539,10 @@ describe("surface replication gate", () => {
         "src/sdk/cli-contracts/flag-contracts.ts",
       ],
       changedLines: {
+        "src/sdk/annotations.ts": [
+          "    name: annotationName,",
+          "  delete normalized.preview;",
+        ],
         "src/sdk/comments.ts": [
           '"--file path not found; use --file - for stdin"',
         ],
