@@ -20,6 +20,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 /** Schema tag stored on every document so a reader can reject foreign shapes. */
 export const RECORD_SCHEMA = "release-failure-record/1";
@@ -329,7 +330,10 @@ export function main(
 }
 
 /* c8 ignore start -- entrypoint guard is exercised through main() directly. */
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main();
 }
 /* c8 ignore stop */

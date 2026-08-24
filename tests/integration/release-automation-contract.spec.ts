@@ -367,9 +367,14 @@ describe("release automation contract", () => {
       const ghLog = path.join(tempRoot, "gh.log");
       const npmLog = path.join(tempRoot, "npm.log");
       const githubOutput = path.join(tempRoot, "github.output");
-      const releaseFailureRecord = path
-        .join(tempRoot, "release-failure-record.json")
-        .replaceAll("\\", "/");
+      const nativeReleaseFailureRecord = path.join(
+        tempRoot,
+        "release-failure-record.json",
+      );
+      const releaseFailureRecord =
+        process.platform === "win32"
+          ? nativeReleaseFailureRecord.replaceAll("\\", "/")
+          : nativeReleaseFailureRecord;
       await writeFile(
         path.join(tempRoot, "gh"),
         `#!/usr/bin/env bash
