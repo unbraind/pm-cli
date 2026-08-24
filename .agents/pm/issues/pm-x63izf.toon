@@ -6,25 +6,25 @@ status: closed
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-24T12:23:09.755Z"
-closed_at: "2026-08-24T12:19:41.924Z"
-completed_at: "2026-08-24T12:19:41.924Z"
+updated_at: "2026-08-24T12:33:02.000Z"
+closed_at: "2026-08-24T12:33:01.274Z"
+completed_at: "2026-08-24T12:33:01.274Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The gate runner records a structured failure document naming the failing gate, its exit status, and its captured verdict, at a path supplied by the environment; The blocked-release issue renders its cause from that document when it exists, including the blocking issue identifiers and the per-issue reason the gate assigned; The preflight configuration detection is retained only as the fallback used when no failure document was produced; No part of the mechanism classifies failures by matching patterns against log or message text; A negative control proves the rendered cause changes when the recorded gate verdict changes, and that a missing document still yields the preflight fallback"
 parent: pm-u9d0
 risk: high
 confidence: high
-resolution: Fixed the hosted-only release retry failure by isolating the workflow fixture failure record and asserting structured verification failures instead of environment-dependent empty output.
-expected_result: "The same-day Auto Release recovery contract behaves identically locally and on GitHub Actions, with its own failure-record path and structured negative-control assertions."
-actual_result: "The fixture overrides RELEASE_FAILURE_RECORD inside its temp sandbox, npm and GitHub verification negatives assert the rendered failure stage/cause, hosted-environment reproduction passes 64 tests, exact coverage passes 7,886 tests, all three linked tests pass, and terminal static assurance passes."
+resolution: "Fixed the hosted-only release retry failures by isolating and cross-platform-normalizing the workflow fixture failure record, then asserting structured verification failures with actionable child-process diagnostics."
+expected_result: "The same-day Auto Release recovery contract behaves identically locally and on GitHub Actions across Linux and Windows, with its own failure-record path and structured negative-control assertions."
+actual_result: "The fixture overrides RELEASE_FAILURE_RECORD inside its temp sandbox, transports that path to Git Bash and native Node with forward slashes, npm and GitHub verification negatives assert the rendered failure stage/cause with stdout/stderr diagnostics, the 64-test hosted-environment reproduction passes, exact coverage previously passed 7,886 tests, and all three linked tests passed."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-2f80fn,discovered_from,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-dqtzva,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
-comments[18]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-08-23T06:39:18.191Z","harness:codex","Implementation start 2026-08-23: live GH-1095 reproduced the residual exactly: the 2026.8.23 tag exists, GitHub/npm artifacts do not, npm publish returned E404, and the alert still emitted failing_stage=unrecorded. This tranche extends the existing structured recorder across downstream publish and verification stages without log-text classification."
   "2026-08-23T07:03:27.150Z","harness:codex","Progress: Auto Release now records downstream GitHub Release failures from structured run/job/step conclusions and records discovery/GitHub Release/npm verification stages before exiting; the current npm publish incident would resolve to release-workflow plus Build, Test, Publish / Publish to npm instead of unrecorded."
   "2026-08-23T07:10:42.447Z","harness:codex","Focused verification: release-failure record and CI workflow contract suites passed 37/37; structured negative controls classify only GitHub job/step conclusions and preserve preflight fallback when no record exists."
@@ -43,6 +43,8 @@ comments[18]{created_at,author,text}:
   "2026-08-24T12:12:18.185Z","harness:codex",Linked-test preflight refused all three inherited commands as foreign_source_ref from their original reviewed branch; this was a trust_refusal with zero assertion failures. Acknowledging the unchanged linked commands on the current recurrence branch before execution.
   "2026-08-24T12:19:41.243Z","harness:codex","Terminal verification: hosted-environment focused suite passed 64/64; authoritative coverage passed 570 files and 7,886 tests at exact 100/100/100/100; trusted linked run test-local-mt775cz2-n8hm1k passed 3/3 after the prior trust-only refusal was explicitly acknowledged; CI=1 pnpm quality:static passed repository assurance, package/API parity, grammar/flag/lexicon/refusal gates, tracker-context, graph composition, and record integrity."
   "2026-08-24T12:23:09.755Z","harness:codex","Additional terminal evidence: pnpm typecheck and pnpm security:scan passed; git diff --check passed; pm health --check-only passed 10/10 with 14 unchanged legacy hierarchy advisories; pm validate --check-resolution --check-history-drift reported history drift 0 with 295 unchanged legacy resolution warnings."
+  "2026-08-24T12:31:28.756Z","harness:codex","Hosted recurrence evidence: PR #1106 CI run 32726869845 passed Linux coverage/static precursor gates but Windows regression failed at release-automation-contract.spec.ts:505 because GITHUB_OUTPUT remained empty. The record path is sandbox-owned but must be transported from Git Bash to native Node in slash form on Windows."
+  "2026-08-24T12:33:00.485Z","harness:codex","Windows remediation: RELEASE_FAILURE_RECORD now uses a slash-normalized temp-owned path before entering Git Bash, preserving native Node path resolution on windows-latest. Each structured negative assertion now includes child stdout/stderr. Hosted-environment focused reproduction passes 64/64 and pnpm typecheck plus git diff --check pass."
 files[5]{path,scope,note}:
   .github/workflows/auto-release.yml,project,"Alert step renders the recorded cause, preflight retained as fallback"
   scripts/release/release-failure-record.mjs,project,"Structured failure document: records and renders the failing gate verdict"
@@ -82,7 +84,7 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,acknowledged
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated public release note for structured release-failure behavior
-close_reason: "Hosted failure-record inheritance is isolated in the recovery fixture and structured negative controls now pass locally under GitHub Actions environment variables, exact coverage, linked tests, and static assurance."
+close_reason: The release recovery fixture isolates inherited state and transports its temp-owned structured failure record cross-platform with actionable negative-control diagnostics.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

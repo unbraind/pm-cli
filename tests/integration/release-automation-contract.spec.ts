@@ -367,10 +367,9 @@ describe("release automation contract", () => {
       const ghLog = path.join(tempRoot, "gh.log");
       const npmLog = path.join(tempRoot, "npm.log");
       const githubOutput = path.join(tempRoot, "github.output");
-      const releaseFailureRecord = path.join(
-        tempRoot,
-        "release-failure-record.json",
-      );
+      const releaseFailureRecord = path
+        .join(tempRoot, "release-failure-record.json")
+        .replaceAll("\\", "/");
       await writeFile(
         path.join(tempRoot, "gh"),
         `#!/usr/bin/env bash
@@ -502,7 +501,10 @@ exit "\${NPM_STATUS}"
       expect(missingPublicPackage.stdout).toContain(
         "could not be verified through the public npm registry",
       );
-      expect(await readFile(githubOutput, "utf8")).toBe(
+      expect(
+        await readFile(githubOutput, "utf8"),
+        `stdout:\n${missingPublicPackage.stdout}\nstderr:\n${missingPublicPackage.stderr}`,
+      ).toBe(
         "failure_stage=npm-publication-verification\n" +
           "failure_cause=Gate npm-publication-verification failed with status 1.\n",
       );
@@ -518,7 +520,10 @@ exit "\${NPM_STATUS}"
       expect(mismatchedPublicPackage.stdout).toContain(
         "is not publicly available from npm at the exact version",
       );
-      expect(await readFile(githubOutput, "utf8")).toBe(
+      expect(
+        await readFile(githubOutput, "utf8"),
+        `stdout:\n${mismatchedPublicPackage.stdout}\nstderr:\n${mismatchedPublicPackage.stderr}`,
+      ).toBe(
         "failure_stage=npm-publication-verification\n" +
           "failure_cause=Gate npm-publication-verification failed with status 1.\n",
       );
@@ -535,7 +540,10 @@ exit "\${NPM_STATUS}"
         "could not be verified through public GitHub Release metadata",
       );
       expect(await readFile(npmLog, "utf8")).toBe("");
-      expect(await readFile(githubOutput, "utf8")).toBe(
+      expect(
+        await readFile(githubOutput, "utf8"),
+        `stdout:\n${unavailableGithubRelease.stdout}\nstderr:\n${unavailableGithubRelease.stderr}`,
+      ).toBe(
         "failure_stage=github-release-verification\n" +
           "failure_cause=Gate github-release-verification failed with status 1.\n",
       );
