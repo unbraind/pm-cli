@@ -58,6 +58,58 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
     });
   });
 
+  it("preserves decoded atomic dash values as literal CLI document data", async () => {
+    await withTempPmPath(async (context) => {
+      const mutations = [
+        {
+          op: "create",
+          id: "pm-atomic-literal-a",
+          options: {
+            title: "Atomic literal A",
+            type: "Task",
+            description: "-",
+          },
+        },
+        {
+          op: "create",
+          id: "pm-atomic-literal-b",
+          options: {
+            title: "Atomic literal B",
+            type: "Task",
+            body: "-",
+          },
+        },
+      ];
+      const committed = context.runCli(
+        [
+          "item",
+          "mutate",
+          "--transaction-id",
+          "cli-atomic-literal-dashes",
+          "--json",
+        ],
+        { input: JSON.stringify(mutations), expectJson: true },
+      );
+      expect(committed.code).toBe(0);
+      expect(committed.json).toMatchObject({
+        status: "committed",
+        mutation_count: 2,
+      });
+      const first = context.runCli(
+        ["get", "pm-atomic-literal-a", "--json", "--full"],
+        { expectJson: true },
+      );
+      const second = context.runCli(
+        ["get", "pm-atomic-literal-b", "--json", "--full"],
+        { expectJson: true },
+      );
+      expect(
+        (first.json as { item: { description?: string } }).item.description,
+      ).toBe("-");
+      expect((second.json as { item: { body?: string } }).item.body).toBe("-");
+    });
+  });
+
   it("creates a heterogeneous forward-referenced specification and completes work in one call", async () => {
     await withTempPmPath(async (context) => {
       const specification = {

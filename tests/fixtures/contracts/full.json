@@ -18306,6 +18306,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "mcp_annotation_file_unavailable",
+      "class": "usage",
+      "code": "mcp_annotation_file_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Mcp annotation file unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/runtime-input.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "mcp_stdin_unavailable",
       "class": "usage",
       "code": "mcp_stdin_unavailable",

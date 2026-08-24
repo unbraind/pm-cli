@@ -6,6 +6,7 @@
  */
 import crypto from "node:crypto";
 import { normalizeItemId, normalizePrefix } from "../core/item/id.js";
+import { preserveMutationStdinTokenLiterals } from "../core/item/parse.js";
 import {
   EXIT_CODE,
   ITEM_PROJECT_CONTEXT_KEYS,
@@ -367,7 +368,13 @@ export function parseItemMutationBatch(input: string): BulkItemMutation[] {
       EXIT_CODE.USAGE,
     );
   }
-  return rows.map((row, index) => validateMutationRow(row, index));
+  return rows.map((row, index) => {
+    const mutation = validateMutationRow(row, index);
+    if (mutation.options !== undefined) {
+      preserveMutationStdinTokenLiterals(mutation.options);
+    }
+    return mutation;
+  });
 }
 
 function deriveReferencedItemId(

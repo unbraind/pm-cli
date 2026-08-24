@@ -216,6 +216,27 @@ const SCALAR_ANNOTATION_SOURCE_ACTIONS = new Set([
   "learnings",
 ]);
 
+function assertMcpAnnotationFileUnavailable(
+  action: string,
+  options: Record<string, unknown>,
+): void {
+  if (
+    !SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action) ||
+    !Object.prototype.hasOwnProperty.call(options, "file")
+  ) {
+    return;
+  }
+  throw new PmCliError(
+    `MCP ${action} does not accept options.file. Pass annotation text in options.add instead.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "mcp_annotation_file_unavailable",
+      required:
+        "Pass annotation text as JSON data; MCP annotation actions cannot read server-local files.",
+    },
+  );
+}
+
 /** Lifecycle actions where a top-level assignee argument aliases the author. */
 const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
   "claim",
@@ -302,11 +323,40 @@ export function normalizeMcpOptionsArrays(
   return result;
 }
 
+/** Resolve the explicit or lifecycle-assignee author accepted by MCP actions. */
+function resolveMcpActionAuthor(
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+  action?: string,
+): string | undefined {
+  const author = readRuntimeString(args, "author");
+  if (author !== undefined) {
+    return author;
+  }
+  return action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action)
+    ? (readRuntimeString(args, "assignee") ??
+        readRuntimeString(options, "assignee"))
+    : undefined;
+}
+
+/** Add a resolved author only when the normalized options do not provide one. */
+function withResolvedAuthor(
+  options: Record<string, unknown>,
+  author: string | undefined,
+): Record<string, unknown> {
+  return author !== undefined && options.author === undefined
+    ? { ...options, author }
+    : options;
+}
+
 /** Merge hoisted top-level action arguments and author aliases into options. */
 export function optionsWithAuthor(
   args: Record<string, unknown>,
   action?: string,
 ): Record<string, unknown> {
+  const sourceOptions = isRuntimeRecord(args.options)
+    ? args.options
+    : undefined;
   const baseOptions = asRecordClone(args.options);
   const hoistedTopLevel: Record<string, unknown> = {};
   const hoistKey = (key: string): void => {
@@ -321,26 +371,22 @@ export function optionsWithAuthor(
   for (const key of UNIVERSAL_READ_OUTPUT_OPTION_KEYS) {
     hoistKey(key);
   }
+  if (action !== undefined) {
+    assertMcpAnnotationFileUnavailable(action, baseOptions);
+  }
   const options = normalizeMcpOptionsArrays(
     { ...hoistedTopLevel, ...baseOptions },
     action,
   );
-  const author = readRuntimeString(args, "author");
-  const authorFromAssignee =
-    action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action)
-      ? (readRuntimeString(args, "assignee") ??
-        readRuntimeString(options, "assignee"))
-      : undefined;
-  if (author && options.author === undefined) {
-    return preserveTransportLiteralOptions(args, { ...options, author });
-  }
-  if (authorFromAssignee && options.author === undefined) {
-    return preserveTransportLiteralOptions(args, {
-      ...options,
-      author: authorFromAssignee,
-    });
-  }
-  return preserveTransportLiteralOptions(args, options);
+  const stdinPolicySource =
+    sourceOptions !== undefined &&
+    !shouldResolveMutationStdinTokens(sourceOptions)
+      ? sourceOptions
+      : args;
+  return preserveTransportLiteralOptions(
+    stdinPolicySource,
+    withResolvedAuthor(options, resolveMcpActionAuthor(args, options, action)),
+  );
 }
 
 // GH-170 (pm-pfnx): the narrow pm_files/pm_docs tools spell the CLI --note flag

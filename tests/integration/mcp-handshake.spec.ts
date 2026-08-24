@@ -2154,7 +2154,7 @@ describe("MCP protocol handshake", () => {
     });
   });
 
-  it("refuses MCP annotation stdin directives without reading the protocol stream", async () => {
+  it("refuses MCP annotation stdin and server-file directives", async () => {
     await withTempPmPath(async (context) => {
       const created = (await mcpServerTestOnly.runAction({
         action: "create",
@@ -2180,7 +2180,17 @@ describe("MCP protocol handshake", () => {
             options: { file: "-" },
           }),
         ).rejects.toMatchObject({
-          code: "mcp_stdin_unavailable",
+          code: "mcp_annotation_file_unavailable",
+        });
+        await expect(
+          mcpServerTestOnly.runAction({
+            action,
+            path: context.pmPath,
+            id: created.id,
+            options: { file: "/etc/hostname" },
+          }),
+        ).rejects.toMatchObject({
+          code: "mcp_annotation_file_unavailable",
         });
       }
     });
@@ -2582,8 +2592,23 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
     expect(response.result?.protocolVersion).toBe("2025-06-18");
   });
 
-  it("answers Plan dash-document requests while the JSON-RPC stdin pipe remains open", async () => {
+  it("refuses files and preserves atomic/Plan dashes while MCP stdin remains open", async () => {
     await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "MCP file-refusal target",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+      const targetId = (create.json as { item: { id: string } }).item.id;
       const distServerPath = path.join(
         process.cwd(),
         "dist",
@@ -2601,20 +2626,24 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
         },
       });
       const responses = readline.createInterface({ input: child.stdout });
-      const responsePromise = new Promise<Record<string, unknown>>(
+      const responsePromise = new Promise<Map<number, Record<string, unknown>>>(
         (resolve, reject) => {
+          const received = new Map<number, Record<string, unknown>>();
           const timeout = setTimeout(() => {
             reject(
               new Error(
-                "timed out waiting for MCP Plan response with open stdin",
+                "timed out waiting for MCP file refusal and literal mutation responses with open stdin",
               ),
             );
           }, 5_000);
           responses.on("line", (line) => {
             const response = JSON.parse(line) as Record<string, unknown>;
-            if (response.id === 41) {
+            if (response.id === 40 || response.id === 41 || response.id === 42) {
+              received.set(response.id, response);
+            }
+            if (received.size === 3) {
               clearTimeout(timeout);
-              resolve(response);
+              resolve(received);
             }
           });
           child.once("error", (error) => {
@@ -2622,6 +2651,21 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
             reject(error);
           });
         },
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 40,
+          method: "tools/call",
+          params: {
+            name: "pm_comments",
+            arguments: {
+              path: context.pmPath,
+              id: targetId,
+              options: { file: "/etc/hostname" },
+            },
+          },
+        })}\n`,
       );
       child.stdin.write(
         `${JSON.stringify({
@@ -2641,10 +2685,82 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
           },
         })}\n`,
       );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 42,
+          method: "tools/call",
+          params: {
+            name: "pm_mutate",
+            arguments: {
+              path: context.pmPath,
+              transactionId: "mcp-atomic-literal-dashes",
+              mutations: [
+                {
+                  op: "create",
+                  id: "pm-mcp-atomic-literal-a",
+                  options: {
+                    title: "MCP atomic literal A",
+                    type: "Task",
+                    description: "-",
+                  },
+                },
+                {
+                  op: "create",
+                  id: "pm-mcp-atomic-literal-b",
+                  options: {
+                    title: "MCP atomic literal B",
+                    type: "Task",
+                    body: "-",
+                  },
+                },
+              ],
+            },
+          },
+        })}\n`,
+      );
       try {
-        const response = await responsePromise;
-        expect(response.error).toBeUndefined();
-        expect(response.result).toBeDefined();
+        const received = await responsePromise;
+        expect(received.get(40)).toMatchObject({
+          result: {
+            isError: true,
+            structuredContent: {
+              result: null,
+              details: { code: "mcp_annotation_file_unavailable" },
+            },
+          },
+        });
+        expect(received.get(41)?.error).toBeUndefined();
+        expect(received.get(41)?.result).toBeDefined();
+        expect(received.get(42)).toMatchObject({
+          result: {
+            structuredContent: {
+              result: { status: "committed", mutation_count: 2 },
+            },
+          },
+        });
+        const target = context.runCli(["get", targetId, "--json", "--full"], {
+          expectJson: true,
+        });
+        expect(target.code).toBe(0);
+        expect(
+          (target.json as { item: { comments?: unknown[] } }).item.comments,
+        ).toEqual([]);
+        const atomicFirst = context.runCli(
+          ["get", "pm-mcp-atomic-literal-a", "--json", "--full"],
+          { expectJson: true },
+        );
+        const atomicSecond = context.runCli(
+          ["get", "pm-mcp-atomic-literal-b", "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(
+          (atomicFirst.json as { item: { description?: string } }).item
+            .description,
+        ).toBe("-");
+        expect(
+          (atomicSecond.json as { item: { body?: string } }).item.body,
+        ).toBe("-");
       } finally {
         responses.close();
         child.stdin.end();

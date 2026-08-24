@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 337
+- Catalog error codes: 338
 - Executable error codes: 16
 - Executable-code ratchet floor: 16
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `missing_lifecycle_target`, `missing_required_argument`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 321
-- Coverage fraction: 0.047478
+- Uncovered error codes: 322
+- Coverage fraction: 0.047337
 - Closed-domain probes: 18
 - Grammar probes: 95
 
@@ -175,6 +175,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `malformed_plan_step_evidence` | `malformed_plan_step_evidence` | uncovered | none | 0 |
 | `manifest_capabilities_absent` | `manifest_capabilities_absent` | uncovered | none | 0 |
 | `manifest_unknown_key` | `manifest_unknown_key` | uncovered | none | 0 |
+| `mcp_annotation_file_unavailable` | `mcp_annotation_file_unavailable` | uncovered | none | 0 |
 | `mcp_stdin_unavailable` | `mcp_stdin_unavailable` | uncovered | none | 0 |
 | `merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |
 | `merge_decisions_unreviewed` | `merge_decisions_unreviewed` | uncovered | none | 0 |
