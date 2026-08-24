@@ -6,25 +6,25 @@ status: closed
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-23T13:11:32.797Z"
-closed_at: "2026-08-23T13:11:32.197Z"
-completed_at: "2026-08-23T13:11:32.197Z"
+updated_at: "2026-08-24T12:40:25.156Z"
+closed_at: "2026-08-24T12:40:24.285Z"
+completed_at: "2026-08-24T12:40:24.285Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The gate runner records a structured failure document naming the failing gate, its exit status, and its captured verdict, at a path supplied by the environment; The blocked-release issue renders its cause from that document when it exists, including the blocking issue identifiers and the per-issue reason the gate assigned; The preflight configuration detection is retained only as the fallback used when no failure document was produced; No part of the mechanism classifies failures by matching patterns against log or message text; A negative control proves the rendered cause changes when the recorded gate verdict changes, and that a missing document still yields the preflight fallback"
 parent: pm-u9d0
 risk: high
 confidence: high
-resolution: "Fixed by recording structured gate failure documents and rendering blocker causes from the recorded failing gate, exit status, and verdict, with configuration preflight retained only when no record exists."
-expected_result: A release gate failure produces a machine-readable record and the blocked-release issue names the gate and structured verdict without log-text classification; absence of a record uses the preflight fallback.
-actual_result: "The release runner writes the structured failure record, the workflow renders it into the blocker issue, negative controls prove verdict-sensitive rendering and fallback behavior, and the canonical public title now generates an outcome-focused release note."
+resolution: "Fixed hosted release retry diagnostics by isolating the fixture record, using canonical cross-platform module entrypoint detection, and asserting structured verification failures with actionable child-process output."
+expected_result: The same-day Auto Release recovery contract records and renders structured negative failures identically on Linux and Windows without leaving its temp sandbox.
+actual_result: "release-failure-record.mjs now detects direct execution with pathToFileURL on Windows drive-letter paths; the fixture normalizes its temp record only on win32, preserving POSIX containment; npm and GitHub verification negatives assert stage/cause with stdout/stderr diagnostics; the hosted-environment 64-test suite, typecheck, and security scan pass locally."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-2f80fn,discovered_from,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-dqtzva,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
-comments[13]{created_at,author,text}:
+comments[22]{created_at,author,text}:
   "2026-08-23T06:39:18.191Z","harness:codex","Implementation start 2026-08-23: live GH-1095 reproduced the residual exactly: the 2026.8.23 tag exists, GitHub/npm artifacts do not, npm publish returned E404, and the alert still emitted failing_stage=unrecorded. This tranche extends the existing structured recorder across downstream publish and verification stages without log-text classification."
   "2026-08-23T07:03:27.150Z","harness:codex","Progress: Auto Release now records downstream GitHub Release failures from structured run/job/step conclusions and records discovery/GitHub Release/npm verification stages before exiting; the current npm publish incident would resolve to release-workflow plus Build, Test, Publish / Publish to npm instead of unrecorded."
   "2026-08-23T07:10:42.447Z","harness:codex","Focused verification: release-failure record and CI workflow contract suites passed 37/37; structured negative controls classify only GitHub job/step conclusions and preserve preflight fallback when no record exists."
@@ -38,6 +38,15 @@ comments[13]{created_at,author,text}:
   "2026-08-23T11:54:36.145Z","harness:codex","Terminal review remediation evidence: CodeRabbit finding 3838390701 is addressed at all three Auto Release watcher callers. Each now propagates the original gh run watch status while the structured recorder retains the same status, and the workflow contract asserts exactly three preserving calls. Focused release/CI tests pass within 189/189; full coverage is exact across 7,847 tests, and lint/static assurance pass."
   "2026-08-23T12:34:40.249Z","harness:codex","Review recurrence start: CodeRabbit finding 3838502159 is accepted after live validation; blank and whitespace-only workflow statuses must remain unreported rather than normalize to zero."
   "2026-08-23T13:11:31.635Z","harness:codex","Final review evidence: integerStatus now rejects empty and whitespace-only workflow statuses instead of coercing them to zero; unit negative controls cover both forms. Focused release-failure tests, pnpm lint/static assurance, and final exact coverage all pass: 566 files, 7,848 tests, 100/100/100/100."
+  "2026-08-24T12:04:28.736Z","harness:codex","Recurrence evidence: exact merged-main CI was green, but guarded release retries 32686802661 and 32723747501 both failed before tagging at tests/integration/release-automation-contract.spec.ts:500. The fixture spreads process.env and does not override RELEASE_FAILURE_RECORD; GitHub Actions supplies it, local shells do not. Negative publication scenarios therefore render structured failure output only in hosted coverage. No v2026.8.24 tag or npm version exists."
+  "2026-08-24T12:05:24.179Z","harness:codex","Fix implemented: the same-day recovery fixture now overrides RELEASE_FAILURE_RECORD with a temp-owned path and asserts structured npm-publication-verification and github-release-verification outputs instead of expecting an empty GITHUB_OUTPUT. Hosted-environment negative control with CI=true, GITHUB_ACTIONS=true, and an inherited outer record path passed 64/64 focused release tests."
+  "2026-08-24T12:12:18.185Z","harness:codex",Linked-test preflight refused all three inherited commands as foreign_source_ref from their original reviewed branch; this was a trust_refusal with zero assertion failures. Acknowledging the unchanged linked commands on the current recurrence branch before execution.
+  "2026-08-24T12:19:41.243Z","harness:codex","Terminal verification: hosted-environment focused suite passed 64/64; authoritative coverage passed 570 files and 7,886 tests at exact 100/100/100/100; trusted linked run test-local-mt775cz2-n8hm1k passed 3/3 after the prior trust-only refusal was explicitly acknowledged; CI=1 pnpm quality:static passed repository assurance, package/API parity, grammar/flag/lexicon/refusal gates, tracker-context, graph composition, and record integrity."
+  "2026-08-24T12:23:09.755Z","harness:codex","Additional terminal evidence: pnpm typecheck and pnpm security:scan passed; git diff --check passed; pm health --check-only passed 10/10 with 14 unchanged legacy hierarchy advisories; pm validate --check-resolution --check-history-drift reported history drift 0 with 295 unchanged legacy resolution warnings."
+  "2026-08-24T12:31:28.756Z","harness:codex","Hosted recurrence evidence: PR #1106 CI run 32726869845 passed Linux coverage/static precursor gates but Windows regression failed at release-automation-contract.spec.ts:505 because GITHUB_OUTPUT remained empty. The record path is sandbox-owned but must be transported from Git Bash to native Node in slash form on Windows."
+  "2026-08-24T12:33:00.485Z","harness:codex","Windows remediation: RELEASE_FAILURE_RECORD now uses a slash-normalized temp-owned path before entering Git Bash, preserving native Node path resolution on windows-latest. Each structured negative assertion now includes child stdout/stderr. Hosted-environment focused reproduction passes 64/64 and pnpm typecheck plus git diff --check pass."
+  "2026-08-24T12:39:00.727Z","harness:codex","Root cause from CI run 32727746724 job 97433029801: the negative scenario emitted expected release-verification stdout with empty stderr and empty GITHUB_OUTPUT. release-failure-record.mjs main was never invoked on Windows because import.meta.url was compared to a manually concatenated file URL. Security re-review also found unconditional slash replacement could escape a POSIX TMPDIR containing a literal backslash; normalization will be win32-only."
+  "2026-08-24T12:40:23.265Z","harness:codex","Final remediation: release-failure-record.mjs now uses pathToFileURL(process.argv[1]).href for the direct-execution guard, matching the repository cross-platform pattern. Fixture slash normalization is restricted to win32, closing the POSIX TMPDIR containment finding. Focused hosted-environment tests pass 64/64; typecheck, security scan, and diff check pass."
 files[5]{path,scope,note}:
   .github/workflows/auto-release.yml,project,"Alert step renders the recorded cause, preflight retained as fallback"
   scripts/release/release-failure-record.mjs,project,"Structured failure document: records and renders the failing gate verdict"
@@ -48,9 +57,36 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-08-23T07:03:37.399Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-08-23T09:31:59.044Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-08-23T11:54:35.153Z",local_mutation,codex/contract-derived-surfaces-and-release-failures
+test_runs[2]:
+  - run_id: test-local-mt774hu1-6t1fbc
+    kind: test
+    status: failed
+    started_at: "2026-08-24T12:12:08.035Z"
+    finished_at: "2026-08-24T12:12:08.137Z"
+    recorded_at: "2026-08-24T12:12:08.137Z"
+    passed: 0
+    failed: 3
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mt775cz2-n8hm1k
+    kind: test
+    status: passed
+    started_at: "2026-08-24T12:12:19.275Z"
+    finished_at: "2026-08-24T12:12:48.494Z"
+    recorded_at: "2026-08-24T12:12:48.494Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-failure-record.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,acknowledged
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated public release note for structured release-failure behavior
-close_reason: Completed structured release-failure preservation including blank-status normalization hardening and exact negative-control coverage.
+close_reason: "Canonical cross-platform entrypoint detection now lets Windows execute the structured failure recorder, while OS-gated fixture normalization preserves sandbox containment."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
