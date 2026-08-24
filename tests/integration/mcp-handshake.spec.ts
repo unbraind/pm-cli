@@ -358,10 +358,16 @@ describe("MCP protocol handshake", () => {
     ).toEqual({ add: "plain" });
     expect(
       mcpServerTestOnly.normalizeMcpOptionsArrays(
-        { add: "comment" },
+        { add: "comment", file: "-" },
         "comments",
       ),
-    ).toEqual({ add: "comment" });
+    ).toEqual({ add: "comment", file: "-" });
+    expect(
+      mcpServerTestOnly.normalizeMcpOptionsArrays(
+        { file: "src/index.ts" },
+        "create",
+      ),
+    ).toEqual({ file: ["src/index.ts"] });
     expect(
       mcpServerTestOnly.withAddNoteOption({ note: "already-set" }),
     ).toEqual({ note: "already-set" });
@@ -537,7 +543,10 @@ describe("MCP protocol handshake", () => {
       ),
     ).toEqual({});
     expect(
-      mcpServerTestOnly.optionsWithAuthor({ title: "not-hoisted", options: {} }),
+      mcpServerTestOnly.optionsWithAuthor({
+        title: "not-hoisted",
+        options: {},
+      }),
     ).toEqual({});
     expect(
       mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_run", { typo: true }),
@@ -2028,6 +2037,165 @@ describe("MCP protocol handshake", () => {
     });
   });
 
+  it("preserves MCP mutation dash values as JSON document data", async () => {
+    await withTempPmPath(async (context) => {
+      const created = (await mcpServerTestOnly.runAction({
+        action: "create",
+        path: context.pmPath,
+        options: {
+          title: "mcp literal stdin tokens",
+          type: "Task",
+          body: "-",
+          comment: ["-"],
+        },
+      })) as { id: string };
+
+      await mcpServerTestOnly.runAction({
+        action: "update",
+        path: context.pmPath,
+        id: created.id,
+        options: { description: "-", note: ["-"] },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "update-many",
+        path: context.pmPath,
+        options: {
+          list: { ids: [created.id] },
+          update: { body: "-", learning: ["-"] },
+        },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "append",
+        path: context.pmPath,
+        id: created.id,
+        options: { body: "-" },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "comments",
+        path: context.pmPath,
+        id: created.id,
+        options: { add: "-" },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "notes",
+        path: context.pmPath,
+        id: created.id,
+        options: { add: "-" },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "learnings",
+        path: context.pmPath,
+        id: created.id,
+        options: { add: "-" },
+      });
+
+      const plan = (await mcpServerTestOnly.runAction({
+        action: "plan",
+        path: context.pmPath,
+        options: {
+          subcommand: "create",
+          title: "mcp literal plan description",
+          description: "-",
+        },
+      })) as { plan: { id: string } };
+      const shortcutIds: string[] = [];
+      for (const action of ["meet", "event", "remind"] as const) {
+        const shortcut = (await mcpServerTestOnly.runAction({
+          action,
+          path: context.pmPath,
+          title: `mcp literal ${action}`,
+          options: { body: "-" },
+        })) as { item: { id: string } };
+        shortcutIds.push(shortcut.item.id);
+      }
+
+      const loaded = (await mcpServerTestOnly.runAction({
+        action: "get",
+        path: context.pmPath,
+        id: created.id,
+        options: { full: true },
+      })) as {
+        item: {
+          body?: string;
+          description?: string;
+          comments?: Array<{ text: string }>;
+          notes?: Array<{ text: string }>;
+          learnings?: Array<{ text: string }>;
+        };
+      };
+      expect(loaded.item).toMatchObject({
+        body: "-\n\n-",
+        description: "-",
+        comments: expect.arrayContaining([
+          expect.objectContaining({ text: "-" }),
+          expect.objectContaining({ text: "-" }),
+        ]),
+        notes: expect.arrayContaining([expect.objectContaining({ text: "-" })]),
+        learnings: expect.arrayContaining([
+          expect.objectContaining({ text: "-" }),
+        ]),
+      });
+      const planItem = (await mcpServerTestOnly.runAction({
+        action: "get",
+        path: context.pmPath,
+        id: plan.plan.id,
+        options: { full: true },
+      })) as { item: { description?: string } };
+      expect(planItem.item.description).toBe("-");
+      for (const id of shortcutIds) {
+        const shortcutItem = (await mcpServerTestOnly.runAction({
+          action: "get",
+          path: context.pmPath,
+          id,
+          options: { full: true },
+        })) as { item: { body?: string } };
+        expect(shortcutItem.item.body).toBe("-");
+      }
+    });
+  });
+
+  it("refuses MCP annotation stdin and server-file directives", async () => {
+    await withTempPmPath(async (context) => {
+      const created = (await mcpServerTestOnly.runAction({
+        action: "create",
+        path: context.pmPath,
+        options: { title: "mcp annotation stdin refusal", type: "Task" },
+      })) as { id: string };
+      for (const action of ["comments", "notes", "learnings"] as const) {
+        await expect(
+          mcpServerTestOnly.runAction({
+            action,
+            path: context.pmPath,
+            id: created.id,
+            options: { stdin: true },
+          }),
+        ).rejects.toMatchObject({
+          code: "mcp_stdin_unavailable",
+        });
+        await expect(
+          mcpServerTestOnly.runAction({
+            action,
+            path: context.pmPath,
+            id: created.id,
+            options: { file: "-" },
+          }),
+        ).rejects.toMatchObject({
+          code: "mcp_annotation_file_unavailable",
+        });
+        await expect(
+          mcpServerTestOnly.runAction({
+            action,
+            path: context.pmPath,
+            id: created.id,
+            options: { file: "/etc/hostname" },
+          }),
+        ).rejects.toMatchObject({
+          code: "mcp_annotation_file_unavailable",
+        });
+      }
+    });
+  });
+
   it("returns an invalid-request error for non-object JSON-RPC lines", async () => {
     const write = vi
       .spyOn(process.stdout, "write")
@@ -2422,5 +2590,334 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
     };
     expect(response.result?.serverInfo?.name).toBe("pm-mcp");
     expect(response.result?.protocolVersion).toBe("2025-06-18");
+  });
+
+  it("refuses files and preserves atomic/Plan dashes while MCP stdin remains open", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "MCP file-refusal target",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+      const targetId = (create.json as { item: { id: string } }).item.id;
+      const pauseTarget = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "MCP pause-task target",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(pauseTarget.code).toBe(0);
+      const pauseTargetId = (
+        pauseTarget.json as { item: { id: string } }
+      ).item.id;
+      expect(
+        context.runCli([
+          "start-task",
+          pauseTargetId,
+          "--author",
+          "mcp-pause-setup",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      const materializePlan = context.runCli(
+        [
+          "plan",
+          "create",
+          "MCP materialize literal plan",
+          "--step",
+          "literal materialized step",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(materializePlan.code).toBe(0);
+      const materializePlanId = (
+        materializePlan.json as { plan: { id: string } }
+      ).plan.id;
+      const distServerPath = path.join(
+        process.cwd(),
+        "dist",
+        "mcp",
+        "server.js",
+      );
+      const child = spawn(process.execPath, [distServerPath], {
+        cwd: process.cwd(),
+        stdio: ["pipe", "pipe", "pipe"],
+        env: {
+          ...context.env,
+          PM_PATH: context.pmPath,
+          PM_NO_TELEMETRY: "1",
+          PM_ANALYTICS_OPTOUT: "1",
+        },
+      });
+      const responses = readline.createInterface({ input: child.stdout });
+      const responsePromise = new Promise<Map<number, Record<string, unknown>>>(
+        (resolve, reject) => {
+          const received = new Map<number, Record<string, unknown>>();
+          const timeout = setTimeout(() => {
+            reject(
+              new Error(
+                "timed out waiting for MCP file refusal, materialization, and literal mutation responses with open stdin",
+              ),
+            );
+          }, 5_000);
+          responses.on("line", (line) => {
+            const response = JSON.parse(line) as Record<string, unknown>;
+            if (
+              response.id === 40 ||
+              response.id === 41 ||
+              response.id === 42 ||
+              response.id === 43 ||
+              response.id === 44 ||
+              response.id === 45
+            ) {
+              received.set(response.id, response);
+            }
+            if (received.size === 6) {
+              clearTimeout(timeout);
+              resolve(received);
+            }
+          });
+          child.once("error", (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          });
+          child.once("exit", (code, signal) => {
+            if (received.size === 6) return;
+            clearTimeout(timeout);
+            reject(
+              new Error(
+                `MCP server exited before answering (code=${code}, signal=${signal})`,
+              ),
+            );
+          });
+        },
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 40,
+          method: "tools/call",
+          params: {
+            name: "pm_comments",
+            arguments: {
+              path: context.pmPath,
+              id: targetId,
+              options: { file: "/etc/hostname" },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 45,
+          method: "tools/call",
+          params: {
+            name: "pm_plan",
+            arguments: {
+              path: context.pmPath,
+              id: materializePlanId,
+              options: {
+                subcommand: "materialize",
+                steps: "plan-step-001",
+                step: "singular alias provenance probe",
+                field: ["body=-"],
+                materializeType: "Task",
+              },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 43,
+          method: "tools/call",
+          params: {
+            name: "pm_run",
+            arguments: {
+              action: "start-task",
+              path: context.pmPath,
+              id: targetId,
+              options: { body: "-" },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 44,
+          method: "tools/call",
+          params: {
+            name: "pm_run",
+            arguments: {
+              action: "pause-task",
+              path: context.pmPath,
+              id: pauseTargetId,
+              options: { body: "-" },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 41,
+          method: "tools/call",
+          params: {
+            name: "pm_plan",
+            arguments: {
+              path: context.pmPath,
+              options: {
+                subcommand: "create",
+                title: "open MCP stdin literal",
+                description: "-",
+              },
+            },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 42,
+          method: "tools/call",
+          params: {
+            name: "pm_mutate",
+            arguments: {
+              path: context.pmPath,
+              transactionId: "mcp-atomic-literal-dashes",
+              mutations: [
+                {
+                  op: "create",
+                  id: "pm-mcp-atomic-literal-a",
+                  options: {
+                    title: "MCP atomic literal A",
+                    type: "Task",
+                    description: "-",
+                  },
+                },
+                {
+                  op: "create",
+                  id: "pm-mcp-atomic-literal-b",
+                  options: {
+                    title: "MCP atomic literal B",
+                    type: "Task",
+                    body: "-",
+                  },
+                },
+              ],
+            },
+          },
+        })}\n`,
+      );
+      try {
+        const received = await responsePromise;
+        expect(received.get(40)).toMatchObject({
+          result: {
+            isError: true,
+            structuredContent: {
+              result: null,
+              details: { code: "mcp_annotation_file_unavailable" },
+            },
+          },
+        });
+        expect(received.get(41)?.error).toBeUndefined();
+        expect(received.get(41)?.result).toBeDefined();
+        expect(received.get(42)).toMatchObject({
+          result: {
+            structuredContent: {
+              result: { status: "committed", mutation_count: 2 },
+            },
+          },
+        });
+        expect(received.get(43)?.error).toBeUndefined();
+        expect(received.get(43)?.result).toBeDefined();
+        expect(received.get(44)?.error).toBeUndefined();
+        expect(received.get(44)?.result).toBeDefined();
+        expect(received.get(45)?.error).toBeUndefined();
+        expect(received.get(45)?.result).toBeDefined();
+        const target = context.runCli(["get", targetId, "--json", "--full"], {
+          expectJson: true,
+        });
+        expect(target.code).toBe(0);
+        expect(
+          (target.json as { item: { comments?: unknown[] } }).item.comments,
+        ).toEqual([]);
+        expect(
+          (target.json as { item: { status?: string } }).item.status,
+        ).toBe("in_progress");
+        const paused = context.runCli(
+          ["get", pauseTargetId, "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(paused.code).toBe(0);
+        expect(
+          (
+            paused.json as {
+              item: { status?: string; assignee?: string };
+            }
+          ).item,
+        ).toMatchObject({ status: "open" });
+        expect(
+          (paused.json as { item: { assignee?: string } }).item.assignee,
+        ).toBeUndefined();
+        const atomicFirst = context.runCli(
+          ["get", "pm-mcp-atomic-literal-a", "--json", "--full"],
+          { expectJson: true },
+        );
+        const atomicSecond = context.runCli(
+          ["get", "pm-mcp-atomic-literal-b", "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(
+          (atomicFirst.json as { item: { description?: string } }).item
+            .description,
+        ).toBe("-");
+        expect(
+          (atomicSecond.json as { item: { body?: string } }).item.body,
+        ).toBe("-");
+        const materializedId = (
+          received.get(45) as {
+            result?: {
+              structuredContent?: {
+                result?: { materialized?: Array<{ id?: string }> };
+              };
+            };
+          }
+        ).result?.structuredContent?.result?.materialized?.[0]?.id;
+        expect(materializedId).toBeTruthy();
+        const materialized = context.runCli(
+          ["get", materializedId ?? "", "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(materialized.code).toBe(0);
+        expect(
+          (materialized.json as { item: { body?: string } }).item.body,
+        ).toBe("-");
+      } finally {
+        responses.close();
+        child.stdin.end();
+        child.kill("SIGTERM");
+      }
+    });
   });
 });

@@ -7,6 +7,9 @@
  */
 import crypto from "node:crypto";
 import path from "node:path";
+import {
+  transferMutationStdinTokenPolicy,
+} from "../core/item/parse.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
@@ -112,6 +115,16 @@ export interface BulkItemMutationOutcome {
   id: string;
   /** Operation the batch applied for this item. */
   op: BulkItemMutation["op"];
+}
+
+function mergeTransactionMutationOptions(
+  source: PmClientFullMutationOptions | undefined,
+  additions: PmClientFullMutationOptions,
+): PmClientFullMutationOptions {
+  const merged = { ...source, ...additions };
+  return source === undefined
+    ? merged
+    : transferMutationStdinTokenPolicy(source, merged);
 }
 
 /** Successful durable result of a bulk item-mutation transaction. */
@@ -289,7 +302,10 @@ function buildCreateStep(
     },
     async apply(): Promise<WorkspaceTransactionJsonValue> {
       const created = await create(
-        { ...mutation.options, author: config.author, id: mutation.id },
+        mergeTransactionMutationOptions(mutation.options, {
+          author: config.author,
+          id: mutation.id,
+        }),
         { pmRoot: config.pmRoot },
       );
       const createdItem = created.item as Record<string, unknown>;
@@ -355,11 +371,10 @@ function buildUpdateStep(
     async apply(): Promise<WorkspaceTransactionJsonValue> {
       const updated = await update(
         mutation.id,
-        {
-          ...mutation.options,
+        mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
           message: bulkHistoryMarker(config.transactionId, stepId, "apply"),
-        },
+        }),
         { pmRoot: config.pmRoot },
       );
       const updatedItem = updated.item as Record<string, unknown>;
@@ -408,11 +423,10 @@ function buildCloseStep(
       const closed = await close(
         mutation.id,
         mutation.reason,
-        {
-          ...mutation.options,
+        mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
           message: bulkHistoryMarker(config.transactionId, stepId, "apply"),
-        },
+        }),
         { pmRoot: config.pmRoot },
       );
       const closedItem = closed.item as Record<string, unknown>;
@@ -461,11 +475,10 @@ function buildReleaseStep(
     async apply(): Promise<WorkspaceTransactionJsonValue> {
       const released = await release(
         mutation.id,
-        {
-          ...mutation.options,
+        mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
           message: bulkHistoryMarker(config.transactionId, stepId, "apply"),
-        },
+        }),
         { pmRoot: config.pmRoot },
       );
       const releasedItem = released.item as Record<string, unknown>;

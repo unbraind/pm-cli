@@ -5,6 +5,11 @@
  * maintenance engines without duplicating their selection or integrity policy.
  */
 import type { HistoryCompactScope } from "../core/history/history-compact-bulk.js";
+import {
+  normalizeBulkIdsValue,
+  parseBulkIdsText,
+  type BulkIdsValue,
+} from "../core/io/bulk-ids-input.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -51,14 +56,20 @@ export function runMcpHistoryCompactAction(
   context: HistoryMcpActionContext,
 ): Promise<HistoryCompactResult | HistoryCompactBulkResult> {
   const idsSource = context.options.ids;
-  const ids = Array.isArray(idsSource)
-    ? idsSource.map(String).filter((value) => value.trim().length > 0)
-    : typeof idsSource === "string"
-      ? idsSource
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean)
-      : undefined;
+  const normalizedIds = normalizeBulkIdsValue(idsSource as BulkIdsValue);
+  if (idsSource !== undefined && normalizedIds === "") {
+    throw new PmCliError(
+      "history-compact ids requires at least one valid item ID.",
+      EXIT_CODE.USAGE,
+      {
+        code: "bulk_ids_input_empty",
+        required:
+          "Provide one or more string or finite numeric IDs; non-finite and unsupported selector values are rejected.",
+      },
+    );
+  }
+  const ids =
+    normalizedIds === undefined ? undefined : parseBulkIdsText(normalizedIds);
   const allOver = parseRuntimeInteger(
     context.options.allOver ?? context.options.all_over,
     "history-compact allOver",

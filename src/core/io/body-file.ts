@@ -7,6 +7,7 @@ import { readFile } from "node:fs/promises";
 
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { createStdinTokenResolver } from "../item/parse.js";
 
 /**
  * GH-214: shared resolver for the `--body-file <path>` input convenience on
@@ -54,6 +55,12 @@ export async function resolveBodyFileContent(
       why: "An empty --body-file value has no file to read the body from.",
     });
   }
+  if (path === "-") {
+    return (await createStdinTokenResolver().resolveValue(
+      "-",
+      "--body-file",
+    )) as string;
+  }
   try {
     return await readFileImpl(path);
   } catch (error: unknown) {
@@ -74,6 +81,7 @@ export async function resolveBodyFileContent(
         why: `The body content is loaded from the file at the supplied path, so an unreadable path cannot produce a body${errno ? ` (underlying error: ${errno})` : ""}.`,
         nextSteps: [
           `Verify the path: ls -l "${path}"`,
+          "Or pipe the body with --body-file -.",
           "Or pass the body inline with --body <text>.",
         ],
       },

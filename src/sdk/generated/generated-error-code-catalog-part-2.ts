@@ -8,6 +8,45 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "missing_cli_flag",
+    meaning: "Missing cli flag condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_cli_flag",
+    aliases: [],
+  },
+  {
+    code: "missing_destination",
+    meaning: "Missing destination condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_destination",
+    aliases: [],
+  },
+  {
+    code: "missing_directory",
+    meaning: "Missing directory condition.",
+    stability: "stable",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_directory",
+    aliases: [],
+  },
+  {
     code: "missing_init_recovery",
     meaning: "Missing init recovery condition.",
     stability: "provisional",

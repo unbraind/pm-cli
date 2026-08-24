@@ -7,6 +7,7 @@ import { _testOnlyUpdateCommand, runUpdate, type UpdateCommandOptions } from "..
 import { runCreate } from "../../../src/cli/commands/create.js";
 import { runGet } from "../../../src/cli/commands/get.js";
 import { runDeps } from "../../../src/cli/commands/deps.js";
+import { preserveMutationStdinTokenLiterals } from "../../../src/sdk/runtime-primitives.js";
 import { setActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
@@ -476,6 +477,67 @@ describe("update command helper coverage", () => {
         "agent",
       ),
     ).toEqual({ changed: true, dependencies: undefined });
+  });
+});
+
+describe("runUpdate stdin token policy", () => {
+  it("preserves literal stdin tokens in transport-decoded options", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate({ title: "literal update seed", type: "Task" }, { path: context.pmPath });
+      await runUpdate(
+        created.item.id,
+        preserveMutationStdinTokenLiterals({ body: "-", note: ["-"] }),
+        { path: context.pmPath },
+      );
+      const stored = await runGet(created.item.id, { path: context.pmPath }, { full: true });
+      expect(stored.item).toMatchObject({
+        body: "-",
+        notes: expect.arrayContaining([expect.objectContaining({ text: "-" })]),
+      });
+    });
+  });
+
+  it("preserves transport literals through close-status recursive updates", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        { title: "literal close-route seed", type: "Task" },
+        { path: context.pmPath },
+      );
+      await runUpdate(
+        created.item.id,
+        preserveMutationStdinTokenLiterals({
+          status: "closed",
+          closeReason: "literal close route",
+          body: "-",
+        }),
+        { path: context.pmPath },
+      );
+      const stored = await runGet(
+        created.item.id,
+        { path: context.pmPath },
+        { full: true },
+      );
+      expect(stored.item).toMatchObject({
+        status: "closed",
+        body: "-",
+        close_reason: "literal close route",
+      });
+    });
+  });
+
+  it("rejects competing direct SDK stdin tokens before reading the stream", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate({ title: "stdin conflict seed", type: "Task" }, { path: context.pmPath });
+      const stdin = new PassThrough();
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      await expect(
+        runUpdate(created.item.id, { description: "-", note: ["-"] }, { path: context.pmPath }),
+      ).rejects.toThrow("Only one option may use");
+      expect(stdin.listenerCount("data")).toBe(0);
+      stdin.destroy();
+    });
   });
 });
 

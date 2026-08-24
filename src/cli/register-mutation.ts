@@ -7,6 +7,7 @@ import type { Command } from "commander";
 import {
   type GlobalOptions,
   resolveBodyFileContent,
+  resolveCliBulkIdsInput,
   EXIT_CODE,
   splitCommaList,
   PmCliError,
@@ -56,7 +57,11 @@ import { runRestore } from "./commands/restore.js";
 import * as schemaModule from "./commands/schema.js";
 import { runUpdate } from "./commands/update.js";
 import { runUpdateMany } from "./commands/update-many.js";
-import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
+import {
+  createStdinTokenResolver,
+  preserveMutationStdinTokenFields,
+  preserveMutationStdinTokenLiterals,
+} from "../sdk/runtime-primitives.js";
 import { resolveDescriptionStdin } from "./description-stdin.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
@@ -800,6 +805,7 @@ function assertCreatePositionalTypeHasTitle(
 
 const STRUCTURED_STDIN_CONFLICT_KEYS = [
   "body",
+  "bodyFile",
   "description",
   "dep",
   "depRemove",
@@ -813,24 +819,56 @@ const STRUCTURED_STDIN_CONFLICT_KEYS = [
   "event",
   "typeOption",
   "field",
+  "ids",
 ] as const;
 
-function assertExclusiveStructuredStdin(
+function assertSingleMutationStdinConsumer(
   options: Record<string, unknown>,
 ): void {
-  const conflictingFlags = STRUCTURED_STDIN_CONFLICT_KEYS.filter((key) => {
+  const stdinFlags = STRUCTURED_STDIN_CONFLICT_KEYS.flatMap((key) => {
     const value = options[key];
-    return value === "-" || (Array.isArray(value) && value.includes("-"));
-  }).map(
-    (key) =>
-      `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
-  );
-  if (conflictingFlags.length > 0) {
+    const count =
+      typeof value === "string" && value.trim() === "-"
+        ? 1
+        : Array.isArray(value)
+          ? value.filter(
+              (entry) => typeof entry === "string" && entry.trim() === "-",
+            ).length
+          : 0;
+    const flag = `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+    return Array.from({ length: count }, () => flag);
+  });
+  if (options.stdinJson === true) {
+    stdinFlags.unshift("--stdin-json");
+  }
+  if (stdinFlags.length > 1) {
     throw new PmCliError(
-      `--stdin-json cannot be combined with other stdin consumers: ${conflictingFlags.join(", ")}`,
+      `Only one option may consume stdin per command invocation. Found: ${stdinFlags.join(", ")}.`,
       EXIT_CODE.USAGE,
     );
   }
+}
+
+function preserveResolvedMutationStdinFields(
+  options: object,
+  bodyFileResolved: boolean,
+  descriptionStdinResolved: boolean,
+): void {
+  const fields: PropertyKey[] = [];
+  if (bodyFileResolved) fields.push("body");
+  if (descriptionStdinResolved) fields.push("description");
+  preserveMutationStdinTokenFields(options, fields);
+}
+
+function isDescriptionStdinConsumer(
+  options: Record<string, unknown>,
+  stdinJsonConsumed: boolean,
+): boolean {
+  return (
+    !stdinJsonConsumed &&
+    typeof options.description === "string" &&
+    options.description.trim() === "-"
+  );
 }
 
 async function runCreateAction(
@@ -841,8 +879,9 @@ async function runCreateAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  if (options.stdinJson === true) {
-    assertExclusiveStructuredStdin(options);
+  assertSingleMutationStdinConsumer(options);
+  const stdinJsonConsumed = options.stdinJson === true;
+  if (stdinJsonConsumed) {
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",
@@ -872,15 +911,28 @@ async function runCreateAction(
     options.title === undefined
   )
     options.title = positionals.positionalTitle;
-  await resolveDescriptionStdin(options);
-  if (typeof options.bodyFile === "string") {
+  const descriptionStdinResolved = isDescriptionStdinConsumer(
+    options,
+    stdinJsonConsumed,
+  );
+  if (!stdinJsonConsumed) {
+    await resolveDescriptionStdin(options);
+  }
+  const bodyFileResolved = typeof options.bodyFile === "string";
+  if (bodyFileResolved) {
     options.body = await resolveBodyFileContent(
-      options.bodyFile,
+      String(options.bodyFile),
       options.body !== undefined ? String(options.body) : undefined,
     );
     delete options.bodyFile;
   }
   const normalized = normalizeCreateOptions(options, { requireType: false });
+  preserveResolvedMutationStdinFields(
+    normalized,
+    bodyFileResolved,
+    descriptionStdinResolved,
+  );
+  if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
   const result = await runCreate(normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
@@ -923,6 +975,8 @@ async function runCloseManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  assertSingleMutationStdinConsumer(options);
+  options.ids = await resolveCliBulkIdsInput(readOptionString(options, "ids"));
   const result = await runCloseMany(
     {
       status: readOptionString(options, "filterStatus"),
@@ -966,6 +1020,8 @@ async function runUpdateManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  assertSingleMutationStdinConsumer(options);
+  options.ids = await resolveCliBulkIdsInput(readOptionString(options, "ids"));
   const result = await runUpdateMany(
     {
       status: readOptionString(options, "filterStatus"),
@@ -1345,8 +1401,10 @@ async function runHistoryCompactAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const ids =
-    typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
+  const idsValue = await resolveCliBulkIdsInput(
+    readOptionString(options, "ids"),
+  );
+  const ids = idsValue === undefined ? undefined : splitCommaList(idsValue);
   const allOver = parseNonNegativeIntFlag(options.allOver, "--all-over");
   const minEntries = parseNonNegativeIntFlag(
     options.minEntries,
@@ -1568,29 +1626,40 @@ async function runUpdateAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  if (options.stdinJson === true) {
-    assertExclusiveStructuredStdin(options);
+  assertSingleMutationStdinConsumer(options);
+  const stdinJsonConsumed = options.stdinJson === true;
+  if (stdinJsonConsumed) {
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",
     );
     options = itemDocumentToMutationOptions(input ?? "", "update", options);
   }
-  await resolveDescriptionStdin(options);
+  const descriptionStdinResolved = isDescriptionStdinConsumer(
+    options,
+    stdinJsonConsumed,
+  );
+  if (!stdinJsonConsumed) {
+    await resolveDescriptionStdin(options);
+  }
   // GH-214: resolve --body-file into the existing body field before
   // normalization so the rest of update is unchanged. CLI-only input alias.
-  if (typeof options.bodyFile === "string") {
+  const bodyFileResolved = typeof options.bodyFile === "string";
+  if (bodyFileResolved) {
     options.body = await resolveBodyFileContent(
-      options.bodyFile,
+      String(options.bodyFile),
       options.body !== undefined ? String(options.body) : undefined,
     );
     delete options.bodyFile;
   }
-  const result = await runUpdate(
-    id,
-    normalizeUpdateOptions(options),
-    globalOptions,
+  const normalized = normalizeUpdateOptions(options);
+  preserveResolvedMutationStdinFields(
+    normalized,
+    bodyFileResolved,
+    descriptionStdinResolved,
   );
+  if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
+  const result = await runUpdate(id, normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(
     await applyActiveCommandResultService(
@@ -1979,7 +2048,7 @@ export function registerMutationCommands(
     )
     .option(
       "--body-file <path>",
-      "Load the item markdown body from a file (mutually exclusive with --body)",
+      "Load body from a file or stdin (-); conflicts with --body",
     )
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
@@ -2039,7 +2108,7 @@ export function registerMutationCommands(
     )
     .option(
       "--body-file <path>",
-      "Load the item markdown body from a file (mutually exclusive with --body)",
+      "Load body from a file or stdin (-); conflicts with --body",
     )
     .option(
       "--replace-deps",
@@ -2157,7 +2226,7 @@ export function registerMutationCommands(
   updateManyCommand
     .option(
       "--ids <value>",
-      "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)",
+      "Explicit ID allowlist: comma/newline text, - stdin, or @path file",
     )
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -2475,7 +2544,7 @@ export function registerMutationCommands(
   closeManyCommand
     .option(
       "--ids <value>",
-      "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)",
+      "Explicit ID allowlist: comma/newline text, - stdin, or @path file",
     )
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -2949,7 +3018,7 @@ export function registerMutationCommands(
     )
     .option(
       "--ids <value>",
-      "Bulk: compact an explicit comma-separated list of item ids",
+      "Bulk IDs: comma/newline text, - stdin, or @path file",
     )
     .option(
       "--all-over <n>",

@@ -5,6 +5,9 @@
  */
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import {
+  transferMutationStdinTokenPolicy,
+} from "./runtime-primitives.js";
+import {
   runCreate,
   type CreateCommandOptions,
   type CreateResult,
@@ -73,7 +76,7 @@ function buildCommonOptions(
   title: string,
   options: SchedulingShortcutCommonOptions,
 ): CreateCommandOptions {
-  return {
+  const createOptions: CreateCommandOptions = {
     type,
     title,
     schedulePreset: "lightweight",
@@ -86,6 +89,7 @@ function buildCommonOptions(
     author: options.author,
     message: options.message,
   };
+  return transferMutationStdinTokenPolicy(options, createOptions);
 }
 
 async function createMeetingOrEvent(

@@ -15833,6 +15833,86 @@
     },
     {
       "aliases": [],
+      "canonical_code": "bulk_ids_input_empty",
+      "class": "usage",
+      "code": "bulk_ids_input_empty",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Bulk ids input empty condition.",
+      "owned_states": [
+        {
+          "entrypoints": [
+            "update-many"
+          ],
+          "expected_exit_class": "usage",
+          "probe_id": "bulk-ids-stdin-empty",
+          "state": "bulk_ids_stdin_contains_no_nonempty_ids"
+        }
+      ],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/io/bulk-ids-input.ts",
+        "sdk/history-compact.ts",
+        "sdk/history-mcp.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "bulk_ids_input_missing_path",
+      "class": "usage",
+      "code": "bulk_ids_input_missing_path",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Bulk ids input missing path condition.",
+      "owned_states": [
+        {
+          "entrypoints": [
+            "update-many"
+          ],
+          "expected_exit_class": "usage",
+          "probe_id": "bulk-ids-file-path-missing",
+          "state": "bulk_ids_file_token_omits_its_path"
+        }
+      ],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/io/bulk-ids-input.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "bulk_ids_input_unreadable",
+      "class": "not_found",
+      "code": "bulk_ids_input_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Bulk ids input unreadable condition.",
+      "owned_states": [
+        {
+          "entrypoints": [
+            "update-many"
+          ],
+          "expected_exit_class": "not_found",
+          "probe_id": "bulk-ids-file-unreadable",
+          "state": "bulk_ids_file_path_cannot_be_read"
+        }
+      ],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/io/bulk-ids-input.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "bundle_integrity_torn_install",
       "class": "generic_failure",
       "code": "bundle_integrity_torn_install",
@@ -18221,6 +18301,40 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "mcp_annotation_file_unavailable",
+      "class": "usage",
+      "code": "mcp_annotation_file_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Mcp annotation file unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/runtime-input.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "mcp_stdin_unavailable",
+      "class": "usage",
+      "code": "mcp_stdin_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Mcp stdin unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
       ],
       "stability": "provisional"
     },
@@ -45046,8 +45160,28 @@
             "type": "string"
           },
           "ids": {
-            "description": "Ids.",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Ids."
           },
           "json": {
             "default": true,
@@ -47504,8 +47638,28 @@
             "type": "string"
           },
           "ids": {
-            "description": "Ids.",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Ids."
           },
           "impact": {
             "description": "Impact.",
@@ -48213,8 +48367,28 @@
             "type": "boolean"
           },
           "ids": {
-            "description": "Ids.",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Ids."
           },
           "json": {
             "default": true,

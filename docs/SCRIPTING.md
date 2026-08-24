@@ -1,6 +1,6 @@
 # CLI Scripting Contract
 
-Tracked by [pm-psy1](../.agents/pm/tasks/pm-psy1.toon), [pm-hqa8g1](../.agents/pm/tasks/pm-hqa8g1.toon), [pm-gknu](../.agents/pm/issues/pm-gknu.toon), [pm-999jh7](../.agents/pm/issues/pm-999jh7.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
+Tracked by [pm-psy1](../.agents/pm/tasks/pm-psy1.toon), [pm-hqa8g1](../.agents/pm/tasks/pm-hqa8g1.toon), [pm-gknu](../.agents/pm/issues/pm-gknu.toon), [pm-999jh7](../.agents/pm/issues/pm-999jh7.toon), [pm-srns](../.agents/pm/issues/pm-srns.toon), [pm-3oq022](../.agents/pm/issues/pm-3oq022.toon), [pm-iktj](../.agents/pm/tasks/pm-iktj.toon), and [pm-kexu](../.agents/pm/issues/pm-kexu.toon).
 
 Use this contract when composing `pm` with shells, CI runners, `jq`, or another process. Exact flags remain discoverable from `pm <command> --help --json` and `pm contracts --command <command> --flags-only --json`.
 
@@ -14,8 +14,8 @@ Use this contract when composing `pm` with shells, CI runners, `jq`, or another 
 | `3`  | Requested tracker or resource was not found.                                     | Correct the path or ID.                              |
 | `4`  | State or concurrency conflict.                                                   | Refresh live state before deciding whether to retry. |
 | `5`  | A required dependency operation failed.                                          | Inspect the dependency evidence before retrying.     |
-| `6`  | The request succeeded but matched nothing to change.                              | Treat as success and inspect the effect receipt.      |
-| `7`  | The request succeeded and changed only part of the selected targets.              | Treat as success and inspect unmatched/skipped rows.  |
+| `6`  | The request succeeded but matched nothing to change.                             | Treat as success and inspect the effect receipt.     |
+| `7`  | The request succeeded and changed only part of the selected targets.             | Treat as success and inspect unmatched/skipped rows. |
 
 Exits `0`, `6`, and `7` are successful outcomes. Bulk mutation envelopes repeat
 the distinction as `outcome: effect`, `outcome: no_effect`, or `outcome:
@@ -133,6 +133,65 @@ else
   exit "$status"
 fi
 ```
+
+Bulk selectors on `update-many`, `close-many`, and `history-compact` accept the
+same explicit ID grammar through three CLI channels: comma/newline-delimited
+argv text, `-` for stdin, and `@path` for a UTF-8 file. This makes a
+read-selector-write pipeline executable without `xargs` command fan-out:
+
+```bash
+pm list --status open,in_progress --fields id,priority --json |
+  jq -r '.items[] | select(.priority >= 2) | .id' |
+  pm update-many --ids - --priority 1 --dry-run --json
+
+pm close-many --ids @reviewed-ids.txt \
+  --reason "Reviewed batch completed" --dry-run --json
+
+pm list --status closed --fields id --json |
+  jq -r '.items[].id' |
+  pm history-compact --ids - --dry-run --json
+```
+
+An unreadable `@path`, empty stdin, or empty file fails before the tracker is
+read or mutated. `unmatched_ids` means the requested ID does not exist; an
+existing ID excluded by another filter is not misreported as nonexistent.
+Apply-mode exit `6`/`7` and the structured effect receipt remain authoritative.
+
+`update-many --dry-run` may be filter-only. It returns the matched rows with an
+empty `planned_update_options` object and empty per-row `changes`, which is a
+bounded way to validate a selector before choosing a mutation. The same
+filter-only invocation without `--dry-run` is rejected with exit `2`.
+
+Direct SDK and MCP callers may pass `ids` as a string, a finite numeric scalar,
+or an array of string and finite numeric IDs. The SDK normalizes every accepted
+shape through the same stable-deduplicating parser; non-finite numbers and
+unsupported explicit selector values are rejected before target selection:
+
+```ts
+import { PmClient } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({ pmRoot: ".agents/pm" });
+await pm.run("update-many", {
+  options: {
+    ids: ["pm-a1b2", "pm-c3d4"],
+    priority: 1,
+    dryRun: true,
+  },
+});
+```
+
+File-reading text flags use the same stdin sentinel. `--body-file -` reads a
+create/update body, while `comments`, `notes`, and `learnings` accept
+`--file -`. Real file paths remain compatible:
+
+```bash
+generate_body | pm create --title "Generated plan" --body-file -
+render_review | pm comments pm-a1b2 --file -
+```
+
+Each command invocation may consume stdin for only one option. Competing
+stdin-backed inputs such as `--description - --body-file -` are rejected before
+the stream is read.
 
 Use NDJSON for streaming row-by-row tools:
 

@@ -5,15 +5,22 @@ import {
   applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
+  assertSingleStdinTokenConsumer,
   collectTagFlagValues,
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
+  overlayMutationStdinTokenPolicy,
   parseCsvKv,
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  preserveMutationStdinTokenFields,
+  preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokenField,
+  shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
+  transferMutationStdinTokenPolicy,
 } from "../../../../src/core/item/parse.js";
 import { resolveEventEndAt } from "../../../../src/sdk/lifecycle/event-validation-messages.js";
 import {
@@ -29,6 +36,92 @@ afterEach(() => {
 });
 
 describe("core/item/parse", () => {
+  it("preserves all or selected mutation stdin tokens as literal data", async () => {
+    const options = { body: "-", comment: ["-"] };
+    preserveMutationStdinTokenFields(options, ["body"]);
+    expect(shouldResolveMutationStdinTokens(options)).toBe(true);
+    expect(shouldResolveMutationStdinTokenField(options, "body")).toBe(false);
+    expect(shouldResolveMutationStdinTokenField(options, "comment")).toBe(true);
+
+    const resolver = createStdinTokenResolver();
+    await expect(resolver.resolveValue("-", "--body", false)).resolves.toBe(
+      "-",
+    );
+    await expect(
+      resolver.resolveList(["-"], "--comment", false),
+    ).resolves.toEqual(["-"]);
+
+    preserveMutationStdinTokenLiterals(options);
+    preserveMutationStdinTokenFields(options, ["body"]);
+    expect(shouldResolveMutationStdinTokens(options)).toBe(false);
+    expect(shouldResolveMutationStdinTokenField(options, "comment")).toBe(
+      false,
+    );
+  });
+
+  it("transfers selected and all-field stdin policies across option clones", () => {
+    const selectedSource = preserveMutationStdinTokenFields(
+      { body: "-", comment: ["-"] },
+      ["body"],
+    );
+    const selectedClone = transferMutationStdinTokenPolicy(selectedSource, {
+      ...selectedSource,
+    });
+    expect(shouldResolveMutationStdinTokenField(selectedClone, "body")).toBe(
+      false,
+    );
+    expect(
+      shouldResolveMutationStdinTokenField(selectedClone, "comment"),
+    ).toBe(true);
+
+    const literalSource = preserveMutationStdinTokenLiterals({ body: "-" });
+    const literalClone = transferMutationStdinTokenPolicy(literalSource, {
+      ...literalSource,
+    });
+    expect(shouldResolveMutationStdinTokens(literalClone)).toBe(false);
+  });
+
+  it("overlays nested stdin policies without weakening an outer policy", () => {
+    const unmarkedTarget = { body: "-" };
+    overlayMutationStdinTokenPolicy(
+      preserveMutationStdinTokenFields({ body: "-" }, ["body"]),
+      unmarkedTarget,
+    );
+    expect(
+      shouldResolveMutationStdinTokenField(unmarkedTarget, "body"),
+    ).toBe(false);
+
+    const selectedTarget = preserveMutationStdinTokenFields(
+      { body: "-", comment: ["-"] },
+      ["comment"],
+    );
+    overlayMutationStdinTokenPolicy(
+      preserveMutationStdinTokenFields({ body: "-" }, ["body"]),
+      selectedTarget,
+    );
+    expect(shouldResolveMutationStdinTokenField(selectedTarget, "body")).toBe(
+      false,
+    );
+    expect(
+      shouldResolveMutationStdinTokenField(selectedTarget, "comment"),
+    ).toBe(false);
+
+    const literalTarget = preserveMutationStdinTokenLiterals({ body: "-" });
+    overlayMutationStdinTokenPolicy(
+      preserveMutationStdinTokenFields({ comment: ["-"] }, ["comment"]),
+      literalTarget,
+    );
+    expect(shouldResolveMutationStdinTokens(literalTarget)).toBe(false);
+  });
+
+  it("refuses a repeated stdin token within one option before reading", () => {
+    expect(() =>
+      assertSingleStdinTokenConsumer([
+        { value: ["-", "-"], optionName: "--comment" },
+      ]),
+    ).toThrow('--comment accepts "-" stdin token at most once');
+  });
+
   it("parses non-negative integer options without accepting fractional or negative values", () => {
     expect(parseOptionalNonNegativeInteger("0", "--estimate")).toBe(0);
     expect(parseOptionalNonNegativeInteger("42", "--estimate")).toBe(42);
@@ -638,9 +731,7 @@ describe("core/item/parse", () => {
       ).toEqual([]);
       expect(() =>
         applyAcceptanceCriteriaMutations([], ["first; second"], undefined),
-      ).toThrow(
-        'Acceptance criteria added with --add-ac cannot contain ";"',
-      );
+      ).toThrow('Acceptance criteria added with --add-ac cannot contain ";"');
     });
   });
 });

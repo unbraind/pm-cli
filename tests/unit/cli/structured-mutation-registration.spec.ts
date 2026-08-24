@@ -127,6 +127,34 @@ describe("structured mutation command registration", () => {
       expect.any(Object),
     );
 
+    const sentinelCreateProgram = programWithGlobals();
+    registerMutationCommands(sentinelCreateProgram);
+    mocks.stdin = JSON.stringify({
+      title: "Literal sentinel",
+      type: "Task",
+      description: "-",
+    });
+    await sentinelCreateProgram.parseAsync(["create", "--stdin-json"], {
+      from: "user",
+    });
+    expect(mocks.runCreate).toHaveBeenLastCalledWith(
+      expect.objectContaining({ description: "-" }),
+      expect.any(Object),
+    );
+
+    const sentinelUpdateProgram = programWithGlobals();
+    registerMutationCommands(sentinelUpdateProgram);
+    mocks.stdin = JSON.stringify({ item: { id: "pm-a", description: "-" } });
+    await sentinelUpdateProgram.parseAsync(
+      ["update", "pm-a", "--stdin-json"],
+      { from: "user" },
+    );
+    expect(mocks.runUpdate).toHaveBeenLastCalledWith(
+      "pm-a",
+      expect.objectContaining({ description: "-" }),
+      expect.any(Object),
+    );
+
     mocks.stdin = undefined;
     const emptyCreateProgram = programWithGlobals();
     registerMutationCommands(emptyCreateProgram);
@@ -165,6 +193,17 @@ describe("structured mutation command registration", () => {
     });
     expect(mocks.runUpdate).toHaveBeenCalledWith(
       "pm-a",
+      expect.objectContaining({ description: "Multiline\nproject context" }),
+      expect.any(Object),
+    );
+
+    const whitespaceProgram = programWithGlobals();
+    registerMutationCommands(whitespaceProgram);
+    await whitespaceProgram.parseAsync(
+      ["create", "--title", "Whitespace", "--description", " - "],
+      { from: "user" },
+    );
+    expect(mocks.runCreate).toHaveBeenLastCalledWith(
       expect.objectContaining({ description: "Multiline\nproject context" }),
       expect.any(Object),
     );
@@ -257,7 +296,7 @@ describe("structured mutation command registration", () => {
         from: "user",
       }),
     ).rejects.toThrow(
-      "--stdin-json cannot be combined with other stdin consumers: --body",
+      "Only one option may consume stdin per command invocation. Found: --stdin-json, --body.",
     );
 
     await expect(
@@ -266,7 +305,7 @@ describe("structured mutation command registration", () => {
         { from: "user" },
       ),
     ).rejects.toThrow(
-      "--stdin-json cannot be combined with other stdin consumers: --description",
+      "Only one option may consume stdin per command invocation. Found: --stdin-json, --description.",
     );
 
     const updateProgram = programWithGlobals();
@@ -286,7 +325,9 @@ describe("structured mutation command registration", () => {
         ],
         { from: "user" },
       ),
-    ).rejects.toThrow("other stdin consumers: --dep, --type-option, --field");
+    ).rejects.toThrow(
+      "Found: --stdin-json, --dep, --type-option, --field.",
+    );
   });
 
   it("previews and commits validated batches with every transaction control", async () => {

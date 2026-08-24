@@ -1132,6 +1132,55 @@
       ],
       "package_version": "2026.8.23",
       "reason": "Capability-family literals are unchanged; the public alias now derives from the canonical extension metadata contract to prevent type drift."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmBulkMutationFilterOptions",
+        "signature ./sdk/contracts:PmBulkMutationFilterOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Bulk mutation ids now also accept source-compatible readonly string arrays."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE",
+        "signature ./sdk:PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Refusal closure ratchets now include three executable bulk ID input states."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CliFlagInvocationContract",
+        "signature ./sdk/contracts:CliFlagInvocationContract"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Expose the optional file_token_prefix metadata field for @path CLI inputs; existing consumers remain source-compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:normalizeBulkIdsValue",
+        "signature ./sdk:PmBulkMutationFilterOptions",
+        "signature ./sdk/contracts:PmBulkMutationFilterOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Restore source-compatible numeric scalar IDs while retaining transport-native ID arrays"
+    },
+    {
+      "changes": [
+        "signature ./sdk:normalizeBulkIdsValue",
+        "signature ./sdk:PmBulkMutationFilterOptions",
+        "signature ./sdk/contracts:PmBulkMutationFilterOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Expand bulk ID contracts to finite numeric array members and fail closed on unsupported explicit selectors"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryCompactBulkCommandOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Align history-compaction SDK ID inputs with bulk transport contracts and fail closed on invalid explicit selectors"
     }
   ],
   "entrypoints": {
@@ -2910,6 +2959,30 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkIdsFileReader",
+          "signature": "export type BulkIdsFileReader = (path: string) => Promise<string>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "BulkIdsInputReaders",
+          "signature": "export interface BulkIdsInputReaders { readFile?: BulkIdsFileReader; readStdin?: BulkIdsStdinReader; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkIdsStdinReader",
+          "signature": "export type BulkIdsStdinReader = (optionName: string) => Promise<string>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkIdsValue",
+          "signature": "export type BulkIdsValue = string | number | readonly (string | number)[] | undefined;"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "BulkItemCloseMutation",
           "signature": "export interface BulkItemCloseMutation { op: \"close\"; id: string; reason: string; options?: PmClientFullMutationOptions; }"
@@ -3158,7 +3231,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagInvocationContract",
-          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; file_token_prefix?: \"@\"; }"
         },
         {
           "classification": "contract_data",
@@ -7154,7 +7227,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryCompactBulkCommandOptions",
-          "signature": "export interface HistoryCompactBulkCommandOptions { ids?: string[]; scope?: HistoryCompactScope; allOver?: number; minEntries?: number; dryRun?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface HistoryCompactBulkCommandOptions { ids?: BulkIdsValue; scope?: HistoryCompactScope; allOver?: number; minEntries?: number; dryRun?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -8849,6 +8922,12 @@
           "signature": "(argv: string[]) => BootstrapInvocationNormalizationResult | calls: (argv: string[]) => BootstrapInvocationNormalizationResult"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "normalizeBulkIdsValue",
+          "signature": "(value: BulkIdsValue) => string | undefined | calls: (value: BulkIdsValue) => string | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "NormalizedAgentProvenanceAdapterValue",
@@ -9303,6 +9382,12 @@
           "kind": "function",
           "name": "parseBootstrapTypeValue",
           "signature": "(argv: string[]) => string | undefined | calls: (argv: string[]) => string | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "parseBulkIdsText",
+          "signature": "(raw: string) => string[] | calls: (raw: string) => string[]"
         },
         {
           "classification": "supported",
@@ -10178,13 +10263,13 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE",
-          "signature": "readonly [\"invalid_argument_value\", \"missing_lifecycle_target\", \"missing_required_argument\", \"projection_options_mutually_exclusive\", \"tracker_not_initialized\", \"tracker_root_missing\", \"tracker_root_not_directory\", \"tracker_root_unreadable\", \"unknown_context_intent\", \"unknown_field_projection\", \"unknown_option\", \"unknown_subcommand\"]"
+          "signature": "readonly [\"bulk_ids_input_empty\", \"bulk_ids_input_missing_path\", \"bulk_ids_input_unreadable\", \"invalid_argument_value\", \"missing_lifecycle_target\", \"missing_required_argument\", \"projection_options_mutually_exclusive\", \"tracker_not_initialized\", \"tracker_root_missing\", \"tracker_root_not_directory\", \"tracker_root_unreadable\", \"unknown_context_intent\", \"unknown_field_projection\", \"unknown_option\", \"unknown_subcommand\"]"
         },
         {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE",
-          "signature": "13"
+          "signature": "16"
         },
         {
           "classification": "advanced_export",
@@ -10286,7 +10371,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
-          "signature": "export type PmBulkMutationFilterOptions = OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>;"
+          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | number | readonly (string | number)[]; };"
         },
         {
           "classification": "supported",
@@ -11337,6 +11422,18 @@
           "kind": "function",
           "name": "prepareSimilarityText",
           "signature": "(value: string) => PreparedSimilarityText | calls: (value: string) => PreparedSimilarityText"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "preserveMutationStdinTokenFields",
+          "signature": "<T extends object>(options: T, fields: readonly PropertyKey[]) => T | calls: <T extends object>(options: T, fields: readonly PropertyKey[]) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "preserveMutationStdinTokenLiterals",
+          "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
         },
         {
           "classification": "supported",
@@ -13233,6 +13330,12 @@
           "kind": "function",
           "name": "resolveClaimPrincipal",
           "signature": "(author: string) => string | calls: (author: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveCliBulkIdsInput",
+          "signature": "(value: string | undefined, optionName?: string, readers?: BulkIdsInputReaders) => Promise<string | undefined> | calls: (value: string | undefined, optionName?: string, readers?: BulkIdsInputReaders) => Promise<string | undefined>"
         },
         {
           "classification": "advanced_export",
@@ -15565,6 +15668,18 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "shouldResolveMutationStdinTokenField",
+          "signature": "(options: object, field: PropertyKey) => boolean | calls: (options: object, field: PropertyKey) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "shouldResolveMutationStdinTokens",
+          "signature": "(options: object) => boolean | calls: (options: object) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "shouldRunSearchRefreshInForeground",
           "signature": "() => boolean | calls: () => boolean"
         },
@@ -16467,6 +16582,12 @@
           "kind": "function",
           "name": "toReplayDocument",
           "signature": "(document: ItemDocument) => ReplayDocument | calls: (document: ItemDocument) => ReplayDocument"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "transferMutationStdinTokenPolicy",
+          "signature": "<T extends object>(source: object, target: T) => T | calls: <T extends object>(source: object, target: T) => T"
         },
         {
           "classification": "advanced_export",
@@ -18788,7 +18909,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagInvocationContract",
-          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; file_token_prefix?: \"@\"; }"
         },
         {
           "classification": "contract_data",
@@ -19760,7 +19881,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
-          "signature": "export type PmBulkMutationFilterOptions = OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>;"
+          "signature": "export type PmBulkMutationFilterOptions = Omit<OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>, \"ids\"> & { ids?: string | number | readonly (string | number)[]; };"
         },
         {
           "classification": "contract_data",
@@ -30303,6 +30424,9 @@
     "body_file_missing_path",
     "body_file_unreadable",
     "budget_exceeded",
+    "bulk_ids_input_empty",
+    "bulk_ids_input_missing_path",
+    "bulk_ids_input_unreadable",
     "bundle_integrity_torn_install",
     "capability_undeclared",
     "capability_unused",
@@ -30442,6 +30566,8 @@
     "malformed_plan_step_evidence",
     "manifest_capabilities_absent",
     "manifest_unknown_key",
+    "mcp_annotation_file_unavailable",
+    "mcp_stdin_unavailable",
     "merge_conflict_markers_detected",
     "merge_decisions_unreviewed",
     "merge_git_config_unwritable",

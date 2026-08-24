@@ -44,7 +44,10 @@ import {
   PM_MCP_RESOURCE_CONTRACTS,
 } from "../sdk/agent-capability-contracts.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
-import { isRuntimeRecord } from "../sdk/runtime-input.js";
+import {
+  isRuntimeRecord,
+  markMcpMutationTransportInput,
+} from "../sdk/runtime-input.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
   createReproducibleProcessRunner,
@@ -64,6 +67,10 @@ interface JsonRpcRequest {
 }
 
 type ToolHandler = (args: Record<string, unknown>) => Promise<unknown>;
+
+function runMcpAction(args: PmActionInput): Promise<unknown> {
+  return runAction(markMcpMutationTransportInput(args));
+}
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
@@ -168,7 +175,7 @@ function detectUnexpectedTopLevelKeys(
 }
 
 const HANDLERS: Record<string, ToolHandler> = {
-  pm_run: (args) => runAction(args as PmActionInput),
+  pm_run: (args) => runMcpAction(args as PmActionInput),
   pm_mutate: async (args) => {
     const transactionId = readRequiredString(args, "transactionId");
     const controls = parseAtomicMutationControls(args);
@@ -223,7 +230,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   ...Object.fromEntries(
     Object.entries(NARROW_TOOL_ACTIONS).map(([tool, action]) => [
       tool,
-      (args: Record<string, unknown>) => runAction({ ...args, action }),
+      (args: Record<string, unknown>) => runMcpAction({ ...args, action }),
     ]),
   ),
 };
@@ -503,16 +510,20 @@ async function readWorkspaceResource(
   }
   let value: unknown;
   if (uri === "pm://workspace/context") {
-    value = await runAction({ ...args, action: "context", limit: 10 });
+    value = await runMcpAction({ ...args, action: "context", limit: 10 });
   } else if (uri === "pm://workspace/claims") {
-    value = await runAction({
+    value = await runMcpAction({
       ...args,
       action: "list",
       status: "in_progress",
       limit: 20,
     });
   } else if (uri === "pm://workspace/focus") {
-    value = await runAction({ ...args, action: "focus", subcommand: "show" });
+    value = await runMcpAction({
+      ...args,
+      action: "focus",
+      subcommand: "show",
+    });
   } else {
     const guidePath = path.join(cwd, "AGENTS.md");
     value = (await pathExists(guidePath))
@@ -668,7 +679,9 @@ function writeError(id: JsonRpcRequest["id"], error: unknown): void {
 /** Implements process rpc line for the public runtime surface of this module. */
 async function processRpcLineWithHandler(
   line: string,
-  requestHandler: typeof handleRequestInReproducibleContext | typeof handleRequest,
+  requestHandler:
+    | typeof handleRequestInReproducibleContext
+    | typeof handleRequest,
 ): Promise<void> {
   if (line.trim().length === 0) {
     return;
@@ -834,7 +847,7 @@ export const _testOnly = {
   get readStringArray() {
     return readRuntimeTestHook("readStringArray");
   },
-  runAction,
+  runAction: runMcpAction,
   get updateManyOptionsFromFlat() {
     return readRuntimeTestHook("updateManyOptionsFromFlat");
   },

@@ -22,6 +22,8 @@ import {
   readSettings,
   resolveAuthor,
   isTerminalPlanMode,
+  preserveMutationStdinTokenFields,
+  transferMutationStdinTokenPolicy,
 } from "../runtime-primitives.js";
 import type {
   DependencyKind,
@@ -1154,6 +1156,17 @@ function buildInitialSteps(options: PlanCommandOptions): {
   };
 }
 
+function preservePlanCreateStdinPolicy(
+  source: PlanCommandOptions,
+  createOptions: CreateCommandOptions,
+  derivedLiteralFields: readonly (keyof CreateCommandOptions)[] = [],
+): void {
+  transferMutationStdinTokenPolicy(source, createOptions);
+  if (derivedLiteralFields.length > 0) {
+    preserveMutationStdinTokenFields(createOptions, derivedLiteralFields);
+  }
+}
+
 async function planCreate(
   options: PlanCommandOptions,
   global: GlobalOptions,
@@ -1212,6 +1225,7 @@ async function planCreate(
       options.message ??
       (fromSearch ? `plan create (search: ${fromSearch})` : `plan create`),
   };
+  preservePlanCreateStdinPolicy(options, createOptions);
 
   const createResult: CreateResult = await runCreate(createOptions, global);
 
@@ -2110,26 +2124,27 @@ async function createMaterializedStepItems(params: {
     materializeFields[fieldKey] = value;
   }
   for (const step of params.targets) {
-    const created = await runCreate(
-      {
-        ...materializeFields,
-        title: step.title,
-        description: step.body?.trim() || step.title,
-        type: params.resolvedTypeName,
-        parent: params.parent,
-        tags: params.tags,
-        author: params.options.author,
-        message:
-          params.options.message ??
-          `materialized from plan ${params.planItemId} step ${step.id}`,
-        dep: buildMaterializeDependencies(
-          params.parent,
-          params.planItemId,
-          step,
-        ),
-      },
-      { ...({} as GlobalOptions), path: params.pmRoot } as GlobalOptions,
-    );
+    const createOptions = {
+      ...materializeFields,
+      title: step.title,
+      description: step.body?.trim() || step.title,
+      type: params.resolvedTypeName,
+      parent: params.parent,
+      tags: params.tags,
+      author: params.options.author,
+      message:
+        params.options.message ??
+        `materialized from plan ${params.planItemId} step ${step.id}`,
+      dep: buildMaterializeDependencies(params.parent, params.planItemId, step),
+    } satisfies CreateCommandOptions;
+    preservePlanCreateStdinPolicy(params.options, createOptions, [
+      "description",
+      ...Object.keys(materializeFields),
+    ]);
+    const created = await runCreate(createOptions, {
+      ...({} as GlobalOptions),
+      path: params.pmRoot,
+    } as GlobalOptions);
     materialized.push({
       id: created.item.id,
       title: created.item.title,
@@ -2278,7 +2293,10 @@ function normalizePlanStepAliasInput(
   if (stepValues.length === 1 && !input.options.stepTitle?.trim()) {
     return {
       ...input,
-      options: { ...input.options, stepTitle: stepValues[0] },
+      options: transferMutationStdinTokenPolicy(input.options, {
+        ...input.options,
+        stepTitle: stepValues[0],
+      }),
     };
   }
   return input;

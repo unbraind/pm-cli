@@ -17,6 +17,56 @@ import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";
+import {
+  normalizeBulkIdsValue,
+  type BulkIdsValue,
+} from "../core/io/bulk-ids-input.js";
+import {
+  overlayMutationStdinTokenPolicy,
+  preserveMutationStdinTokenLiterals,
+  transferMutationStdinTokenPolicy,
+} from "../core/item/parse.js";
+
+const MCP_MUTATION_TRANSPORT = Symbol("pm.mcp-mutation-transport");
+
+/** Mark an action object decoded from the MCP JSON-RPC transport. */
+export function markMcpMutationTransportInput<T extends object>(input: T): T {
+  Object.defineProperty(input, MCP_MUTATION_TRANSPORT, {
+    value: true,
+    enumerable: true,
+  });
+  return input;
+}
+
+function isMcpMutationTransportInput(input: object): boolean {
+  return MCP_MUTATION_TRANSPORT in input;
+}
+
+function preserveTransportLiteralOptions<T extends object>(
+  source: object,
+  options: T,
+): T {
+  return isMcpMutationTransportInput(source)
+    ? preserveMutationStdinTokenLiterals(options)
+    : transferMutationStdinTokenPolicy(source, options);
+}
+
+/** Clone mutation options with overrides while retaining stdin provenance. */
+export function mutationOptionsWithOverrides<
+  Source extends object,
+  Overrides extends object,
+>(
+  source: Source,
+  overrides: Overrides,
+  omittedKeys: readonly PropertyKey[] = [],
+): Source & Overrides {
+  const options = transferMutationStdinTokenPolicy(source, {
+    ...source,
+    ...overrides,
+  });
+  for (const key of omittedKeys) Reflect.deleteProperty(options, key);
+  return options;
+}
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
 export function readRuntimeString(
@@ -162,6 +212,9 @@ const SCALAR_TO_ARRAY_FIELDS = new Set([
   "envClear",
   "env_clear",
 ]);
+const ANNOTATION_SCALAR_TO_ARRAY_FIELDS = new Set(
+  [...SCALAR_TO_ARRAY_FIELDS].filter((field) => field !== "file"),
+);
 
 // Actions where the linked-resource fields `add` and `remove` are string[] arrays.
 // For other actions (comments/notes/learnings) `add` and `remove` are scalar strings
@@ -173,6 +226,33 @@ const ARRAY_ADD_REMOVE_ACTIONS = new Set([
   "test",
   "test-all",
 ]);
+
+const SCALAR_ANNOTATION_SOURCE_ACTIONS = new Set([
+  "comments",
+  "notes",
+  "learnings",
+]);
+
+function assertMcpAnnotationFileUnavailable(
+  action: string,
+  options: Record<string, unknown>,
+): void {
+  if (
+    !SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action) ||
+    !Object.prototype.hasOwnProperty.call(options, "file")
+  ) {
+    return;
+  }
+  throw new PmCliError(
+    `MCP ${action} does not accept options.file. Pass annotation text in options.add instead.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "mcp_annotation_file_unavailable",
+      required:
+        "Pass annotation text as JSON data; MCP annotation actions cannot read server-local files.",
+    },
+  );
+}
 
 /** Lifecycle actions where a top-level assignee argument aliases the author. */
 const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
@@ -222,13 +302,15 @@ const UNIVERSAL_READ_OUTPUT_OPTION_KEYS = [
 /** Reconcile MCP array/scalar option spellings with CLI flag expectations. */
 export function normalizeMcpOptionsArrays(
   options: Record<string, unknown>,
-  action?: string,
+  action = "",
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const promoteAddRemove =
-    action !== undefined && ARRAY_ADD_REMOVE_ACTIONS.has(action);
+  const promoteAddRemove = ARRAY_ADD_REMOVE_ACTIONS.has(action);
   const preserveStandaloneNote =
     action === "files" || action === "files-discover" || action === "docs";
+  const scalarToArrayFields = SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action)
+    ? ANNOTATION_SCALAR_TO_ARRAY_FIELDS
+    : SCALAR_TO_ARRAY_FIELDS;
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key)) {
       result[key] = value.join(",");
@@ -238,7 +320,10 @@ export function normalizeMcpOptionsArrays(
       result[key] = value;
       continue;
     }
-    if (typeof value === "string" && SCALAR_TO_ARRAY_FIELDS.has(key)) {
+    if (
+      typeof value === "string" &&
+      scalarToArrayFields.has(key)
+    ) {
       result[key] = [value];
       continue;
     }
@@ -255,11 +340,40 @@ export function normalizeMcpOptionsArrays(
   return result;
 }
 
+/** Resolve the explicit or lifecycle-assignee author accepted by MCP actions. */
+function resolveMcpActionAuthor(
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+  action?: string,
+): string | undefined {
+  const author = readRuntimeString(args, "author");
+  if (author !== undefined) {
+    return author;
+  }
+  return action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action)
+    ? (readRuntimeString(args, "assignee") ??
+        readRuntimeString(options, "assignee"))
+    : undefined;
+}
+
+/** Add a resolved author only when the normalized options do not provide one. */
+function withResolvedAuthor(
+  options: Record<string, unknown>,
+  author: string | undefined,
+): Record<string, unknown> {
+  return author !== undefined && options.author === undefined
+    ? { ...options, author }
+    : options;
+}
+
 /** Merge hoisted top-level action arguments and author aliases into options. */
 export function optionsWithAuthor(
   args: Record<string, unknown>,
   action?: string,
 ): Record<string, unknown> {
+  const sourceOptions = isRuntimeRecord(args.options)
+    ? args.options
+    : undefined;
   const baseOptions = asRecordClone(args.options);
   const hoistedTopLevel: Record<string, unknown> = {};
   const hoistKey = (key: string): void => {
@@ -274,23 +388,20 @@ export function optionsWithAuthor(
   for (const key of UNIVERSAL_READ_OUTPUT_OPTION_KEYS) {
     hoistKey(key);
   }
+  if (action !== undefined && isMcpMutationTransportInput(args)) {
+    assertMcpAnnotationFileUnavailable(action, baseOptions);
+  }
   const options = normalizeMcpOptionsArrays(
     { ...hoistedTopLevel, ...baseOptions },
     action,
   );
-  const author = readRuntimeString(args, "author");
-  const authorFromAssignee =
-    action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action)
-      ? (readRuntimeString(args, "assignee") ??
-        readRuntimeString(options, "assignee"))
-      : undefined;
-  if (author && options.author === undefined) {
-    return { ...options, author };
-  }
-  if (authorFromAssignee && options.author === undefined) {
-    return { ...options, author: authorFromAssignee };
-  }
-  return options;
+  const stdinPolicySource = isMcpMutationTransportInput(args)
+    ? args
+    : (sourceOptions ?? args);
+  return preserveTransportLiteralOptions(
+    stdinPolicySource,
+    withResolvedAuthor(options, resolveMcpActionAuthor(args, options, action)),
+  );
 }
 
 // GH-170 (pm-pfnx): the narrow pm_files/pm_docs tools spell the CLI --note flag
@@ -406,10 +517,13 @@ export function withMutationCompaction(
   idOnly: boolean;
   runnerOptions: Record<string, unknown>;
 } {
+  const runnerOptions = preserveTransportLiteralOptions(options ?? {}, {
+    ...options,
+  });
   return {
     changedFields: args.fullChangedFields === true ? "full" : "compact",
     idOnly: args.idOnly === true,
-    runnerOptions: { ...options },
+    runnerOptions,
   };
 }
 
@@ -427,7 +541,9 @@ export function mutationListOptions(
     updatedBefore: readRuntimeScalarString(options, "filterUpdatedBefore"),
     createdAfter: readRuntimeScalarString(options, "filterCreatedAfter"),
     createdBefore: readRuntimeScalarString(options, "filterCreatedBefore"),
-    ids: readRuntimeScalarStringAllowBlank(options, "ids"),
+    ids: normalizeBulkIdsValue(
+      options.ids as string | number | readonly string[] | undefined,
+    ),
     assignee: readRuntimeScalarString(options, "filterAssignee"),
     assigneeFilter:
       readRuntimeScalarString(options, "filterAssigneeFilter") ??
@@ -479,6 +595,16 @@ export function graphOptionsFromFlat(
   };
 }
 
+function normalizeBulkMutationListOptions(
+  options: Record<string, unknown>,
+): ListOptions {
+  const normalized = normalizeListOptions(options);
+  if (options.ids !== undefined) {
+    normalized.ids = normalizeBulkIdsValue(options.ids as BulkIdsValue);
+  }
+  return normalized;
+}
+
 /** Build close-many command options from one flat MCP parameter payload. */
 export function closeManyOptionsFromFlat(
   options: Record<string, unknown>,
@@ -486,7 +612,7 @@ export function closeManyOptionsFromFlat(
   return {
     status: readRuntimeString(options, "filterStatus"),
     list: isRuntimeRecord(options.list)
-      ? normalizeListOptions(options.list)
+      ? normalizeBulkMutationListOptions(options.list)
       : mutationListOptions(options),
     reason: readRuntimeString(options, "reason"),
     resolution: readRuntimeString(options, "resolution"),
@@ -588,12 +714,19 @@ export function updateManyOptionsFromFlat(
     const updateSource = isRuntimeRecord(options.update)
       ? options.update
       : updateManyUpdateOptionsFromFlat(options);
+    const normalizedUpdate = preserveTransportLiteralOptions(
+      options,
+      normalizeMcpUpdateOptions(updateSource),
+    );
     return {
       status: readRuntimeScalarString(options, "filterStatus"),
       list: isRuntimeRecord(options.list)
-        ? normalizeListOptions(options.list)
+        ? normalizeBulkMutationListOptions(options.list)
         : mutationListOptions(options),
-      update: normalizeMcpUpdateOptions(updateSource) as never,
+      update: overlayMutationStdinTokenPolicy(
+        updateSource,
+        normalizedUpdate,
+      ) as never,
       dryRun:
         options.dryRun === true || options.dry_run === true ? true : undefined,
       rollback: readRuntimeString(options, "rollback"),
@@ -608,7 +741,10 @@ export function updateManyOptionsFromFlat(
   return {
     status: readRuntimeScalarString(options, "filterStatus"),
     list: mutationListOptions(options),
-    update: updateManyUpdateOptionsFromFlat(options) as never,
+    update: preserveTransportLiteralOptions(
+      options,
+      updateManyUpdateOptionsFromFlat(options),
+    ) as never,
     dryRun:
       options.dryRun === true || options.dry_run === true ? true : undefined,
     rollback: readRuntimeString(options, "rollback"),

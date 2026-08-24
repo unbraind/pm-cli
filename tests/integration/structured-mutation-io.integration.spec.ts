@@ -58,6 +58,58 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
     });
   });
 
+  it("preserves decoded atomic dash values as literal CLI document data", async () => {
+    await withTempPmPath(async (context) => {
+      const mutations = [
+        {
+          op: "create",
+          id: "pm-atomic-literal-a",
+          options: {
+            title: "Atomic literal A",
+            type: "Task",
+            description: "-",
+          },
+        },
+        {
+          op: "create",
+          id: "pm-atomic-literal-b",
+          options: {
+            title: "Atomic literal B",
+            type: "Task",
+            body: "-",
+          },
+        },
+      ];
+      const committed = context.runCli(
+        [
+          "item",
+          "mutate",
+          "--transaction-id",
+          "cli-atomic-literal-dashes",
+          "--json",
+        ],
+        { input: JSON.stringify(mutations), expectJson: true },
+      );
+      expect(committed.code).toBe(0);
+      expect(committed.json).toMatchObject({
+        status: "committed",
+        mutation_count: 2,
+      });
+      const first = context.runCli(
+        ["get", "pm-atomic-literal-a", "--json", "--full"],
+        { expectJson: true },
+      );
+      const second = context.runCli(
+        ["get", "pm-atomic-literal-b", "--json", "--full"],
+        { expectJson: true },
+      );
+      expect(
+        (first.json as { item: { description?: string } }).item.description,
+      ).toBe("-");
+      expect((second.json as { item: { body?: string } }).item.body).toBe("-");
+    });
+  });
+
   it("creates a heterogeneous forward-referenced specification and completes work in one call", async () => {
     await withTempPmPath(async (context) => {
       const specification = {
@@ -211,9 +263,11 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           input: JSON.stringify({
             title: "Document title",
             type: "Feature",
+            description: "-",
+            body: "-",
             priority: 1,
             tags: ["json", "agent"],
-            comments: [{ text: "Structured comment", author: "io-agent" }],
+            comments: [{ text: "-" }],
             files: [
               {
                 path: "src/structured-proof.ts",
@@ -230,7 +284,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
       expect(created.json).toMatchObject({
         id: expect.stringMatching(/^pm-/u),
         status: "open",
-        changed_field_count: 12,
+        changed_field_count: 13,
       });
       expect(created.json).not.toHaveProperty("item");
       expect(created.json).not.toHaveProperty("changed_fields");
@@ -243,19 +297,21 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
         item: Record<string, unknown> & {
           comments: Array<{ text: string }>;
           files: Array<{ path: string }>;
+          notes?: Array<{ text: string }>;
         };
       };
       expect(envelope.item.comments).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ text: "Structured comment" }),
-        ]),
+        expect.arrayContaining([expect.objectContaining({ text: "-" })]),
       );
       expect(envelope.item.files).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ path: "src/structured-proof.ts" }),
         ]),
       );
+      expect(envelope.item.description).toBe("-");
+      expect(envelope.item.body).toBe("-");
       envelope.item.description = "Round tripped";
+      envelope.item.notes = [{ text: "-" }];
       const updated = context.runCli(
         ["update", id, "--stdin-json", "--no-changed-fields", "--json"],
         {
@@ -265,7 +321,18 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
       );
       expect(updated.json).toMatchObject({
         item: { id, description: "Round tripped" },
-        changed_field_count: 1,
+        changed_field_count: 2,
+      });
+      const roundTripped = context.runCli(["get", id, "--full", "--json"], {
+        expectJson: true,
+      });
+      expect(roundTripped.json).toMatchObject({
+        item: {
+          body: "-",
+          notes: expect.arrayContaining([
+            expect.objectContaining({ text: "-" }),
+          ]),
+        },
       });
 
       const full = context.runCli(

@@ -110,15 +110,62 @@
           "path": "src/sdk/annotations.ts",
           "changed_lines_contain_any": [
             "AnnotationMutationReceipt",
+            "AnnotationHistoryRestoration",
+            "AnnotationOmissionReceipt",
             "normalizeAnnotationTransportOptions",
             "fullHistory",
+            "mutation_receipt",
+            "omission_receipt",
+            "action:",
+            "entry_index",
+            "changed_count",
+            "full_history_included",
+            "selector:",
+            "cli_flag",
+            "sdk_option",
+            "mcp_option",
+            "has_omissions",
+            "omitted_field_group_count",
+            "omitted_field_groups",
+            "name: string;",
+            "restore_with",
+            "normalized.full"
+          ]
+        },
+        {
+          "path": "src/sdk/comments.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "fullHistory",
+            "mutation_receipt",
             "omission_receipt"
           ]
         },
-        "src/sdk/comments.ts",
-        "src/sdk/notes.ts",
-        "src/sdk/learnings.ts",
-        "src/cli/register-annotations.ts",
+        {
+          "path": "src/sdk/notes.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "fullHistory",
+            "mutation_receipt",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/sdk/learnings.ts",
+          "changed_lines_contain_any": [
+            "AnnotationMutationReceipt",
+            "fullHistory",
+            "mutation_receipt",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/cli/register-annotations.ts",
+          "changed_lines_contain_any": [
+            "--full-history",
+            "fullHistory: options.fullHistory"
+          ]
+        },
         {
           "path": "src/sdk/cli-contracts/flag-contracts.ts",
           "changed_lines_contain_any": ["--full-history"]

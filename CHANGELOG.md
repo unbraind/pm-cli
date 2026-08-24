@@ -4,11 +4,14 @@
 
 ### Fixed
 
+- Bulk writes accept newline/comma IDs from argv, stdin, and @path with effect-aware exits ([pm-3oq022](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3oq022.toon))
+- update-many --dry-run allows filter-only preview for review and bulk-selection workflows ([pm-kexu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kexu.toon))
 - Structured release-failure causes are preserved in blocked-release alerts ([pm-x63izf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x63izf.toon))
 - Releases from the default branch are supported with analyzer evidence ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 
 ### Other
 
+- Uniform stdin convention: body-file and annotation --file flags accept '-' for stdin ([pm-iktj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-iktj.toon))
 - Single source of surface tiering: one contract-declared tier per command drives CLI help, MCP tool profiles, completions, and docs together ([pm-kxci8x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kxci8x.toon))
 
 ## 2026.8.23 - 2026-08-23

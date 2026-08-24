@@ -21,7 +21,6 @@ import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
 function createTask(context: TempPmContext, title: string): string {
   return createTestItemId(context, {
     title,
@@ -391,8 +390,11 @@ describe("runComments", () => {
       createStdinTokenResolver: () => ({
         resolveValue: vi.fn(async () => undefined),
       }),
+      shouldResolveMutationStdinTokens: () => true,
     }));
     vi.doMock("../../../src/sdk/annotations.js", () => ({
+      assertAnnotationStdinTransportAvailable: vi.fn(),
+      isErrnoError: () => false,
       parseAnnotationTextInput: parseInputMock,
       runAnnotationCommand: runAnnotationMock,
     }));
@@ -404,6 +406,9 @@ describe("runComments", () => {
 
     const stdinInput = await mockedRunComments("pm-stdin-flag", { stdin: true }, {} as never);
     expect((stdinInput as unknown as { value?: string }).value).toBe("");
+
+    const fileStdinInput = await mockedRunComments("pm-stdin-file", { file: "-" }, {} as never);
+    expect((fileStdinInput as unknown as { value?: string }).value).toBe("");
 
     vi.doUnmock("../../../src/core/item/parse.js");
     vi.doUnmock("../../../src/sdk/annotations.js");
@@ -423,6 +428,7 @@ describe("runComments", () => {
       }),
     }));
     vi.doMock("../../../src/sdk/annotations.js", () => ({
+      assertAnnotationStdinTransportAvailable: vi.fn(),
       isErrnoError: (error: unknown) =>
         typeof error === "object" && error !== null && "code" in error,
       parseAnnotationTextInput: vi.fn((raw: string) => raw),

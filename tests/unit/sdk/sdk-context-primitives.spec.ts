@@ -1,4 +1,6 @@
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import {
   PmClient,
@@ -20,6 +22,7 @@ import {
   profileLint,
   profileList,
   profileShow,
+  preserveMutationStdinTokenLiterals,
   schema,
   schemaAddField,
   schemaAddStatus,
@@ -177,6 +180,56 @@ describe("SDK context-management primitives", () => {
     });
   });
 
+  it("preserves explicit literal policy through PmClient append and Plan clones", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({
+        pmRoot: context.pmPath,
+        noExtensions: true,
+        author: "sdk-literal-clone-test",
+      });
+      const item = await client.create({
+        title: "SDK append literal clone",
+        type: "Task",
+      });
+
+      const appendStdin = Readable.from(["APPEND_PROTOCOL_BYTES"]);
+      const appendSpy = vi
+        .spyOn(process, "stdin", "get")
+        .mockReturnValue(appendStdin as unknown as NodeJS.ReadStream);
+      try {
+        await client.append(
+          item.item.id,
+          "-",
+          preserveMutationStdinTokenLiterals({}),
+        );
+      } finally {
+        appendSpy.mockRestore();
+      }
+
+      const planStdin = Readable.from(["PLAN_PROTOCOL_BYTES"]);
+      const planSpy = vi
+        .spyOn(process, "stdin", "get")
+        .mockReturnValue(planStdin as unknown as NodeJS.ReadStream);
+      let planId: string;
+      try {
+        const plan = await client.planCreate(
+          preserveMutationStdinTokenLiterals({
+            title: "SDK Plan literal clone",
+            description: "-",
+          }),
+        );
+        planId = plan.plan.id;
+      } finally {
+        planSpy.mockRestore();
+      }
+
+      const appended = await client.get(item.item.id, { full: true });
+      expect(appended.item.body).toBe("-");
+      const planItem = await client.get(planId, { full: true });
+      expect(planItem.item.description).toBe("-");
+    });
+  });
+
   it("exposes annotation, link, customization, and governance helpers on PmClient and top-level exports", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(
@@ -247,6 +300,23 @@ describe("SDK context-management primitives", () => {
           )
         ).learnings.at(-1)?.text,
       ).toBe("SDK learning");
+
+      const annotationPath = path.join(
+        context.tempRoot,
+        "sdk-annotation-input.txt",
+      );
+      await writeFile(annotationPath, "SDK file annotation", "utf8");
+      expect(
+        (await client.comments(id, { file: annotationPath })).comments.at(-1)
+          ?.text,
+      ).toBe("SDK file annotation");
+      expect(
+        (await client.notes(id, { file: annotationPath })).notes.at(-1)?.text,
+      ).toBe("SDK file annotation");
+      expect(
+        (await client.learnings(id, { file: annotationPath })).learnings.at(-1)
+          ?.text,
+      ).toBe("SDK file annotation");
 
       expect(
         (

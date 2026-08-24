@@ -85,6 +85,15 @@ export {
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
 export {
+  normalizeBulkIdsValue,
+  parseBulkIdsText,
+  resolveCliBulkIdsInput,
+  type BulkIdsFileReader,
+  type BulkIdsInputReaders,
+  type BulkIdsStdinReader,
+  type BulkIdsValue,
+} from "../core/io/bulk-ids-input.js";
+export {
   type HistoryDiffValueEntry,
   computeHistoryDiff,
   patchPathToChangedField,
@@ -162,6 +171,11 @@ export {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  preserveMutationStdinTokenFields,
+  preserveMutationStdinTokenLiterals,
+  transferMutationStdinTokenPolicy,
+  shouldResolveMutationStdinTokenField,
+  shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
 } from "../core/item/parse.js";
 export { resolvePriority } from "../core/item/priority.js";

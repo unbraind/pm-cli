@@ -42,7 +42,64 @@ describe("CLI flag invocation contracts", () => {
       }),
     ).toMatchObject({
       takes_value: true,
-      input_sources: ["argv", "file"],
+      description:
+        "Read the item body from a file, or from stdin when set to -.",
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+    });
+    expect(
+      enrichCliFlagInvocationContract("update-many", {
+        flag: "--ids",
+        value_name: "value",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+      file_token_prefix: "@",
+    });
+    for (const flag of [
+      "--body",
+      "--description",
+      "--dep-remove",
+      "--comment",
+      "--reminder",
+      "--event",
+    ]) {
+      expect(
+        enrichCliFlagInvocationContract("update-many", {
+          flag,
+          value_name: "value",
+        }),
+      ).toMatchObject({ input_sources: ["argv", "stdin"], stdin_token: "-" });
+    }
+    expect(
+      enrichCliFlagInvocationContract("history-compact", {
+        flag: "--ids",
+        value_name: "value",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+      file_token_prefix: "@",
+    });
+    expect(
+      enrichCliFlagInvocationContract("close-many", {
+        flag: "--ids",
+        value_name: "value",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
+      file_token_prefix: "@",
+    });
+    expect(
+      enrichCliFlagInvocationContract("comments", {
+        flag: "--file",
+        value_name: "path",
+      }),
+    ).toMatchObject({
+      input_sources: ["argv", "file", "stdin"],
+      stdin_token: "-",
     });
   });
 

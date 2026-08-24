@@ -26,6 +26,8 @@ export interface CliFlagInvocationContract extends CliFlagContract {
   input_sources: CliFlagInputSource[];
   /** Sentinel that redirects the argv value to stdin. */
   stdin_token?: "-";
+  /** Prefix that redirects the argv value to a file path. */
+  file_token_prefix?: "@";
 }
 
 /** Executable option arity observed from the registered Commander program. */
@@ -74,7 +76,7 @@ export interface CliFlagInvocationParityReport {
 
 const FLAG_DESCRIPTIONS: Readonly<Record<string, string>> = Object.freeze({
   "--body": "Set the item body.",
-  "--body-file": "Read the item body from a file.",
+  "--body-file": "Read the item body from a file, or from stdin when set to -.",
   "--description": "Set the item description.",
   "--stdin": "Read the value from stdin.",
   "--stdin-json": "Read a complete JSON document from stdin.",
@@ -85,13 +87,16 @@ const STDIN_TOKEN_FLAGS = new Set([
   "--body",
   "--comment",
   "--dep",
+  "--dep-remove",
   "--description",
   "--doc",
+  "--event",
   "--field",
   "--file",
   "--learning",
   "--note",
   "--remove",
+  "--reminder",
   "--test",
   "--type-option",
 ]);
@@ -106,6 +111,24 @@ const STDIN_VALUE_COMMANDS = new Set([
   "notes",
   "test",
   "update",
+  "update-many",
+]);
+
+const FILE_OR_STDIN_COMMAND_FLAGS = new Set([
+  "close-many:--ids",
+  "comments:--file",
+  "create:--body-file",
+  "history-compact:--ids",
+  "learnings:--file",
+  "notes:--file",
+  "update:--body-file",
+  "update-many:--ids",
+]);
+
+const AT_PATH_FILE_COMMAND_FLAGS = new Set([
+  "close-many:--ids",
+  "history-compact:--ids",
+  "update-many:--ids",
 ]);
 
 const BOOLEAN_FLAG_PREFIXES = [
@@ -276,6 +299,9 @@ function resolveFlagInputSources(
   flag: string,
 ): CliFlagInputSource[] {
   if (flag === "--stdin" || flag === "--stdin-json") return ["stdin"];
+  if (FILE_OR_STDIN_COMMAND_FLAGS.has(`${command}:${flag}`)) {
+    return ["argv", "file", "stdin"];
+  }
   if (flag.endsWith("-file")) return ["argv", "file"];
   if (STDIN_TOKEN_FLAGS.has(flag) && STDIN_VALUE_COMMANDS.has(command)) {
     return ["argv", "stdin"];
@@ -335,6 +361,9 @@ export function enrichCliFlagInvocationContract(
     contract.flag !== "--stdin" &&
     contract.flag !== "--stdin-json"
       ? { stdin_token: "-" as const }
+      : {}),
+    ...(AT_PATH_FILE_COMMAND_FLAGS.has(`${command}:${contract.flag}`)
+      ? { file_token_prefix: "@" as const }
       : {}),
   };
 }

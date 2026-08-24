@@ -132,6 +132,12 @@ describe("annotation source resolution", () => {
       mode: "add",
       value: "",
     });
+    await expect(
+      resolveMockedAnnotationInput({ file: "-" }, "note"),
+    ).resolves.toMatchObject({
+      mode: "add",
+      value: "",
+    });
     vi.doUnmock("../../../src/core/item/parse.js");
     await vi.resetModules();
   });

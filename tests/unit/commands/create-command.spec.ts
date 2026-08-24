@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyCreateCommand, runCreate, type CreateCommandOptions } from "../../../src/cli/commands/create.js";
 import { parseTypeOptionEntries } from "../../../src/sdk/lifecycle/repeatable-metadata-parsers.js";
+import { preserveMutationStdinTokenLiterals } from "../../../src/sdk/runtime-primitives.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionCommands,
@@ -97,6 +98,36 @@ describe("runCreate", () => {
       "--message",
       '"Create Task item"',
     ]);
+  });
+
+  it("preserves literal stdin tokens in transport-decoded options", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        preserveMutationStdinTokenLiterals(baseCreateOptions({ body: "-", comment: ["-"] })),
+        { path: context.pmPath },
+      );
+      const stored = context.runCli(["get", result.item.id, "--full", "--json"], { expectJson: true });
+      expect(stored.json).toMatchObject({
+        item: {
+          body: "-",
+          comments: expect.arrayContaining([expect.objectContaining({ text: "-" })]),
+        },
+      });
+    });
+  });
+
+  it("rejects competing direct SDK stdin tokens before reading the stream", async () => {
+    await withTempPmPath(async (context) => {
+      const stdin = new PassThrough();
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      await expect(
+        runCreate(baseCreateOptions({ body: "-", comment: ["-"] }), { path: context.pmPath }),
+      ).rejects.toThrow("Only one option may use");
+      expect(stdin.listenerCount("data")).toBe(0);
+      stdin.destroy();
+    });
   });
 
   it("surfaces a next_transition lifecycle hint for workable open items, but not reference types (GH-216)", async () => {

@@ -473,16 +473,49 @@ describe("surface replication gate", () => {
     ) as Record<string, unknown>;
     config.waivers = [];
 
-    const report = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
-      changedFiles: ["src/sdk/annotations.ts"],
-      today: "2026-08-07",
-    });
-
-    expect(report.ok).toBe(false);
-    expect(report.violations).toContain(
-      "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
+    const annotationSet = (
+      config.sets as Array<{
+        id: string;
+        triggers: Array<{
+          path?: string;
+          changed_lines_contain_any?: string[];
+        }>;
+      }>
+    ).find((entry) => entry.id === "annotation-mutation-receipts");
+    const sharedReceiptTrigger = annotationSet?.triggers.find(
+      (entry) => entry.path === "src/sdk/annotations.ts",
     );
+    expect(sharedReceiptTrigger?.changed_lines_contain_any).toEqual(
+      expect.arrayContaining([
+        "action:",
+        "entry_index",
+        "changed_count",
+        "full_history_included",
+        "has_omissions",
+        "omitted_field_group_count",
+        "omitted_field_groups",
+        "name: string;",
+        "restore_with",
+        "normalized.full",
+      ]),
+    );
+
+    for (const changedLine of [
+      "    name: string;",
+      "  delete normalized.full;",
+    ]) {
+      const report = await validateSurfaceReplication(config, {
+        repoRoot: path.resolve("."),
+        changedFiles: ["src/sdk/annotations.ts"],
+        changedLines: { "src/sdk/annotations.ts": [changedLine] },
+        today: "2026-08-07",
+      });
+
+      expect(report.ok).toBe(false);
+      expect(report.violations).toContain(
+        "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
+      );
+    }
   }, 120_000);
 
   it("does not activate annotation replication for unrelated shared contract lines", async () => {
@@ -497,10 +530,29 @@ describe("surface replication gate", () => {
     const unrelated = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: [
+        "src/sdk/annotations.ts",
+        "src/sdk/comments.ts",
+        "src/sdk/notes.ts",
+        "src/sdk/learnings.ts",
+        "src/cli/register-annotations.ts",
         "src/sdk/cli-contracts/tool-schema.ts",
         "src/sdk/cli-contracts/flag-contracts.ts",
       ],
       changedLines: {
+        "src/sdk/annotations.ts": [
+          "    name: annotationName,",
+          "  delete normalized.preview;",
+        ],
+        "src/sdk/comments.ts": [
+          '"--file path not found; use --file - for stdin"',
+        ],
+        "src/sdk/notes.ts": ["Read note text from a UTF-8 file or stdin."],
+        "src/sdk/learnings.ts": [
+          "Read learning text from a UTF-8 file or stdin.",
+        ],
+        "src/cli/register-annotations.ts": [
+          '"Read entry text from a file or stdin (-)"',
+        ],
         "src/sdk/cli-contracts/tool-schema.ts": ['  "outputCursor",'],
         "src/sdk/cli-contracts/flag-contracts.ts": [
           '  { flag: "--normalize-provenance" },',

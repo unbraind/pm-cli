@@ -34,6 +34,7 @@ import {
   toErrorMessage,
   stableValueEquals,
   nowIso,
+  preserveMutationStdinTokenLiterals,
   resolveIsoOrRelative,
   getActiveExtensionRegistrations,
   resolvePmRoot,
@@ -54,6 +55,7 @@ import { runRestore } from "./restore.js";
 import {
   assertUpdateMutationOptionCombinations,
   parseDependencyAdditions,
+  resolveUpdateTransportOptions,
   runUpdate,
   type UpdateCommandOptions,
 } from "./update.js";
@@ -1139,15 +1141,12 @@ const applyUpdateManyRows = async (params: {
       continue;
     }
     try {
-      const result = await runUpdate(
-        item.id,
-        {
-          ...params.options.update,
-          message: updateMessage,
-          runtimeFieldCommands: ["update_many"],
-        },
-        params.global,
-      );
+      const rowUpdateOptions = preserveMutationStdinTokenLiterals({
+        ...params.options.update,
+        message: updateMessage,
+        runtimeFieldCommands: ["update_many" as const],
+      });
+      const result = await runUpdate(item.id, rowUpdateOptions, params.global);
       rows.push({
         id: item.id,
         status: "updated",
@@ -1241,6 +1240,14 @@ export const runUpdateMany = async (
   const runtime = await loadUpdateManyRuntimeContext(global);
   const rollbackId =
     typeof options.rollback === "string" ? options.rollback : undefined;
+  if (rollbackId === undefined) {
+    options = {
+      ...options,
+      update: preserveMutationStdinTokenLiterals(
+        await resolveUpdateTransportOptions(options.update),
+      ),
+    };
+  }
   const updateSummary = sanitizeUpdateOptionsForSummary(options.update);
   rejectBlankIdsFilter(options.list);
   if (rollbackId !== undefined) {
@@ -1252,9 +1259,9 @@ export const runUpdateMany = async (
       updateSummary,
     });
   }
-  if (!hasAnyUpdateMutationInput(options.update)) {
+  if (!hasAnyUpdateMutationInput(options.update) && options.dryRun !== true) {
     throw new PmCliError(
-      `No update-many mutation flags provided. Add at least one mutation flag (for example: ${UPDATE_MANY_MUTATION_FLAG_GUIDANCE}).`,
+      `No update-many mutation flags provided. Add at least one mutation flag (for example: ${UPDATE_MANY_MUTATION_FLAG_GUIDANCE}), or pass --dry-run for a filter-only preview.`,
       EXIT_CODE.USAGE,
     );
   }

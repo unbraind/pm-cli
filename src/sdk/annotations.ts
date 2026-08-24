@@ -8,7 +8,12 @@ import { readFile } from "node:fs/promises";
 import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
-import { createStdinTokenResolver, parseCsvKv } from "../core/item/parse.js";
+import {
+  createStdinTokenResolver,
+  parseCsvKv,
+  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
+} from "../core/item/parse.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -20,7 +25,7 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
@@ -97,7 +102,7 @@ export function normalizeAnnotationTransportOptions(
     ...(options.full === true ? { fullHistory: true } : {}),
   };
   delete normalized.full;
-  return normalized;
+  return transferMutationStdinTokenPolicy(options, normalized);
 }
 
 /** Presentation-layer inputs accepted by the shared annotation source resolver. */
@@ -262,6 +267,23 @@ export function isErrnoError(error: unknown): error is { code?: unknown } {
   return typeof error === "object" && error !== null && "code" in error;
 }
 
+/** Refuse presentation-level stdin directives when JSON-RPC owns the process stream. */
+export function assertAnnotationStdinTransportAvailable(
+  options: AnnotationSourceOptions,
+  optionName: string,
+): void {
+  if (shouldResolveMutationStdinTokens(options)) return;
+  throw new PmCliError(
+    `${optionName} cannot read process stdin through the MCP JSON-RPC transport. Pass annotation text in options.add instead.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "mcp_stdin_unavailable",
+      required:
+        "Pass annotation text as JSON data; the MCP protocol already owns process stdin.",
+    },
+  );
+}
+
 async function resolveAnnotationTextSource(
   options: AnnotationSourceOptions,
   noun: string,
@@ -279,14 +301,21 @@ async function resolveAnnotationTextSource(
     );
   }
   const stdinResolver = createStdinTokenResolver();
+  const resolveStdinTokens = shouldResolveMutationStdinTokens(options);
   if (options.add !== undefined) {
     return {
-      value: (await stdinResolver.resolveValue(options.add, "--add")) ?? "",
+      value:
+        (await stdinResolver.resolveValue(
+          options.add,
+          "--add",
+          resolveStdinTokens,
+        )) ?? "",
       rawValue: options.add,
       emptyFlag: "--add",
     };
   }
   if (options.stdin === true) {
+    assertAnnotationStdinTransportAvailable(options, "--stdin");
     return {
       value: (await stdinResolver.resolveValue("-", "--stdin")) ?? "",
       emptyFlag: "--stdin",
@@ -297,18 +326,25 @@ async function resolveAnnotationTextSource(
   if (!filePath) {
     throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
   }
+  if (filePath === "-") {
+    assertAnnotationStdinTransportAvailable(options, "--file -");
+    return {
+      value: (await stdinResolver.resolveValue("-", "--file")) ?? "",
+      emptyFlag: "--file",
+    };
+  }
   try {
     return { value: await readFile(filePath, "utf8"), emptyFlag: "--file" };
   } catch (error: unknown) {
     if (isErrnoError(error) && isFileAbsentError(error)) {
       throw new PmCliError(
-        `--file path not found: ${filePath}`,
+        `--file path not found: ${filePath}. Use --file - to read stdin.`,
         EXIT_CODE.USAGE,
       );
     }
     const detail = error instanceof Error ? error.message : String(error);
     throw new PmCliError(
-      `Failed to read --file path "${filePath}": ${detail}`,
+      `Failed to read --file path "${filePath}": ${detail}. Use --file - to read stdin.`,
       EXIT_CODE.USAGE,
     );
   }

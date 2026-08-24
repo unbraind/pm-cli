@@ -4,6 +4,7 @@
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import {
   COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
@@ -23,13 +24,14 @@ import {
   applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
-  createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
   splitAcceptanceCriteria,
   resolvePriority,
   normalizeStatusInput,
@@ -346,9 +348,12 @@ function normalizeLegacyNoneUpdateOptions(
     /* c8 ignore stop */
   }
 
-  return applyLegacyNoneCollectionNormalizers(
-    normalized,
-    UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+  return transferMutationStdinTokenPolicy(
+    options,
+    applyLegacyNoneCollectionNormalizers(
+      normalized,
+      UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+    ),
   );
 }
 
@@ -1506,29 +1511,36 @@ function applyUpdateScalarMutations(
 async function resolveStdinUpdateOptions(
   options: UpdateCommandOptions,
 ): Promise<UpdateCommandOptions> {
-  const stdinResolver = createStdinTokenResolver();
-  return normalizeLegacyNoneUpdateOptions({
-    ...options,
-    body: await stdinResolver.resolveValue(options.body, "--body"),
-    dep: await stdinResolver.resolveList(options.dep, "--dep"),
-    depRemove: await stdinResolver.resolveList(
-      options.depRemove,
-      "--dep-remove",
-    ),
-    comment: await stdinResolver.resolveList(options.comment, "--comment"),
-    note: await stdinResolver.resolveList(options.note, "--note"),
-    learning: await stdinResolver.resolveList(options.learning, "--learning"),
-    file: await stdinResolver.resolveList(options.file, "--file"),
-    test: await stdinResolver.resolveList(options.test, "--test"),
-    doc: await stdinResolver.resolveList(options.doc, "--doc"),
-    reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
-    event: await stdinResolver.resolveList(options.event, "--event"),
-    typeOption: await stdinResolver.resolveList(
-      options.typeOption,
-      "--type-option",
-    ),
-    field: await stdinResolver.resolveList(options.field, "--field"),
-  });
+  const scalarFields = [
+    ["body", "--body"],
+    ["description", "--description"],
+  ] as const;
+  const listFields = [
+    ["dep", "--dep"],
+    ["depRemove", "--dep-remove"],
+    ["comment", "--comment"],
+    ["note", "--note"],
+    ["learning", "--learning"],
+    ["file", "--file"],
+    ["test", "--test"],
+    ["doc", "--doc"],
+    ["reminder", "--reminder"],
+    ["event", "--event"],
+    ["typeOption", "--type-option"],
+    ["field", "--field"],
+  ] as const;
+  return normalizeLegacyNoneUpdateOptions(
+    await resolveMutationStdinTokenFields(options, scalarFields, listFields),
+  );
+}
+
+/** Resolve update stdin tokens once while preserving transport-marked literals. */
+export async function resolveUpdateTransportOptions(
+  options: UpdateCommandOptions,
+): Promise<UpdateCommandOptions> {
+  return shouldResolveMutationStdinTokens(options)
+    ? await resolveStdinUpdateOptions(options)
+    : normalizeLegacyNoneUpdateOptions(options);
 }
 
 function buildClearCollectionDefinitions(
@@ -2084,14 +2096,18 @@ async function routeCloseStatusUpdate(
   const routeWarnings: string[] = [];
   let preChangedFields: string[] = [];
   if (otherFieldKeys.length > 0) {
-    const preUpdate = await runUpdate(
-      context.id,
+    const preUpdateOptions = transferMutationStdinTokenPolicy(
+      context.options,
       {
         ...context.options,
         status: undefined,
         closeReason: undefined,
         message: undefined,
       },
+    );
+    const preUpdate = await runUpdate(
+      context.id,
+      preUpdateOptions,
       context.global,
     );
     preChangedFields = preUpdate.changed_fields;
@@ -3120,7 +3136,7 @@ async function runUpdateWithContext(
   global: GlobalOptions,
   execution: UpdateExecutionContext = {},
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
-  options = await resolveStdinUpdateOptions(options);
+  options = await resolveUpdateTransportOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertUpdateTrackerInitialized(pmRoot);
   const settings = await readSettings(pmRoot);

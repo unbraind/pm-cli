@@ -504,12 +504,169 @@ export interface StdinTokenResolver {
   resolveValue(
     value: string | undefined,
     optionName: string,
+    resolveToken?: boolean,
   ): Promise<string | undefined>;
   /** Value that configures or reports resolve list for this contract. */
   resolveList(
     values: string[] | undefined,
     optionName: string,
+    resolveToken?: boolean,
   ): Promise<string[] | undefined>;
+}
+
+const ALL_MUTATION_STDIN_FIELDS = Symbol("all-mutation-stdin-fields");
+const literalStdinTokenFields = new WeakMap<
+  object,
+  typeof ALL_MUTATION_STDIN_FIELDS | ReadonlySet<PropertyKey>
+>();
+
+/** Mark transport-decoded options whose dash values are data, not stdin tokens. */
+export function preserveMutationStdinTokenLiterals<T extends object>(
+  options: T,
+): T {
+  literalStdinTokenFields.set(options, ALL_MUTATION_STDIN_FIELDS);
+  return options;
+}
+
+/** Mark selected mutation fields whose dash values are literal transport data. */
+export function preserveMutationStdinTokenFields<T extends object>(
+  options: T,
+  fields: readonly PropertyKey[],
+): T {
+  const current = literalStdinTokenFields.get(options);
+  if (current === ALL_MUTATION_STDIN_FIELDS) return options;
+  literalStdinTokenFields.set(
+    options,
+    new Set([...(current ?? []), ...fields]),
+  );
+  return options;
+}
+
+/** Copy the complete mutation stdin-token policy across an option clone. */
+export function transferMutationStdinTokenPolicy<T extends object>(
+  source: object,
+  target: T,
+): T {
+  const policy = literalStdinTokenFields.get(source);
+  if (policy === undefined) return target;
+  literalStdinTokenFields.set(
+    target,
+    policy === ALL_MUTATION_STDIN_FIELDS ? policy : new Set(policy),
+  );
+  return target;
+}
+
+/** Add a source mutation stdin-token policy without weakening the target. */
+export function overlayMutationStdinTokenPolicy<T extends object>(
+  source: object,
+  target: T,
+): T {
+  const sourcePolicy = literalStdinTokenFields.get(source);
+  const targetPolicy = literalStdinTokenFields.get(target);
+  if (
+    sourcePolicy === undefined ||
+    targetPolicy === ALL_MUTATION_STDIN_FIELDS
+  ) {
+    return target;
+  }
+  if (sourcePolicy === ALL_MUTATION_STDIN_FIELDS) {
+    literalStdinTokenFields.set(target, sourcePolicy);
+    return target;
+  }
+  literalStdinTokenFields.set(
+    target,
+    new Set([...(targetPolicy ?? []), ...sourcePolicy]),
+  );
+  return target;
+}
+
+/** Report whether lifecycle input should interpret dash values as stdin tokens. */
+export function shouldResolveMutationStdinTokens(options: object): boolean {
+  return literalStdinTokenFields.get(options) !== ALL_MUTATION_STDIN_FIELDS;
+}
+
+/** Report whether one mutation field should interpret dash as a stdin token. */
+export function shouldResolveMutationStdinTokenField(
+  options: object,
+  field: PropertyKey,
+): boolean {
+  const literalFields = literalStdinTokenFields.get(options);
+  return (
+    literalFields !== ALL_MUTATION_STDIN_FIELDS && !literalFields?.has(field)
+  );
+}
+
+/** Refuse competing stdin-token fields before any resolver starts reading. */
+export function assertSingleStdinTokenConsumer(
+  candidates: readonly {
+    value: string | readonly string[] | undefined;
+    optionName: string;
+    resolveToken?: boolean;
+  }[],
+): void {
+  let stdinConsumerOption: string | undefined;
+  for (const candidate of candidates) {
+    if (candidate.resolveToken === false || candidate.value === undefined) {
+      continue;
+    }
+    const values = Array.isArray(candidate.value)
+      ? candidate.value
+      : [candidate.value];
+    const tokenCount = values.filter(
+      (value) => value.trim() === STDIN_TOKEN,
+    ).length;
+    if (tokenCount > 1) {
+      throw new PmCliError(
+        `${candidate.optionName} accepts "${STDIN_TOKEN}" stdin token at most once per command invocation`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (tokenCount === 0) continue;
+    if (
+      stdinConsumerOption !== undefined &&
+      stdinConsumerOption !== candidate.optionName
+    ) {
+      throw new PmCliError(
+        `Only one option may use "${STDIN_TOKEN}" stdin token per command invocation. Already used by ${stdinConsumerOption}.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    stdinConsumerOption = candidate.optionName;
+  }
+}
+
+/** Resolve a typed mutation option bag only after its complete stdin plan is conflict-free. */
+export async function resolveMutationStdinTokenFields<T extends object>(
+  options: T,
+  scalarFields: readonly (readonly [keyof T & string, string])[],
+  listFields: readonly (readonly [keyof T & string, string])[],
+): Promise<T> {
+  const source = options as Record<string, unknown>;
+  const definitions = [...scalarFields, ...listFields];
+  assertSingleStdinTokenConsumer(
+    definitions.map(([field, optionName]) => ({
+      value: source[field] as string | readonly string[] | undefined,
+      optionName,
+      resolveToken: shouldResolveMutationStdinTokenField(options, field),
+    })),
+  );
+  const stdinResolver = createStdinTokenResolver();
+  const resolved = { ...source };
+  for (const [field, optionName] of scalarFields) {
+    resolved[field] = await stdinResolver.resolveValue(
+      source[field] as string | undefined,
+      optionName,
+      shouldResolveMutationStdinTokenField(options, field),
+    );
+  }
+  for (const [field, optionName] of listFields) {
+    resolved[field] = await stdinResolver.resolveList(
+      source[field] as string[] | undefined,
+      optionName,
+      shouldResolveMutationStdinTokenField(options, field),
+    );
+  }
+  return preserveMutationStdinTokenLiterals(resolved as T);
 }
 
 /** Implements create stdin token resolver for the public runtime surface of this module. */
@@ -534,7 +691,9 @@ export function createStdinTokenResolver(): StdinTokenResolver {
   const resolveValue = async (
     value: string | undefined,
     optionName: string,
+    resolveToken = true,
   ): Promise<string | undefined> => {
+    if (!resolveToken) return value;
     if (value === undefined) {
       return undefined;
     }
@@ -547,7 +706,9 @@ export function createStdinTokenResolver(): StdinTokenResolver {
   const resolveList = async (
     values: string[] | undefined,
     optionName: string,
+    resolveToken = true,
   ): Promise<string[] | undefined> => {
+    if (!resolveToken) return values;
     if (!values) {
       return undefined;
     }

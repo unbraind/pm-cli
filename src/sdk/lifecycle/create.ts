@@ -4,6 +4,7 @@
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import {
   removeFileIfExists,
   writeFileAtomic,
@@ -20,13 +21,14 @@ import {
   validateMissingParentReference,
   validateSprintOrReleaseValue,
   assertNoUnknownCsvKeys,
-  createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
   resolvePriority,
   getFocusedItem,
   normalizeStatusInput,
@@ -393,9 +395,12 @@ function normalizeLegacyNoneCreateOptions(
     /* c8 ignore stop */
   }
 
-  return applyLegacyNoneCollectionNormalizers(
-    normalized,
-    CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+  return transferMutationStdinTokenPolicy(
+    options,
+    applyLegacyNoneCollectionNormalizers(
+      normalized,
+      CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+    ),
   );
 }
 
@@ -1039,25 +1044,36 @@ function parseTypeOptions(raw: string[] | undefined): {
 async function resolveCreateStdinInputs(
   options: CreateCommandOptions,
 ): Promise<CreateCommandOptions> {
-  const stdinResolver = createStdinTokenResolver();
-  return {
-    ...options,
-    body: await stdinResolver.resolveValue(options.body, "--body"),
-    dep: await stdinResolver.resolveList(options.dep, "--dep"),
-    comment: await stdinResolver.resolveList(options.comment, "--comment"),
-    note: await stdinResolver.resolveList(options.note, "--note"),
-    learning: await stdinResolver.resolveList(options.learning, "--learning"),
-    file: await stdinResolver.resolveList(options.file, "--file"),
-    test: await stdinResolver.resolveList(options.test, "--test"),
-    doc: await stdinResolver.resolveList(options.doc, "--doc"),
-    reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
-    event: await stdinResolver.resolveList(options.event, "--event"),
-    typeOption: await stdinResolver.resolveList(
-      options.typeOption,
-      "--type-option",
-    ),
-    field: await stdinResolver.resolveList(options.field, "--field"),
-  };
+  const scalarFields = [
+    ["body", "--body"],
+    ["description", "--description"],
+  ] as const;
+  const listFields = [
+    ["dep", "--dep"],
+    ["comment", "--comment"],
+    ["note", "--note"],
+    ["learning", "--learning"],
+    ["file", "--file"],
+    ["test", "--test"],
+    ["doc", "--doc"],
+    ["reminder", "--reminder"],
+    ["event", "--event"],
+    ["typeOption", "--type-option"],
+    ["field", "--field"],
+  ] as const;
+  return await resolveMutationStdinTokenFields(
+    options,
+    scalarFields,
+    listFields,
+  );
+}
+
+async function resolveCreateTransportInputs(
+  options: CreateCommandOptions,
+): Promise<CreateCommandOptions> {
+  return shouldResolveMutationStdinTokens(options)
+    ? await resolveCreateStdinInputs(options)
+    : options;
 }
 
 function resolveCreateMode(
@@ -2665,7 +2681,7 @@ export async function runCreate(
   global: GlobalOptions,
 ): Promise<CreateResult> {
   let resolvedOptions = normalizeLegacyNoneCreateOptions(
-    await resolveCreateStdinInputs(options),
+    await resolveCreateTransportInputs(options),
   );
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);

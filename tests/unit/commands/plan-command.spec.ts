@@ -612,6 +612,7 @@ describe("runPlan command family", () => {
         options: {
           steps: "all",
           materializeType: "Task",
+          field: ["body=-"],
           author: "test-author",
         } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
@@ -634,6 +635,16 @@ describe("runPlan command family", () => {
           ),
         ),
       ).toBe(true);
+      for (const materializedId of materializedIds) {
+        const materialized = context.runCli(
+          ["get", materializedId, "--json", "--full"],
+          { expectJson: true },
+        );
+        expect(materialized.code).toBe(0);
+        expect(
+          (materialized.json as { item: { body?: string } }).item.body,
+        ).toBe("-");
+      }
       const validation = context.runCli(
         [
           "validate",
