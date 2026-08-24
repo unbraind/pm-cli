@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:sdk","area:storage",durability,governance,interop,specification,standards
 created_at: "2026-07-25T12:29:30.396Z"
-updated_at: "2026-07-25T20:44:41.644Z"
+updated_at: "2026-08-24T14:26:37.442Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "The specification defines the item document grammar, history record grammar, hash-chain construction, tombstone and redaction semantics, relationship edge encoding, and index artifacts, and states for each artifact whether it is authoritative or derivable; The specification states the compatibility rules between format versions, including what a conformant reader must do with a version it does not recognize; A conformance suite exists that a third-party implementation can run, covering read, write, hash-chain verification, and round-trip fidelity; This implementation is run against the same conformance suite in CI, so the spec and the code cannot drift; An independent reader — a small script that verifies a history chain without importing pm — is published as executable proof that the spec is sufficient; The specification is versioned and its revision policy is stated, so a change to it is a reviewable event"
@@ -19,20 +19,56 @@ why_now: The v1.0 stability contract freezes the storage format policy; a policy
 parent: pm-o2kc
 risk: medium
 confidence: 60
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-3z0k,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-ae1u,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-eeai,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-mn4zas,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-pae3wo,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-t4d7nz,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-w7ccmv,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-xp1xsw,related,"2026-07-25T12:29:30.396Z",null,null
-  pm-9c7h9x,related,"2026-07-25T12:35:29.524Z",null,null
-  pm-e5yupa,related,"2026-07-25T12:35:29.524Z",null,null
-  pm-g608fc,related,"2026-07-25T12:35:29.524Z",null,null
-  pm-iiv1gl,related,"2026-07-25T12:35:29.524Z",null,null
-  pm-odohgb,related,"2026-07-25T12:35:29.524Z",null,null
-  pm-wlqxg3,related,"2026-07-25T12:35:29.524Z",null,null
-  pm-is1a,implements,"2026-07-25T20:44:41.293Z",null,null
+dependencies[16]:
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-ae1u
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-eeai
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-mn4zas
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-pae3wo
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-t4d7nz
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-w7ccmv
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-25T12:29:30.396Z"
+  - id: pm-9c7h9x
+    kind: related
+    created_at: "2026-07-25T12:35:29.524Z"
+  - id: pm-e5yupa
+    kind: related
+    created_at: "2026-07-25T12:35:29.524Z"
+  - id: pm-g608fc
+    kind: related
+    created_at: "2026-07-25T12:35:29.524Z"
+  - id: pm-iiv1gl
+    kind: related
+    created_at: "2026-07-25T12:35:29.524Z"
+  - id: pm-odohgb
+    kind: related
+    created_at: "2026-07-25T12:35:29.524Z"
+  - id: pm-wlqxg3
+    kind: related
+    created_at: "2026-07-25T12:35:29.524Z"
+  - id: pm-is1a
+    kind: implements
+    created_at: "2026-07-25T20:44:41.293Z"
+  - id: pm-ljrh29
+    kind: verifies
+    created_at: "2026-08-24T14:26:36.982Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

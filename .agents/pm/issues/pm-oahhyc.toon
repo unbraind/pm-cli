@@ -1,0 +1,32 @@
+id: pm-oahhyc
+title: "Dynamic-read continuation cursors are born stale: pm health emits a cursor that its next invocation rejects"
+description: "A default-budget full pm health read returns a valid-looking output continuation for the remaining checks, but an immediate retry with that cursor fails read_output_cursor_stale even though no tracker mutation occurred. Dynamic health fields such as telemetry timestamps make the collection fingerprint change between pages, so the token-efficient recovery path is unusable and the only successful workaround is an unbounded reread."
+type: Issue
+status: open
+priority: 1
+tags[9]: agent-ux,"area:cli","area:sdk",context-management,cursor,diagnostics,output-contract,regression,token-efficiency
+created_at: "2026-08-24T14:24:39.321Z"
+updated_at: "2026-08-24T14:24:39.321Z"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: Dynamic read pagination binds every page to a stable snapshot or epoch whose identity survives volatile telemetry and clock fields; The exact emitted CLI recovery command succeeds without a tracker mutation and SDK and MCP cursor bindings behave identically; A deterministic regression advances health telemetry and clock fields between page one and page two while preserving the declared row collection; Cursor fingerprints include only collection identity and immutable query inputs or the producer freezes volatile inputs for the continuation lifetime; Stale cursors from genuine tracker or contract changes still fail closed with an executable restart command; Default-budget and unbounded reads are set-equivalent and do not duplicate or skip checks
+goal: project management = context management
+objective: Make every declared bounded-read continuation executable and snapshot-consistent across dynamic diagnostic surfaces
+value: Agents can recover omitted health and diagnostic rows without discarding the first page or paying for an unbounded rerun
+why_now: The complete ecosystem review exercised the recovery command exactly as emitted and it failed immediately on the current release
+parent: pm-5t33or
+risk: high
+confidence: high
+severity: high
+expected_result: An output cursor returned by pm health resumes the exact declared check collection on the next invocation and returns the remaining rows with stable snapshot semantics.
+actual_result: pm health --check-only --full returned five of ten checks and a recovery cursor; the immediate retry returned read_output_cursor_stale. Re-running with --output-budget unbounded returned all ten checks successfully.
+affected_version: 2026.8.24
+component: read-output continuation
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-08-24T14:24:39.321Z","harness:codex","cli:create:dep",detected
+  pm-8nev0o,recurs_from,"2026-08-24T14:24:39.321Z","harness:codex","cli:create:dep",detected
+  pm-a8zm,discovered_from,"2026-08-24T14:24:39.321Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-24T14:24:39.321Z","harness:codex","Duplicate check 2026-08-24: searched all statuses for health output cursor stale; dynamic telemetry continuation; declared row collection recovery; and read_output_cursor_stale. The nearest lineage is closed pm-8nev0o for missing continuation support and open pm-5t33or for budget contracts. Neither owns a cursor that is emitted successfully but invalid before its first use."
+body: ""

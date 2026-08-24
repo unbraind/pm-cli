@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The outcome-milestone ladder is a sibling set rather than a layer: 1,024 terminal items reach the roadmap apex through 154 typed roots without traversing any outcome milestone ([pm-h6b73t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h6b73t.toon))
+
 ## 2026.8.24 - 2026-08-24
 
 ### Fixed

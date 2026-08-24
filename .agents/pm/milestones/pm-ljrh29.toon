@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[9]: "area:history","area:privacy",continuity,"horizon:far",immutability,milestone,outcome,roadmap,standards
 created_at: "2026-08-14T14:35:39.995Z"
-updated_at: "2026-08-14T14:35:39.995Z"
+updated_at: "2026-08-24T14:27:59.779Z"
 deadline: "2036-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 129600
@@ -27,4 +27,6 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-14T14:35:39.995Z","harness:codex","Duplicate check evidence 2026-08-14: exact all-status phrase search returned zero and existing compatibility retention and cryptographic items are distinct delivery slices rather than a continuity outcome milestone."
+notes[1]{created_at,author,text}:
+  "2026-08-24T14:27:59.779Z","harness:codex","Continuity programme organization 2026-08-24: durability is evaluated across independent axes rather than as one distant date. Format continuity is owned by the open workspace specification and conformance suite; state continuity by item and workspace point-in-time reconstruction; proof continuity by algorithm-agile chains and portable detached attestations; semantic continuity by versioned relationship and operation vocabularies; organizational continuity by federation, signatures, and policy migration; legal continuity by retention and proof-preserving erasure; consumer continuity by re-derivable token and latency budgets. Added explicit verifies edges from pm-4jk8kx, pm-3z0k, and pm-5gf0xf to this outcome; pm-pae3wo already verifies it. Promotion requires a synthetic corpus spanning multiple format, schema, policy, organization, and cryptographic generations plus independent-reader proof. No additional calendar milestone is needed because this item already owns the multi-decade outcome."
 body: ""

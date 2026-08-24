@@ -4,10 +4,11 @@ description: "GitHub issue #1091 reports that manifest_unknown_key is only reach
 type: Issue
 status: open
 priority: 2
-tags: []
+tags[5]: "area:extensions","area:sdk",diagnostics,manifest-schema,package-platform
 created_at: "2026-08-22T18:40:17.079Z"
-updated_at: "2026-08-22T19:13:32.526Z"
+updated_at: "2026-08-24T14:26:35.800Z"
 author: "harness:codex"
+estimated_minutes: 240
 acceptance_criteria: pm health surfaces unknown manifest keys with actionable author guidance; public SDK exposes a stable schema-lint boundary or separates schema findings from compatibility verdicts; extension/package listings preserve thin-adapter parity; docs identify the supported author-metadata location; focused SDK CLI MCP tests and exact full coverage pass
 parent: pm-usfg
 risk: medium

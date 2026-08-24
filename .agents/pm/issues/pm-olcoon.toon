@@ -4,9 +4,9 @@ description: "Manual packed-CLI testing showed that create --parent parent-a per
 type: Issue
 status: open
 priority: 2
-tags: []
+tags[6]: "area:cli","area:sdk",hierarchy,identifiers,normalization,transport-parity
 created_at: "2026-08-21T14:49:23.426Z"
-updated_at: "2026-08-22T07:28:15.595Z"
+updated_at: "2026-08-24T14:35:57.301Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "A public SDK identifier parser distinguishes canonical local ids, unqualified local shorthand, and explicit cross-workspace references; parent scalars and dependency rows call the same parser across create, update, plan materialization, CLI, MCP, packages, npx and bunx; unambiguous local shorthand normalizes identically or every surface refuses with one typed ambiguity code and an executable canonical retry; intentional remote identifiers remain byte-stable; negative controls cover dangling shorthand, ambiguous prefixes, already-prefixed ids, remote ids, and mixed parent/dependency writes; packed-consumer tests prove no behavior divergence; validation and graph audit report zero new missing hierarchy targets."
