@@ -110,9 +110,24 @@
           "path": "src/sdk/annotations.ts",
           "changed_lines_contain_any": [
             "AnnotationMutationReceipt",
+            "AnnotationHistoryRestoration",
+            "AnnotationOmissionReceipt",
             "normalizeAnnotationTransportOptions",
             "fullHistory",
-            "omission_receipt"
+            "mutation_receipt",
+            "omission_receipt",
+            "action:",
+            "entry_index",
+            "changed_count",
+            "full_history_included",
+            "selector:",
+            "cli_flag",
+            "sdk_option",
+            "mcp_option",
+            "has_omissions",
+            "omitted_field_group_count",
+            "omitted_field_groups",
+            "restore_with"
           ]
         },
         {

@@ -27,6 +27,8 @@ describe("bulk ID input sources", () => {
     );
     expect(normalizeBulkIdsValue(undefined)).toBeUndefined();
     expect(normalizeBulkIdsValue(" , \n ")).toBe("");
+    expect(normalizeBulkIdsValue(Number.NaN)).toBe("");
+    expect(normalizeBulkIdsValue(Number.POSITIVE_INFINITY)).toBe("");
   });
 
   it("resolves stdin, @path, inline text, and an omitted selector", async () => {

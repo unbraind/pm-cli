@@ -192,6 +192,24 @@ describe("bulk and file input composability", () => {
         "Only one option may consume stdin per command invocation",
       );
 
+      const whitespaceDescriptionConflict = context.runCli(
+        [
+          "create",
+          "--title",
+          "conflicting whitespace stdin",
+          "--description",
+          " - ",
+          "--body-file",
+          "-",
+          "--json",
+        ],
+        { input: "one stream still cannot supply two fields" },
+      );
+      expect(whitespaceDescriptionConflict.code).toBe(2);
+      expect(whitespaceDescriptionConflict.stderr).toContain(
+        "Only one option may consume stdin per command invocation",
+      );
+
       const bulkConflict = context.runCli(
         ["update-many", "--ids", " - ", "--body", "-", "--json"],
         { input: "pm-stdin-files" },

@@ -50,7 +50,11 @@ export function normalizeBulkIdsValue(
     return undefined;
   }
   if (typeof value === "number") {
-    return Number.isFinite(value) ? String(value) : undefined;
+    // Preserve an explicitly supplied but invalid numeric selector as blank so
+    // the bulk lifecycle's fail-closed empty-ID guard rejects it. Returning
+    // undefined here would erase the allowlist and could broaden a mutation to
+    // every item matched by the remaining filters.
+    return Number.isFinite(value) ? String(value) : "";
   }
   const ids = Array.isArray(value)
     ? parseBulkIdsText(value.join("\n"))

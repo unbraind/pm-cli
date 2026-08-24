@@ -8,15 +8,23 @@ import {
 
 describe("bulk runtime input normalization", () => {
   it("accepts transport-native ID arrays and preserves scalar compatibility", () => {
-    expect(normalizeMcpOptionsArrays({ ids: ["pm-a", "pm-b"] })).toEqual({
-      ids: "pm-a,pm-b",
+    expect(
+      normalizeMcpOptionsArrays(
+        { ids: ["extension-a", "extension-b"] },
+        "extension-action",
+      ),
+    ).toEqual({
+      ids: ["extension-a", "extension-b"],
     });
     expect(mutationListOptions({ ids: ["pm-a", "pm-b\npm-c"] })).toMatchObject({
       ids: "pm-a,pm-b,pm-c",
     });
     expect(mutationListOptions({ ids: 123 })).toMatchObject({ ids: "123" });
     expect(mutationListOptions({ ids: Number.NaN })).toMatchObject({
-      ids: undefined,
+      ids: "",
+    });
+    expect(mutationListOptions({ ids: Number.POSITIVE_INFINITY })).toMatchObject({
+      ids: "",
     });
     expect(
       updateManyOptionsFromFlat({

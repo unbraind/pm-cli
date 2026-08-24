@@ -166,10 +166,15 @@ Direct SDK and MCP callers should pass `ids` as either a string or an array;
 the SDK normalizes both shapes through the same stable-deduplicating parser:
 
 ```ts
-await client.updateMany({
-  ids: ["pm-a1b2", "pm-c3d4"],
-  priority: 1,
-  dryRun: true,
+import { PmClient } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({ pmRoot: ".agents/pm" });
+await pm.run("update-many", {
+  options: {
+    ids: ["pm-a1b2", "pm-c3d4"],
+    priority: 1,
+    dryRun: true,
+  },
 });
 ```
 

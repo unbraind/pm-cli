@@ -9,10 +9,13 @@ import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 export async function resolveDescriptionStdin(
   options: Record<string, unknown>,
 ): Promise<void> {
-  if (options.description === "-") {
+  if (
+    typeof options.description === "string" &&
+    options.description.trim() === "-"
+  ) {
     options.description =
       (await createStdinTokenResolver().resolveValue(
-        "-",
+        options.description,
         "--description",
       )) ?? "";
   }

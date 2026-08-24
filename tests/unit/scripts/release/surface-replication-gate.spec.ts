@@ -473,6 +473,31 @@ describe("surface replication gate", () => {
     ) as Record<string, unknown>;
     config.waivers = [];
 
+    const annotationSet = (
+      config.sets as Array<{
+        id: string;
+        triggers: Array<{
+          path?: string;
+          changed_lines_contain_any?: string[];
+        }>;
+      }>
+    ).find((entry) => entry.id === "annotation-mutation-receipts");
+    const sharedReceiptTrigger = annotationSet?.triggers.find(
+      (entry) => entry.path === "src/sdk/annotations.ts",
+    );
+    expect(sharedReceiptTrigger?.changed_lines_contain_any).toEqual(
+      expect.arrayContaining([
+        "action:",
+        "entry_index",
+        "changed_count",
+        "full_history_included",
+        "has_omissions",
+        "omitted_field_group_count",
+        "omitted_field_groups",
+        "restore_with",
+      ]),
+    );
+
     const report = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: ["src/sdk/annotations.ts"],

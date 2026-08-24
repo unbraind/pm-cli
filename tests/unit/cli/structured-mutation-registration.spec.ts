@@ -169,6 +169,17 @@ describe("structured mutation command registration", () => {
       expect.any(Object),
     );
 
+    const whitespaceProgram = programWithGlobals();
+    registerMutationCommands(whitespaceProgram);
+    await whitespaceProgram.parseAsync(
+      ["create", "--title", "Whitespace", "--description", " - "],
+      { from: "user" },
+    );
+    expect(mocks.runCreate).toHaveBeenLastCalledWith(
+      expect.objectContaining({ description: "Multiline\nproject context" }),
+      expect.any(Object),
+    );
+
     mocks.stdin = undefined;
     const emptyProgram = programWithGlobals();
     registerMutationCommands(emptyProgram);

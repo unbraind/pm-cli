@@ -139,7 +139,6 @@ const ARRAY_TO_CSV_FIELDS = new Set([
   "blocked_by",
   "skills",
   "fields",
-  "ids",
 ]);
 
 /** Fields whose scalar MCP values promote into the CLI's repeatable arrays. */
