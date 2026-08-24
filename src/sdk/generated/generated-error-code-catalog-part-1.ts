@@ -2107,6 +2107,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "mcp_stdin_unavailable",
+    meaning: "Mcp stdin unavailable condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/annotations.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "mcp_stdin_unavailable",
+    aliases: [],
+  },
+  {
     code: "merge_conflict_markers_detected",
     meaning: "Merge conflict markers detected condition.",
     stability: "stable",

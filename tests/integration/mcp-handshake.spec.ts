@@ -358,10 +358,16 @@ describe("MCP protocol handshake", () => {
     ).toEqual({ add: "plain" });
     expect(
       mcpServerTestOnly.normalizeMcpOptionsArrays(
-        { add: "comment" },
+        { add: "comment", file: "-" },
         "comments",
       ),
-    ).toEqual({ add: "comment" });
+    ).toEqual({ add: "comment", file: "-" });
+    expect(
+      mcpServerTestOnly.normalizeMcpOptionsArrays(
+        { file: "src/index.ts" },
+        "create",
+      ),
+    ).toEqual({ file: ["src/index.ts"] });
     expect(
       mcpServerTestOnly.withAddNoteOption({ note: "already-set" }),
     ).toEqual({ note: "already-set" });
@@ -2064,6 +2070,44 @@ describe("MCP protocol handshake", () => {
         id: created.id,
         options: { body: "-" },
       });
+      await mcpServerTestOnly.runAction({
+        action: "comments",
+        path: context.pmPath,
+        id: created.id,
+        options: { add: "-" },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "notes",
+        path: context.pmPath,
+        id: created.id,
+        options: { add: "-" },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "learnings",
+        path: context.pmPath,
+        id: created.id,
+        options: { add: "-" },
+      });
+
+      const plan = (await mcpServerTestOnly.runAction({
+        action: "plan",
+        path: context.pmPath,
+        options: {
+          subcommand: "create",
+          title: "mcp literal plan description",
+          description: "-",
+        },
+      })) as { plan: { id: string } };
+      const shortcutIds: string[] = [];
+      for (const action of ["meet", "event", "remind"] as const) {
+        const shortcut = (await mcpServerTestOnly.runAction({
+          action,
+          path: context.pmPath,
+          title: `mcp literal ${action}`,
+          options: { body: "-" },
+        })) as { item: { id: string } };
+        shortcutIds.push(shortcut.item.id);
+      }
 
       const loaded = (await mcpServerTestOnly.runAction({
         action: "get",
@@ -2084,12 +2128,61 @@ describe("MCP protocol handshake", () => {
         description: "-",
         comments: expect.arrayContaining([
           expect.objectContaining({ text: "-" }),
+          expect.objectContaining({ text: "-" }),
         ]),
         notes: expect.arrayContaining([expect.objectContaining({ text: "-" })]),
         learnings: expect.arrayContaining([
           expect.objectContaining({ text: "-" }),
         ]),
       });
+      const planItem = (await mcpServerTestOnly.runAction({
+        action: "get",
+        path: context.pmPath,
+        id: plan.plan.id,
+        options: { full: true },
+      })) as { item: { description?: string } };
+      expect(planItem.item.description).toBe("-");
+      for (const id of shortcutIds) {
+        const shortcutItem = (await mcpServerTestOnly.runAction({
+          action: "get",
+          path: context.pmPath,
+          id,
+          options: { full: true },
+        })) as { item: { body?: string } };
+        expect(shortcutItem.item.body).toBe("-");
+      }
+    });
+  });
+
+  it("refuses MCP annotation stdin directives without reading the protocol stream", async () => {
+    await withTempPmPath(async (context) => {
+      const created = (await mcpServerTestOnly.runAction({
+        action: "create",
+        path: context.pmPath,
+        options: { title: "mcp annotation stdin refusal", type: "Task" },
+      })) as { id: string };
+      for (const action of ["comments", "notes", "learnings"] as const) {
+        await expect(
+          mcpServerTestOnly.runAction({
+            action,
+            path: context.pmPath,
+            id: created.id,
+            options: { stdin: true },
+          }),
+        ).rejects.toMatchObject({
+          code: "mcp_stdin_unavailable",
+        });
+        await expect(
+          mcpServerTestOnly.runAction({
+            action,
+            path: context.pmPath,
+            id: created.id,
+            options: { file: "-" },
+          }),
+        ).rejects.toMatchObject({
+          code: "mcp_stdin_unavailable",
+        });
+      }
     });
   });
 
@@ -2487,5 +2580,76 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
     };
     expect(response.result?.serverInfo?.name).toBe("pm-mcp");
     expect(response.result?.protocolVersion).toBe("2025-06-18");
+  });
+
+  it("answers Plan dash-document requests while the JSON-RPC stdin pipe remains open", async () => {
+    await withTempPmPath(async (context) => {
+      const distServerPath = path.join(
+        process.cwd(),
+        "dist",
+        "mcp",
+        "server.js",
+      );
+      const child = spawn(process.execPath, [distServerPath], {
+        cwd: process.cwd(),
+        stdio: ["pipe", "pipe", "pipe"],
+        env: {
+          ...context.env,
+          PM_PATH: context.pmPath,
+          PM_NO_TELEMETRY: "1",
+          PM_ANALYTICS_OPTOUT: "1",
+        },
+      });
+      const responses = readline.createInterface({ input: child.stdout });
+      const responsePromise = new Promise<Record<string, unknown>>(
+        (resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(
+              new Error(
+                "timed out waiting for MCP Plan response with open stdin",
+              ),
+            );
+          }, 5_000);
+          responses.on("line", (line) => {
+            const response = JSON.parse(line) as Record<string, unknown>;
+            if (response.id === 41) {
+              clearTimeout(timeout);
+              resolve(response);
+            }
+          });
+          child.once("error", (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          });
+        },
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 41,
+          method: "tools/call",
+          params: {
+            name: "pm_plan",
+            arguments: {
+              path: context.pmPath,
+              options: {
+                subcommand: "create",
+                title: "open MCP stdin literal",
+                description: "-",
+              },
+            },
+          },
+        })}\n`,
+      );
+      try {
+        const response = await responsePromise;
+        expect(response.error).toBeUndefined();
+        expect(response.result).toBeDefined();
+      } finally {
+        responses.close();
+        child.stdin.end();
+        child.kill("SIGTERM");
+      }
+    });
   });
 });

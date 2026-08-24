@@ -10,11 +10,13 @@ import {
   type GlobalOptions,
   PmCliError,
   createStdinTokenResolver,
+  shouldResolveMutationStdinTokens,
 } from "./runtime-primitives.js";
 import type { Comment } from "../types/index.js";
 import {
   type AnnotationMutationReceipt,
   type AnnotationOmissionReceipt,
+  assertAnnotationStdinTransportAvailable,
   isErrnoError,
   parseAnnotationTextInput,
   runAnnotationCommand,
@@ -93,10 +95,15 @@ async function resolveCommentTextSource(
     );
   }
   if (hasAdd) {
-    const addInput = await stdinResolver.resolveValue(options.add, "--add");
+    const addInput = await stdinResolver.resolveValue(
+      options.add,
+      "--add",
+      shouldResolveMutationStdinTokens(options),
+    );
     return { value: addInput ?? "", emptyFlag: "--add" };
   }
   if (hasStdin) {
+    assertAnnotationStdinTransportAvailable(options, "--stdin");
     const stdinInput = await stdinResolver.resolveValue("-", "--stdin");
     return { value: stdinInput ?? "", emptyFlag: "--stdin" };
   }
@@ -105,6 +112,7 @@ async function resolveCommentTextSource(
     throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
   }
   if (filePath === "-") {
+    assertAnnotationStdinTransportAvailable(options, "--file -");
     return {
       value: (await stdinResolver.resolveValue("-", "--file")) ?? "",
       emptyFlag: "--file",

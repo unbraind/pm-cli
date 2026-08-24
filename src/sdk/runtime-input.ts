@@ -195,6 +195,9 @@ const SCALAR_TO_ARRAY_FIELDS = new Set([
   "envClear",
   "env_clear",
 ]);
+const ANNOTATION_SCALAR_TO_ARRAY_FIELDS = new Set(
+  [...SCALAR_TO_ARRAY_FIELDS].filter((field) => field !== "file"),
+);
 
 // Actions where the linked-resource fields `add` and `remove` are string[] arrays.
 // For other actions (comments/notes/learnings) `add` and `remove` are scalar strings
@@ -205,6 +208,12 @@ const ARRAY_ADD_REMOVE_ACTIONS = new Set([
   "docs",
   "test",
   "test-all",
+]);
+
+const SCALAR_ANNOTATION_SOURCE_ACTIONS = new Set([
+  "comments",
+  "notes",
+  "learnings",
 ]);
 
 /** Lifecycle actions where a top-level assignee argument aliases the author. */
@@ -255,13 +264,15 @@ const UNIVERSAL_READ_OUTPUT_OPTION_KEYS = [
 /** Reconcile MCP array/scalar option spellings with CLI flag expectations. */
 export function normalizeMcpOptionsArrays(
   options: Record<string, unknown>,
-  action?: string,
+  action = "",
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const promoteAddRemove =
-    action !== undefined && ARRAY_ADD_REMOVE_ACTIONS.has(action);
+  const promoteAddRemove = ARRAY_ADD_REMOVE_ACTIONS.has(action);
   const preserveStandaloneNote =
     action === "files" || action === "files-discover" || action === "docs";
+  const scalarToArrayFields = SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action)
+    ? ANNOTATION_SCALAR_TO_ARRAY_FIELDS
+    : SCALAR_TO_ARRAY_FIELDS;
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key)) {
       result[key] = value.join(",");
@@ -271,7 +282,10 @@ export function normalizeMcpOptionsArrays(
       result[key] = value;
       continue;
     }
-    if (typeof value === "string" && SCALAR_TO_ARRAY_FIELDS.has(key)) {
+    if (
+      typeof value === "string" &&
+      scalarToArrayFields.has(key)
+    ) {
       result[key] = [value];
       continue;
     }

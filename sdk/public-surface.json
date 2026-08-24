@@ -30560,6 +30560,7 @@
     "malformed_plan_step_evidence",
     "manifest_capabilities_absent",
     "manifest_unknown_key",
+    "mcp_stdin_unavailable",
     "merge_conflict_markers_detected",
     "merge_decisions_unreviewed",
     "merge_git_config_unwritable",

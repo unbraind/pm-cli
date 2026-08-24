@@ -5,6 +5,10 @@
  */
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import {
+  preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokens,
+} from "./runtime-primitives.js";
+import {
   runCreate,
   type CreateCommandOptions,
   type CreateResult,
@@ -73,7 +77,7 @@ function buildCommonOptions(
   title: string,
   options: SchedulingShortcutCommonOptions,
 ): CreateCommandOptions {
-  return {
+  const createOptions: CreateCommandOptions = {
     type,
     title,
     schedulePreset: "lightweight",
@@ -86,6 +90,9 @@ function buildCommonOptions(
     author: options.author,
     message: options.message,
   };
+  return shouldResolveMutationStdinTokens(options)
+    ? createOptions
+    : preserveMutationStdinTokenLiterals(createOptions);
 }
 
 async function createMeetingOrEvent(

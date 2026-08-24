@@ -18305,6 +18305,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "mcp_stdin_unavailable",
+      "class": "usage",
+      "code": "mcp_stdin_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Mcp stdin unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "history_merge_conflict_markers_detected"
       ],

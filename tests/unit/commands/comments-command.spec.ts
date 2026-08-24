@@ -390,8 +390,10 @@ describe("runComments", () => {
       createStdinTokenResolver: () => ({
         resolveValue: vi.fn(async () => undefined),
       }),
+      shouldResolveMutationStdinTokens: () => true,
     }));
     vi.doMock("../../../src/sdk/annotations.js", () => ({
+      assertAnnotationStdinTransportAvailable: vi.fn(),
       parseAnnotationTextInput: parseInputMock,
       runAnnotationCommand: runAnnotationMock,
     }));
