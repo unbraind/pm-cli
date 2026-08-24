@@ -1174,6 +1174,13 @@
       ],
       "package_version": "2026.8.23",
       "reason": "Expand bulk ID contracts to finite numeric array members and fail closed on unsupported explicit selectors"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryCompactBulkCommandOptions"
+      ],
+      "package_version": "2026.8.23",
+      "reason": "Align history-compaction SDK ID inputs with bulk transport contracts and fail closed on invalid explicit selectors"
     }
   ],
   "entrypoints": {
@@ -2967,6 +2974,12 @@
           "kind": "type",
           "name": "BulkIdsStdinReader",
           "signature": "export type BulkIdsStdinReader = (optionName: string) => Promise<string>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkIdsValue",
+          "signature": "export type BulkIdsValue = string | number | readonly (string | number)[] | undefined;"
         },
         {
           "classification": "advanced_export",
@@ -7214,7 +7227,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryCompactBulkCommandOptions",
-          "signature": "export interface HistoryCompactBulkCommandOptions { ids?: string[]; scope?: HistoryCompactScope; allOver?: number; minEntries?: number; dryRun?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface HistoryCompactBulkCommandOptions { ids?: BulkIdsValue; scope?: HistoryCompactScope; allOver?: number; minEntries?: number; dryRun?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "advanced_export",

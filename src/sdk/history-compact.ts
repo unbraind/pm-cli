@@ -33,6 +33,11 @@ import { lifecycleClassifierFromStatusRegistry } from "../core/governance/metada
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
+import {
+  normalizeBulkIdsValue,
+  parseBulkIdsText,
+  type BulkIdsValue,
+} from "../core/io/bulk-ids-input.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -43,7 +48,7 @@ import {
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
 import { readLocatedItem } from "../core/store/item-store.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import type { HistoryEntry } from "../types/index.js";
@@ -542,7 +547,7 @@ export const HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES = 3;
 /** Documents the bulk history compact command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCompactBulkCommandOptions {
   /** Value that configures or reports ids for this contract. */
-  ids?: string[];
+  ids?: BulkIdsValue;
   /** Value that configures or reports scope for this contract. */
   scope?: HistoryCompactScope;
   /** Value that configures or reports all over for this contract. */
@@ -557,6 +562,33 @@ export interface HistoryCompactBulkCommandOptions {
   message?: string;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
+}
+
+type NormalizedHistoryCompactBulkCommandOptions =
+  HistoryCompactBulkCommandOptions & { ids?: string[] };
+
+function normalizeHistoryCompactBulkOptions(
+  options: HistoryCompactBulkCommandOptions,
+): NormalizedHistoryCompactBulkCommandOptions {
+  const normalizedIdsText = normalizeBulkIdsValue(options.ids);
+  if (options.ids !== undefined && normalizedIdsText === "") {
+    throw new PmCliError(
+      "history-compact ids requires at least one valid item ID.",
+      EXIT_CODE.USAGE,
+      {
+        code: "bulk_ids_input_empty",
+        required:
+          "Provide one or more string or finite numeric IDs; non-finite and unsupported selector values are rejected.",
+      },
+    );
+  }
+  return {
+    ...options,
+    ids:
+      normalizedIdsText === undefined
+        ? undefined
+        : parseBulkIdsText(normalizedIdsText),
+  };
 }
 
 /** Per-item outcome row in a bulk compaction pass. */
@@ -789,6 +821,7 @@ export async function runHistoryCompactBulk(
   options: HistoryCompactBulkCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryCompactBulkResult> {
+  const normalizedOptions = normalizeHistoryCompactBulkOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
 
@@ -805,7 +838,9 @@ export async function runHistoryCompactBulk(
     });
 
   const mode: "ids" | "scan" =
-    options.ids !== undefined && options.ids.length > 0 ? "ids" : "scan";
+    normalizedOptions.ids !== undefined && normalizedOptions.ids.length > 0
+      ? "ids"
+      : "scan";
   const minEntries =
     options.minEntries ?? HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES;
   const policy = settings.history.compact_policy;
@@ -816,7 +851,7 @@ export async function runHistoryCompactBulk(
     (policyThresholdApplied ? policy.max_entries : undefined);
 
   const selection = selectHistoryCompactBulkTargets(candidates, {
-    ids: options.ids,
+    ids: normalizedOptions.ids,
     scope: options.scope,
     minEntries,
     allOver,
@@ -834,7 +869,7 @@ export async function runHistoryCompactBulk(
   for (const row of selection) {
     const outcome = await runHistoryCompactBulkRow({
       row,
-      options,
+      options: normalizedOptions,
       dryRun,
       global,
     });

@@ -15854,6 +15854,7 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/io/bulk-ids-input.ts",
+        "sdk/history-compact.ts",
         "sdk/history-mcp.ts"
       ],
       "stability": "provisional"

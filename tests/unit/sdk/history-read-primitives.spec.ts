@@ -126,7 +126,7 @@ describe("public SDK history and rich-read primitives", () => {
       const compact = await client.historyCompact(id, { dryRun: true });
       expect(compact).toMatchObject({ id, dry_run: true });
       const bulk = await client.historyCompactBulk({
-        ids: [id],
+        ids: [id, 42],
         minEntries: 0,
         dryRun: true,
       });

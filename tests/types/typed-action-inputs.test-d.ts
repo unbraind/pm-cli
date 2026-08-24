@@ -10,12 +10,17 @@
  */
 import type {
   ListProjectedItem,
+  PmClient,
   PmClientCloseActionOptions,
   PmCloseManyActionOptions,
   PmCreateActionOptions,
   PmUpdateActionOptions,
   PmUpdateManyActionOptions,
 } from "../../src/sdk/index.js";
+
+declare const typedClient: PmClient;
+void typedClient.historyCompactBulk({ ids: 123, dryRun: true });
+void typedClient.historyCompactBulk({ ids: [123, "pm-a"], dryRun: true });
 
 // --- create: contract-declared keys and value shapes compile ---
 const createOptions: PmCreateActionOptions = {

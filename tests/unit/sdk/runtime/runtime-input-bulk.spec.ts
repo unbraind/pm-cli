@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  closeManyOptionsFromFlat,
   mutationListOptions,
   normalizeMcpOptionsArrays,
   updateManyOptionsFromFlat,
@@ -23,7 +24,9 @@ describe("bulk runtime input normalization", () => {
     expect(mutationListOptions({ ids: Number.NaN })).toMatchObject({
       ids: "",
     });
-    expect(mutationListOptions({ ids: Number.POSITIVE_INFINITY })).toMatchObject({
+    expect(
+      mutationListOptions({ ids: Number.POSITIVE_INFINITY }),
+    ).toMatchObject({
       ids: "",
     });
     expect(
@@ -47,4 +50,25 @@ describe("bulk runtime input normalization", () => {
       dryRun: true,
     });
   });
+
+  it.each([updateManyOptionsFromFlat, closeManyOptionsFromFlat])(
+    "normalizes nested bulk selectors without erasing explicit invalid IDs",
+    (normalize) => {
+      expect(
+        normalize({ list: { ids: [123], type: "Task" }, dryRun: true }),
+      ).toMatchObject({ list: { ids: "123", type: "Task" } });
+      expect(
+        normalize({ list: { ids: Number.NaN, type: "Task" }, dryRun: true }),
+      ).toMatchObject({ list: { ids: "", type: "Task" } });
+      expect(
+        normalize({ list: { ids: { invalid: true }, type: "Task" } }),
+      ).toMatchObject({ list: { ids: "", type: "Task" } });
+      expect(
+        normalize({
+          list: { ids: ["pm-a", Number.POSITIVE_INFINITY], type: "Task" },
+          dryRun: true,
+        }),
+      ).toMatchObject({ list: { ids: "", type: "Task" } });
+    },
+  );
 });

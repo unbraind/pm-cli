@@ -91,6 +91,7 @@ export {
   type BulkIdsFileReader,
   type BulkIdsInputReaders,
   type BulkIdsStdinReader,
+  type BulkIdsValue,
 } from "../core/io/bulk-ids-input.js";
 export {
   type HistoryDiffValueEntry,

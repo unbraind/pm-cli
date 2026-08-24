@@ -17,7 +17,10 @@ import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";
-import { normalizeBulkIdsValue } from "../core/io/bulk-ids-input.js";
+import {
+  normalizeBulkIdsValue,
+  type BulkIdsValue,
+} from "../core/io/bulk-ids-input.js";
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
 export function readRuntimeString(
@@ -482,6 +485,16 @@ export function graphOptionsFromFlat(
   };
 }
 
+function normalizeBulkMutationListOptions(
+  options: Record<string, unknown>,
+): ListOptions {
+  const normalized = normalizeListOptions(options);
+  if (options.ids !== undefined) {
+    normalized.ids = normalizeBulkIdsValue(options.ids as BulkIdsValue);
+  }
+  return normalized;
+}
+
 /** Build close-many command options from one flat MCP parameter payload. */
 export function closeManyOptionsFromFlat(
   options: Record<string, unknown>,
@@ -489,7 +502,7 @@ export function closeManyOptionsFromFlat(
   return {
     status: readRuntimeString(options, "filterStatus"),
     list: isRuntimeRecord(options.list)
-      ? normalizeListOptions(options.list)
+      ? normalizeBulkMutationListOptions(options.list)
       : mutationListOptions(options),
     reason: readRuntimeString(options, "reason"),
     resolution: readRuntimeString(options, "resolution"),
@@ -594,7 +607,7 @@ export function updateManyOptionsFromFlat(
     return {
       status: readRuntimeScalarString(options, "filterStatus"),
       list: isRuntimeRecord(options.list)
-        ? normalizeListOptions(options.list)
+        ? normalizeBulkMutationListOptions(options.list)
         : mutationListOptions(options),
       update: normalizeMcpUpdateOptions(updateSource) as never,
       dryRun:
