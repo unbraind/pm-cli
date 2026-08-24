@@ -22,17 +22,134 @@ import {
 
 const MAX_READ_OUTPUT_CURSOR_LENGTH = 4096;
 
+const HEALTH_TELEMETRY_VOLATILE_DETAIL_FIELDS = Object.freeze([
+  "queue_draining",
+  "queue_entries",
+  "queue_exists",
+  "queue_high_retry_entries",
+  "queue_invalid_rows",
+  "queue_max_attempts",
+  "queue_rows_total",
+  "queue_size_bytes",
+  "pending_otel_spans",
+  "last_attempted_flush_at",
+  "last_failed_flush_at",
+  "last_otel_attempt_at",
+  "last_otel_failure_at",
+  "last_otel_success_at",
+  "last_successful_flush_at",
+] as const);
+
+/** Stable snapshot policy for a read surface whose probes refresh observation metadata. */
+export interface PmReadOutputContinuationFingerprintPolicy {
+  /** Version included in fingerprints so policy changes invalidate older cursors. */
+  version: 3;
+  /** Declared continuation row paths governed by this policy. */
+  paths: readonly string[];
+  /** Exact direct detail fields excluded for each named dynamic row. */
+  ignored_detail_field_names_by_row: Readonly<
+    Record<string, readonly string[]>
+  >;
+  /** Promise that verdicts, stable configuration, and nonvolatile evidence remain bound. */
+  guarantee: "nonvolatile_snapshot_and_stable_configuration";
+}
+
+/** Command-specific exceptions to complete-row continuation fingerprinting. */
+export const PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES: Readonly<
+  Partial<
+    Record<PmReadOutputSurface, PmReadOutputContinuationFingerprintPolicy>
+  >
+> = Object.freeze({
+  health: Object.freeze({
+    version: 3,
+    paths: Object.freeze(["checks"]),
+    ignored_detail_field_names_by_row: Object.freeze({
+      telemetry: HEALTH_TELEMETRY_VOLATILE_DETAIL_FIELDS,
+    }),
+    guarantee: "nonvolatile_snapshot_and_stable_configuration",
+  }),
+});
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Fingerprint the complete canonical row snapshot so changed evidence fails closed. */
+function normalizeReadOutputFingerprintValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(normalizeReadOutputFingerprintValue);
+  }
+  if (!isRecord(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
+      key,
+      normalizeReadOutputFingerprintValue(entry),
+    ]),
+  );
+}
+
+function normalizeReadOutputFingerprintRow(
+  value: unknown,
+  policy: PmReadOutputContinuationFingerprintPolicy,
+): unknown {
+  if (!isRecord(value)) return normalizeReadOutputFingerprintValue(value);
+  const rowName = typeof value.name === "string" ? value.name : undefined;
+  const ignoredDetailFields =
+    rowName !== undefined &&
+    Object.hasOwn(policy.ignored_detail_field_names_by_row, rowName)
+      ? policy.ignored_detail_field_names_by_row[rowName]
+      : undefined;
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, entry]) => {
+        if (key !== "details" || !ignoredDetailFields || !isRecord(entry)) {
+          return [key, normalizeReadOutputFingerprintValue(entry)];
+        }
+        return [
+          key,
+          Object.fromEntries(
+            Object.entries(entry)
+              .filter(([detailKey]) => !ignoredDetailFields.includes(detailKey))
+              .map(([detailKey, detailValue]) => [
+                detailKey,
+                normalizeReadOutputFingerprintValue(detailValue),
+              ]),
+          ),
+        ];
+      }),
+  );
+}
+
+function normalizeReadOutputFingerprintSnapshot(
+  value: unknown,
+  policy: PmReadOutputContinuationFingerprintPolicy,
+): unknown {
+  return Array.isArray(value)
+    ? value.map((row) => normalizeReadOutputFingerprintRow(row, policy))
+    : normalizeReadOutputFingerprintRow(value, policy);
+}
+
+/** Fingerprint the policy-normalized row snapshot so stable evidence changes fail closed. */
 export function readOutputCollectionFingerprint(
   path: string,
   value: unknown[] | Record<string, unknown>,
+  command?: PmReadOutputSurface,
 ): string {
+  const policy = command
+    ? PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES[command]
+    : undefined;
+  const policyApplies = policy?.paths.includes(path) === true;
   return createHash("sha256")
-    .update(stableStringify({ path, value }))
+    .update(
+      stableStringify({
+        path,
+        value: policyApplies
+          ? normalizeReadOutputFingerprintSnapshot(value, policy)
+          : value,
+        ...(policyApplies
+          ? { fingerprint_policy_version: policy.version }
+          : {}),
+      }),
+    )
     .digest("base64url")
     .slice(0, 16);
 }
@@ -149,7 +266,7 @@ export function applyReadOutputContinuation(
     !collection ||
     totalRows !== cursor.total_rows ||
     cursor.offset > totalRows ||
-    readOutputCollectionFingerprint(cursor.path, collection.value) !==
+    readOutputCollectionFingerprint(cursor.path, collection.value, command) !==
       cursor.fingerprint
   ) {
     throw new PmCliError(

@@ -753,6 +753,9 @@ async function buildIntegrityCheck(
     ...(pendingMergeDecisions.length > 0
       ? [`merge_decisions_unreviewed:${pendingMergeDecisions.length}`]
       : []),
+    ...(losslessMergeReceipts.length > 0
+      ? [`merge_receipts_pending:${losslessMergeReceipts.length}`]
+      : []),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),

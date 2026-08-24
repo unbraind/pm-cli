@@ -1,0 +1,69 @@
+id: pm-q4isdq
+title: "GH-1105: contracts must declare each command projection vocabulary before invocation"
+description: "GitHub issue #1105 shows that the global output_policy.degradation_ladder is presented as a universal contract while runtime validation accepts a command-specific subset. Publish the exact per-command projection modes and selector vocabulary from the same SDK-owned registry used by runtime validation, expose it consistently through full and command-scoped contracts, CLI, and MCP discovery, and retain a clearly labeled global union only as ecosystem metadata."
+type: Issue
+status: closed
+priority: 1
+tags[8]: agent-ux,"area:cli","area:mcp","area:sdk",contracts,output-contract,projection,token-efficiency
+created_at: "2026-08-24T15:08:27.572Z"
+updated_at: "2026-08-24T17:57:08.231Z"
+closed_at: "2026-08-24T16:39:33.996Z"
+completed_at: "2026-08-24T16:39:33.996Z"
+author: "harness:codex"
+estimated_minutes: 420
+acceptance_criteria: "Every read command contract publishes the exact projection modes accepted by runtime validation; The global degradation ladder is labeled as a union rather than a per-command guarantee; CLI full contracts, command-scoped contracts, MCP schemas, generated fixtures, and public SDK types stay byte-consistent; A contract consumer can select a valid projection for list and health without invoking either command; Negative controls fail when runtime modes and published modes diverge; Documentation explains modes, field selectors, and compatibility semantics within existing token ceilings"
+goal: project management = context management
+objective: Let agents choose a valid bounded-read projection without a failed exploratory call
+value: "Contract discovery becomes executable, token-efficient, and identical to runtime validation across transports"
+why_now: GitHub #1105 reproduced on the current release and the complete all-status lineage has no focused owner beyond the broad token-budget feature
+parent: pm-5t33or
+risk: high
+confidence: high
+severity: high
+resolution: "Published exact per-command projection vocabularies across shared SDK, CLI contracts, MCP discovery, generated fixtures, tests, and operator documentation."
+expected_result: "pm contracts --command list and pm contracts --command health publish their exact supported projection modes and selector vocabulary, with CLI and MCP consumers reading the same SDK-owned declaration."
+actual_result: "The SDK-owned read-output registry now publishes each command's exact projection_modes, runtime contracts expose a labeled global union plus command-scoped discovery metadata, and generated CLI/MCP/public SDK fixtures remain synchronized within existing token budgets."
+affected_version: 2026.8.24
+component: read-output contracts
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-08-24T15:08:27.572Z","harness:codex","cli:create:dep",detected
+  pm-srns,implements,"2026-08-24T15:08:27.572Z","harness:codex","cli:create:dep",detected
+  pm-xlzl,recurs_from,"2026-08-24T16:14:29.366Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-24T15:08:27.572Z","harness:codex","Duplicate check 2026-08-24: read all 2,539 items across every status with --full --strict-read and no omissions; searched GH-1105, output policy, degradation ladder, projection modes, output-include, and the 21-child pm-5t33or lineage. Closed pm-xlzl owns command-scoped narrowing and open pm-5t33or owns the broad budget program, but no focused item owns publishing the runtime-valid per-command projection vocabulary. GitHub: https://github.com/unbraind/pm-cli/issues/1105"
+  "2026-08-24T16:14:23.892Z","harness:codex","Graph-governance correction: the duplicate-check comment names pm-xlzl as the shipped command-scoped projection predecessor, so this follow-on now records a typed recurs_from edge instead of leaving that lineage only in prose."
+  "2026-08-24T16:39:02.009Z","harness:codex","Evidence 2026-08-24: linked contract test passed 2/2 with trusted local-source provenance; full suite passed 572 files and 7,893 tests; exact coverage passed 57,585/57,585 statements, 43,098/43,098 branches, 11,987/11,987 functions, and 55,503/55,503 lines; contracts snapshot, token-budget gate, public SDK surface, full static quality, lint, package artifact, 88-command package-first dogfood, 10/10 external packages, and 13-package npx smoke passed. Negative controls prove published modes equal runtime modes and the global ladder is labeled union_not_per_command."
+  "2026-08-24T17:57:08.231Z","harness:codex","Final evidence: pnpm quality:static passed on 2026-08-24, including generated contracts, public SDK surface, SDK entrypoint costs, CLI transport floor, graph composition, and record integrity. Bugbot final review reported no bugs; Security Review reported no actionable findings. Focused per-command projection contract coverage and the exact full coverage gate remain green."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Generated public SDK projection contract surface
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Runtime discovery contract
+  src/sdk/read-output-contracts.ts,project,Canonical per-command projection mode registry
+  tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
+  tests/unit/commands/contracts-projection-modes.spec.ts,project,Per-command discovery and union-scope controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-projection-modes.spec.ts,project,240,"harness:codex","2026-08-24T15:20:34.864Z",local_mutation,codex/read-output-projection-snapshots
+test_runs[1]:
+  - run_id: test-local-mt7g5aog-c7hiix
+    kind: test
+    status: passed
+    started_at: "2026-08-24T16:24:33.745Z"
+    finished_at: "2026-08-24T16:24:42.064Z"
+    recorded_at: "2026-08-24T16:24:42.064Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/contracts-projection-modes.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Global union versus command-local modes
+  docs/READ_OUTPUT_CONTRACTS.md,project,Projection vocabulary discovery
+close_reason: "Exact per-command projection vocabularies are published from the shared SDK registry across CLI/MCP contracts with generated parity, negative controls, full-suite exact coverage, and installed-consumer acceptance."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-q4isdq
+  gate_id: per-command-read-output-projection-contract
+  negative_control: Remove a command-specific projection mode or desynchronize the generated SDK and runtime-contract inventories; tests/unit/commands/contracts-projection-modes.spec.ts must fail.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/contracts-projection-modes.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+body: ""

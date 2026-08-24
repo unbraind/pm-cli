@@ -1,0 +1,61 @@
+id: pm-baksix
+title: "GH-1104: health must not certify pending lossless merge receipts as reconciled"
+description: "A pending merge receipt created by a lossless comment union remains state=pending while health reports ok=true. Existing pm-lwmstb correctly distinguishes lossless provenance from lossy decisions, but GitHub #1104 demonstrates that the green gate still implies reconciliation that did not occur. Publish a non-blocking-to-data but health-visible pending-receipt finding, route remediation to pm merge reconcile, and prove history-repair cannot hide it."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
+created_at: "2026-08-24T15:23:02.991Z"
+updated_at: "2026-08-24T17:57:09.370Z"
+closed_at: "2026-08-24T16:39:46.425Z"
+completed_at: "2026-08-24T16:39:46.425Z"
+author: "harness:codex"
+acceptance_criteria: A lossless pending merge receipt makes the health gate non-green with receipt-aware remediation; history-repair cannot clear the finding; pm merge reconcile settles it; lossy decision classification remains distinct
+parent: pm-dj98
+risk: medium
+confidence: high
+resolution: Separated pending lossless receipt health from lossy decision review while requiring reconciliation for both and preserving executable remediation.
+expected_result: Health distinguishes pending lossless receipts from pending lossy decisions but reports both as unreconciled until pm merge reconcile consumes the receipt.
+actual_result: "A pending lossless receipt now emits merge_receipts_pending:<n>, makes health non-green, and resolves through the registry-owned pm merge reconcile --dry-run guidance; history repair cannot hide it, reconciliation clears it, and lossy receipts remain merge_decisions_unreviewed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
+  pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
+  "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
+  "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,Generated public pending-receipt error surface
+  src/core/diagnostics/remediation.ts,project,Receipt-aware remediation
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public error-code contract
+  src/sdk/governance/health.ts,project,Lossless pending receipt health finding
+  tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,History-repair and reconcile end-to-end controls
+  tests/integration/remediation-registry.spec.ts,project,Executable remediation contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,project,300,"harness:codex","2026-08-24T15:28:37.602Z",local_mutation,codex/read-output-projection-snapshots
+test_runs[1]:
+  - run_id: test-local-mt7g64h9-seists
+    kind: test
+    status: passed
+    started_at: "2026-08-24T16:25:07.948Z"
+    finished_at: "2026-08-24T16:25:20.685Z"
+    recorded_at: "2026-08-24T16:25:20.685Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated error-code coverage
+  docs/MERGE_SAFETY.md,project,Pending lossless receipt gate semantics
+close_reason: "Pending lossless receipts now fail health with receipt-aware reconcile guidance, survive history repair until reconciled, and remain distinct from lossy decision review; temporary git-repository integration and exact coverage pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-baksix
+  gate_id: lossless-merge-receipt-health-visibility
+  negative_control: Create an unresolved lossless merge receipt in the temporary Git integration workspace; health must emit merge_receipts_pending and fail while lossy receipts remain merge_decisions_unreviewed.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+body: ""

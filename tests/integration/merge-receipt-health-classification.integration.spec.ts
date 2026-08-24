@@ -26,7 +26,7 @@ function checkDetails(
 }
 
 describe("merge receipt health classification", () => {
-  it("reports lossless receipts without turning them into blocking decisions", async () => {
+  it("keeps lossless receipt settlement distinct from lossy review", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "--quiet"], { cwd: context.tempRoot });
       expect(
@@ -34,10 +34,27 @@ describe("merge receipt health classification", () => {
           cwd: context.tempRoot,
         }).code,
       ).toBe(0);
+      expect(
+        context.runCli(
+          [
+            "create",
+            "--json",
+            "--id",
+            "merge-lossless",
+            "--title",
+            "Lossless merge receipt",
+            "--description",
+            "Exercise pending receipt health classification",
+            "--type",
+            "Task",
+          ],
+          { cwd: context.tempRoot },
+        ).code,
+      ).toBe(0);
 
       await writeMergeReceipt({
         cwd: context.tempRoot,
-        itemPath: ".agents/pm/tasks/pm-lossless.toon",
+        itemPath: ".agents/pm/tasks/merge-lossless.toon",
         preferred: "ours",
         fieldsFromTheirs: ["status"],
         unionFields: ["comments"],
@@ -50,12 +67,16 @@ describe("merge receipt health classification", () => {
       );
       expect(health.code).toBe(0);
       const healthResult = health.json as DiagnosticEnvelope;
-      expect(healthResult.warnings).not.toContain(
-        "merge_decisions_unreviewed:1",
-      );
+      expect(healthResult.ok).toBe(false);
+      expect(healthResult.warnings).toContain("merge_receipts_pending:1");
       expect(checkDetails(healthResult, "integrity").counts).toMatchObject({
         pending_merge_decisions: 0,
         lossless_merge_receipts: 1,
+      });
+      expect(
+        checkDetails(healthResult, "integrity").remediation_map,
+      ).toMatchObject({
+        merge_receipts_pending: "pm merge reconcile --dry-run",
       });
 
       const validation = context.runCli(
@@ -72,6 +93,36 @@ describe("merge receipt health classification", () => {
         pending_merge_decision_count: 0,
         lossless_merge_receipt_count: 1,
       });
+
+      expect(
+        context.runCli(["history-repair", "merge-lossless", "--json"], {
+          cwd: context.tempRoot,
+        }).code,
+      ).toBe(0);
+      const healthAfterHistoryRepair = context.runCli(
+        ["health", "--check-only", "--full", "--json"],
+        { cwd: context.tempRoot, expectJson: true },
+      );
+      expect(
+        (healthAfterHistoryRepair.json as DiagnosticEnvelope).warnings,
+      ).toContain("merge_receipts_pending:1");
+
+      const reconciled = context.runCli(["merge", "reconcile", "--json"], {
+        cwd: context.tempRoot,
+        expectJson: true,
+      });
+      expect(reconciled.code).toBe(0);
+      expect(reconciled.json).toMatchObject({
+        ok: true,
+        receipts: { pending_before: 1, reconciled: 1 },
+      });
+      const healthAfterReconcile = context.runCli(
+        ["health", "--check-only", "--full", "--json"],
+        { cwd: context.tempRoot, expectJson: true },
+      );
+      expect(
+        (healthAfterReconcile.json as DiagnosticEnvelope).warnings,
+      ).not.toContain("merge_receipts_pending:1");
 
       await writeMergeReceipt({
         cwd: context.tempRoot,
@@ -101,6 +152,9 @@ describe("merge receipt health classification", () => {
       expect(lossyHealthResult.warnings).toContain(
         "merge_decisions_unreviewed:1",
       );
+      expect(lossyHealthResult.warnings).not.toContain(
+        "merge_receipts_pending:1",
+      );
 
       const lossyValidation = context.runCli(
         ["validate", "--check-storage-integrity", "--json"],
@@ -115,7 +169,7 @@ describe("merge receipt health classification", () => {
         checkDetails(lossyValidationResult, "storage_integrity"),
       ).toMatchObject({
         pending_merge_decision_count: 1,
-        lossless_merge_receipt_count: 1,
+        lossless_merge_receipt_count: 0,
       });
     });
   });

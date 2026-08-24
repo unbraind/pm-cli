@@ -236,6 +236,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Review the pending merge receipts, re-apply any intended discarded values, then run pm merge reconcile; lossy receipts require explicit --force acceptance.",
   },
   {
+    code: "merge_receipts_pending",
+    command: "pm merge reconcile --dry-run",
+    summary:
+      "A lossless merge receipt is still pending; preview and run pm merge reconcile so a green health gate certifies receipt settlement, not only intact data.",
+  },
+  {
     code: "validate_merge_decisions_unreviewed",
     command: "pm merge reconcile --dry-run",
     summary:

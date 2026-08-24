@@ -103,6 +103,12 @@ describe("shared remediation registry", () => {
       ).toBe('pm update <id> --title "<distinct title>"');
     });
 
+    it("routes pending lossless merge receipts to receipt-aware reconciliation", () => {
+      expect(resolveRemediation("merge_receipts_pending:1")?.command).toBe(
+        "pm merge reconcile --dry-run",
+      );
+    });
+
     it("resolves pm health locks warnings to gc lock-sweep guidance", () => {
       expect(resolveRemediation("locks_stale_count:3")?.command).toBe(
         "pm gc --scope locks",

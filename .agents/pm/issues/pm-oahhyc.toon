@@ -2,11 +2,13 @@ id: pm-oahhyc
 title: "Dynamic-read continuation cursors are born stale: pm health emits a cursor that its next invocation rejects"
 description: "A default-budget full pm health read returns a valid-looking output continuation for the remaining checks, but an immediate retry with that cursor fails read_output_cursor_stale even though no tracker mutation occurred. Dynamic health fields such as telemetry timestamps make the collection fingerprint change between pages, so the token-efficient recovery path is unusable and the only successful workaround is an unbounded reread."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[9]: agent-ux,"area:cli","area:sdk",context-management,cursor,diagnostics,output-contract,regression,token-efficiency
 created_at: "2026-08-24T14:24:39.321Z"
-updated_at: "2026-08-24T14:24:39.321Z"
+updated_at: "2026-08-24T17:57:08.782Z"
+closed_at: "2026-08-24T17:50:04.355Z"
+completed_at: "2026-08-24T17:50:04.355Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: Dynamic read pagination binds every page to a stable snapshot or epoch whose identity survives volatile telemetry and clock fields; The exact emitted CLI recovery command succeeds without a tracker mutation and SDK and MCP cursor bindings behave identically; A deterministic regression advances health telemetry and clock fields between page one and page two while preserving the declared row collection; Cursor fingerprints include only collection identity and immutable query inputs or the producer freezes volatile inputs for the continuation lifetime; Stale cursors from genuine tracker or contract changes still fail closed with an executable restart command; Default-budget and unbounded reads are set-equivalent and do not duplicate or skip checks
@@ -18,8 +20,9 @@ parent: pm-5t33or
 risk: high
 confidence: high
 severity: high
-expected_result: An output cursor returned by pm health resumes the exact declared check collection on the next invocation and returns the remaining rows with stable snapshot semantics.
-actual_result: pm health --check-only --full returned five of ten checks and a recovery cursor; the immediate retry returned read_output_cursor_stale. Re-running with --output-budget unbounded returned all ten checks successfully.
+resolution: "Stabilized health continuations with field-scoped policy v3, direct-row-only normalization, and own-property exclusion lookup; lifecycle churn resumes while configuration, probe, error, verdict, nested-name, and prototype-name changes fail closed without crashing."
+expected_result: "A telemetry-enabled health cursor resumes across enumerated direct queue/timestamp churn; all stable, nested, and prototype-like row-name changes remain fingerprinted and cannot crash normalization."
+actual_result: "Object.hasOwn protects policy lookup; constructor, toString, and __proto__ controls pass alongside 10 real-process transport tests. All 7,894 tests pass with exact 57,595/43,113/11,991/55,512 statement/branch/function/line coverage."
 affected_version: 2026.8.24
 component: read-output continuation
 regression: true
@@ -27,6 +30,84 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-24T14:24:39.321Z","harness:codex","cli:create:dep",detected
   pm-8nev0o,recurs_from,"2026-08-24T14:24:39.321Z","harness:codex","cli:create:dep",detected
   pm-a8zm,discovered_from,"2026-08-24T14:24:39.321Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-24T14:24:39.321Z","harness:codex","Duplicate check 2026-08-24: searched all statuses for health output cursor stale; dynamic telemetry continuation; declared row collection recovery; and read_output_cursor_stale. The nearest lineage is closed pm-8nev0o for missing continuation support and open pm-5t33or for budget contracts. Neither owns a cursor that is emitted successfully but invalid before its first use."
+  "2026-08-24T16:39:11.627Z","harness:codex","Evidence 2026-08-24: both linked tests passed with trusted local-source provenance (10 transport tests plus 3 fingerprint tests); the temporary real-process CLI regression advances observation timestamps between pages and successfully replays the emitted cursor; substantive queue changes and non-health timestamp changes remain stale. Full 7,893-test suite and exact 100/100/100/100 coverage passed, along with contracts, SDK surface, static quality, lint, package-first dogfood, external-package, and packed npx acceptance."
+  "2026-08-24T16:50:17.905Z","harness:codex","Review finding: Bugbot identified that the first implementation excluded only observation timestamps while enabled command telemetry can change queue counters and pending-span detail fields between health pages. Reopened to define a truthful dynamic-row snapshot contract and add telemetry-enabled real-process replay coverage before re-closing."
+  "2026-08-24T17:02:11.742Z","harness:codex","Review correction evidence 2026-08-24: policy v2 publishes volatile_detail_row_names=[telemetry] and guarantee=nonvolatile_snapshot_and_row_identity. The real-process regression explicitly enables telemetry, forces queue retention through a local failing endpoint, verifies queued events exist after page one, and successfully resumes page two. Unit controls prove telemetry queue/pending-span detail churn resumes while storage evidence, telemetry verdicts, non-health fields, and policy-version drift fail closed. Linked tests passed 13/13; authoritative suite passed 572 files and 7,893 tests with exact 57,586/43,104/11,987/55,504 statement/branch/function/line coverage."
+  "2026-08-24T17:16:32.184Z","harness:codex","Security Review finding: the dynamic-row exclusion was broader than the documented trust boundary. Correction scopes exclusions to explicit telemetry lifecycle counters/timestamps only; stable configuration, endpoint/probe state, environment overrides, and failure errors remain fingerprinted."
+  "2026-08-24T17:38:55.072Z","harness:codex","Final correction evidence 2026-08-24: linked tests reran with trusted local-source provenance (10 transport + 4 fingerprint tests); nested objects named telemetry remain fully fingerprinted; endpoint, capture level, overrides, probe state, and failure errors all fail stale; enumerated direct queue/timestamp churn resumes. Authoritative full suite passed 572 files and 7,894 tests with exact 57,594/43,109/11,991/55,511 statement/branch/function/line coverage."
+  "2026-08-24T17:42:43.295Z","harness:codex","Security Review finding: row names constructor, toString, and __proto__ could collide with inherited policy-map properties. The correction requires Object.hasOwn before resolving exclusions, so all prototype-like names remain fully fingerprinted and cannot crash normalization."
+  "2026-08-24T17:50:03.583Z","harness:codex","Final prototype-safety evidence 2026-08-24: own-property lookup prevents Object.prototype collisions; constructor, toString, and __proto__ rows remain fully fingerprinted. Linked tests passed with trusted local-source provenance (10 transport + 4 fingerprint); authoritative 572-file, 7,894-test suite passed with exact 57,595/43,113/11,991/55,512 coverage."
+  "2026-08-24T17:57:08.782Z","harness:codex","Final recurrence evidence: pnpm quality:static passed after the v3 health continuation policy and Object.hasOwn hardening. Bugbot final review reported no bugs; Security Review reported no actionable findings. Linked tests passed with trusted local-source execution: 10 real-process transport cases plus 4 fingerprint cases, covering lifecycle churn resume and stable, nested, and prototype-like negative controls."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Generated public stable-snapshot policy surface
+  src/sdk/read-output-contracts.ts,project,Shared capture and replay integration
+  src/sdk/read-output/continuation.ts,project,Stable health continuation snapshot policy
+  tests/unit/sdk/read-output-transport.spec.ts,project,Real CLI cursor replay with CLI SDK MCP recovery bindings
+  tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts,project,Stable timestamp and substantive-change negative controls
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-transport.spec.ts,project,240,"harness:codex","2026-08-24T15:37:37.870Z",local_mutation,codex/read-output-projection-snapshots
+  node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts,project,240,"harness:codex","2026-08-24T15:44:50.311Z",local_mutation,codex/read-output-projection-snapshots
+test_runs[4]:
+  - run_id: test-local-mt7g5rkf-skm80o
+    kind: test
+    status: passed
+    started_at: "2026-08-24T16:24:46.526Z"
+    finished_at: "2026-08-24T16:25:03.950Z"
+    recorded_at: "2026-08-24T16:25:03.950Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt7hh9zp-y9m307
+    kind: test
+    status: passed
+    started_at: "2026-08-24T17:01:41.510Z"
+    finished_at: "2026-08-24T17:02:00.661Z"
+    recorded_at: "2026-08-24T17:02:00.661Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt7isgzq-hkm40u
+    kind: test
+    status: passed
+    started_at: "2026-08-24T17:38:23.927Z"
+    finished_at: "2026-08-24T17:38:42.566Z"
+    recorded_at: "2026-08-24T17:38:42.566Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt7j71jw-e1x8bf
+    kind: test
+    status: passed
+    started_at: "2026-08-24T17:49:42.883Z"
+    finished_at: "2026-08-24T17:50:02.396Z"
+    recorded_at: "2026-08-24T17:50:02.396Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Continuation contract cross-reference
+  docs/READ_OUTPUT_CONTRACTS.md,project,Stable health snapshot semantics
+close_reason: "All Bugbot and Security Review recurrences resolved: field-scoped direct-row policy v3 is configuration-sensitive, nested-safe, prototype-safe, fully covered, and proven in real telemetry-enabled processes."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-oahhyc
+  gate_id: health-continuation-field-scoped-policy-v3
+  negative_control: "Mutate endpoint, capture level, environment overrides, endpoint probe, failure errors, a nested object named telemetry, prototype-like row names, a stable health detail, or the telemetry verdict; each must fail stale without crashing while enumerated queue/timestamp lifecycle churn resumes."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-continuation-fingerprint.spec.ts tests/unit/sdk/read-output-transport.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""

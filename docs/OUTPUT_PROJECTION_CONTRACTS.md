@@ -16,7 +16,10 @@ selectors are tracked by
 and canonical TOON tables are tracked by
 [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon) and
 [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon). Nested evidence continuation
-is tracked by [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon).
+is tracked by [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon) and
+[pm-oahhyc](../.agents/pm/issues/pm-oahhyc.toon). Exact command-local
+projection discovery is tracked by
+[pm-q4isdq](../.agents/pm/issues/pm-q4isdq.toon).
 
 ## Agent Quick Context
 
@@ -111,6 +114,15 @@ machine-iterable without a command-specific selector. `fields` is always explici
 `--fields` projection from a command that intentionally owns a fixed row
 shape. NDJSON event streams do not carry an envelope and therefore do not
 publish a row contract.
+
+Projection mode discovery is command-local even though the compatibility
+degradation ladder is global. Read
+`output_projection_contracts.commands` from a command-scoped contracts call or
+the full contracts matrix before selecting a whole-result mode. The
+contract labels the global ladder `union_not_per_command`, so clients cannot
+infer that `list` accepts `summary` or that `health` accepts `compact`.
+`PM_READ_OUTPUT_SURFACE_CONTRACTS[].projection_modes` provides the identical
+canonical matrix to SDK and package consumers.
 
 SDK and package authors can import `PM_READ_ROW_CONTRACTS`,
 `PM_READ_ROW_JQ_SELECTOR`, and `resolveReadRowContract` from
