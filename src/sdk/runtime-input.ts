@@ -21,6 +21,35 @@ import {
   normalizeBulkIdsValue,
   type BulkIdsValue,
 } from "../core/io/bulk-ids-input.js";
+import {
+  preserveMutationStdinTokenLiterals,
+  shouldResolveMutationStdinTokens,
+} from "../core/item/parse.js";
+
+const MCP_MUTATION_TRANSPORT = Symbol("pm.mcp-mutation-transport");
+
+/** Mark an action object decoded from the MCP JSON-RPC transport. */
+export function markMcpMutationTransportInput<T extends object>(input: T): T {
+  Object.defineProperty(input, MCP_MUTATION_TRANSPORT, {
+    value: true,
+    enumerable: true,
+  });
+  return input;
+}
+
+function isMcpMutationTransportInput(input: object): boolean {
+  return MCP_MUTATION_TRANSPORT in input;
+}
+
+function preserveTransportLiteralOptions<T extends object>(
+  source: object,
+  options: T,
+): T {
+  return isMcpMutationTransportInput(source) ||
+    !shouldResolveMutationStdinTokens(source)
+    ? preserveMutationStdinTokenLiterals(options)
+    : options;
+}
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
 export function readRuntimeString(
@@ -289,12 +318,15 @@ export function optionsWithAuthor(
         readRuntimeString(options, "assignee"))
       : undefined;
   if (author && options.author === undefined) {
-    return { ...options, author };
+    return preserveTransportLiteralOptions(args, { ...options, author });
   }
   if (authorFromAssignee && options.author === undefined) {
-    return { ...options, author: authorFromAssignee };
+    return preserveTransportLiteralOptions(args, {
+      ...options,
+      author: authorFromAssignee,
+    });
   }
-  return options;
+  return preserveTransportLiteralOptions(args, options);
 }
 
 // GH-170 (pm-pfnx): the narrow pm_files/pm_docs tools spell the CLI --note flag
@@ -410,10 +442,13 @@ export function withMutationCompaction(
   idOnly: boolean;
   runnerOptions: Record<string, unknown>;
 } {
+  const runnerOptions = preserveTransportLiteralOptions(options ?? {}, {
+    ...options,
+  });
   return {
     changedFields: args.fullChangedFields === true ? "full" : "compact",
     idOnly: args.idOnly === true,
-    runnerOptions: { ...options },
+    runnerOptions,
   };
 }
 
@@ -609,7 +644,10 @@ export function updateManyOptionsFromFlat(
       list: isRuntimeRecord(options.list)
         ? normalizeBulkMutationListOptions(options.list)
         : mutationListOptions(options),
-      update: normalizeMcpUpdateOptions(updateSource) as never,
+      update: preserveTransportLiteralOptions(
+        options,
+        normalizeMcpUpdateOptions(updateSource),
+      ) as never,
       dryRun:
         options.dryRun === true || options.dry_run === true ? true : undefined,
       rollback: readRuntimeString(options, "rollback"),
@@ -624,7 +662,10 @@ export function updateManyOptionsFromFlat(
   return {
     status: readRuntimeScalarString(options, "filterStatus"),
     list: mutationListOptions(options),
-    update: updateManyUpdateOptionsFromFlat(options) as never,
+    update: preserveTransportLiteralOptions(
+      options,
+      updateManyUpdateOptionsFromFlat(options),
+    ) as never,
     dryRun:
       options.dryRun === true || options.dry_run === true ? true : undefined,
     rollback: readRuntimeString(options, "rollback"),

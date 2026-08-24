@@ -537,7 +537,10 @@ describe("MCP protocol handshake", () => {
       ),
     ).toEqual({});
     expect(
-      mcpServerTestOnly.optionsWithAuthor({ title: "not-hoisted", options: {} }),
+      mcpServerTestOnly.optionsWithAuthor({
+        title: "not-hoisted",
+        options: {},
+      }),
     ).toEqual({});
     expect(
       mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_run", { typo: true }),
@@ -2025,6 +2028,68 @@ describe("MCP protocol handshake", () => {
         name: "Task",
       })) as { action?: string };
       expect(schemaShow.action).toBe("show");
+    });
+  });
+
+  it("preserves MCP mutation dash values as JSON document data", async () => {
+    await withTempPmPath(async (context) => {
+      const created = (await mcpServerTestOnly.runAction({
+        action: "create",
+        path: context.pmPath,
+        options: {
+          title: "mcp literal stdin tokens",
+          type: "Task",
+          body: "-",
+          comment: ["-"],
+        },
+      })) as { id: string };
+
+      await mcpServerTestOnly.runAction({
+        action: "update",
+        path: context.pmPath,
+        id: created.id,
+        options: { description: "-", note: ["-"] },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "update-many",
+        path: context.pmPath,
+        options: {
+          list: { ids: [created.id] },
+          update: { body: "-", learning: ["-"] },
+        },
+      });
+      await mcpServerTestOnly.runAction({
+        action: "append",
+        path: context.pmPath,
+        id: created.id,
+        options: { body: "-" },
+      });
+
+      const loaded = (await mcpServerTestOnly.runAction({
+        action: "get",
+        path: context.pmPath,
+        id: created.id,
+        options: { full: true },
+      })) as {
+        item: {
+          body?: string;
+          description?: string;
+          comments?: Array<{ text: string }>;
+          notes?: Array<{ text: string }>;
+          learnings?: Array<{ text: string }>;
+        };
+      };
+      expect(loaded.item).toMatchObject({
+        body: "-\n\n-",
+        description: "-",
+        comments: expect.arrayContaining([
+          expect.objectContaining({ text: "-" }),
+        ]),
+        notes: expect.arrayContaining([expect.objectContaining({ text: "-" })]),
+        learnings: expect.arrayContaining([
+          expect.objectContaining({ text: "-" }),
+        ]),
+      });
     });
   });
 

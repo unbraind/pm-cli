@@ -558,6 +558,79 @@ export function shouldResolveMutationStdinTokenField(
   );
 }
 
+/** Refuse competing stdin-token fields before any resolver starts reading. */
+export function assertSingleStdinTokenConsumer(
+  candidates: readonly {
+    value: string | readonly string[] | undefined;
+    optionName: string;
+    resolveToken?: boolean;
+  }[],
+): void {
+  let stdinConsumerOption: string | undefined;
+  for (const candidate of candidates) {
+    if (candidate.resolveToken === false || candidate.value === undefined) {
+      continue;
+    }
+    const values = Array.isArray(candidate.value)
+      ? candidate.value
+      : [candidate.value];
+    const tokenCount = values.filter(
+      (value) => value.trim() === STDIN_TOKEN,
+    ).length;
+    if (tokenCount > 1) {
+      throw new PmCliError(
+        `${candidate.optionName} accepts "${STDIN_TOKEN}" stdin token at most once per command invocation`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (tokenCount === 0) continue;
+    if (
+      stdinConsumerOption !== undefined &&
+      stdinConsumerOption !== candidate.optionName
+    ) {
+      throw new PmCliError(
+        `Only one option may use "${STDIN_TOKEN}" stdin token per command invocation. Already used by ${stdinConsumerOption}.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    stdinConsumerOption = candidate.optionName;
+  }
+}
+
+/** Resolve a typed mutation option bag only after its complete stdin plan is conflict-free. */
+export async function resolveMutationStdinTokenFields<T extends object>(
+  options: T,
+  scalarFields: readonly (readonly [keyof T & string, string])[],
+  listFields: readonly (readonly [keyof T & string, string])[],
+): Promise<T> {
+  const source = options as Record<string, unknown>;
+  const definitions = [...scalarFields, ...listFields];
+  assertSingleStdinTokenConsumer(
+    definitions.map(([field, optionName]) => ({
+      value: source[field] as string | readonly string[] | undefined,
+      optionName,
+      resolveToken: shouldResolveMutationStdinTokenField(options, field),
+    })),
+  );
+  const stdinResolver = createStdinTokenResolver();
+  const resolved = { ...source };
+  for (const [field, optionName] of scalarFields) {
+    resolved[field] = await stdinResolver.resolveValue(
+      source[field] as string | undefined,
+      optionName,
+      shouldResolveMutationStdinTokenField(options, field),
+    );
+  }
+  for (const [field, optionName] of listFields) {
+    resolved[field] = await stdinResolver.resolveList(
+      source[field] as string[] | undefined,
+      optionName,
+      shouldResolveMutationStdinTokenField(options, field),
+    );
+  }
+  return resolved as T;
+}
+
 /** Implements create stdin token resolver for the public runtime surface of this module. */
 export function createStdinTokenResolver(): StdinTokenResolver {
   let stdinValuePromise: Promise<string> | undefined;

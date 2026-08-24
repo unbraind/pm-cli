@@ -57,6 +57,21 @@ describe("CLI flag invocation contracts", () => {
       stdin_token: "-",
       file_token_prefix: "@",
     });
+    for (const flag of [
+      "--body",
+      "--description",
+      "--dep-remove",
+      "--comment",
+      "--reminder",
+      "--event",
+    ]) {
+      expect(
+        enrichCliFlagInvocationContract("update-many", {
+          flag,
+          value_name: "value",
+        }),
+      ).toMatchObject({ input_sources: ["argv", "stdin"], stdin_token: "-" });
+    }
     expect(
       enrichCliFlagInvocationContract("history-compact", {
         flag: "--ids",

@@ -116,6 +116,20 @@ describe("runCreate", () => {
     });
   });
 
+  it("rejects competing direct SDK stdin tokens before reading the stream", async () => {
+    await withTempPmPath(async (context) => {
+      const stdin = new PassThrough();
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      await expect(
+        runCreate(baseCreateOptions({ body: "-", comment: ["-"] }), { path: context.pmPath }),
+      ).rejects.toThrow("Only one option may use");
+      expect(stdin.listenerCount("data")).toBe(0);
+      stdin.destroy();
+    });
+  });
+
   it("surfaces a next_transition lifecycle hint for workable open items, but not reference types (GH-216)", async () => {
     await withTempPmPath(async (context) => {
       const task = await runCreate(

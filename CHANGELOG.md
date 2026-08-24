@@ -275,7 +275,6 @@
 - SDK entrypoint import-cost gate false-fails on cold filesystem cache: single-shot fresh-process sampling exceeds the 30ms noise margin ([pm-cg1sjb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cg1sjb.toon))
 - Legacy invalid provenance findings block health without a safe disposition path ([pm-5q8wa0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5q8wa0.toon))
 - History drift scan hashes reordered linked-test projections ([pm-eax4y8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eax4y8.toon))
-- PR \#983 exact-head hardening: shell-safe recovery, coherent graph evidence, and executable contract regressions ([pm-wqhzhg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wqhzhg.toon))
 - Linked-test removal must be lossless and observable for commands containing comma or equals delimiters ([pm-m0b7h8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m0b7h8.toon))
 - Annotation transposition recovery: detect pm <collection\> add <id\> before the item id is consumed as text ([pm-rncuf7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rncuf7.toon))
 - Health result contract parity: every checks\[\] row exposes a boolean ok beside its tri-state status ([pm-h97qxd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h97qxd.toon))
@@ -295,7 +294,6 @@
 
 ### Other
 
-- Deliver PR \#981 context and evidence contract tranche through exact-head review ([pm-ajj4r7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ajj4r7.toon))
 - Evaluate and refresh @sentry/node 10.70 with packed-consumer proof ([pm-fb0lkg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fb0lkg.toon))
 - Refresh compatible tsx 4.23.12 and esbuild 0.28.2 patches ([pm-67b84b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-67b84b.toon))
 
@@ -316,7 +314,6 @@
 - Unknown-option recovery names three of six commands that accept the flag, capped silently and in arbitrary order, so the hint excludes the right answer while reading as exhaustive ([pm-yqe0mo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yqe0mo.toon))
 - Subcommand-token error contract: one unknown-subcommand code with nearest-match recovery across every subcommand family ([pm-185870](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-185870.toon))
 - pm get cannot report linked files, tests, or docs in any projection, so the one command an agent uses to rebuild an item's context silently reports them as absent ([pm-tld20c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tld20c.toon))
-- Exact-head review hardening: terminator-safe create mode, complete item ID conflict parsing, and public changelog integrity ([pm-l5bc03](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l5bc03.toon))
 
 ### Security
 
@@ -360,8 +357,6 @@
 ### Other
 
 - Refresh pinned GitHub Actions for PR \#958 with exact-head compatibility proof ([pm-obh6lo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-obh6lo.toon))
-- PR-957: make linked-test order acceptance deterministic under coverage shards ([pm-xg60q3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xg60q3.toon))
-- Public changelog uses capability language for provenance outcomes ([pm-zzahs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zzahs4.toon))
 - The measurement ratchet floors only aggregate graph totals, so converting typed semantic edges to untyped ones passes every declaration ([pm-70jyvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-70jyvw.toon))
 
 ## 2026.8.9 - 2026-08-09

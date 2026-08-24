@@ -87,13 +87,16 @@ const STDIN_TOKEN_FLAGS = new Set([
   "--body",
   "--comment",
   "--dep",
+  "--dep-remove",
   "--description",
   "--doc",
+  "--event",
   "--field",
   "--file",
   "--learning",
   "--note",
   "--remove",
+  "--reminder",
   "--test",
   "--type-option",
 ]);
@@ -108,6 +111,7 @@ const STDIN_VALUE_COMMANDS = new Set([
   "notes",
   "test",
   "update",
+  "update-many",
 ]);
 
 const FILE_OR_STDIN_COMMAND_FLAGS = new Set([

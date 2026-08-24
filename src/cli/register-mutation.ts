@@ -849,6 +849,28 @@ function assertSingleMutationStdinConsumer(
   }
 }
 
+function preserveResolvedMutationStdinFields(
+  options: object,
+  bodyFileResolved: boolean,
+  descriptionStdinResolved: boolean,
+): void {
+  const fields: PropertyKey[] = [];
+  if (bodyFileResolved) fields.push("body");
+  if (descriptionStdinResolved) fields.push("description");
+  preserveMutationStdinTokenFields(options, fields);
+}
+
+function isDescriptionStdinConsumer(
+  options: Record<string, unknown>,
+  stdinJsonConsumed: boolean,
+): boolean {
+  return (
+    !stdinJsonConsumed &&
+    typeof options.description === "string" &&
+    options.description.trim() === "-"
+  );
+}
+
 async function runCreateAction(
   typeOrTitle: string | undefined,
   secondTitle: string | undefined,
@@ -889,6 +911,10 @@ async function runCreateAction(
     options.title === undefined
   )
     options.title = positionals.positionalTitle;
+  const descriptionStdinResolved = isDescriptionStdinConsumer(
+    options,
+    stdinJsonConsumed,
+  );
   if (!stdinJsonConsumed) {
     await resolveDescriptionStdin(options);
   }
@@ -901,9 +927,11 @@ async function runCreateAction(
     delete options.bodyFile;
   }
   const normalized = normalizeCreateOptions(options, { requireType: false });
-  if (bodyFileResolved) {
-    preserveMutationStdinTokenFields(normalized, ["body"]);
-  }
+  preserveResolvedMutationStdinFields(
+    normalized,
+    bodyFileResolved,
+    descriptionStdinResolved,
+  );
   if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
   const result = await runCreate(normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
@@ -1607,6 +1635,10 @@ async function runUpdateAction(
     );
     options = itemDocumentToMutationOptions(input ?? "", "update", options);
   }
+  const descriptionStdinResolved = isDescriptionStdinConsumer(
+    options,
+    stdinJsonConsumed,
+  );
   if (!stdinJsonConsumed) {
     await resolveDescriptionStdin(options);
   }
@@ -1621,9 +1653,11 @@ async function runUpdateAction(
     delete options.bodyFile;
   }
   const normalized = normalizeUpdateOptions(options);
-  if (bodyFileResolved) {
-    preserveMutationStdinTokenFields(normalized, ["body"]);
-  }
+  preserveResolvedMutationStdinFields(
+    normalized,
+    bodyFileResolved,
+    descriptionStdinResolved,
+  );
   if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
   const result = await runUpdate(id, normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);

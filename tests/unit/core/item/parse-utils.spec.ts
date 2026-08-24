@@ -5,6 +5,7 @@ import {
   applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
+  assertSingleStdinTokenConsumer,
   collectTagFlagValues,
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
@@ -54,6 +55,14 @@ describe("core/item/parse", () => {
     expect(shouldResolveMutationStdinTokenField(options, "comment")).toBe(
       false,
     );
+  });
+
+  it("refuses a repeated stdin token within one option before reading", () => {
+    expect(() =>
+      assertSingleStdinTokenConsumer([
+        { value: ["-", "-"], optionName: "--comment" },
+      ]),
+    ).toThrow('--comment accepts "-" stdin token at most once');
   });
 
   it("parses non-negative integer options without accepting fractional or negative values", () => {

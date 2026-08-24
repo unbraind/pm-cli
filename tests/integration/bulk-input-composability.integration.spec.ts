@@ -212,6 +212,19 @@ describe("bulk and file input composability", () => {
       );
       expect(updated.code).toBe(0);
 
+      const described = context.runCli(
+        [
+          "update-many",
+          "--ids",
+          "pm-stdin-files",
+          "--description",
+          "-",
+          "--json",
+        ],
+        { input: "-" },
+      );
+      expect(described.code).toBe(0);
+
       const dashCreated = context.runCli(
         [
           "create",
@@ -276,13 +289,14 @@ describe("bulk and file input composability", () => {
         "get",
         "pm-stdin-files",
         "--fields",
-        "body,comments,notes,learnings",
+        "body,description,comments,notes,learnings",
         "--json",
       ]);
       expect(item.code).toBe(0);
       expect(JSON.parse(item.stdout)).toMatchObject({
         item: {
           body: "# Updated body\n\nfrom stdin",
+          description: "-",
           comments: [expect.objectContaining({ text: "comments from stdin" })],
           notes: [expect.objectContaining({ text: "notes from stdin" })],
           learnings: [

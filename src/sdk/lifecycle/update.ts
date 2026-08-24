@@ -4,6 +4,7 @@
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import {
   COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
@@ -23,14 +24,12 @@ import {
   applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
-  createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
-  shouldResolveMutationStdinTokenField,
   shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
   resolvePriority,
@@ -1508,15 +1507,10 @@ function applyUpdateScalarMutations(
 async function resolveStdinUpdateOptions(
   options: UpdateCommandOptions,
 ): Promise<UpdateCommandOptions> {
-  const stdinResolver = createStdinTokenResolver();
-  const resolved = {
-    ...options,
-    body: await stdinResolver.resolveValue(
-      options.body,
-      "--body",
-      shouldResolveMutationStdinTokenField(options, "body"),
-    ),
-  };
+  const scalarFields = [
+    ["body", "--body"],
+    ["description", "--description"],
+  ] as const;
   const listFields = [
     ["dep", "--dep"],
     ["depRemove", "--dep-remove"],
@@ -1531,14 +1525,9 @@ async function resolveStdinUpdateOptions(
     ["typeOption", "--type-option"],
     ["field", "--field"],
   ] as const;
-  for (const [field, optionName] of listFields) {
-    resolved[field] = await stdinResolver.resolveList(
-      options[field],
-      optionName,
-      shouldResolveMutationStdinTokenField(options, field),
-    );
-  }
-  return normalizeLegacyNoneUpdateOptions(resolved);
+  return normalizeLegacyNoneUpdateOptions(
+    await resolveMutationStdinTokenFields(options, scalarFields, listFields),
+  );
 }
 
 /** Resolve update stdin tokens once while preserving transport-marked literals. */

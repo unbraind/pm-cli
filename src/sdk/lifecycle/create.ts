@@ -4,6 +4,7 @@
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import {
   removeFileIfExists,
   writeFileAtomic,
@@ -20,14 +21,12 @@ import {
   validateMissingParentReference,
   validateSprintOrReleaseValue,
   assertNoUnknownCsvKeys,
-  createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
-  shouldResolveMutationStdinTokenField,
   shouldResolveMutationStdinTokens,
   resolvePriority,
   getFocusedItem,
@@ -1041,15 +1040,10 @@ function parseTypeOptions(raw: string[] | undefined): {
 async function resolveCreateStdinInputs(
   options: CreateCommandOptions,
 ): Promise<CreateCommandOptions> {
-  const stdinResolver = createStdinTokenResolver();
-  const resolved = {
-    ...options,
-    body: await stdinResolver.resolveValue(
-      options.body,
-      "--body",
-      shouldResolveMutationStdinTokenField(options, "body"),
-    ),
-  };
+  const scalarFields = [
+    ["body", "--body"],
+    ["description", "--description"],
+  ] as const;
   const listFields = [
     ["dep", "--dep"],
     ["comment", "--comment"],
@@ -1063,14 +1057,11 @@ async function resolveCreateStdinInputs(
     ["typeOption", "--type-option"],
     ["field", "--field"],
   ] as const;
-  for (const [field, optionName] of listFields) {
-    resolved[field] = await stdinResolver.resolveList(
-      options[field],
-      optionName,
-      shouldResolveMutationStdinTokenField(options, field),
-    );
-  }
-  return resolved;
+  return await resolveMutationStdinTokenFields(
+    options,
+    scalarFields,
+    listFields,
+  );
 }
 
 async function resolveCreateTransportInputs(

@@ -496,6 +496,21 @@ describe("runUpdate stdin token policy", () => {
       });
     });
   });
+
+  it("rejects competing direct SDK stdin tokens before reading the stream", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate({ title: "stdin conflict seed", type: "Task" }, { path: context.pmPath });
+      const stdin = new PassThrough();
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      await expect(
+        runUpdate(created.item.id, { description: "-", note: ["-"] }, { path: context.pmPath }),
+      ).rejects.toThrow("Only one option may use");
+      expect(stdin.listenerCount("data")).toBe(0);
+      stdin.destroy();
+    });
+  });
 });
 
 interface CreateTaskOptions {
