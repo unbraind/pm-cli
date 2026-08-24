@@ -23,7 +23,7 @@ import {
 } from "../core/io/bulk-ids-input.js";
 import {
   preserveMutationStdinTokenLiterals,
-  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
 
 const MCP_MUTATION_TRANSPORT = Symbol("pm.mcp-mutation-transport");
@@ -45,10 +45,9 @@ function preserveTransportLiteralOptions<T extends object>(
   source: object,
   options: T,
 ): T {
-  return isMcpMutationTransportInput(source) ||
-    !shouldResolveMutationStdinTokens(source)
+  return isMcpMutationTransportInput(source)
     ? preserveMutationStdinTokenLiterals(options)
-    : options;
+    : transferMutationStdinTokenPolicy(source, options);
 }
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
@@ -378,11 +377,9 @@ export function optionsWithAuthor(
     { ...hoistedTopLevel, ...baseOptions },
     action,
   );
-  const stdinPolicySource =
-    sourceOptions !== undefined &&
-    !shouldResolveMutationStdinTokens(sourceOptions)
-      ? sourceOptions
-      : args;
+  const stdinPolicySource = isMcpMutationTransportInput(args)
+    ? args
+    : (sourceOptions ?? args);
   return preserveTransportLiteralOptions(
     stdinPolicySource,
     withResolvedAuthor(options, resolveMcpActionAuthor(args, options, action)),

@@ -28,6 +28,7 @@ import {
   parseOptionalNumber,
   parseTags,
   shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
   resolvePriority,
   getFocusedItem,
   normalizeStatusInput,
@@ -394,9 +395,12 @@ function normalizeLegacyNoneCreateOptions(
     /* c8 ignore stop */
   }
 
-  return applyLegacyNoneCollectionNormalizers(
-    normalized,
-    CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+  return transferMutationStdinTokenPolicy(
+    options,
+    applyLegacyNoneCollectionNormalizers(
+      normalized,
+      CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+    ),
   );
 }
 

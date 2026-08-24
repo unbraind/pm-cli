@@ -16586,6 +16586,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "transferMutationStdinTokenPolicy",
+          "signature": "<T extends object>(source: object, target: T) => T | calls: <T extends object>(source: object, target: T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "translateHostEnvironmentFault",
           "signature": "(error: unknown, operation: string, options?: HostEnvironmentBoundaryOptions) => PmCliError | null | calls: (error: unknown, operation: string, options?: HostEnvironmentBoundaryOptions) => PmCliError | null"
         },

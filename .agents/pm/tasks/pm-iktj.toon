@@ -6,9 +6,9 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:cli",composability
 created_at: "2026-07-06T22:10:15.407Z"
-updated_at: "2026-08-24T09:04:12.569Z"
-closed_at: "2026-08-24T09:04:11.754Z"
-completed_at: "2026-08-24T09:04:11.754Z"
+updated_at: "2026-08-24T09:32:02.750Z"
+closed_at: "2026-08-24T09:31:39.500Z"
+completed_at: "2026-08-24T09:31:39.500Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: All file-reading flags across commands accept '-' to read stdin (inventory taken from contracts); behavior documented in the scripting contract (pm-psy1); error message for unreadable paths mentions the '-' option; tests cover piped heredoc usage; no behavior change for real paths
@@ -16,14 +16,14 @@ parent: pm-mpbb
 risk: low
 confidence: high
 resolution: fixed
-expected_result: "File, CLI stdin, SDK stdin-token, and MCP document sources remain unambiguous before any stream read."
-actual_result: "Bulk body/ID inputs compose across CLI, SDK, MCP, and atomic structured transactions without fail-open selectors or competing stdin reads. MCP mutation payloads treat dash sentinels as literal data, refuse server-local annotation file reads, and preserve direct CLI/SDK file/stdin semantics; full exact coverage and repository assurance pass."
+expected_result: File-backed CLI inputs and structured SDK or MCP dash values retain one unambiguous source policy through normalization and recursive mutation dispatch.
+actual_result: Body-file and annotation file flags accept '-' stdin for CLI and direct SDK use; resolved file content and structured MCP or atomic dash values remain literal through cloned and recursive option bags; MCP refuses annotation server-file and stdin sources; close-status updates preserve body '-' without a second read.
 dependencies[4]{id,kind,created_at}:
   pm-psy1,related,"2026-07-06T22:10:24.411Z"
   pm-gknu,related,"2026-07-16T05:45:22.382Z"
   pm-m9xv,implements,"2026-07-25T06:28:02.305Z"
   pm-fs8q9x,implements,"2026-07-26T05:59:31.644Z"
-comments[21]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-08-23T20:29:26.533Z","harness:codex","Implementation start 2026-08-23: contract-derived census and shared SDK file-or-stdin primitive will cover every external-content --*-file surface, preserve real-path behavior, improve unreadable-path recovery, and prove piped heredoc use. Canonical pm-iktj is reused after all-status duplicate verification."
   "2026-08-23T21:57:50.433Z","harness:codex","Tracker repair evidence: removed only the newly added duplicate pm-m9xv implements row by its exact created_at signature; the canonical 2026-07-25 relationship remains intact."
   "2026-08-23T22:05:18.542Z","harness:codex","Verification evidence 2026-08-24: every external-content file flag in this scope accepts '-' as stdin through the shared SDK token resolver: update/close --body-file plus comments, notes, and learnings --file. Real paths retain prior behavior and unreadable/missing input produces structured recovery. CLI invocation contracts now declare argv/file/stdin modes and the docs include heredoc/pipeline examples. Focused linked tests, the disposable-tracker body-stdin check, 7,858-test exact 100% coverage, typecheck, security scan, and the complete lint/static stack pass. The duplicate relationship added during reconciliation was removed by exact signature; the canonical historical implements edge remains."
@@ -45,9 +45,11 @@ comments[21]{created_at,author,text}:
   "2026-08-24T08:44:26.007Z","harness:codex","Closeout diagnostics: deterministic changelog generation/check remained unchanged at 2,181 items and 392,254 bytes; pm validate passed with history drift 0 and only the unchanged 295 legacy resolution warnings; pm health --check-only passed all 10 checks with 14 legacy hierarchy advisories. Item is closed and claim released."
   "2026-08-24T08:49:11.254Z","harness:codex","Exact-head security re-review at aaa4dfe8a2a9bc9246390db982d9a9035f5667a9 found the annotation file refusal was applied in shared runtime normalization without checking the MCP marker, so public PmClient comments/notes/learnings file requests regressed despite low-level SDK support. Narrow the refusal to marked MCP transport inputs and add direct PmClient positive regressions alongside MCP negative controls."
   "2026-08-24T09:04:10.931Z","harness:codex","Exact-head re-review fix evidence: mcp_annotation_file_unavailable is now gated by the explicit MCP transport marker. Spawned MCP options.file negative controls still refuse without reading server files, while public PmClient comments/notes/learnings successfully append the same local file content. Focused boundary proof passed 145/145; full exact coverage passed 570 files / 7,880 tests at 100% statements (57,553), branches (43,081), functions (11,978), and lines (55,474); typecheck, credential scan, and the complete static assurance chain passed. All 8 linked commands passed with local_source_ref trust and every failure category zero."
+  "2026-08-24T09:31:38.956Z","harness:codex","Exact-head review-fix evidence 2026-08-24: the shared transferMutationStdinTokenPolicy preserves all-field and selected-field literal provenance through runtime normalization, annotation adapters, atomic overlays, Plan and scheduling derivations, legacy create/update normalization, and close-status recursion. A transport-marked status=closed update stores body '-' literally without reading stdin again; MCP tests fail immediately on early child exit; annotation mocks expose the complete imported surface. Focused proof passed 437/437. Full exact coverage passed 570 files / 7,882 tests at 100% statements (57,558/57,558), branches (43,075/43,075), functions (11,979/11,979), and lines (55,478/55,478). Typecheck, security scan, SDK surface, diff check, and the complete static assurance chain passed. All 8 linked commands passed with local_source_ref trust and every failure category zero."
+  "2026-08-24T09:32:02.750Z","harness:codex","Closeout evidence: latest pm-changelog 2026.8.17 generation and deterministic check remain unchanged at 2,181 closed items and 392,254 bytes after scoped PM metadata correction and final recurrence closure."
 notes[1]{created_at,author,text}:
   "2026-07-15T19:27:03.514Z",maintainer-agent,"Dogfood confirmation 2026-07-15 (review pass #89): pm create --body-file - fails ENOENT body_file_unreadable (tries to open a file literally named \"-\"), forcing a scratch-file workaround mid-review. The error's own next_steps suggest \"ls -l \\\"-\\\"\" — the recovery bundle does not know stdin is the intent. This is exactly the convention gap this item owns; --body-file should be first on the flag list when implementing."
-files[31]{path,scope,note}:
+files[32]{path,scope,note}:
   sdk/public-surface.json,project,Additive SDK stdin policy contract
   src/cli/register-annotations.ts,project,Uniform file-or-stdin input contract
   src/cli/register-mutation.ts,project,Mark body-file output as literal body data
@@ -76,6 +78,7 @@ files[31]{path,scope,note}:
   tests/integration/structured-mutation-io.integration.spec.ts,project,Real-process CLI atomic dash literal regression coverage
   tests/unit/cli/structured-mutation-registration.spec.ts,project,Single-consumer stdin refusal regression coverage
   tests/unit/commands/comments-command.spec.ts,project,Direct stdin compatibility and MCP source resolver mock coverage
+  tests/unit/commands/update-command.spec.ts,project,Close-status literal provenance regression
   tests/unit/core/item/parse-utils.spec.ts,project,Field-scoped body literal policy unit coverage
   tests/unit/sdk/flag-invocation-contracts.spec.ts,project,File and stdin invocation metadata regression coverage
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,Direct PmClient annotation file transport regression
@@ -88,7 +91,7 @@ tests[8]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T05:26:43.269Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,project,240,"harness:codex","2026-08-24T08:23:02.918Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T08:50:35.308Z",local_mutation,codex/bulk-input-composability-contracts
-test_runs[11]:
+test_runs[12]:
   - run_id: test-local-mt6btbef-ori5yr
     kind: test
     status: passed
@@ -251,9 +254,27 @@ test_runs[11]:
       node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt71domp-w46u3z
+    kind: test
+    status: passed
+    started_at: "2026-08-24T09:29:36.611Z"
+    finished_at: "2026-08-24T09:31:19.153Z"
+    recorded_at: "2026-08-24T09:31:19.153Z"
+    passed: 8
+    failed: 0
+    skipped: 0
+    executions[8]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/io/body-file.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release entry
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated MCP stdin refusal recovery census
   docs/SCRIPTING.md,project,File-reading stdin convention and examples
-close_reason: "Scoped annotation file refusal to marked MCP transport while preserving direct SDK file input; exact coverage, static assurance, and all eight trusted linked tests pass."
+close_reason: "Literal stdin-token provenance now survives cloned and recursive mutation option bags; exact coverage, full static assurance, and all eight trusted linked tests pass."
 body: "Found in review #15 follow-up: pm update --body-file - fails with ENOENT (tries to open a file literally named '-'), while pm notes --add - reads stdin. Agents composing bodies from heredocs/pipes (the grep/jq/heredoc composability principle) hit this asymmetry and fall back to temp files. Inventory every --*-file flag via pm contracts, route them through a shared read-file-or-stdin helper, and record the convention in the scripting contract. Related-not-duplicate: pm-kipd (GH-438 full-item JSON on stdin), pm-a2h3 (notes/learnings --stdin parity)."

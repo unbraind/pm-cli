@@ -11,8 +11,8 @@ import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import {
   createStdinTokenResolver,
   parseCsvKv,
-  preserveMutationStdinTokenLiterals,
   shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -102,9 +102,7 @@ export function normalizeAnnotationTransportOptions(
     ...(options.full === true ? { fullHistory: true } : {}),
   };
   delete normalized.full;
-  return shouldResolveMutationStdinTokens(options)
-    ? normalized
-    : preserveMutationStdinTokenLiterals(normalized);
+  return transferMutationStdinTokenPolicy(options, normalized);
 }
 
 /** Presentation-layer inputs accepted by the shared annotation source resolver. */

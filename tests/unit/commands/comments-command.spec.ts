@@ -394,6 +394,7 @@ describe("runComments", () => {
     }));
     vi.doMock("../../../src/sdk/annotations.js", () => ({
       assertAnnotationStdinTransportAvailable: vi.fn(),
+      isErrnoError: () => false,
       parseAnnotationTextInput: parseInputMock,
       runAnnotationCommand: runAnnotationMock,
     }));
@@ -427,6 +428,7 @@ describe("runComments", () => {
       }),
     }));
     vi.doMock("../../../src/sdk/annotations.js", () => ({
+      assertAnnotationStdinTransportAvailable: vi.fn(),
       isErrnoError: (error: unknown) =>
         typeof error === "object" && error !== null && "code" in error,
       parseAnnotationTextInput: vi.fn((raw: string) => raw),

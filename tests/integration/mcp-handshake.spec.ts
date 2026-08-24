@@ -2650,6 +2650,15 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
             clearTimeout(timeout);
             reject(error);
           });
+          child.once("exit", (code, signal) => {
+            if (received.size === 3) return;
+            clearTimeout(timeout);
+            reject(
+              new Error(
+                `MCP server exited before answering (code=${code}, signal=${signal})`,
+              ),
+            );
+          });
         },
       );
       child.stdin.write(

@@ -23,8 +23,7 @@ import {
   resolveAuthor,
   isTerminalPlanMode,
   preserveMutationStdinTokenFields,
-  preserveMutationStdinTokenLiterals,
-  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
 } from "../runtime-primitives.js";
 import type {
   DependencyKind,
@@ -1162,9 +1161,8 @@ function preservePlanCreateStdinPolicy(
   createOptions: CreateCommandOptions,
   derivedLiteralFields: readonly (keyof CreateCommandOptions)[] = [],
 ): void {
-  if (!shouldResolveMutationStdinTokens(source)) {
-    preserveMutationStdinTokenLiterals(createOptions);
-  } else if (derivedLiteralFields.length > 0) {
+  transferMutationStdinTokenPolicy(source, createOptions);
+  if (derivedLiteralFields.length > 0) {
     preserveMutationStdinTokenFields(createOptions, derivedLiteralFields);
   }
 }

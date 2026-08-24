@@ -5,8 +5,7 @@
  */
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import {
-  preserveMutationStdinTokenLiterals,
-  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
 } from "./runtime-primitives.js";
 import {
   runCreate,
@@ -90,9 +89,7 @@ function buildCommonOptions(
     author: options.author,
     message: options.message,
   };
-  return shouldResolveMutationStdinTokens(options)
-    ? createOptions
-    : preserveMutationStdinTokenLiterals(createOptions);
+  return transferMutationStdinTokenPolicy(options, createOptions);
 }
 
 async function createMeetingOrEvent(

@@ -31,6 +31,7 @@ import {
   parseOptionalNumber,
   parseTags,
   shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
   splitAcceptanceCriteria,
   resolvePriority,
   normalizeStatusInput,
@@ -347,9 +348,12 @@ function normalizeLegacyNoneUpdateOptions(
     /* c8 ignore stop */
   }
 
-  return applyLegacyNoneCollectionNormalizers(
-    normalized,
-    UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+  return transferMutationStdinTokenPolicy(
+    options,
+    applyLegacyNoneCollectionNormalizers(
+      normalized,
+      UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS,
+    ),
   );
 }
 
@@ -2092,14 +2096,18 @@ async function routeCloseStatusUpdate(
   const routeWarnings: string[] = [];
   let preChangedFields: string[] = [];
   if (otherFieldKeys.length > 0) {
-    const preUpdate = await runUpdate(
-      context.id,
+    const preUpdateOptions = transferMutationStdinTokenPolicy(
+      context.options,
       {
         ...context.options,
         status: undefined,
         closeReason: undefined,
         message: undefined,
       },
+    );
+    const preUpdate = await runUpdate(
+      context.id,
+      preUpdateOptions,
       context.global,
     );
     preChangedFields = preUpdate.changed_fields;

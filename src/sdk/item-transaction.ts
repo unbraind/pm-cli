@@ -8,8 +8,7 @@
 import crypto from "node:crypto";
 import path from "node:path";
 import {
-  preserveMutationStdinTokenLiterals,
-  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -123,9 +122,9 @@ function mergeTransactionMutationOptions(
   additions: PmClientFullMutationOptions,
 ): PmClientFullMutationOptions {
   const merged = { ...source, ...additions };
-  return source !== undefined && !shouldResolveMutationStdinTokens(source)
-    ? preserveMutationStdinTokenLiterals(merged)
-    : merged;
+  return source === undefined
+    ? merged
+    : transferMutationStdinTokenPolicy(source, merged);
 }
 
 /** Successful durable result of a bulk item-mutation transaction. */

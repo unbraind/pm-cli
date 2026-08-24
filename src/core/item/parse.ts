@@ -542,6 +542,20 @@ export function preserveMutationStdinTokenFields<T extends object>(
   return options;
 }
 
+/** Copy the complete mutation stdin-token policy across an option clone. */
+export function transferMutationStdinTokenPolicy<T extends object>(
+  source: object,
+  target: T,
+): T {
+  const policy = literalStdinTokenFields.get(source);
+  if (policy === undefined) return target;
+  literalStdinTokenFields.set(
+    target,
+    policy === ALL_MUTATION_STDIN_FIELDS ? policy : new Set(policy),
+  );
+  return target;
+}
+
 /** Report whether lifecycle input should interpret dash values as stdin tokens. */
 export function shouldResolveMutationStdinTokens(options: object): boolean {
   return literalStdinTokenFields.get(options) !== ALL_MUTATION_STDIN_FIELDS;
@@ -628,7 +642,7 @@ export async function resolveMutationStdinTokenFields<T extends object>(
       shouldResolveMutationStdinTokenField(options, field),
     );
   }
-  return resolved as T;
+  return preserveMutationStdinTokenLiterals(resolved as T);
 }
 
 /** Implements create stdin token resolver for the public runtime surface of this module. */

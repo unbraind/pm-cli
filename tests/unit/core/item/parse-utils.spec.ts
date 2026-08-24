@@ -19,6 +19,7 @@ import {
   shouldResolveMutationStdinTokenField,
   shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,
+  transferMutationStdinTokenPolicy,
 } from "../../../../src/core/item/parse.js";
 import { resolveEventEndAt } from "../../../../src/sdk/lifecycle/event-validation-messages.js";
 import {
@@ -55,6 +56,28 @@ describe("core/item/parse", () => {
     expect(shouldResolveMutationStdinTokenField(options, "comment")).toBe(
       false,
     );
+  });
+
+  it("transfers selected and all-field stdin policies across option clones", () => {
+    const selectedSource = preserveMutationStdinTokenFields(
+      { body: "-", comment: ["-"] },
+      ["body"],
+    );
+    const selectedClone = transferMutationStdinTokenPolicy(selectedSource, {
+      ...selectedSource,
+    });
+    expect(shouldResolveMutationStdinTokenField(selectedClone, "body")).toBe(
+      false,
+    );
+    expect(
+      shouldResolveMutationStdinTokenField(selectedClone, "comment"),
+    ).toBe(true);
+
+    const literalSource = preserveMutationStdinTokenLiterals({ body: "-" });
+    const literalClone = transferMutationStdinTokenPolicy(literalSource, {
+      ...literalSource,
+    });
+    expect(shouldResolveMutationStdinTokens(literalClone)).toBe(false);
   });
 
   it("refuses a repeated stdin token within one option before reading", () => {

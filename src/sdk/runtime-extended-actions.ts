@@ -7,8 +7,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
-  preserveMutationStdinTokenLiterals,
-  shouldResolveMutationStdinTokens,
+  transferMutationStdinTokenPolicy,
 } from "./runtime-primitives.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import { resolvePmRoot } from "../core/store/paths.js";
@@ -55,9 +54,7 @@ function mergedInput(
   context: RuntimeExtendedActionContext,
 ): Record<string, unknown> {
   const input = { ...context.args, ...context.options };
-  return shouldResolveMutationStdinTokens(context.options)
-    ? input
-    : preserveMutationStdinTokenLiterals(input);
+  return transferMutationStdinTokenPolicy(context.options, input);
 }
 
 function requiredString(input: Record<string, unknown>, key: string): string {

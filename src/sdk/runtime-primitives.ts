@@ -173,6 +173,7 @@ export {
   parseTags,
   preserveMutationStdinTokenFields,
   preserveMutationStdinTokenLiterals,
+  transferMutationStdinTokenPolicy,
   shouldResolveMutationStdinTokenField,
   shouldResolveMutationStdinTokens,
   splitAcceptanceCriteria,

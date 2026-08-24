@@ -497,6 +497,34 @@ describe("runUpdate stdin token policy", () => {
     });
   });
 
+  it("preserves transport literals through close-status recursive updates", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        { title: "literal close-route seed", type: "Task" },
+        { path: context.pmPath },
+      );
+      await runUpdate(
+        created.item.id,
+        preserveMutationStdinTokenLiterals({
+          status: "closed",
+          closeReason: "literal close route",
+          body: "-",
+        }),
+        { path: context.pmPath },
+      );
+      const stored = await runGet(
+        created.item.id,
+        { path: context.pmPath },
+        { full: true },
+      );
+      expect(stored.item).toMatchObject({
+        status: "closed",
+        body: "-",
+        close_reason: "literal close route",
+      });
+    });
+  });
+
   it("rejects competing direct SDK stdin tokens before reading the stream", async () => {
     await withTempPmPath(async (context) => {
       const created = await runCreate({ title: "stdin conflict seed", type: "Task" }, { path: context.pmPath });
