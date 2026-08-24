@@ -1,3 +1,5 @@
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { loadContextIntentSnapshotForInvocation } from "../../../src/cli/context-intent-invocation.js";
 import { TOOLS } from "../../../src/mcp/tool-definitions.js";
@@ -259,6 +261,150 @@ describe("universal read-output transport contracts", () => {
       expect(pagedIds).toEqual(completeIds);
       expect(new Set(pagedIds).size).toBe(completeIds.length);
       expect(peakResponseBytes).toBeLessThan(12_000);
+    });
+  });
+
+  it("replays a real health cursor while enabled telemetry changes its queue", async () => {
+    await withTempPmPath(async ({ env, runCli, tempRoot }) => {
+      env.PM_TELEMETRY_DISABLED = "0";
+      env.PM_TELEMETRY_OTEL_DISABLED = "1";
+      env.PM_TELEMETRY_INLINE_FLUSH = "1";
+      env.NODE_ENV = "production";
+      delete env.VITEST;
+      delete env.VITEST_WORKER_ID;
+
+      const enableTelemetry = runCli(
+        [
+          "config",
+          "global",
+          "set",
+          "telemetry-tracking",
+          "--policy",
+          "enabled",
+          "--json",
+          "--no-extensions",
+        ],
+        { cwd: tempRoot, expectJson: true },
+      );
+      expect(
+        enableTelemetry.code,
+        `${enableTelemetry.stdout}\n${enableTelemetry.stderr}`,
+      ).toBe(0);
+      const globalSettingsPath = path.join(env.PM_GLOBAL_PATH, "settings.json");
+      const globalSettings = JSON.parse(
+        await readFile(globalSettingsPath, "utf8"),
+      ) as { telemetry?: Record<string, unknown> };
+      globalSettings.telemetry = {
+        ...globalSettings.telemetry,
+        endpoint: "http://127.0.0.1:9/v1/events",
+      };
+      await writeFile(
+        globalSettingsPath,
+        `${JSON.stringify(globalSettings, null, 2)}\n`,
+        "utf8",
+      );
+
+      let first:
+        | {
+            budget: number;
+            envelope: {
+              checks: Array<{ name: string }>;
+              next_cursor: string;
+              output_budget_truncation: {
+                recovery: {
+                  cursor: string;
+                  cli: "--output-cursor";
+                  sdk: "outputCursor";
+                  mcp: "outputCursor";
+                };
+              };
+            };
+          }
+        | undefined;
+      for (const budget of [4_000, 3_000, 2_000, 1_500, 1_000]) {
+        const candidate = runCli(
+          [
+            "health",
+            "--check-only",
+            "--full",
+            "--output-budget",
+            String(budget),
+            "--json",
+            "--no-extensions",
+          ],
+          { cwd: tempRoot, expectJson: true },
+        );
+        const envelope = candidate.json as {
+          checks?: Array<{ name: string }>;
+          next_cursor?: string;
+          output_budget_truncation?: {
+            recovery?: {
+              cursor: string;
+              cli: "--output-cursor";
+              sdk: "outputCursor";
+              mcp: "outputCursor";
+            };
+          };
+        };
+        if (
+          candidate.code === 0 &&
+          Array.isArray(envelope.checks) &&
+          typeof envelope.next_cursor === "string" &&
+          envelope.output_budget_truncation?.recovery !== undefined
+        ) {
+          first = {
+            budget,
+            envelope: {
+              checks: envelope.checks,
+              next_cursor: envelope.next_cursor,
+              output_budget_truncation: {
+                recovery: envelope.output_budget_truncation.recovery,
+              },
+            },
+          };
+          break;
+        }
+      }
+      if (!first) {
+        throw new Error("Expected health to produce a bounded checks cursor.");
+      }
+      expect(first.envelope.output_budget_truncation.recovery).toMatchObject({
+        cursor: first.envelope.next_cursor,
+        cli: "--output-cursor",
+        sdk: "outputCursor",
+        mcp: "outputCursor",
+      });
+      const queuedAfterFirstPage = (
+        await readFile(
+          path.join(env.PM_GLOBAL_PATH, "runtime", "telemetry", "events.jsonl"),
+          "utf8",
+        )
+      )
+        .split("\n")
+        .filter(Boolean);
+      expect(queuedAfterFirstPage.length).toBeGreaterThan(0);
+
+      const second = runCli(
+        [
+          "health",
+          "--check-only",
+          "--full",
+          "--output-budget",
+          String(first.budget),
+          "--output-cursor",
+          first.envelope.next_cursor,
+          "--json",
+          "--no-extensions",
+        ],
+        { cwd: tempRoot, expectJson: true },
+      );
+      expect(second.code, `${second.stdout}\n${second.stderr}`).toBe(0);
+      expect(
+        (second.json as { checks: Array<{ name: string }> }).checks.length,
+      ).toBeGreaterThan(0);
+      expect(
+        (second.json as { checks: Array<{ name: string }> }).checks[0]?.name,
+      ).not.toBe(first.envelope.checks[0]?.name);
     });
   });
 

@@ -160,6 +160,8 @@ import {
   type PmContextIntentContract,
 } from "../context-intent-contracts.js";
 import {
+  readOutputIncludeModeOptions,
+  resolveReadOutputSurface,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   type PmReadOutputSurfaceContract,
 } from "../read-output-contracts.js";
@@ -313,6 +315,13 @@ export interface ContractsResult {
     token_estimate: "ceil(utf8_bytes / 4)";
     degradation_ladder: string[];
     allows_unbounded_opt_out: boolean;
+  };
+  /** Exact per-command projection vocabularies and the scope of the compatibility union. */
+  output_projection_contracts?: {
+    global_ladder_field: "output_policy.degradation_ladder";
+    global_ladder_scope: "union_not_per_command";
+    discovery: "pm contracts --command <command> --summary";
+    commands?: Array<{ command: string; modes: string[] }>;
   };
   /** Value that configures or reports runtime schema for this contract. */
   runtime_schema?: {
@@ -3051,6 +3060,7 @@ function attachAgentCommandContractsResult(
     includeFormatBudgets: boolean;
     includeIntentProvenance: boolean;
     includePositionalSignatures: boolean;
+    includeProjectionModeMatrix: boolean;
   },
 ): void {
   result.command_summaries = buildCommandSummarySurface(
@@ -3065,6 +3075,24 @@ function attachAgentCommandContractsResult(
     token_estimate: "ceil(utf8_bytes / 4)",
     degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
     allows_unbounded_opt_out: true,
+  };
+  result.output_projection_contracts = {
+    global_ladder_field: "output_policy.degradation_ladder",
+    global_ladder_scope: "union_not_per_command",
+    discovery: "pm contracts --command <command> --summary",
+    ...(options.includeProjectionModeMatrix
+      ? {
+          commands: [...new Set(outputCommands.map(normalizeCommandPath))]
+            .filter(
+              (command) => resolveReadOutputSurface(command) !== undefined,
+            )
+            .sort((left, right) => left.localeCompare(right))
+            .map((command) => ({
+              command,
+              modes: [...readOutputIncludeModeOptions(command).keys()],
+            })),
+        }
+      : {}),
   };
   result.grammar_contracts = {
     nouns: PM_CLI_GRAMMAR_CONTRACT.nouns,
@@ -3130,6 +3158,7 @@ export async function runContracts(
         includeFormatBudgets: includeCommandDetails,
         includeIntentProvenance: includeCommandDetails,
         includePositionalSignatures: includeCommandDetails,
+        includeProjectionModeMatrix: includeCommandDetails,
       },
     );
   }

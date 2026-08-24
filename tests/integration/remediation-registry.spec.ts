@@ -103,6 +103,15 @@ describe("shared remediation registry", () => {
       ).toBe('pm update <id> --title "<distinct title>"');
     });
 
+    it("routes pending lossless merge receipts to receipt-aware reconciliation", () => {
+      expect(resolveRemediation("merge_receipts_pending:1")?.command).toBe(
+        "pm merge reconcile --dry-run",
+      );
+      expect(
+        resolveRemediation("history_drift_merge_receipt:pm-merge")?.command,
+      ).toBe("pm merge reconcile --dry-run");
+    });
+
     it("resolves pm health locks warnings to gc lock-sweep guidance", () => {
       expect(resolveRemediation("locks_stale_count:3")?.command).toBe(
         "pm gc --scope locks",
@@ -110,6 +119,12 @@ describe("shared remediation registry", () => {
       expect(resolveRemediation("locks_unreadable:1")?.command).toBe(
         "pm gc --scope locks --dry-run",
       );
+    });
+
+    it("routes invalid merge receipt evidence to the full health diagnostic", () => {
+      expect(
+        resolveRemediation("merge_receipt_evidence_invalid:1")?.command,
+      ).toBe("pm health --check-only --full");
     });
 
     it("resolves item format-version warnings to migration and upgrade guidance", () => {

@@ -236,6 +236,18 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Review the pending merge receipts, re-apply any intended discarded values, then run pm merge reconcile; lossy receipts require explicit --force acceptance.",
   },
   {
+    code: "merge_receipts_pending",
+    command: "pm merge reconcile --dry-run",
+    summary:
+      "A lossless merge receipt is still pending; preview and run pm merge reconcile so a green health gate certifies receipt settlement, not only intact data.",
+  },
+  {
+    code: "merge_receipt_evidence_invalid",
+    command: "pm health --check-only --full",
+    summary:
+      "One or more receipt files failed bounded-file, schema, or identity validation; use the full health count to inspect the clone-local and durable receipt directories, then repair or remove only confirmed invalid evidence.",
+  },
+  {
     code: "validate_merge_decisions_unreviewed",
     command: "pm merge reconcile --dry-run",
     summary:
@@ -267,6 +279,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm history-repair <id>",
     summary:
       "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
+  },
+  {
+    code: "history_drift_merge_receipt",
+    command: "pm merge reconcile --dry-run",
+    summary:
+      "Canonical path, changed-field, and merged-value hash evidence attributes this drift to a pending receipt; preview reconciliation instead of repairing history directly.",
   },
   // --- pm health: storage (history compaction policy) ---
   {

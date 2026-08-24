@@ -17194,6 +17194,23 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_merge_receipt",
+      "class": "generic_failure",
+      "code": "history_drift_merge_receipt",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift merge receipt condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_missing_streams"
       ],
@@ -18393,6 +18410,41 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_receipt_evidence_invalid",
+      "class": "conflict",
+      "code": "merge_receipt_evidence_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge receipt evidence invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts",
+        "sdk/merge/reconcile.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_receipts_pending",
+      "class": "generic_failure",
+      "code": "merge_receipts_pending",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge receipts pending condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_reconcile_discards_require_acceptance",
       "class": "conflict",
       "code": "merge_reconcile_discards_require_acceptance",
@@ -18405,6 +18457,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/merge/reconcile.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_reconcile_receipt_evidence_untrusted",
+      "class": "conflict",
+      "code": "merge_reconcile_receipt_evidence_untrusted",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge reconcile receipt evidence untrusted condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history-repair.ts"
       ],
       "stability": "provisional"
     },
@@ -34138,6 +34207,190 @@
     ],
     "token_estimate": "ceil(utf8_bytes / 4)"
   },
+  "output_projection_contracts": {
+    "commands": [
+      {
+        "command": "activity",
+        "modes": [
+          "compact",
+          "full"
+        ]
+      },
+      {
+        "command": "aggregate",
+        "modes": []
+      },
+      {
+        "command": "assurance",
+        "modes": []
+      },
+      {
+        "command": "assurance apply",
+        "modes": []
+      },
+      {
+        "command": "assurance derive",
+        "modes": []
+      },
+      {
+        "command": "assurance list",
+        "modes": []
+      },
+      {
+        "command": "assurance presets",
+        "modes": []
+      },
+      {
+        "command": "assurance promote",
+        "modes": []
+      },
+      {
+        "command": "assurance put",
+        "modes": []
+      },
+      {
+        "command": "assurance remove",
+        "modes": []
+      },
+      {
+        "command": "assurance risk",
+        "modes": []
+      },
+      {
+        "command": "assurance run",
+        "modes": []
+      },
+      {
+        "command": "assurance show",
+        "modes": []
+      },
+      {
+        "command": "assurance verdicts",
+        "modes": []
+      },
+      {
+        "command": "comments",
+        "modes": []
+      },
+      {
+        "command": "context",
+        "modes": []
+      },
+      {
+        "command": "contracts",
+        "modes": [
+          "full",
+          "summary"
+        ]
+      },
+      {
+        "command": "ctx",
+        "modes": []
+      },
+      {
+        "command": "deps",
+        "modes": [
+          "full",
+          "summary"
+        ]
+      },
+      {
+        "command": "docs",
+        "modes": []
+      },
+      {
+        "command": "duplicates",
+        "modes": []
+      },
+      {
+        "command": "events",
+        "modes": [
+          "full"
+        ]
+      },
+      {
+        "command": "files",
+        "modes": []
+      },
+      {
+        "command": "get",
+        "modes": [
+          "full"
+        ]
+      },
+      {
+        "command": "graph",
+        "modes": [
+          "full",
+          "summary"
+        ]
+      },
+      {
+        "command": "health",
+        "modes": [
+          "brief",
+          "full",
+          "summary"
+        ]
+      },
+      {
+        "command": "history",
+        "modes": [
+          "compact",
+          "full"
+        ]
+      },
+      {
+        "command": "list",
+        "modes": [
+          "brief",
+          "compact",
+          "full"
+        ]
+      },
+      {
+        "command": "next",
+        "modes": []
+      },
+      {
+        "command": "notes",
+        "modes": []
+      },
+      {
+        "command": "package catalog",
+        "modes": []
+      },
+      {
+        "command": "package manage",
+        "modes": []
+      },
+      {
+        "command": "packages catalog",
+        "modes": []
+      },
+      {
+        "command": "search",
+        "modes": [
+          "compact",
+          "full"
+        ]
+      },
+      {
+        "command": "stats",
+        "modes": []
+      },
+      {
+        "command": "validate",
+        "modes": [
+          "counts",
+          "full"
+        ]
+      }
+    ],
+    "discovery": "pm contracts --command <command> --summary",
+    "global_ladder_field": "output_policy.degradation_ladder",
+    "global_ladder_scope": "union_not_per_command"
+  },
   "read_output_dimensions": [
     {
       "budget_retention_policy": "ordered_prefix",
@@ -34241,6 +34494,11 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "brief",
+        "compact",
+        "full"
       ]
     },
     {
@@ -34327,7 +34585,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -34413,6 +34672,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "compact",
+        "full"
       ]
     },
     {
@@ -34487,6 +34750,9 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "full"
       ]
     },
     {
@@ -34554,7 +34820,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -34619,6 +34886,11 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "brief",
+        "full",
+        "summary"
       ]
     },
     {
@@ -34711,6 +34983,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "full",
+        "summary"
       ]
     },
     {
@@ -34789,6 +35065,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "full",
+        "summary"
       ]
     },
     {
@@ -34856,6 +35136,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "compact",
+        "full"
       ]
     },
     {
@@ -34929,6 +35213,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "compact",
+        "full"
       ]
     },
     {
@@ -34982,6 +35270,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "counts",
+        "full"
       ]
     },
     {
@@ -35043,6 +35335,9 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "full"
       ]
     },
     {
@@ -35096,6 +35391,10 @@
         "legacy",
         "intent",
         "default"
+      ],
+      "projection_modes": [
+        "full",
+        "summary"
       ]
     },
     {
@@ -35143,7 +35442,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35190,7 +35490,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35249,7 +35550,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35289,7 +35591,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35329,7 +35632,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35369,7 +35673,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35416,7 +35721,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35456,7 +35762,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35496,7 +35803,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "ordered_prefix",
@@ -35536,7 +35844,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     },
     {
       "budget_retention_policy": "verdict_priority",
@@ -35576,7 +35885,8 @@
         "legacy",
         "intent",
         "default"
-      ]
+      ],
+      "projection_modes": []
     }
   ],
   "relationship_kind_contracts": [

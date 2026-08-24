@@ -89,7 +89,7 @@ import {
   resolveProjectMergeTypeFolders,
 } from "../merge/install.js";
 import {
-  listMergeReceipts,
+  inspectMergeReceiptEvidence,
   partitionMergeReceipts,
 } from "../merge/receipts.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
@@ -3220,6 +3220,15 @@ export const _testOnlyValidateCommand = {
 
 type LoadedValidateSettings = Awaited<ReturnType<typeof readSettings>>;
 
+function appendInvalidMergeReceiptEvidenceWarning(
+  warnings: string[],
+  invalidEvidenceCount: number,
+): void {
+  if (invalidEvidenceCount > 0) {
+    warnings.push(`merge_receipt_evidence_invalid:${invalidEvidenceCount}`);
+  }
+}
+
 /** Build the post-merge storage-integrity check (GH-603/GH-607/GH-609/GH-611): provably corrupted storage — unreadable item documents, on-disk-vs-parsed census mismatches, history conflict markers, resurrected deletes, and unparseable config/schema files — fails validate as an error instead of hiding behind ok:true. The `history_repair_reconciliations` count is informational: it surfaces post-repair divergence without permanently failing repaired workspaces. */
 async function buildStorageIntegrityCheck(
   pmRoot: string,
@@ -3295,13 +3304,14 @@ async function buildStorageIntegrityCheck(
       `validate_merge_driver_configuration:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
     );
   }
-  const pendingMergeReceipts =
-    gitWorkspaceRoot === null
-      ? []
-      : await listMergeReceipts(gitWorkspaceRoot, {
-          includeLossless: true,
-          pmRoot,
-        });
+  const mergeReceiptEvidence = await inspectMergeReceiptEvidence(
+    gitWorkspaceRoot ?? pmRoot,
+    {
+      includeLossless: true,
+      pmRoot,
+    },
+  );
+  const pendingMergeReceipts = mergeReceiptEvidence.receipts;
   const {
     pendingDecisions: pendingMergeDecisions,
     lossless: losslessMergeReceipts,
@@ -3311,6 +3321,10 @@ async function buildStorageIntegrityCheck(
       `validate_merge_decisions_unreviewed:${pendingMergeDecisions.length}`,
     );
   }
+  appendInvalidMergeReceiptEvidenceWarning(
+    warnings,
+    mergeReceiptEvidence.invalid_evidence_count,
+  );
   const status = errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok";
   return {
     check: {
@@ -3329,6 +3343,8 @@ async function buildStorageIntegrityCheck(
           ...new Set(pendingMergeDecisions.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
         lossless_merge_receipt_count: losslessMergeReceipts.length,
+        invalid_merge_receipt_evidence_count:
+          mergeReceiptEvidence.invalid_evidence_count,
         lossless_merge_receipt_items: [
           ...new Set(losslessMergeReceipts.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),

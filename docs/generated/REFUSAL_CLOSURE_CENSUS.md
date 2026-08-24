@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 338
+- Catalog error codes: 342
 - Executable error codes: 16
 - Executable-code ratchet floor: 16
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `missing_lifecycle_target`, `missing_required_argument`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 322
-- Coverage fraction: 0.047337
+- Uncovered error codes: 326
+- Coverage fraction: 0.046784
 - Closed-domain probes: 18
 - Grammar probes: 95
 
@@ -111,6 +111,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `history_author_acknowledge_target_unreadable` | `history_author_acknowledge_target_unreadable` | uncovered | none | 0 |
 | `history_drift_chain_mismatch` | `history_drift_chain_mismatch` | uncovered | none | 0 |
 | `history_drift_hash_mismatch` | `history_drift_hash_mismatch` | uncovered | none | 0 |
+| `history_drift_merge_receipt` | `history_drift_merge_receipt` | uncovered | none | 0 |
 | `history_drift_missing_stream` | `history_drift_missing_stream` | uncovered | none | 0 |
 | `history_drift_unreadable_stream` | `history_drift_unreadable_stream` | uncovered | none | 0 |
 | `history_merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |
@@ -180,7 +181,10 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |
 | `merge_decisions_unreviewed` | `merge_decisions_unreviewed` | uncovered | none | 0 |
 | `merge_git_config_unwritable` | `merge_git_config_unwritable` | uncovered | none | 0 |
+| `merge_receipt_evidence_invalid` | `merge_receipt_evidence_invalid` | uncovered | none | 0 |
+| `merge_receipts_pending` | `merge_receipts_pending` | uncovered | none | 0 |
 | `merge_reconcile_discards_require_acceptance` | `merge_reconcile_discards_require_acceptance` | uncovered | none | 0 |
+| `merge_reconcile_receipt_evidence_untrusted` | `merge_reconcile_receipt_evidence_untrusted` | uncovered | none | 0 |
 | `merge_root_not_found` | `merge_root_not_found` | uncovered | none | 0 |
 | `missing_allowed_values` | `missing_allowed_values` | uncovered | none | 0 |
 | `missing_budget` | `missing_budget` | uncovered | none | 0 |

@@ -1,6 +1,6 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-srns](../.agents/pm/issues/pm-srns.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), [pm-2qvq7a](../.agents/pm/issues/pm-2qvq7a.toon), and [pm-xam9bt](../.agents/pm/issues/pm-xam9bt.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-srns](../.agents/pm/issues/pm-srns.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-oahhyc](../.agents/pm/issues/pm-oahhyc.toon), [pm-q4isdq](../.agents/pm/issues/pm-q4isdq.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), [pm-2qvq7a](../.agents/pm/issues/pm-2qvq7a.toon), and [pm-xam9bt](../.agents/pm/issues/pm-xam9bt.toon).
 
 ## Agent Quick Context
 
@@ -59,6 +59,17 @@ spellings in a temporary tracker, and compares their useful result after
 removing spelling receipts and volatile run metadata. A selector that matches
 neither a declared mode nor any field on any returned row is refused with the
 legal domain, rather than returning rows with every field removed.
+
+Runtime discovery publishes the same exact vocabulary before invocation.
+`pm contracts --command <command> --summary` returns
+`output_projection_contracts.commands`, while
+`output_projection_contracts.global_ladder_scope: "union_not_per_command"`
+explicitly marks `output_policy.degradation_ladder` as a cross-command union,
+not a promise that every member is accepted by the selected command. For
+example, `list` declares `brief`, `compact`, and `full`; `health` declares
+`brief`, `full`, and `summary`. The full `read_output_dimensions` matrix also
+includes `projection_modes` for every canonical read surface, including an
+explicit empty array when a surface has no whole-result modes.
 
 ## Cross-Call Context Sessions
 
@@ -164,6 +175,18 @@ an unbounded multi-megabyte response;
 `recovery_budget_multiplier: 1` declares that each next page retains the same
 useful-result ceiling.
 
+Health continuation fingerprints use a versioned nonvolatile-snapshot policy
+for the `checks` row. Command-lifecycle telemetry may refresh timestamps, queue
+counters, and pending spans between pages, so the policy excludes only those
+explicit direct fields from the `telemetry` row's `details`. The row identity,
+verdict, enabled state, capture level, endpoint, environment overrides, probe
+result, and failure errors remain fingerprinted. Every other health check also
+remains fully fingerprinted; changing storage, integrity, history, or another
+stable check fails closed. `PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES`
+publishes the exact ignored detail fields per dynamic row. Other commands still
+fingerprint every field, including fields with the same spelling, and any
+policy-version change fails closed against an older cursor.
+
 When compaction affects a nested collection that is not declared resumable,
 the recovery budget is derived from the larger of the binding ceiling plus one
 and the measured pre-compaction result. The SDK adds a 25% envelope margin and
@@ -221,7 +244,7 @@ const result = await pm.list({
 });
 ```
 
-Package authors should use the exported read-output contracts instead of inventing package-local limit or projection vocabularies. `PM_READ_OUTPUT_SURFACE_CONTRACTS` is the machine-readable matrix and `resolveReadOutputDimensions` plus `applyReadOutputDimensions` are the shared execution primitives.
+Package authors should use the exported read-output contracts instead of inventing package-local limit or projection vocabularies. `PM_READ_OUTPUT_SURFACE_CONTRACTS` is the machine-readable matrix, `PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES` declares stable-snapshot exceptions, and `resolveReadOutputDimensions` plus `applyReadOutputDimensions` are the shared execution primitives.
 
 ## Drift Gates
 

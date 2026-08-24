@@ -2,6 +2,9 @@
 
 Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fresh-init fence ownership is tracked by [pm-1w3ljt](../.agents/pm/issues/pm-1w3ljt.toon); runtime-cache index governance by [pm-hous](../.agents/pm/issues/pm-hous.toon); local allocation safety by [pm-khdq](../.agents/pm/issues/pm-khdq.toon); fence-coverage completeness and drift detection by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); package-defined item coverage by [pm-5rexki](../.agents/pm/issues/pm-5rexki.toon); non-item JSON coverage by [pm-gjicmx](../.agents/pm/issues/pm-gjicmx.toon); portable driver identity by [pm-w91mvg](../.agents/pm/issues/pm-w91mvg.toon); pending receipt validation by [pm-ysqb6n](../.agents/pm/issues/pm-ysqb6n.toon); receipt classification by [pm-jtwsct](../.agents/pm/issues/pm-jtwsct.toon); direction-independent item conflict selection by [pm-dlx7v7](../.agents/pm/issues/pm-dlx7v7.toon); corrected reconciliation guidance by [pm-lwmstb](../.agents/pm/issues/pm-lwmstb.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); auditable merge history by [pm-9j2r3b](../.agents/pm/tasks/pm-9j2r3b.toon); durable conflict decisions by [pm-rh98vo](../.agents/pm/issues/pm-rh98vo.toon); continuous conformance by [pm-76dnfg](../.agents/pm/tasks/pm-76dnfg.toon); workspace-wide CI enforcement by [pm-pdr8t1](../.agents/pm/tasks/pm-pdr8t1.toon); post-merge reconciliation by [pm-mfkv92](../.agents/pm/issues/pm-mfkv92.toon); linked-command execution trust by [pm-ed28wi](../.agents/pm/issues/pm-ed28wi.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
 
+Lossless receipt health gating is tracked by
+[pm-baksix](../.agents/pm/issues/pm-baksix.toon).
+
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
 ## Install the repository merge contract
@@ -118,11 +121,37 @@ pm merge reconcile --force --message "Accept reviewed merge decisions" --json
 ```
 
 The preview reports every drifted stream and pending receipt without mutation.
-Lossless receipts are reported as provenance but do not become blocking merge
-decisions. Receipts with discarded scalar values remain blocking and the apply
-pass refuses them unless the coordinator explicitly supplies `--force` after
-review. This prevents a routine history repair from silently accepting data
-loss while preserving a zero-noise path for merges that retained both changes.
+Lossless receipts do not become discarded-value decisions and reconcile without
+`--force`, but `pm health` reports `merge_receipts_pending:<n>` and remains
+non-green until the apply pass settles them. `pm history-repair` cannot clear
+that receipt finding. When a drifted item also has a pending receipt, the
+`history_drift` remediation map prioritizes `pm merge reconcile --dry-run` only
+when canonical item path, changed-field, and merged-value hash evidence all
+attribute that finding to one or more receipts loaded from the clone-local Git
+evidence store. Every field declared by each receipt must match its current merged-value
+hash, even when only a subset appears in the history reconciliation diff.
+Disjoint valid receipts may collectively cover a multi-field reconciliation;
+the audit and settlement then retain every individually proven receipt id.
+Serialized source claims are ignored. Receipt readers validate the complete
+bounded schema, safe identifiers, filename and item-path identity, timestamps,
+and bounded decision structure before a sidecar enters health or
+reconciliation. Reads use size-preflighted, no-follow regular-file descriptors;
+durable decisions must retain hash-only values. Legacy or durable-only receipts,
+receipts whose declared fields disagree with their hashes, same-item tampering,
+and drift on unrelated items fail closed to the normal `pm history-repair`
+guidance. Health indexes clone-local evidence once by item and reconciliation
+uses the same per-item groups with a fixed receipt-only worker pool, so committed
+sidecars cannot amplify drift scans into unbounded parallel repair work.
+Apply-mode reconciliation repeats the same proof against the exact
+item snapshot used by the audited history rewrite. The audit event and
+settlement include only the individually proven receipt id, so one valid receipt
+cannot authorize an untrusted same-item sibling. Failed or unproven receipts
+remain pending unless the coordinator explicitly reviews and supplies `--force`.
+Receipts with discarded scalar values retain the distinct
+`merge_decisions_unreviewed:<n>` finding, and the apply pass refuses them unless
+the coordinator explicitly supplies `--force` after review. This prevents a
+routine history repair from hiding unfinished reconciliation or silently
+accepting data loss.
 It exits nonzero while either merge-critical validation check is non-green, so
 CI and explicit post-merge hooks cannot approve unresolved receipts or drift.
 The apply pass uses the audited history rewrite boundary to append a

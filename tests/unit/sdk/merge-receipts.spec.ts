@@ -1,9 +1,23 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import type { Stats } from "node:fs";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+  type FileHandle,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  readBoundedRegularFile,
+  resolveReceiptNoFollowFlag,
+  type ReceiptFileBoundary,
+} from "../../../src/sdk/merge/receipt-file-boundary.js";
+import {
+  inspectMergeReceiptEvidence,
   listMergeReceipts,
   markMergeReceiptReconciled,
   runMergeReceiptReport,
@@ -12,6 +26,45 @@ import {
 } from "../../../src/sdk/merge/receipts.js";
 
 const workspaces: string[] = [];
+
+function boundaryStats(params: {
+  size: number;
+  file?: boolean;
+  symbolicLink?: boolean;
+}): Stats {
+  return {
+    size: params.size,
+    isFile: () => params.file !== false,
+    isSymbolicLink: () => params.symbolicLink === true,
+  } as Stats;
+}
+
+function fakeReceiptBoundary(params: {
+  pathStats: Stats;
+  openedStats?: Stats[];
+  bytes?: string;
+  zeroRead?: boolean;
+}): { boundary: ReceiptFileBoundary; close: ReturnType<typeof vi.fn> } {
+  const openedStats = [...(params.openedStats ?? [params.pathStats])];
+  const close = vi.fn(async () => undefined);
+  const handle = {
+    stat: vi.fn(async () => openedStats.shift() ?? params.pathStats),
+    read: vi.fn(async (buffer: Buffer, offset: number) => {
+      if (params.zeroRead === true) return { bytesRead: 0, buffer };
+      const bytes = Buffer.from(params.bytes ?? "");
+      bytes.copy(buffer, offset);
+      return { bytesRead: bytes.length, buffer };
+    }),
+    close,
+  } as unknown as FileHandle;
+  return {
+    boundary: {
+      lstat: vi.fn(async () => params.pathStats),
+      open: vi.fn(async () => handle),
+    },
+    close,
+  };
+}
 
 describe("clone-local merge decision receipts", () => {
   afterEach(async () => {
@@ -193,6 +246,20 @@ describe("clone-local merge decision receipts", () => {
     });
 
     execFileSync("git", ["init", "-q"], { cwd: workspace });
+    await expect(
+      markMergeReceiptReconciled(workspace, {
+        version: 1,
+        id: "x".repeat(5_000),
+        item_path: "tasks/pm-path-error.toon",
+        item_id: "pm-path-error",
+        conflict_resolution: "preferred_side",
+        fields_from_theirs: [],
+        union_fields: [],
+        decisions: [],
+        state: "pending",
+        created_at: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toMatchObject({ code: "ENAMETOOLONG" });
     const receiptDirectory = execFileSync(
       "git",
       [
@@ -250,6 +317,31 @@ describe("clone-local merge decision receipts", () => {
     expect((await listMergeReceipts(workspace))[0]).not.toHaveProperty(
       "preferred",
     );
+    await markMergeReceiptReconciled(workspace, {
+      version: 1,
+      id: "legacy",
+      item_path: ".agents/pm/tasks/pm-legacy.toon",
+      item_id: "pm-legacy",
+      preferred: "ours",
+      conflict_resolution: undefined as never,
+      fields_from_theirs: [],
+      union_fields: [],
+      decisions: [],
+      state: "pending",
+      created_at: "2026-07-27T00:00:00.000Z",
+    });
+    await markMergeReceiptReconciled(workspace, {
+      version: 1,
+      id: "pre-preference",
+      item_path: ".agents/pm/tasks/pm-pre-preference.toon",
+      item_id: "pm-pre-preference",
+      conflict_resolution: undefined as never,
+      fields_from_theirs: [],
+      union_fields: [],
+      decisions: [],
+      state: "pending",
+      created_at: "2026-07-26T00:00:00.000Z",
+    });
     await rm(receiptDirectory, { recursive: true });
     await writeFile(
       path.join(workspace, ".git", "pm-merge-receipts"),
@@ -332,5 +424,111 @@ describe("clone-local merge decision receipts", () => {
       ...clonedReceipts[0]!,
       id: "durable-sidecar-missing",
     });
+  });
+
+  it("counts divergent same-id local and durable copies as invalid evidence", async () => {
+    const workspace = await mkdtemp(
+      path.join(os.tmpdir(), "pm-receipts-divergent-"),
+    );
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const pmRoot = path.join(workspace, ".agents", "pm");
+    await mkdir(path.join(pmRoot, "tasks"), { recursive: true });
+    await writeFile(path.join(pmRoot, "settings.json"), "{}\n", "utf8");
+    const receipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-divergent.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [],
+    });
+    expect(receipt).not.toBeNull();
+    const durablePath = path.join(
+      pmRoot,
+      "merge-receipts",
+      `${receipt?.id}.json`,
+    );
+    const durable = JSON.parse(
+      await readFile(durablePath, "utf8"),
+    ) as Record<string, unknown>;
+    durable.item_id = "pm-divergent-forged";
+    durable.item_path = ".agents/pm/tasks/pm-divergent-forged.toon";
+    durable.state = "reconciled";
+    durable.reconciled_at = "2026-08-24T00:00:00.000Z";
+    await writeFile(durablePath, `${JSON.stringify(durable)}\n`, "utf8");
+
+    await expect(
+      inspectMergeReceiptEvidence(workspace, { pmRoot }),
+    ).resolves.toEqual({ receipts: [], invalid_evidence_count: 1 });
+  });
+
+  it("enforces the bounded no-follow receipt file boundary", async () => {
+    expect(resolveReceiptNoFollowFlag({ O_NOFOLLOW: 128 })).toBe(128);
+    expect(resolveReceiptNoFollowFlag({})).toBe(0);
+
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipt-file-"));
+    workspaces.push(workspace);
+    const receiptPath = path.join(workspace, "receipt.json");
+    await writeFile(receiptPath, "{}", "utf8");
+    await expect(readBoundedRegularFile(receiptPath, 16)).resolves.toBe("{}");
+
+    for (const pathStats of [
+      boundaryStats({ size: 1, symbolicLink: true }),
+      boundaryStats({ size: 1, file: false }),
+      boundaryStats({ size: 17 }),
+    ]) {
+      await expect(
+        readBoundedRegularFile(
+          "candidate",
+          16,
+          fakeReceiptBoundary({ pathStats }).boundary,
+        ),
+      ).resolves.toBeNull();
+    }
+
+    for (const openedStats of [
+      boundaryStats({ size: 1, file: false }),
+      boundaryStats({ size: 17 }),
+    ]) {
+      const fake = fakeReceiptBoundary({
+        pathStats: boundaryStats({ size: 1 }),
+        openedStats: [openedStats],
+      });
+      await expect(
+        readBoundedRegularFile("candidate", 16, fake.boundary),
+      ).resolves.toBeNull();
+      expect(fake.close).toHaveBeenCalledOnce();
+    }
+
+    const shortRead = fakeReceiptBoundary({
+      pathStats: boundaryStats({ size: 2 }),
+      openedStats: [boundaryStats({ size: 2 }), boundaryStats({ size: 2 })],
+      zeroRead: true,
+    });
+    await expect(
+      readBoundedRegularFile("candidate", 16, shortRead.boundary),
+    ).resolves.toBeNull();
+
+    const changed = fakeReceiptBoundary({
+      pathStats: boundaryStats({ size: 2 }),
+      openedStats: [boundaryStats({ size: 2 }), boundaryStats({ size: 3 })],
+      bytes: "{}",
+    });
+    await expect(
+      readBoundedRegularFile("candidate", 16, changed.boundary),
+    ).resolves.toBeNull();
+
+    const stable = fakeReceiptBoundary({
+      pathStats: boundaryStats({ size: 2 }),
+      openedStats: [boundaryStats({ size: 2 }), boundaryStats({ size: 2 })],
+      bytes: "{}",
+    });
+    await expect(
+      readBoundedRegularFile("candidate", 16, stable.boundary),
+    ).resolves.toBe("{}");
+    expect(shortRead.close).toHaveBeenCalledOnce();
+    expect(changed.close).toHaveBeenCalledOnce();
+    expect(stable.close).toHaveBeenCalledOnce();
   });
 });

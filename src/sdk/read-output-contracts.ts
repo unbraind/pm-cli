@@ -36,7 +36,10 @@ import {
 export {
   decodeReadOutputContinuationCursor,
   encodeReadOutputContinuationCursor,
+  PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES,
+  readOutputCollectionFingerprint,
 } from "./read-output/continuation.js";
+export type { PmReadOutputContinuationFingerprintPolicy } from "./read-output/continuation.js";
 import {
   applyReadOutputSessionReferences,
   attachReadOutputSessionReceipt,
@@ -143,6 +146,8 @@ export interface PmReadOutputSurfaceContract {
   precedence: readonly ["canonical", "legacy", "intent", "default"];
   /** Stable policy used before budget compaction selects retained rows. */
   budget_retention_policy: "ordered_prefix" | "verdict_priority";
+  /** Exact command-local whole-result modes accepted by `outputInclude`. */
+  projection_modes?: readonly string[];
 }
 
 /** Source that selected an effective output dimension. */
@@ -535,6 +540,9 @@ function buildSurfaceContract(
     precedence: READ_OUTPUT_PRECEDENCE,
     budget_retention_policy:
       command === "assurance" ? "verdict_priority" : "ordered_prefix",
+    projection_modes: Object.freeze([
+      ...readOutputIncludeModeOptions(command).keys(),
+    ]),
   });
 }
 
@@ -1788,6 +1796,7 @@ interface ReadOutputContinuationState {
 
 function captureReadOutputContinuationState(
   projected: Record<string, unknown>,
+  command: PmReadOutputSurface,
   cursor: PmReadOutputCursorEnvelope | undefined,
   options: Record<string, unknown>,
 ): ReadOutputContinuationState {
@@ -1808,6 +1817,7 @@ function captureReadOutputContinuationState(
             : readOutputCollectionFingerprint(
                 collection.path,
                 collection.value,
+                command,
               ),
         },
       ];
@@ -1911,6 +1921,7 @@ export function applyReadOutputDimensions<
   );
   const continuationState = captureReadOutputContinuationState(
     projected,
+    resolved.command,
     cursor,
     options,
   );
