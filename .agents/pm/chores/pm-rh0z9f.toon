@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: "area:ci",codeql,dependabot,dependencies,github-actions,security,supply-chain
 created_at: "2026-08-24T15:08:31.881Z"
-updated_at: "2026-08-24T17:57:09.943Z"
+updated_at: "2026-08-24T17:59:25.775Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#6aaf9b7b4719bd8feda3e4c0"
 author: "harness:codex"
@@ -24,11 +24,12 @@ actual_result: "The exact immutable SHA from Dependabot PR #1103 now pins CodeQL
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-pp6al9,recurs_from,"2026-08-24T15:08:31.881Z","harness:codex","cli:create:dep",detected
   pm-qwoy,implements,"2026-08-24T15:08:31.881Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-24T15:08:31.881Z","harness:codex","Duplicate check 2026-08-24: the complete 2,539-item all-status strict read found no 4.37.8 or PR #1103 owner. Closed pm-pp6al9 is the nearest prior pinned CodeQL dependency-refresh lineage for PR #1046, so this non-duplicate recurrence is linked with recurs_from. Source: https://github.com/unbraind/pm-cli/pull/1103"
   "2026-08-24T16:39:28.574Z","harness:codex","Local evidence 2026-08-24: both linked tests passed with trusted local-source provenance; contracts snapshot and gate registry are current; full 7,893-test exact-coverage suite, full static quality, lint, package artifact, 10/10 external package smoke, 13-package packed npx smoke, and pnpm audit with no known vulnerabilities passed. The adopted SHA is db488d1387b57f3f5ddef2d880f594dc7863e8df from PR #1103. Item intentionally remains in progress until replacement-PR hosted security checks pass and #1103 is closed as superseded."
   "2026-08-24T16:43:23.076Z","harness:codex","Security-review correction 2026-08-24: the prior local-evidence comment transposed the CodeQL commit. The exact immutable SHA present in all three workflow uses and corresponding to CodeQL 4.37.8 is db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28. Treat db488d1387b57f3f5ddef2d880f594dc7863e8df in the earlier append-only comment as superseded evidence, not the pinned object."
   "2026-08-24T17:57:09.943Z","harness:codex","Local adoption evidence: the exact CodeQL action pin db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 is present in CodeQL init/analyze and Scorecard SARIF upload. pnpm quality:static passed; Bugbot final review reported no bugs; Security Review reported no actionable findings. Item remains in progress pending hosted exact-head CodeQL/security checks and superseding closure of Dependabot PR #1103."
+  "2026-08-24T17:59:25.775Z","harness:codex","Replacement delivery PR: https://github.com/unbraind/pm-cli/pull/1108 at implementation head c855a5dd656c449a0fde5c0341dde0ff128f68d5; hosted exact-head security evidence remains required before closure."
 files[2]{path,scope,note}:
   .github/workflows/codeql.yml,project,Pinned CodeQL init and analyze 4.37.8
   .github/workflows/scorecard.yml,project,Pinned CodeQL SARIF upload 4.37.8

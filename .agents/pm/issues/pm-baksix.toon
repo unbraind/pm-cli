@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-24T17:57:09.370Z"
+updated_at: "2026-08-24T17:59:25.172Z"
 closed_at: "2026-08-24T16:39:46.425Z"
 completed_at: "2026-08-24T16:39:46.425Z"
 author: "harness:codex"
@@ -20,10 +20,11 @@ actual_result: "A pending lossless receipt now emits merge_receipts_pending:<n>,
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
   "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
   "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
+  "2026-08-24T17:59:25.172Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1108 at reviewed implementation head c855a5dd656c449a0fde5c0341dde0ff128f68d5."
 files[7]{path,scope,note}:
   sdk/public-surface.json,project,Generated public pending-receipt error surface
   src/core/diagnostics/remediation.ts,project,Receipt-aware remediation
