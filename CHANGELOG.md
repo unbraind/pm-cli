@@ -4,9 +4,9 @@
 
 ### Fixed
 
+- Structured release-failure causes are preserved in blocked-release alerts ([pm-x63izf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x63izf.toon))
 - Bulk writes accept newline/comma IDs from argv, stdin, and @path with effect-aware exits ([pm-3oq022](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3oq022.toon))
 - update-many --dry-run allows filter-only preview for review and bulk-selection workflows ([pm-kexu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kexu.toon))
-- Structured release-failure causes are preserved in blocked-release alerts ([pm-x63izf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x63izf.toon))
 - Releases from the default branch are supported with analyzer evidence ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 
 ### Other
