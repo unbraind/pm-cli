@@ -2,13 +2,13 @@ id: pm-rh0z9f
 title: Adopt Dependabot PR #1103 pinned CodeQL 4.37.8 refresh
 description: "Incorporate the grouped immutable-SHA updates for github/codeql-action init, analyze, and upload-sarif from Dependabot PR #1103 into the active reviewed delivery, preserve CodeQL lockstep, verify the hosted security matrix, and close the redundant bot PR after the exact updates are present."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[7]: "area:ci",codeql,dependabot,dependencies,github-actions,security,supply-chain
 created_at: "2026-08-24T15:08:31.881Z"
-updated_at: "2026-08-24T17:59:25.775Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#6aaf9b7b4719bd8feda3e4c0"
+updated_at: "2026-08-24T22:17:20.757Z"
+closed_at: "2026-08-24T22:16:01.742Z"
+completed_at: "2026-08-24T22:16:01.742Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "The exact Dependabot workflow changes are present without weakening SHA pinning; CodeQL, Scorecard, Trivy, Semgrep, TruffleHog, ShellCheck, PSScriptAnalyzer, and actionlint remain green; PR #1103 is closed only after the replacement PR contains the updates; The final GitHub security and dependency alert inventories are empty"
@@ -19,17 +19,19 @@ why_now: PR #1103 is fully green but behind main and would otherwise remain open
 parent: pm-qwoy
 risk: low
 confidence: high
+resolution: fixed
 expected_result: "All three CodeQL action uses resolve to the 4.37.8 pinned SHA, the full security matrix passes, and PR #1103 is closed as superseded by the reviewed delivery."
-actual_result: "The exact immutable SHA from Dependabot PR #1103 now pins CodeQL init, analyze, and Scorecard upload-sarif at 4.37.8 in the broad delivery; local contracts, registry, audit, and package gates pass. Hosted security matrix and superseding PR closure remain required before completion."
+actual_result: "PR #1108 merged as 0ef4d405999d33cb1911e212c828a87da2232e6f with the exact CodeQL 4.37.8 immutable SHA in init, analyze, and Scorecard upload-sarif. Exact-head CodeQL, security, CI, static assurance, and coverage passed; Dependabot PR #1103 was closed as superseded; open code-scanning, Dependabot, and secret-scanning alert inventories are all zero."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-pp6al9,recurs_from,"2026-08-24T15:08:31.881Z","harness:codex","cli:create:dep",detected
   pm-qwoy,implements,"2026-08-24T15:08:31.881Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-24T15:08:31.881Z","harness:codex","Duplicate check 2026-08-24: the complete 2,539-item all-status strict read found no 4.37.8 or PR #1103 owner. Closed pm-pp6al9 is the nearest prior pinned CodeQL dependency-refresh lineage for PR #1046, so this non-duplicate recurrence is linked with recurs_from. Source: https://github.com/unbraind/pm-cli/pull/1103"
   "2026-08-24T16:39:28.574Z","harness:codex","Local evidence 2026-08-24: both linked tests passed with trusted local-source provenance; contracts snapshot and gate registry are current; full 7,893-test exact-coverage suite, full static quality, lint, package artifact, 10/10 external package smoke, 13-package packed npx smoke, and pnpm audit with no known vulnerabilities passed. The adopted SHA is db488d1387b57f3f5ddef2d880f594dc7863e8df from PR #1103. Item intentionally remains in progress until replacement-PR hosted security checks pass and #1103 is closed as superseded."
   "2026-08-24T16:43:23.076Z","harness:codex","Security-review correction 2026-08-24: the prior local-evidence comment transposed the CodeQL commit. The exact immutable SHA present in all three workflow uses and corresponding to CodeQL 4.37.8 is db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28. Treat db488d1387b57f3f5ddef2d880f594dc7863e8df in the earlier append-only comment as superseded evidence, not the pinned object."
   "2026-08-24T17:57:09.943Z","harness:codex","Local adoption evidence: the exact CodeQL action pin db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 is present in CodeQL init/analyze and Scorecard SARIF upload. pnpm quality:static passed; Bugbot final review reported no bugs; Security Review reported no actionable findings. Item remains in progress pending hosted exact-head CodeQL/security checks and superseding closure of Dependabot PR #1103."
   "2026-08-24T17:59:25.775Z","harness:codex","Replacement delivery PR: https://github.com/unbraind/pm-cli/pull/1108 at implementation head c855a5dd656c449a0fde5c0341dde0ff128f68d5; hosted exact-head security evidence remains required before closure."
+  "2026-08-24T22:15:57.152Z","harness:codex","Completion evidence 2026-08-24: PR #1108 exact head b7f9af03ddaac9d521981d96fec53b40bb4f1af2 completed 30 successful checks with zero failures or pending checks. CodeQL Analyze, CodeQL result, Trivy, Semgrep, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, all CI gates, four coverage shards, aggregate coverage, Windows, CodSpeed, CodeFactor, DeepScan, Hound, and codecov patch were green. PR #1108 merged as 0ef4d405999d33cb1911e212c828a87da2232e6f. Dependabot PR #1103 closed as superseded before merge. GitHub API open-alert inventories: code scanning 0, Dependabot 0, secret scanning 0."
 files[2]{path,scope,note}:
   .github/workflows/codeql.yml,project,Pinned CodeQL init and analyze 4.37.8
   .github/workflows/scorecard.yml,project,Pinned CodeQL SARIF upload 4.37.8
@@ -49,4 +51,13 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm contracts:check",schema,schema,source,local_source_ref
       "pnpm quality:gate-registry",schema,schema,source,local_source_ref
+close_reason: CodeQL 4.37.8 immutable pin landed through reviewed PR #1108 with exact-head hosted security and CI green; redundant PR #1103 closed and all open security/dependency alert inventories are zero.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-rh0z9f
+  gate_id: codeql-action-immutable-pin-security-matrix
+  negative_control: Dependabot PR #1103 CodeQL 4.37.8 pin before reviewed adoption
+  local_checks[3]: "pnpm contracts:check","pnpm quality:gate-registry","pnpm quality:defect-evidence"
+  hosted_checks[4]: CodeQL / Analyze (javascript-typescript),CodeQL,Security and Script Quality / Trivy,semgrep-cloud-platform/scan
 body: ""
