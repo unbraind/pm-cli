@@ -17,6 +17,7 @@ import {
   type ReceiptFileBoundary,
 } from "../../../src/sdk/merge/receipt-file-boundary.js";
 import {
+  _testOnlyMergeReceipts,
   inspectMergeReceiptEvidence,
   listMergeReceipts,
   markMergeReceiptReconciled,
@@ -259,7 +260,9 @@ describe("clone-local merge decision receipts", () => {
         state: "pending",
         created_at: "2026-07-27T00:00:00.000Z",
       }),
-    ).rejects.toMatchObject({ code: "ENAMETOOLONG" });
+    ).rejects.toThrow(
+      "Merge receipt trusted settlement input failed schema validation.",
+    );
     const receiptDirectory = execFileSync(
       "git",
       [
@@ -527,6 +530,18 @@ describe("clone-local merge decision receipts", () => {
     await expect(
       readBoundedRegularFile("candidate", 16, stable.boundary),
     ).resolves.toBe("{}");
+    const boundaryFailure = new Error("receipt boundary failed");
+    await expect(
+      _testOnlyMergeReceipts.prepareReceiptSettlement({
+        receiptPath: "candidate",
+        receiptId: "receipt-boundary-error",
+        evidenceSource: "clone_local",
+        reconciledAt: "2026-08-25T00:00:00.000Z",
+        readReceipt: async () => {
+          throw boundaryFailure;
+        },
+      }),
+    ).rejects.toBe(boundaryFailure);
     expect(shortRead.close).toHaveBeenCalledOnce();
     expect(changed.close).toHaveBeenCalledOnce();
     expect(stable.close).toHaveBeenCalledOnce();

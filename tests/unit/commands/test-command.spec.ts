@@ -27,7 +27,10 @@ import {
   resolveLinkedTestRunSelection,
 } from "../../../src/core/test/run-selectors.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
-import { readSettings } from "../../../src/core/store/settings.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import {
   loadTaskMetadata,
@@ -1578,6 +1581,21 @@ describe("runTest", () => {
         "history",
         "utf8",
       );
+      const sourceWorkspaceHistory =
+        '{"hash":"source-workspace-history"}\n';
+      await writeFile(
+        path.join(source, "pm", "history", "_workspace.jsonl"),
+        sourceWorkspaceHistory,
+        "utf8",
+      );
+      await mkdir(path.join(tempRoot, "sandbox-pm", "history"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(tempRoot, "sandbox-pm", "history", "_workspace.jsonl"),
+        '{"hash":"sandbox-initializer-history"}\n',
+        "utf8",
+      );
       const restrictedDir = path.join(source, "pm", "blocked-folder");
       await mkdir(restrictedDir, { recursive: true });
       await chmod(restrictedDir, 0);
@@ -1589,12 +1607,22 @@ describe("runTest", () => {
         path.join(source, "pm"),
         path.join(tempRoot, "sandbox-pm"),
       );
+      await testInternals.seedMissingLinkedTestSettingsHistory(
+        path.join(source, "missing-settings"),
+        path.join(tempRoot, "unused-sandbox-pm"),
+      );
       expect(
         await readFile(
           path.join(tempRoot, "sandbox-pm", "tasks", "pm-a.toon"),
           "utf8",
         ),
       ).toBe("item");
+      expect(
+        await readFile(
+          path.join(tempRoot, "sandbox-pm", "history", "_workspace.jsonl"),
+          "utf8",
+        ),
+      ).toBe(sourceWorkspaceHistory);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -2655,6 +2683,106 @@ describe("runTest", () => {
       );
       expect(run.run_results[0]?.status).toBe("passed");
       expect(run.run_results[0]?.stdout).toBe("false");
+    });
+  });
+
+  it("seeds missing workspace history with the exact tracker settings document", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-sandbox-settings-history-seed");
+      await rm(path.join(context.pmPath, "history", "_workspace.jsonl"), {
+        force: true,
+      });
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node dist/cli.js validate --check-history-drift --strict-exit --json,scope=project,timeout_seconds=30,pm_context_mode=tracker",
+          ],
+          message: "seed strict tracker history validation",
+        },
+        { path: context.pmPath },
+      );
+
+      const run = await runTest(
+        id,
+        { run: true, timeout: "30" },
+        { path: context.pmPath },
+      );
+      expect(run.run_results[0]).toMatchObject({
+        status: "passed",
+        exit_code: 0,
+      });
+      const validation = JSON.parse(run.run_results[0]?.stdout ?? "{}") as {
+        checks?: Array<{
+          name?: string;
+          details?: {
+            counts?: { workspace_state_mismatches?: number };
+            workspace_state_mismatches?: string[];
+          };
+        }>;
+      };
+      const historyDrift = validation.checks?.find(
+        (check) => check.name === "history_drift",
+      );
+      expect(historyDrift?.details).toMatchObject({
+        counts: { workspace_state_mismatches: 0 },
+        workspace_state_mismatches: [],
+      });
+    });
+  });
+
+  it("preserves source workspace-history drift as a tracker-mode failure", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-sandbox-settings-history-drift");
+      const auditedSettings = await readSettings(context.pmPath);
+      auditedSettings.author_default = "audited-linked-test-author";
+      await writeSettings(context.pmPath, auditedSettings);
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        author_default?: string;
+      };
+      settings.author_default = "out-of-band-linked-test-author";
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node dist/cli.js validate --check-history-drift --strict-exit --json,scope=project,timeout_seconds=30,pm_context_mode=tracker",
+          ],
+          message: "seed negative-control tracker history validation",
+        },
+        { path: context.pmPath },
+      );
+
+      const run = await runTest(
+        id,
+        { run: true, timeout: "30" },
+        { path: context.pmPath },
+      );
+      expect(run.run_results[0]).toMatchObject({
+        status: "failed",
+        exit_code: 1,
+      });
+      const validation = JSON.parse(run.run_results[0]?.stdout ?? "{}") as {
+        checks?: Array<{
+          name?: string;
+          details?: {
+            counts?: { workspace_state_mismatches?: number };
+            workspace_state_mismatches?: string[];
+          };
+        }>;
+      };
+      const historyDrift = validation.checks?.find(
+        (check) => check.name === "history_drift",
+      );
+      expect(historyDrift?.details).toMatchObject({
+        counts: { workspace_state_mismatches: 1 },
+        workspace_state_mismatches: ["settings.json"],
+      });
     });
   });
 
