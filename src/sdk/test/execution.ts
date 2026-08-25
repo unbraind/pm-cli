@@ -17,7 +17,15 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { isFileMissingError, pathExists } from "../../core/fs/fs-utils.js";
+import {
+  isFileMissingError,
+  pathExists,
+  readFileIfExists,
+} from "../../core/fs/fs-utils.js";
+import {
+  getWorkspaceHistoryPath,
+  writeWorkspaceJsonWithHistory,
+} from "../../core/history/workspace-history.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   createStdinTokenResolver,
@@ -1742,6 +1750,37 @@ async function seedLinkedTestTrackerData(
   }
 }
 
+/**
+ * Create an audited settings snapshot only for source trackers that predate
+ * workspace history, while preserving any existing source history verbatim.
+ */
+async function seedMissingLinkedTestSettingsHistory(
+  sourceRoot: string,
+  sandboxRoot: string,
+): Promise<void> {
+  const sourceSettingsRaw = await readFileIfExists(getSettingsPath(sourceRoot));
+  if (
+    sourceSettingsRaw === null ||
+    (await pathExists(getWorkspaceHistoryPath(sourceRoot)))
+  ) {
+    return;
+  }
+  const sandboxSettings = await readSettings(sandboxRoot);
+  await rm(getWorkspaceHistoryPath(sandboxRoot), { force: true });
+  await rm(getSettingsPath(sandboxRoot), { force: true });
+  await writeWorkspaceJsonWithHistory({
+    pmRoot: sandboxRoot,
+    filePath: getSettingsPath(sandboxRoot),
+    raw: sourceSettingsRaw,
+    op: "settings:write",
+    author: resolveAuthor(undefined, sandboxSettings.author_default),
+    lockTtlSeconds: sandboxSettings.locks.ttl_seconds,
+    lockWaitMs: sandboxSettings.locks.wait_ms,
+    recordCreation: true,
+    message: "Seed linked-test tracker settings history",
+  });
+}
+
 async function countLinkedTestItemFiles(pmRoot: string): Promise<number> {
   if (!(await pathExists(pmRoot))) {
     return 0;
@@ -2258,6 +2297,14 @@ async function seedLinkedTestSandboxesFromSource(
     layout.trackerProjectPmPath,
   );
   await seedLinkedTestTrackerData(
+    sourceRoots.globalPmRoot,
+    layout.trackerGlobalPmPath,
+  );
+  await seedMissingLinkedTestSettingsHistory(
+    sourceRoots.projectPmRoot,
+    layout.trackerProjectPmPath,
+  );
+  await seedMissingLinkedTestSettingsHistory(
     sourceRoots.globalPmRoot,
     layout.trackerGlobalPmPath,
   );
@@ -3490,6 +3537,7 @@ export const _testOnlyTestCommand = {
   resolveTestRunOptions,
   resolveTrackedRunId,
   runLinkedTestCommand,
+  seedMissingLinkedTestSettingsHistory,
   seedLinkedTestSandbox,
   seedLinkedTestTrackerData,
   segmentInvokesRecursiveTestAll,

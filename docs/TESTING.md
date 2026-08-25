@@ -443,6 +443,10 @@ context. This preserves source isolation without copying an unrelated tracker
 into constrained temporary storage.
 Capacity, permission, and resource failures while seeding a required tracker
 surface as typed, path-redacted host-environment refusals with recovery steps.
+When a legacy source tracker has settings but no `_workspace` history, tracker
+mode creates the sandbox's initial audited settings snapshot from the exact
+source bytes. Existing source workspace history is copied unchanged, including
+real drift, so linked validation never masks a source integrity failure.
 
 ## Source Workspace Modes
 

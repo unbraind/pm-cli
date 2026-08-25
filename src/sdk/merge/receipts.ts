@@ -373,10 +373,13 @@ async function prepareReceiptSettlement(params: {
   receiptId: string;
   evidenceSource: "clone_local" | "durable";
   reconciledAt: string;
+  readReceipt?: (receiptPath: string) => Promise<string | null>;
 }): Promise<{ path: string; content: string; fingerprint: string } | null> {
   let raw: string | null;
   try {
-    raw = await readBoundedRegularReceiptFile(params.receiptPath);
+    raw = await (params.readReceipt ?? readBoundedRegularReceiptFile)(
+      params.receiptPath,
+    );
   } catch (error) {
     if (isFileAbsentError(error)) return null;
     throw error;
@@ -724,6 +727,12 @@ export async function markMergeReceiptReconciled(
     }
     return;
   }
+  const receiptEvidenceSource = receipt.evidence_source ?? "clone_local";
+  if (!isMergeDecisionReceipt(receipt, receiptEvidenceSource)) {
+    throw new Error(
+      "Merge receipt trusted settlement input failed schema validation.",
+    );
+  }
   const reconciledAt = nowIso();
   const localPath = path.join(directory, receiptFileName(receipt.id));
   const trackerRoot = await resolveTrackerRootFromItemPath(
@@ -765,13 +774,6 @@ export async function markMergeReceiptReconciled(
     }
     return;
   }
-  const receiptEvidenceSource = receipt.evidence_source ?? "clone_local";
-  const trustedReceiptId = receipt.id;
-  if (!isMergeDecisionReceipt(receipt, receiptEvidenceSource)) {
-    throw new Error(
-      `Receipt ${trustedReceiptId} trusted settlement input failed schema validation.`,
-    );
-  }
   const expectedFingerprint = receiptProvenanceFingerprint(receipt);
   if (
     new Set([expectedFingerprint, ...writes.map((write) => write.fingerprint)])
@@ -804,3 +806,6 @@ export async function runMergeReceiptReport(options: {
     generated_at: nowIso(),
   };
 }
+
+/** Test-only seams for deterministic receipt-boundary fault coverage. */
+export const _testOnlyMergeReceipts = { prepareReceiptSettlement };

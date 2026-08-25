@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1112: Windows Node 24 merge-receipt boundary test relies on POSIX name-length failure ([pm-v3umtp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3umtp.toon))
+- GH-1109: tracker-context seeding writes an empty settings history document ([pm-2ga1g7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ga1g7.toon))
+
 ## 2026.8.25 - 2026-08-25
 
 ### Fixed
