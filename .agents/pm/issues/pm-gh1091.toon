@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk",diagnostics,manifest-schema,package-platform
 created_at: "2026-08-22T18:40:17.079Z"
-updated_at: "2026-08-25T09:51:20.563Z"
+updated_at: "2026-08-25T10:02:33.270Z"
 closed_at: "2026-08-25T09:51:10.197Z"
 completed_at: "2026-08-25T09:51:10.197Z"
 author: "harness:codex"
@@ -27,10 +27,11 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w0d,implements,"2026-08-22T19:13:32.228Z","harness:codex","cli:update:dep",detected
   pm-u5le,implements,"2026-08-22T19:13:32.228Z","harness:codex","cli:update:dep",detected
   pm-f05lsg,implements,"2026-08-25T08:44:59.831Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-22T18:40:17.079Z","harness:codex","Duplicate check 2026-08-22: all-status searches for manifest_unknown_key, manifest schema findings health, unknown manifest keys author, compatibility findings schema findings, and inspectExtensionManifestSchema public SDK found the closed authoring primitives pm-1w0d/pm-u5le and broad SDK lineage pm-usfg, but no item owns CLI reachability plus stable schema-versus-version finding separation. Source: https://github.com/unbraind/pm-cli/issues/1091"
   "2026-08-25T08:44:57.091Z","harness:codex","Implementation start 2026-08-25: complete all-status inventory (2,558 readable items), immutable activity (54,395 events), exact/fuzzy/parent-scope duplicate review, live GitHub issue/PR/alert inventory, and full canonical metadata review selected this as the only open direct SDK-first child. This branch will expose stable public SDK schema-lint and compatibility partitions, lint the author workspace through health and package/extension diagnostics, document supported author metadata, and prove CLI/MCP/packed-consumer parity."
   "2026-08-25T09:51:05.266Z","harness:codex","Implementation and verification evidence 2026-08-25: exported a stable public lintExtensionManifestSchema boundary while retaining the backwards-compatible compatibility result; added read-only author manifest inspection with absent, malformed JSON, invalid-shape, unknown-key, and missing-version-bound diagnostics; surfaced one shared result through health plus package/extension doctor SDK, CLI, and MCP adapters; documented package.json#pm as package metadata and manifest.json as the author manifest. PM linked test passed 3/3. Exact full coverage passed 572 files and 7,906 tests at 100% statements (57,874/57,874), branches (43,402/43,402), functions (12,059/12,059), and lines (55,778/55,778). quality:static passed all repository, contract, package-boundary, recovery, graph, record-integrity, import-cost, and transport-floor gates. jscpd found 0 clones across 1,114 files; package artifact, 88-command package-first dogfood, 10 external packages with zero blocking failures, and packed npx across 13 packages passed. pnpm audit found no known vulnerabilities and the tracked-file secret scan was clean."
+  "2026-08-25T10:02:33.270Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1115 at implementation commit 335f6c902. Hosted checks and requested review providers will evaluate this exact reviewed delivery before merge."
 files[8]{path,scope,note}:
   sdk/public-surface.json,project,generated additive SDK surface
   src/core/extensions/manifest-schema.ts,project,stable pure schema lint contract
