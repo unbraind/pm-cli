@@ -2,11 +2,13 @@ id: pm-gh1091
 title: "GH-1091: surface extension manifest schema lint separately from version compatibility"
 description: "GitHub issue #1091 reports that manifest_unknown_key is only reachable through an SDK analyzer, is absent from pm health and package/extension discovery, and shares one findings array with version compatibility verdicts, making exact compatibility assertions unstable across CLI upgrades."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk",diagnostics,manifest-schema,package-platform
 created_at: "2026-08-22T18:40:17.079Z"
-updated_at: "2026-08-24T14:26:35.800Z"
+updated_at: "2026-08-25T10:12:15.047Z"
+closed_at: "2026-08-25T09:51:10.197Z"
+completed_at: "2026-08-25T09:51:10.197Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: pm health surfaces unknown manifest keys with actionable author guidance; public SDK exposes a stable schema-lint boundary or separates schema findings from compatibility verdicts; extension/package listings preserve thin-adapter parity; docs identify the supported author-metadata location; focused SDK CLI MCP tests and exact full coverage pass
@@ -16,13 +18,54 @@ confidence: high
 severity: medium
 environment: pm-cli 2026.8.21 extension manifest authoring and health surfaces
 repro_steps: "Add an ignored top-level manifest key such as pm; run pm health, context, extension list, and package list; compare their silence with checkExtensionManifestCompatibility findings."
+resolution: Stable public schema lint and shared author-workspace diagnostics now distinguish manifest advisories from version compatibility and surface them through health and doctor transports.
 expected_result: "CLI health/discovery exposes ignored manifest keys, and the public SDK offers a stable separation between schema lint and version-compatibility verdicts."
 actual_result: "Only checkExtensionManifestCompatibility exposes manifest_unknown_key, and its flat findings array mixes schema advisories with compatibility failures."
 customer_impact: Extension authors ship inert keys without diagnostics and exact compatibility assertions break when new advisory schema codes are added.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-usfg,implements,"2026-08-22T18:40:17.079Z","harness:codex","cli:create:dep",detected
   pm-1w0d,implements,"2026-08-22T19:13:32.228Z","harness:codex","cli:update:dep",detected
   pm-u5le,implements,"2026-08-22T19:13:32.228Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-f05lsg,implements,"2026-08-25T08:44:59.831Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-08-22T18:40:17.079Z","harness:codex","Duplicate check 2026-08-22: all-status searches for manifest_unknown_key, manifest schema findings health, unknown manifest keys author, compatibility findings schema findings, and inspectExtensionManifestSchema public SDK found the closed authoring primitives pm-1w0d/pm-u5le and broad SDK lineage pm-usfg, but no item owns CLI reachability plus stable schema-versus-version finding separation. Source: https://github.com/unbraind/pm-cli/issues/1091"
+  "2026-08-25T08:44:57.091Z","harness:codex","Implementation start 2026-08-25: complete all-status inventory (2,558 readable items), immutable activity (54,395 events), exact/fuzzy/parent-scope duplicate review, live GitHub issue/PR/alert inventory, and full canonical metadata review selected this as the only open direct SDK-first child. This branch will expose stable public SDK schema-lint and compatibility partitions, lint the author workspace through health and package/extension diagnostics, document supported author metadata, and prove CLI/MCP/packed-consumer parity."
+  "2026-08-25T09:51:05.266Z","harness:codex","Implementation and verification evidence 2026-08-25: exported a stable public lintExtensionManifestSchema boundary while retaining the backwards-compatible compatibility result; added read-only author manifest inspection with absent, malformed JSON, invalid-shape, unknown-key, and missing-version-bound diagnostics; surfaced one shared result through health plus package/extension doctor SDK, CLI, and MCP adapters; documented package.json#pm as package metadata and manifest.json as the author manifest. PM linked test passed 3/3. Exact full coverage passed 572 files and 7,906 tests at 100% statements (57,874/57,874), branches (43,402/43,402), functions (12,059/12,059), and lines (55,778/55,778). quality:static passed all repository, contract, package-boundary, recovery, graph, record-integrity, import-cost, and transport-floor gates. jscpd found 0 clones across 1,114 files; package artifact, 88-command package-first dogfood, 10 external packages with zero blocking failures, and packed npx across 13 packages passed. pnpm audit found no known vulnerabilities and the tracked-file secret scan was clean."
+  "2026-08-25T10:02:33.270Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1115 at implementation commit 335f6c902. Hosted checks and requested review providers will evaluate this exact reviewed delivery before merge."
+  "2026-08-25T10:12:15.047Z","harness:codex","Hosted remediation evidence: exact-head CI / Gates (static) correctly failed because this governed production defect lacked escape_class and structured gate_evidence. Added escape_class=production_defect and gate_id=extension-manifest-author-diagnostics with the focused unit/integration tests, refusal-closure gate, defect-evidence gate, full coverage, and hosted static/coverage checks. Local pnpm quality:defect-evidence now passes with 0 findings. The synthetic negative control exits 1 and reports missing_escape_class plus missing_gate_evidence, proving the gate fails closed."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,generated additive SDK surface
+  src/core/extensions/manifest-schema.ts,project,stable pure schema lint contract
+  src/sdk/compose.ts,project,public SDK schema and compatibility partitions
+  src/sdk/extension.ts,project,package and extension doctor parity
+  src/sdk/extension/author-manifest.ts,project,shared read-only author workspace diagnostics
+  src/sdk/governance/health.ts,project,health author manifest diagnostics
+  tests/fixtures/contracts/full.json,project,generated public contract snapshot
+  tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,public schema partition contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,240,"harness:codex","2026-08-25T09:17:55.663Z",local_mutation,codex/manifest-diagnostics-recovery-contracts
+test_runs[1]:
+  - run_id: test-local-mt8hfl5x-ztbjue
+    kind: test
+    status: passed
+    started_at: "2026-08-25T09:48:16.376Z"
+    finished_at: "2026-08-25T09:48:28.005Z"
+    recorded_at: "2026-08-25T09:48:28.005Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,manifest metadata and health doctor guidance
+  docs/SDK.md,project,public schema lint and finding partitions
+close_reason: "Delivered stable public manifest schema lint, author-workspace diagnostics across health and package/extension doctor transports, actionable docs, compatibility-preserving exports, exact 100% coverage, broad static assurance, and packed/external consumer proof."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1091
+  gate_id: extension-manifest-author-diagnostics
+  negative_control: Remove author manifest warnings from health or doctor integration; tests/unit/sdk/extension-manifest-schema-contract.spec.ts and tests/integration/refusal-reachability.integration.spec.ts must fail.
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,node scripts/release/refusal-closure-gate.mjs,node scripts/release/defect-evidence-gate.mjs --json,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

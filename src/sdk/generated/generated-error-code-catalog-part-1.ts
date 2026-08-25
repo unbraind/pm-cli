@@ -2110,14 +2110,17 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     code: "manifest_unknown_key",
     meaning: "Manifest unknown key condition.",
     stability: "provisional",
-    exit_code: 2,
-    class: "usage",
+    exit_code: 1,
+    class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/compose.ts"],
+    sources: ["core/extensions/manifest-schema.ts"],
     emitting_commands: ["*"],
     canonical_code: "manifest_unknown_key",
     aliases: [],
+    owned_states: [
+      { state: "author_workspace_manifest_declares_an_unknown_top_level_key", probe_id: "author-manifest-unknown-key", entrypoints: ["health"], expected_exit_class: "generic_failure" },
+    ],
   },
   {
     code: "mcp_annotation_file_unavailable",

@@ -244,6 +244,7 @@ Common authoring exports:
   the same remediation used by runtime activation.
 - `renderExtensionSurfaceMarkdown` (render a describe summary to a drift-free Markdown reference doc for a package README)
 - `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
+- `inspectExtensionManifestSchema` / `lintExtensionManifestSchema` (pure raw-manifest schema inspection and actionable finding boundary)
 - `preflightExtension` (one-call capstone: lint + manifest synthesis + version-compat in a single consolidated report)
 - `RESERVED_ITEM_FIELD_NAMES` (the shared runtime/authoring denylist); `lintExtensionBlueprint`, preflight, and the test harness reject blueprint item fields that shadow these metadata keys before publication
 - `EXTENSION_CAPABILITIES`
@@ -2783,8 +2784,18 @@ bound, a `pm_min_version` the target is below, or a `block`-mode `pm_max_version
 the target exceeds) and stays quiet on advisory `*_unchecked` / `*_exceeded_warn`
 warnings, which still load:
 
+Use `lintExtensionManifestSchema(manifest)` when only the manifest vocabulary is
+in scope. It returns stable `manifest_unknown_key` and
+`no_version_bounds_declared` findings without requiring a target pm version.
+Compatibility results retain the existing combined `findings` array, while the
+dedicated lint result gives SDK, CLI, and MCP adapters a stable schema-only
+boundary.
+
 ```ts
-import { checkExtensionManifestCompatibility } from "@unbrained/pm-cli/sdk";
+import {
+  checkExtensionManifestCompatibility,
+  lintExtensionManifestSchema,
+} from "@unbrained/pm-cli/sdk";
 import { assertExtensionManifestCompatible } from "@unbrained/pm-cli/sdk/testing";
 
 // Inspect every bound outcome against a target version…
@@ -2792,6 +2803,9 @@ const report = checkExtensionManifestCompatibility(manifest, {
   pmVersion: "2026.6.23",
 });
 //   report.compatible === false, report.findings[0].code === "pm_min_version_unmet", …
+
+const schema = lintExtensionManifestSchema(manifest);
+//   schema.ok === false, schema.findings[0].path === "compatibility", …
 
 // …or fail the package's own suite when a bound would block the load.
 assertExtensionManifestCompatible(manifest, { pmVersion: "2026.6.23" });

@@ -25,6 +25,22 @@
         "expected_exit_class": "not_found"
       }
     ],
+    "manifest_unknown_key": [
+      {
+        "state": "author_workspace_manifest_declares_an_unknown_top_level_key",
+        "probe_id": "author-manifest-unknown-key",
+        "entrypoints": ["health"],
+        "expected_exit_class": "generic_failure"
+      }
+    ],
+    "no_version_bounds_declared": [
+      {
+        "state": "author_workspace_manifest_omits_canonical_pm_version_bounds",
+        "probe_id": "author-manifest-version-bounds-missing",
+        "entrypoints": ["health"],
+        "expected_exit_class": "generic_failure"
+      }
+    ],
     "tracker_not_initialized": [
       {
         "state": "selected_tracker_root_exists_without_settings",

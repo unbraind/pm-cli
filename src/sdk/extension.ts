@@ -93,6 +93,7 @@ import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ow
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
+import { inspectExtensionAuthorManifestAtPmRoot } from "./extension/author-manifest.js";
 import {
   resolveExtensionInstallSourceIdentity,
   type ExtensionInstallSourceResolution,
@@ -3185,7 +3186,8 @@ const runExtensionDoctorAction = async (
     ...loadResult,
     loaded: loadResult.loaded,
   });
-  warnings.push(...loadResult.warnings);
+  const authorManifest = await inspectExtensionAuthorManifestAtPmRoot(resolvedRoots.pm_root);
+  warnings.push(...authorManifest.warnings, ...loadResult.warnings);
   warnings.push(...classifyDoctorLoadFailureWarnings(loadResult.failed));
   warnings.push(...activationResult.warnings);
   warnings.push(
@@ -3370,6 +3372,7 @@ const runExtensionDoctorAction = async (
     capability_contract: capabilityContract,
     capability_guidance: capabilityGuidance,
     managed_state_fix: managedStateFixSummary,
+    author_manifest: authorManifest,
     isolation,
     policy: loadResult.policy,
   };

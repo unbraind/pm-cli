@@ -34,6 +34,46 @@ interface RefusalEnvelope {
   };
 }
 
+interface ReachabilityProbe {
+  entrypoint: string;
+  run: () => {
+    code: number;
+    stderr: string;
+    json?: unknown;
+  };
+  observedCode?: string;
+}
+
+function observeReachabilityProbe(
+  probe: ReachabilityProbe,
+  result: ReturnType<ReachabilityProbe["run"]>,
+): RefusalEnvelope {
+  if (probe.observedCode === undefined) {
+    const envelope = JSON.parse(result.stderr) as RefusalEnvelope;
+    expect(result.code).toBe(envelope.exit_code);
+    return envelope;
+  }
+  const findings = (
+    result.json as {
+      checks?: Array<{
+        name: string;
+        details?: {
+          author_manifest?: {
+            schema_findings?: Array<{ code?: string }>;
+          };
+        };
+      }>;
+    }
+  ).checks?.find((check) => check.name === "extensions")?.details
+    ?.author_manifest?.schema_findings;
+  expect(findings).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ code: probe.observedCode }),
+    ]),
+  );
+  return { code: probe.observedCode, exit_code: result.code };
+}
+
 function verifyTrackerPreflightRecovery(
   context: TempPmContext,
   probeId: string,
@@ -56,10 +96,8 @@ function verifyTrackerPreflightRecovery(
       "skip",
     ]);
     expect(
-      context.runCli([
-        ...envelope.recovery!.suggested_retry_args!,
-        "--json",
-      ]).code,
+      context.runCli([...envelope.recovery!.suggested_retry_args!, "--json"])
+        .code,
     ).toBe(0);
   }
   if (
@@ -121,191 +159,226 @@ describe("real-entrypoint refusal reachability", () => {
   it.runIf(process.platform !== "win32")(
     "reaches every declared state as its typed code and exit class",
     async () => {
-    await withTempPmPath(async (context) => {
-      const invalidRoot = path.join(context.tempRoot, "tracker-root-file");
-      await writeFile(invalidRoot, "not a directory", "utf8");
-      const missingRoot = path.join(context.tempRoot, "tracker-root-missing");
-      const settingsMissingRoot = path.join(
-        context.tempRoot,
-        "tracker-root-settings-missing",
-      );
-      await mkdir(settingsMissingRoot, { recursive: true });
-      const unreadableRoot = path.join(
-        context.tempRoot,
-        "tracker-root-unreadable",
-      );
-      await mkdir(unreadableRoot, { recursive: true });
-      await copyFile(
-        path.join(context.pmPath, "settings.json"),
-        path.join(unreadableRoot, "settings.json"),
-      );
-      const probes = new Map<
-        string,
-        {
-          entrypoint: string;
-          run: () => { code: number; stderr: string };
-        }
-      >([
-        [
-          "bulk-ids-stdin-empty",
-          {
-            entrypoint: "update-many",
-            run: () =>
-              context.runCli(
-                ["update-many", "--ids", "-", "--tags", "probe", "--json"],
-                { input: "\n,\n" },
-              ),
-          },
-        ],
-        [
-          "bulk-ids-file-path-missing",
-          {
-            entrypoint: "update-many",
-            run: () =>
-              context.runCli([
-                "update-many",
-                "--ids",
-                "@",
-                "--tags",
-                "probe",
-                "--json",
-              ]),
-          },
-        ],
-        [
-          "bulk-ids-file-unreadable",
-          {
-            entrypoint: "update-many",
-            run: () =>
-              context.runCli([
-                "update-many",
-                "--ids",
-                `@${path.join(context.tempRoot, "missing-ids.txt")}`,
-                "--tags",
-                "probe",
-                "--json",
-              ]),
-          },
-        ],
-        [
-          "tracker-root-missing",
-          {
-            entrypoint: "list",
-            run: () =>
-              context.runCli(["--pm-path", missingRoot, "list", "--json"]),
-          },
-        ],
-        [
+      await withTempPmPath(async (context) => {
+        const invalidRoot = path.join(context.tempRoot, "tracker-root-file");
+        await writeFile(invalidRoot, "not a directory", "utf8");
+        const missingRoot = path.join(context.tempRoot, "tracker-root-missing");
+        const settingsMissingRoot = path.join(
+          context.tempRoot,
           "tracker-root-settings-missing",
-          {
-            entrypoint: "list",
-            run: () =>
-              context.runCli([
-                "--pm-path",
-                settingsMissingRoot,
-                "list",
-                "--json",
-              ]),
-          },
-        ],
-        [
-          "tracker-root-not-directory",
-          {
-            entrypoint: "list",
-            run: () =>
-              context.runCli(["--pm-path", invalidRoot, "list", "--json"]),
-          },
-        ],
-        [
+        );
+        await mkdir(settingsMissingRoot, { recursive: true });
+        const unreadableRoot = path.join(
+          context.tempRoot,
           "tracker-root-unreadable",
-          {
-            entrypoint: "list",
-            run: () => {
-              chmodSync(unreadableRoot, 0o000);
-              try {
-                return context.runCli([
+        );
+        await mkdir(unreadableRoot, { recursive: true });
+        await copyFile(
+          path.join(context.pmPath, "settings.json"),
+          path.join(unreadableRoot, "settings.json"),
+        );
+        await writeFile(
+          path.join(context.tempRoot, "manifest.json"),
+          JSON.stringify({
+            name: "reachability-author-workspace",
+            version: "1.0.0",
+            entry: "./index.ts",
+            capabilities: [],
+            compatibility: { pm: "2026.8.25" },
+          }),
+          "utf8",
+        );
+        const probes = new Map<string, ReachabilityProbe>([
+          [
+            "bulk-ids-stdin-empty",
+            {
+              entrypoint: "update-many",
+              run: () =>
+                context.runCli(
+                  ["update-many", "--ids", "-", "--tags", "probe", "--json"],
+                  { input: "\n,\n" },
+                ),
+            },
+          ],
+          [
+            "bulk-ids-file-path-missing",
+            {
+              entrypoint: "update-many",
+              run: () =>
+                context.runCli([
+                  "update-many",
+                  "--ids",
+                  "@",
+                  "--tags",
+                  "probe",
+                  "--json",
+                ]),
+            },
+          ],
+          [
+            "bulk-ids-file-unreadable",
+            {
+              entrypoint: "update-many",
+              run: () =>
+                context.runCli([
+                  "update-many",
+                  "--ids",
+                  `@${path.join(context.tempRoot, "missing-ids.txt")}`,
+                  "--tags",
+                  "probe",
+                  "--json",
+                ]),
+            },
+          ],
+          [
+            "author-manifest-unknown-key",
+            {
+              entrypoint: "health",
+              run: () =>
+                context.runCli(
+                  ["health", "--full", "--strict-exit", "--json"],
+                  {
+                    expectJson: true,
+                  },
+                ),
+              observedCode: "manifest_unknown_key",
+            },
+          ],
+          [
+            "author-manifest-version-bounds-missing",
+            {
+              entrypoint: "health",
+              run: () =>
+                context.runCli(
+                  ["health", "--full", "--strict-exit", "--json"],
+                  {
+                    expectJson: true,
+                  },
+                ),
+              observedCode: "no_version_bounds_declared",
+            },
+          ],
+          [
+            "tracker-root-missing",
+            {
+              entrypoint: "list",
+              run: () =>
+                context.runCli(["--pm-path", missingRoot, "list", "--json"]),
+            },
+          ],
+          [
+            "tracker-root-settings-missing",
+            {
+              entrypoint: "list",
+              run: () =>
+                context.runCli([
                   "--pm-path",
-                  unreadableRoot,
+                  settingsMissingRoot,
                   "list",
                   "--json",
-                ]);
-              } finally {
-                chmodSync(unreadableRoot, 0o700);
-              }
+                ]),
             },
-          },
-        ],
-        [
-          "cross-command-unknown-option",
-          {
-            entrypoint: "deps",
-            run: () =>
-              context.runCli(["deps", "--add", "related:pm-x", "--json"]),
-          },
-        ],
-        [
-          "schema-unknown-subcommand",
-          {
-            entrypoint: "schema",
-            run: () =>
-              context.runCli(["schema", "add-typ", "Example", "--json"]),
-          },
-        ],
-        [
-          "graph-unknown-subcommand",
-          {
-            entrypoint: "graph",
-            run: () => context.runCli(["graph", "analyz", "--json"]),
-          },
-        ],
-        [
-          "config-unknown-action",
-          {
-            entrypoint: "config",
-            run: () =>
-              context.runCli(["config", "project", "delete", "--json"]),
-          },
-        ],
-        [
-          "package-unknown-action",
-          {
-            entrypoint: "package",
-            run: () => context.runCli(["package", "insta", "--json"]),
-          },
-        ],
-      ]);
-      const observations: PmRefusalProbeObservation[] = [];
-      for (const contract of PM_ERROR_CODE_CATALOG) {
-        for (const state of contract.owned_states ?? []) {
-          const probe = probes.get(state.probe_id);
-          expect(probe, `missing probe driver ${state.probe_id}`).toBeDefined();
-          const result = probe!.run();
-          const envelope = JSON.parse(result.stderr) as RefusalEnvelope;
-          expect(result.code).toBe(envelope.exit_code);
-          verifyTrackerPreflightRecovery(
-            context,
-            state.probe_id,
-            envelope,
-            result.stderr,
-            { missing: missingRoot, settingsMissing: settingsMissingRoot },
-          );
-          observations.push({
-            probe_id: state.probe_id,
-            entrypoint: probe!.entrypoint,
-            code: envelope.code,
-            exit_class:
-              result.code === 2
-                ? "usage"
-                : result.code === 3
-                  ? "not_found"
-                  : "generic_failure",
-          });
+          ],
+          [
+            "tracker-root-not-directory",
+            {
+              entrypoint: "list",
+              run: () =>
+                context.runCli(["--pm-path", invalidRoot, "list", "--json"]),
+            },
+          ],
+          [
+            "tracker-root-unreadable",
+            {
+              entrypoint: "list",
+              run: () => {
+                chmodSync(unreadableRoot, 0o000);
+                try {
+                  return context.runCli([
+                    "--pm-path",
+                    unreadableRoot,
+                    "list",
+                    "--json",
+                  ]);
+                } finally {
+                  chmodSync(unreadableRoot, 0o700);
+                }
+              },
+            },
+          ],
+          [
+            "cross-command-unknown-option",
+            {
+              entrypoint: "deps",
+              run: () =>
+                context.runCli(["deps", "--add", "related:pm-x", "--json"]),
+            },
+          ],
+          [
+            "schema-unknown-subcommand",
+            {
+              entrypoint: "schema",
+              run: () =>
+                context.runCli(["schema", "add-typ", "Example", "--json"]),
+            },
+          ],
+          [
+            "graph-unknown-subcommand",
+            {
+              entrypoint: "graph",
+              run: () => context.runCli(["graph", "analyz", "--json"]),
+            },
+          ],
+          [
+            "config-unknown-action",
+            {
+              entrypoint: "config",
+              run: () =>
+                context.runCli(["config", "project", "delete", "--json"]),
+            },
+          ],
+          [
+            "package-unknown-action",
+            {
+              entrypoint: "package",
+              run: () => context.runCli(["package", "insta", "--json"]),
+            },
+          ],
+        ]);
+        const observations: PmRefusalProbeObservation[] = [];
+        for (const contract of PM_ERROR_CODE_CATALOG) {
+          for (const state of contract.owned_states ?? []) {
+            const probe = probes.get(state.probe_id);
+            expect(
+              probe,
+              `missing probe driver ${state.probe_id}`,
+            ).toBeDefined();
+            const result = probe!.run();
+            const envelope = observeReachabilityProbe(probe!, result);
+            verifyTrackerPreflightRecovery(
+              context,
+              state.probe_id,
+              envelope,
+              result.stderr,
+              { missing: missingRoot, settingsMissing: settingsMissingRoot },
+            );
+            observations.push({
+              probe_id: state.probe_id,
+              entrypoint: probe!.entrypoint,
+              code: envelope.code,
+              exit_class:
+                result.code === 2
+                  ? "usage"
+                  : result.code === 3
+                    ? "not_found"
+                    : "generic_failure",
+            });
+          }
         }
-      }
-      expect(
-        verifyPmRefusalReachability(PM_ERROR_CODE_CATALOG, observations),
-      ).toMatchObject({ ok: true, declared_probe_count: 12 });
-    });
+        expect(
+          verifyPmRefusalReachability(PM_ERROR_CODE_CATALOG, observations),
+        ).toMatchObject({ ok: true, declared_probe_count: 14 });
+      });
     },
   );
 
@@ -435,7 +508,9 @@ describe("real-entrypoint refusal reachability", () => {
       }
       const completeListRetry =
         completeListFailure.receipt.recovery.suggested_retry;
-      expect(context.runCli(completeListRetry.split(" ").slice(1)).code).toBe(0);
+      expect(context.runCli(completeListRetry.split(" ").slice(1)).code).toBe(
+        0,
+      );
       const obligations: PmRecoveryReferenceObligation[] = [
         ...derivePmRecoveryReferenceObligations(
           "schema-split-action",
