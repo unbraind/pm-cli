@@ -1581,6 +1581,21 @@ describe("runTest", () => {
         "history",
         "utf8",
       );
+      const sourceWorkspaceHistory =
+        '{"hash":"source-workspace-history"}\n';
+      await writeFile(
+        path.join(source, "pm", "history", "_workspace.jsonl"),
+        sourceWorkspaceHistory,
+        "utf8",
+      );
+      await mkdir(path.join(tempRoot, "sandbox-pm", "history"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(tempRoot, "sandbox-pm", "history", "_workspace.jsonl"),
+        '{"hash":"sandbox-initializer-history"}\n',
+        "utf8",
+      );
       const restrictedDir = path.join(source, "pm", "blocked-folder");
       await mkdir(restrictedDir, { recursive: true });
       await chmod(restrictedDir, 0);
@@ -1602,6 +1617,12 @@ describe("runTest", () => {
           "utf8",
         ),
       ).toBe("item");
+      expect(
+        await readFile(
+          path.join(tempRoot, "sandbox-pm", "history", "_workspace.jsonl"),
+          "utf8",
+        ),
+      ).toBe(sourceWorkspaceHistory);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
