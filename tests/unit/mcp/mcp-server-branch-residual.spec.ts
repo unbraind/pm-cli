@@ -28,8 +28,10 @@ const LIFECYCLE_UPDATE_SDK_MODULE = "../../../src/sdk/lifecycle/update.js";
 const LIFECYCLE_CLAIM_SDK_MODULE = "../../../src/sdk/lifecycle/claim.js";
 const LIFECYCLE_APPEND_SDK_MODULE = "../../../src/sdk/lifecycle/append.js";
 const LIFECYCLE_PLAN_SDK_MODULE = "../../../src/sdk/lifecycle/plan.js";
-const LIFECYCLE_UPDATE_MANY_SDK_MODULE = "../../../src/sdk/lifecycle/update-many.js";
-const LIFECYCLE_CLOSE_MANY_SDK_MODULE = "../../../src/sdk/lifecycle/close-many.js";
+const LIFECYCLE_UPDATE_MANY_SDK_MODULE =
+  "../../../src/sdk/lifecycle/update-many.js";
+const LIFECYCLE_CLOSE_MANY_SDK_MODULE =
+  "../../../src/sdk/lifecycle/close-many.js";
 const QUERY_ACTIVITY_SDK_MODULE = "../../../src/sdk/query/activity.js";
 const QUERY_AGGREGATE_SDK_MODULE = "../../../src/sdk/query/aggregate.js";
 const QUERY_HISTORY_SDK_MODULE = "../../../src/sdk/query/history.js";
@@ -45,9 +47,17 @@ const SCHEMA_SDK_MODULE = "../../../src/sdk/schema.js";
 const STATS_SDK_MODULE = "../../../src/sdk/stats.js";
 const TELEMETRY_SDK_MODULE = "../../../src/sdk/telemetry.js";
 const TEST_EXECUTION_SDK_MODULE = "../../../src/sdk/test/execution.js";
+const VALIDATE_SDK_MODULE = "../../../src/sdk/governance/validate.js";
 const PACKAGE_ROOT_MODULE = "../../../src/core/packages/root.js";
 const EXTENSIONS_MODULE = "../../../src/core/extensions/index.js";
 const TOOLS_MODULE = "../../../src/mcp/tool-definitions.js";
+const PM_MCP_PROTOCOL_VERSION = "2026-07-28";
+const PM_MCP_TASKS_EXTENSION = "io.modelcontextprotocol/tasks";
+const PM_MCP_META_KEYS = {
+  clientCapabilities: "io.modelcontextprotocol/clientCapabilities",
+  clientInfo: "io.modelcontextprotocol/clientInfo",
+  protocolVersion: "io.modelcontextprotocol/protocolVersion",
+} as const;
 
 type CommandModule = typeof import("../../../src/cli/commands/index.js");
 const INITIAL_PM_PACKAGE_ROOT = process.env.PM_CLI_PACKAGE_ROOT;
@@ -120,6 +130,7 @@ function buildCommandMocks() {
     runGraph: vi.fn(async () => ({ action: "graph" })),
     runDocs: vi.fn(async () => ({ action: "docs" })),
     runTest: vi.fn(async () => ({ action: "test" })),
+    runValidate: vi.fn(async () => ({ action: "validate" })),
     runDelete: vi.fn(async () => ({ action: "delete" })),
     runHistoryRepair: vi.fn(async () => ({ action: "history-repair" })),
     runHistoryRepairAll: vi.fn(async () => ({ action: "history-repair-all" })),
@@ -142,9 +153,10 @@ async function importServerWithCommandMocks(
   });
   vi.doMock(DEPENDENCIES_SDK_MODULE, () => ({ runDeps: commandMocks.runDeps }));
   vi.doMock(GRAPH_RUN_SDK_MODULE, async () => {
-    const actual = await vi.importActual<
-      typeof import("../../../src/sdk/graph/run.js")
-    >(GRAPH_RUN_SDK_MODULE);
+    const actual =
+      await vi.importActual<typeof import("../../../src/sdk/graph/run.js")>(
+        GRAPH_RUN_SDK_MODULE,
+      );
     return { ...actual, runGraph: commandMocks.runGraph };
   });
   vi.doMock(QUERY_GET_SDK_MODULE, () => ({ runGet: commandMocks.runGet }));
@@ -191,7 +203,9 @@ async function importServerWithCommandMocks(
   vi.doMock(QUERY_HISTORY_SDK_MODULE, () => ({
     runHistory: commandMocks.runHistory,
   }));
-  vi.doMock(COMMENTS_SDK_MODULE, () => ({ runComments: commandMocks.runComments }));
+  vi.doMock(COMMENTS_SDK_MODULE, () => ({
+    runComments: commandMocks.runComments,
+  }));
   vi.doMock(NOTES_SDK_MODULE, () => ({ runNotes: commandMocks.runNotes }));
   vi.doMock(LEARNINGS_SDK_MODULE, () => ({
     runLearnings: commandMocks.runLearnings,
@@ -242,11 +256,17 @@ async function importServerWithCommandMocks(
     return { ...actual, runTelemetry: commandMocks.runTelemetry };
   });
   vi.doMock(TEST_EXECUTION_SDK_MODULE, async () => {
-    const actual =
-      await vi.importActual<typeof import("../../../src/sdk/test/execution.js")>(
-        TEST_EXECUTION_SDK_MODULE,
-      );
+    const actual = await vi.importActual<
+      typeof import("../../../src/sdk/test/execution.js")
+    >(TEST_EXECUTION_SDK_MODULE);
     return { ...actual, runTest: commandMocks.runTest };
+  });
+  vi.doMock(VALIDATE_SDK_MODULE, async () => {
+    const actual =
+      await vi.importActual<
+        typeof import("../../../src/sdk/governance/validate.js")
+      >(VALIDATE_SDK_MODULE);
+    return { ...actual, runValidate: commandMocks.runValidate };
   });
   return import("../../../src/mcp/server.js");
 }
@@ -283,6 +303,7 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(STATS_SDK_MODULE);
     vi.doUnmock(TELEMETRY_SDK_MODULE);
     vi.doUnmock(TEST_EXECUTION_SDK_MODULE);
+    vi.doUnmock(VALIDATE_SDK_MODULE);
     vi.doUnmock(PACKAGE_ROOT_MODULE);
     vi.doUnmock(EXTENSIONS_MODULE);
     vi.doUnmock(TOOLS_MODULE);
@@ -732,6 +753,210 @@ describe("mcp server branch residual coverage", () => {
     expect(commandMocks.runPlan).toHaveBeenCalledWith(
       expect.objectContaining({ id: "pm-16a", reorderTo: 4 }),
     );
+  });
+
+  it("covers modern MRTR task eligibility, resume, and protocol-failure branches", async () => {
+    const commandMocks = buildCommandMocks();
+    const server = await importServerWithCommandMocks(
+      commandMocks,
+      mockEmptyExtensionWorkspace,
+    );
+    const contextWithTasks = server._testOnly.resolveMcpRequestContext({
+      _meta: {
+        [PM_MCP_META_KEYS.protocolVersion]: PM_MCP_PROTOCOL_VERSION,
+        [PM_MCP_META_KEYS.clientCapabilities]: {
+          extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
+        },
+      },
+    });
+    const contextWithoutTasks = server._testOnly.resolveMcpRequestContext({
+      _meta: {
+        [PM_MCP_META_KEYS.protocolVersion]: PM_MCP_PROTOCOL_VERSION,
+        [PM_MCP_META_KEYS.clientCapabilities]: {},
+      },
+    });
+    expect(server._testOnly.mcpTaskPrincipal(contextWithTasks)).toBe(
+      "anonymous-stdio",
+    );
+    expect(
+      server._testOnly.shouldCreateMcpTask(
+        { name: "pm_validate" },
+        contextWithoutTasks,
+      ),
+    ).toBe(false);
+    for (const name of ["pm_validate", "pm_health", "pm_graph"]) {
+      expect(
+        server._testOnly.shouldCreateMcpTask({ name }, contextWithTasks),
+      ).toBe(true);
+    }
+    expect(
+      server._testOnly.shouldCreateMcpTask(
+        { name: "pm_test", arguments: { subcommand: "run" } },
+        contextWithTasks,
+      ),
+    ).toBe(true);
+    expect(
+      server._testOnly.shouldCreateMcpTask(
+        {
+          name: "pm_test",
+          arguments: { options: { subcommand: "run" } },
+        },
+        contextWithTasks,
+      ),
+    ).toBe(true);
+    expect(
+      server._testOnly.shouldCreateMcpTask(
+        { name: "pm_test", arguments: { subcommand: "list" } },
+        contextWithTasks,
+      ),
+    ).toBe(false);
+    expect(
+      server._testOnly.shouldCreateMcpTask(
+        { name: "pm_run", arguments: { action: "validate" } },
+        contextWithTasks,
+      ),
+    ).toBe(true);
+    expect(
+      server._testOnly.shouldCreateMcpTask(
+        { name: "pm_run", arguments: { action: 7 } },
+        contextWithTasks,
+      ),
+    ).toBe(false);
+    expect(
+      server._testOnly.shouldCreateMcpTask(undefined, contextWithTasks),
+    ).toBe(false);
+
+    const modernParams = (
+      capabilities: Record<string, unknown>,
+      params: Record<string, unknown>,
+    ) => ({
+      ...params,
+      _meta: {
+        [PM_MCP_META_KEYS.protocolVersion]: PM_MCP_PROTOCOL_VERSION,
+        [PM_MCP_META_KEYS.clientCapabilities]: capabilities,
+        [PM_MCP_META_KEYS.clientInfo]: {
+          name: "mrtr-branch-host",
+          version: "1.0.0",
+        },
+      },
+    });
+    const inputRequest = {
+      approval: {
+        method: "elicitation/create",
+        params: {
+          mode: "form",
+          message: "Approve validation?",
+          requestedSchema: { type: "object" },
+        },
+      },
+    };
+
+    await withTempPmPath(async () => {
+      commandMocks.runValidate.mockRejectedValueOnce(
+        server._testOnly.createMcpInputRequiredError({
+          inputRequests: inputRequest,
+          requestState: "sync-state",
+        }),
+      );
+      await expect(
+        server.handleRequest({
+          jsonrpc: "2.0",
+          id: 201,
+          method: "tools/call",
+          params: modernParams(
+            { elicitation: {} },
+            { name: "pm_validate", arguments: {} },
+          ),
+        }),
+      ).resolves.toMatchObject({
+        resultType: "input_required",
+        requestState: "sync-state",
+      });
+
+      commandMocks.runValidate
+        .mockRejectedValueOnce(
+          server._testOnly.createMcpInputRequiredError({
+            inputRequests: inputRequest,
+            requestState: "task-state",
+          }),
+        )
+        .mockResolvedValueOnce({ ok: true });
+      const taskCapabilities = {
+        elicitation: {},
+        extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
+      };
+      const created = await server.handleRequest({
+        jsonrpc: "2.0",
+        id: 202,
+        method: "tools/call",
+        params: modernParams(taskCapabilities, {
+          name: "pm_validate",
+          arguments: {},
+        }),
+      });
+      const taskId = String(created?.taskId);
+
+      const poll = async (pollTaskId: string, status: string) => {
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          const result = await server.handleRequest({
+            jsonrpc: "2.0",
+            id: 203 + attempt,
+            method: "tasks/get",
+            params: modernParams(taskCapabilities, { taskId: pollTaskId }),
+          });
+          if (result?.status === status) return result;
+          await new Promise<void>((resolve) => setTimeout(resolve, 5));
+        }
+        throw new Error(`task did not reach ${status}`);
+      };
+      await expect(poll(taskId, "input_required")).resolves.toMatchObject({
+        inputRequests: { approval: { method: "elicitation/create" } },
+      });
+      await server.handleRequest({
+        jsonrpc: "2.0",
+        id: 304,
+        method: "tasks/update",
+        params: modernParams(taskCapabilities, {
+          taskId,
+          inputResponses: { approval: { action: "accept" } },
+        }),
+      });
+      await expect(poll(taskId, "completed")).resolves.toMatchObject({
+        result: { resultType: "complete" },
+      });
+
+      commandMocks.runValidate.mockRejectedValueOnce(
+        server._testOnly.createMcpProtocolError(
+          "task protocol failure",
+          -32602,
+        ),
+      );
+      const failedCreated = await server.handleRequest({
+        jsonrpc: "2.0",
+        id: 305,
+        method: "tools/call",
+        params: modernParams(taskCapabilities, {
+          name: "pm_validate",
+          arguments: {},
+        }),
+      });
+      const failedTaskId = String(failedCreated?.taskId);
+      await expect(poll(failedTaskId, "failed")).resolves.toMatchObject({
+        status: "failed",
+        error: { code: -32602, message: "task protocol failure" },
+      });
+    });
+  });
+
+  it("settles detached task persistence failures without rejecting", async () => {
+    const server = await importServerWithCommandMocks(buildCommandMocks());
+
+    await expect(
+      server._testOnly.settleMcpTaskExecution(
+        "task-persistence-failure",
+        Promise.reject(new Error("durable task store unavailable")),
+      ),
+    ).resolves.toBeUndefined();
   });
 
   it("covers extension-dispatch fallback branches", async () => {

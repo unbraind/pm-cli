@@ -2,12 +2,14 @@ id: pm-rzs24j
 title: "Official MCP tasks extension for pm: asynchronous long operations, tasks/get polling, tasks/update input, durable handles, and lifecycle convergence"
 description: "Expose long-running pm operations through io.modelcontextprotocol/tasks with SDK-owned durable handles, polling, mid-flight input, cancellation, expiration, and immutable lifecycle evidence."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[6]: "area:mcp","area:sdk",async,durable-handles,long-running,tasks-extension
 created_at: "2026-08-25T05:09:28.783Z"
-updated_at: "2026-08-25T05:09:28.783Z"
+updated_at: "2026-08-25T18:05:13.731Z"
 deadline: "2026-11-15T00:00:00.000Z"
+closed_at: "2026-08-25T17:55:38.526Z"
+completed_at: "2026-08-25T17:55:38.526Z"
 author: "harness:codex"
 estimated_minutes: 900
 acceptance_criteria: "The tasks extension is explicitly negotiated and never appears as an unadvertised core capability; Eligible long operations can return durable handles without per-request opt-in and tasks/get reports bounded authoritative state; tasks/update accepts validated mid-flight input and composes deterministically with MRTR inputResponses; tasks/list and blocking tasks/result are not implemented on the canonical 2026-07-28 path; Cancellation, duplicate updates, expiration, unauthorized access, restart recovery, retention, and immutable terminal evidence have negative tests; The SDK provides a transport-neutral task provider and adapters for test, reindex, graph, import, and validation operations"
@@ -18,11 +20,44 @@ why_now: "2026-07-28 moves tasks out of core and redesigns them around tasks/get
 parent: pm-rs9vry
 risk: high
 confidence: medium
+resolution: Implemented the negotiated official tasks extension through a public filesystem-durable SDK store and thin MCP task adapter.
+expected_result: "Eligible long-running operations return durable principal-scoped handles with bounded status, mid-flight input, cancellation, expiry, restart recovery, and immutable terminal outcomes."
+actual_result: "Task creation, polling, update, cancellation, corruption handling, retention, principal isolation, restart recovery, MRTR composition, and real protocol execution pass focused and full-suite verification."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-klxax7,implements,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
   pm-qd6gvf,verifies,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
   pm-rz9gep,blocked_by,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-25T05:09:28.783Z","harness:codex","Duplicate check evidence: searched all statuses for io.modelcontextprotocol/tasks tasks/get tasks/update tasks/result tasks/list durable handles polling and mid-flight input. Existing pm task and plan items are domain lifecycle work and do not implement the MCP extension."
+  "2026-08-25T17:55:11.973Z","harness:codex","Final evidence 2026-08-25: the public durable task store and MCP adapter implement the negotiated io.modelcontextprotocol/tasks extension with create/get/update/cancel, principal isolation, TTL expiry, restart recovery, atomic writes, immutable terminal results, MRTR mid-flight input, and explicit non-support for list and blocking result methods. PM-linked 21-test cohort passed; the same exact 7,950-test 100/100/100/100 repository run plus static, graph, package, plugin-host, temporary-consumer, security, and dependency gates passed."
+  "2026-08-25T18:05:13.731Z","harness:codex","Evidence addendum: detached MCP task execution now settles persistence-layer rejections at the background boundary so a durable-store failure cannot become a process-level unhandled rejection; focused branch-residual suite passed 9/9, typecheck passed, and the full lint/static assurance chain passed with graph-composition and 54,339-event append-only record integrity green."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,Machine-readable public API compatibility snapshot
+  src/mcp/server.ts,project,Task negotiation async dispatch and task methods
+  src/sdk/index.ts,project,Published aggregate SDK exports
+  src/sdk/mcp/tasks.ts,project,Filesystem-backed official tasks extension lifecycle
+  src/sdk/runtime-primitives.ts,project,Public missing-file classifier reused by durable task reads
+  tests/integration/mcp-stateless-protocol.spec.ts,project,Real async task and task-method integration coverage
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MRTR task resume failure and eligibility branch coverage
+  tests/unit/sdk/mcp/tasks.spec.ts,project,Durable task lifecycle and corruption coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/tasks.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T16:52:52.875Z",local_mutation,codex/mcp-mrtr-tasks-cache-contracts
+test_runs[1]:
+  - run_id: test-local-mt8yosot-9wtao7
+    kind: test
+    status: passed
+    started_at: "2026-08-25T17:51:19.232Z"
+    finished_at: "2026-08-25T17:51:31.133Z"
+    recorded_at: "2026-08-25T17:51:31.133Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/tasks.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Normative requirement ownership and evidence
+  docs/MCP_2026_07_28.md,project,Task negotiation lifecycle and restart boundary
+  docs/SDK_MCP_INTERACTIONS.md,project,Public durable task SDK usage and trust boundaries
+close_reason: "Delivered the negotiated durable MCP tasks extension with SDK-owned lifecycle state, principal scoping, restart recovery, mid-flight input, cancellation, expiry, immutable outcomes, and full protocol/package verification."
 body: "## Task lifecycle\n\n- A qualifying operation may return a durable task handle when the tasks extension is negotiated.\n- tasks/get polls authoritative status, bounded progress, result, error, expiration, and recovery.\n- tasks/update supplies mid-flight client input and composes with MRTR without two conflicting state machines.\n- Cancellation and timeout are idempotent and terminal task states are immutable events.\n- Handles are scoped to workspace, authority, protocol policy, and retention; they never expose filesystem paths or secrets.\n- Existing pm plan, test-run, telemetry, and history identifiers remain domain records and are not silently conflated with transport task handles."

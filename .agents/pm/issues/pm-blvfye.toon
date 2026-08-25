@@ -1,0 +1,27 @@
+id: pm-blvfye
+title: "GH-1118: natural-language word-number titles trigger duplicate issue-code false positives"
+description: "The duplicate issue-code title heuristic treats prose such as Match-3, Covid-19, or Wi-Fi-6 as tracker identifiers and emits an impossible rename-or-merge remediation for unrelated items."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:governance","area:validate",false-positive,github-intake
+created_at: "2026-08-25T16:27:05.142Z"
+updated_at: "2026-08-25T17:23:17.294Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "The classifier distinguishes prose compounds from evidence-backed issue identifiers without maintaining an unbounded dictionary; negative controls retain detection for real uppercase and configured code formats; validation output explains the evidence and recovery path; focused tests cover Match-3, Covid-19, Wi-Fi-6, real codes, mixed case, body evidence, and configured formats; the full validation and 100 percent coverage gates pass."
+parent: pm-33cw
+risk: medium
+confidence: high
+reporter: GitHub issue #1118
+severity: medium
+repro_steps: "Create two unrelated items whose titles contain the same natural-language word-number token such as Match-3, then run pm validate --check-metadata."
+expected_result: Natural-language compounds are not classified as logical issue codes; true structured issue codes and genuine collisions remain detected with actionable evidence.
+actual_result: The generic title regex groups unrelated prose tokens as issue codes and recommends dishonest renames or merges.
+affected_version: 2026.8.23
+component: metadata validation
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33cw,implements,"2026-08-25T16:27:05.142Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T16:27:05.142Z","harness:codex","Duplicate check evidence: strict-read inspected all 2,558 items across every lifecycle state with no omissions; searches for GH-1118, duplicate_issue_codes, Match-3, natural-language genre, and hyphenated word-number found adjacent historical false-positive work but no owner for prose compounds. Canonical source: https://github.com/unbraind/pm-cli/issues/1118"
+body: ""

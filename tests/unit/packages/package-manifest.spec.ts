@@ -221,8 +221,8 @@ describe("pm package manifest model", () => {
     };
 
     // Sentry 10.68.0 exposed transitive declarations that referenced missing
-    // modules; 10.70.0 is the latest release proven by the packed TS consumer.
-    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.70.0");
+    // modules; 10.71.0 is the latest release proven by the packed TS consumer.
+    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.71.0");
   });
 
   it("reads package.json pm resources as a first-class manifest", async () => {
