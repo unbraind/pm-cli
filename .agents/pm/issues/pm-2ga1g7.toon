@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: history-integrity,linked-tests,regression,tracker-context
 created_at: "2026-08-24T22:37:40.571Z"
-updated_at: "2026-08-25T07:33:40.670Z"
+updated_at: "2026-08-25T08:01:21.390Z"
 closed_at: "2026-08-25T07:33:32.514Z"
 completed_at: "2026-08-25T07:33:32.514Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ regression: true
 customer_impact: Projects cannot combine pm test tracker context with the recommended strict history-drift governance gate without false failures.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-8izv,discovered_from,"2026-08-24T22:37:40.571Z","harness:codex","cli:create:dep",detected
-comments[9]:
+comments[10]:
   - created_at: "2026-08-24T22:37:40.571Z"
     author: "harness:codex"
     text: "text=Duplicate-check evidence: inspected live context and open/in-progress inventories, searched all statuses for GH-1109, tracker-context seeding, settings:write, _workspace history drift, and linked-test parity; no existing item covers this regression. GitHub source: https://github.com/unbraind/pm-cli/issues/1109"
@@ -55,6 +55,9 @@ comments[9]:
   - created_at: "2026-08-25T07:33:31.271Z"
     author: "harness:codex"
     text: "Review acceptance: exact-byte coverage pre-populates sandbox history/_workspace.jsonl with an initializer stream, seeds a distinct source stream through seedLinkedTestTrackerData, and proves the sandbox stream equals the source bytes. The production implementation already preserved existing source history; no runtime change was required. Focused suite passed 63/63 and full coverage passed 572 files / 7904 tests at exactly 100% statements, branches, functions, and lines."
+  - created_at: "2026-08-25T08:01:21.390Z"
+    author: "harness:codex"
+    text: "Merged delivery evidence: PR #1113 merged to main as 74632a9ceb246cabcdb37f52b943af2dd45c7a84. Exact-main CI run 32823719285 passed release-analyzer provenance, build, Windows Node 24, four coverage shards plus the exact aggregate gate, typecheck, compatibility, smokes, and static assurance. Exact-main CodeQL 32823719216, Security 32823719166, Docs 32823719193, OSSF 32823719210, and CodSpeed 32823719238 all passed. GitHub issue #1109 closed via the merged PR."
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,Tracker-mode sandbox seeding implementation implicated by GH-1109
   tests/unit/commands/test-command.spec.ts,project,Existing tracker-context sandbox regression suite and destination for focused coverage
