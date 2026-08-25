@@ -114,7 +114,8 @@ try {
   const discovery = await request("server/discover");
   if (
     discovery.resultType !== "complete" ||
-    !discovery.supportedVersions?.includes("2026-07-28")
+    !Array.isArray(discovery.supportedVersions) ||
+    !discovery.supportedVersions.includes("2026-07-28")
   ) {
     throw new Error("MCP server missing canonical stateless discovery");
   }

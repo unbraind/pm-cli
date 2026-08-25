@@ -160,6 +160,17 @@ describe("smoke-claude-plugin", () => {
       expected: /missing canonical stateless discovery/,
     },
     {
+      name: "discovery uses a scalar canonical version",
+      overrides: {
+        discoveryResult: {
+          resultType: "complete",
+          supportedVersions: "2026-07-28",
+          instructions: "Use pm_context before mutation tools.",
+        },
+      } as SmokeOverrides,
+      expected: /missing canonical stateless discovery/,
+    },
+    {
       name: "discovery missing instructions",
       overrides: {
         discoveryResult: { resultType: "complete", supportedVersions: ["2026-07-28"], instructions: "" },

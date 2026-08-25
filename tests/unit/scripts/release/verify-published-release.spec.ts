@@ -655,6 +655,42 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       },
     });
     expect(String(mcp.failure)).toContain("mcp_discovery_response_invalid");
+
+    const scalarVersion = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
+        if (command === "npx" && args.includes("pm-mcp")) {
+          return {
+            status: 0,
+            stdout: JSON.stringify({
+              id: 1,
+              result: {
+                resultType: "complete",
+                supportedVersions: "2026-07-28",
+                _meta: {
+                  "io.modelcontextprotocol/serverInfo": { name: "pm-mcp" },
+                },
+              },
+            }),
+            stderr: "",
+          };
+        }
+        return successfulExecutorResult(args);
+      },
+    });
+    expect(String(scalarVersion.failure)).toContain(
+      "mcp_discovery_response_invalid",
+    );
   });
 
   it("fails closed when missing-bin controls pass or a manifest bin is uncovered", async () => {

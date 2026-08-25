@@ -226,7 +226,8 @@ function assertMcpDiscovery(stdout) {
     response?.result?._meta?.["io.modelcontextprotocol/serverInfo"]?.name !==
       "pm-mcp" ||
     response.result.resultType !== "complete" ||
-    !response.result.supportedVersions?.includes("2026-07-28")
+    !Array.isArray(response.result.supportedVersions) ||
+    !response.result.supportedVersions.includes("2026-07-28")
   ) {
     return { ok: false, reason: "mcp_discovery_response_invalid" };
   }

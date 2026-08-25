@@ -15,7 +15,8 @@ try {
   const discovery = await request("server/discover");
   if (
     discovery.resultType !== "complete" ||
-    !discovery.supportedVersions?.includes("2026-07-28")
+    !Array.isArray(discovery.supportedVersions) ||
+    !discovery.supportedVersions.includes("2026-07-28")
   ) {
     throw new Error("MCP discovery did not advertise the canonical revision");
   }

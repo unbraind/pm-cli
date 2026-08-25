@@ -6,10 +6,10 @@ status: closed
 priority: 1
 tags[6]: "area:mcp","area:sdk",protocol-negotiation,result-type,server-discover,stateless
 created_at: "2026-08-25T05:08:17.895Z"
-updated_at: "2026-08-25T15:48:20.816Z"
+updated_at: "2026-08-25T16:01:35.983Z"
 deadline: "2026-09-30T00:00:00.000Z"
-closed_at: "2026-08-25T14:41:37.224Z"
-completed_at: "2026-08-25T14:41:37.224Z"
+closed_at: "2026-08-25T16:01:35.043Z"
+completed_at: "2026-08-25T16:01:35.043Z"
 author: "harness:codex"
 estimated_minutes: 720
 acceptance_criteria: "server/discover is mandatory and deterministic with exact supported versions, capabilities, extensions, and identity; Every request validates request-local protocol version and client capabilities and every result identifies the server; Unsupported versions, missing capabilities, malformed metadata, and header mismatches return the specified structured error codes; Ordinary results include resultType complete and compatibility treatment of omitted resultType is isolated and tested; No behavior depends on initialize or notifications/initialized state; The public pm SDK exposes transport-neutral negotiation, discovery, metadata validation, and result-envelope primitives"
@@ -20,20 +20,21 @@ why_now: The current server hardcodes 2025-06-18 and retains initialize state th
 parent: pm-rs9vry
 risk: critical
 confidence: high
-resolution: Implemented the stateless MCP 2026-07-28 core through public SDK contracts and the MCP server adapter.
-expected_result: "Request-local negotiation and discovery with typed envelopes, deterministic identity, structured errors, no modern initialize state, and bounded legacy compatibility."
-actual_result: "SDK helpers, server/discover, request metadata validation, resultType complete, serverInfo metadata, modern refusals, legacy adapter behavior, real stdio/plugin tests, exact coverage, and static assurance all pass."
+resolution: "Implemented and review-hardened the stateless MCP 2026-07-28 core through public SDK contracts, the MCP server adapter, discovery verifiers, and compatibility probes."
+expected_result: Every explicit modern request is validated request-locally; discovery and result envelopes are structurally typed; malformed versions and discovery shapes fail closed; legacy behavior remains bounded and independently tested.
+actual_result: "Strict explicit-version routing, server/discover, complete envelopes, server identity, structured errors, array-validated release and plugin probes, bounded legacy interoperability, 59 focused remediation tests, and exact 100% repository coverage all pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-kl11,supersedes,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
   pm-sqvshj,blocked_by,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-25T05:08:17.895Z","harness:codex","Duplicate check evidence: searched all statuses for stateless MCP server/discover request metadata protocolVersion clientCapabilities serverInfo resultType initialize removal and unsupported version handling. Existing handshake work is terminal and targets 2025-06-18."
   "2026-08-25T14:41:15.407Z","harness:codex","Evidence: public typed SDK protocol contracts, stateless per-request validation, deterministic server/discover, complete result envelopes, identity metadata, unsupported-version and missing-capability errors, legacy adapter, and real stdio coverage are implemented. Final exact-tree coverage: 574 files, 7920 tests, statements 57964/57964, branches 43503/43503, functions 12075/12075, lines 55865/55865. PM-linked typecheck, coverage, complete-tracker static assurance, and 49-test MCP cohort passed."
   "2026-08-25T15:01:37.533Z","harness:codex","Superseding final-tree evidence after legacy _meta era-selection fix: PM-linked full suite passed all four links. Exact coverage: 574 files, 7921 tests, statements 57964/57964, branches 43505/43505, functions 12075/12075, lines 55865/55865. Focused SDK/direct-handler/real-stdio cohort: 50 tests passed. Complete-tracker static assurance passed with persisted tracker context."
   "2026-08-25T15:29:06.260Z","harness:codex","Final frozen-source evidence after envelope integrity review: PM-linked exact coverage passed with 574 files and 7921 tests; statements 57971/57971, branches 43511/43511, functions 12077/12077, lines 55872/55872. Modern tool execution errors now retain resultType complete and serverInfo metadata, protocol errors remain JSON-RPC errors, and method-specific result metadata is preserved."
   "2026-08-25T15:48:20.816Z","harness:codex","Review remediation evidence: DeepScan reported high-severity NULL_POINTER 233240748 in src/mcp/server.ts because the modern dispatcher parameter was cast from possibly absent request metadata. Replaced the cast with an isModernMcpRequest TypeScript type predicate so request.params._meta is structurally proven before dispatch. Exact verification on the remediated source: focused MCP suite 13/13 passed; ESLint passed; Prettier passed; typecheck passed; full coverage passed 574 files and 7,921 tests with 100% statements (57,970/57,970), branches (43,511/43,511), functions (12,077/12,077), and lines (55,871/55,871). The complete static suite passed every functional and governance assertion through SDK entrypoint costs; its final local timing-only transport-floor probe exceeded ceilings under sustained host load (load average above 7), while the PR's hosted Gates (static) is the authoritative uncontended check."
+  "2026-08-25T16:01:33.902Z","harness:codex","Final pre-close review evidence on the review-hardened source: CodeRabbit's three actionable findings were addressed through PM lifecycle reconstruction, Array.isArray discovery validation in release/Codex/Claude probes with scalar negative fixtures, and explicit protocol-version-key routing before legacy initialize with invalid-type and modern-initialize negative tests. Focused cohort passed 59/59; typecheck, lint, formatting, and changelog checks passed; exact coverage passed 574 files and 7,923 tests with statements 57,970/57,970, branches 43,514/43,514, functions 12,077/12,077, and lines 55,874/55,874."
 learnings[2]{created_at,author,text}:
   "2026-08-25T14:41:16.143Z","harness:codex",Linked repository assurance commands that inspect the governed tracker must declare pm_context_mode=tracker; the default schema context intentionally has zero real items and can produce a contextually false defect-evidence failure.
   "2026-08-25T14:41:16.933Z","harness:codex","Unversioned requests cannot prove modern protocol intent, so compatibility must classify them as legacy; strict 2026-07-28 metadata validation begins only when that version is explicitly claimed."
@@ -171,5 +172,5 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed closeout entry for stateless MCP core
   docs/MCP_2026_07_28_CONFORMANCE.md,project,Implementation status matrix
   docs/MCP_2026_07_28.md,project,Normative implementation contract
-close_reason: "Implemented the public typed SDK and MCP server stateless core: request-local version/capability validation, deterministic server/discover and identity, complete result envelopes, structured refusals, bounded legacy interoperability, and real stdio/plugin coverage. Exact repository coverage and complete-tracker assurance passed."
+close_reason: "Replacement closeout after final structured outcomes and review evidence: stateless MCP core and all CodeRabbit functional/provenance remediations pass focused tests and exact 100% repository coverage."
 body: "## Contract\n\n- Implement server/discover with supported versions, capabilities, extensions, and server identity.\n- Require and validate io.modelcontextprotocol/protocolVersion and clientCapabilities in request _meta.\n- Accept request-local clientInfo and return serverInfo in result _meta.\n- Return UnsupportedProtocolVersionError and MissingRequiredClientCapability with current allocated codes.\n- Add required resultType complete and input_required handling while treating older omitted resultType as complete only inside the compatibility adapter.\n- Remove runtime dependence on initialize and notifications/initialized.\n- Keep deterministic capability ordering and one SDK-owned schema for CLI, MCP, tests, contracts, and docs."

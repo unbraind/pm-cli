@@ -746,17 +746,17 @@ async function handleRequestInReproducibleContext(
   if (!request.id && request.method?.startsWith("notifications/")) {
     return undefined;
   }
+  if (hasMcpProtocolVersionMetadata(request)) {
+    return dispatchModernMcpRequest(request, request.params._meta);
+  }
   if (request.method === "initialize") {
     return handleLegacyInitialize(request.params);
   }
-  if (!isModernMcpRequest(request)) {
-    return dispatchLegacyMcpRequest(request);
-  }
-  return dispatchModernMcpRequest(request, request.params._meta);
+  return dispatchLegacyMcpRequest(request);
 }
 
-/** Return whether a request explicitly claims a modern protocol revision. */
-function isModernMcpRequest(
+/** Return whether a request explicitly supplies the modern version metadata key. */
+function hasMcpProtocolVersionMetadata(
   request: JsonRpcRequest,
 ): request is JsonRpcRequest & {
   params: Record<string, unknown> & { _meta: Record<string, unknown> };
@@ -764,7 +764,7 @@ function isModernMcpRequest(
   const meta = isMcpRecord(request.params) ? request.params._meta : undefined;
   return (
     isMcpRecord(meta) &&
-    typeof meta[PM_MCP_META_KEYS.protocolVersion] === "string"
+    Object.prototype.hasOwnProperty.call(meta, PM_MCP_META_KEYS.protocolVersion)
   );
 }
 
@@ -816,7 +816,7 @@ function writeToolCallErrorResponse(
   const content = errorContent(error);
   writeResponse(
     request.id,
-    isModernMcpRequest(request)
+    hasMcpProtocolVersionMetadata(request)
       ? buildMcpCompleteResult(content, PM_MCP_SERVER_INFO)
       : content,
   );

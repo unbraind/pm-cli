@@ -228,6 +228,30 @@ describe("MCP 2026-07-28 stateless server", () => {
     await expect(
       handleRequest({
         jsonrpc: "2.0",
+        id: 30,
+        method: "initialize",
+        params: modernParams(),
+      }),
+    ).rejects.toMatchObject({ code: -32601 });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 31,
+        method: "ping",
+        params: {
+          _meta: {
+            [PM_MCP_META_KEYS.protocolVersion]: 7,
+            [PM_MCP_META_KEYS.clientCapabilities]: {},
+          },
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: PM_MCP_ERROR_CODES.unsupportedProtocolVersion,
+      data: { requested: null },
+    });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
         id: 3,
         method: "initialize",
         params: {

@@ -103,6 +103,18 @@ describe("smoke-codex-plugin-mcp", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects a scalar canonical discovery revision", async () => {
+    const request = vi.fn(async () => ({
+      resultType: "complete",
+      supportedVersions: "2026-07-28",
+    }));
+    const dispose = mockHarness(request, vi.fn(async () => ({ ok: true })));
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /did not advertise the canonical revision/,
+    );
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects a stale create mutation envelope", async () => {
     const request = vi.fn(async (method: string) =>
       method === "server/discover"
