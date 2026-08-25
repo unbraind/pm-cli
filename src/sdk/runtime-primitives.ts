@@ -79,6 +79,7 @@ export {
   resolveRegisteredVectorStoreAdapter,
 } from "../core/extensions/runtime-registrations.js";
 export {
+  isFileMissingError,
   pathExists,
   readFileIfExists,
   removeFileIfExists,

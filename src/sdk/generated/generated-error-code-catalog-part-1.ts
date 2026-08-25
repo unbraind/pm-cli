@@ -2149,6 +2149,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "mcp_task_not_found_or_not_authorized",
+    meaning: "Mcp task not found or not authorized condition.",
+    stability: "provisional",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/mcp/tasks.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "mcp_task_not_found_or_not_authorized",
+    aliases: [],
+  },
+  {
     code: "merge_conflict_markers_detected",
     meaning: "Merge conflict markers detected condition.",
     stability: "stable",

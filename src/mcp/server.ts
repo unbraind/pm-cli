@@ -64,13 +64,30 @@ import {
   PM_MCP_META_KEYS,
   PM_MCP_PROTOCOL_VERSION,
   PmMcpProtocolError,
+  attachMcpServerInfo,
   buildMcpCompleteResult,
   buildMcpDiscoverResult,
+  hasMcpClientExtension,
   isMcpRecord,
   resolveMcpRequestContext,
   type PmMcpImplementation,
+  type PmMcpRequestContext,
   type PmMcpServerCapabilities,
 } from "../sdk/mcp/protocol.js";
+import {
+  PmMcpInputRequiredError,
+  buildMcpInputRequiredResult,
+  parseMcpInputResponses,
+  validateMcpJsonSchema,
+  withMcpCachePolicy,
+  type PmMcpCachePolicy,
+  type PmMcpInputResponses,
+} from "../sdk/mcp/interactions.js";
+import {
+  PM_MCP_TASKS_EXTENSION,
+  PmMcpTaskStore,
+  createMcpTaskStore,
+} from "../sdk/mcp/tasks.js";
 
 interface JsonRpcRequest {
   jsonrpc?: string;
@@ -112,8 +129,27 @@ const PM_MCP_SERVER_CAPABILITIES: PmMcpServerCapabilities = {
   prompts: { listChanged: true },
   resources: { listChanged: true },
   tools: { listChanged: true },
-  extensions: {},
+  extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
 };
+const PM_MCP_CACHE_POLICIES = {
+  prompts: { ttlMs: 60_000, cacheScope: "public" },
+  resource: { ttlMs: 0, cacheScope: "private" },
+  resources: { ttlMs: 60_000, cacheScope: "public" },
+  tools: { ttlMs: 30_000, cacheScope: "private" },
+} as const satisfies Record<string, PmMcpCachePolicy>;
+const PM_MCP_DIRECT_TASK_TOOLS = new Set([
+  "pm_graph",
+  "pm_health",
+  "pm_validate",
+]);
+const PM_MCP_RUN_TASK_ACTIONS = new Set([
+  "graph",
+  "health",
+  "import",
+  "reindex",
+  "test-all",
+  "validate",
+]);
 const PM_MCP_INSTRUCTIONS =
   "You have access to native pm CLI tools for git-based project management. " +
   "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
@@ -177,6 +213,7 @@ function nearestDeclaredKey(
 // accept arbitrary top-level keys (see extensionOptionsFromArgs), so unexpected
 // keys there are by-design rather than typos and must not be flagged.
 const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
+const MCP_RETRY_ARGUMENT_KEYS = new Set(["inputResponses", "requestState"]);
 
 function detectUnexpectedTopLevelKeys(
   toolName: string,
@@ -193,7 +230,7 @@ function detectUnexpectedTopLevelKeys(
   if (declared === undefined) {
     return [];
   }
-  const declaredSet = new Set(declared);
+  const declaredSet = new Set([...declared, ...MCP_RETRY_ARGUMENT_KEYS]);
   const warnings: string[] = [];
   for (const key of Object.keys(args)) {
     if (declaredSet.has(key)) {
@@ -470,9 +507,17 @@ async function handleToolCall(
       if (!handler) {
         throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
       }
-      const requestedArgs = decodeHtmlEntitiesInOptions(
-        asRecordClone(params.arguments),
-      );
+      const inputResponses =
+        params.inputResponses === undefined
+          ? undefined
+          : parseMcpInputResponses(params.inputResponses);
+      const requestedArgs = {
+        ...decodeHtmlEntitiesInOptions(asRecordClone(params.arguments)),
+        ...(inputResponses ? { inputResponses } : {}),
+        ...(typeof params.requestState === "string"
+          ? { requestState: params.requestState }
+          : {}),
+      };
       const access = await resolveMcpToolAccess(TOOLS, name, requestedArgs);
       if (!access.available) {
         throw new PmCliError(
@@ -685,12 +730,312 @@ async function dispatchLegacyMcpRequest(
   );
 }
 
+function deterministicMcpTools(
+  tools: Awaited<ReturnType<typeof resolveMcpToolSurface>>["tools"],
+): Awaited<ReturnType<typeof resolveMcpToolSurface>>["tools"] {
+  return tools
+    .map((tool) => ({
+      ...tool,
+      inputSchema: validateMcpJsonSchema(tool.inputSchema) as Record<
+        string,
+        unknown
+      >,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function mcpTaskPrincipal(requestContext: PmMcpRequestContext): string {
+  return requestContext.clientInfo
+    ? `${requestContext.clientInfo.name}@${requestContext.clientInfo.version}`
+    : "anonymous-stdio";
+}
+
+function mcpTaskStore(): PmMcpTaskStore {
+  return createMcpTaskStore({
+    pmRoot: resolvePmRoot(process.cwd()),
+    owner: "pm-mcp-task-provider",
+  });
+}
+
+function shouldCreateMcpTask(
+  params: Record<string, unknown> | undefined,
+  requestContext: PmMcpRequestContext,
+): boolean {
+  if (!hasMcpClientExtension(requestContext, PM_MCP_TASKS_EXTENSION)) {
+    return false;
+  }
+  const requestParams = asRecordClone(params);
+  const name = requestParams.name;
+  const args = asRecordClone(requestParams.arguments);
+  if (PM_MCP_DIRECT_TASK_TOOLS.has(name as string)) return true;
+  if (
+    name === "pm_test" &&
+    (args.subcommand === "run" ||
+      (isMcpRecord(args.options) && args.options.subcommand === "run"))
+  ) {
+    return true;
+  }
+  if (name !== "pm_run") return false;
+  return (
+    typeof args.action === "string" && PM_MCP_RUN_TASK_ACTIONS.has(args.action)
+  );
+}
+
+interface PendingMcpTaskExecution {
+  context: PmMcpRequestContext;
+  params: Record<string, unknown>;
+  principal: string;
+  requestState?: string;
+  store: PmMcpTaskStore;
+  taskId: string;
+}
+
+const PENDING_MCP_TASKS = new Map<string, PendingMcpTaskExecution>();
+
+async function executeMcpTask(
+  execution: PendingMcpTaskExecution,
+  inputResponses?: PmMcpInputResponses,
+): Promise<void> {
+  const params = {
+    ...execution.params,
+    ...(inputResponses ? { inputResponses } : {}),
+    ...(execution.requestState ? { requestState: execution.requestState } : {}),
+  };
+  try {
+    const result = await handleToolCall(params, execution.context.clientInfo);
+    await execution.store.complete(
+      execution.taskId,
+      execution.principal,
+      buildMcpCompleteResult(result, PM_MCP_SERVER_INFO),
+    );
+    PENDING_MCP_TASKS.delete(execution.taskId);
+  } catch (error: unknown) {
+    if (error instanceof PmMcpInputRequiredError) {
+      execution.requestState = error.requestState;
+      await execution.store.requireInput({
+        taskId: execution.taskId,
+        principal: execution.principal,
+        requestContext: execution.context,
+        inputRequests: error.inputRequests,
+        statusMessage: "Task requires additional client input.",
+      });
+      return;
+    }
+    if (error instanceof PmMcpProtocolError) {
+      await execution.store.fail(execution.taskId, execution.principal, {
+        code: error.code,
+        message: error.message,
+        data: error.data,
+      });
+    } else {
+      await execution.store.complete(
+        execution.taskId,
+        execution.principal,
+        buildMcpCompleteResult(errorContent(error), PM_MCP_SERVER_INFO),
+      );
+    }
+    PENDING_MCP_TASKS.delete(execution.taskId);
+  }
+}
+
+async function settleMcpTaskExecution(
+  taskId: string,
+  execution: Promise<void>,
+): Promise<void> {
+  try {
+    await execution;
+  } catch {
+    // Persistence failures can outlive the request that created the detached
+    // execution. Keep them from becoming process-level unhandled rejections;
+    // the durable task record remains available for TTL-based recovery.
+    PENDING_MCP_TASKS.delete(taskId);
+  }
+}
+
+function scheduleMcpTaskExecution(
+  execution: PendingMcpTaskExecution,
+  inputResponses?: PmMcpInputResponses,
+): void {
+  void settleMcpTaskExecution(
+    execution.taskId,
+    executeMcpTask(execution, inputResponses),
+  );
+}
+
+async function createMcpTaskForToolCall(
+  params: Record<string, unknown> | undefined,
+  requestContext: PmMcpRequestContext,
+): Promise<Record<string, unknown>> {
+  const store = mcpTaskStore();
+  const principal = mcpTaskPrincipal(requestContext);
+  const task = await store.create({
+    principal,
+    statusMessage: "pm operation accepted for asynchronous execution.",
+  });
+  const execution: PendingMcpTaskExecution = {
+    context: requestContext,
+    params: asRecordClone(params),
+    principal,
+    store,
+    taskId: task.taskId,
+  };
+  PENDING_MCP_TASKS.set(task.taskId, execution);
+  scheduleMcpTaskExecution(execution);
+  return attachMcpServerInfo(task, PM_MCP_SERVER_INFO);
+}
+
+async function dispatchMcpTaskMethod(
+  request: JsonRpcRequest,
+  requestContext: PmMcpRequestContext,
+): Promise<Record<string, unknown>> {
+  if (!hasMcpClientExtension(requestContext, PM_MCP_TASKS_EXTENSION)) {
+    throw new PmMcpProtocolError(
+      "Missing required client capability",
+      PM_MCP_ERROR_CODES.missingRequiredClientCapability,
+      {
+        requiredCapabilities: {
+          extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
+        },
+      },
+    );
+  }
+  const params = asRecordClone(request.params);
+  const taskId = readRequiredString(params, "taskId");
+  const principal = mcpTaskPrincipal(requestContext);
+  const store = mcpTaskStore();
+  if (request.method === "tasks/get") {
+    return buildMcpCompleteResult(
+      await store.get(taskId, principal),
+      PM_MCP_SERVER_INFO,
+    );
+  }
+  if (request.method === "tasks/update") {
+    const update = await store.update(taskId, principal, params.inputResponses);
+    const execution = PENDING_MCP_TASKS.get(taskId);
+    if (
+      execution &&
+      update.acceptedKeys.length > 0 &&
+      update.remainingKeys.length === 0
+    ) {
+      scheduleMcpTaskExecution(
+        execution,
+        await store.takeInputResponses(taskId, principal),
+      );
+    }
+    return buildMcpCompleteResult({}, PM_MCP_SERVER_INFO);
+  }
+  await store.cancel(taskId, principal);
+  PENDING_MCP_TASKS.delete(taskId);
+  return buildMcpCompleteResult({}, PM_MCP_SERVER_INFO);
+}
+
+async function dispatchModernToolMethod(
+  request: JsonRpcRequest,
+  requestContext: PmMcpRequestContext,
+  clientInfo: ReturnType<typeof readMcpClientInfo>,
+): Promise<Record<string, unknown>> {
+  if (request.method === "tools/list") {
+    const surface = await resolveMcpToolSurface(
+      TOOLS,
+      requestWorkspaceArgs(request.params),
+    );
+    return buildMcpCompleteResult(
+      withMcpCachePolicy(
+        { tools: deterministicMcpTools(surface.tools) },
+        PM_MCP_CACHE_POLICIES.tools,
+      ),
+      PM_MCP_SERVER_INFO,
+    );
+  }
+  if (shouldCreateMcpTask(request.params, requestContext)) {
+    return createMcpTaskForToolCall(request.params, requestContext);
+  }
+  try {
+    return buildMcpCompleteResult(
+      await handleToolCall(request.params, clientInfo),
+      PM_MCP_SERVER_INFO,
+    );
+  } catch (error: unknown) {
+    if (!(error instanceof PmMcpInputRequiredError)) throw error;
+    return buildMcpInputRequiredResult({
+      requestContext,
+      serverInfo: PM_MCP_SERVER_INFO,
+      inputRequests: error.inputRequests,
+      requestState: error.requestState,
+    });
+  }
+}
+
+async function dispatchModernResourceMethod(
+  request: JsonRpcRequest,
+): Promise<Record<string, unknown>> {
+  if (request.method === "resources/list") {
+    const resources = [...PM_MCP_RESOURCE_CONTRACTS].sort((left, right) =>
+      left.uri.localeCompare(right.uri),
+    );
+    return buildMcpCompleteResult(
+      withMcpCachePolicy({ resources }, PM_MCP_CACHE_POLICIES.resources),
+      PM_MCP_SERVER_INFO,
+    );
+  }
+  if (request.method === "resources/templates/list") {
+    return buildMcpCompleteResult(
+      withMcpCachePolicy(
+        { resourceTemplates: [] },
+        PM_MCP_CACHE_POLICIES.resources,
+      ),
+      PM_MCP_SERVER_INFO,
+    );
+  }
+  try {
+    const resource = await readWorkspaceResource(
+      readRequiredString(asRecordClone(request.params), "uri"),
+      request.params,
+    );
+    return buildMcpCompleteResult(
+      withMcpCachePolicy(resource, PM_MCP_CACHE_POLICIES.resource),
+      PM_MCP_SERVER_INFO,
+    );
+  } catch (error: unknown) {
+    if (
+      !(error instanceof PmCliError) ||
+      !error.message.startsWith("Unknown pm MCP resource:")
+    ) {
+      throw error;
+    }
+    throw new PmMcpProtocolError(
+      error.message,
+      PM_MCP_ERROR_CODES.invalidParams,
+      { field: "uri" },
+    );
+  }
+}
+
+function dispatchModernPromptMethod(
+  request: JsonRpcRequest,
+): Record<string, unknown> {
+  const result =
+    request.method === "prompts/list"
+      ? withMcpCachePolicy(
+          {
+            prompts: PM_MCP_PROMPT_CONTRACTS.map((prompt) => ({
+              name: prompt.name,
+              description: prompt.description,
+              arguments: prompt.arguments,
+            })).sort((left, right) => left.name.localeCompare(right.name)),
+          },
+          PM_MCP_CACHE_POLICIES.prompts,
+        )
+      : renderWorkflowPrompt(request.params);
+  return buildMcpCompleteResult(result, PM_MCP_SERVER_INFO);
+}
+
 /** Dispatch one validated stateless request through the modern surface. */
 async function dispatchModernMcpRequest(
   request: JsonRpcRequest,
   meta: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  resolveMcpRequestContext(request.params);
+  const requestContext = resolveMcpRequestContext(request.params);
   const clientInfo = readMcpClientInfo(meta[PM_MCP_META_KEYS.clientInfo]);
   if (request.method === "server/discover") {
     return buildMcpDiscoverResult({
@@ -704,39 +1049,30 @@ async function dispatchModernMcpRequest(
       removedIn: PM_MCP_PROTOCOL_VERSION,
     });
   }
-  let result: Record<string, unknown>;
-  if (request.method === "tools/list") {
-    result = {
-      tools: (
-        await resolveMcpToolSurface(TOOLS, requestWorkspaceArgs(request.params))
-      ).tools,
-    };
-  } else if (request.method === "tools/call") {
-    result = await handleToolCall(request.params, clientInfo);
-  } else if (request.method === "resources/list") {
-    result = { resources: PM_MCP_RESOURCE_CONTRACTS };
-  } else if (request.method === "resources/read") {
-    result = await readWorkspaceResource(
-      readRequiredString(asRecordClone(request.params), "uri"),
-      request.params,
-    );
-  } else if (request.method === "prompts/list") {
-    result = {
-      prompts: PM_MCP_PROMPT_CONTRACTS.map((prompt) => ({
-        name: prompt.name,
-        description: prompt.description,
-        arguments: prompt.arguments,
-      })),
-    };
-  } else if (request.method === "prompts/get") {
-    result = renderWorkflowPrompt(request.params);
-  } else {
-    throw new PmMcpProtocolError(
-      `MCP method not found: ${request.method ?? "(missing)"}`,
-      -32601,
-    );
+  if (
+    request.method === "tasks/get" ||
+    request.method === "tasks/update" ||
+    request.method === "tasks/cancel"
+  ) {
+    return dispatchMcpTaskMethod(request, requestContext);
   }
-  return buildMcpCompleteResult(result, PM_MCP_SERVER_INFO);
+  if (request.method === "tools/list" || request.method === "tools/call") {
+    return dispatchModernToolMethod(request, requestContext, clientInfo);
+  }
+  if (
+    request.method === "resources/list" ||
+    request.method === "resources/templates/list" ||
+    request.method === "resources/read"
+  ) {
+    return dispatchModernResourceMethod(request);
+  }
+  if (request.method === "prompts/list" || request.method === "prompts/get") {
+    return dispatchModernPromptMethod(request);
+  }
+  throw new PmMcpProtocolError(
+    `MCP method not found: ${request.method ?? "(missing)"}`,
+    -32601,
+  );
 }
 
 /** Implements handle request for the public runtime surface of this module. */
@@ -948,6 +1284,12 @@ function readRuntimeTestHook<Key extends RuntimeTestHookKey>(
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   boundMcpClientProvenance,
+  createMcpInputRequiredError: (
+    input: ConstructorParameters<typeof PmMcpInputRequiredError>[0],
+  ) => new PmMcpInputRequiredError(input),
+  createMcpProtocolError: (
+    ...input: ConstructorParameters<typeof PmMcpProtocolError>
+  ) => new PmMcpProtocolError(...input),
   get closeManyOptionsFromFlat() {
     return readRuntimeTestHook("closeManyOptionsFromFlat");
   },
@@ -967,7 +1309,11 @@ export const _testOnly = {
     return readRuntimeTestHook("mutationListOptions");
   },
   nearestDeclaredKey,
+  mcpTaskPrincipal,
   resultContent,
+  resolveMcpRequestContext,
+  shouldCreateMcpTask,
+  settleMcpTaskExecution,
   get normalizeActionName() {
     return readRuntimeTestHook("normalizeActionName");
   },

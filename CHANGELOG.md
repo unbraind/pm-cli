@@ -4,6 +4,9 @@
 
 ### Added
 
+- MCP server surface and cache contracts: deterministic tools, prompts, resources, JSON Schema 2020-12, ttlMs, cacheScope, and change coherence ([pm-hv1x1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hv1x1x.toon))
+- Official MCP tasks extension for pm: asynchronous long operations, tasks/get polling, tasks/update input, durable handles, and lifecycle convergence ([pm-rzs24j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rzs24j.toon))
+- MCP multi round-trip requests: input_required results, elicitation, retry state, and removal of server-initiated request assumptions ([pm-rz9gep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rz9gep.toon))
 - Stateless MCP core: request-local version and capabilities, mandatory server/discover, typed result envelopes, and deterministic identity ([pm-vae5ec](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vae5ec.toon))
 
 ### Changed
@@ -19,6 +22,10 @@
 ### Deprecated
 
 - ADR: MCP 2026-07-28 is canonical and legacy interoperability is a bounded stateless adapter, not connection-local session state ([pm-sqvshj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-sqvshj.toon))
+
+### Other
+
+- Refresh Sentry 10.71 and TypeScript-ESLint 8.68 with packed-consumer proof ([pm-7xfndr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7xfndr.toon))
 
 ## 2026.8.25 - 2026-08-25
 

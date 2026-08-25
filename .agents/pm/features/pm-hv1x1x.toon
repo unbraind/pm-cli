@@ -2,12 +2,14 @@ id: pm-hv1x1x
 title: "MCP server surface and cache contracts: deterministic tools, prompts, resources, JSON Schema 2020-12, ttlMs, cacheScope, and change coherence"
 description: "Bring every pm MCP list/read/call surface onto the 2026-07-28 schema and caching contract with deterministic ordering, broad JSON Schema support, safe references, and coherent invalidation."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[8]: "area:mcp",caching,determinism,json-schema,prompts,resources,token-efficiency,tools
 created_at: "2026-08-25T05:09:49.804Z"
-updated_at: "2026-08-25T05:09:49.804Z"
+updated_at: "2026-08-25T17:55:57.142Z"
 deadline: "2026-10-31T00:00:00.000Z"
+closed_at: "2026-08-25T17:55:45.543Z"
+completed_at: "2026-08-25T17:55:45.543Z"
 author: "harness:codex"
 estimated_minutes: 780
 acceptance_criteria: "Every cacheable result includes validated ttlMs and cacheScope with documented freshness and privacy semantics; Tool listing is deterministic and cache invalidation composes correctly with listChanged and subscriptions/listen; JSON Schema 2020-12 references and composition keywords work within explicit recursion, size, and work bounds; structuredContent accepts every JSON value and schema-validation refusals are actionable and token-bounded; Resource-not-found uses Invalid Params and never leaks resource existence outside caller authority; SDK, MCP, docs, generated schemas, golden snapshots, and packed artifacts prove one shared contract"
@@ -18,11 +20,40 @@ why_now: "The new revision requires ttlMs and cacheScope on cacheable results, d
 parent: pm-rs9vry
 risk: high
 confidence: high
+resolution: "Implemented deterministic modern server surfaces, explicit cache policies, bounded JSON Schema 2020-12 validation, and authority-safe resource errors through shared SDK contracts."
+expected_result: "Tools, prompts, resources, templates, and call results are deterministic, token-efficient, cache-scoped, schema-validated, and coherent with modern error semantics."
+actual_result: "List/read/call cache metadata, deterministic ordering, structured JSON values, bounded references/composition, invalid-resource behavior, generated contracts, packed artifacts, and real protocol tests all pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,blocked_by,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
   pm-yf07b7,supersedes,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-25T05:09:49.804Z","harness:codex","Duplicate check evidence: searched all statuses for ttlMs cacheScope deterministic tools/list JSON Schema 2020-12 structuredContent references composition bounds and resource not found. pm-yf07b7 delivered the earlier resource and prompt surface but not the new revision contract."
+  "2026-08-25T17:55:18.569Z","harness:codex","Final evidence 2026-08-25: modern list/read/call results now expose validated ttlMs/cacheScope policies, tool ordering is deterministic, resources use authority-safe Invalid Params behavior, structured content accepts all JSON values, and the shared SDK validator supports bounded JSON Schema 2020-12 types, references, composition, arrays and objects. PM-linked 22-test cohort passed; generated contracts/public surface are current and exact coverage, static, graph, package, temporary consumer, plugin-host, lint, audit and secret gates pass."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Machine-readable public API compatibility snapshot
+  src/mcp/server.ts,project,Deterministic tools and cacheable list-read results
+  src/sdk/index.ts,project,Published aggregate SDK exports
+  src/sdk/mcp/interactions.ts,project,Bounded JSON Schema 2020-12 and cache policy primitives
+  tests/integration/mcp-stateless-protocol.spec.ts,project,Real modern server cache schema and task protocol coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/interactions.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T16:52:57.719Z",local_mutation,codex/mcp-mrtr-tasks-cache-contracts
+test_runs[1]:
+  - run_id: test-local-mt8yp635-7h8rym
+    kind: test
+    status: passed
+    started_at: "2026-08-25T17:51:37.075Z"
+    finished_at: "2026-08-25T17:51:48.497Z"
+    recorded_at: "2026-08-25T17:51:48.497Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/interactions.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Normative requirement ownership and evidence
+  docs/MCP_2026_07_28.md,project,Cache and schema server behavior
+  docs/SDK_MCP_INTERACTIONS.md,project,Public cache and JSON Schema SDK usage
+close_reason: "Delivered deterministic cache-scoped MCP surfaces, bounded JSON Schema 2020-12 validation, authority-safe resource semantics, shared SDK contracts, current generated artifacts, and exact full-suite proof."
 body: "## Surface contract\n\n- tools/list, prompts/list, resources/list, resources/read, and resources/templates/list return ttlMs and public or private cacheScope.\n- Tool ordering is deterministic and stable enough for prompt caches.\n- listChanged and subscriptions/listen invalidation align with TTL hints and never allow stale authorization decisions.\n- inputSchema and outputSchema accept applicable JSON Schema 2020-12 keywords and resolve references under bounded depth, bytes, and composition work.\n- structuredContent accepts any JSON value while tool result envelopes remain predictable.\n- Resource-not-found returns Invalid Params and recovery identifies the missing URI without leaking unrelated resources.\n- Contract generation, SDK types, MCP tool definitions, docs, golden files, and packed artifacts derive from one source."

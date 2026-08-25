@@ -84,6 +84,17 @@ export interface PmMcpResultEnvelope {
   [key: string]: unknown;
 }
 
+/** Required server identity metadata attached to every modern result shape. */
+export interface PmMcpServerResultMetadata {
+  /** Result-local MCP metadata. */
+  _meta: {
+    /** Server identity is repeated on every modern result. */
+    "io.modelcontextprotocol/serverInfo": PmMcpImplementation;
+    /** Additional namespaced or application metadata. */
+    [key: string]: unknown;
+  };
+}
+
 /** Modern discovery response contract. */
 export interface PmMcpDiscoverResult extends PmMcpResultEnvelope {
   /** Modern stateless revisions accepted through per-request metadata. */
@@ -139,8 +150,7 @@ export function parseMcpImplementation(
     );
   }
   const name = typeof value.name === "string" ? value.name.trim() : "";
-  const version =
-    typeof value.version === "string" ? value.version.trim() : "";
+  const version = typeof value.version === "string" ? value.version.trim() : "";
   if (name.length === 0 || version.length === 0) {
     throw new PmMcpProtocolError(
       "Invalid MCP clientInfo metadata",
@@ -165,9 +175,7 @@ export function parseMcpImplementation(
 }
 
 /** Validate the stateless metadata required on every modern MCP request. */
-export function resolveMcpRequestContext(
-  params: unknown,
-): PmMcpRequestContext {
+export function resolveMcpRequestContext(params: unknown): PmMcpRequestContext {
   const meta = isMcpRecord(params) ? params._meta : undefined;
   if (!isMcpRecord(meta)) {
     throw new PmMcpProtocolError(
@@ -258,20 +266,39 @@ export function assertMcpClientCapabilities(
   }
 }
 
-/** Attach required modern result fields without mutating the caller payload. */
-export function buildMcpCompleteResult<Payload extends Record<string, unknown>>(
+/** Return whether this request independently negotiated one named extension. */
+export function hasMcpClientExtension(
+  requestContext: PmMcpRequestContext,
+  extension: string,
+): boolean {
+  const extensions = requestContext.clientCapabilities.extensions;
+  return isMcpRecord(extensions) && isMcpRecord(extensions[extension]);
+}
+
+/** Attach required server identity while preserving a non-complete result discriminator. */
+export function attachMcpServerInfo<Payload extends Record<string, unknown>>(
   payload: Payload,
   serverInfo: PmMcpImplementation,
-): Payload & PmMcpResultEnvelope {
+): Payload & PmMcpServerResultMetadata {
   const payloadMeta = isMcpRecord(payload._meta) ? payload._meta : {};
   return {
     ...payload,
-    resultType: "complete",
     _meta: {
       ...payloadMeta,
       [PM_MCP_META_KEYS.serverInfo]: { ...serverInfo },
     },
   };
+}
+
+/** Attach required modern result fields without mutating the caller payload. */
+export function buildMcpCompleteResult<Payload extends Record<string, unknown>>(
+  payload: Payload,
+  serverInfo: PmMcpImplementation,
+): Payload & PmMcpResultEnvelope {
+  return attachMcpServerInfo(
+    { ...payload, resultType: "complete" as const },
+    serverInfo,
+  );
 }
 
 /** Build deterministic current-revision server discovery. */

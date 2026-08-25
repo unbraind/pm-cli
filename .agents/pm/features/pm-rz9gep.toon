@@ -2,12 +2,14 @@ id: pm-rz9gep
 title: "MCP multi round-trip requests: input_required results, elicitation, retry state, and removal of server-initiated request assumptions"
 description: Implement the 2026-07-28 MRTR pattern so pm can request bounded user or host input and continue the original operation through explicit inputResponses.
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[6]: "area:mcp",elicitation,input-required,mrtr,retry,state-machine
 created_at: "2026-08-25T05:08:41.357Z"
-updated_at: "2026-08-25T05:50:35.092Z"
+updated_at: "2026-08-25T17:57:14.660Z"
 deadline: "2026-10-15T00:00:00.000Z"
+closed_at: "2026-08-25T17:55:30.479Z"
+completed_at: "2026-08-25T17:55:30.479Z"
 author: "harness:codex"
 estimated_minutes: 600
 acceptance_criteria: "All interim results use resultType input_required with typed bounded inputRequests and requestState; Retrying the original request with inputResponses resumes deterministically or returns an actionable expired or invalid-state refusal; No handler sends roots/list, sampling/createMessage, elicitation/create, or notifications/elicitation/complete as server-initiated RPC; Consent, secrets, authorization expansion, cancellation, duplicate retries, replay, and expiration have explicit negative tests; The SDK exposes a reusable MRTR state machine and MCP is a thin transport adapter"
@@ -18,11 +20,49 @@ why_now: "2026-07-28 replaces roots/list, sampling/createMessage, elicitation/cr
 parent: pm-rs9vry
 risk: high
 confidence: high
+resolution: "Implemented SDK-owned bounded multi-round-trip continuations with sealed request state, explicit input-required envelopes, deterministic retry, expiry, authorization binding, and replay protection."
+expected_result: "Modern hosts can satisfy bounded input requests by retrying the original method with typed responses, without reverse RPC or hidden connection state."
+actual_result: "The public interaction SDK and MCP adapter pass adversarial state, expiry, replay, malformed schema, synchronous, asynchronous, and real stateless protocol tests."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,implements,"2026-08-25T05:08:41.357Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,blocked_by,"2026-08-25T05:08:41.357Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:08:41.357Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:50:32.282Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-25T05:08:41.357Z","harness:codex","Duplicate check evidence: searched all statuses for multi round-trip input_required inputRequests inputResponses elicitation retry requestState and reverse RPC removal. No canonical MCP MRTR owner exists."
+  "2026-08-25T17:55:05.602Z","harness:codex","Final evidence 2026-08-25: the SDK interaction module and MCP adapter implement the 2026-07-28 multi-round-trip input_required pattern from https://modelcontextprotocol.io/specification/2026-07-28 with bounded typed requests/responses, HMAC-sealed principal-bound state, expiry, cancellation and replay refusal. PM-linked 28-test cohort passed; full repository coverage passed 576 files and 7,950 tests at statements 58,372/58,372, branches 43,890/43,890, functions 12,155/12,155, and lines 56,253/56,253. ESLint, typecheck, zero-clone detection, static contracts, tracker/graph/record assurance, package artifact, both plugin hosts, npx, external packages, audit and secret scanning pass."
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,Machine-readable public API compatibility snapshot
+  src/mcp/server.ts,project,Stateless MRTR adapter and retry dispatch
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Regenerated error catalog source coordinates after MCP protocol additions
+  src/sdk/index.ts,project,Published aggregate SDK exports
+  src/sdk/mcp/interactions.ts,project,Public bounded MRTR continuation and replay contracts
+  src/sdk/mcp/protocol.ts,project,Modern result metadata and negotiated extension helpers
+  tests/fixtures/contracts/full.json,project,Generated machine contract snapshot including current MCP errors
+  tests/integration/mcp-stateless-protocol.spec.ts,project,Real stateless modern protocol integration coverage
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MRTR sync and async adapter negative controls
+  tests/unit/sdk/mcp/interactions.spec.ts,project,MRTR cache schema positive and adversarial coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/interactions.spec.ts tests/unit/sdk/mcp/protocol.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T16:52:47.644Z",local_mutation,codex/mcp-mrtr-tasks-cache-contracts
+test_runs[1]:
+  - run_id: test-local-mt8yogo0-hse5em
+    kind: test
+    status: passed
+    started_at: "2026-08-25T17:51:04.365Z"
+    finished_at: "2026-08-25T17:51:15.552Z"
+    recorded_at: "2026-08-25T17:51:15.552Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/interactions.spec.ts tests/unit/sdk/mcp/protocol.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+docs[7]{path,scope,note}:
+  CHANGELOG.md,project,"Generated reviewed-delivery changelog containing the completed MRTR,durable tasks,cache/schema,and dependency refresh entries"
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Regenerated refusal census after MCP error source additions
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Normative requirement ownership and evidence
+  docs/MCP_2026_07_28.md,project,MRTR protocol behavior and compatibility boundary
+  docs/README.md,project,Documentation map for the new MCP SDK guide
+  docs/SDK_MCP_INTERACTIONS.md,project,Public MRTR SDK usage and trust boundaries
+  docs/SDK.md,project,Aggregate SDK routing to MCP interaction contracts
+close_reason: "Delivered bounded MRTR input-required continuations with sealed replay-safe state, public SDK contracts, thin MCP adapter, adversarial tests, exact coverage, and release-grade package/security proof."
 body: "## State model\n\n- A handler either returns complete or input_required.\n- input_required contains ordered typed inputRequests and opaque requestState bounded by policy.\n- The host retries the original method with inputResponses and the exact application state needed to continue.\n- URL-mode elicitation learns completion through retry and carries correlation only in requestState.\n- Cancellation, idempotency, replay protection, expiration, redaction, and consent are explicit.\n- pm recovery envelopes can map missing authority or missing user choices into safe MRTR requests without weakening refusal semantics."

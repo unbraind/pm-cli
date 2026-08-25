@@ -18365,6 +18365,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "mcp_task_not_found_or_not_authorized",
+      "class": "not_found",
+      "code": "mcp_task_not_found_or_not_authorized",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Mcp task not found or not authorized condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mcp/tasks.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "history_merge_conflict_markers_detected"
       ],

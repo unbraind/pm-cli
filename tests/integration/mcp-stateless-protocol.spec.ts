@@ -6,6 +6,7 @@ import {
   PM_MCP_ERROR_CODES,
   PM_MCP_META_KEYS,
   PM_MCP_PROTOCOL_VERSION,
+  PM_MCP_TASKS_EXTENSION,
   PmMcpProtocolError,
 } from "../../src/sdk/index.js";
 
@@ -23,6 +24,17 @@ function modernParams(
       },
     },
   };
+}
+
+function modernTaskParams(
+  params: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const result = modernParams(params);
+  const meta = result._meta as Record<string, unknown>;
+  meta[PM_MCP_META_KEYS.clientCapabilities] = {
+    extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
+  };
+  return result;
 }
 
 describe("MCP 2026-07-28 stateless server", () => {
@@ -46,7 +58,7 @@ describe("MCP 2026-07-28 stateless server", () => {
         prompts: { listChanged: true },
         resources: { listChanged: true },
         tools: { listChanged: true },
-        extensions: {},
+        extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
       },
       ttlMs: 60_000,
       cacheScope: "public",
@@ -69,6 +81,8 @@ describe("MCP 2026-07-28 stateless server", () => {
     });
     expect(result).toMatchObject({
       resultType: "complete",
+      ttlMs: 30_000,
+      cacheScope: "private",
       _meta: {
         [PM_MCP_META_KEYS.serverInfo]: { name: "pm-mcp" },
       },
@@ -105,6 +119,8 @@ describe("MCP 2026-07-28 stateless server", () => {
       }),
     ).resolves.toMatchObject({
       resultType: "complete",
+      ttlMs: 60_000,
+      cacheScope: "public",
       resources: expect.arrayContaining([
         expect.objectContaining({ uri: "pm://workspace/context" }),
       ]),
@@ -126,6 +142,8 @@ describe("MCP 2026-07-28 stateless server", () => {
       }),
     ).resolves.toMatchObject({
       resultType: "complete",
+      ttlMs: 60_000,
+      cacheScope: "public",
       prompts: expect.arrayContaining([
         expect.objectContaining({ name: "orient" }),
       ]),
@@ -156,6 +174,130 @@ describe("MCP 2026-07-28 stateless server", () => {
     await expect(
       handleRequest({ method: "notifications/cancelled" }),
     ).resolves.toBeUndefined();
+  });
+
+  it("serves cacheable templates and uses Invalid Params for missing resources", async () => {
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 40,
+        method: "resources/templates/list",
+        params: modernParams(),
+      }),
+    ).resolves.toMatchObject({
+      resultType: "complete",
+      resourceTemplates: [],
+      ttlMs: 60_000,
+      cacheScope: "public",
+    });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 41,
+        method: "resources/read",
+        params: modernParams({ uri: "pm://workspace/missing" }),
+      }),
+    ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.invalidParams });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 410,
+        method: "resources/read",
+        params: modernParams({ uri: "pm://workspace/agent-guide" }),
+      }),
+    ).resolves.toMatchObject({
+      resultType: "complete",
+      ttlMs: 0,
+      cacheScope: "private",
+      contents: expect.any(Array),
+    });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 411,
+        method: "resources/read",
+        params: modernParams(),
+      }),
+    ).rejects.toThrow(/Missing required argument: uri/u);
+  });
+
+  it("negotiates durable asynchronous tool calls and official task methods", async () => {
+    const taskParams = modernTaskParams({
+      name: "pm_validate",
+      arguments: { options: { checkHistoryDrift: true } },
+    });
+    const created = await handleRequest({
+      jsonrpc: "2.0",
+      id: 42,
+      method: "tools/call",
+      params: taskParams,
+    });
+    expect(created).toMatchObject({
+      resultType: "task",
+      status: "working",
+      taskId: expect.stringMatching(/^mcp-task-/u),
+    });
+    const taskId = String(created?.taskId);
+    let polled: Record<string, unknown> | undefined;
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      polled = await handleRequest({
+        jsonrpc: "2.0",
+        id: 43 + attempt,
+        method: "tasks/get",
+        params: modernTaskParams({ taskId }),
+      });
+      if (polled?.status !== "working") break;
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    }
+    expect(polled).toMatchObject({
+      resultType: "complete",
+      status: "completed",
+      result: { resultType: "complete" },
+    });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 150,
+        method: "tasks/update",
+        params: modernTaskParams({
+          taskId,
+          inputResponses: {},
+        }),
+      }),
+    ).resolves.toMatchObject({ resultType: "complete" });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 151,
+        method: "tasks/cancel",
+        params: modernTaskParams({ taskId }),
+      }),
+    ).resolves.toMatchObject({ resultType: "complete" });
+  });
+
+  it("requires per-request tasks negotiation and rejects removed task methods", async () => {
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 152,
+        method: "tasks/get",
+        params: modernParams({
+          taskId: "mcp-task-123e4567-e89b-42d3-a456-426614174000",
+        }),
+      }),
+    ).rejects.toMatchObject({
+      code: PM_MCP_ERROR_CODES.missingRequiredClientCapability,
+    });
+    for (const method of ["tasks/list", "tasks/result"]) {
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 153,
+          method,
+          params: modernParams(),
+        }),
+      ).rejects.toMatchObject({ code: -32601 });
+    }
   });
 
   it("serializes allocated modern protocol errors on the JSON-RPC surface", async () => {
@@ -306,32 +448,50 @@ describe("MCP 2026-07-28 stateless server", () => {
   });
 
   it("serves independent modern requests over a real stdio process", async () => {
-    const child = spawn(process.execPath, [path.join(process.cwd(), "dist", "mcp", "server.js")], {
-      cwd: process.cwd(),
-      stdio: ["pipe", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        PM_NO_TELEMETRY: "1",
-        PM_ANALYTICS_OPTOUT: "1",
+    const child = spawn(
+      process.execPath,
+      [path.join(process.cwd(), "dist", "mcp", "server.js")],
+      {
+        cwd: process.cwd(),
+        stdio: ["pipe", "pipe", "pipe"],
+        env: {
+          ...process.env,
+          PM_NO_TELEMETRY: "1",
+          PM_ANALYTICS_OPTOUT: "1",
+        },
       },
-    });
+    );
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
     child.stderr.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
 
     const requests = [
-      { jsonrpc: "2.0", id: 11, method: "server/discover", params: modernParams() },
+      {
+        jsonrpc: "2.0",
+        id: 11,
+        method: "server/discover",
+        params: modernParams(),
+      },
       { jsonrpc: "2.0", id: 12, method: "tools/list", params: modernParams() },
       { jsonrpc: "2.0", id: 13, method: "ping", params: modernParams() },
-      { jsonrpc: "2.0", id: 14, method: "missing/current", params: modernParams() },
+      {
+        jsonrpc: "2.0",
+        id: 14,
+        method: "missing/current",
+        params: modernParams(),
+      },
     ];
-    child.stdin.end(`${requests.map((request) => JSON.stringify(request)).join("\n")}\n`);
+    child.stdin.end(
+      `${requests.map((request) => JSON.stringify(request)).join("\n")}\n`,
+    );
 
     const exitCode = await new Promise<number | null>((resolve, reject) => {
       const timeout = setTimeout(() => {
         child.kill("SIGTERM");
-        reject(new Error("timed out waiting for stateless MCP stdio responses"));
+        reject(
+          new Error("timed out waiting for stateless MCP stdio responses"),
+        );
       }, 5_000);
       child.once("error", (error) => {
         clearTimeout(timeout);
@@ -352,8 +512,14 @@ describe("MCP 2026-07-28 stateless server", () => {
     expect(exitCode).toBe(0);
     expect(Buffer.concat(stderrChunks).toString("utf8")).toBe("");
     expect(responses).toHaveLength(4);
-    expect(responses[0]).toMatchObject({ id: 11, result: { resultType: "complete" } });
-    expect(responses[1]).toMatchObject({ id: 12, result: { resultType: "complete" } });
+    expect(responses[0]).toMatchObject({
+      id: 11,
+      result: { resultType: "complete" },
+    });
+    expect(responses[1]).toMatchObject({
+      id: 12,
+      result: { resultType: "complete" },
+    });
     expect(responses[2]).toMatchObject({ id: 13, error: { code: -32601 } });
     expect(responses[3]).toMatchObject({ id: 14, error: { code: -32601 } });
   });

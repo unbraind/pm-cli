@@ -62,6 +62,13 @@ Terminal recurrence and executable recovery are tracked by
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
+MCP hosts can build on the public stateless protocol, MRTR, cache/schema, and
+durable task primitives described in
+[MCP Interaction and Task SDK](SDK_MCP_INTERACTIONS.md). Those contracts are
+owned by [pm-rz9gep](../.agents/pm/features/pm-rz9gep.toon),
+[pm-rzs24j](../.agents/pm/features/pm-rzs24j.toon), and
+[pm-hv1x1x](../.agents/pm/features/pm-hv1x1x.toon).
+
 ## Install
 
 ```bash
