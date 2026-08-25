@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:mcp","area:sdk",protocol-negotiation,result-type,server-discover,stateless
 created_at: "2026-08-25T05:08:17.895Z"
-updated_at: "2026-08-25T15:29:06.260Z"
+updated_at: "2026-08-25T15:48:20.816Z"
 deadline: "2026-09-30T00:00:00.000Z"
 closed_at: "2026-08-25T14:41:37.224Z"
 completed_at: "2026-08-25T14:41:37.224Z"
@@ -28,11 +28,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-sqvshj,blocked_by,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-25T05:08:17.895Z","harness:codex","Duplicate check evidence: searched all statuses for stateless MCP server/discover request metadata protocolVersion clientCapabilities serverInfo resultType initialize removal and unsupported version handling. Existing handshake work is terminal and targets 2025-06-18."
   "2026-08-25T14:41:15.407Z","harness:codex","Evidence: public typed SDK protocol contracts, stateless per-request validation, deterministic server/discover, complete result envelopes, identity metadata, unsupported-version and missing-capability errors, legacy adapter, and real stdio coverage are implemented. Final exact-tree coverage: 574 files, 7920 tests, statements 57964/57964, branches 43503/43503, functions 12075/12075, lines 55865/55865. PM-linked typecheck, coverage, complete-tracker static assurance, and 49-test MCP cohort passed."
   "2026-08-25T15:01:37.533Z","harness:codex","Superseding final-tree evidence after legacy _meta era-selection fix: PM-linked full suite passed all four links. Exact coverage: 574 files, 7921 tests, statements 57964/57964, branches 43505/43505, functions 12075/12075, lines 55865/55865. Focused SDK/direct-handler/real-stdio cohort: 50 tests passed. Complete-tracker static assurance passed with persisted tracker context."
   "2026-08-25T15:29:06.260Z","harness:codex","Final frozen-source evidence after envelope integrity review: PM-linked exact coverage passed with 574 files and 7921 tests; statements 57971/57971, branches 43511/43511, functions 12077/12077, lines 55872/55872. Modern tool execution errors now retain resultType complete and serverInfo metadata, protocol errors remain JSON-RPC errors, and method-specific result metadata is preserved."
+  "2026-08-25T15:48:20.816Z","harness:codex","Review remediation evidence: DeepScan reported high-severity NULL_POINTER 233240748 in src/mcp/server.ts because the modern dispatcher parameter was cast from possibly absent request metadata. Replaced the cast with an isModernMcpRequest TypeScript type predicate so request.params._meta is structurally proven before dispatch. Exact verification on the remediated source: focused MCP suite 13/13 passed; ESLint passed; Prettier passed; typecheck passed; full coverage passed 574 files and 7,921 tests with 100% statements (57,970/57,970), branches (43,511/43,511), functions (12,077/12,077), and lines (55,871/55,871). The complete static suite passed every functional and governance assertion through SDK entrypoint costs; its final local timing-only transport-floor probe exceeded ceilings under sustained host load (load average above 7), while the PR's hosted Gates (static) is the authoritative uncontended check."
 learnings[2]{created_at,author,text}:
   "2026-08-25T14:41:16.143Z","harness:codex",Linked repository assurance commands that inspect the governed tracker must declare pm_context_mode=tracker; the default schema context intentionally has zero real items and can produce a contextually false defect-evidence failure.
   "2026-08-25T14:41:16.933Z","harness:codex","Unversioned requests cannot prove modern protocol intent, so compatibility must classify them as legacy; strict 2026-07-28 metadata validation begins only when that version is explicitly claimed."

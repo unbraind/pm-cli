@@ -752,12 +752,15 @@ async function handleRequestInReproducibleContext(
   if (!isModernMcpRequest(request)) {
     return dispatchLegacyMcpRequest(request);
   }
-  const meta = request.params?._meta as Record<string, unknown>;
-  return dispatchModernMcpRequest(request, meta);
+  return dispatchModernMcpRequest(request, request.params._meta);
 }
 
 /** Return whether a request explicitly claims a modern protocol revision. */
-function isModernMcpRequest(request: JsonRpcRequest): boolean {
+function isModernMcpRequest(
+  request: JsonRpcRequest,
+): request is JsonRpcRequest & {
+  params: Record<string, unknown> & { _meta: Record<string, unknown> };
+} {
   const meta = isMcpRecord(request.params) ? request.params._meta : undefined;
   return (
     isMcpRecord(meta) &&
@@ -807,10 +810,7 @@ function writeToolCallErrorResponse(
   request: JsonRpcRequest,
   error: unknown,
 ): boolean {
-  if (
-    request.method !== "tools/call" ||
-    error instanceof PmMcpProtocolError
-  ) {
+  if (request.method !== "tools/call" || error instanceof PmMcpProtocolError) {
     return false;
   }
   const content = errorContent(error);
