@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[9]: "area:ci","area:sdk","area:tests",cross-platform,"gh:1112",merge-receipts,nightly,node24,windows
 created_at: "2026-08-25T06:08:21.321Z"
-updated_at: "2026-08-25T07:15:29.624Z"
+updated_at: "2026-08-25T08:01:21.926Z"
 closed_at: "2026-08-25T07:06:04.857Z"
 completed_at: "2026-08-25T07:06:04.857Z"
 author: "harness:codex"
@@ -28,13 +28,14 @@ regression: true
 customer_impact: The scheduled Windows gate is red and creates a release-trust incident even though the merge-receipt product behavior did not regress.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-25T06:08:21.321Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-25T06:08:21.321Z","harness:codex","Duplicate-check evidence 2026-08-25: completed a strict full all-status read of 2,557 items and 54,342 history events with no omissions; searched exact GH-1112/title, ENAMETOOLONG, merge-receipts, promise-resolved, Windows nightly, and prior Windows/merge lineages. No item covers run 32809906959 or this host-filename-limit assumption. pm-j668gl is the closed canonical Windows test-signal lineage, linked as discovered_from. Source: https://github.com/unbraind/pm-cli/issues/1112"
   "2026-08-25T06:15:36.356Z","harness:codex","TDD red evidence 2026-08-25: focused merge-receipt suite fails the new platform-neutral contract on Linux because markMergeReceiptReconciled reaches lstat on a 5,000-character ID and throws host ENAMETOOLONG before schema validation. Hosted Windows instead accepts the path and resolves; both outcomes prove validation occurs after the unsafe host-dependent boundary."
   "2026-08-25T06:36:59.304Z","harness:codex","Verification: full coverage run exposed a case-sensitive public error-message compatibility assertion in merge-receipt health settlement. Normalized the stable message without reintroducing receipt-id/path access; focused unit plus integration rerun passed 8/8."
   "2026-08-25T07:03:24.259Z","harness:codex","Acceptance: the former 5000-character receipt id now fails with the stable schema-validation message before path construction. Focused merge unit and health integration suites pass 8/8; the full repository suite passes 7904/7904 with exact 100/100/100/100 coverage. The current packed artifact imports through npm @unbrained/pm-cli/sdk/merge and Bun SDK entrypoints."
   "2026-08-25T07:06:02.288Z","harness:codex","Tracker gate: history-drift validation is clean for the live corpus. Repository-wide resolution validation still reports the pre-existing 295 closed-item metadata backlog; this item has complete resolution/expected/actual fields and does not add to it. Full health is ok with only seven declared legacy hierarchy-cardinality warnings."
   "2026-08-25T07:15:29.624Z","harness:codex",PR #1113 static CI correctly failed closed because the nightly regression lacked escape_class and structured gate_evidence. Added nightly_regression classification plus the 5000-character schema-before-path negative control and local/hosted gate inventory; defect-evidence gate now passes with zero findings.
+  "2026-08-25T08:01:21.926Z","harness:codex","Merged delivery evidence: PR #1113 merged to main as 74632a9ceb246cabcdb37f52b943af2dd45c7a84. Exact-main Windows Node 24 passed in CI run 32823719285 alongside exact coverage and static assurance; CodeQL, Security, Docs, OSSF, and CodSpeed exact-main workflows also passed. GitHub issue #1112 closed via the merged PR."
 files[3]{path,scope,note}:
   src/sdk/merge/receipts.ts,project,Validate receipt evidence before platform-dependent path IO
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Preserve settlement and health classification contracts after early schema validation
