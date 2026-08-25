@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: history-integrity,linked-tests,regression,tracker-context
 created_at: "2026-08-24T22:37:40.571Z"
-updated_at: "2026-08-25T07:06:29.714Z"
+updated_at: "2026-08-25T07:15:28.988Z"
 closed_at: "2026-08-25T07:06:03.153Z"
 completed_at: "2026-08-25T07:06:03.153Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ regression: true
 customer_impact: Projects cannot combine pm test tracker context with the recommended strict history-drift governance gate without false failures.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-8izv,discovered_from,"2026-08-24T22:37:40.571Z","harness:codex","cli:create:dep",detected
-comments[6]:
+comments[7]:
   - created_at: "2026-08-24T22:37:40.571Z"
     author: "harness:codex"
     text: "text=Duplicate-check evidence: inspected live context and open/in-progress inventories, searched all statuses for GH-1109, tracker-context seeding, settings:write, _workspace history drift, and linked-test parity; no existing item covers this regression. GitHub source: https://github.com/unbraind/pm-cli/issues/1109"
@@ -46,6 +46,9 @@ comments[6]:
   - created_at: "2026-08-25T07:06:01.686Z"
     author: "harness:codex"
     text: "Tracker gate: history-drift validation is clean for the live corpus. Repository-wide resolution validation still reports the pre-existing 295 closed-item metadata backlog; this item has complete resolution/expected/actual fields and does not add to it. Full health is ok with only seven declared legacy hierarchy-cardinality warnings."
+  - created_at: "2026-08-25T07:15:28.988Z"
+    author: "harness:codex"
+    text: PR #1113 static CI correctly failed closed because the terminal production defect lacked escape_class and structured gate_evidence. Added production_defect classification plus the linked-test tracker-history negative control and local/hosted gate inventory; defect-evidence gate now passes with zero findings.
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,Tracker-mode sandbox seeding implementation implicated by GH-1109
   tests/unit/commands/test-command.spec.ts,project,Existing tracker-context sandbox regression suite and destination for focused coverage
@@ -78,4 +81,12 @@ docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed closeout entry
   docs/TESTING.md,project,Document tracker-context workspace-history semantics
 close_reason: "Fixed legacy tracker-context sandbox history seeding; focused, full 7904-test exact-coverage, manual strict-validation, and packed npm/Bun acceptance all pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-2ga1g7
+  gate_id: linked-test-tracker-history-integrity
+  negative_control: Seed a source tracker whose settings history records one document and whose settings.json is mutated out of band; tracker-context linked strict history validation must retain and report the genuine workspace mismatch.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: "## Failure boundary\n\nThe tracker-mode linked-test sandbox copies or derives non-trivial workspace settings and must record the exact final settings document in the workspace history stream. The current seeding path writes a settings history event whose replayed document is empty, so strict history-drift validation correctly rejects the sandbox.\n\n## Repair constraints\n\n- Preserve sandbox isolation and never read or write the real project tracker during the linked command.\n- Build the final settings document once and use that same value for disk persistence and the immutable workspace history event.\n- Cover default and non-trivial settings, schema and tracker context modes, nested strict validation, repeated seeding, and deterministic replay.\n- Add a negative control that restores the empty history document and proves the gate fails."
