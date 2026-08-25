@@ -257,14 +257,20 @@ async function openHttpSubscription(input: {
   }
   const subscriptionId = input.request.id;
   const subscriptionKey = Symbol("pm-mcp-http-subscription");
-  input.response.setHeader("Cache-Control", "no-cache, no-store");
-  input.response.setHeader("Connection", "keep-alive");
-  input.response.setHeader("Content-Type", "text/event-stream");
-  input.response.setHeader("X-Accel-Buffering", "no");
+  let responseStarted = false;
   await openMcpSubscription({
     request: input.request,
     key: subscriptionKey,
-    sink: (notification) => writePmMcpSseEvent(input.response, notification),
+    sink: (notification) => {
+      if (!responseStarted) {
+        responseStarted = true;
+        input.response.setHeader("Cache-Control", "no-cache, no-store");
+        input.response.setHeader("Connection", "keep-alive");
+        input.response.setHeader("Content-Type", "text/event-stream");
+        input.response.setHeader("X-Accel-Buffering", "no");
+      }
+      return writePmMcpSseEvent(input.response, notification);
+    },
   });
   const active: ActiveHttpSubscription = {
     id: subscriptionId,
@@ -380,13 +386,12 @@ export function createPmMcpHttpServer(options: PmMcpHttpServerOptions = {}) {
 function closeActiveHttpSubscriptions(runtime: PmMcpHttpRuntime): void {
   for (const [key, active] of runtime.activeSubscriptions) {
     if (active.timer) clearInterval(active.timer);
-    const result = closeMcpSubscription(active.id, key) as Record<
-      string,
-      unknown
-    >;
-    active.response.write(
-      `data: ${JSON.stringify({ jsonrpc: "2.0", id: active.id, result })}\n\n`,
-    );
+    const result = closeMcpSubscription(active.id, key);
+    if (result) {
+      active.response.write(
+        `data: ${JSON.stringify({ jsonrpc: "2.0", id: active.id, result })}\n\n`,
+      );
+    }
     active.response.end();
   }
   runtime.activeSubscriptions.clear();
@@ -537,6 +542,13 @@ export function resolvePmMcpHttpServerOptionsFromEnvironment(
       }
     : base;
 }
+
+/** Internal HTTP transport seams used only by direct integration tests. */
+export const _testOnly = {
+  /** Return the first active request-scoped transport key for one server. */
+  activeSubscriptionKey: (server: Server): symbol | undefined =>
+    PM_MCP_HTTP_RUNTIMES.get(server)!.activeSubscriptions.keys().next().value,
+};
 
 /* c8 ignore start -- executable guard and process lifecycle are integration-tested */
 if (isInvokedAsMcpMainModule(process.argv[1], import.meta.url)) {

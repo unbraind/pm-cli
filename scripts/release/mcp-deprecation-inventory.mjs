@@ -39,6 +39,11 @@ const NEGATIVE_CONTROL_PATHS = new Set([
   "tests/unit/mcp/mutation-envelope-parity.spec.ts",
   "tests/unit/sdk/mcp/transport.spec.ts",
 ]);
+const BOUNDED_SOURCE_CONTROLS = new Set([
+  'src/mcp/server.ts\0removed-ping\0if (request.method === "ping") {',
+  'src/mcp/server.ts\0removed-initialize\0if (request.method === "initialize") {',
+  'src/sdk/mcp/transport.ts\0sse-replay-header\0failHeader("MCP SSE resumability is not supported", "Last-Event-ID");',
+]);
 
 function isMcpSurface(relativePath) {
   if (
@@ -78,14 +83,16 @@ async function collectSourceFiles(root, directory = root) {
   return files;
 }
 
-function disposition(relativePath, line) {
+function disposition(relativePath, rule, line, boundedSourceControls) {
   if (relativePath === "src/mcp/legacy-adapter.ts") return "legacy_adapter";
   if (relativePath.startsWith("docs/MCP_")) return "migration_document";
   if (NEGATIVE_CONTROL_PATHS.has(relativePath)) return "negative_control";
+  const boundedKey = `${relativePath}\0${rule}\0${line.trim()}`;
   if (
-    line.includes("mcp-deprecation-negative-control") ||
-    line.includes("mcp-legacy-boundary")
+    BOUNDED_SOURCE_CONTROLS.has(boundedKey) &&
+    !boundedSourceControls.has(boundedKey)
   ) {
+    boundedSourceControls.add(boundedKey);
     return "bounded_source_control";
   }
   return "canonical_violation";
@@ -95,8 +102,8 @@ async function scanMcpDeprecationFile(file) {
   const source = await readFile(file.absolutePath, "utf8");
   const lines = source.split(/\r?\n/u);
   const findings = [];
+  const boundedSourceControls = new Set();
   for (const [index, line] of lines.entries()) {
-    const context = `${index > 0 ? lines[index - 1] : ""} ${line} ${index + 1 < lines.length ? lines[index + 1] : ""}`;
     for (const [rule, pattern] of RULES) {
       pattern.lastIndex = 0;
       if (!pattern.test(line)) continue;
@@ -104,7 +111,12 @@ async function scanMcpDeprecationFile(file) {
         rule,
         path: file.relativePath,
         line: index + 1,
-        disposition: disposition(file.relativePath, context),
+        disposition: disposition(
+          file.relativePath,
+          rule,
+          line,
+          boundedSourceControls,
+        ),
       });
     }
   }

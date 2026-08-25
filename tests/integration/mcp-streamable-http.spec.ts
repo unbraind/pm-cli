@@ -17,6 +17,7 @@ import {
   processRpcLine,
 } from "../../src/mcp/server.js";
 import {
+  _testOnly as httpServerTestOnly,
   closePmMcpHttpServer,
   createPmMcpHttpServer,
   resolvePmMcpHttpListenAddress,
@@ -28,11 +29,11 @@ import {
 function modernRequest(
   method: string,
   params: Record<string, unknown> = {},
-  id: string | number | undefined = 1,
+  id: string | number | null = 1,
 ): Record<string, unknown> {
   return {
     jsonrpc: "2.0",
-    ...(id === undefined ? {} : { id }),
+    id,
     method,
     params: {
       ...params,
@@ -46,6 +47,20 @@ function modernRequest(
 }
 
 const servers: ReturnType<typeof createPmMcpHttpServer>[] = [];
+const directSubscriptions: Array<{
+  id: string | number;
+  key: symbol;
+}> = [];
+
+async function openDirectSubscription(
+  input: Parameters<typeof openMcpSubscription>[0] & { key: symbol },
+): Promise<void> {
+  await openMcpSubscription(input);
+  directSubscriptions.push({
+    id: input.request.id as string | number,
+    key: input.key,
+  });
+}
 
 async function startServer(
   options: Parameters<typeof startPmMcpHttpServer>[0] = {},
@@ -69,6 +84,10 @@ async function stopServer(
 
 afterEach(async () => {
   await Promise.all(servers.splice(0).map(stopServer));
+  serverTestOnly.closeStdioMcpSubscriptions();
+  for (const subscription of directSubscriptions.splice(0)) {
+    closeMcpSubscription(subscription.id, subscription.key);
+  }
 });
 
 describe("MCP 2026-07-28 Streamable HTTP", () => {
@@ -104,7 +123,7 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
       "transport-scope",
     );
     const failedKey = Symbol("failed-http-stream");
-    await openMcpSubscription({
+    await openDirectSubscription({
       request,
       key: failedKey,
       sink: (notification) => {
@@ -119,7 +138,7 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
 
     const healthyKey = Symbol("healthy-http-stream");
     const healthy = vi.fn();
-    await openMcpSubscription({
+    await openDirectSubscription({
       request: modernRequest(
         "subscriptions/listen",
         { notifications: { toolsListChanged: true } },
@@ -140,7 +159,7 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
 
   it("closes only stdio-owned streams during stdio shutdown", async () => {
     const scopedKey = Symbol("http-stream");
-    await openMcpSubscription({
+    await openDirectSubscription({
       request: modernRequest(
         "subscriptions/listen",
         { notifications: {} },
@@ -163,6 +182,18 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
     expect(closeMcpSubscription("shared-id", scopedKey)).toMatchObject({
       resultType: "complete",
     });
+    await openMcpSubscription({
+      request: modernRequest(
+        "subscriptions/listen",
+        { notifications: {} },
+        "stale-stdio",
+      ),
+      sink: vi.fn(),
+    });
+    expect(
+      serverTestOnly.expireMcpSubscriptionRecord("stale-stdio"),
+    ).toMatchObject({ resultType: "complete" });
+    expect(serverTestOnly.closeStdioMcpSubscriptions()).toEqual([]);
   });
 
   it("preserves SSE ordering through drain and rejects closed backpressure", async () => {
@@ -231,6 +262,24 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
         body: "{}",
       }),
     ).resolves.toMatchObject({ status: 403 });
+
+    const invalidSubscription = modernRequest(
+      "subscriptions/listen",
+      { notifications: { toolsListChanged: "yes" } },
+      "invalid-filter",
+    );
+    const invalidSubscriptionResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: invalidSubscription }),
+      body: JSON.stringify(invalidSubscription),
+    });
+    expect(invalidSubscriptionResponse.status).toBe(400);
+    expect(invalidSubscriptionResponse.headers.get("content-type")).toContain(
+      "application/json",
+    );
+    expect(
+      invalidSubscriptionResponse.headers.get("x-accel-buffering"),
+    ).toBeNull();
 
     const discover = modernRequest("server/discover");
     const discoverResponse = await fetch(`${baseUrl}/mcp`, {
@@ -368,7 +417,7 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
       ],
     ] as const) {
       const { baseUrl, server } = await startServer({ requestHandler });
-      const request = modernRequest("server/discover", {}, null as never);
+      const request = modernRequest("server/discover", {}, null);
       const response = await fetch(`${baseUrl}/mcp`, {
         method: "POST",
         headers: buildMcpHttpRequestHeaders({ request }),
@@ -561,6 +610,12 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
     const decoded = new TextDecoder().decode(first?.value);
     expect(decoded).toContain("notifications/subscriptions/acknowledged");
     expect(decoded).not.toContain("id:");
+    await serverTestOnly.emitMcpChangeNotifications("install");
+    let notification = new TextDecoder().decode((await reader?.read())?.value);
+    if (!notification.includes("notifications/tools/list_changed")) {
+      notification += new TextDecoder().decode((await reader?.read())?.value);
+    }
+    expect(notification).toContain("notifications/tools/list_changed");
     const keepAlive = await Promise.race([
       reader?.read(),
       new Promise<never>((_resolve, reject) =>
@@ -574,6 +629,30 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
     expect(finalEvent).toContain('"resultType":"complete"');
     controller.abort();
     await reader?.cancel().catch(() => undefined);
+  });
+
+  it("ends an HTTP stream without a duplicate result after registry pruning", async () => {
+    const { baseUrl, server } = await startServer({ keepAliveMs: 0 });
+    const listen = modernRequest(
+      "subscriptions/listen",
+      { notifications: {} },
+      "pruned-http",
+    );
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: listen }),
+      body: JSON.stringify(listen),
+    });
+    const reader = response.body?.getReader();
+    await reader?.read();
+    const key = httpServerTestOnly.activeSubscriptionKey(server);
+    expect(key).toBeTypeOf("symbol");
+    expect(
+      serverTestOnly.expireMcpSubscriptionRecord("pruned-http", key),
+    ).toMatchObject({ resultType: "complete" });
+    const finalRead = reader?.read();
+    await stopServer(server);
+    await expect(finalRead).resolves.toMatchObject({ done: true });
   });
 
   it("allows independent HTTP clients to reuse a JSON-RPC subscription id", async () => {

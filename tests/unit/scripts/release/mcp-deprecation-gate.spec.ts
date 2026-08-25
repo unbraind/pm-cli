@@ -76,13 +76,27 @@ describe("MCP deprecation inventory gate", () => {
       legacy_adapter: 1,
       migration_document: 1,
       negative_control: 1,
-      bounded_source_control: 1,
-      canonical_violation: 1,
+      bounded_source_control: 0,
+      canonical_violation: 2,
     });
     expect(report.findings.at(-1)).toMatchObject({
       path: "tests/integration/mcp-stateless-protocol.spec.ts",
       disposition: "negative_control",
     });
+  });
+
+  it("permits only exact single-use reviewed source controls", async () => {
+    const root = await fixture();
+    await writeFile(
+      path.join(root, "src/mcp/server.ts"),
+      [
+        'if (request.method === "ping") {',
+        'if (request.method === "ping") { // mcp-deprecation-negative-control',
+      ].join("\n"),
+    );
+    const report = await scanMcpDeprecations(root);
+    expect(report.counts.bounded_source_control).toBe(1);
+    expect(report.counts.canonical_violation).toBe(1);
   });
 
   it("sets a failing exit code only when canonical violations exist", async () => {

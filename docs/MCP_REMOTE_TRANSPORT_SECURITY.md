@@ -27,15 +27,15 @@ pm-mcp-http
 
 Configuration is explicit and environment-only:
 
-| Variable | Meaning | Default |
-| --- | --- | --- |
-| `PM_MCP_HTTP_HOST` | Bind host | `127.0.0.1` |
-| `PM_MCP_HTTP_PORT` | Bind port, including `0` for an ephemeral test port | `3000` |
-| `PM_MCP_HTTP_ALLOWED_ORIGINS` | Comma-separated exact browser origins | none |
-| `PM_MCP_HTTP_BEARER_TOKEN` | Opaque deployment token for the bundled verifier | none |
-| `PM_MCP_HTTP_AUTH_ISSUER` | Exact HTTPS authorization-server issuer | none |
-| `PM_MCP_HTTP_RESOURCE` | Canonical MCP resource/audience URI | none |
-| `PM_MCP_HTTP_SCOPES` | Space-separated consent scopes | `pm:read pm:write` |
+| Variable                      | Meaning                                             | Default            |
+| ----------------------------- | --------------------------------------------------- | ------------------ |
+| `PM_MCP_HTTP_HOST`            | Bind host                                           | `127.0.0.1`        |
+| `PM_MCP_HTTP_PORT`            | Bind port, including `0` for an ephemeral test port | `3000`             |
+| `PM_MCP_HTTP_ALLOWED_ORIGINS` | Comma-separated exact browser origins               | none               |
+| `PM_MCP_HTTP_BEARER_TOKEN`    | Opaque deployment token for the bundled verifier    | none               |
+| `PM_MCP_HTTP_AUTH_ISSUER`     | Exact HTTPS authorization-server issuer             | none               |
+| `PM_MCP_HTTP_RESOURCE`        | Canonical MCP resource/audience URI                 | none               |
+| `PM_MCP_HTTP_SCOPES`          | Space-separated consent scopes                      | `pm:read pm:write` |
 
 A non-loopback bind fails closed unless token, issuer, and resource are all
 present. Production deployments should normally call
@@ -67,18 +67,21 @@ notification carries the listen request's JSON-RPC id in
 `io.modelcontextprotocol/subscriptionId`.
 
 The supported opt-ins are tool-list, prompt-list, resource-list, and exact
-resource-update notifications. Writes await the transport sink, so a slow
-consumer applies backpressure rather than reordering messages. Disconnecting
-deletes the request-scoped subscription. A broken stream has no replay cursor:
-there are no SSE event ids and `Last-Event-ID` is rejected. The caller retries
-the lost operation with a new JSON-RPC request id.
+resource-update notifications. Each stream serializes writes and drops a sink
+that fails or remains backpressured beyond the bounded write deadline; tool
+calls do not await subscriber delivery. Disconnecting deletes the
+request-scoped subscription. A broken stream has no replay cursor: there are no
+SSE event ids and `Last-Event-ID` is rejected. The caller retries the lost
+operation with a new JSON-RPC request id.
 
-`MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name` are built and validated
-against the JSON-RPC body. Tool properties may declare `x-mcp-header` in their
-JSON Schema; the SDK validates the header name, rejects reserved or duplicate
-mappings, encodes non-ASCII and ambiguous values with the MCP Base64 sentinel,
-and compares the decoded header with the argument value before dispatch.
-CR/LF and control-character values are always rejected.
+`MCP-Protocol-Version` and `Mcp-Method` are built and validated against every
+JSON-RPC request body. `Mcp-Name` is required only for `prompts/get`,
+`resources/read`, and `tools/call`; methods such as `tools/list` omit it. Tool
+properties may declare `x-mcp-header` in their JSON Schema; the SDK validates
+the header name, rejects reserved or duplicate mappings, encodes non-ASCII and
+ambiguous values with the MCP Base64 sentinel, and compares the decoded header
+with the argument value before dispatch. CR/LF and control-character values
+are always rejected.
 
 Current pm handlers do not emit request progress or deprecated MCP log-message
 notifications. A `progressToken` or request-local
@@ -123,18 +126,18 @@ inherit one another's trace context. Raw bearer tokens are hashed for
 constant-time comparison by the bundled verifier and are never included in
 claims, errors, traces, or JSON-RPC result data.
 
-| Threat | Enforced boundary |
-| --- | --- |
-| DNS rebinding/browser drive-by | Loopback default plus exact `Origin` allowlist |
-| Token passthrough | Bearer is verified at pm and never forwarded to another service |
-| Issuer mix-up | Exact discovery/response issuer checks and issuer-keyed credentials |
-| Confused audience | Exact protected-resource audience check |
-| Excess authority | Required-scope intersection before dispatch |
-| Query/log credential leak | Query tokens rejected; challenges and errors omit token material |
-| Header injection | Schema-derived allowlist, reserved-name checks, control-byte rejection |
-| Trace privacy leak | Syntax/size validation, baggage-key allowlist, request-local storage |
-| Proxy cache disclosure | MCP and metadata errors use explicit content types; MCP results use `no-store` |
-| Replay after disconnect | No session, event id, resume cursor, or redelivery; retry uses a new request id |
+| Threat                         | Enforced boundary                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| DNS rebinding/browser drive-by | Loopback default plus exact `Origin` allowlist                                  |
+| Token passthrough              | Bearer is verified at pm and never forwarded to another service                 |
+| Issuer mix-up                  | Exact discovery/response issuer checks and issuer-keyed credentials             |
+| Confused audience              | Exact protected-resource audience check                                         |
+| Excess authority               | Required-scope intersection before dispatch                                     |
+| Query/log credential leak      | Query tokens rejected; challenges and errors omit token material                |
+| Header injection               | Schema-derived allowlist, reserved-name checks, control-byte rejection          |
+| Trace privacy leak             | Syntax/size validation, baggage-key allowlist, request-local storage            |
+| Proxy cache disclosure         | MCP and metadata errors use explicit content types; MCP results use `no-store`  |
+| Replay after disconnect        | No session, event id, resume cursor, or redelivery; retry uses a new request id |
 
 ## Deprecated-feature inventory and sunset
 

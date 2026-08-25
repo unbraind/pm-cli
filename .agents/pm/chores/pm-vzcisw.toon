@@ -6,10 +6,10 @@ status: closed
 priority: 1
 tags[8]: "area:mcp",compatibility,deprecation,http-sse,logging,migration,roots,sampling
 created_at: "2026-08-25T05:13:05.253Z"
-updated_at: "2026-08-25T21:13:38.347Z"
+updated_at: "2026-08-25T23:00:46.320Z"
 deadline: "2026-10-31T00:00:00.000Z"
-closed_at: "2026-08-25T21:13:23.821Z"
-completed_at: "2026-08-25T21:13:23.821Z"
+closed_at: "2026-08-25T23:00:45.652Z"
+completed_at: "2026-08-25T23:00:45.652Z"
 author: "harness:codex"
 estimated_minutes: 540
 acceptance_criteria: "A generated inventory finds every removed or deprecated symbol and classifies source, test, doc, package, and release-probe usage; Canonical 2026-07-28 code and public docs contain no initialize-state, ping, logging/setLevel, roots-change, legacy resource-subscription, session-header, SSE-resume, or tasks/result behavior; Every deprecated feature uses the specification migration path and has a dated compatibility and removal policy; Legacy adapters are isolated from canonical SDK policy and have protocol-era positive and negative tests; CI fails when a removed symbol or deprecated feature is reintroduced outside the explicit adapter allowlist"
@@ -27,13 +27,15 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3zh9s4,blocked_by,"2026-08-25T05:13:05.253Z","harness:codex","cli:create:dep",detected
   pm-lold,supersedes,"2026-08-25T05:13:05.253Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:13:05.253Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-25T05:13:05.253Z","harness:codex","Duplicate check evidence: searched all statuses for MCP deprecated Roots Sampling Logging Dynamic Client Registration HTTP SSE includeContext ping initialize sessions and migration. Existing terminal issues fix individual old-protocol behavior but no item owns revision-wide removal."
   "2026-08-25T05:18:53.030Z","harness:codex","Graph governance: the authorization prerequisite pm-3zh9s4 already carries the transport, stateless-foundation, and ADR chain, so two redundant direct blocked_by rows were removed without weakening execution order."
   "2026-08-25T19:16:17.245Z","harness:codex","Execution scope: generated legacy-symbol inventory and CI gate, canonical removal of session-era methods and headers, explicit bounded legacy adapter policy, protocol-era tests, docs, and release evidence."
   "2026-08-25T19:54:45.151Z","harness:codex","Implementation evidence: isolated every supported 2025-06-18 behavior in LegacyMcpAdapter, kept the modern dispatcher sessionless, and added a generated source/test/doc inventory that fails on canonical removed or deprecated symbols. Current inventory has zero canonical violations; the migration guide records replacement behavior and an earliest 2027-07-28 deprecated-feature sunset, while legacy stdio removal still requires two clean consumer windows."
   "2026-08-25T20:04:23.928Z","harness:codex","Full-suite correction evidence: the first 7,975-test coverage run found only governed-inventory drift from the new mandatory gate. Updated the canonical quality command golden and retained the central gate-registry migration-majority policy by naming this a generated inventory invoked from quality:static. The four targeted failures now pass (67/67)."
   "2026-08-25T21:13:13.574Z","harness:codex","Evidence: extracted the legacy adapter behind canonical 2026-07-28 paths, delegated the old pm_subscribe surface, documented sunset/migration policy, and added the governed deprecation inventory ratchet. Inventory passed with 40 classified references: 1 legacy adapter, 14 migration references, 22 negative tests, 3 bounded tests, and 0 unclassified canonical references. Exact repository verification passed 581 files / 7,982 tests at 100/100/100/100; static quality, lint, typecheck, release contract, package, npx, and dogfood gates passed."
+  "2026-08-25T22:57:39.971Z","harness:codex","Hosted-review remediation evidence (final code before close): replaced the generic source-marker bypass with an exact path+rule+source-line single-use allowlist. The final MCP deprecation inventory reports 40 findings: 1 legacy adapter, 14 migration-document references, 22 negative controls, 3 bounded source controls, and 0 canonical violations. Exact local proof: focused gate tests passed, 581 files / 7,990 tests reached exact 100% coverage, and the complete lint/static chain exited 0."
+  "2026-08-25T23:00:42.284Z","harness:codex","Final linked-test execution after hosted-review remediation: the deprecation/handshake/stateless suite passed 50/50 tests and the live deprecation inventory gate passed with zero canonical violations."
 files[10]{path,scope,note}:
   package.json,project,Mandatory deprecation quality command
   scripts/release/mcp-deprecation-inventory.mjs,project,Generated deprecated symbol inventory and CI ratchet
@@ -48,7 +50,7 @@ files[10]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/mcp-deprecation-gate.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T19:54:43.923Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
   "pnpm quality:mcp-deprecations",project,120,"harness:codex","2026-08-25T19:54:44.527Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mt934bap-9b9fze
     kind: test
     status: passed
@@ -61,10 +63,22 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/mcp-deprecation-gate.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
       "pnpm quality:mcp-deprecations",schema,schema,source,local_source_ref
+  - run_id: test-local-mt99q6u0-naktjb
+    kind: test
+    status: passed
+    started_at: "2026-08-25T23:00:15.738Z"
+    finished_at: "2026-08-25T23:00:31.896Z"
+    recorded_at: "2026-08-25T23:00:31.896Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/mcp-deprecation-gate.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:mcp-deprecations",schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Reviewed delivery release notes
   docs/MCP_2026_07_28_CONFORMANCE.md,project,Deprecation conformance disposition
   docs/MCP_2026_07_28.md,project,Removed and migrated behavior ledger
   docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project,Dated sunset and migration policy
-close_reason: "Completed the MCP 2026-07-28 deprecation migration with isolated legacy adapter, compatibility delegation, dated migration documentation, a zero-unclassified-reference inventory ratchet, and exact 100% coverage."
+close_reason: "Delivered explicit legacy compatibility adapters and an exact allowlisted deprecation inventory gate with zero canonical violations, migration documentation, negative controls, and final linked/full verification."
 body: "## Migration ledger\n\n- initialize and notifications/initialized: replace with request-local metadata and server/discover.\n- ping: remove from canonical server and tests.\n- logging/setLevel: replace with request-local logLevel metadata, stderr for stdio, and OpenTelemetry for remote observability.\n- notifications/roots/list_changed and Roots: pass directories or files through tool parameters, resource URIs, or server configuration.\n- Sampling and includeContext legacy values: integrate directly with provider APIs when needed and omit or use none during compatibility.\n- HTTP+SSE, GET endpoints, session headers, and SSE resumability: replace with Streamable HTTP POST and explicit retry.\n- Dynamic Client Registration: prefer Client ID Metadata Documents with bounded fallback.\n- resources subscribe methods: replace with subscriptions/listen.\n\nEvery adapter declares owner, supported era, telemetry, security consequences, sunset evidence, and removal gate."

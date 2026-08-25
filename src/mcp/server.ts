@@ -615,7 +615,7 @@ async function handleToolCall(
           // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
           // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
           const result = await handler(args);
-          await emitMcpChangeNotifications(action);
+          void emitMcpChangeNotifications(action);
           return resultContent(result, warnings, args.tokenAccounting === true);
         },
         { probesEnabled: workspaceIdentity?.probes_enabled },
@@ -680,11 +680,8 @@ function closeStdioMcpSubscriptions(): Array<{
   }> = [];
   for (const [key, subscription] of PM_MCP_SUBSCRIPTIONS) {
     if (key !== subscription.id) continue;
-    const result = closeMcpSubscription(subscription.id, key) as Record<
-      string,
-      unknown
-    >;
-    closed.push({ id: subscription.id, result });
+    const result = closeMcpSubscription(subscription.id, key);
+    if (result) closed.push({ id: subscription.id, result });
   }
   return closed;
 }
@@ -1435,6 +1432,10 @@ export const _testOnly = {
   closeStdioMcpSubscriptions,
   errorContent,
   emitMcpChangeNotifications,
+  expireMcpSubscriptionRecord: (
+    id: PmMcpSubscriptionId,
+    key: PmMcpTransportSubscriptionKey = id,
+  ) => PM_MCP_SUBSCRIPTIONS.get(key)!.registry.close(id),
   getMcpClientInfo: () => LEGACY_MCP_ADAPTER.getClientInfo(),
   get extensionOptionsFromArgs() {
     return readRuntimeTestHook("extensionOptionsFromArgs");

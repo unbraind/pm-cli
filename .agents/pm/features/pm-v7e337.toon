@@ -6,10 +6,10 @@ status: closed
 priority: 1
 tags[8]: "area:mcp",cancellation,headers,progress,stdio,streamable-http,streaming,subscriptions
 created_at: "2026-08-25T05:09:03.758Z"
-updated_at: "2026-08-25T21:58:12.596Z"
+updated_at: "2026-08-25T23:00:43.599Z"
 deadline: "2026-10-31T00:00:00.000Z"
-closed_at: "2026-08-25T21:13:21.351Z"
-completed_at: "2026-08-25T21:13:21.351Z"
+closed_at: "2026-08-25T23:00:42.991Z"
+completed_at: "2026-08-25T23:00:42.991Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: "subscriptions/listen supports every specified notification type and tags notifications with the negotiated subscription id; Legacy HTTP GET, resources/subscribe, resources/unsubscribe, session headers, Last-Event-ID, SSE event ids, and redelivery semantics are absent from the canonical path; Progress and logging notifications remain request-scoped and cannot leak across concurrent requests; STDIO and Streamable HTTP pass equivalent tool, resource, prompt, cancellation, backpressure, disconnect, and retry cases; Mcp-Method, Mcp-Name, and x-mcp-header behavior is schema-derived, validated, and covered against injection and mismatch"
@@ -28,12 +28,15 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-vae5ec,blocked_by,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:50:33.335Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-25T05:09:03.758Z","harness:codex","Duplicate check evidence: searched all statuses for subscriptions/listen resourceSubscriptions Streamable HTTP Mcp-Session-Id Last-Event-ID Mcp-Method Mcp-Name x-mcp-header and stream retry. No item covers the new transport model."
   "2026-08-25T19:16:13.729Z","harness:codex","Execution scope: SDK-owned subscription contracts, stdio dispatch, Streamable HTTP header validation, request-scoped notification isolation, retry/disconnect semantics, tests, docs, and release evidence."
   "2026-08-25T19:54:19.554Z","harness:codex","Implementation evidence: added SDK-owned subscription filtering/correlation and schema-derived HTTP headers, real sessionless pm-mcp-http POST/SSE transport, stdio parity, asynchronous sink backpressure, response-stream disconnect cleanup, fresh-id retry proof, additive SDK snapshot, and operator docs. Focused transport/stateless tests are green."
   "2026-08-25T21:13:12.496Z","harness:codex","Evidence: shipped public subscription and transport SDK contracts, stdio and Streamable HTTP adapters, schema-derived headers, backpressure/cancel/close semantics, package bin, documentation, and compatibility tests. Exact repository verification passed 581 files / 7,982 tests with 100% statements (58,983/58,983), branches (44,433/44,433), functions (12,277/12,277), and lines (56,823/56,823). Linked run test-local-mt95vmrt-9rnex3 passed all 3 commands, including package artifact, npx smoke, and 88-command package-first dogfood. An installed-package HTTP-bin smoke caught the npm symlink realpath entrypoint defect; the shared realpath-aware main-module guard fixed it, and a fresh packed install successfully imported the SDK and served server/discover over the published pm-mcp-http bin."
   "2026-08-25T21:56:23.388Z","harness:codex","Final verification evidence: linked run completed all three commands against the final concurrency-hardened code: 57 focused MCP tests, packed artifact plus npx consumer smoke, and 88-command package-first dogfood. A fresh npm install of the packed tarball imported the public SDK at protocol 2026-07-28 and launched node_modules/.bin/pm-mcp-http through the real npm symlink; server/discover returned HTTP 200 with supportedVersions [2026-07-28]. The exact repository run passed 581 files / 7,986 tests with 100% statements (59,009/59,009), branches (44,444/44,444), functions (12,283/12,283), and lines (56,846/56,846)."
+  "2026-08-25T22:27:15.163Z","harness:codex","Hosted exact-head remediation evidence: DeepScan flagged the integration helper's id === undefined branch as unreachable because its default parameter narrowed undefined away; the helper now models valid JSON-RPC request ids as string | number | null and emits id directly, with the existing notification tests continuing to remove id explicitly. Gates (static) independently flagged collectMcpHeaderAnnotations at CodeFactor complexity 18 over the repository ceiling 16; annotation validation is now isolated in a documented parser and the exact static gate reports zero violations. Verification after both review-caught fixes: affected suites 18/18, TypeScript contracts pass, repository coverage 581/581 files and 7,986/7,986 tests at exact 100% (59,013 statements, 44,446 branches, 12,284 functions, 56,848 lines), and CODEFACTOR_BASE_REF=origin/main pnpm lint passes through the complete static assurance chain."
+  "2026-08-25T22:57:38.850Z","harness:codex","Hosted-review remediation evidence (final code before close): addressed subscription/transport findings by delaying SSE headers until registry/filter validation, serializing sink writes with a bounded 5s write deadline, decoupling tool-call responses from notification backpressure, suppressing undefined result payloads, rejecting malformed non-string methods, and adding direct-subscription/stdio/HTTP close-race and stale-registry coverage. Exact local proof: node scripts/run-tests.mjs coverage passed 581 files / 7,990 tests with 59,056/59,056 statements, 44,456/44,456 branches, 12,296/12,296 functions, and 56,887/56,887 lines; CODEFACTOR_BASE_REF=origin/main pnpm lint exited 0, including ESLint, jscpd, static complexity, SDK surface/import-cost, MCP inventory, tracker quality, and record-integrity gates."
+  "2026-08-25T23:00:41.068Z","harness:codex","Final linked-test execution after hosted-review remediation: all 3 linked commands passed — 37 focused subscription/transport/HTTP tests, package-artifact plus packed-npx smoke, and package-first dogfood (88 commands). No linked test was skipped."
 files[16]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Managed changelog extension receipt refreshed by reviewed closeout generation
   package.json,project,Published HTTP binary and quality gate wiring
@@ -55,7 +58,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T19:54:18.996Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
   "pnpm quality:package-artifact && pnpm smoke:npx",project,300,"harness:codex","2026-08-25T21:10:30.806Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
   "pnpm dogfood:package-first",project,300,"harness:codex","2026-08-25T21:10:31.358Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mt933ogb-fdbfv8
     kind: test
     status: passed
@@ -93,6 +96,19 @@ test_runs[3]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
       "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
       "pnpm dogfood:package-first",schema,schema,source,local_source_ref
+  - run_id: test-local-mt99pfaw-1rii6o
+    kind: test
+    status: passed
+    started_at: "2026-08-25T22:57:45.059Z"
+    finished_at: "2026-08-25T22:59:56.216Z"
+    recorded_at: "2026-08-25T22:59:56.216Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
+      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
 docs[6]{path,scope,note}:
   CHANGELOG.md,project,Reviewed delivery release notes
   docs/MCP_2026_07_28_CONFORMANCE.md,project,Normative owner and evidence matrix
@@ -100,5 +116,5 @@ docs[6]{path,scope,note}:
   docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project,HTTP operation retry and backpressure guide
   docs/README.md,project,Documentation index
   docs/SDK_MCP_INTERACTIONS.md,project,Public subscription and header SDK guide
-close_reason: "Delivered MCP 2026-07-28 subscription and transport contracts with public SDK primitives, stdio and Streamable HTTP adapters, security/backpressure semantics, package publication surface, docs, installed-consumer proof, and exact 100% coverage."
+close_reason: "Delivered public MCP subscriptions, transport metadata, real stdio/Streamable HTTP runtime integration, lifecycle safety, documentation, installed-consumer proof, and all hosted-review remediations; exact coverage, lint/static gates, all three linked tests, package smoke, and dogfood pass."
 body: "## Streaming model\n\n- subscriptions/listen is one long-lived POST-response stream with explicit requested notification types and a server-minted subscription identifier.\n- tools, prompts, resources, and resource-subscription changes flow only through the opted-in listen stream.\n- progress and message notifications remain on the response stream of their originating request.\n- A broken request stream loses that in-flight request and the client retries with a new JSON-RPC request id.\n- STDIO and Streamable HTTP share SDK handlers, cancellation, ordering, backpressure, heartbeat policy, and structured failures.\n- Streamable HTTP validates Mcp-Method and Mcp-Name and supports declared x-mcp-header parameter mappings without header injection."

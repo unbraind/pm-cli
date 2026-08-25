@@ -103,6 +103,35 @@ function containsHeaderAnnotation(value: unknown): boolean {
   );
 }
 
+/** Validate and normalize one schema-derived custom-header annotation. */
+function parseMcpHeaderAnnotation(
+  propertySchema: Record<string, unknown>,
+  propertyPath: string[],
+  names: Set<string>,
+): PmMcpHeaderAnnotation | undefined {
+  const annotation = propertySchema["x-mcp-header"];
+  if (annotation === undefined) return undefined;
+  const type = propertySchema.type;
+  if (
+    typeof annotation !== "string" ||
+    !HEADER_NAME_TOKEN_PATTERN.test(annotation) ||
+    !["boolean", "integer", "string"].includes(String(type)) ||
+    names.has(annotation.toLowerCase())
+  ) {
+    throw new PmMcpProtocolError(
+      "Invalid MCP x-mcp-header annotation",
+      PM_MCP_ERROR_CODES.invalidParams,
+      { field: propertyPath.join("."), annotation },
+    );
+  }
+  names.add(annotation.toLowerCase());
+  return {
+    name: annotation,
+    path: propertyPath,
+    type: type as PmMcpHeaderAnnotation["type"],
+  };
+}
+
 /** Parse valid statically reachable custom-header annotations from a tool schema. */
 export function collectMcpHeaderAnnotations(
   schema: unknown,
@@ -129,28 +158,12 @@ export function collectMcpHeaderAnnotations(
     for (const [property, propertySchema] of Object.entries(properties)) {
       if (!isMcpRecord(propertySchema)) continue;
       const propertyPath = [...path, property];
-      const annotation = propertySchema["x-mcp-header"];
-      if (annotation !== undefined) {
-        const type = propertySchema.type;
-        if (
-          typeof annotation !== "string" ||
-          !HEADER_NAME_TOKEN_PATTERN.test(annotation) ||
-          !["boolean", "integer", "string"].includes(String(type)) ||
-          names.has(annotation.toLowerCase())
-        ) {
-          throw new PmMcpProtocolError(
-            "Invalid MCP x-mcp-header annotation",
-            PM_MCP_ERROR_CODES.invalidParams,
-            { field: propertyPath.join("."), annotation },
-          );
-        }
-        names.add(annotation.toLowerCase());
-        annotations.push({
-          name: annotation,
-          path: propertyPath,
-          type: type as PmMcpHeaderAnnotation["type"],
-        });
-      }
+      const annotation = parseMcpHeaderAnnotation(
+        propertySchema,
+        propertyPath,
+        names,
+      );
+      if (annotation) annotations.push(annotation);
       for (const [keyword, nested] of Object.entries(propertySchema)) {
         if (
           keyword !== "properties" &&
@@ -268,7 +281,10 @@ function validateMcpRequiredRequestHeaders(
   headers: Map<string, string>,
   request: Record<string, unknown>,
 ): void {
-  const method = typeof request.method === "string" ? request.method : "";
+  const method = request.method;
+  if (typeof method !== "string" || method.length === 0) {
+    failHeader("Missing MCP request method", "Mcp-Method");
+  }
   const params = isMcpRecord(request.params) ? request.params : undefined;
   const expectedProtocol = resolveMcpRequestContext(params).protocolVersion;
   if (headers.get("mcp-protocol-version") !== expectedProtocol) {

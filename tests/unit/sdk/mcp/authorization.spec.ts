@@ -71,6 +71,13 @@ describe("MCP remote authorization and trace contracts", () => {
       "https://auth.example.test/.well-known/oauth-authorization-server",
       "https://auth.example.test/.well-known/openid-configuration",
     ]);
+    expect(
+      buildMcpAuthorizationDiscoveryUrls("https://auth.example.test/tenant1/"),
+    ).toEqual([
+      "https://auth.example.test/.well-known/oauth-authorization-server/tenant1",
+      "https://auth.example.test/.well-known/openid-configuration/tenant1",
+      "https://auth.example.test/tenant1/.well-known/openid-configuration",
+    ]);
   });
 
   it("validates exact issuer metadata and mandatory S256 PKCE", () => {
@@ -95,12 +102,16 @@ describe("MCP remote authorization and trace contracts", () => {
       validateMcpAuthorizationServerMetadata(
         {
           issuer: "https://auth.example.test",
-          code_challenge_methods_supported: ["S256"],
+          authorization_endpoint: "https://auth.example.test/authorize",
+          token_endpoint: "https://auth.example.test/token",
+          code_challenge_methods_supported: ["S256", 7],
         },
         "https://auth.example.test",
       ),
     ).toEqual({
       issuer: "https://auth.example.test",
+      authorization_endpoint: "https://auth.example.test/authorize",
+      token_endpoint: "https://auth.example.test/token",
       code_challenge_methods_supported: ["S256"],
     });
     for (const value of [
@@ -115,6 +126,21 @@ describe("MCP remote authorization and trace contracts", () => {
       },
       {
         issuer: "https://auth.example.test",
+        code_challenge_methods_supported: ["S256"],
+      },
+      {
+        issuer: "https://auth.example.test",
+        authorization_endpoint: "https://auth.example.test/authorize",
+        code_challenge_methods_supported: ["S256"],
+      },
+      {
+        issuer: "https://auth.example.test",
+        token_endpoint: "https://auth.example.test/token",
+        code_challenge_methods_supported: ["S256"],
+      },
+      {
+        issuer: "https://auth.example.test",
+        authorization_endpoint: "https://auth.example.test/authorize",
         code_challenge_methods_supported: ["S256"],
         token_endpoint: "http://auth.example.test/token",
       },
@@ -236,6 +262,8 @@ describe("MCP remote authorization and trace contracts", () => {
     if (first) first.clientId = "also-mutated";
     expect(store.get("https://auth.example.test")).toEqual({ clientId: "one" });
     expect(store.get("https://other.example.test")).toBeUndefined();
+    store.set("https://auth.example.test/tenant", { clientId: "tenant" });
+    expect(store.get("https://auth.example.test/tenant/")).toBeUndefined();
     expect(store.delete("https://auth.example.test")).toBe(true);
     expect(store.delete("https://auth.example.test")).toBe(false);
   });
@@ -312,7 +340,7 @@ describe("MCP remote authorization and trace contracts", () => {
     ).resolves.toEqual({ ...claims, audience: [claims.audience] });
     await expect(
       authorizeMcpHttpRequest({
-        headers: { authorization: "Bearer correct-token" },
+        headers: { authorization: "bearer correct-token" },
         requestUrl: "https://mcp.example.test/mcp",
         policy: { ...policy, requiredScopes: undefined },
       }),

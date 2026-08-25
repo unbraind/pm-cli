@@ -276,7 +276,7 @@ describe("MCP Streamable HTTP transport contracts", () => {
         },
         request: { ...modernRequest("tools/list"), method: 7 },
       }),
-    ).not.toThrow();
+    ).toThrow(/request method/u);
     expect(() =>
       validateMcpHttpRequestHeaders({
         headers: {

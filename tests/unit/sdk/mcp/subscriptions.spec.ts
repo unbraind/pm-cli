@@ -185,29 +185,93 @@ describe("MCP subscription SDK contracts", () => {
     expect(healthy).toHaveBeenCalledTimes(2);
   });
 
-  it("waits for asynchronous sinks so transport backpressure preserves ordering", async () => {
+  it("serializes asynchronous sink writes so backpressure preserves ordering", async () => {
     const deliveries: string[] = [];
-    let releaseWrite: (() => void) | undefined;
+    const releases: Array<() => void> = [];
+    let activeWrites = 0;
+    let maximumActiveWrites = 0;
     const registry = new PmMcpSubscriptionRegistry({
       capabilities: CAPABILITIES,
       serverInfo: { name: "pm-mcp", version: "1" },
     });
     await registry.open({
       id: "backpressure",
-      notifications: { toolsListChanged: true },
+      notifications: {
+        toolsListChanged: true,
+        resourceSubscriptions: ["pm://workspace/context"],
+      },
       sink: async (notification) => {
         if (notification.method.includes("acknowledged")) return;
+        activeWrites += 1;
+        maximumActiveWrites = Math.max(maximumActiveWrites, activeWrites);
         await new Promise<void>((resolve) => {
-          releaseWrite = resolve;
+          releases.push(resolve);
         });
         deliveries.push(notification.method);
+        activeWrites -= 1;
       },
     });
-    const pending = registry.emitListChanged("tools");
-    await Promise.resolve();
+    const first = registry.emitListChanged("tools");
+    const second = registry.emitResourceUpdated("pm://workspace/context");
+    await vi.waitFor(() => expect(releases).toHaveLength(1));
     expect(deliveries).toEqual([]);
-    releaseWrite?.();
-    await expect(pending).resolves.toBe(1);
+    releases.shift()?.();
+    await vi.waitFor(() => expect(releases).toHaveLength(1));
     expect(deliveries).toEqual(["notifications/tools/list_changed"]);
+    releases.shift()?.();
+    await expect(Promise.all([first, second])).resolves.toEqual([1, 1]);
+    expect(deliveries).toEqual([
+      "notifications/tools/list_changed",
+      "notifications/resources/updated",
+    ]);
+    expect(maximumActiveWrites).toBe(1);
+  });
+
+  it("drops a sink that remains backpressured beyond the write deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      const registry = new PmMcpSubscriptionRegistry({
+        capabilities: CAPABILITIES,
+        serverInfo: { name: "pm-mcp", version: "1" },
+      });
+      await registry.open({
+        id: "slow",
+        notifications: { toolsListChanged: true },
+        sink: (notification) =>
+          notification.method.includes("acknowledged")
+            ? undefined
+            : new Promise<void>(() => undefined),
+      });
+      const pending = registry.emitListChanged("tools");
+      await vi.advanceTimersByTimeAsync(5_000);
+      await expect(pending).resolves.toBe(0);
+      expect(registry.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("invalidates queued writes after a concurrent close and non-Error rejection", async () => {
+    let rejectWrite: ((error: string) => void) | undefined;
+    const registry = new PmMcpSubscriptionRegistry({
+      capabilities: CAPABILITIES,
+      serverInfo: { name: "pm-mcp", version: "1" },
+    });
+    await registry.open({
+      id: "closing",
+      notifications: { toolsListChanged: true },
+      sink: (notification) =>
+        notification.method.includes("acknowledged")
+          ? undefined
+          : new Promise<void>((_resolve, reject) => {
+              rejectWrite = reject;
+            }),
+    });
+    const first = registry.emitListChanged("tools");
+    const second = registry.emitListChanged("tools");
+    await vi.waitFor(() => expect(rejectWrite).toBeTypeOf("function"));
+    expect(registry.close("closing")).toMatchObject({ resultType: "complete" });
+    rejectWrite?.("closed transport");
+    await expect(Promise.all([first, second])).resolves.toEqual([0, 0]);
   });
 });

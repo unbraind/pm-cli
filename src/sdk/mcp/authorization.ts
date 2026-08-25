@@ -180,8 +180,7 @@ export function buildMcpAuthorizationDiscoveryUrls(issuer: string): string[] {
     issuer,
     "authorization server issuer",
   );
-  const suffix =
-    parsed.pathname === "/" ? "" : parsed.pathname.replace(/^\//u, "");
+  const suffix = parsed.pathname.replace(/^\/+|\/+$/gu, "");
   const origin = parsed.origin;
   return suffix
     ? [
@@ -229,14 +228,29 @@ export function validateMcpAuthorizationServerMetadata(
       401,
     );
   }
+  const requiredUrl = (field: string): string => {
+    const candidate = value[field];
+    if (typeof candidate !== "string") {
+      throw new PmMcpAuthorizationError(
+        `Authorization server metadata requires ${field}`,
+        401,
+      );
+    }
+    return requireAbsoluteAuthorizationUrl(candidate, field).href;
+  };
   const optionalUrl = (field: string): string | undefined => {
     const candidate = value[field];
     return typeof candidate === "string"
       ? requireAbsoluteAuthorizationUrl(candidate, field).href
       : undefined;
   };
+  const authorizationEndpoint = requiredUrl("authorization_endpoint");
+  const tokenEndpoint = requiredUrl("token_endpoint");
+  const registrationEndpoint = optionalUrl("registration_endpoint");
   return {
     issuer: expected,
+    authorization_endpoint: authorizationEndpoint,
+    token_endpoint: tokenEndpoint,
     code_challenge_methods_supported: [
       ...new Set(
         value.code_challenge_methods_supported.filter(
@@ -244,17 +258,11 @@ export function validateMcpAuthorizationServerMetadata(
         ),
       ),
     ],
-    ...(optionalUrl("authorization_endpoint")
-      ? { authorization_endpoint: optionalUrl("authorization_endpoint") }
-      : {}),
-    ...(optionalUrl("token_endpoint")
-      ? { token_endpoint: optionalUrl("token_endpoint") }
-      : {}),
     ...(value.client_id_metadata_document_supported === true
       ? { client_id_metadata_document_supported: true }
       : {}),
-    ...(optionalUrl("registration_endpoint")
-      ? { registration_endpoint: optionalUrl("registration_endpoint") }
+    ...(registrationEndpoint
+      ? { registration_endpoint: registrationEndpoint }
       : {}),
   };
 }
@@ -491,7 +499,7 @@ export async function authorizeMcpHttpRequest(input: {
     );
   }
   const authorization = readHeader(input.headers, "authorization");
-  const match = authorization?.match(/^Bearer ([^\s]+)$/u);
+  const match = authorization?.match(/^Bearer ([^\s]+)$/iu);
   if (!match) {
     throw new PmMcpAuthorizationError(
       "Missing or malformed bearer token",

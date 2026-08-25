@@ -50,10 +50,37 @@ export type PmMcpSubscriptionSink = (
 interface PmMcpSubscriptionRecord {
   filter: PmMcpSubscriptionFilter;
   sink: PmMcpSubscriptionSink;
+  writeQueue: Promise<void>;
 }
 
 const MAX_RESOURCE_SUBSCRIPTIONS = 256;
 const MAX_RESOURCE_URI_BYTES = 2_048;
+const MCP_SUBSCRIPTION_WRITE_TIMEOUT_MS = 5_000;
+
+function writeSubscriptionNotification(
+  sink: PmMcpSubscriptionSink,
+  notification: PmMcpSubscriptionNotification,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error("MCP subscription sink write timed out")),
+      MCP_SUBSCRIPTION_WRITE_TIMEOUT_MS,
+    );
+    timer.unref();
+    Promise.resolve()
+      .then(() => sink(notification))
+      .then(
+        () => {
+          clearTimeout(timer);
+          resolve();
+        },
+        (error: unknown) => {
+          clearTimeout(timer);
+          reject(error instanceof Error ? error : new Error(String(error)));
+        },
+      );
+  });
+}
 
 function validateOptionalBoolean(
   value: unknown,
@@ -194,16 +221,26 @@ export class PmMcpSubscriptionRegistry {
       parseMcpSubscriptionFilter(input.notifications),
       this.#capabilities,
     );
-    this.#records.set(input.id, { filter, sink: input.sink });
+    const record: PmMcpSubscriptionRecord = {
+      filter,
+      sink: input.sink,
+      writeQueue: Promise.resolve(),
+    };
+    this.#records.set(input.id, record);
     try {
-      await input.sink({
-        jsonrpc: "2.0",
-        method: "notifications/subscriptions/acknowledged",
-        params: {
-          _meta: { [PM_MCP_SUBSCRIPTION_ID_META_KEY]: input.id },
-          notifications: structuredClone(filter),
+      await this.#deliver(
+        input.id,
+        record,
+        {
+          jsonrpc: "2.0",
+          method: "notifications/subscriptions/acknowledged",
+          params: {
+            _meta: { [PM_MCP_SUBSCRIPTION_ID_META_KEY]: input.id },
+            notifications: structuredClone(filter),
+          },
         },
-      });
+        true,
+      );
     } catch (error) {
       this.#records.delete(input.id);
       throw error;
@@ -256,14 +293,24 @@ export class PmMcpSubscriptionRegistry {
     id: PmMcpSubscriptionId,
     record: PmMcpSubscriptionRecord,
     notification: PmMcpSubscriptionNotification,
+    propagateFailure = false,
   ): Promise<boolean> {
-    try {
-      await record.sink(notification);
-      return true;
-    } catch {
-      this.#records.delete(id);
-      return false;
-    }
+    const pending = record.writeQueue.then(async () => {
+      if (this.#records.get(id) !== record) return false;
+      try {
+        await writeSubscriptionNotification(record.sink, notification);
+        return true;
+      } catch (error) {
+        if (this.#records.get(id) === record) this.#records.delete(id);
+        if (propagateFailure) throw error;
+        return false;
+      }
+    });
+    record.writeQueue = pending.then(
+      () => undefined,
+      () => undefined,
+    );
+    return pending;
   }
 
   /** Gracefully close one subscription and return its final modern result. */
