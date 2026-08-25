@@ -94,6 +94,7 @@ import type {
 import { readManagedExtensionState } from "../extension.js";
 import { scanProvenanceResolverHealth } from "./provenance-health.js";
 import { applyStoredExtensionMigrationState } from "../extension/migrations.js";
+import { inspectExtensionAuthorManifest } from "../extension/author-manifest.js";
 import {
   buildCapabilityContractMetadata,
   buildRegistrationCollisionRemediation,
@@ -1136,6 +1137,9 @@ async function buildExtensionCheck(
   settings: PmSettings,
   noExtensionsFlag: boolean,
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const authorManifest = await inspectExtensionAuthorManifest(
+    resolveWorkspaceRoot(pmRoot),
+  );
   const loadResult = await loadExtensions({
     pmRoot,
     settings,
@@ -1248,6 +1252,7 @@ async function buildExtensionCheck(
         ]
       : [];
   const extensionWarnings = [
+    ...authorManifest.warnings,
     ...loadResult.warnings,
     ...activationDetails.warnings,
     ...migrationStatus.warnings,
@@ -1282,6 +1287,7 @@ async function buildExtensionCheck(
         loaded: loadedSummaries,
         warnings: extensionWarnings,
         activation: activationDetails,
+        author_manifest: authorManifest,
         triage: extensionTriage,
         ...(migrationStatus.summary.pending_count > 0
           ? {
@@ -1458,6 +1464,7 @@ const HEALTH_DETAIL_SUMMARIZERS = {
           activation.migration_status,
         ),
       },
+      author_manifest: details.author_manifest,
       triage: details.triage,
       capability_contract: details.capability_contract,
       capability_guidance: summarizeRecordList(

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1796,
+    "covered_symbols": 1801,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1797
+    "required_symbols": 1802
   },
   "breaking_acknowledgements": [
     {
@@ -6075,6 +6075,24 @@
           "signature": "export interface ExtensionManifestEngines { pm?: string; node?: string; [engine: string]: string | undefined; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionManifestSchemaFinding",
+          "signature": "export interface ExtensionManifestSchemaFinding { code: \"manifest_unknown_key\" | \"no_version_bounds_declared\"; path: string; suggested_key?: \"pm_min_version\" | \"pm_max_version\"; message: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionManifestSchemaInspection",
+          "signature": "export interface ExtensionManifestSchemaInspection { unknownKeys: string[]; missingVersionBounds: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionManifestSchemaLintResult",
+          "signature": "export interface ExtensionManifestSchemaLintResult { ok: boolean; findings: ExtensionManifestSchemaFinding[]; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "extensionMigrate",
@@ -7666,6 +7684,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "inspectExtensionManifestSchema",
+          "signature": "(manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaInspection | calls: (manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaInspection"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "inspectHistoryAuthorStream",
           "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
@@ -8221,6 +8245,12 @@
           "kind": "interface",
           "name": "LintExtensionBlueprintOptions",
           "signature": "export interface LintExtensionBlueprintOptions { declaredCapabilities?: readonly string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "lintExtensionManifestSchema",
+          "signature": "(manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaLintResult | calls: (manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaLintResult"
         },
         {
           "classification": "supported",
@@ -10355,8 +10385,20 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE_V2",
+          "signature": "readonly string[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE",
           "signature": "16"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2",
+          "signature": "18"
         },
         {
           "classification": "advanced_export",
@@ -18059,6 +18101,24 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ExtensionManifestSchemaFinding",
+          "signature": "export interface ExtensionManifestSchemaFinding { code: \"manifest_unknown_key\" | \"no_version_bounds_declared\"; path: string; suggested_key?: \"pm_min_version\" | \"pm_max_version\"; message: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionManifestSchemaInspection",
+          "signature": "export interface ExtensionManifestSchemaInspection { unknownKeys: string[]; missingVersionBounds: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionManifestSchemaLintResult",
+          "signature": "export interface ExtensionManifestSchemaLintResult { ok: boolean; findings: ExtensionManifestSchemaFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ExtensionModule",
           "signature": "export interface ExtensionModule { manifest?: ExtensionManifest; activate(api: ExtensionApi): void | Promise<void>; deactivate?(): void | Promise<void>; }"
         },
@@ -18227,6 +18287,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "inspectExtensionManifestSchema",
+          "signature": "(manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaInspection | calls: (manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaInspection"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "lintExtensionBlueprint",
           "signature": "(blueprint: ExtensionBlueprint, options?: LintExtensionBlueprintOptions) => ExtensionBlueprintLintResult | calls: (blueprint: ExtensionBlueprint, options?: LintExtensionBlueprintOptions) => ExtensionBlueprintLintResult"
         },
@@ -18235,6 +18301,12 @@
           "kind": "interface",
           "name": "LintExtensionBlueprintOptions",
           "signature": "export interface LintExtensionBlueprintOptions { declaredCapabilities?: readonly string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "lintExtensionManifestSchema",
+          "signature": "(manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaLintResult | calls: (manifest: Readonly<Record<string, unknown>>) => ExtensionManifestSchemaLintResult"
         },
         {
           "classification": "supported",

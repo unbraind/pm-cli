@@ -341,10 +341,13 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/compose.ts"],
+    sources: ["core/extensions/manifest-schema.ts"],
     emitting_commands: ["*"],
     canonical_code: "no_version_bounds_declared",
     aliases: [],
+    owned_states: [
+      { state: "author_workspace_manifest_omits_canonical_pm_version_bounds", probe_id: "author-manifest-version-bounds-missing", entrypoints: ["health"], expected_exit_class: "generic_failure" },
+    ],
   },
   {
     code: "non_refusal_exit",

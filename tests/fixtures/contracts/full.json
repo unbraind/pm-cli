@@ -18307,17 +18307,26 @@
     {
       "aliases": [],
       "canonical_code": "manifest_unknown_key",
-      "class": "usage",
+      "class": "generic_failure",
       "code": "manifest_unknown_key",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 2,
+      "exit_code": 1,
       "meaning": "Manifest unknown key condition.",
-      "owned_states": [],
+      "owned_states": [
+        {
+          "entrypoints": [
+            "health"
+          ],
+          "expected_exit_class": "generic_failure",
+          "probe_id": "author-manifest-unknown-key",
+          "state": "author_workspace_manifest_declares_an_unknown_top_level_key"
+        }
+      ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/compose.ts"
+        "core/extensions/manifest-schema.ts"
       ],
       "stability": "provisional"
     },
@@ -18925,10 +18934,19 @@
       ],
       "exit_code": 1,
       "meaning": "No version bounds declared condition.",
-      "owned_states": [],
+      "owned_states": [
+        {
+          "entrypoints": [
+            "health"
+          ],
+          "expected_exit_class": "generic_failure",
+          "probe_id": "author-manifest-version-bounds-missing",
+          "state": "author_workspace_manifest_omits_canonical_pm_version_bounds"
+        }
+      ],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/compose.ts"
+        "core/extensions/manifest-schema.ts"
       ],
       "stability": "provisional"
     },

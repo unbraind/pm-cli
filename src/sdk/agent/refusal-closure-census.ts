@@ -48,10 +48,10 @@ export interface PmRefusalClosureCensusReport {
   rows: PmRefusalClosureCensusRow[];
 }
 
-/** Reviewed floor of 16 catalog rows; includes one alias across 15 canonical groups. */
+/** @deprecated Historical v1 floor retained for SDK compatibility. */
 export const PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE = 16;
 
-/** Fifteen canonical compatibility groups that must retain executable evidence. */
+/** @deprecated Historical v1 identities retained for SDK compatibility. */
 export const PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE =
   Object.freeze([
     "bulk_ids_input_empty",
@@ -71,10 +71,23 @@ export const PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE =
     "unknown_subcommand",
   ] as const);
 
+/** Reviewed v2 floor of 18 catalog rows across 17 canonical groups. */
+export const PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2 = 18;
+
+/** V2 canonical identities that must retain executable evidence. */
+export const PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE_V2 =
+  Object.freeze(
+    [
+      ...PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
+      "manifest_unknown_key",
+      "no_version_bounds_declared",
+    ].sort((left, right) => left.localeCompare(right)),
+  );
+
 /** Ratchet receipt that prevents catalog growth from erasing proven closure. */
 export function verifyPmRefusalClosureRatchet(
   report: PmRefusalClosureCensusReport,
-  baseline = PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
+  baseline = PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2,
 ): { ok: boolean; baseline: number; actual: number } {
   return {
     ok: report.executable_error_code_count >= baseline,
@@ -86,7 +99,7 @@ export function verifyPmRefusalClosureRatchet(
 /** Ratchet canonical compatibility-group identities independently from counts. */
 export function verifyPmRefusalClosureIdentityRatchet(
   report: PmRefusalClosureCensusReport,
-  requiredCanonicalCodes: readonly string[] = PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
+  requiredCanonicalCodes: readonly string[] = PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE_V2,
 ): {
   ok: boolean;
   required_canonical_codes: string[];
@@ -216,8 +229,8 @@ export function renderPmRefusalClosureCensusMarkdown(
     "",
     `- Catalog error codes: ${report.catalog_error_code_count}`,
     `- Executable error codes: ${report.executable_error_code_count}`,
-    `- Executable-code ratchet floor: ${PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE}`,
-    `- Required executable canonical codes: ${PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE.map((code) => `\`${code}\``).join(", ")}`,
+    `- Executable-code ratchet floor: ${PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2}`,
+    `- Required executable canonical codes: ${PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE_V2.map((code) => `\`${code}\``).join(", ")}`,
     `- Uncovered error codes: ${report.uncovered_error_code_count}`,
     `- Coverage fraction: ${report.coverage_fraction.toFixed(6)}`,
     `- Closed-domain probes: ${report.closed_domain_probe_count}`,

@@ -62,7 +62,7 @@ function createSuccessfulOptions(errorEnvelope = {}) {
 describe("executable refusal closure gate", () => {
   it("fails the catalog ratchet when executable evidence regresses", () => {
     expect(scorePmRefusalCatalogClosure([])).toMatchObject({
-      catalogRatchet: { ok: false, baseline: 16, actual: 0 },
+      catalogRatchet: { ok: false, baseline: 18, actual: 0 },
       catalogRatchetFindings: expect.arrayContaining([
         expect.objectContaining({
           code: "executable_error_code_count_regressed",
@@ -100,8 +100,8 @@ describe("executable refusal closure gate", () => {
         },
         catalog_closure: {
           complete: false,
-          executable_error_code_count: 16,
-          ratchet: { ok: true, baseline: 16, actual: 16 },
+          executable_error_code_count: 18,
+          ratchet: { ok: true, baseline: 18, actual: 18 },
           restore_with: "docs/generated/REFUSAL_CLOSURE_CENSUS.md",
         },
         findings: [],
@@ -132,7 +132,7 @@ describe("executable refusal closure gate", () => {
       ).toMatchObject({
         ok: false,
         catalog_closure: {
-          ratchet: { ok: false, baseline: 16, actual: 0 },
+          ratchet: { ok: false, baseline: 18, actual: 0 },
         },
         findings: expect.arrayContaining([
           expect.objectContaining({

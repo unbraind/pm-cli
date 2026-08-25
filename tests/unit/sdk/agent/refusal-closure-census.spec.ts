@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { listCoreClosedDomainContracts } from "../../../../src/sdk/agent/closed-domain-contracts.js";
 import {
   buildPmRefusalClosureCensus,
-  PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
-  PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
+  PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE_V2,
+  PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2,
   renderPmRefusalClosureCensusMarkdown,
   verifyPmRefusalClosureIdentityRatchet,
   verifyPmRefusalClosureRatchet,
@@ -105,20 +105,20 @@ describe("refusal closure census", () => {
     );
     expect(verifyPmRefusalClosureRatchet(report)).toEqual({
       ok: true,
-      baseline: PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
+      baseline: PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2,
       actual: report.executable_error_code_count,
     });
     expect(verifyPmRefusalClosureIdentityRatchet(report)).toEqual({
       ok: true,
       required_canonical_codes: [
-        ...PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE,
+        ...PM_REFUSAL_CLOSURE_EXECUTABLE_CANONICAL_CODE_BASELINE_V2,
       ],
       missing_required_canonical_codes: [],
     });
     expect(
       verifyPmRefusalClosureRatchet(
         { ...report, executable_error_code_count: 12 },
-        PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE,
+        PM_REFUSAL_CLOSURE_EXECUTABLE_CODE_BASELINE_V2,
       ).ok,
     ).toBe(false);
 
