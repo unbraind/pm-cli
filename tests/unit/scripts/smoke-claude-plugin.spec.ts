@@ -45,7 +45,7 @@ const REQUIRED_TOOLS = [
 interface SmokeOverrides {
   marketplace?: unknown;
   pluginJson?: unknown;
-  initResult?: unknown;
+  discoveryResult?: unknown;
   tools?: string[];
   createResult?: unknown;
   getResult?: unknown;
@@ -56,8 +56,14 @@ interface SmokeOverrides {
 
 function setupSmoke(overrides: SmokeOverrides = {}) {
   const request = vi.fn(async (method: string) => {
-    if (method === "initialize") {
-      return overrides.initResult ?? { instructions: "Use pm_context before mutation tools." };
+    if (method === "server/discover") {
+      return (
+        overrides.discoveryResult ?? {
+          resultType: "complete",
+          supportedVersions: ["2026-07-28"],
+          instructions: "Use pm_context before mutation tools.",
+        }
+      );
     }
     if (method === "tools/list") {
       return { tools: (overrides.tools ?? REQUIRED_TOOLS).map((name) => ({ name })) };
@@ -105,6 +111,8 @@ describe("smoke-claude-plugin", () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await harness.importModule(SCRIPT);
     expect(startPluginMcpSmoke).toHaveBeenCalled();
+    const request = await startPluginMcpSmoke.mock.results[0]?.value;
+    expect(request?.request).toHaveBeenCalledWith("server/discover");
     expect(callTool).toHaveBeenCalledWith("pm_validate", expect.any(Object));
     expect(callTool).toHaveBeenCalledWith("pm_health", expect.any(Object));
     expect(callTool).toHaveBeenCalledWith("pm_events", expect.any(Object));
@@ -141,13 +149,32 @@ describe("smoke-claude-plugin", () => {
 
   it.each([
     {
-      name: "init missing instructions",
-      overrides: { initResult: { instructions: "" } } as SmokeOverrides,
+      name: "discovery missing canonical version",
+      overrides: {
+        discoveryResult: {
+          resultType: "complete",
+          supportedVersions: ["2025-06-18"],
+          instructions: "Use pm_context before mutation tools.",
+        },
+      } as SmokeOverrides,
+      expected: /missing canonical stateless discovery/,
+    },
+    {
+      name: "discovery missing instructions",
+      overrides: {
+        discoveryResult: { resultType: "complete", supportedVersions: ["2026-07-28"], instructions: "" },
+      } as SmokeOverrides,
       expected: /missing instructions/,
     },
     {
       name: "instructions missing pm_context",
-      overrides: { initResult: { instructions: "no guidance here" } } as SmokeOverrides,
+      overrides: {
+        discoveryResult: {
+          resultType: "complete",
+          supportedVersions: ["2026-07-28"],
+          instructions: "no guidance here",
+        },
+      } as SmokeOverrides,
       expected: /missing pm_context guidance/,
     },
     {

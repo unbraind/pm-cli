@@ -73,9 +73,10 @@ Add to the project's `.mcp.json`:
 ```
 
 The repo root `.mcp.json` uses this approach and activates automatically when
-Claude Code opens this repository. The MCP initialize handshake supplies the
-client name/version to pm's bounded identity detector, so normal agent
-mutations do not need a hard-wired `PM_AUTHOR`.
+Claude Code opens this repository. Under MCP `2026-07-28`, every request carries
+the protocol version, client capabilities, and client identity in `_meta`, so
+pm's bounded identity detector does not depend on session state and normal
+agent mutations do not need a hard-wired `PM_AUTHOR`.
 
 ## MCP Server Launcher
 
@@ -115,7 +116,10 @@ node scripts/smoke-claude-plugin.mjs
 pnpm smoke:claude-plugin
 ```
 
-Verifies: plugin file structure, manifest name consistency, MCP initialize, 31 tools present, full workflow (init → create → claim → update → link files/docs/tests → get → context → search → validate → health), and session-start hook.
+Verifies: plugin file structure, manifest name consistency, stateless MCP
+discovery for `2026-07-28`, 31 tools present, full workflow (init → create →
+claim → update → link files/docs/tests → get → context → search → validate →
+health), and session-start hook.
 
 ### MCP server smoke test
 
@@ -182,7 +186,10 @@ After installing the plugin:
 
 The authoritative plugin version is `plugins/pm-claude/.claude-plugin/plugin.json`; this row stays on the `1.x` major line so it does not drift with each plugin release.
 
-The MCP server uses JSON-RPC 2.0 over stdio with protocol version `2025-06-18`.
+The MCP server uses JSON-RPC 2.0 over stdio with canonical protocol version
+`2026-07-28`. A bounded legacy path remains for unversioned older hosts, with
+`2025-06-18` initialize available to enrich client identity; current hosts
+discover the server and send metadata on every request.
 
 ## Extension Policy Diagnostics
 

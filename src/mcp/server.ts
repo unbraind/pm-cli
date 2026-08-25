@@ -58,6 +58,19 @@ import {
   resolveItemMutationDocument,
 } from "../sdk/structured-mutations.js";
 import { resolveAuthor, resolvePmRoot } from "../sdk/runtime-primitives.js";
+import {
+  PM_MCP_ERROR_CODES,
+  PM_MCP_LEGACY_PROTOCOL_VERSIONS,
+  PM_MCP_META_KEYS,
+  PM_MCP_PROTOCOL_VERSION,
+  PmMcpProtocolError,
+  buildMcpCompleteResult,
+  buildMcpDiscoverResult,
+  isMcpRecord,
+  resolveMcpRequestContext,
+  type PmMcpImplementation,
+  type PmMcpServerCapabilities,
+} from "../sdk/mcp/protocol.js";
 
 interface JsonRpcRequest {
   jsonrpc?: string;
@@ -89,7 +102,29 @@ if (
 // build serving requests (was hard-coded "1.0.0"; see pm-2nvw).
 const PM_MCP_SERVER_VERSION =
   resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
-let activeMcpClientInfo: AgentClientInfo | undefined;
+const PM_MCP_SERVER_INFO: PmMcpImplementation = {
+  name: "pm-mcp",
+  version: PM_MCP_SERVER_VERSION,
+  description: "Stateless project-context management through pm SDK contracts.",
+  websiteUrl: "https://github.com/unbraind/pm-cli",
+};
+const PM_MCP_SERVER_CAPABILITIES: PmMcpServerCapabilities = {
+  prompts: { listChanged: true },
+  resources: { listChanged: true },
+  tools: { listChanged: true },
+  extensions: {},
+};
+const PM_MCP_INSTRUCTIONS =
+  "You have access to native pm CLI tools for git-based project management. " +
+  "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
+  "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_events, pm_create, pm_mutate, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_graph, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
+  "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
+  "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
+  "Use pm_run with an explicit action for active package-owned operations, plus activity, aggregate, history, stats, test-all, and gc. " +
+  "Use history-redact for audited history-stream redaction workflows, history-repair to re-anchor a drifted history chain, and history-compact to checkpoint/prune long history streams while preserving replay integrity. " +
+  "Agent harness and model provenance are detected automatically; pass author only for an intentional identity override. " +
+  "Do not pass path during real repository tracking — only pass path for sandbox or test runs.";
+let legacyMcpClientInfo: AgentClientInfo | undefined;
 
 // Tool definitions (TOOLS) live in ./tool-definitions.ts so the `pm contracts`
 // golden-file snapshot can import the surface without loading the server
@@ -391,12 +426,8 @@ function boundMcpClientProvenance(value: unknown): Record<string, string> {
   return bounded;
 }
 
-function readMcpClientInfo(
-  params: Record<string, unknown> | undefined,
-): AgentClientInfo | undefined {
-  const clientInfo = isRuntimeRecord(params?.clientInfo)
-    ? params.clientInfo
-    : {};
+function readMcpClientInfo(value: unknown): AgentClientInfo | undefined {
+  const clientInfo = isRuntimeRecord(value) ? value : {};
   const clientName =
     typeof clientInfo.name === "string" ? clientInfo.name.trim() : "";
   if (clientName.length === 0) return undefined;
@@ -422,12 +453,13 @@ function readMcpClientInfo(
 
 async function handleToolCall(
   paramsInput: Record<string, unknown> | undefined,
+  clientInfo: AgentClientInfo | undefined,
 ): Promise<Record<string, unknown>> {
   return runWithHarnessDetectionSignals(
     {
       env: process.env,
       argv: process.argv,
-      ...(activeMcpClientInfo ? { client_info: activeMcpClientInfo } : {}),
+      ...(clientInfo ? { client_info: clientInfo } : {}),
     },
     async () => {
       const params = asRecordClone(paramsInput);
@@ -577,38 +609,45 @@ function renderWorkflowPrompt(
   };
 }
 
-/** Implements handle request for the public runtime surface of this module. */
-async function handleRequestInReproducibleContext(
-  request: JsonRpcRequest,
-): Promise<Record<string, unknown> | undefined> {
-  if (!request.id && request.method?.startsWith("notifications/")) {
-    return undefined;
-  }
-  if (request.method === "ping") {
-    return {};
-  }
-  if (request.method === "initialize") {
-    activeMcpClientInfo = readMcpClientInfo(request.params);
-    return {
-      protocolVersion: "2025-06-18",
-      capabilities: {
-        tools: { listChanged: true },
-        resources: { listChanged: true },
-        prompts: { listChanged: true },
+/** Validate and answer the bounded legacy initialize adapter. */
+function handleLegacyInitialize(
+  params: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const requestedVersion = params?.protocolVersion;
+  if (
+    typeof requestedVersion === "string" &&
+    !PM_MCP_LEGACY_PROTOCOL_VERSIONS.includes(
+      requestedVersion as (typeof PM_MCP_LEGACY_PROTOCOL_VERSIONS)[number],
+    )
+  ) {
+    throw new PmMcpProtocolError(
+      "Unsupported legacy MCP protocol version",
+      PM_MCP_ERROR_CODES.unsupportedProtocolVersion,
+      {
+        supported: [...PM_MCP_LEGACY_PROTOCOL_VERSIONS],
+        requested: requestedVersion,
+        modern: PM_MCP_PROTOCOL_VERSION,
       },
-      serverInfo: { name: "pm-mcp", version: PM_MCP_SERVER_VERSION },
-      instructions:
-        "You have access to native pm CLI tools for git-based project management. " +
-        "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_events, pm_create, pm_mutate, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_graph, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
-        "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
-        "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
-        "Use pm_run with an explicit action for active package-owned operations, plus activity, aggregate, history, stats, test-all, and gc. " +
-        "Use history-redact for audited history-stream redaction workflows, history-repair to re-anchor a drifted history chain, and history-compact to checkpoint/prune long history streams while preserving replay integrity. " +
-        "Agent harness and model provenance are detected automatically; pass author only for an intentional identity override. " +
-        "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
-    };
+    );
   }
+  legacyMcpClientInfo = readMcpClientInfo(params?.clientInfo);
+  return {
+    protocolVersion: PM_MCP_LEGACY_PROTOCOL_VERSIONS[0],
+    capabilities: structuredClone(PM_MCP_SERVER_CAPABILITIES),
+    serverInfo: { ...PM_MCP_SERVER_INFO },
+    instructions: PM_MCP_INSTRUCTIONS,
+  };
+}
+
+/** Dispatch an unversioned request through the bounded legacy surface. */
+async function dispatchLegacyMcpRequest(
+  request: JsonRpcRequest,
+): Promise<Record<string, unknown>> {
+  if (request.method === "ping") return {};
+  // Missing version metadata cannot identify a 2026-07-28 request. Preserve
+  // the pre-version-negotiation stdio behavior as the bounded legacy path;
+  // initialize enriches its client identity but is not required by older pm
+  // hosts. Modern requests remain strict through resolveMcpRequestContext.
   if (request.method === "tools/list") {
     return {
       tools: (
@@ -617,7 +656,7 @@ async function handleRequestInReproducibleContext(
     };
   }
   if (request.method === "tools/call") {
-    return handleToolCall(request.params);
+    return handleToolCall(request.params, legacyMcpClientInfo);
   }
   if (request.method === "resources/list") {
     return { resources: PM_MCP_RESOURCE_CONTRACTS };
@@ -646,6 +685,86 @@ async function handleRequestInReproducibleContext(
   );
 }
 
+/** Dispatch one validated stateless request through the modern surface. */
+async function dispatchModernMcpRequest(
+  request: JsonRpcRequest,
+  meta: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  resolveMcpRequestContext(request.params);
+  const clientInfo = readMcpClientInfo(meta[PM_MCP_META_KEYS.clientInfo]);
+  if (request.method === "server/discover") {
+    return buildMcpDiscoverResult({
+      serverInfo: PM_MCP_SERVER_INFO,
+      capabilities: PM_MCP_SERVER_CAPABILITIES,
+      instructions: PM_MCP_INSTRUCTIONS,
+    });
+  }
+  if (request.method === "ping") {
+    throw new PmMcpProtocolError("MCP method not found: ping", -32601, {
+      removedIn: PM_MCP_PROTOCOL_VERSION,
+    });
+  }
+  let result: Record<string, unknown>;
+  if (request.method === "tools/list") {
+    result = {
+      tools: (
+        await resolveMcpToolSurface(TOOLS, requestWorkspaceArgs(request.params))
+      ).tools,
+    };
+  } else if (request.method === "tools/call") {
+    result = await handleToolCall(request.params, clientInfo);
+  } else if (request.method === "resources/list") {
+    result = { resources: PM_MCP_RESOURCE_CONTRACTS };
+  } else if (request.method === "resources/read") {
+    result = await readWorkspaceResource(
+      readRequiredString(asRecordClone(request.params), "uri"),
+      request.params,
+    );
+  } else if (request.method === "prompts/list") {
+    result = {
+      prompts: PM_MCP_PROMPT_CONTRACTS.map((prompt) => ({
+        name: prompt.name,
+        description: prompt.description,
+        arguments: prompt.arguments,
+      })),
+    };
+  } else if (request.method === "prompts/get") {
+    result = renderWorkflowPrompt(request.params);
+  } else {
+    throw new PmMcpProtocolError(
+      `MCP method not found: ${request.method ?? "(missing)"}`,
+      -32601,
+    );
+  }
+  return buildMcpCompleteResult(result, PM_MCP_SERVER_INFO);
+}
+
+/** Implements handle request for the public runtime surface of this module. */
+async function handleRequestInReproducibleContext(
+  request: JsonRpcRequest,
+): Promise<Record<string, unknown> | undefined> {
+  if (!request.id && request.method?.startsWith("notifications/")) {
+    return undefined;
+  }
+  if (request.method === "initialize") {
+    return handleLegacyInitialize(request.params);
+  }
+  if (!isModernMcpRequest(request)) {
+    return dispatchLegacyMcpRequest(request);
+  }
+  const meta = request.params?._meta as Record<string, unknown>;
+  return dispatchModernMcpRequest(request, meta);
+}
+
+/** Return whether a request explicitly claims a modern protocol revision. */
+function isModernMcpRequest(request: JsonRpcRequest): boolean {
+  const meta = isMcpRecord(request.params) ? request.params._meta : undefined;
+  return (
+    isMcpRecord(meta) &&
+    typeof meta[PM_MCP_META_KEYS.protocolVersion] === "string"
+  );
+}
+
 /** Dispatch one MCP request under supported process-level reproducibility settings. */
 export async function handleRequest(
   request: JsonRpcRequest,
@@ -665,12 +784,43 @@ function writeResponse(
 }
 
 function writeError(id: JsonRpcRequest["id"], error: unknown): void {
-  const code = error instanceof PmCliError ? error.exitCode : -32603;
+  const code =
+    error instanceof PmMcpProtocolError
+      ? error.code
+      : error instanceof PmCliError
+        ? error.exitCode
+        : -32603;
   const message = error instanceof Error ? error.message : String(error);
-  const data = error instanceof PmCliError ? error.context : undefined;
+  const data =
+    error instanceof PmMcpProtocolError
+      ? error.data
+      : error instanceof PmCliError
+        ? error.context
+        : undefined;
   process.stdout.write(
     `${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message, data } })}\n`,
   );
+}
+
+/** Write an MCP tool execution failure as a successful tool result envelope. */
+function writeToolCallErrorResponse(
+  request: JsonRpcRequest,
+  error: unknown,
+): boolean {
+  if (
+    request.method !== "tools/call" ||
+    error instanceof PmMcpProtocolError
+  ) {
+    return false;
+  }
+  const content = errorContent(error);
+  writeResponse(
+    request.id,
+    isModernMcpRequest(request)
+      ? buildMcpCompleteResult(content, PM_MCP_SERVER_INFO)
+      : content,
+  );
+  return true;
 }
 
 // pm-3puw: parse one JSON-RPC line, dispatch it, and write the response. Kept
@@ -715,9 +865,7 @@ async function processRpcLineWithHandler(
     if (!shouldRespond) {
       return;
     }
-    if (request.method === "tools/call") {
-      writeResponse(request.id, errorContent(error));
-    } else {
+    if (!writeToolCallErrorResponse(request, error)) {
       writeError(request.id, error);
     }
   }
@@ -808,7 +956,7 @@ export const _testOnly = {
   collectMutationGuardWarnings,
   errorContent,
   getMcpClientInfo: () =>
-    activeMcpClientInfo ? { ...activeMcpClientInfo } : undefined,
+    legacyMcpClientInfo ? { ...legacyMcpClientInfo } : undefined,
   get extensionOptionsFromArgs() {
     return readRuntimeTestHook("extensionOptionsFromArgs");
   },

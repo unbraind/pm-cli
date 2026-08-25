@@ -12,11 +12,13 @@ const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({
 });
 
 try {
-  await request("initialize", {
-    protocolVersion: "2025-06-18",
-    capabilities: {},
-    clientInfo: { name: "pm-codex-plugin-smoke", version: "1.0.0" },
-  });
+  const discovery = await request("server/discover");
+  if (
+    discovery.resultType !== "complete" ||
+    !discovery.supportedVersions?.includes("2026-07-28")
+  ) {
+    throw new Error("MCP discovery did not advertise the canonical revision");
+  }
   const tools = await request("tools/list");
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
   for (const required of ["pm_run", "pm_context", "pm_create", "pm_get", "pm_update", "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings", "pm_deps", "pm_test"]) {

@@ -152,22 +152,27 @@ invalid values.
 
 ## Cross an MCP boundary
 
-An embedding MCP client can add bounded `provenance` and `episode` fields to
-its initialize `clientInfo`. The server retains only those fields and applies
-them to later tool calls from that initialized client.
+An embedding MCP 2026-07-28 client can add bounded `provenance` and `episode`
+fields to request-local `io.modelcontextprotocol/clientInfo`. The server
+retains only those fields while processing that request; no later request
+inherits them.
 
 ```json
 {
-  "clientInfo": {
-    "name": "agent-host",
-    "version": "1.0.0",
-    "provenance": {
-      "role": "implementer",
-      "topic": "release readiness"
-    },
-    "episode": {
-      "id": "release-2026-08-01",
-      "label": "Release readiness"
+  "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {},
+    "io.modelcontextprotocol/clientInfo": {
+      "name": "agent-host",
+      "version": "1.0.0",
+      "provenance": {
+        "role": "implementer",
+        "topic": "release readiness"
+      },
+      "episode": {
+        "id": "release-2026-08-01",
+        "label": "Release readiness"
+      }
     }
   }
 }

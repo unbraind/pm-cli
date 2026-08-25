@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Stateless MCP core: request-local version and capabilities, mandatory server/discover, typed result envelopes, and deterministic identity ([pm-vae5ec](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vae5ec.toon))
+
 ### Changed
 
 - SDK-first architecture: pm CLI (and MCP) become thin layers over a complete public pm SDK ([pm-usfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-usfg.toon))
@@ -11,6 +15,10 @@
 - GH-1091: surface extension manifest schema lint separately from version compatibility ([pm-gh1091](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1091.toon))
 - GH-1109: tracker-context seeding writes an empty settings history document ([pm-2ga1g7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ga1g7.toon))
 - GH-1112: Windows Node 24 merge-receipt boundary test relies on POSIX name-length failure ([pm-v3umtp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3umtp.toon))
+
+### Deprecated
+
+- ADR: MCP 2026-07-28 is canonical and legacy interoperability is a bounded stateless adapter, not connection-local session state ([pm-sqvshj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-sqvshj.toon))
 
 ## 2026.8.25 - 2026-08-25
 

@@ -58,6 +58,10 @@ describe("plugin-mcp-smoke-harness", () => {
     );
 
     const initializePromise = session.request("initialize", { ping: true });
+    expect(JSON.parse(String(env.stdinWrite.mock.calls.at(-1)?.[0]))).toMatchObject({
+      method: "initialize",
+      params: { ping: true },
+    });
     env.readlineEmitter.emit(
       "line",
       JSON.stringify({ jsonrpc: "2.0", id: lastId(env.stdinWrite), result: { instructions: "ok" } }),
@@ -66,6 +70,14 @@ describe("plugin-mcp-smoke-harness", () => {
 
     // structuredContent?.result wins (line 108 left side).
     const structuredPromise = session.callTool("pm_get", { id: "pm-1" });
+    expect(JSON.parse(String(env.stdinWrite.mock.calls.at(-1)?.[0]))).toMatchObject({
+      params: {
+        _meta: {
+          "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+          "io.modelcontextprotocol/clientCapabilities": {},
+        },
+      },
+    });
     env.readlineEmitter.emit(
       "line",
       JSON.stringify({

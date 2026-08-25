@@ -20,17 +20,22 @@ const NPM_PACKAGE =
 const PACKAGE_BINS = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
 ).bin;
-const INITIALIZE_REQUEST = `${JSON.stringify({
+const MCP_DISCOVER_REQUEST = `${JSON.stringify({
   jsonrpc: "2.0",
   id: 1,
-  method: "initialize",
+  method: "server/discover",
   params: {
-    protocolVersion: "2025-06-18",
-    capabilities: {},
-    clientInfo: { name: "published-artifact-verifier", version: "1.0.0" },
+    _meta: {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities": {},
+      "io.modelcontextprotocol/clientInfo": {
+        name: "published-artifact-verifier",
+        version: "1.0.0",
+      },
+    },
   },
 })}\n`;
-const MCP_INITIALIZE_TIMEOUT_MS = 60_000;
+const MCP_DISCOVER_TIMEOUT_MS = 60_000;
 
 function usage() {
   console.log(`Usage:
@@ -43,7 +48,7 @@ function usage() {
 Verifies the public release surfaces after publish:
 - npm registry metadata
 - npx and bunx real CLI command dispatch
-- npx and bunx pm-mcp JSON-RPC initialization
+- npx and bunx pm-mcp stateless JSON-RPC discovery
 - package bin-to-entrypoint coverage and missing-bin negative controls
 - GitHub Release metadata
 `);
@@ -210,7 +215,7 @@ function assertCliDispatch(stdout) {
   return { ok: true, command: "contracts", output: "json" };
 }
 
-function assertMcpInitialize(stdout) {
+function assertMcpDiscovery(stdout) {
   const response = stdout
     .split(/\r?\n/u)
     .map((line) => line.trim())
@@ -218,15 +223,18 @@ function assertMcpInitialize(stdout) {
     .map((line) => JSON.parse(line))
     .find((entry) => entry.id === 1);
   if (
-    response?.result?.serverInfo?.name !== "pm-mcp" ||
-    typeof response.result.protocolVersion !== "string"
+    response?.result?._meta?.["io.modelcontextprotocol/serverInfo"]?.name !==
+      "pm-mcp" ||
+    response.result.resultType !== "complete" ||
+    !response.result.supportedVersions?.includes("2026-07-28")
   ) {
-    return { ok: false, reason: "mcp_initialize_response_invalid" };
+    return { ok: false, reason: "mcp_discovery_response_invalid" };
   }
   return {
     ok: true,
-    server_name: response.result.serverInfo.name,
-    protocol_version: response.result.protocolVersion,
+    server_name:
+      response.result._meta["io.modelcontextprotocol/serverInfo"].name,
+    protocol_version: "2026-07-28",
   };
 }
 
@@ -320,9 +328,9 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
-      assertMcpInitialize,
-      INITIALIZE_REQUEST,
-      MCP_INITIALIZE_TIMEOUT_MS,
+      assertMcpDiscovery,
+      MCP_DISCOVER_REQUEST,
+      MCP_DISCOVER_TIMEOUT_MS,
     );
     const bunxPm = verifyRequiredExecutor(
       "bunx-pm",
@@ -374,9 +382,9 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
-      assertMcpInitialize,
-      INITIALIZE_REQUEST,
-      MCP_INITIALIZE_TIMEOUT_MS,
+      assertMcpDiscovery,
+      MCP_DISCOVER_REQUEST,
+      MCP_DISCOVER_TIMEOUT_MS,
     );
     const negativeControls = {
       npx: verifyMissingBinControl(

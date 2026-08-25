@@ -147,8 +147,11 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
         jsonrpc: "2.0",
         id: 1,
         result: {
-          protocolVersion: "2025-06-18",
-          serverInfo: { name: "pm-mcp" },
+          supportedVersions: ["2026-07-28"],
+          resultType: "complete",
+          _meta: {
+            "io.modelcontextprotocol/serverInfo": { name: "pm-mcp" },
+          },
         },
       }),
       stderr: "",
@@ -608,7 +611,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     );
   });
 
-  it("rejects non-object CLI output and an invalid MCP initialize response", async () => {
+  it("rejects non-object CLI output and an invalid MCP discovery response", async () => {
     const cli = await runVerify({
       argv: [
         "--version",
@@ -651,7 +654,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         return successfulExecutorResult(args);
       },
     });
-    expect(String(mcp.failure)).toContain("mcp_initialize_response_invalid");
+    expect(String(mcp.failure)).toContain("mcp_discovery_response_invalid");
   });
 
   it("fails closed when missing-bin controls pass or a manifest bin is uncovered", async () => {

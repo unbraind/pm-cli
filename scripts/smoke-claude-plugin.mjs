@@ -5,7 +5,7 @@
  * Tests:
  * 1. Plugin file structure (marketplace + plugin manifests, skills, commands, agents, hooks)
  * 2. MCP server launcher resolves the repo build
- * 3. MCP server initializes with instructions
+ * 3. MCP server discovers the current stateless protocol with instructions
  * 4. All 31 required tools are listed
  * 5. pm_run(init), pm_create, pm_claim, pm_update, pm_comments, pm_files, pm_docs, pm_test,
  *    pm_get, pm_context, pm_search, pm_events, pm_validate, pm_health all succeed
@@ -110,19 +110,21 @@ const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({
 });
 
 try {
-  // 1. Initialize and check instructions
-  const initResult = await request("initialize", {
-    protocolVersion: "2025-06-18",
-    capabilities: {},
-    clientInfo: { name: "pm-claude-plugin-smoke", version: "1.0.0" },
-  });
-  if (!initResult.instructions || typeof initResult.instructions !== "string") {
-    throw new Error("MCP server missing instructions in initialize response");
+  // 1. Discover and check the canonical revision plus instructions.
+  const discovery = await request("server/discover");
+  if (
+    discovery.resultType !== "complete" ||
+    !discovery.supportedVersions?.includes("2026-07-28")
+  ) {
+    throw new Error("MCP server missing canonical stateless discovery");
   }
-  if (!initResult.instructions.includes("pm_context")) {
+  if (!discovery.instructions || typeof discovery.instructions !== "string") {
+    throw new Error("MCP server missing instructions in discovery response");
+  }
+  if (!discovery.instructions.includes("pm_context")) {
     throw new Error("Server instructions missing pm_context guidance");
   }
-  console.log("MCP initialize: ok (instructions present)");
+  console.log("MCP discovery: ok (2026-07-28 + instructions present)");
 
   // 2. Verify all required tools
   const tools = await request("tools/list");
