@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[8]: "area:mcp",cancellation,headers,progress,stdio,streamable-http,streaming,subscriptions
 created_at: "2026-08-25T05:09:03.758Z"
-updated_at: "2026-08-25T05:09:03.758Z"
+updated_at: "2026-08-25T05:50:35.874Z"
 deadline: "2026-10-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 840
@@ -18,10 +18,11 @@ why_now: "The revision removes HTTP GET, MCP session IDs, resource subscribe met
 parent: pm-rs9vry
 risk: critical
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,blocked_by,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-25T05:50:33.335Z","harness:codex","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-25T05:09:03.758Z","harness:codex","Duplicate check evidence: searched all statuses for subscriptions/listen resourceSubscriptions Streamable HTTP Mcp-Session-Id Last-Event-ID Mcp-Method Mcp-Name x-mcp-header and stream retry. No item covers the new transport model."
 body: "## Streaming model\n\n- subscriptions/listen is one long-lived POST-response stream with explicit requested notification types and a server-minted subscription identifier.\n- tools, prompts, resources, and resource-subscription changes flow only through the opted-in listen stream.\n- progress and message notifications remain on the response stream of their originating request.\n- A broken request stream loses that in-flight request and the client retries with a new JSON-RPC request id.\n- STDIO and Streamable HTTP share SDK handlers, cancellation, ordering, backpressure, heartbeat policy, and structured failures.\n- Streamable HTTP validates Mcp-Method and Mcp-Name and supports declared x-mcp-header parameter mappings without header injection."

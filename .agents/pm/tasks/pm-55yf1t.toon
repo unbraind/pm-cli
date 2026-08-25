@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: "area:mcp",ci,conformance,negative-control,published-artifact,real-process,release-gate
 created_at: "2026-08-25T05:12:34.029Z"
-updated_at: "2026-08-25T05:18:50.975Z"
+updated_at: "2026-08-25T05:50:34.380Z"
 deadline: "2026-12-15T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 1200
@@ -18,7 +18,7 @@ why_now: The existing handshake test proves an obsolete revision and the release
 parent: pm-rs9vry
 risk: critical
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-8nzivt,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,verifies,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
   pm-hv1x1x,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
@@ -29,6 +29,8 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-ygli86,implements,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
   pm-vzcisw,blocked_by,"2026-08-25T05:13:50.205Z","harness:codex","cli:update:dep",detected
   pm-s00mpf,verifies,"2026-08-25T05:15:00.364Z","harness:codex","cli:update:dep",detected
+  pm-kl11,discovered_from,"2026-08-25T05:50:27.401Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,implements,"2026-08-25T05:50:27.401Z","harness:codex","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-08-25T05:12:34.029Z","harness:codex","Duplicate check evidence: searched all statuses for MCP 2026-07-28 conformance official schema protocol-era adapter Inspector real transport adversarial negative-control packed and published release gates. pm-kl11 and the current release probe only cover the obsolete initialize contract."
   "2026-08-25T05:18:50.346Z","harness:codex","Graph governance: removed four direct blocked_by rows that were already implied through typed leaf prerequisites. The release gate still waits for every MCP lane through pm-rzs24j, pm-hv1x1x, pm-8nzivt, pm-pznhee, and pm-vzcisw, while preserving the established redundancy ceiling."
