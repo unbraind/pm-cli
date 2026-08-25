@@ -60,7 +60,6 @@ import {
 import { resolveAuthor, resolvePmRoot } from "../sdk/runtime-primitives.js";
 import {
   PM_MCP_ERROR_CODES,
-  PM_MCP_LEGACY_PROTOCOL_VERSIONS,
   PM_MCP_META_KEYS,
   PM_MCP_PROTOCOL_VERSION,
   PmMcpProtocolError,
@@ -88,11 +87,26 @@ import {
   PmMcpTaskStore,
   createMcpTaskStore,
 } from "../sdk/mcp/tasks.js";
+import {
+  PmMcpSubscriptionRegistry,
+  type PmMcpSubscriptionId,
+  type PmMcpSubscriptionSink,
+} from "../sdk/mcp/subscriptions.js";
+import {
+  extractMcpTraceContext,
+  runWithMcpTraceContext,
+} from "../sdk/mcp/authorization.js";
+import { LegacyMcpAdapter } from "./legacy-adapter.js";
 
-interface JsonRpcRequest {
+/** JSON-RPC request shape accepted by pm MCP transport adapters. */
+export interface JsonRpcRequest {
+  /** JSON-RPC revision marker when supplied by the transport. */
   jsonrpc?: string;
+  /** Correlation identifier omitted only for notifications. */
   id?: string | number | null;
+  /** Protocol operation selected by the caller. */
   method?: string;
+  /** Operation inputs including request-local MCP metadata. */
   params?: Record<string, unknown>;
 }
 
@@ -127,10 +141,32 @@ const PM_MCP_SERVER_INFO: PmMcpImplementation = {
 };
 const PM_MCP_SERVER_CAPABILITIES: PmMcpServerCapabilities = {
   prompts: { listChanged: true },
-  resources: { listChanged: true },
+  resources: { listChanged: true, subscribe: true },
   tools: { listChanged: true },
   extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
 };
+type PmMcpTransportSubscriptionKey = PmMcpSubscriptionId | symbol;
+interface PmMcpTransportSubscription {
+  id: PmMcpSubscriptionId;
+  registry: PmMcpSubscriptionRegistry;
+}
+const PM_MCP_SUBSCRIPTIONS = new Map<
+  PmMcpTransportSubscriptionKey,
+  PmMcpTransportSubscription
+>();
+
+function createMcpSubscriptionRegistry(): PmMcpSubscriptionRegistry {
+  return new PmMcpSubscriptionRegistry({
+    capabilities: PM_MCP_SERVER_CAPABILITIES,
+    serverInfo: PM_MCP_SERVER_INFO,
+  });
+}
+
+function pruneClosedMcpSubscriptionRegistries(): void {
+  for (const [key, subscription] of PM_MCP_SUBSCRIPTIONS) {
+    if (subscription.registry.size === 0) PM_MCP_SUBSCRIPTIONS.delete(key);
+  }
+}
 const PM_MCP_CACHE_POLICIES = {
   prompts: { ttlMs: 60_000, cacheScope: "public" },
   resource: { ttlMs: 0, cacheScope: "private" },
@@ -160,7 +196,6 @@ const PM_MCP_INSTRUCTIONS =
   "Use history-redact for audited history-stream redaction workflows, history-repair to re-anchor a drifted history chain, and history-compact to checkpoint/prune long history streams while preserving replay integrity. " +
   "Agent harness and model provenance are detected automatically; pass author only for an intentional identity override. " +
   "Do not pass path during real repository tracking — only pass path for sandbox or test runs.";
-let legacyMcpClientInfo: AgentClientInfo | undefined;
 
 // Tool definitions (TOOLS) live in ./tool-definitions.ts so the `pm contracts`
 // golden-file snapshot can import the surface without loading the server
@@ -488,6 +523,28 @@ function readMcpClientInfo(value: unknown): AgentClientInfo | undefined {
   return result;
 }
 
+async function emitMcpChangeNotifications(
+  action: string | undefined,
+): Promise<void> {
+  if (isMutationAction(action ?? "")) {
+    await Promise.all(
+      [...PM_MCP_SUBSCRIPTIONS.values()].flatMap(({ registry }) =>
+        PM_MCP_RESOURCE_CONTRACTS.map((resource) =>
+          registry.emitResourceUpdated(resource.uri),
+        ),
+      ),
+    );
+  }
+  if (["extension", "install", "package", "uninstall"].includes(action ?? "")) {
+    await Promise.all(
+      [...PM_MCP_SUBSCRIPTIONS.values()].map(({ registry }) =>
+        registry.emitListChanged("tools"),
+      ),
+    );
+  }
+  pruneClosedMcpSubscriptionRegistries();
+}
+
 async function handleToolCall(
   paramsInput: Record<string, unknown> | undefined,
   clientInfo: AgentClientInfo | undefined,
@@ -558,12 +615,106 @@ async function handleToolCall(
           // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
           // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
           const result = await handler(args);
+          await emitMcpChangeNotifications(action);
           return resultContent(result, warnings, args.tokenAccounting === true);
         },
         { probesEnabled: workspaceIdentity?.probes_enabled },
       );
     },
   );
+}
+
+/** Open one modern subscription through a concrete transport-owned sink. */
+export async function openMcpSubscription(input: {
+  request: JsonRpcRequest;
+  key?: PmMcpTransportSubscriptionKey;
+  sink: PmMcpSubscriptionSink;
+}): Promise<void> {
+  if (
+    (typeof input.request.id !== "string" &&
+      typeof input.request.id !== "number") ||
+    input.request.method !== "subscriptions/listen"
+  ) {
+    throw new PmMcpProtocolError(
+      "Invalid MCP subscriptions/listen request",
+      PM_MCP_ERROR_CODES.invalidParams,
+      { required: ["id", "method", "params.notifications"] },
+    );
+  }
+  resolveMcpRequestContext(input.request.params);
+  const key = input.key ?? input.request.id;
+  if (PM_MCP_SUBSCRIPTIONS.has(key)) {
+    throw new PmMcpProtocolError(
+      "MCP subscription id is already active",
+      PM_MCP_ERROR_CODES.invalidParams,
+      { subscriptionId: input.request.id },
+    );
+  }
+  const registry = createMcpSubscriptionRegistry();
+  await registry.open({
+    id: input.request.id,
+    notifications: input.request.params?.notifications,
+    sink: input.sink,
+  });
+  PM_MCP_SUBSCRIPTIONS.set(key, { id: input.request.id, registry });
+}
+
+/** Gracefully close one active subscription by its request identifier. */
+export function closeMcpSubscription(
+  id: PmMcpSubscriptionId,
+  key: PmMcpTransportSubscriptionKey = id,
+): Record<string, unknown> | undefined {
+  const subscription = PM_MCP_SUBSCRIPTIONS.get(key);
+  if (!subscription || subscription.id !== id) return undefined;
+  PM_MCP_SUBSCRIPTIONS.delete(key);
+  return subscription.registry.close(id);
+}
+
+function closeStdioMcpSubscriptions(): Array<{
+  id: PmMcpSubscriptionId;
+  result: Record<string, unknown>;
+}> {
+  const closed: Array<{
+    id: PmMcpSubscriptionId;
+    result: Record<string, unknown>;
+  }> = [];
+  for (const [key, subscription] of PM_MCP_SUBSCRIPTIONS) {
+    if (key !== subscription.id) continue;
+    const result = closeMcpSubscription(subscription.id, key) as Record<
+      string,
+      unknown
+    >;
+    closed.push({ id: subscription.id, result });
+  }
+  return closed;
+}
+
+/** Resolve the current workspace-enriched tool schema for HTTP header checks. */
+export async function resolveMcpToolSchemaForRequest(
+  request: JsonRpcRequest,
+): Promise<unknown> {
+  if (request.method !== "tools/call") return undefined;
+  const name = request.params?.name;
+  if (typeof name !== "string") return undefined;
+  const surface = await resolveMcpToolSurface(
+    TOOLS,
+    requestWorkspaceArgs(request.params),
+  );
+  return surface.tools.find((tool) => tool.name === name)?.inputSchema;
+}
+
+/** Preserve MCP tool-result error semantics for non-protocol adapter failures. */
+export function buildMcpToolCallErrorResult(
+  request: JsonRpcRequest,
+  error: unknown,
+): Record<string, unknown> | undefined {
+  if (request.method !== "tools/call" || error instanceof PmMcpProtocolError) {
+    return undefined;
+  }
+  const content = errorContent(error);
+  return hasMcpProtocolVersionMetadata(request)
+    ? buildMcpCompleteResult(content, PM_MCP_SERVER_INFO)
+    : content;
 }
 
 function requestWorkspaceArgs(
@@ -654,81 +805,31 @@ function renderWorkflowPrompt(
   };
 }
 
-/** Validate and answer the bounded legacy initialize adapter. */
-function handleLegacyInitialize(
-  params: Record<string, unknown> | undefined,
-): Record<string, unknown> {
-  const requestedVersion = params?.protocolVersion;
-  if (
-    typeof requestedVersion === "string" &&
-    !PM_MCP_LEGACY_PROTOCOL_VERSIONS.includes(
-      requestedVersion as (typeof PM_MCP_LEGACY_PROTOCOL_VERSIONS)[number],
-    )
-  ) {
-    throw new PmMcpProtocolError(
-      "Unsupported legacy MCP protocol version",
-      PM_MCP_ERROR_CODES.unsupportedProtocolVersion,
-      {
-        supported: [...PM_MCP_LEGACY_PROTOCOL_VERSIONS],
-        requested: requestedVersion,
-        modern: PM_MCP_PROTOCOL_VERSION,
-      },
-    );
-  }
-  legacyMcpClientInfo = readMcpClientInfo(params?.clientInfo);
-  return {
-    protocolVersion: PM_MCP_LEGACY_PROTOCOL_VERSIONS[0],
-    capabilities: structuredClone(PM_MCP_SERVER_CAPABILITIES),
-    serverInfo: { ...PM_MCP_SERVER_INFO },
-    instructions: PM_MCP_INSTRUCTIONS,
-  };
-}
-
-/** Dispatch an unversioned request through the bounded legacy surface. */
-async function dispatchLegacyMcpRequest(
-  request: JsonRpcRequest,
-): Promise<Record<string, unknown>> {
-  if (request.method === "ping") return {};
-  // Missing version metadata cannot identify a 2026-07-28 request. Preserve
-  // the pre-version-negotiation stdio behavior as the bounded legacy path;
-  // initialize enriches its client identity but is not required by older pm
-  // hosts. Modern requests remain strict through resolveMcpRequestContext.
-  if (request.method === "tools/list") {
-    return {
-      tools: (
-        await resolveMcpToolSurface(TOOLS, requestWorkspaceArgs(request.params))
-      ).tools,
-    };
-  }
-  if (request.method === "tools/call") {
-    return handleToolCall(request.params, legacyMcpClientInfo);
-  }
-  if (request.method === "resources/list") {
-    return { resources: PM_MCP_RESOURCE_CONTRACTS };
-  }
-  if (request.method === "resources/read") {
-    return readWorkspaceResource(
-      readRequiredString(asRecordClone(request.params), "uri"),
-      request.params,
-    );
-  }
-  if (request.method === "prompts/list") {
-    return {
-      prompts: PM_MCP_PROMPT_CONTRACTS.map((prompt) => ({
-        name: prompt.name,
-        description: prompt.description,
-        arguments: prompt.arguments,
-      })),
-    };
-  }
-  if (request.method === "prompts/get") {
-    return renderWorkflowPrompt(request.params);
-  }
-  throw new PmCliError(
-    `Unsupported MCP method: ${request.method ?? "(missing)"}`,
-    64,
-  );
-}
+const LEGACY_MCP_ADAPTER = new LegacyMcpAdapter({
+  serverInfo: PM_MCP_SERVER_INFO,
+  capabilities: PM_MCP_SERVER_CAPABILITIES,
+  instructions: PM_MCP_INSTRUCTIONS,
+  parseClientInfo: readMcpClientInfo,
+  listTools: async (params) => ({
+    tools: (await resolveMcpToolSurface(TOOLS, requestWorkspaceArgs(params)))
+      .tools,
+  }),
+  callTool: handleToolCall,
+  listResources: () => ({ resources: PM_MCP_RESOURCE_CONTRACTS }),
+  readResource: (params) =>
+    readWorkspaceResource(
+      readRequiredString(asRecordClone(params), "uri"),
+      params,
+    ),
+  listPrompts: () => ({
+    prompts: PM_MCP_PROMPT_CONTRACTS.map((prompt) => ({
+      name: prompt.name,
+      description: prompt.description,
+      arguments: prompt.arguments,
+    })),
+  }),
+  getPrompt: renderWorkflowPrompt,
+});
 
 function deterministicMcpTools(
   tools: Awaited<ReturnType<typeof resolveMcpToolSurface>>["tools"],
@@ -1045,6 +1146,7 @@ async function dispatchModernMcpRequest(
     });
   }
   if (request.method === "ping") {
+    // The preceding match is an mcp-deprecation-negative-control for modern callers.
     throw new PmMcpProtocolError("MCP method not found: ping", -32601, {
       removedIn: PM_MCP_PROTOCOL_VERSION,
     });
@@ -1083,12 +1185,20 @@ async function handleRequestInReproducibleContext(
     return undefined;
   }
   if (hasMcpProtocolVersionMetadata(request)) {
-    return dispatchModernMcpRequest(request, request.params._meta);
+    const allowlist = (process.env.PM_MCP_BAGGAGE_ALLOWLIST ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    return runWithMcpTraceContext(
+      extractMcpTraceContext(request.params, { baggageAllowlist: allowlist }),
+      () => dispatchModernMcpRequest(request, request.params._meta),
+    );
   }
   if (request.method === "initialize") {
-    return handleLegacyInitialize(request.params);
+    // The preceding match is an mcp-legacy-boundary delegated to the isolated adapter.
+    return LEGACY_MCP_ADAPTER.initialize(request.params);
   }
-  return dispatchLegacyMcpRequest(request);
+  return LEGACY_MCP_ADAPTER.dispatch(request);
 }
 
 /** Return whether a request explicitly supplies the modern version metadata key. */
@@ -1149,13 +1259,31 @@ function writeToolCallErrorResponse(
   if (request.method !== "tools/call" || error instanceof PmMcpProtocolError) {
     return false;
   }
-  const content = errorContent(error);
   writeResponse(
     request.id,
-    hasMcpProtocolVersionMetadata(request)
-      ? buildMcpCompleteResult(content, PM_MCP_SERVER_INFO)
-      : content,
+    buildMcpToolCallErrorResult(request, error) as Record<string, unknown>,
   );
+  return true;
+}
+
+async function handleStdioTransportControl(
+  request: JsonRpcRequest,
+): Promise<boolean> {
+  if (request.method === "subscriptions/listen") {
+    await openMcpSubscription({
+      request,
+      sink: (notification) => {
+        process.stdout.write(`${JSON.stringify(notification)}\n`);
+      },
+    });
+    return true;
+  }
+  if (request.method !== "notifications/cancelled") return false;
+  const requestId = request.params?.requestId;
+  if (typeof requestId === "string" || typeof requestId === "number") {
+    const result = closeMcpSubscription(requestId);
+    if (result) writeResponse(requestId, result);
+  }
   return true;
 }
 
@@ -1193,6 +1321,7 @@ async function processRpcLineWithHandler(
   }
   const shouldRespond = Object.prototype.hasOwnProperty.call(request, "id");
   try {
+    if (await handleStdioTransportControl(request)) return;
     const result = await requestHandler(request);
     if (shouldRespond && result !== undefined) {
       writeResponse(request.id, result);
@@ -1237,6 +1366,13 @@ export function startMcpServer(): void {
   }
   rl.on("line", (line) => {
     void queue.enqueue(() => processLine(line));
+  });
+  rl.on("close", () => {
+    void queue.enqueue(() => {
+      for (const closed of closeStdioMcpSubscriptions()) {
+        writeResponse(closed.id, closed.result);
+      }
+    });
   });
 }
 
@@ -1296,9 +1432,10 @@ export const _testOnly = {
   detectUnexpectedOptionKeys,
   detectUnexpectedTopLevelKeys,
   collectMutationGuardWarnings,
+  closeStdioMcpSubscriptions,
   errorContent,
-  getMcpClientInfo: () =>
-    legacyMcpClientInfo ? { ...legacyMcpClientInfo } : undefined,
+  emitMcpChangeNotifications,
+  getMcpClientInfo: () => LEGACY_MCP_ADAPTER.getClientInfo(),
   get extensionOptionsFromArgs() {
     return readRuntimeTestHook("extensionOptionsFromArgs");
   },
@@ -1314,6 +1451,7 @@ export const _testOnly = {
   resolveMcpRequestContext,
   shouldCreateMcpTask,
   settleMcpTaskExecution,
+  subscriptionCount: () => PM_MCP_SUBSCRIPTIONS.size,
   get normalizeActionName() {
     return readRuntimeTestHook("normalizeActionName");
   },

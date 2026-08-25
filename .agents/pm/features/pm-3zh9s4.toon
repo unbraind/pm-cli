@@ -2,12 +2,14 @@ id: pm-3zh9s4
 title: "MCP remote authorization and observability: issuer-bound credentials, client metadata documents, consent, header security, and OpenTelemetry propagation"
 description: "Define and implement the 2026-07-28 remote MCP trust boundary for Streamable HTTP, including authorization discovery, issuer validation, registration migration, consent, trace context, and abuse resistance."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[8]: "area:mcp",authorization,client-metadata,issuer,oauth,opentelemetry,privacy,security
 created_at: "2026-08-25T05:10:30.953Z"
-updated_at: "2026-08-25T05:10:30.953Z"
+updated_at: "2026-08-25T21:46:20.022Z"
 deadline: "2026-11-30T00:00:00.000Z"
+closed_at: "2026-08-25T21:13:22.486Z"
+completed_at: "2026-08-25T21:13:22.486Z"
 author: "harness:codex"
 estimated_minutes: 960
 acceptance_criteria: "Authorization-server discovery and issuer pinning prevent credentials from being reused or redeemed at a different issuer; Present iss values are validated and dynamic registration fallback is bounded behind Client ID Metadata Document preference; application_type, redirect URI, scopes, consent, refresh, revocation, and re-registration behavior have positive and negative tests; Header mappings, proxies, caches, traces, logs, errors, and telemetry cannot leak tokens, secrets, workspace paths, or private resource content; traceparent, tracestate, and baggage propagation follows explicit allowlists, byte limits, and redaction; A threat model and real Streamable HTTP integration suite gate release"
@@ -18,10 +20,54 @@ why_now: "The revision tightens issuer and application-type validation, binds cr
 parent: pm-rs9vry
 risk: critical
 confidence: medium
+resolution: Implemented and verified
+expected_result: "Issuer-bound, scope-bounded remote MCP authorization and privacy-safe trace propagation."
+actual_result: "RFC 9728 discovery, issuer/PKCE/registration controls, credential lifecycle, bearer enforcement, trace limits, docs, and adversarial tests all pass."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,verifies,"2026-08-25T05:10:30.953Z","harness:codex","cli:create:dep",detected
   pm-sqvshj,discovered_from,"2026-08-25T05:10:30.953Z","harness:codex","cli:create:dep",detected
   pm-v7e337,blocked_by,"2026-08-25T05:10:30.953Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-25T05:10:30.953Z","harness:codex","Duplicate check evidence: searched all statuses for MCP authorization iss issuer binding application_type client ID metadata documents dynamic registration consent headers and OpenTelemetry. No current item owns the remote 2026-07-28 trust boundary."
+  "2026-08-25T19:16:15.394Z","harness:codex","Execution scope: issuer-bound authorization helpers, Client ID Metadata Document preference, protected-resource and scope validation, safe transport headers, OpenTelemetry context allowlists/redaction, threat-model docs, and adversarial tests."
+  "2026-08-25T19:54:42.079Z","harness:codex","Implementation evidence: added RFC 9728 metadata, exact issuer discovery and response validation, S256 enforcement, Client ID Metadata Document preference with bounded DCR fallback, issuer-keyed credential replacement/revocation primitives, issuer/audience/scope bearer enforcement, constant-time opaque token verification, and W3C trace/baggage isolation. Unit adversarial and real HTTP authorization suites are green; the deployment threat model documents host-owned refresh and revocation boundaries."
+  "2026-08-25T21:13:13.034Z","harness:codex","Evidence: shipped RFC 9728 protected-resource metadata, issuer/S256 and registration policy validation, CIMD/DCR helpers, permission-bounded credential storage, bearer scope enforcement, trace/baggage propagation, and secure remote-server environment defaults. Exact repository verification passed 581 files / 7,982 tests at 100/100/100/100; focused authorization and Streamable HTTP tests passed; pnpm quality:static, pnpm lint, pnpm typecheck, SDK surface verification, package artifact validation, npx smoke, and package-first dogfood all passed."
+  "2026-08-25T21:46:20.022Z","harness:codex","Review evidence: pre-PR concurrency analysis found that HTTP clients can reuse client-local JSON-RPC ids and that a disconnected sink must not fail an unrelated mutation. The transport wrapper now scopes each HTTP stream with an opaque key, broadcasts through isolated registries, prunes failed sinks, and closes stdio-only streams independently. Negative controls cover duplicate IDs, stale-sink isolation, and mixed stdio/HTTP shutdown; the final exact run passed 581 files / 7,986 tests at 100/100/100/100."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,Additive public trust contracts
+  src/mcp/http-server.ts,project,Protected resource and remote authorization boundary
+  src/mcp/server.ts,project,Request-local trace context dispatch
+  src/sdk/index.ts,project,Public authorization SDK exports
+  src/sdk/mcp/authorization.ts,project,Issuer OAuth bearer and trace privacy primitives
+  tests/integration/mcp-streamable-http.spec.ts,project,Real bearer challenge metadata and authorized request proof
+  tests/unit/sdk/mcp/authorization.spec.ts,project,Issuer registration scope credential and trace adversarial proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/authorization.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts,project,240,"harness:codex","2026-08-25T19:54:41.343Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
+test_runs[1]:
+  - run_id: test-local-mt933xqw-66ioeo
+    kind: test
+    status: passed
+    started_at: "2026-08-25T19:55:04.479Z"
+    finished_at: "2026-08-25T19:55:15.992Z"
+    recorded_at: "2026-08-25T19:55:15.992Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/authorization.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts,schema,schema,source,local_source_ref
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,Reviewed delivery release notes
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Authorization conformance evidence
+  docs/MCP_2026_07_28.md,project,Remote authorization protocol decision
+  docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project,Threat model deployment and credential lifecycle
+  docs/SDK_MCP_INTERACTIONS.md,project,Public authorization SDK lifecycle
+close_reason: "Delivered remote MCP authorization and observability with RFC 9728 metadata, issuer/PKCE/registration validation, bounded credential lifecycle, bearer scopes, trace propagation, secure defaults, documentation, and exact 100% coverage."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-2026-07-28-remote-boundaries
+  negative_control: Two concurrent Streamable HTTP subscriptions reuse one JSON-RPC id while one transport sink fails; the healthy stream must continue and the stale registry must be pruned.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/integration/mcp-streamable-http.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: pull-request exact coverage,pull-request static quality
+  owner: pm-rs9vry
 body: "## Trust boundary\n\n- Discover and pin authorization-server issuer identity before persisting or redeeming credentials.\n- Validate a returned iss value and never reuse credentials across issuers.\n- Send an appropriate application_type and prefer Client ID Metadata Documents over deprecated dynamic registration.\n- Make consent scopes align with pm read, mutation, workspace, extension, task, and resource authority.\n- Validate transport headers and custom x-mcp-header mappings against injection, confused deputy, SSRF, replay, downgrade, and proxy-cache threats.\n- Propagate traceparent, tracestate, and baggage only through allowlisted metadata with privacy limits and redaction.\n- Keep stdio local trust behavior distinct from remote HTTP authorization rather than silently treating one as the other."

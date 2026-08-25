@@ -735,6 +735,24 @@ export function collectPackageExportSourceEntries(
   }
 }
 
+/** Resolve TypeScript source entrypoints published through package executable bins. */
+export function collectPackageBinSourceEntries(
+  packageJsonPath = path.join(repoRoot, "package.json"),
+) {
+  try {
+    const packageJson = JSON.parse(loadText(packageJsonPath));
+    const entries = new Set();
+    for (const value of Object.values(packageJson.bin ?? {})) {
+      if (typeof value !== "string") continue;
+      const match = /^dist\/(.+)\.js$/u.exec(value);
+      if (match?.[1]) entries.add(`src/${match[1]}.ts`);
+    }
+    return entries;
+  } catch {
+    return new Set();
+  }
+}
+
 export function checkOrphanSourceModules(files) {
   const sourceFiles = sourceFilesOnly(files);
   const incoming = new Map(sourceFiles.map((file) => [file, 0]));
@@ -774,6 +792,7 @@ export function checkOrphanSourceModules(files) {
     "src/sdk/testing.ts",
     "src/types/index.ts",
     ...collectPackageExportSourceEntries(),
+    ...collectPackageBinSourceEntries(),
   ]);
   const violations = [];
   for (const [absolutePath, incomingCount] of incoming.entries()) {

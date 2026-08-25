@@ -4,6 +4,7 @@
 
 ### Added
 
+- MCP subscriptions and transports: subscriptions/listen, request-scoped streams, Streamable HTTP headers, retry semantics, and stdio parity ([pm-v7e337](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v7e337.toon))
 - MCP server surface and cache contracts: deterministic tools, prompts, resources, JSON Schema 2020-12, ttlMs, cacheScope, and change coherence ([pm-hv1x1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hv1x1x.toon))
 - Official MCP tasks extension for pm: asynchronous long operations, tasks/get polling, tasks/update input, durable handles, and lifecycle convergence ([pm-rzs24j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rzs24j.toon))
 - MCP multi round-trip requests: input_required results, elicitation, retry state, and removal of server-initiated request assumptions ([pm-rz9gep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rz9gep.toon))
@@ -19,8 +20,13 @@
 - GH-1109: tracker-context seeding writes an empty settings history document ([pm-2ga1g7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ga1g7.toon))
 - GH-1112: Windows Node 24 merge-receipt boundary test relies on POSIX name-length failure ([pm-v3umtp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3umtp.toon))
 
+### Security
+
+- MCP remote authorization and observability: issuer-bound credentials, client metadata documents, consent, header security, and OpenTelemetry propagation ([pm-3zh9s4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3zh9s4.toon))
+
 ### Deprecated
 
+- MCP 2026-07-28 deprecation and removal migration: roots, sampling, logging, dynamic registration, HTTP+SSE, includeContext, ping, and legacy sessions ([pm-vzcisw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vzcisw.toon))
 - ADR: MCP 2026-07-28 is canonical and legacy interoperability is a bounded stateless adapter, not connection-local session state ([pm-sqvshj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-sqvshj.toon))
 
 ### Other

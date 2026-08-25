@@ -2,12 +2,14 @@ id: pm-v7e337
 title: "MCP subscriptions and transports: subscriptions/listen, request-scoped streams, Streamable HTTP headers, retry semantics, and stdio parity"
 description: "Replace connection-session and legacy subscription behavior with the 2026-07-28 long-lived listen request, request-scoped notifications, required headers, and explicit broken-stream retry semantics."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[8]: "area:mcp",cancellation,headers,progress,stdio,streamable-http,streaming,subscriptions
 created_at: "2026-08-25T05:09:03.758Z"
-updated_at: "2026-08-25T05:50:35.874Z"
+updated_at: "2026-08-25T21:58:12.596Z"
 deadline: "2026-10-31T00:00:00.000Z"
+closed_at: "2026-08-25T21:13:21.351Z"
+completed_at: "2026-08-25T21:13:21.351Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: "subscriptions/listen supports every specified notification type and tags notifications with the negotiated subscription id; Legacy HTTP GET, resources/subscribe, resources/unsubscribe, session headers, Last-Event-ID, SSE event ids, and redelivery semantics are absent from the canonical path; Progress and logging notifications remain request-scoped and cannot leak across concurrent requests; STDIO and Streamable HTTP pass equivalent tool, resource, prompt, cancellation, backpressure, disconnect, and retry cases; Mcp-Method, Mcp-Name, and x-mcp-header behavior is schema-derived, validated, and covered against injection and mismatch"
@@ -18,11 +20,85 @@ why_now: "The revision removes HTTP GET, MCP session IDs, resource subscribe met
 parent: pm-rs9vry
 risk: critical
 confidence: medium
+resolution: Implemented and verified
+expected_result: Transport-neutral subscriptions/listen and sessionless stdio/Streamable HTTP parity with schema-derived headers and bounded retry semantics.
+actual_result: "Public SDK contracts, both transports, packaging, security controls, docs, installed-consumer smoke, and exact full-suite coverage all pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,blocked_by,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:50:33.335Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-25T05:09:03.758Z","harness:codex","Duplicate check evidence: searched all statuses for subscriptions/listen resourceSubscriptions Streamable HTTP Mcp-Session-Id Last-Event-ID Mcp-Method Mcp-Name x-mcp-header and stream retry. No item covers the new transport model."
+  "2026-08-25T19:16:13.729Z","harness:codex","Execution scope: SDK-owned subscription contracts, stdio dispatch, Streamable HTTP header validation, request-scoped notification isolation, retry/disconnect semantics, tests, docs, and release evidence."
+  "2026-08-25T19:54:19.554Z","harness:codex","Implementation evidence: added SDK-owned subscription filtering/correlation and schema-derived HTTP headers, real sessionless pm-mcp-http POST/SSE transport, stdio parity, asynchronous sink backpressure, response-stream disconnect cleanup, fresh-id retry proof, additive SDK snapshot, and operator docs. Focused transport/stateless tests are green."
+  "2026-08-25T21:13:12.496Z","harness:codex","Evidence: shipped public subscription and transport SDK contracts, stdio and Streamable HTTP adapters, schema-derived headers, backpressure/cancel/close semantics, package bin, documentation, and compatibility tests. Exact repository verification passed 581 files / 7,982 tests with 100% statements (58,983/58,983), branches (44,433/44,433), functions (12,277/12,277), and lines (56,823/56,823). Linked run test-local-mt95vmrt-9rnex3 passed all 3 commands, including package artifact, npx smoke, and 88-command package-first dogfood. An installed-package HTTP-bin smoke caught the npm symlink realpath entrypoint defect; the shared realpath-aware main-module guard fixed it, and a fresh packed install successfully imported the SDK and served server/discover over the published pm-mcp-http bin."
+  "2026-08-25T21:56:23.388Z","harness:codex","Final verification evidence: linked run completed all three commands against the final concurrency-hardened code: 57 focused MCP tests, packed artifact plus npx consumer smoke, and 88-command package-first dogfood. A fresh npm install of the packed tarball imported the public SDK at protocol 2026-07-28 and launched node_modules/.bin/pm-mcp-http through the real npm symlink; server/discover returned HTTP 200 with supportedVersions [2026-07-28]. The exact repository run passed 581 files / 7,986 tests with 100% statements (59,009/59,009), branches (44,444/44,444), functions (12,283/12,283), and lines (56,846/56,846)."
+files[16]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Managed changelog extension receipt refreshed by reviewed closeout generation
+  package.json,project,Published HTTP binary and quality gate wiring
+  scripts/finalize-build.mjs,project,HTTP binary executable permission
+  scripts/release/static-quality-gate.mts,project,Package bin entrypoint orphan detection
+  sdk/public-surface.json,project,Additive public SDK transport contracts
+  src/mcp/http-server.ts,project,Sessionless Streamable HTTP POST adapter
+  src/mcp/server.ts,project,Shared stdio dispatch subscriptions and change emissions
+  src/sdk/mcp/subscriptions.ts,project,Transport-neutral subscription registry and correlation
+  src/sdk/mcp/transport.ts,project,Schema-derived HTTP header projection and validation
+  tests/helpers/releaseContracts.ts,project,Static quality command golden includes MCP transport ratchet
+  tests/integration/mcp-handshake.spec.ts,project,Stdio subscription close and npm-symlink main-module entrypoint regression proof
+  tests/integration/mcp-streamable-http.spec.ts,project,Real HTTP parity security disconnect and retry
+  tests/integration/release-readiness-runtime.spec.ts,project,Published HTTP bin and quality workflow acceptance proof
+  tests/unit/scripts/release/static-quality-gate.spec.ts,project,Package bin entrypoint ratchet coverage
+  tests/unit/sdk/mcp/subscriptions.spec.ts,project,Subscription filters ordering backpressure and closure
+  tests/unit/sdk/mcp/transport.spec.ts,project,Header encoding schema and injection controls
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T19:54:18.996Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
+  "pnpm quality:package-artifact && pnpm smoke:npx",project,300,"harness:codex","2026-08-25T21:10:30.806Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
+  "pnpm dogfood:package-first",project,300,"harness:codex","2026-08-25T21:10:31.358Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
+test_runs[3]:
+  - run_id: test-local-mt933ogb-fdbfv8
+    kind: test
+    status: passed
+    started_at: "2026-08-25T19:54:51.030Z"
+    finished_at: "2026-08-25T19:55:03.947Z"
+    recorded_at: "2026-08-25T19:55:03.947Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mt95vmrt-9rnex3
+    kind: test
+    status: passed
+    started_at: "2026-08-25T21:10:39.153Z"
+    finished_at: "2026-08-25T21:12:47.369Z"
+    recorded_at: "2026-08-25T21:12:47.369Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
+      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
+  - run_id: test-local-mt97e1fi-7jmvym
+    kind: test
+    status: passed
+    started_at: "2026-08-25T21:52:55.968Z"
+    finished_at: "2026-08-25T21:55:05.790Z"
+    recorded_at: "2026-08-25T21:55:05.790Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
+      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
+docs[6]{path,scope,note}:
+  CHANGELOG.md,project,Reviewed delivery release notes
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Normative owner and evidence matrix
+  docs/MCP_2026_07_28.md,project,Canonical transport decision
+  docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project,HTTP operation retry and backpressure guide
+  docs/README.md,project,Documentation index
+  docs/SDK_MCP_INTERACTIONS.md,project,Public subscription and header SDK guide
+close_reason: "Delivered MCP 2026-07-28 subscription and transport contracts with public SDK primitives, stdio and Streamable HTTP adapters, security/backpressure semantics, package publication surface, docs, installed-consumer proof, and exact 100% coverage."
 body: "## Streaming model\n\n- subscriptions/listen is one long-lived POST-response stream with explicit requested notification types and a server-minted subscription identifier.\n- tools, prompts, resources, and resource-subscription changes flow only through the opted-in listen stream.\n- progress and message notifications remain on the response stream of their originating request.\n- A broken request stream loses that in-flight request and the client retries with a new JSON-RPC request id.\n- STDIO and Streamable HTTP share SDK handlers, cancellation, ordering, backpressure, heartbeat policy, and structured failures.\n- Streamable HTTP validates Mcp-Method and Mcp-Name and supports declared x-mcp-header parameter mappings without header injection."

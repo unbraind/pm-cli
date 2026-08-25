@@ -92,6 +92,7 @@ type SqModule = {
   checkTrivialDocstrings: (
     files: string[],
   ) => Array<{ path: string; line: number; name: string; reason: string }>;
+  collectPackageBinSourceEntries: (packageJsonPath?: string) => Set<string>;
   checkOrphanSourceModules: (files: string[]) => Array<{ path: string }>;
   collectSdkBoundarySourceFiles: (files: string[]) => string[];
   collectPrivateCoreImportEdges: (
@@ -995,6 +996,34 @@ describe("static-quality-gate", () => {
       expect(paths).not.toContain("src/barrel/index.ts");
       expect(paths).not.toContain("src/thing.spec.ts");
       expect(paths).not.toContain("src/used.ts");
+    });
+
+    it("collectPackageBinSourceEntries: derives executable source entries and fails closed on malformed manifests", async () => {
+      mockUtils("/repo");
+      mockFs({
+        readFileSync: vi.fn((p: string) => {
+          if (String(p).endsWith("broken.json")) return "{";
+          if (String(p).endsWith("empty.json")) return "{}";
+          return JSON.stringify({
+            bin: {
+              pm: "dist/cli.js",
+              "pm-mcp-http": "dist/mcp/http-server.js",
+              ignored: "vendor/entry.js",
+              malformed: 7,
+            },
+          });
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect([
+        ...mod.collectPackageBinSourceEntries("/repo/package.json"),
+      ]).toEqual(["src/cli.ts", "src/mcp/http-server.ts"]);
+      expect(mod.collectPackageBinSourceEntries("/repo/broken.json").size).toBe(
+        0,
+      );
+      expect(mod.collectPackageBinSourceEntries("/repo/empty.json").size).toBe(
+        0,
+      );
     });
 
     it("checkSdkImportBoundary hard-denies CLI/MCP private core imports regardless of legacy baselines", async () => {

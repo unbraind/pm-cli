@@ -47,6 +47,7 @@ pm guide release --json
 - [MCP 2026-07-28 Protocol Decision](MCP_2026_07_28.md) - stateless request metadata, discovery, result envelopes, explicit legacy boundary, and migration policy.
 - [MCP 2026-07-28 Conformance Matrix](MCP_2026_07_28_CONFORMANCE.md) - official revision changes mapped to canonical owners and executable evidence.
 - [MCP Interaction and Task SDK](SDK_MCP_INTERACTIONS.md) - public MRTR continuation, cache/schema validation, and durable task-store contracts.
+- [MCP Remote Transport, Authorization, and Migration](MCP_REMOTE_TRANSPORT_SECURITY.md) - Streamable HTTP operation, subscriptions, OAuth and trace boundaries, threat model, and deprecated-feature ratchet.
 - [SDK Artifact Output Contracts](SDK_ARTIFACT_OUTPUT.md) - clean stdout/file exporter channels, bounded receipts, binary-safe delivery, and shared NDJSON terminal framing.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
 - [Output Projection and Omission Contracts](OUTPUT_PROJECTION_CONTRACTS.md) - explicit withheld-field receipts, mode-paired row keys, and completion resolver outcomes.

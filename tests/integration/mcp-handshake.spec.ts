@@ -2351,10 +2351,13 @@ describe("MCP protocol handshake", () => {
 
   it("starts the stdio server with serialized line processing", async () => {
     let lineHandler: ((line: string) => void) | undefined;
+    let closeHandler: (() => void) | undefined;
     const fakeInterface = {
       on: vi.fn((event: string, handler: (line: string) => void) => {
         if (event === "line") {
           lineHandler = handler;
+        } else if (event === "close") {
+          closeHandler = handler;
         }
         return fakeInterface;
       }),
@@ -2377,6 +2380,30 @@ describe("MCP protocol handshake", () => {
       );
       lineHandler?.(JSON.stringify({ jsonrpc: "2.0", id: 93, method: "ping" }));
       await vi.waitFor(() => expect(write).toHaveBeenCalled());
+      lineHandler?.(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: "stdio-close",
+          method: "subscriptions/listen",
+          params: {
+            notifications: {},
+            _meta: {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientCapabilities": {},
+            },
+          },
+        }),
+      );
+      await vi.waitFor(() =>
+        expect(mcpServerTestOnly.subscriptionCount()).toBe(1),
+      );
+      closeHandler?.();
+      await vi.waitFor(() =>
+        expect(mcpServerTestOnly.subscriptionCount()).toBe(0),
+      );
+      expect(write).toHaveBeenCalledWith(
+        expect.stringContaining('"id":"stdio-close"'),
+      );
     } finally {
       write.mockRestore();
       createInterface.mockRestore();
@@ -2623,9 +2650,8 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
         { expectJson: true },
       );
       expect(pauseTarget.code).toBe(0);
-      const pauseTargetId = (
-        pauseTarget.json as { item: { id: string } }
-      ).item.id;
+      const pauseTargetId = (pauseTarget.json as { item: { id: string } }).item
+        .id;
       expect(
         context.runCli([
           "start-task",
@@ -2874,9 +2900,9 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
         expect(
           (target.json as { item: { comments?: unknown[] } }).item.comments,
         ).toEqual([]);
-        expect(
-          (target.json as { item: { status?: string } }).item.status,
-        ).toBe("in_progress");
+        expect((target.json as { item: { status?: string } }).item.status).toBe(
+          "in_progress",
+        );
         const paused = context.runCli(
           ["get", pauseTargetId, "--json", "--full"],
           { expectJson: true },
