@@ -19,6 +19,7 @@ import path from "node:path";
 import readline from "node:readline";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
+const MCP_PROTOCOL_VERSION = "2026-07-28";
 
 /**
  * Start an MCP server child process speaking JSON-RPC over stdio and return a
@@ -84,7 +85,24 @@ export async function startPluginMcpSmoke({
 
   function request(method, params = {}) {
     const id = nextId++;
-    child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
+    const requestParams =
+      method === "initialize"
+        ? params
+        : {
+            ...params,
+            _meta: {
+              "io.modelcontextprotocol/protocolVersion": MCP_PROTOCOL_VERSION,
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": {
+                name: author,
+                version: "1.0.0",
+              },
+              ...params._meta,
+            },
+          };
+    child.stdin.write(
+      `${JSON.stringify({ jsonrpc: "2.0", id, method, params: requestParams })}\n`,
+    );
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         pending.delete(id);

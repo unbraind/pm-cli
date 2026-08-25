@@ -2,12 +2,14 @@ id: pm-sqvshj
 title: "ADR: MCP 2026-07-28 is canonical and legacy interoperability is a bounded stateless adapter, not connection-local session state"
 description: "Choose the protocol-version, transport, compatibility, and dependency strategy for replacing the 2025-06-18 initialize handshake without preserving forbidden session semantics."
 type: Decision
-status: open
+status: closed
 priority: 1
 tags[6]: adr,"area:mcp",compatibility,deprecation,protocol-versioning,stateless
 created_at: "2026-08-25T05:07:23.485Z"
-updated_at: "2026-08-25T05:07:23.485Z"
+updated_at: "2026-08-25T16:01:32.157Z"
 deadline: "2026-09-15T00:00:00.000Z"
+closed_at: "2026-08-25T16:01:31.225Z"
+completed_at: "2026-08-25T16:01:31.225Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "The accepted decision names canonical and supported legacy protocol versions plus a sunset policy; The decision resolves hand-rolled versus official-SDK usage while preserving the public pm SDK as the policy boundary; STDIO and Streamable HTTP negotiation, discovery, compatibility probes, and unsupported-version errors are specified; Every removed or deprecated feature has an explicit remove, adapt, or migrate disposition with security rationale; Rollout telemetry, negative controls, rollback, and released-artifact gates are defined before implementation starts"
@@ -18,9 +20,42 @@ why_now: "Every downstream protocol child depends on whether initialize, ping, s
 parent: pm-rs9vry
 risk: critical
 confidence: medium
+resolution: "Accepted and implemented MCP 2026-07-28 as the canonical stateless protocol, with a bounded 2025-06-18 compatibility adapter."
+expected_result: "A single canonical protocol decision that fixes version routing, discovery validation, compatibility, deprecations, security, rollout, rollback, and release proof."
+actual_result: "The ADR, conformance matrix, strict explicit-version routing, array-validated discovery probes, bounded legacy adapter, and executable plugin and release gates now implement the approved policy."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-kl11,supersedes,"2026-08-25T05:07:23.485Z","harness:codex","cli:create:dep",detected
   pm-pif3,discovered_from,"2026-08-25T05:07:23.485Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-25T05:07:23.485Z","harness:codex","Duplicate check evidence: searched all statuses for MCP protocol ADR 2026-07-28 stateless compatibility initialize removal and legacy adapters. pm-pif3 covers the old dependency-free implementation choice and pm-kl11 covers the old handshake test; neither decides the new revision."
+  "2026-08-25T14:41:14.732Z","harness:codex","Evidence: canonical 2026-07-28 decision, bounded 2025-06-18 adapter policy, transport/version/error matrix, rollout and rollback gates are documented. PM linked run passed pnpm build plus real Codex and Claude plugin discovery/workflow smokes."
+  "2026-08-25T16:01:30.355Z","harness:codex","Final pre-close review evidence: CodeRabbit findings were verified against the live head. Discovery verifiers now reject scalar supportedVersions; explicit reserved protocol-version metadata routes through strict modern validation before legacy initialize. Focused remediation cohort passed 59/59, typecheck and lint passed, and full exact coverage passed 574 files and 7,923 tests at 100% statements, branches, functions, and lines."
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  pnpm build,project,240,"harness:codex","2026-08-25T12:44:03.856Z",local_mutation,codex/mcp-stateless-discovery-contracts,Compile decision-backed protocol surface
+  node scripts/smoke-codex-plugin-mcp.mjs,project,120,"harness:codex","2026-08-25T12:44:04.524Z",local_mutation,codex/mcp-stateless-discovery-contracts,Real Codex plugin discovery smoke
+  node scripts/smoke-claude-plugin.mjs,project,120,"harness:codex","2026-08-25T12:44:05.227Z",local_mutation,codex/mcp-stateless-discovery-contracts,Real Claude plugin discovery and workflow smoke
+test_runs[1]:
+  - run_id: test-local-mt8qdjn6-v5exoo
+    kind: test
+    status: passed
+    started_at: "2026-08-25T13:58:41.293Z"
+    finished_at: "2026-08-25T13:58:49.266Z"
+    recorded_at: "2026-08-25T13:58:49.266Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm build,schema,schema,source,local_source_ref
+      node scripts/smoke-codex-plugin-mcp.mjs,schema,schema,source,local_source_ref
+      node scripts/smoke-claude-plugin.mjs,schema,schema,source,local_source_ref
+docs[8]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Per-request client provenance contract
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,Runtime identity contract
+  docs/CLAUDE_CODE_PLUGIN.md,project,Claude plugin stateless discovery guidance
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Revision capability disposition and owner matrix
+  docs/MCP_2026_07_28.md,project,Canonical protocol decision and compatibility policy
+  docs/README.md,project,Public documentation index
+  docs/RELEASING.md,project,Published MCP verification contract
+  docs/SDK_AGENT_SESSION_CONTEXT.md,project,SDK request metadata example
+close_reason: "Replacement closeout after recording structured decision outcomes and final review validation: canonical stateless routing and discovery-shape enforcement are implemented and exact coverage passes."
 body: "## Decision questions\n\n1. Canonical version and exact supported legacy versions.\n2. STDIO compatibility probe behavior when server/discover is unknown to an older client.\n3. Whether protocol support remains hand-rolled, adopts an official SDK, or isolates schema-derived wire contracts behind the public pm SDK.\n4. Streamable HTTP deployment and authorization scope.\n5. Removal or adapter policy for initialize, notifications/initialized, ping, logging/setLevel, roots changes, resource subscriptions, SSE resumability, and deprecated features.\n6. Capability and extension negotiation when a caller omits or conflicts with request metadata.\n7. Rollout, metrics, sunset criteria, and rollback without mutable history.\n\n## Preferred direction\n\nUse the official schema as the normative wire contract, keep transport-neutral semantics in the public pm SDK, make 2026-07-28 the default, and retain only explicitly tested compatibility adapters that do not recreate protocol-level sessions."

@@ -386,8 +386,9 @@ git push origin v<version>
   Bun caches plus an empty npm user config so maintainer credentials and cached
   metadata cannot mask a public-registry outage. The verifier dispatches a real
   `pm contracts` command through both explicit-bin and package-default
-  invocations, performs a JSON-RPC initialize handshake against the
-  symlink-resolved `pm-mcp` bin under both npx and bunx, derives bin coverage
+  invocations, performs stateless JSON-RPC `server/discover` against the
+  symlink-resolved `pm-mcp` bin under both npx and bunx, requires canonical
+  `2026-07-28` metadata/result envelopes, derives bin coverage
   from `package.json`, and proves missing-bin and missing-command controls fail.
 - exact-package installed acceptance through
   `scripts/release/verify-installed-agent-session.mjs`. Separate npm and Bun

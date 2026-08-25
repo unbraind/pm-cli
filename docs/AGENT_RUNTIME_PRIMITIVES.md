@@ -156,11 +156,12 @@ author literals at read time; every row reports `harness_source` and
 `vocabulary_version`, and unresolved literals remain visible in the bounded
 summary. No history entry is rewritten.
 
-MCP captures `clientInfo.name` and `clientInfo.version` during initialize and
-scopes all later tool calls to that client signal. Optional host-provided
-`model`, `session`, `provenance`, and `episode` fields are supported, but
-version is not
-misclassified as a model or session. Provenance keys must use the bounded
+MCP 2026-07-28 reads `io.modelcontextprotocol/clientInfo` independently from
+every request's `_meta` and scopes only that request to the client signal. The
+bounded legacy adapter still reads `clientInfo` during `2025-06-18`
+`initialize`. Optional host-provided `model`, `session`, `provenance`, and
+`episode` fields are supported, but version is not misclassified as a model or
+session. Provenance keys must use the bounded
 lowercase dimension vocabulary; blank, malformed, and oversized data is
 discarded before mutation context is created. See
 [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) for precedence,

@@ -80,11 +80,13 @@ All new history fields are optional. Readers must accept:
 - explicit `model: null`, `effort: null`, or `role: null` observations meaning
   the dimension was declared but unavailable for a detected harness.
 
-MCP clients may supply a bounded `clientInfo.provenance` map during initialize.
+Modern MCP clients may supply a bounded
+`io.modelcontextprotocol/clientInfo.provenance` map in each request's `_meta`.
 The server retains only valid dimension names and trimmed values, then resolves
-that map inside the invocation-scoped identity context for every mutation. A
-missing MCP signal is recorded as explicit `null`; it is never confused with a
-legacy entry that predates the dimension.
+that map inside the invocation-scoped identity context for that request. The
+bounded `2025-06-18` adapter accepts the same map during legacy `initialize`.
+A missing MCP signal is recorded as explicit `null`; it is never confused with
+a legacy entry that predates the dimension.
 
 Unknown provenance dimensions are preserved as data and do not change author
 resolution. Removing a dimension from a descriptor never rewrites existing

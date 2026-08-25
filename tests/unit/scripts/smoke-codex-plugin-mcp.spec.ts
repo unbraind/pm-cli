@@ -36,6 +36,12 @@ function mockHarness(request: unknown, callTool: unknown) {
 describe("smoke-codex-plugin-mcp", () => {
   it("runs the full MCP smoke workflow and logs success", async () => {
     const request = vi.fn(async (method: string) => {
+      if (method === "server/discover") {
+        return {
+          resultType: "complete",
+          supportedVersions: ["2026-07-28"],
+        };
+      }
       if (method === "tools/list") {
         return { tools: FULL_TOOLS.map((name) => ({ name })) };
       }
@@ -61,7 +67,7 @@ describe("smoke-codex-plugin-mcp", () => {
 
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await harness.importModule(SCRIPT);
-    expect(request).toHaveBeenCalledWith("initialize", expect.any(Object));
+    expect(request).toHaveBeenCalledWith("server/discover");
     expect(callTool).toHaveBeenCalledWith("pm_run", expect.any(Object));
     expect(callTool).toHaveBeenCalledWith("pm_validate", expect.any(Object));
     expect(dispose).toHaveBeenCalledTimes(1);
@@ -70,6 +76,12 @@ describe("smoke-codex-plugin-mcp", () => {
 
   it("throws and disposes when a required MCP tool is missing", async () => {
     const request = vi.fn(async (method: string) => {
+      if (method === "server/discover") {
+        return {
+          resultType: "complete",
+          supportedVersions: ["2026-07-28"],
+        };
+      }
       if (method === "tools/list") return { tools: [{ name: "pm_run" }] };
       return { ok: true };
     });
@@ -79,11 +91,40 @@ describe("smoke-codex-plugin-mcp", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects discovery that omits the canonical revision", async () => {
+    const request = vi.fn(async () => ({
+      resultType: "complete",
+      supportedVersions: ["2025-06-18"],
+    }));
+    const dispose = mockHarness(request, vi.fn(async () => ({ ok: true })));
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /did not advertise the canonical revision/,
+    );
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a scalar canonical discovery revision", async () => {
+    const request = vi.fn(async () => ({
+      resultType: "complete",
+      supportedVersions: "2026-07-28",
+    }));
+    const dispose = mockHarness(request, vi.fn(async () => ({ ok: true })));
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /did not advertise the canonical revision/,
+    );
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects a stale create mutation envelope", async () => {
     const request = vi.fn(async (method: string) =>
-      method === "tools/list"
-        ? { tools: FULL_TOOLS.map((name) => ({ name })) }
-        : { ok: true },
+      method === "server/discover"
+        ? {
+            resultType: "complete",
+            supportedVersions: ["2026-07-28"],
+          }
+        : method === "tools/list"
+          ? { tools: FULL_TOOLS.map((name) => ({ name })) }
+          : { ok: true },
     );
     const callTool = vi.fn(async (tool: string) =>
       tool === "pm_create" ? { item: { id: "pm-stale" } } : { ok: true },
@@ -97,9 +138,14 @@ describe("smoke-codex-plugin-mcp", () => {
 
   it("rejects an id-less lean create mutation envelope", async () => {
     const request = vi.fn(async (method: string) =>
-      method === "tools/list"
-        ? { tools: FULL_TOOLS.map((name) => ({ name })) }
-        : { ok: true },
+      method === "server/discover"
+        ? {
+            resultType: "complete",
+            supportedVersions: ["2026-07-28"],
+          }
+        : method === "tools/list"
+          ? { tools: FULL_TOOLS.map((name) => ({ name })) }
+          : { ok: true },
     );
     const callTool = vi.fn(async (tool: string) =>
       tool === "pm_create"
@@ -115,6 +161,12 @@ describe("smoke-codex-plugin-mcp", () => {
 
   it("throws when the smoke item does not persist the expected status/links", async () => {
     const request = vi.fn(async (method: string) => {
+      if (method === "server/discover") {
+        return {
+          resultType: "complete",
+          supportedVersions: ["2026-07-28"],
+        };
+      }
       if (method === "tools/list") return { tools: FULL_TOOLS.map((name) => ({ name })) };
       return { ok: true };
     });

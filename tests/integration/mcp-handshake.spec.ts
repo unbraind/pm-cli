@@ -2712,6 +2712,18 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
       child.stdin.write(
         `${JSON.stringify({
           jsonrpc: "2.0",
+          id: 39,
+          method: "initialize",
+          params: {
+            protocolVersion: "2025-06-18",
+            capabilities: {},
+            clientInfo: { name: "legacy-stdin-test", version: "1.0.0" },
+          },
+        })}\n`,
+      );
+      child.stdin.write(
+        `${JSON.stringify({
+          jsonrpc: "2.0",
           id: 40,
           method: "tools/call",
           params: {

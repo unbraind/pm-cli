@@ -2067,6 +2067,18 @@
           "signature": "(adds: LinkedArtifact[], removes: string[], migrations?: PathMigration[]) => void | calls: (adds: LinkedArtifact[], removes: string[], migrations?: PathMigration[]) => void"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertMcpClientCapabilities",
+          "signature": "(requestContext: PmMcpRequestContext, requiredCapabilities: readonly string[]) => void | calls: (requestContext: PmMcpRequestContext, requiredCapabilities: readonly string[]) => void"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertMcpProtocolHeader",
+          "signature": "(requestContext: PmMcpRequestContext, headerValue: string | undefined) => void | calls: (requestContext: PmMcpRequestContext, headerValue: string | undefined) => void"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "assertMemoryRelationshipGraphAdapterConformance",
@@ -2923,6 +2935,18 @@
           "kind": "function",
           "name": "buildItemSchedule",
           "signature": "(item: ItemMetadata) => ItemScheduleContext | undefined | calls: (item: ItemMetadata) => ItemScheduleContext | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildMcpCompleteResult",
+          "signature": "<Payload extends Record<string, unknown>>(payload: Payload, serverInfo: PmMcpImplementation) => Payload & PmMcpResultEnvelope | calls: <Payload extends Record<string, unknown>>(payload: Payload, serverInfo: PmMcpImplementation) => Payload & PmMcpResultEnvelope"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildMcpDiscoverResult",
+          "signature": "(input: { serverInfo: PmMcpImplementation; capabilities: PmMcpServerCapabilities; instructions?: string; ttlMs?: number; }) => PmMcpDiscoverResult | calls: (input: { serverInfo: PmMcpImplementation; capabilities: PmMcpServerCapabilities; instructions?: string; ttlMs?: number; }) => PmMcpDiscoverResult"
         },
         {
           "classification": "supported",
@@ -7749,6 +7773,12 @@
           "signature": "export type InstallSource = LocalInstallSource | GithubInstallSource | NpmInstallSource;"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "interpretMcpResultType",
+          "signature": "(result: unknown, era: PmMcpProtocolEra) => string | calls: (result: unknown, era: PmMcpProtocolEra) => string"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "isAlreadyClaimedError",
@@ -7777,6 +7807,12 @@
           "kind": "function",
           "name": "isHostOutputSuppressed",
           "signature": "(value: unknown) => value is SuppressedHostOutput | calls: (value: unknown) => value is SuppressedHostOutput"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isMcpRecord",
+          "signature": "(value: unknown) => value is Record<string, unknown> | calls: (value: unknown) => value is Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -9659,6 +9695,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "parseMcpImplementation",
+          "signature": "(value: unknown) => PmMcpImplementation | undefined | calls: (value: unknown) => PmMcpImplementation | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "parseMigrateEntries",
           "signature": "(raw: string[] | undefined) => PathMigration[] | calls: (raw: string[] | undefined) => PathMigration[]"
         },
@@ -10229,14 +10271,44 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_MCP_ERROR_CODES",
+          "signature": "{ readonly headerMismatch: -32020; readonly missingRequiredClientCapability: -32021; readonly unsupportedProtocolVersion: -32022; readonly invalidParams: -32602; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_LEGACY_PROTOCOL_VERSIONS",
+          "signature": "readonly [\"2025-06-18\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_META_KEYS",
+          "signature": "{ readonly clientCapabilities: \"io.modelcontextprotocol/clientCapabilities\"; readonly clientInfo: \"io.modelcontextprotocol/clientInfo\"; readonly protocolVersion: \"io.modelcontextprotocol/protocolVersion\"; readonly serverInfo: \"io.modelcontextprotocol/serverInfo\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_MCP_PROMPT_CONTRACTS",
           "signature": "readonly PmMcpPromptContract[]"
         },
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_MCP_PROTOCOL_VERSION",
+          "signature": "\"2026-07-28\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_MCP_RESOURCE_CONTRACTS",
           "signature": "readonly PmMcpResourceContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_SUPPORTED_PROTOCOL_VERSIONS",
+          "signature": "readonly [\"2026-07-28\"]"
         },
         {
           "classification": "advanced_export",
@@ -10996,6 +11068,24 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpClientCapabilities",
+          "signature": "export type PmMcpClientCapabilities = Record<string, unknown>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpDiscoverResult",
+          "signature": "export interface PmMcpDiscoverResult extends PmMcpResultEnvelope { supportedVersions: string[]; capabilities: PmMcpServerCapabilities; ttlMs: number; cacheScope: \"public\"; instructions?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpImplementation",
+          "signature": "export interface PmMcpImplementation { name: string; version: string; description?: string; websiteUrl?: string; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "PmMcpPromptArgumentContract",
           "signature": "export interface PmMcpPromptArgumentContract { name: string; description: string; required: boolean; }"
@@ -11008,9 +11098,39 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpProtocolEra",
+          "signature": "export type PmMcpProtocolEra = \"modern\" | \"legacy\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "class",
+          "name": "PmMcpProtocolError",
+          "signature": "export declare class PmMcpProtocolError extends Error { readonly code: number; readonly data: Record<string, unknown>; constructor(message: string, code: number, data?: Record<string, unknown>); }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpRequestContext",
+          "signature": "export interface PmMcpRequestContext { protocolVersion: (typeof PM_MCP_SUPPORTED_PROTOCOL_VERSIONS)[number]; clientCapabilities: PmMcpClientCapabilities; clientInfo?: PmMcpImplementation; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "PmMcpResourceContract",
           "signature": "export interface PmMcpResourceContract { uri: string; name: string; description: string; mimeType: \"application/json\" | \"text/markdown\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpResultEnvelope",
+          "signature": "export interface PmMcpResultEnvelope { resultType: \"complete\"; _meta: { \"io.modelcontextprotocol/serverInfo\": PmMcpImplementation; }; [key: string]: unknown; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpServerCapabilities",
+          "signature": "export interface PmMcpServerCapabilities { prompts?: { listChanged?: boolean; }; resources?: { listChanged?: boolean; subscribe?: boolean; }; tools?: { listChanged?: boolean; }; extensions?: Record<string, Record<string, unknown>>; [key: string]: unknown; }"
         },
         {
           "classification": "advanced_export",
@@ -13711,6 +13831,12 @@
           "kind": "function",
           "name": "resolveLinkedTestTrustBatch",
           "signature": "(pmRoot: string, tests: LinkedTest[], currentSourceRef?: string) => Promise<LinkedTestTrustDecision[]> | calls: (pmRoot: string, tests: LinkedTest[], currentSourceRef?: string) => Promise<LinkedTestTrustDecision[]>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveMcpRequestContext",
+          "signature": "(params: unknown) => PmMcpRequestContext | calls: (params: unknown) => PmMcpRequestContext"
         },
         {
           "classification": "supported",

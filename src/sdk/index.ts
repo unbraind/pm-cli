@@ -16,6 +16,7 @@ export {
   resolvePmCommandCapabilityFamily,
   resolvePmCommandVisibilityTier,
 } from "./agent-capability-contracts.js";
+export * from "./mcp/protocol.js";
 export * from "./cli-contracts/grammar-contracts.js";
 export * from "./agent-session-context.js";
 export type {
