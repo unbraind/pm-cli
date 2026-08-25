@@ -1,0 +1,28 @@
+id: pm-vae5ec
+title: "Stateless MCP core: request-local version and capabilities, mandatory server/discover, typed result envelopes, and deterministic identity"
+description: Implement the 2026-07-28 base protocol model in SDK-owned contracts and replace initialize-scoped behavior with per-request metadata and mandatory discovery.
+type: Feature
+status: open
+priority: 1
+tags[6]: "area:mcp","area:sdk",protocol-negotiation,result-type,server-discover,stateless
+created_at: "2026-08-25T05:08:17.895Z"
+updated_at: "2026-08-25T05:08:17.895Z"
+deadline: "2026-09-30T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 720
+acceptance_criteria: "server/discover is mandatory and deterministic with exact supported versions, capabilities, extensions, and identity; Every request validates request-local protocol version and client capabilities and every result identifies the server; Unsupported versions, missing capabilities, malformed metadata, and header mismatches return the specified structured error codes; Ordinary results include resultType complete and compatibility treatment of omitted resultType is isolated and tested; No behavior depends on initialize or notifications/initialized state; The public pm SDK exposes transport-neutral negotiation, discovery, metadata validation, and result-envelope primitives"
+goal: Standards-correct stateless MCP core
+objective: Make every request self-describing and every server capability discoverable without connection-local initialization
+value: "Hosts can negotiate, retry, load-balance, and cache safely across independent requests"
+why_now: The current server hardcodes 2025-06-18 and retains initialize state that the 2026-07-28 core removes
+parent: pm-rs9vry
+risk: critical
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kl11,supersedes,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
+  pm-sqvshj,blocked_by,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,implements,"2026-08-25T05:08:17.895Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:08:17.895Z","harness:codex","Duplicate check evidence: searched all statuses for stateless MCP server/discover request metadata protocolVersion clientCapabilities serverInfo resultType initialize removal and unsupported version handling. Existing handshake work is terminal and targets 2025-06-18."
+body: "## Contract\n\n- Implement server/discover with supported versions, capabilities, extensions, and server identity.\n- Require and validate io.modelcontextprotocol/protocolVersion and clientCapabilities in request _meta.\n- Accept request-local clientInfo and return serverInfo in result _meta.\n- Return UnsupportedProtocolVersionError and MissingRequiredClientCapability with current allocated codes.\n- Add required resultType complete and input_required handling while treating older omitted resultType as complete only inside the compatibility adapter.\n- Remove runtime dependence on initialize and notifications/initialized.\n- Keep deterministic capability ordering and one SDK-owned schema for CLI, MCP, tests, contracts, and docs."

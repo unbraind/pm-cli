@@ -1,0 +1,28 @@
+id: pm-pznhee
+title: "MCP Apps for pm: interactive graph, context, plan, assurance, and long-operation views with consent-safe action boundaries"
+description: Expose optional interactive pm views as MCP Apps while keeping authoritative state and mutations in SDK-backed tools and resources.
+type: Feature
+status: open
+priority: 3
+tags[8]: "area:mcp",assurance,context,graph,interaction,long-term,mcp-apps,visualization
+created_at: "2026-08-25T05:11:42.545Z"
+updated_at: "2026-08-25T05:11:42.545Z"
+deadline: "2027-06-30T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 1200
+acceptance_criteria: "Each app reads authoritative SDK resources and never becomes a second tracker or mutable cache of record; All mutations use declared MCP tools with preview, consent, authority, idempotency, and immutable receipts; Graph and context explanations preserve typed edges, provenance, omissions, confidence, and token accounting; Accessibility, keyboard operation, reduced motion, large graphs, degraded connections, and stale data have explicit tests; Apps are optional extensions and absence never removes core CLI, SDK, or MCP functionality"
+goal: Interactive context without creating a second project-management state
+objective: "Render graph exploration, context selection, plan progress, assurance verdicts, and task state through standard MCP App contracts"
+value: Humans and agents can inspect complex project relationships and evidence interactively while preserving one immutable source of truth
+why_now: "MCP Apps are a notable extension and pm already owns graph, context, plans, tasks, and assurance primitives that benefit from safe interactive presentation"
+parent: pm-rs9vry
+risk: high
+confidence: low
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,verifies,"2026-08-25T05:11:42.545Z","harness:codex","cli:create:dep",detected
+  pm-4k6b,implements,"2026-08-25T05:11:42.545Z","harness:codex","cli:create:dep",detected
+  pm-7ob5,implements,"2026-08-25T05:11:42.545Z","harness:codex","cli:create:dep",detected
+  pm-rz9gep,blocked_by,"2026-08-25T05:11:42.545Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:11:42.545Z","harness:codex","Duplicate check evidence: searched all statuses for MCP Apps interactive graph context plan assurance and task views. Existing graph and context owners provide primitives but no standard MCP App presentation layer."
+body: "## App portfolio\n\n- Context explorer showing why each item entered the token budget and what was omitted.\n- Relationship graph with typed paths, impact, critical path, communities, redundancy, provenance, and time travel.\n- Plan and milestone view with dependencies, decisions, discoveries, validation, and evidence.\n- Assurance dashboard with measurement provenance, gate verdicts, negative controls, and recurrence families.\n- Long-operation panel for task status, requested input, cancellation, and recovery.\n- Every mutation leaves the app through an explicit SDK-backed MCP tool with preview, consent, authority, and immutable receipt.\n- The app stores presentation state only and can be discarded without losing project state."

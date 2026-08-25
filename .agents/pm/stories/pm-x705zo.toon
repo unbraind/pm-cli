@@ -1,0 +1,26 @@
+id: pm-x705zo
+title: "As an MCP host or coding agent, I can discover pm capabilities and complete long-running context workflows through one current stateless protocol"
+description: "An MCP consumer can discover versions and capabilities, invoke pm tools and resources, satisfy requested input, follow progress or task state, and resume at application-level handles without hidden connection state."
+type: Story
+status: open
+priority: 1
+tags[6]: agent-story,"area:mcp",discoverability,host-story,long-running,stateless
+created_at: "2026-08-25T05:07:45.082Z"
+updated_at: "2026-08-25T05:07:45.082Z"
+deadline: "2026-10-15T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "The journey is executable over real stdio and Streamable HTTP transports; No successful operation depends on initialize state, an MCP session header, SSE redelivery, or undocumented server memory; Every response is token-bounded, deterministic where required, and exposes recovery when information is omitted; Input requests, task updates, progress, subscriptions, cancellation, and ordinary completion preserve one consistent state model; The packed and published agent transcript passes for npm, npx, bunx, and MCP consumers"
+goal: One predictable current MCP experience for agents and hosts
+objective: "Specify the end-to-end user outcome that all protocol, transport, task, resource, and conformance children jointly deliver"
+value: Integrators need fewer bespoke pm adapters and agents receive compact explainable context through standard MCP flows
+why_now: "The existing MCP experience depends on an obsolete handshake and does not expose the latest discovery, MRTR, subscription, cache, or task contracts"
+parent: pm-rs9vry
+risk: high
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-wo7x,discovered_from,"2026-08-25T05:07:45.082Z","harness:codex","cli:create:dep",detected
+  pm-z3ez,implements,"2026-08-25T05:07:45.082Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:07:45.082Z","harness:codex","Duplicate check evidence: searched all statuses for MCP host story stateless discovery long-running tasks MRTR subscriptions and released-agent workflow. pm-wo7x covers drift-free narrow tools only; no existing story owns the 2026-07-28 end-to-end journey."
+body: "## End-to-end journey\n\n- Discover supported protocol versions, server identity, core capabilities, and extensions.\n- Send any request with explicit request-local version and client capability metadata.\n- List and call deterministic token-bounded pm tools, prompts, and resources.\n- Respond to input_required results and retry the original request with inputResponses.\n- Observe request progress and opted-in list or resource changes without connection-local state.\n- Run long operations through durable task handles and application-level pm cursors.\n- Receive actionable structured refusals for unsupported versions, missing capabilities, invalid schemas, authorization failures, and expired handles.\n- Verify the same journey against a packed and published installation."

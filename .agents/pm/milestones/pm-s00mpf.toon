@@ -1,0 +1,26 @@
+id: pm-s00mpf
+title: "Outcome milestone: MCP 2026-07-28 interoperability proven from public SDK through released core and negotiated extensions"
+description: "Declare the outcome reached only when current MCP behavior, compatibility, security, tasks, skills, Apps, transports, and released consumers pass one requirement-complete evidence gate."
+type: Milestone
+status: open
+priority: 1
+tags[7]: 2026-07-28,"area:mcp",extensions,interoperability,milestone,outcome,released-artifact
+created_at: "2026-08-25T05:13:54.247Z"
+updated_at: "2026-08-25T05:13:54.247Z"
+deadline: "2027-06-30T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "The complete official requirement matrix has no unowned, untested, waived-without-expiry, or contradictory row; SDK, stdio, Streamable HTTP, tasks, skills, Apps, security, caching, and deprecation gates pass with proven negative controls; The exact released package and every advertised consumer surface report and execute the same protocol and extension contract; No critical or high MCP security, conformance, drift, release, or compatibility blocker remains open; The milestone evidence cites exact commit, package version, release, workflow runs, test commands, and immutable pm receipts"
+goal: Current standards-based pm integration
+objective: "Graduate the MCP programme only after interoperable behavior and optional extensions are proven across SDK, transports, packages, and releases"
+value: The roadmap distinguishes protocol claims from exact evidence that real hosts can consume
+why_now: The MCP capability epic is living scope and the SDK-complete milestone does not independently certify current protocol interoperability
+parent: pm-doxj
+risk: high
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rgaal,discovered_from,"2026-08-25T05:13:54.247Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,blocked_by,"2026-08-25T05:13:54.247Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:13:54.247Z","harness:codex","Duplicate check evidence: searched all statuses and all existing milestones for MCP 2026-07-28 interoperability current protocol extensions and released-artifact outcomes. pm-9rgaal proves SDK completeness but not protocol-version conformance."
+body: "## Exit evidence\n\n- Canonical 2026-07-28 core and every supported extension have requirement-level owners and passing negative controls.\n- Legacy protocol support is explicit, bounded, telemetry-visible, and sunset-ready.\n- Public SDK owns semantics and both real transports are thin tested adapters.\n- Security, authorization, privacy, consent, caching, schema resource bounds, and observability gates pass.\n- Tasks, skills, and Apps are negotiated extensions and absence preserves all core functionality.\n- Packed and published npm, npx, bunx, stdio, and Streamable HTTP consumers pass the canonical agent journey.\n- Source, contracts, generated schemas, docs, discovery, package metadata, release metadata, and runtime behavior agree exactly."

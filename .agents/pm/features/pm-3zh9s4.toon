@@ -1,0 +1,27 @@
+id: pm-3zh9s4
+title: "MCP remote authorization and observability: issuer-bound credentials, client metadata documents, consent, header security, and OpenTelemetry propagation"
+description: "Define and implement the 2026-07-28 remote MCP trust boundary for Streamable HTTP, including authorization discovery, issuer validation, registration migration, consent, trace context, and abuse resistance."
+type: Feature
+status: open
+priority: 1
+tags[8]: "area:mcp",authorization,client-metadata,issuer,oauth,opentelemetry,privacy,security
+created_at: "2026-08-25T05:10:30.953Z"
+updated_at: "2026-08-25T05:10:30.953Z"
+deadline: "2026-11-30T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 960
+acceptance_criteria: "Authorization-server discovery and issuer pinning prevent credentials from being reused or redeemed at a different issuer; Present iss values are validated and dynamic registration fallback is bounded behind Client ID Metadata Document preference; application_type, redirect URI, scopes, consent, refresh, revocation, and re-registration behavior have positive and negative tests; Header mappings, proxies, caches, traces, logs, errors, and telemetry cannot leak tokens, secrets, workspace paths, or private resource content; traceparent, tracestate, and baggage propagation follows explicit allowlists, byte limits, and redaction; A threat model and real Streamable HTTP integration suite gate release"
+goal: Secure observable remote pm MCP
+objective: "Make every remote request attributable, authorized, consented, privacy-bounded, and traceable without credential or context leakage"
+value: "Organizations can expose pm remotely without unsafe token reuse, redirect ambiguity, header injection, or opaque failures"
+why_now: "The revision tightens issuer and application-type validation, binds credentials to authorization servers, prefers Client ID Metadata Documents, and defines trace-context propagation"
+parent: pm-rs9vry
+risk: critical
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,verifies,"2026-08-25T05:10:30.953Z","harness:codex","cli:create:dep",detected
+  pm-sqvshj,discovered_from,"2026-08-25T05:10:30.953Z","harness:codex","cli:create:dep",detected
+  pm-v7e337,blocked_by,"2026-08-25T05:10:30.953Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:10:30.953Z","harness:codex","Duplicate check evidence: searched all statuses for MCP authorization iss issuer binding application_type client ID metadata documents dynamic registration consent headers and OpenTelemetry. No current item owns the remote 2026-07-28 trust boundary."
+body: "## Trust boundary\n\n- Discover and pin authorization-server issuer identity before persisting or redeeming credentials.\n- Validate a returned iss value and never reuse credentials across issuers.\n- Send an appropriate application_type and prefer Client ID Metadata Documents over deprecated dynamic registration.\n- Make consent scopes align with pm read, mutation, workspace, extension, task, and resource authority.\n- Validate transport headers and custom x-mcp-header mappings against injection, confused deputy, SSRF, replay, downgrade, and proxy-cache threats.\n- Propagate traceparent, tracestate, and baggage only through allowlisted metadata with privacy limits and redaction.\n- Keep stdio local trust behavior distinct from remote HTTP authorization rather than silently treating one as the other."

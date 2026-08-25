@@ -1,0 +1,27 @@
+id: pm-8nzivt
+title: "Skills over MCP: discoverable version-coherent pm workflows with progressive disclosure, capability requirements, and token budgets"
+description: "Expose canonical pm skills through negotiated MCP extension contracts so agents can discover only the workflow guidance relevant to their role, surface, version, and current context budget."
+type: Feature
+status: open
+priority: 2
+tags[6]: agent-guidance,"area:mcp",progressive-disclosure,skills,token-budget,version-coherence
+created_at: "2026-08-25T05:11:35.408Z"
+updated_at: "2026-08-25T05:11:35.408Z"
+deadline: "2027-01-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 600
+acceptance_criteria: "Agents can list and fetch pm skills through a negotiated extension without loading unrelated bodies; Skill versions declare compatible pm, MCP, SDK, package, and contract versions and fail closed on drift; All CLI, SDK, MCP, package, testing, release, governance, and operator families have canonical skill routing or an explicit non-skill disposition; Examples and recovery commands are generated or validated against live runtime contracts in local and hosted CI; Token cost, completion success, stale guidance, and recovery closure are measured and ratcheted"
+goal: Self-describing pm workflows over MCP
+objective: Publish skills as structured versioned capabilities tied to runtime contracts instead of static duplicated prose
+value: Agents receive complete current guidance without loading every pm command or maintaining harness-specific copies
+why_now: The latest MCP ecosystem identifies Skills over MCP as an extension while the pm roadmap already requires all skills to cover CLI and SDK features through progressive disclosure
+parent: pm-rs9vry
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,verifies,"2026-08-25T05:11:35.408Z","harness:codex","cli:create:dep",detected
+  pm-vae5ec,blocked_by,"2026-08-25T05:11:35.408Z","harness:codex","cli:create:dep",detected
+  pm-z3ez,implements,"2026-08-25T05:11:35.408Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:11:35.408Z","harness:codex","Duplicate check evidence: searched all statuses for Skills over MCP skill discovery progressive disclosure capability requirements version coherence and token budgets. pm-z3ez owns distribution but not the MCP extension protocol."
+body: "## Skill contract\n\n- Discover skill identity, version, purpose, required capabilities, supported surfaces, input contract, output budget, and linked runtime commands.\n- Fetch brief, standard, deep, or exact referenced sections on demand.\n- Bind skill compatibility to pm package version, MCP protocol version, active extensions, and contract schema version.\n- Generate or validate command examples against live contracts and execute negative controls in CI.\n- Preserve repository-local overrides with explicit provenance and precedence.\n- Measure tokens loaded, steps completed, refusal recovery, and stale-guidance escapes."

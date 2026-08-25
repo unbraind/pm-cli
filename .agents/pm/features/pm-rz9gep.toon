@@ -1,0 +1,27 @@
+id: pm-rz9gep
+title: "MCP multi round-trip requests: input_required results, elicitation, retry state, and removal of server-initiated request assumptions"
+description: Implement the 2026-07-28 MRTR pattern so pm can request bounded user or host input and continue the original operation through explicit inputResponses.
+type: Feature
+status: open
+priority: 1
+tags[6]: "area:mcp",elicitation,input-required,mrtr,retry,state-machine
+created_at: "2026-08-25T05:08:41.357Z"
+updated_at: "2026-08-25T05:08:41.357Z"
+deadline: "2026-10-15T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 600
+acceptance_criteria: "All interim results use resultType input_required with typed bounded inputRequests and requestState; Retrying the original request with inputResponses resumes deterministically or returns an actionable expired or invalid-state refusal; No handler sends roots/list, sampling/createMessage, elicitation/create, or notifications/elicitation/complete as server-initiated RPC; Consent, secrets, authorization expansion, cancellation, duplicate retries, replay, and expiration have explicit negative tests; The SDK exposes a reusable MRTR state machine and MCP is a thin transport adapter"
+goal: Explicit resumable interaction without reverse RPC
+objective: Represent all server-needed input as typed inputRequests and resume through a retried original request
+value: "Hosts can handle consent, clarification, and missing parameters without unsupported server-initiated calls or hidden sessions"
+why_now: "2026-07-28 replaces roots/list, sampling/createMessage, elicitation/create, and similar reverse requests with MRTR"
+parent: pm-rs9vry
+risk: high
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,implements,"2026-08-25T05:08:41.357Z","harness:codex","cli:create:dep",detected
+  pm-vae5ec,blocked_by,"2026-08-25T05:08:41.357Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,implements,"2026-08-25T05:08:41.357Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:08:41.357Z","harness:codex","Duplicate check evidence: searched all statuses for multi round-trip input_required inputRequests inputResponses elicitation retry requestState and reverse RPC removal. No canonical MCP MRTR owner exists."
+body: "## State model\n\n- A handler either returns complete or input_required.\n- input_required contains ordered typed inputRequests and opaque requestState bounded by policy.\n- The host retries the original method with inputResponses and the exact application state needed to continue.\n- URL-mode elicitation learns completion through retry and carries correlation only in requestState.\n- Cancellation, idempotency, replay protection, expiration, redaction, and consent are explicit.\n- pm recovery envelopes can map missing authority or missing user choices into safe MRTR requests without weakening refusal semantics."

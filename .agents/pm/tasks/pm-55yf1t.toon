@@ -1,0 +1,35 @@
+id: pm-55yf1t
+title: "MCP 2026-07-28 conformance and release gate: official schema matrix, protocol-era adapters, real transports, adversarial cases, and published consumers"
+description: "Build a requirement-complete test and release gate that proves the SDK, stdio server, Streamable HTTP server, packages, docs, and published artifacts implement the declared 2026-07-28 surface."
+type: Task
+status: open
+priority: 1
+tags[7]: "area:mcp",ci,conformance,negative-control,published-artifact,real-process,release-gate
+created_at: "2026-08-25T05:12:34.029Z"
+updated_at: "2026-08-25T05:18:50.975Z"
+deadline: "2026-12-15T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 1200
+acceptance_criteria: "A generated matrix maps every official 2026-07-28 normative requirement and supported extension to owners and executable evidence with no unclassified row; Official schema fixtures and protocol-era tests run through the public SDK and real stdio and Streamable HTTP processes; Each major behavior has a negative control that demonstrates the gate fails when the behavior is removed or malformed; Concurrency, cancellation, disconnect, retry, replay, authorization, caching, resource bounds, and token ceilings have adversarial coverage; Packed, npm, npx, and bunx consumers execute the full canonical agent journey and verify the advertised protocol version; Release is refused if source, generated schemas, docs, contracts, server discovery, package metadata, or published behavior disagree"
+goal: Evidence-backed MCP conformance
+objective: "Turn every normative requirement and supported extension into executable local, hosted, packed, and published proof"
+value: "Protocol drift, false-green tests, legacy regressions, security mistakes, and broken package bins fail before release"
+why_now: The existing handshake test proves an obsolete revision and the release probe validates only initialize rather than the latest protocol and extensions
+parent: pm-rs9vry
+risk: critical
+confidence: high
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8nzivt,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-9rgaal,verifies,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-hv1x1x,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-pznhee,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,verifies,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-rzs24j,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,verifies,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,implements,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
+  pm-vzcisw,blocked_by,"2026-08-25T05:13:50.205Z","harness:codex","cli:update:dep",detected
+  pm-s00mpf,verifies,"2026-08-25T05:15:00.364Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-25T05:12:34.029Z","harness:codex","Duplicate check evidence: searched all statuses for MCP 2026-07-28 conformance official schema protocol-era adapter Inspector real transport adversarial negative-control packed and published release gates. pm-kl11 and the current release probe only cover the obsolete initialize contract."
+  "2026-08-25T05:18:50.346Z","harness:codex","Graph governance: removed four direct blocked_by rows that were already implied through typed leaf prerequisites. The release gate still waits for every MCP lane through pm-rzs24j, pm-hv1x1x, pm-8nzivt, pm-pznhee, and pm-vzcisw, while preserving the established redundancy ceiling."
+body: "## Matrix dimensions\n\n- Requirement: every MUST, MUST NOT, REQUIRED, supported SHOULD, removed behavior, deprecation, and error code from the official schema and changelog.\n- Surface: public SDK, stdio process, Streamable HTTP process, MCP tools, resources, prompts, tasks, skills, Apps, docs, contracts, and schemas.\n- Era: 2026-07-28 canonical plus every explicitly supported legacy probe and refusal.\n- Outcome: positive case, malformed case, missing-capability case, unsupported-version case, concurrency case, disconnect or retry case, authorization case, resource-bound case, and negative control.\n- Artifact: checkout, packed tarball, clean install, npm package, npx, bunx, and release metadata.\n- Scale: deterministic ordering, prompt-cache stability, bounded output, large schema, many tools or resources, long history, and concurrent clients.\n- Evidence: exact source revision, exact package version, exact commit, exact test command, gate verdict, and immutable pm record."

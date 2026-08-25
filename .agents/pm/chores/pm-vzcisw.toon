@@ -1,0 +1,28 @@
+id: pm-vzcisw
+title: "MCP 2026-07-28 deprecation and removal migration: roots, sampling, logging, dynamic registration, HTTP+SSE, includeContext, ping, and legacy sessions"
+description: Remove canonical use of deleted protocol methods and migrate every deprecated feature to the specified replacement while preserving only bounded evidence-backed compatibility adapters.
+type: Chore
+status: open
+priority: 1
+tags[8]: "area:mcp",compatibility,deprecation,http-sse,logging,migration,roots,sampling
+created_at: "2026-08-25T05:13:05.253Z"
+updated_at: "2026-08-25T05:18:53.680Z"
+deadline: "2026-10-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 540
+acceptance_criteria: "A generated inventory finds every removed or deprecated symbol and classifies source, test, doc, package, and release-probe usage; Canonical 2026-07-28 code and public docs contain no initialize-state, ping, logging/setLevel, roots-change, legacy resource-subscription, session-header, SSE-resume, or tasks/result behavior; Every deprecated feature uses the specification migration path and has a dated compatibility and removal policy; Legacy adapters are isolated from canonical SDK policy and have protocol-era positive and negative tests; CI fails when a removed symbol or deprecated feature is reintroduced outside the explicit adapter allowlist"
+goal: No new dependence on removed or deprecated MCP features
+objective: "Inventory every legacy feature in source, tests, docs, packages, examples, and release probes and migrate it to the 2026-07-28 path"
+value: The current implementation does not carry dead protocol state or teach agents patterns scheduled for removal
+why_now: "The latest revision removes ping and several session or subscription behaviors and deprecates Roots, Sampling, Logging, Dynamic Client Registration, HTTP+SSE, and includeContext values"
+parent: pm-rs9vry
+risk: high
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3zh9s4,blocked_by,"2026-08-25T05:13:05.253Z","harness:codex","cli:create:dep",detected
+  pm-lold,supersedes,"2026-08-25T05:13:05.253Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,implements,"2026-08-25T05:13:05.253Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-25T05:13:05.253Z","harness:codex","Duplicate check evidence: searched all statuses for MCP deprecated Roots Sampling Logging Dynamic Client Registration HTTP SSE includeContext ping initialize sessions and migration. Existing terminal issues fix individual old-protocol behavior but no item owns revision-wide removal."
+  "2026-08-25T05:18:53.030Z","harness:codex","Graph governance: the authorization prerequisite pm-3zh9s4 already carries the transport, stateless-foundation, and ADR chain, so two redundant direct blocked_by rows were removed without weakening execution order."
+body: "## Migration ledger\n\n- initialize and notifications/initialized: replace with request-local metadata and server/discover.\n- ping: remove from canonical server and tests.\n- logging/setLevel: replace with request-local logLevel metadata, stderr for stdio, and OpenTelemetry for remote observability.\n- notifications/roots/list_changed and Roots: pass directories or files through tool parameters, resource URIs, or server configuration.\n- Sampling and includeContext legacy values: integrate directly with provider APIs when needed and omit or use none during compatibility.\n- HTTP+SSE, GET endpoints, session headers, and SSE resumability: replace with Streamable HTTP POST and explicit retry.\n- Dynamic Client Registration: prefer Client ID Metadata Documents with bounded fallback.\n- resources subscribe methods: replace with subscriptions/listen.\n\nEvery adapter declares owner, supported era, telemetry, security consequences, sunset evidence, and removal gate."

@@ -1,0 +1,28 @@
+id: pm-rs9vry
+title: "MCP 2026-07-28 conformance programme: stateless protocol, discovery, MRTR, subscriptions, extensions, security, caching, and released-artifact proof"
+description: "Migrate the pm MCP platform from the 2025-06-18 initialize-based implementation to complete 2026-07-28 conformance, with SDK-owned protocol contracts, explicit legacy compatibility, real transport tests, and release gates."
+type: Feature
+status: open
+priority: 1
+tags[8]: 2026-07-28,"area:mcp","area:sdk",conformance,protocol,release-gate,security,stateless
+created_at: "2026-08-25T05:06:28.595Z"
+updated_at: "2026-08-25T05:14:59.751Z"
+deadline: "2026-12-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 2400
+acceptance_criteria: "The official 2026-07-28 TypeScript schema and changelog are mapped requirement by requirement to a canonical owner, implementation surface, positive test, negative test, documentation section, and release gate; Every applicable core request and result uses stateless per-request protocol metadata and the server implements mandatory discovery with deterministic capability and identity reporting; MRTR, required resultType handling, subscriptions/listen, revised tasks, caching metadata, transport headers, schema behavior, authorization rules, trace propagation, and deprecation migrations are covered by individually tracked children; Resources, prompts, tools, official extensions, and client-facing features are explicitly implemented, explicitly declared not applicable with evidence, or tracked behind a standards-based compatibility boundary; Public SDK entrypoints own protocol negotiation, validation, envelopes, capabilities, and transport-neutral behavior while CLI and MCP layers contain no private policy fork; Real-process stdio and Streamable HTTP conformance suites prove success and refusal behavior against supported and unsupported versions, malformed metadata, disconnects, retries, cache scopes, authorization issuers, and extension negotiation; Packed and published artifacts are installed and verified through npm, npx, bunx, and the MCP release probe before a release can be advertised"
+goal: project management = context management
+objective: Make every applicable MCP 2026-07-28 core requirement and official extension reachable through SDK-owned contracts and verified over real transports
+value: Agents and hosts can integrate pm through a current interoperable protocol without hand-maintained drift or legacy-session assumptions
+why_now: "The shipped server advertises 2025-06-18 and requires initialize while the latest specification is stateless and changes negotiation, streaming, requests, caching, extensions, transport, and security contracts"
+parent: pm-5k4v
+risk: critical
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rgaal,implements,"2026-08-25T05:06:28.595Z","harness:codex","cli:create:dep",detected
+  pm-a8zm,discovered_from,"2026-08-25T05:06:28.595Z","harness:codex","cli:create:dep",detected
+  pm-kl11,supersedes,"2026-08-25T05:06:28.595Z","harness:codex","cli:create:dep",detected
+  pm-s00mpf,implements,"2026-08-25T05:14:56.434Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:06:28.595Z","harness:codex","Duplicate check evidence: inspected all 2543 items and 54141 history events; searched every lifecycle state for 2026-07-28 stateless discover subscriptions MRTR tasks caching headers authorization schema and deprecations; reviewed all 33 existing MCP children. No item owns this protocol revision. Official source: https://modelcontextprotocol.io/specification/2026-07-28"
+body: "## Delivery horizons\n\n- Foundation: build an authoritative requirement-to-code-to-test matrix from the official 2026-07-28 schema and changelog.\n- Protocol core: adopt stateless per-request version and capability metadata plus mandatory server discovery and result types.\n- Interaction and streaming: implement multi round-trip requests, subscription listening, progress, cancellation, and extension negotiation.\n- Server and extension surface: complete tools, resources, prompts, tasks, skills, and MCP Apps where pm exposes useful capabilities.\n- Trust boundary: implement transport headers, cache policy, JSON Schema 2020-12 behavior, authorization issuer binding, telemetry propagation, consent, and deprecation migrations.\n- Proof: test official schema conformance, legacy probes, negative cases, real stdio and Streamable HTTP processes, packed installs, npx, bunx, and exact released artifacts.\n\n## Architecture constraint\n\nProtocol semantics and typed envelopes belong to the public SDK. The CLI and MCP process are thin adapters. Compatibility is explicit, versioned, bounded, and never inferred from connection-local state."

@@ -1,0 +1,28 @@
+id: pm-hv1x1x
+title: "MCP server surface and cache contracts: deterministic tools, prompts, resources, JSON Schema 2020-12, ttlMs, cacheScope, and change coherence"
+description: "Bring every pm MCP list/read/call surface onto the 2026-07-28 schema and caching contract with deterministic ordering, broad JSON Schema support, safe references, and coherent invalidation."
+type: Feature
+status: open
+priority: 1
+tags[8]: "area:mcp",caching,determinism,json-schema,prompts,resources,token-efficiency,tools
+created_at: "2026-08-25T05:09:49.804Z"
+updated_at: "2026-08-25T05:09:49.804Z"
+deadline: "2026-10-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 780
+acceptance_criteria: "Every cacheable result includes validated ttlMs and cacheScope with documented freshness and privacy semantics; Tool listing is deterministic and cache invalidation composes correctly with listChanged and subscriptions/listen; JSON Schema 2020-12 references and composition keywords work within explicit recursion, size, and work bounds; structuredContent accepts every JSON value and schema-validation refusals are actionable and token-bounded; Resource-not-found uses Invalid Params and never leaks resource existence outside caller authority; SDK, MCP, docs, generated schemas, golden snapshots, and packed artifacts prove one shared contract"
+goal: Complete cacheable deterministic server features
+objective: "Make tool, prompt, resource, template, and read results conformant, bounded, cache-safe, and generated from shared SDK contracts"
+value: "Clients spend fewer tokens and requests while preserving exact freshness, privacy, and schema semantics"
+why_now: "The new revision requires ttlMs and cacheScope on cacheable results, deterministic tool ordering, broader JSON Schema 2020-12 behavior, and different resource-not-found errors"
+parent: pm-rs9vry
+risk: high
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
+  pm-vae5ec,blocked_by,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
+  pm-yf07b7,supersedes,"2026-08-25T05:09:49.804Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:09:49.804Z","harness:codex","Duplicate check evidence: searched all statuses for ttlMs cacheScope deterministic tools/list JSON Schema 2020-12 structuredContent references composition bounds and resource not found. pm-yf07b7 delivered the earlier resource and prompt surface but not the new revision contract."
+body: "## Surface contract\n\n- tools/list, prompts/list, resources/list, resources/read, and resources/templates/list return ttlMs and public or private cacheScope.\n- Tool ordering is deterministic and stable enough for prompt caches.\n- listChanged and subscriptions/listen invalidation align with TTL hints and never allow stale authorization decisions.\n- inputSchema and outputSchema accept applicable JSON Schema 2020-12 keywords and resolve references under bounded depth, bytes, and composition work.\n- structuredContent accepts any JSON value while tool result envelopes remain predictable.\n- Resource-not-found returns Invalid Params and recovery identifies the missing URI without leaking unrelated resources.\n- Contract generation, SDK types, MCP tool definitions, docs, golden files, and packed artifacts derive from one source."

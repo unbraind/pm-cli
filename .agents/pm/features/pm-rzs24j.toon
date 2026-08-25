@@ -1,0 +1,28 @@
+id: pm-rzs24j
+title: "Official MCP tasks extension for pm: asynchronous long operations, tasks/get polling, tasks/update input, durable handles, and lifecycle convergence"
+description: "Expose long-running pm operations through io.modelcontextprotocol/tasks with SDK-owned durable handles, polling, mid-flight input, cancellation, expiration, and immutable lifecycle evidence."
+type: Feature
+status: open
+priority: 1
+tags[6]: "area:mcp","area:sdk",async,durable-handles,long-running,tasks-extension
+created_at: "2026-08-25T05:09:28.783Z"
+updated_at: "2026-08-25T05:09:28.783Z"
+deadline: "2026-11-15T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 900
+acceptance_criteria: "The tasks extension is explicitly negotiated and never appears as an unadvertised core capability; Eligible long operations can return durable handles without per-request opt-in and tasks/get reports bounded authoritative state; tasks/update accepts validated mid-flight input and composes deterministically with MRTR inputResponses; tasks/list and blocking tasks/result are not implemented on the canonical 2026-07-28 path; Cancellation, duplicate updates, expiration, unauthorized access, restart recovery, retention, and immutable terminal evidence have negative tests; The SDK provides a transport-neutral task provider and adapters for test, reindex, graph, import, and validation operations"
+goal: Standard asynchronous execution for long pm operations
+objective: "Map tests, reindexing, graph analysis, imports, validation, and other bounded long operations onto the official tasks extension"
+value: "Hosts can start, inspect, steer, cancel, and recover long pm work without blocking a request or inventing a private job protocol"
+why_now: "2026-07-28 moves tasks out of core and redesigns them around tasks/get, tasks/update, unsolicited handles, and extension negotiation"
+parent: pm-rs9vry
+risk: high
+confidence: medium
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-klxax7,implements,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
+  pm-qd6gvf,verifies,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
+  pm-rz9gep,blocked_by,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,implements,"2026-08-25T05:09:28.783Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-25T05:09:28.783Z","harness:codex","Duplicate check evidence: searched all statuses for io.modelcontextprotocol/tasks tasks/get tasks/update tasks/result tasks/list durable handles polling and mid-flight input. Existing pm task and plan items are domain lifecycle work and do not implement the MCP extension."
+body: "## Task lifecycle\n\n- A qualifying operation may return a durable task handle when the tasks extension is negotiated.\n- tasks/get polls authoritative status, bounded progress, result, error, expiration, and recovery.\n- tasks/update supplies mid-flight client input and composes with MRTR without two conflicting state machines.\n- Cancellation and timeout are idempotent and terminal task states are immutable events.\n- Handles are scoped to workspace, authority, protocol policy, and retention; they never expose filesystem paths or secrets.\n- Existing pm plan, test-run, telemetry, and history identifiers remain domain records and are not silently conflated with transport task handles."
