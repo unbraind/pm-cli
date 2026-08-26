@@ -19,7 +19,8 @@ import {
 } from "./protocol.js";
 
 /** Draft extension identifier proposed by SEP-2640. */
-export const PM_MCP_SKILLS_EXTENSION = "io.modelcontextprotocol/skills" as const;
+export const PM_MCP_SKILLS_EXTENSION =
+  "io.modelcontextprotocol/skills" as const;
 
 /** Exact draft proposal revision implemented by pm. */
 export const PM_MCP_SKILLS_DRAFT_REVISION =
@@ -51,7 +52,9 @@ export function assertPmMcpSkillsCapability(
       PM_MCP_ERROR_CODES.missingRequiredClientCapability,
       {
         requiredCapabilities: {
-          extensions: { [PM_MCP_SKILLS_EXTENSION]: PM_MCP_SKILLS_SERVER_CAPABILITY },
+          extensions: {
+            [PM_MCP_SKILLS_EXTENSION]: PM_MCP_SKILLS_SERVER_CAPABILITY,
+          },
         },
       },
     );
@@ -161,15 +164,24 @@ export interface ReadPmMcpSkillDirectoryResult {
   resources: Array<{
     uri: string;
     name: string;
-    mimeType: "application/octet-stream" | "inode/directory" | "text/markdown" | "text/plain";
+    mimeType:
+      | "application/octet-stream"
+      | "inode/directory"
+      | "text/markdown"
+      | "text/plain";
   }>;
   /** Opaque continuation cursor when more direct children exist. */
   nextCursor?: string;
+  /** Explicit completeness signal for this directory page. */
+  hasMore: boolean;
 }
 
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const SKILL_PAGE_SIZES = new Set(
-  Array.from({ length: PM_MCP_SKILL_LIMITS.maxPageSize }, (_, index) => index + 1),
+  Array.from(
+    { length: PM_MCP_SKILL_LIMITS.maxPageSize },
+    (_, index) => index + 1,
+  ),
 );
 
 function skillError(message: string, data?: Record<string, unknown>): never {
@@ -188,7 +200,10 @@ function skillFileMimeType(
   }
 }
 
-function parseSkillFrontmatter(content: string, source: string): Record<string, unknown> {
+function parseSkillFrontmatter(
+  content: string,
+  source: string,
+): Record<string, unknown> {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content);
   if (!match) skillError(`Skill ${source} is missing YAML frontmatter.`);
   const document = parseDocument(match[1], {
@@ -255,12 +270,19 @@ async function collectSkillFiles(
   const directory = path.join(root, relative);
   const entries = await readdir(directory, { withFileTypes: true });
   const files: Array<{ relative: string; bytes: Buffer }> = [];
-  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-    const childRelative = path.posix.join(relative.split(path.sep).join("/"), entry.name);
+  for (const entry of entries.sort((left, right) =>
+    left.name.localeCompare(right.name),
+  )) {
+    const childRelative = path.posix.join(
+      relative.split(path.sep).join("/"),
+      entry.name,
+    );
     const childPath = path.join(root, ...childRelative.split("/"));
     const stats = await lstat(childPath);
     if (stats.isSymbolicLink()) {
-      skillError(`Skill resource must not be a symbolic link: ${childRelative}.`);
+      skillError(
+        `Skill resource must not be a symbolic link: ${childRelative}.`,
+      );
     }
     if (stats.isDirectory()) {
       files.push(...(await collectSkillFiles(root, childRelative, budget)));
@@ -275,7 +297,9 @@ async function collectSkillFiles(
         ),
       });
     } else {
-      skillError(`Skill resource must be a regular file or directory: ${childRelative}.`);
+      skillError(
+        `Skill resource must be a regular file or directory: ${childRelative}.`,
+      );
     }
   }
   return files;
@@ -297,22 +321,36 @@ async function loadSkillOrigin(
     throw error;
   }
   const skillEntries = entries
-    .filter((entry) => entry.isDirectory() && SKILL_NAME_PATTERN.test(entry.name))
+    .filter(
+      (entry) => entry.isDirectory() && SKILL_NAME_PATTERN.test(entry.name),
+    )
     .sort((left, right) => left.name.localeCompare(right.name));
   if (skillEntries.length > MAX_MCP_SKILLS_PER_ORIGIN) {
-    skillError(`Skill origin exceeds ${MAX_MCP_SKILLS_PER_ORIGIN} directories.`);
+    skillError(
+      `Skill origin exceeds ${MAX_MCP_SKILLS_PER_ORIGIN} directories.`,
+    );
   }
   const originBytes = { value: 0 };
   for (const entry of skillEntries) {
-    const files = await collectSkillFiles(path.join(skillsRoot, entry.name), "", {
-      files: 0,
-      skillBytes: 0,
-      originBytes,
-    });
-    const totalBytes = files.reduce((sum, file) => sum + file.bytes.byteLength, 0);
+    const files = await collectSkillFiles(
+      path.join(skillsRoot, entry.name),
+      "",
+      {
+        files: 0,
+        skillBytes: 0,
+        originBytes,
+      },
+    );
+    const totalBytes = files.reduce(
+      (sum, file) => sum + file.bytes.byteLength,
+      0,
+    );
     const main = files.find((file) => file.relative === "SKILL.md");
     if (!main) continue;
-    const frontmatter = parseSkillFrontmatter(main.bytes.toString("utf8"), entry.name);
+    const frontmatter = parseSkillFrontmatter(
+      main.bytes.toString("utf8"),
+      entry.name,
+    );
     if (frontmatter.name !== entry.name) {
       skillError(`Skill directory ${entry.name} must match frontmatter name.`, {
         actual: frontmatter.name ?? null,
@@ -323,9 +361,12 @@ async function loadSkillOrigin(
       typeof frontmatter.description !== "string" ||
       frontmatter.description.trim().length === 0
     ) {
-      skillError(`Skill ${entry.name} requires a non-empty frontmatter description.`, {
-        required: ["description"],
-      });
+      skillError(
+        `Skill ${entry.name} requires a non-empty frontmatter description.`,
+        {
+          required: ["description"],
+        },
+      );
     }
     const resources = files.map((file) => ({
       uri: `skill://${entry.name}/${file.relative}`,
@@ -333,7 +374,11 @@ async function loadSkillOrigin(
       size: file.bytes.byteLength,
     }));
     const fingerprint = createHash("sha256")
-      .update(resources.map((resource) => `${resource.uri}:${resource.digest}`).join("\n"))
+      .update(
+        resources
+          .map((resource) => `${resource.uri}:${resource.digest}`)
+          .join("\n"),
+      )
       .digest("hex");
     skills.set(entry.name, {
       uri: `skill://${entry.name}/SKILL.md`,
@@ -413,15 +458,25 @@ export class PmMcpSkillRegistry {
   }
 
   /** Load package skills and apply validated workspace overrides by name. */
-  static async load(options: LoadPmMcpSkillsOptions): Promise<PmMcpSkillRegistry> {
+  static async load(
+    options: LoadPmMcpSkillsOptions,
+  ): Promise<PmMcpSkillRegistry> {
     const packaged = await loadSkillOrigin(
       path.join(options.packageRoot, ".agents", "skills"),
       "package",
       options.packageVersion,
     );
     if (options.workspaceRoot) {
-      const packageSkillsRoot = path.resolve(options.packageRoot, ".agents", "skills");
-      const workspaceSkillsRoot = path.resolve(options.workspaceRoot, ".agents", "skills");
+      const packageSkillsRoot = path.resolve(
+        options.packageRoot,
+        ".agents",
+        "skills",
+      );
+      const workspaceSkillsRoot = path.resolve(
+        options.workspaceRoot,
+        ".agents",
+        "skills",
+      );
       if (workspaceSkillsRoot !== packageSkillsRoot) {
         const overrides = await loadSkillOrigin(
           workspaceSkillsRoot,
@@ -438,7 +493,9 @@ export class PmMcpSkillRegistry {
   list(options: ListPmMcpSkillsOptions = {}): ListPmMcpSkillsResult {
     const limit = options.limit ?? PM_MCP_SKILL_LIMITS.defaultPageSize;
     if (!SKILL_PAGE_SIZES.has(limit)) {
-      skillError(`Skill list limit must be an integer from 1 to ${PM_MCP_SKILL_LIMITS.maxPageSize}.`);
+      skillError(
+        `Skill list limit must be an integer from 1 to ${PM_MCP_SKILL_LIMITS.maxPageSize}.`,
+      );
     }
     const offset = this.#decodeCursor(options.cursor, "skills/list");
     const ordered = [...this.#skills.values()].sort((left, right) =>
@@ -460,7 +517,9 @@ export class PmMcpSkillRegistry {
 
   /** Get one skill descriptor by its SKILL.md URI. */
   get(uri: string): PmMcpSkillDescriptor {
-    const match = /^skill:\/\/([a-z0-9]+(?:-[a-z0-9]+)*)\/SKILL\.md$/u.exec(uri);
+    const match = /^skill:\/\/([a-z0-9]+(?:-[a-z0-9]+)*)\/SKILL\.md$/u.exec(
+      uri,
+    );
     const skill = match ? this.#skills.get(match[1]) : undefined;
     if (!skill) skillError(`Unknown pm MCP skill: ${uri}.`, { field: "uri" });
     return projectSkill(skill);
@@ -472,7 +531,9 @@ export class PmMcpSkillRegistry {
     const skill = match ? this.#skills.get(match[1]) : undefined;
     const relative = match?.[2] ?? "";
     const bytes = skill && relative ? skill.files.get(relative) : undefined;
-    const resource = skill?.resources.find((candidate) => candidate.uri === uri);
+    const resource = skill?.resources.find(
+      (candidate) => candidate.uri === uri,
+    );
     if (!skill || !bytes || !resource) {
       skillError(`Unknown pm MCP skill resource: ${uri}.`, { field: "uri" });
     }
@@ -511,13 +572,19 @@ export class PmMcpSkillRegistry {
     uri: string,
     options: ListPmMcpSkillsOptions = {},
   ): ReadPmMcpSkillDirectoryResult {
-    const match = /^skill:\/\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/(.+))?$/u.exec(uri);
+    const match = /^skill:\/\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/(.+))?$/u.exec(
+      uri,
+    );
     const skill = match ? this.#skills.get(match[1]) : undefined;
-    if (!skill) skillError(`Unknown pm MCP skill directory: ${uri}.`, { field: "uri" });
+    if (!skill)
+      skillError(`Unknown pm MCP skill directory: ${uri}.`, { field: "uri" });
     const directory = (match?.[2] ?? "").replace(/\/$/u, "");
     const prefix = directory.length > 0 ? `${directory}/` : "";
     const base = `skill://${match![1]}`;
-    const children = new Map<string, ReadPmMcpSkillDirectoryResult["resources"][number]>();
+    const children = new Map<
+      string,
+      ReadPmMcpSkillDirectoryResult["resources"][number]
+    >();
     for (const resource of skill.resources) {
       const relative = resource.uri.slice(`${base}/`.length);
       if (!relative.startsWith(prefix)) continue;
@@ -539,15 +606,21 @@ export class PmMcpSkillRegistry {
     }
     const limit = options.limit ?? PM_MCP_SKILL_LIMITS.maxPageSize;
     if (!SKILL_PAGE_SIZES.has(limit)) {
-      skillError(`Skill directory limit must be an integer from 1 to ${PM_MCP_SKILL_LIMITS.maxPageSize}.`);
+      skillError(
+        `Skill directory limit must be an integer from 1 to ${PM_MCP_SKILL_LIMITS.maxPageSize}.`,
+      );
     }
     const offset = this.#decodeCursor(options.cursor, uri);
-    const ordered = [...children.values()].sort((left, right) => left.uri.localeCompare(right.uri));
+    const ordered = [...children.values()].sort((left, right) =>
+      left.uri.localeCompare(right.uri),
+    );
     const resources = ordered.slice(offset, offset + limit);
     const nextOffset = offset + resources.length;
+    const hasMore = nextOffset < ordered.length;
     return {
       resources,
-      ...(nextOffset < ordered.length
+      hasMore,
+      ...(hasMore
         ? {
             nextCursor: this.#encodeCursor(nextOffset, uri),
           }

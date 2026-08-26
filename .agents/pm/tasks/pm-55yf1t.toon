@@ -6,10 +6,10 @@ status: closed
 priority: 1
 tags[7]: "area:mcp",ci,conformance,negative-control,published-artifact,real-process,release-gate
 created_at: "2026-08-25T05:12:34.029Z"
-updated_at: "2026-08-26T16:57:31.341Z"
+updated_at: "2026-08-26T17:43:32.070Z"
 deadline: "2026-12-15T00:00:00.000Z"
-closed_at: "2026-08-26T16:57:30.738Z"
-completed_at: "2026-08-26T16:57:30.738Z"
+closed_at: "2026-08-26T17:43:31.251Z"
+completed_at: "2026-08-26T17:43:31.251Z"
 author: "harness:codex"
 estimated_minutes: 1200
 acceptance_criteria: "A generated matrix maps every official 2026-07-28 normative requirement and supported extension to owners and executable evidence with no unclassified row; Official schema fixtures and protocol-era tests run through the public SDK and real stdio and Streamable HTTP processes; Each major behavior has a negative control that demonstrates the gate fails when the behavior is removed or malformed; Concurrency, cancellation, disconnect, retry, replay, authorization, caching, resource bounds, and token ceilings have adversarial coverage; Packed, npm, npx, and bunx consumers execute the full canonical agent journey and verify the advertised protocol version; Release is refused if source, generated schemas, docs, contracts, server discovery, package metadata, or published behavior disagree"
@@ -20,9 +20,9 @@ why_now: The existing handshake test proves an obsolete revision and the release
 parent: pm-rs9vry
 risk: critical
 confidence: high
-resolution: "Extended MCP 2026-07-28 conformance and release verification across Skills and Apps for real npx, bunx, stdio, and HTTP consumers."
+resolution: Extended MCP 2026-07-28 conformance and release verification across Skills and Apps with exact optional-extension degradation semantics.
 expected_result: "Release gates fail on protocol, capability, digest, resource, transport, or installed-consumer drift."
-actual_result: "Verifier asserts exact Skills revision/status, advertised resources and independent digests, Apps discovery and HTML reads across npx/bunx; negative fixtures and exact 100 percent coverage prove failure paths."
+actual_result: "Verifier and docs distinguish optional Apps discovery degradation from strict direct App reads and fail-closed Skills methods; npx/bunx paths, negative fixtures, and exact coverage pass."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-8nzivt,blocked_by,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,verifies,"2026-08-25T05:12:34.029Z","harness:codex","cli:create:dep",detected
@@ -36,13 +36,14 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-s00mpf,verifies,"2026-08-25T05:15:00.364Z","harness:codex","cli:update:dep",detected
   pm-kl11,discovered_from,"2026-08-25T05:50:27.401Z","harness:codex","cli:update:dep",detected
   pm-u9d0,implements,"2026-08-25T05:50:27.401Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-25T05:12:34.029Z","harness:codex","Duplicate check evidence: searched all statuses for MCP 2026-07-28 conformance official schema protocol-era adapter Inspector real transport adversarial negative-control packed and published release gates. pm-kl11 and the current release probe only cover the obsolete initialize contract."
   "2026-08-25T05:18:50.346Z","harness:codex","Graph governance: removed four direct blocked_by rows that were already implied through typed leaf prerequisites. The release gate still waits for every MCP lane through pm-rzs24j, pm-hv1x1x, pm-8nzivt, pm-pznhee, and pm-vzcisw, while preserving the established redundancy ceiling."
   "2026-08-25T14:41:17.713Z","harness:codex","Progress evidence: added the official-revision owner matrix plus SDK helper and real-process stateless conformance coverage. PM-linked aggregate coverage, complete-tracker static assurance, and 12-test current-foundation cohort passed. The aggregate remains open because Streamable HTTP, tasks, cache/subscriptions, authorization/telemetry, deprecations, and published-consumer lanes retain separate active owners."
   "2026-08-25T15:01:38.183Z","harness:codex","Superseding current-foundation evidence: unversioned legacy requests carrying unrelated _meta remain on the compatibility adapter; strict modern validation activates only when protocolVersion is explicitly claimed. Focused foundation cohort is now 13 tests and the core PM-linked exact coverage/static suite passes on the corrected tree."
   "2026-08-26T15:49:44.799Z","harness:codex","Final conformance evidence: every declared prerequisite owner is live-verified closed with substantive resolution. Discovery, Skills, Apps, tasks, MRTR, cache/resource contracts, authorization, transport, subscriptions, deprecation inventory, release verifier, and real stateless process coverage converge on MCP 2026-07-28. Final exact coverage passed 583 files / 8,011 tests at 100/100/100/100; static quality and graph composition pass with zero canonical MCP deprecation violations; packed npx and bunx clients exercised discovery, four skills, five Apps, and App resource rendering."
   "2026-08-26T16:57:17.139Z","harness:codex","PR review remediation evidence: published verifier now requires the exact draft Skills revision/status, reads a listed skill resource, and independently verifies its SHA-256 digest for both text and binary payload paths. Structured fixtures cover wrong revision, wrong digest, and binary bunx success. Exact coverage and the full static/conformance gates passed; real packed npx and bunx MCP journeys returned five responses including discovery, Skills, Apps, app HTML, and digest-bearing skill content."
+  "2026-08-26T17:43:07.566Z","harness:codex","Exact-head remediation evidence: the canonical protocol decision now documents implemented optional-Apps behavior precisely—incompatible declarations degrade tools/list and resources/list to non-UI discovery, while direct ui:// reads and every Skills method remain fail-closed. Focused conformance, deprecation inventory, static assurance, and exact coverage pass."
 notes[1]{created_at,author,text}:
   "2026-08-26T15:49:43.255Z","harness:codex",Live publication proof is a post-merge operational claim. The reviewed source includes fail-closed npx/bunx stdio and HTTP verifier coverage; registry/tag verification will be recorded separately after the immutable release exists.
 learnings[1]{created_at,author,text}:
@@ -155,8 +156,9 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:static",tracker,tracker,source,local_source_ref
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
   docs/MCP_2026_07_28_CONFORMANCE.md,project,Owner-mapped MCP revision conformance matrix
+  docs/MCP_2026_07_28.md,project,Exact Apps discovery degradation and strict direct-read semantics
   docs/MCP_SKILLS_AND_APPS.md,project,Extension conformance contract
-close_reason: "Delivered release-blocking 2026-07-28 Skills and Apps conformance for exact capabilities, resource digests, stdio/HTTP, npx, bunx, negative fixtures, and packed consumers."
+close_reason: "Corrected the canonical MCP decision to match optional Apps discovery degradation and strict direct-read/Skills negotiation, with full conformance gates passing."
 body: "## Matrix dimensions\n\n- Requirement: every MUST, MUST NOT, REQUIRED, supported SHOULD, removed behavior, deprecation, and error code from the official schema and changelog.\n- Surface: public SDK, stdio process, Streamable HTTP process, MCP tools, resources, prompts, tasks, skills, Apps, docs, contracts, and schemas.\n- Era: 2026-07-28 canonical plus every explicitly supported legacy probe and refusal.\n- Outcome: positive case, malformed case, missing-capability case, unsupported-version case, concurrency case, disconnect or retry case, authorization case, resource-bound case, and negative control.\n- Artifact: checkout, packed tarball, clean install, npm package, npx, bunx, and release metadata.\n- Scale: deterministic ordering, prompt-cache stability, bounded output, large schema, many tools or resources, long history, and concurrent clients.\n- Evidence: exact source revision, exact package version, exact commit, exact test command, gate verdict, and immutable pm record."

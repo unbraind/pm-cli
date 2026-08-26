@@ -4,8 +4,8 @@
 
 ### Added
 
-- MCP Apps for pm: interactive graph, context, plan, assurance, and long-operation views with consent-safe action boundaries ([pm-pznhee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pznhee.toon))
 - Skills over MCP: discoverable version-coherent pm workflows with progressive disclosure, capability requirements, and token budgets ([pm-8nzivt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8nzivt.toon))
+- MCP Apps for pm: interactive graph, context, plan, assurance, and long-operation views with consent-safe action boundaries ([pm-pznhee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pznhee.toon))
 
 ### Fixed
 
@@ -14,8 +14,8 @@
 
 ### Other
 
-- MCP 2026-07-28 conformance and release gate: official schema matrix, protocol-era adapters, real transports, adversarial cases, and published consumers ([pm-55yf1t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55yf1t.toon))
 - Refresh compatible ESLint 10.9.1 and Node type 26.3 patches ([pm-crkmmr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-crkmmr.toon))
+- MCP 2026-07-28 conformance and release gate: official schema matrix, protocol-era adapters, real transports, adversarial cases, and published consumers ([pm-55yf1t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55yf1t.toon))
 
 ## 2026.8.26 - 2026-08-26
 

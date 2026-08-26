@@ -36,7 +36,11 @@ async function writeSkill(
     `---\nname: ${name}\ndescription: ${description}\nmetadata:\n  owner: unbrained\n---\n\n# ${name}\n`,
     "utf8",
   );
-  await writeFile(path.join(directory, "references", "DETAIL.md"), "# Detail\n", "utf8");
+  await writeFile(
+    path.join(directory, "references", "DETAIL.md"),
+    "# Detail\n",
+    "utf8",
+  );
 }
 
 function context(declaration: unknown) {
@@ -51,7 +55,9 @@ function context(declaration: unknown) {
 }
 
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 describe("Skills over MCP SDK registry", () => {
@@ -61,10 +67,19 @@ describe("Skills over MCP SDK registry", () => {
       status: "draft",
       directoryRead: true,
     });
-    expect(() => assertPmMcpSkillsCapability(context(PM_MCP_SKILLS_SERVER_CAPABILITY))).not.toThrow();
-    expect(() => assertPmMcpSkillsCapability(context(PM_MCP_SKILLS_SERVER_CAPABILITY), true)).not.toThrow();
+    expect(() =>
+      assertPmMcpSkillsCapability(context(PM_MCP_SKILLS_SERVER_CAPABILITY)),
+    ).not.toThrow();
+    expect(() =>
+      assertPmMcpSkillsCapability(
+        context(PM_MCP_SKILLS_SERVER_CAPABILITY),
+        true,
+      ),
+    ).not.toThrow();
     for (const declaration of [undefined, null, {}, { revision: "latest" }]) {
-      expect(() => assertPmMcpSkillsCapability(context(declaration))).toThrow(PmMcpProtocolError);
+      expect(() => assertPmMcpSkillsCapability(context(declaration))).toThrow(
+        PmMcpProtocolError,
+      );
     }
     expect(() =>
       assertPmMcpSkillsCapability(
@@ -92,10 +107,16 @@ describe("Skills over MCP SDK registry", () => {
       packageVersion: "2026.8.26",
     });
     const first = registry.list({ limit: 1 });
-    expect(first).toMatchObject({ hasMore: true, skills: [{ uri: "skill://pm-developer/SKILL.md" }] });
+    expect(first).toMatchObject({
+      hasMore: true,
+      skills: [{ uri: "skill://pm-developer/SKILL.md" }],
+    });
     expect(first.nextCursor).toEqual(expect.any(String));
     const second = registry.list({ cursor: first.nextCursor, limit: 1 });
-    expect(second).toMatchObject({ hasMore: false, skills: [{ uri: "skill://pm-user/SKILL.md" }] });
+    expect(second).toMatchObject({
+      hasMore: false,
+      skills: [{ uri: "skill://pm-user/SKILL.md" }],
+    });
     expect(second).not.toHaveProperty("nextCursor");
     const descriptor = registry.get("skill://pm-developer/SKILL.md");
     expect(descriptor).toMatchObject({
@@ -110,7 +131,9 @@ describe("Skills over MCP SDK registry", () => {
     expect(descriptor.resources).toHaveLength(4);
     const read = registry.read("skill://pm-developer/SKILL.md");
     const bytes = Buffer.from(read.contents[0].text);
-    expect(read.contents[0]._meta.digest).toBe(`sha256:${createHash("sha256").update(bytes).digest("hex")}`);
+    expect(read.contents[0]._meta.digest).toBe(
+      `sha256:${createHash("sha256").update(bytes).digest("hex")}`,
+    );
     expect(read.contents[0]._meta.origin).toBe("package");
     expect(registry.read("skill://pm-developer/asset.bin")).toMatchObject({
       contents: [
@@ -145,9 +168,11 @@ describe("Skills over MCP SDK registry", () => {
         mimeType: "text/markdown",
       },
     ]);
-    expect(registry.readDirectory("skill://pm-developer/references").resources.map(({ uri }) => uri)).toEqual([
-      "skill://pm-developer/references/DETAIL.md",
-    ]);
+    expect(
+      registry
+        .readDirectory("skill://pm-developer/references")
+        .resources.map(({ uri }) => uri),
+    ).toEqual(["skill://pm-developer/references/DETAIL.md"]);
     expect(
       registry
         .readDirectory("skill://pm-developer/references/")
@@ -156,25 +181,27 @@ describe("Skills over MCP SDK registry", () => {
     const directoryFirst = registry.readDirectory("skill://pm-developer", {
       limit: 1,
     });
+    expect(directoryFirst).toMatchObject({ hasMore: true });
     expect(directoryFirst.nextCursor).toEqual(expect.any(String));
-    expect(
-      registry.readDirectory("skill://pm-developer", {
-        cursor: directoryFirst.nextCursor,
-        limit: 3,
-      }).resources,
-    ).toHaveLength(3);
+    const directoryFinal = registry.readDirectory("skill://pm-developer", {
+      cursor: directoryFirst.nextCursor,
+      limit: 3,
+    });
+    expect(directoryFinal).toMatchObject({ hasMore: false });
+    expect(directoryFinal.resources).toHaveLength(3);
+    expect(directoryFinal).not.toHaveProperty("nextCursor");
     expect(() =>
       registry.readDirectory("skill://pm-developer", {
         cursor: first.nextCursor,
       }),
     ).toThrow(/cursor is invalid or stale/u);
-    expect(() => registry.readDirectory("skill://pm-developer/SKILL.md")).toThrow(
-      /Unknown pm MCP skill directory/u,
-    );
+    expect(() =>
+      registry.readDirectory("skill://pm-developer/SKILL.md"),
+    ).toThrow(/Unknown pm MCP skill directory/u);
     for (const limit of [0, 101, 1.5]) {
-      expect(() => registry.readDirectory("skill://pm-developer", { limit })).toThrow(
-        /directory limit/u,
-      );
+      expect(() =>
+        registry.readDirectory("skill://pm-developer", { limit }),
+      ).toThrow(/directory limit/u);
     }
 
     const cursorPayload = JSON.parse(
@@ -190,7 +217,9 @@ describe("Skills over MCP SDK registry", () => {
       { ...cursorPayload, offset: -1 },
     ]) {
       const cursor = Buffer.from(JSON.stringify(invalid)).toString("base64url");
-      expect(() => registry.list({ cursor })).toThrow(/cursor is invalid or stale/u);
+      expect(() => registry.list({ cursor })).toThrow(
+        /cursor is invalid or stale/u,
+      );
     }
   });
 
@@ -208,21 +237,36 @@ describe("Skills over MCP SDK registry", () => {
       frontmatter: { description: "workspace workflow" },
       _meta: { origin: "workspace", trust: "untrusted" },
     });
-    expect(registry.read("skill://pm-user/SKILL.md").contents[0]._meta.origin).toBe("workspace");
+    expect(
+      registry.read("skill://pm-user/SKILL.md").contents[0]._meta.origin,
+    ).toBe("workspace");
     const sameOrigin = await PmMcpSkillRegistry.load({
       packageRoot,
       workspaceRoot: packageRoot,
       packageVersion: "1.0.0",
     });
-    expect(sameOrigin.get("skill://pm-user/SKILL.md")._meta.origin).toBe("package");
+    expect(sameOrigin.get("skill://pm-user/SKILL.md")._meta.origin).toBe(
+      "package",
+    );
   });
 
   it("returns an empty registry for absent roots and rejects stale or invalid reads", async () => {
     const root = await tempRoot();
-    await mkdir(path.join(root, ".agents", "skills", "INVALID"), { recursive: true });
-    await mkdir(path.join(root, ".agents", "skills", "no-main"), { recursive: true });
-    await writeFile(path.join(root, ".agents", "skills", "README.txt"), "ignored", "utf8");
-    const registry = await PmMcpSkillRegistry.load({ packageRoot: root, packageVersion: "1" });
+    await mkdir(path.join(root, ".agents", "skills", "INVALID"), {
+      recursive: true,
+    });
+    await mkdir(path.join(root, ".agents", "skills", "no-main"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(root, ".agents", "skills", "README.txt"),
+      "ignored",
+      "utf8",
+    );
+    const registry = await PmMcpSkillRegistry.load({
+      packageRoot: root,
+      packageVersion: "1",
+    });
     expect(registry.list()).toEqual({ skills: [], hasMore: false });
     const fileRoot = path.join(root, "package-file");
     await writeFile(fileRoot, "not a directory", "utf8");
@@ -252,16 +296,41 @@ describe("Skills over MCP SDK registry", () => {
 
   it("rejects malformed frontmatter, mismatched names, links, and resource limits", async () => {
     const malformed = await tempRoot();
-    const malformedDirectory = path.join(malformed, ".agents", "skills", "bad-skill");
+    const malformedDirectory = path.join(
+      malformed,
+      ".agents",
+      "skills",
+      "bad-skill",
+    );
     await mkdir(malformedDirectory, { recursive: true });
-    await writeFile(path.join(malformedDirectory, "SKILL.md"), "# no frontmatter\n", "utf8");
-    await expect(PmMcpSkillRegistry.load({ packageRoot: malformed, packageVersion: "1" })).rejects.toThrow(/frontmatter/u);
+    await writeFile(
+      path.join(malformedDirectory, "SKILL.md"),
+      "# no frontmatter\n",
+      "utf8",
+    );
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: malformed, packageVersion: "1" }),
+    ).rejects.toThrow(/frontmatter/u);
 
     const invalidYaml = await tempRoot();
-    const invalidYamlDirectory = path.join(invalidYaml, ".agents", "skills", "bad-yaml");
+    const invalidYamlDirectory = path.join(
+      invalidYaml,
+      ".agents",
+      "skills",
+      "bad-yaml",
+    );
     await mkdir(invalidYamlDirectory, { recursive: true });
-    await writeFile(path.join(invalidYamlDirectory, "SKILL.md"), "---\nname: [\n---\n", "utf8");
-    await expect(PmMcpSkillRegistry.load({ packageRoot: invalidYaml, packageVersion: "1" })).rejects.toThrow(/invalid YAML/u);
+    await writeFile(
+      path.join(invalidYamlDirectory, "SKILL.md"),
+      "---\nname: [\n---\n",
+      "utf8",
+    );
+    await expect(
+      PmMcpSkillRegistry.load({
+        packageRoot: invalidYaml,
+        packageVersion: "1",
+      }),
+    ).rejects.toThrow(/invalid YAML/u);
 
     const alias = await tempRoot();
     const aliasDirectory = path.join(alias, ".agents", "skills", "alias-skill");
@@ -271,7 +340,9 @@ describe("Skills over MCP SDK registry", () => {
       "---\nname: alias-skill\ndescription: &description aliased\nmetadata:\n  copy: *description\n---\n",
       "utf8",
     );
-    await expect(PmMcpSkillRegistry.load({ packageRoot: alias, packageVersion: "1" })).rejects.toThrow(/aliases/u);
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: alias, packageVersion: "1" }),
+    ).rejects.toThrow(/aliases/u);
 
     const mismatch = await tempRoot();
     await writeSkill(mismatch, "actual-name");
@@ -280,7 +351,9 @@ describe("Skills over MCP SDK registry", () => {
       "---\nname: different-name\ndescription: mismatch\n---\n",
       "utf8",
     );
-    await expect(PmMcpSkillRegistry.load({ packageRoot: mismatch, packageVersion: "1" })).rejects.toThrow(/must match/u);
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: mismatch, packageVersion: "1" }),
+    ).rejects.toThrow(/must match/u);
 
     const missingDescription = await tempRoot();
     const missingDescriptionDirectory = path.join(
@@ -296,7 +369,10 @@ describe("Skills over MCP SDK registry", () => {
       "utf8",
     );
     await expect(
-      PmMcpSkillRegistry.load({ packageRoot: missingDescription, packageVersion: "1" }),
+      PmMcpSkillRegistry.load({
+        packageRoot: missingDescription,
+        packageVersion: "1",
+      }),
     ).rejects.toThrow(/requires/u);
 
     for (const [name, frontmatter] of [
@@ -307,7 +383,12 @@ describe("Skills over MCP SDK registry", () => {
       ["empty-description", "name: empty-description\ndescription: '   '"],
     ] as const) {
       const invalidRoot = await tempRoot();
-      const invalidDirectory = path.join(invalidRoot, ".agents", "skills", name);
+      const invalidDirectory = path.join(
+        invalidRoot,
+        ".agents",
+        "skills",
+        name,
+      );
       await mkdir(invalidDirectory, { recursive: true });
       await writeFile(
         path.join(invalidDirectory, "SKILL.md"),
@@ -315,7 +396,10 @@ describe("Skills over MCP SDK registry", () => {
         "utf8",
       );
       await expect(
-        PmMcpSkillRegistry.load({ packageRoot: invalidRoot, packageVersion: "1" }),
+        PmMcpSkillRegistry.load({
+          packageRoot: invalidRoot,
+          packageVersion: "1",
+        }),
       ).rejects.toThrow(PmMcpProtocolError);
     }
 
@@ -325,7 +409,9 @@ describe("Skills over MCP SDK registry", () => {
       path.join(linked, ".agents", "skills", "linked-skill", "SKILL.md"),
       path.join(linked, ".agents", "skills", "linked-skill", "LINK.md"),
     );
-    await expect(PmMcpSkillRegistry.load({ packageRoot: linked, packageVersion: "1" })).rejects.toThrow(/symbolic link/u);
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: linked, packageVersion: "1" }),
+    ).rejects.toThrow(/symbolic link/u);
 
     if (process.platform !== "win32") {
       const special = await tempRoot();
@@ -344,11 +430,14 @@ describe("Skills over MCP SDK registry", () => {
       });
       try {
         await expect(
-          PmMcpSkillRegistry.load({ packageRoot: special, packageVersion: "1" }),
+          PmMcpSkillRegistry.load({
+            packageRoot: special,
+            packageVersion: "1",
+          }),
         ).rejects.toThrow(/regular file or directory/u);
       } finally {
         await new Promise<void>((resolve, reject) => {
-          server.close((error) => error ? reject(error) : resolve());
+          server.close((error) => (error ? reject(error) : resolve()));
         });
       }
     }
@@ -360,14 +449,25 @@ describe("Skills over MCP SDK registry", () => {
       "x".repeat(16 * 1024 * 1024 + 1),
       "utf8",
     );
-    await expect(PmMcpSkillRegistry.load({ packageRoot: oversized, packageVersion: "1" })).rejects.toThrow(/per-file limit/u);
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: oversized, packageVersion: "1" }),
+    ).rejects.toThrow(/per-file limit/u);
 
     const tooMany = await tempRoot();
     await writeSkill(tooMany, "many-files");
-    const tooManyDirectory = path.join(tooMany, ".agents", "skills", "many-files");
+    const tooManyDirectory = path.join(
+      tooMany,
+      ".agents",
+      "skills",
+      "many-files",
+    );
     await Promise.all(
       Array.from({ length: 511 }, (_, index) =>
-        writeFile(path.join(tooManyDirectory, `resource-${index}.txt`), "x", "utf8"),
+        writeFile(
+          path.join(tooManyDirectory, `resource-${index}.txt`),
+          "x",
+          "utf8",
+        ),
       ),
     );
     await expect(
@@ -399,7 +499,10 @@ describe("Skills over MCP SDK registry", () => {
       ),
     );
     await expect(
-      PmMcpSkillRegistry.load({ packageRoot: tooManySkills, packageVersion: "1" }),
+      PmMcpSkillRegistry.load({
+        packageRoot: tooManySkills,
+        packageVersion: "1",
+      }),
     ).rejects.toThrow(/exceeds 100 directories/u);
 
     const oversizedOrigin = await tempRoot();
@@ -411,7 +514,10 @@ describe("Skills over MCP SDK registry", () => {
       );
     }
     await expect(
-      PmMcpSkillRegistry.load({ packageRoot: oversizedOrigin, packageVersion: "1" }),
+      PmMcpSkillRegistry.load({
+        packageRoot: oversizedOrigin,
+        packageVersion: "1",
+      }),
     ).rejects.toThrow(/origin exceeds the aggregate byte limit/u);
   });
 });

@@ -1274,6 +1274,13 @@
       ],
       "package_version": "2026.8.26",
       "reason": "Align the new unshipped MCP Skills draft contracts with the exact SEP-2640 digest, directory-read, and resource-limit schema before first publication."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ReadPmMcpSkillDirectoryResult"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Complete the unmerged Skills directory pagination contract with required hasMore metadata"
     }
   ],
   "entrypoints": {
@@ -12840,7 +12847,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ReadPmMcpSkillDirectoryResult",
-          "signature": "export interface ReadPmMcpSkillDirectoryResult { resources: Array<{ uri: string; name: string; mimeType: \"application/octet-stream\" | \"inode/directory\" | \"text/markdown\" | \"text/plain\"; }>; nextCursor?: string; }"
+          "signature": "export interface ReadPmMcpSkillDirectoryResult { resources: Array<{ uri: string; name: string; mimeType: \"application/octet-stream\" | \"inode/directory\" | \"text/markdown\" | \"text/plain\"; }>; nextCursor?: string; hasMore: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -14713,6 +14720,12 @@
           "kind": "function",
           "name": "resolveWorkspaceRelationshipKindRegistry",
           "signature": "() => RelationshipKindRegistry | calls: () => RelationshipKindRegistry"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveWorkspaceRoot",
+          "signature": "(pmRoot: string) => string | calls: (pmRoot: string) => string"
         },
         {
           "classification": "supported",

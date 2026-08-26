@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
@@ -123,7 +125,9 @@ describe("MCP 2026-07-28 stateless server", () => {
         expect.objectContaining({
           name: "pm_context",
           _meta: expect.objectContaining({
-            ui: expect.objectContaining({ resourceUri: "ui://pm/context.html" }),
+            ui: expect.objectContaining({
+              resourceUri: "ui://pm/context.html",
+            }),
           }),
         }),
       ]),
@@ -145,13 +149,10 @@ describe("MCP 2026-07-28 stateless server", () => {
         }),
       ]),
     );
-    const incompatibleParams = modernExtensionParams(
-      PM_MCP_APPS_EXTENSION,
-      {
-        specVersion: "1900-01-01",
-        mimeTypes: [PM_MCP_APP_MIME_TYPE],
-      },
-    );
+    const incompatibleParams = modernExtensionParams(PM_MCP_APPS_EXTENSION, {
+      specVersion: "1900-01-01",
+      mimeTypes: [PM_MCP_APP_MIME_TYPE],
+    });
     await expect(
       handleRequest({
         jsonrpc: "2.0",
@@ -224,7 +225,9 @@ describe("MCP 2026-07-28 stateless server", () => {
         method: "resources/read",
         params: modernParams({ uri: "ui://pm/context.html" }),
       }),
-    ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.missingRequiredClientCapability });
+    ).rejects.toMatchObject({
+      code: PM_MCP_ERROR_CODES.missingRequiredClientCapability,
+    });
     await expect(
       handleRequest({
         jsonrpc: "2.0",
@@ -266,7 +269,10 @@ describe("MCP 2026-07-28 stateless server", () => {
       method: "skills/list",
       params: extensionParams({ cursor: listed?.nextCursor }),
     });
-    expect(listedNext).toMatchObject({ resultType: "complete", hasMore: false });
+    expect(listedNext).toMatchObject({
+      resultType: "complete",
+      hasMore: false,
+    });
     const skill = await handleRequest({
       jsonrpc: "2.0",
       id: 311,
@@ -302,9 +308,12 @@ describe("MCP 2026-07-28 stateless server", () => {
     });
     expect(directory?.resources).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ uri: expect.stringMatching(/^skill:\/\/pm-sdk\//u) }),
+        expect.objectContaining({
+          uri: expect.stringMatching(/^skill:\/\/pm-sdk\//u),
+        }),
       ]),
     );
+    expect(directory).toMatchObject({ hasMore: true });
     const directoryNext = await handleRequest({
       jsonrpc: "2.0",
       id: 3131,
@@ -314,7 +323,10 @@ describe("MCP 2026-07-28 stateless server", () => {
         cursor: directory?.nextCursor,
       }),
     });
-    expect([...(directory?.resources ?? []), ...(directoryNext?.resources ?? [])]).toEqual(
+    expect([
+      ...(directory?.resources ?? []),
+      ...(directoryNext?.resources ?? []),
+    ]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ uri: "skill://pm-sdk/SKILL.md" }),
         expect.objectContaining({
@@ -323,6 +335,7 @@ describe("MCP 2026-07-28 stateless server", () => {
         }),
       ]),
     );
+    expect(directoryNext).toMatchObject({ hasMore: false });
     await expect(
       handleRequest({
         jsonrpc: "2.0",
@@ -334,6 +347,64 @@ describe("MCP 2026-07-28 stateless server", () => {
         }),
       }),
     ).resolves.toMatchObject({ skill: { frontmatter: { name: "pm-user" } } });
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "pm-mcp-workspace-skills-"),
+    );
+    const originalPmPath = process.env.PM_PATH;
+    try {
+      const skillRoot = path.join(
+        workspaceRoot,
+        ".agents",
+        "skills",
+        "workspace-only",
+      );
+      const nestedCwd = path.join(workspaceRoot, "nested", "project");
+      await mkdir(skillRoot, { recursive: true });
+      await mkdir(path.join(workspaceRoot, ".agents", "pm"), {
+        recursive: true,
+      });
+      await mkdir(nestedCwd, { recursive: true });
+      await writeFile(
+        path.join(workspaceRoot, ".agents", "pm", "settings.json"),
+        "{}\n",
+        "utf8",
+      );
+      await writeFile(
+        path.join(skillRoot, "SKILL.md"),
+        "---\nname: workspace-only\ndescription: Workspace-only workflow\n---\n\n# Workspace only\n",
+        "utf8",
+      );
+      delete process.env.PM_PATH;
+      for (const params of [
+        extensionParams({
+          uri: "skill://workspace-only/SKILL.md",
+          cwd: nestedCwd,
+        }),
+        extensionParams({
+          uri: "skill://workspace-only/SKILL.md",
+          cwd: process.cwd(),
+          path: workspaceRoot,
+        }),
+      ]) {
+        await expect(
+          handleRequest({
+            jsonrpc: "2.0",
+            id: 3133,
+            method: "skills/get",
+            params,
+          }),
+        ).resolves.toMatchObject({
+          skill: {
+            frontmatter: { name: "workspace-only" },
+            _meta: { origin: "workspace", trust: "untrusted" },
+          },
+        });
+      }
+    } finally {
+      if (originalPmPath === undefined) delete process.env.PM_PATH;
+      else process.env.PM_PATH = originalPmPath;
+      await rm(workspaceRoot, { recursive: true, force: true });
+    }
     await expect(
       handleRequest({
         jsonrpc: "2.0",
@@ -341,11 +412,17 @@ describe("MCP 2026-07-28 stateless server", () => {
         method: "skills/list",
         params: modernParams(),
       }),
-    ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.missingRequiredClientCapability });
+    ).rejects.toMatchObject({
+      code: PM_MCP_ERROR_CODES.missingRequiredClientCapability,
+    });
     for (const [id, method, params] of [
       [315, "skills/list", extensionParams({ cursor: 123 })],
       [316, "skills/list", extensionParams({ limit: "2" })],
-      [317, "resources/directory/read", extensionParams({ uri: "skill://pm-sdk", limit: "2" })],
+      [
+        317,
+        "resources/directory/read",
+        extensionParams({ uri: "skill://pm-sdk", limit: "2" }),
+      ],
     ] as const) {
       await expect(
         handleRequest({ jsonrpc: "2.0", id, method, params }),

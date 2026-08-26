@@ -391,6 +391,7 @@ export {
   getSettingsPath,
   resolveImplicitPmRoot,
   resolvePmRoot,
+  resolveWorkspaceRoot,
 } from "../core/store/paths.js";
 export {
   persistSelectedItemFormat,

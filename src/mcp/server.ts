@@ -57,7 +57,11 @@ import {
   parseAtomicMutationControls,
   resolveItemMutationDocument,
 } from "../sdk/structured-mutations.js";
-import { resolveAuthor, resolvePmRoot } from "../sdk/runtime-primitives.js";
+import {
+  resolveAuthor,
+  resolvePmRoot,
+  resolveWorkspaceRoot,
+} from "../sdk/runtime-primitives.js";
 import {
   PM_MCP_ERROR_CODES,
   PM_MCP_META_KEYS,
@@ -797,7 +801,10 @@ async function loadRequestSkillRegistry(
   params: Record<string, unknown> | undefined,
 ): Promise<PmMcpSkillRegistry> {
   const args = requestWorkspaceArgs(params);
-  const workspaceRoot = typeof args.cwd === "string" ? args.cwd : process.cwd();
+  const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+  const workspaceRoot = resolveWorkspaceRoot(
+    resolvePmRoot(cwd, typeof args.path === "string" ? args.path : undefined),
+  );
   return PmMcpSkillRegistry.load({
     packageRoot: resolvePmPackageRoot(),
     workspaceRoot,
@@ -1146,7 +1153,13 @@ async function dispatchModernResourceMethod(
         throw new PmMcpProtocolError(
           "MCP App resource requires negotiated client capability",
           PM_MCP_ERROR_CODES.missingRequiredClientCapability,
-          { requiredCapabilities: { extensions: { [PM_MCP_APPS_EXTENSION]: PM_MCP_APPS_SERVER_CAPABILITY } } },
+          {
+            requiredCapabilities: {
+              extensions: {
+                [PM_MCP_APPS_EXTENSION]: PM_MCP_APPS_SERVER_CAPABILITY,
+              },
+            },
+          },
         );
       }
       resource = {

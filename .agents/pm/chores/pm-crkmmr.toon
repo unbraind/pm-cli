@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[4]: dependencies,quality,supply-chain,types
 created_at: "2026-08-26T14:37:53.572Z"
-updated_at: "2026-08-26T16:57:18.125Z"
-closed_at: "2026-08-26T15:50:07.702Z"
-completed_at: "2026-08-26T15:50:07.702Z"
+updated_at: "2026-08-26T17:43:33.350Z"
+closed_at: "2026-08-26T17:43:32.733Z"
+completed_at: "2026-08-26T17:43:32.733Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "ESLint and @types/node resolve to registry-current compatible patches; TypeScript 7 and npm-package-arg 14 remain linked to their canonical evidence-backed blockers; lint, typecheck, audit, exact coverage, packed consumer, and release gates pass"
@@ -19,25 +19,78 @@ why_now: The broad MCP release dependency census found two compatible patches an
 parent: pm-doxj
 risk: low
 confidence: high
-resolution: Adopted compatible ESLint and Node declaration patches while preserving evidence-backed owners for incompatible majors.
-expected_result: "All registry-current compatible patches land without bypassing engine or peer contracts, and incompatible majors retain canonical owners."
-actual_result: ESLint 10.9.1 and @types/node 26.3.0 resolve cleanly; TypeScript 7 and npm-package-arg 14 remain with typed causal links to their incompatibility owners.
+resolution: Adopted compatible ESLint and Node declaration patches and linked every claimed reproducible verification gate while preserving incompatible-major owners.
+expected_result: "All compatible patches and their exact coverage, artifact, npx, bunx-verifier, packed-consumer, lint, type, and audit gates are reproducible from the item."
+actual_result: "ESLint 10.9.1 and @types/node 26.3.0 resolve with zero vulnerabilities; six linked commands cover every claimed local gate, while live publication remains post-merge evidence."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7xfndr,discovered_from,"2026-08-26T14:37:53.572Z","harness:codex","cli:create:dep",detected
   pm-940mcx,recurs_from,"2026-08-26T14:37:53.572Z","harness:codex","cli:create:dep",detected
   pm-do5b,discovered_from,"2026-08-26T15:35:42.538Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,discovered_from,"2026-08-26T15:35:43.247Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-26T14:37:53.572Z","harness:codex","Duplicate check evidence: searched all statuses for exact ESLint 10.9.1, @types/node 26.3.0, TypeScript 7, npm-package-arg 14, and dependency refresh owners. No item owns the two current compatible patches; pm-do5b and pm-ksr40d remain canonical for the incompatible majors."
   "2026-08-26T15:49:45.715Z","harness:codex","Final dependency evidence: ESLint resolves to 10.9.1 and @types/node to 26.3.0; runtime Node declarations retain the >=22 floor. Registry census leaves only TypeScript 7 (typesript-eslint peer incompatibility, pm-do5b) and npm-package-arg 14 (Node engine incompatibility, pm-ksr40d), now linked as causal discoveries rather than generic related edges. Audit reports zero vulnerabilities; typecheck, ESLint, zero-clone, exact coverage, static quality, package artifact, npx, bunx, and packed consumer proof pass."
   "2026-08-26T15:49:59.988Z","harness:codex","Correction: the canonical TypeScript 7 blocker is the typescript-eslint 8.68 peer range, tracked by pm-do5b."
+  "2026-08-26T17:43:08.096Z","harness:codex","Exact-head evidence remediation: linked-test metadata now makes exact coverage, package-artifact integrity, fresh npx, package-first packed dogfood, and deterministic npx/bunx verifier paths reproducible. Current executions pass: 583 files / 8,011 tests at 100/100/100/100; artifact 19,651,385 bytes / 1,533 files; npx package smoke; and 88-command package-first dogfood. Live registry bunx proof remains correctly separated as post-merge operational evidence."
 learnings[2]{created_at,author,text}:
   "2026-08-26T15:49:42.793Z","harness:codex","Compatible patch automation must preserve engine and peer floors: safe ESLint and Node declaration patches can land while TypeScript 7 and npm-package-arg 14 remain with their canonical migration owners."
   "2026-08-26T16:57:18.125Z","harness:codex","Closure outcome ordering: record resolution, expected_result, actual_result, and evidence comments before the close event so immutable history makes the terminal decision self-contained; append a corrective learning instead of rewriting prior history."
 files[2]{path,scope,note}:
   package.json,project,Compatible patch declarations
   pnpm-lock.yaml,project,Resolved dependency graph
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  pnpm lint && pnpm typecheck && pnpm audit --audit-level=low,project,1200,"harness:codex","2026-08-26T14:38:10.719Z",local_mutation,main
-close_reason: Refreshed all currently compatible dependency patches with zero vulnerabilities and retained typed causal links to the two incompatible-major owners.
+tests[6]:
+  - command: pnpm lint && pnpm typecheck && pnpm audit --audit-level=low
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T14:38:10.719Z"
+      source_kind: local_mutation
+      source_ref: main
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T17:25:30.006Z"
+      source_kind: local_mutation
+      source_ref: feat/mcp-skills-apps-context-platform
+    note: Exact repository coverage gate claimed by the dependency refresh
+  - command: "pnpm quality:package-artifact"
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T17:25:30.471Z"
+      source_kind: local_mutation
+      source_ref: feat/mcp-skills-apps-context-platform
+    note: Packed artifact integrity gate claimed by the dependency refresh
+  - command: "pnpm smoke:npx"
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T17:25:30.977Z"
+      source_kind: local_mutation
+      source_ref: feat/mcp-skills-apps-context-platform
+    note: Fresh npx packed-consumer smoke claimed by the dependency refresh
+  - command: "pnpm dogfood:package-first"
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T17:25:31.557Z"
+      source_kind: local_mutation
+      source_ref: feat/mcp-skills-apps-context-platform
+    note: Package-first packed CLI and SDK dogfood claimed by the dependency refresh
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T17:25:32.117Z"
+      source_kind: local_mutation
+      source_ref: feat/mcp-skills-apps-context-platform
+    note: Deterministic npx and bunx published-verifier path coverage; live registry proof remains post-merge
+close_reason: "Made every dependency-refresh verification claim reproducible through linked exact coverage, artifact, npx, package-first, and npx/bunx verifier commands; current gates pass."
 body: ""
