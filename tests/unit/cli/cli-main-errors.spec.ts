@@ -15,9 +15,7 @@ import type * as CliEntrypointModule from "../../../src/cli.js";
 vi.mock("node:module", async (importOriginal) => {
   const actual = await importOriginal<typeof NodeModule>();
   const enableCompileCache =
-    typeof (actual as { enableCompileCache?: unknown }).enableCompileCache === "function"
-      ? actual.enableCompileCache
-      : (_cacheDir?: string) => ({ status: 0 });
+    typeof (actual as { enableCompileCache?: unknown }).enableCompileCache === "function" ? actual.enableCompileCache : (_cacheDir?: string) => ({ status: 0 });
   return { ...actual, enableCompileCache };
 });
 
@@ -100,11 +98,7 @@ import {
   formatUnknownErrorForJson,
   renderGuidanceMessage,
 } from "../../../src/cli/error-guidance.js";
-import {
-  listGuideTopicIds,
-  listGuideTopics,
-  resolveGuideTopic,
-} from "../../../src/sdk/guide-topics.js";
+import { listGuideTopicIds, listGuideTopics, resolveGuideTopic } from "../../../src/sdk/guide-topics.js";
 import {
   collectMandatoryMigrationBlockers,
   decideWriteGate,
@@ -188,10 +182,9 @@ async function runSourceCli(args: string[], env: NodeJS.ProcessEnv): Promise<Sou
       return true;
     }) as typeof process.stderr.write;
 
-    const loaded = await importFreshSourceModule<{ runPmCli: (argv: string[]) => Promise<void> }>(
-      "cli/main.js",
-      "sourceCli",
-    );
+    const loaded = await importFreshSourceModule<{
+      runPmCli: (argv: string[]) => Promise<void>;
+    }>("cli/main.js", "sourceCli");
     await loaded.runPmCli(args);
     return {
       code: process.exitCode ?? EXIT_CODE.SUCCESS,
@@ -266,17 +259,109 @@ async function captureStderrAsync(run: () => Promise<void>): Promise<string> {
 describe("CLI main error helpers", () => {
   it("only treats Commander-owned codes as Commander errors", () => {
     expect(_testOnly.isCommanderError({ code: "commander.unknownOption" })).toBe(true);
-    expect(_testOnly.isCommanderError({ code: "ENOENT", exitCode: EXIT_CODE.NOT_FOUND })).toBe(false);
+    expect(
+      _testOnly.isCommanderError({
+        code: "ENOENT",
+        exitCode: EXIT_CODE.NOT_FOUND,
+      }),
+    ).toBe(false);
     expect(_testOnly.isCommanderError(new Error("plain"))).toBe(false);
   });
 
   it("recognizes commander catch-path candidates without capturing generic coded errors", () => {
-    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "commander.unknownOption" })).toBe(true);
-    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "commander.version" })).toBe(true);
-    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander", message: "rendered (outputHelp)" })).toBe(true);
-    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander", message: 42 })).toBe(false);
+    expect(
+      _testOnly.shouldHandleRunPmCliCommanderError({
+        code: "commander.unknownOption",
+      }),
+    ).toBe(true);
+    expect(
+      _testOnly.shouldHandleRunPmCliCommanderError({
+        code: "commander.version",
+      }),
+    ).toBe(true);
+    expect(
+      _testOnly.shouldHandleRunPmCliCommanderError({
+        code: "not-commander",
+        message: "rendered (outputHelp)",
+      }),
+    ).toBe(true);
+    expect(
+      _testOnly.shouldHandleRunPmCliCommanderError({
+        code: "not-commander",
+        message: 42,
+      }),
+    ).toBe(false);
     expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander" })).toBe(false);
     expect(_testOnly.shouldHandleRunPmCliCommanderError(new Error("plain"))).toBe(false);
+  });
+
+  it("handles unknown-help fallback errors without a Commander code", async () => {
+    await withTempPmPath(async (context) => {
+      const invocationArgv = ["--no-extensions", "definitely-missing", "--help"];
+      const emitTelemetryCommandError = vi.fn(async () => ({
+        errorCategory: "usage" as const,
+        commandResolution: "unknown_command" as const,
+      }));
+      const previousExitCode = process.exitCode;
+      try {
+        const stderr = await captureStderrAsync(async () => {
+          await expect(
+            _testOnly.handleRunPmCliHelpDisplayError(
+              {
+                error: { message: "(outputHelp)" },
+                invocationArgv,
+                bootstrapGlobal: parseBootstrapGlobalOptions(invocationArgv),
+                jsonErrors: false,
+                bootstrapPmRoot: context.pmPath,
+                attemptedCommand: "definitely-missing",
+                emitTelemetryCommandError,
+              } as never,
+              undefined,
+              "(outputHelp)",
+            ),
+          ).resolves.toBe(true);
+        });
+        expect(stderr).toContain("Unknown command definitely-missing");
+        expect(emitTelemetryCommandError).toHaveBeenCalledWith(
+          expect.objectContaining({
+            options: expect.objectContaining({
+              commander_code: "commander.helpDisplayed",
+            }),
+          }),
+        );
+
+        const jsonInvocationArgv = [
+          "--no-extensions",
+          "--json",
+          "--lean",
+          "definitely-missing",
+          "--help",
+        ];
+        const jsonStderr = await captureStderrAsync(async () => {
+          await expect(
+            _testOnly.handleRunPmCliHelpDisplayError(
+              {
+                error: { message: "(outputHelp)" },
+                invocationArgv: jsonInvocationArgv,
+                bootstrapGlobal:
+                  parseBootstrapGlobalOptions(jsonInvocationArgv),
+                jsonErrors: true,
+                bootstrapPmRoot: context.pmPath,
+                attemptedCommand: "definitely-missing",
+                emitTelemetryCommandError,
+              } as never,
+              undefined,
+              "(outputHelp)",
+            ),
+          ).resolves.toBe(true);
+        });
+        expect(JSON.parse(jsonStderr)).toMatchObject({
+          code: "unknown_command",
+        });
+      } finally {
+        process.exitCode = previousExitCode;
+      }
+    });
   });
 
   it("resolves unknown help tokens from command path, command name, and fallback", () => {
@@ -309,7 +394,9 @@ describe("CLI main error helpers", () => {
     // A null snapshot resets to an empty registry: no override handles the
     // service and the payload passes through unchanged.
     _testOnly.setRecoveredExtensionServices(null);
-    const passthrough = runActiveServiceOverrideSync("help_format", { command: "list" });
+    const passthrough = runActiveServiceOverrideSync("help_format", {
+      command: "list",
+    });
     expect(passthrough.handled).toBe(false);
     expect(passthrough.result).toEqual({ command: "list" });
   });
@@ -362,10 +449,7 @@ describe("CLI main error helpers", () => {
   });
 
   it("preserves non-Error thrown exit codes for Sentry filtering", () => {
-    const wrapped = _testOnly.wrapThrownErrorForSentry(
-      { exitCode: EXIT_CODE.USAGE },
-      "Calendar accepts at most one positional view",
-    ) as Error & { exitCode?: number };
+    const wrapped = _testOnly.wrapThrownErrorForSentry({ exitCode: EXIT_CODE.USAGE }, "Calendar accepts at most one positional view") as Error & { exitCode?: number };
 
     expect(wrapped).toBeInstanceOf(Error);
     expect(wrapped.message).toBe("Calendar accepts at most one positional view");
@@ -399,7 +483,7 @@ describe("CLI main error helpers", () => {
         },
       },
       ["--json", "install", "npm:pm-brief", "--project"],
-      "npm package \"pm-brief\" was not found in the registry.",
+      'npm package "pm-brief" was not found in the registry.',
     );
 
     expect(context.recovery).toMatchObject({
@@ -444,89 +528,44 @@ describe("CLI main error helpers", () => {
 
   it("uses extension flag arity when constructing suggested retries", () => {
     const descriptors = new Map([
-        [
-          "todos sync",
-          {
-            command: "todos sync",
-            action: "sync",
-            examples: [],
-            failure_hints: [],
-            arguments: [],
-            flags: [
-              { long: "--allow-empty" },
-              { long: "--source", value_name: "path" },
-              { long: "--count", value_type: "number" },
-              { long: "--label", type: "string" },
-              { long: "--token", required: true },
-            ],
-          },
-        ],
-        [
-          "todos",
-          {
-            command: "todos",
-            action: "todos",
-            examples: [],
-            failure_hints: [],
-            arguments: [],
-            flags: [],
-          },
-        ],
-      ]);
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync", "items.json"],
-      "todos",
-      "--allow-empty",
-      descriptors,
-    )).toBe(false);
-    expect(extensionFlagTakesValueForInvocation(
-      ["--name", "todos", "todos", "sync"],
-      "todos",
-      "--allow-empty",
-      descriptors,
-    )).toBe(false);
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync", "--source", "todos"],
-      "todos",
-      "--allow-empty",
-      descriptors,
-    )).toBe(false);
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync"],
-      "todos",
-      "--source",
-      descriptors,
-    )).toBe(true);
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync"],
-      "todos",
-      "--label",
-      descriptors,
-    )).toBe(true);
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync"],
-      "todos",
-      "--missing",
-      descriptors,
-    )).toBeUndefined();
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync"],
-      "missing",
-      "--source",
-      descriptors,
-    )).toBeUndefined();
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync"],
-      "todos",
-      "--count",
-      descriptors,
-    )).toBe(true);
-    expect(extensionFlagTakesValueForInvocation(
-      ["todos", "sync"],
-      "todos",
-      "--token",
-      descriptors,
-    )).toBe(true);
+      [
+        "todos sync",
+        {
+          command: "todos sync",
+          action: "sync",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [
+            { long: "--allow-empty" },
+            { long: "--source", value_name: "path" },
+            { long: "--count", value_type: "number" },
+            { long: "--label", type: "string" },
+            { long: "--token", required: true },
+          ],
+        },
+      ],
+      [
+        "todos",
+        {
+          command: "todos",
+          action: "todos",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+        },
+      ],
+    ]);
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync", "items.json"], "todos", "--allow-empty", descriptors)).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(["--name", "todos", "todos", "sync"], "todos", "--allow-empty", descriptors)).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync", "--source", "todos"], "todos", "--allow-empty", descriptors)).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync"], "todos", "--source", descriptors)).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync"], "todos", "--label", descriptors)).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync"], "todos", "--missing", descriptors)).toBeUndefined();
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync"], "missing", "--source", descriptors)).toBeUndefined();
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync"], "todos", "--count", descriptors)).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(["todos", "sync"], "todos", "--token", descriptors)).toBe(true);
   });
 
   it("maps flattened aliases only within the same extension registration", () => {
@@ -550,11 +589,7 @@ describe("CLI main error helpers", () => {
   });
 
   it("does not suggest retries for flags that were already provided", () => {
-    const context = _testOnly.buildPmCliRecoveryContext(
-      undefined,
-      ["update", "pm-123", "--message", "done"],
-      "Missing required option --message",
-    );
+    const context = _testOnly.buildPmCliRecoveryContext(undefined, ["update", "pm-123", "--message", "done"], "Missing required option --message");
 
     expect(context.recovery).toEqual({
       attempted_command: "pm update pm-123 --message done",
@@ -602,28 +637,15 @@ describe("CLI main error helpers", () => {
   it("sanitizes inherited history-redact recovery fields in compact and expanded modes", () => {
     const canary = "inherited-recovery-canary-864";
     for (const explain of [false, true]) {
-      const invocationArgv = [
-        "history-redact",
-        "pm-example",
-        `--literal=${canary}`,
-        ...(explain ? ["--explain"] : []),
-      ];
+      const invocationArgv = ["history-redact", "pm-example", `--literal=${canary}`, ...(explain ? ["--explain"] : [])];
       const context = _testOnly.buildPmCliRecoveryContext(
         {
           recovery: {
             recovery_mode: "compact",
             attempted_command: `pm history-redact pm-example --literal=${canary}`,
-            normalized_args: [
-              "history-redact",
-              "pm-example",
-              `--literal=${canary}`,
-            ],
+            normalized_args: ["history-redact", "pm-example", `--literal=${canary}`],
             suggested_retry: `pm history-redact pm-example --literal=${canary}`,
-            suggested_retry_args: [
-              "history-redact",
-              "pm-example",
-              `--literal=${canary}`,
-            ],
+            suggested_retry_args: ["history-redact", "pm-example", `--literal=${canary}`],
           },
         },
         invocationArgv,
@@ -635,9 +657,7 @@ describe("CLI main error helpers", () => {
         attempted_command: expect.stringContaining("--literal=[redacted]"),
         normalized_args: expect.arrayContaining(["--literal=[redacted]"]),
         suggested_retry: expect.stringContaining("--literal=[redacted]"),
-        suggested_retry_args: expect.arrayContaining([
-          "--literal=[redacted]",
-        ]),
+        suggested_retry_args: expect.arrayContaining(["--literal=[redacted]"]),
       });
     }
   });
@@ -731,10 +751,7 @@ describe("CLI main error helpers", () => {
   it("normalizes primitive error and telemetry helper inputs defensively", () => {
     expect(_testOnly.describeUnknownError(new Error("boom"))).toBe("boom");
     expect(_testOnly.describeUnknownError("plain failure")).toBe("Unknown failure");
-    expect(_testOnly.inferMissingFieldsFromErrorMessage("missing --title, --type and --title")).toEqual([
-      "--title",
-      "--type",
-    ]);
+    expect(_testOnly.inferMissingFieldsFromErrorMessage("missing --title, --type and --title")).toEqual(["--title", "--type"]);
     expect(_testOnly.inferMissingFieldsFromErrorMessage("missing title")).toBeUndefined();
 
     const record = {
@@ -795,67 +812,26 @@ describe("CLI bootstrap and usage helper tails", () => {
   it("verifies collection recovery item ids against the selected tracker", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(
-        [
-          "create",
-          "--json",
-          "--title",
-          "Recovery target",
-          "--description",
-          "Existing item for usage recovery",
-          "--type",
-          "Task",
-          "--status",
-          "open",
-        ],
+        ["create", "--json", "--title", "Recovery target", "--description", "Existing item for usage recovery", "--type", "Task", "--status", "open"],
         { expectJson: true },
       );
       const itemId = (created.json as { item: { id: string } }).item.id;
       const previousArgv = process.argv;
       try {
-        process.argv = [
-          "node",
-          "pm",
-          "--pm-path",
-          context.pmPath,
-          "files",
-          "add",
-          itemId,
-        ];
-        const verified = await resolveCommanderUsageContext(
-          new Error(
-            "error: too many arguments for 'files'. Expected 1 argument but got 2.",
-          ),
-          new Command("pm"),
-          new Map(),
-        );
+        process.argv = ["node", "pm", "--pm-path", context.pmPath, "files", "add", itemId];
+        const verified = await resolveCommanderUsageContext(new Error("error: too many arguments for 'files'. Expected 1 argument but got 2."), new Command("pm"), new Map());
         expect(verified.verifiedCollectionItemId).toBe(itemId);
 
         process.argv[process.argv.length - 1] = "pm-missing";
-        const missing = await resolveCommanderUsageContext(
-          new Error(
-            "error: too many arguments for 'files'. Expected 1 argument but got 2.",
-          ),
-          new Command("pm"),
-          new Map(),
-        );
+        const missing = await resolveCommanderUsageContext(new Error("error: too many arguments for 'files'. Expected 1 argument but got 2."), new Command("pm"), new Map());
         expect(missing.verifiedCollectionItemId).toBeUndefined();
 
         process.argv[process.argv.length - 2] = "list";
-        const nonAdd = await resolveCommanderUsageContext(
-          new Error(
-            "error: too many arguments for 'files'. Expected 1 argument but got 2.",
-          ),
-          new Command("pm"),
-          new Map(),
-        );
+        const nonAdd = await resolveCommanderUsageContext(new Error("error: too many arguments for 'files'. Expected 1 argument but got 2."), new Command("pm"), new Map());
         expect(nonAdd.verifiedCollectionItemId).toBeUndefined();
 
         process.argv = ["node", "pm", "--pm-path", context.pmPath];
-        const commandless = await resolveCommanderUsageContext(
-          new Error("error: too many arguments"),
-          new Command("pm"),
-          new Map(),
-        );
+        const commandless = await resolveCommanderUsageContext(new Error("error: too many arguments"), new Command("pm"), new Map());
         expect(commandless.verifiedCollectionItemId).toBeUndefined();
       } finally {
         process.argv = previousArgv;
@@ -884,11 +860,7 @@ describe("CLI bootstrap and usage helper tails", () => {
     const previousArgv = process.argv;
     process.argv = ["node", "pm", "alpha", "--bta"];
     try {
-      const emptyContext = await resolveCommanderUsageContext(
-        new Error("error: unknown option '--bta'"),
-        command,
-        new Map(),
-      );
+      const emptyContext = await resolveCommanderUsageContext(new Error("error: unknown option '--bta'"), command, new Map());
       expect(emptyContext.commandName).toBe("alpha");
       expect(emptyContext.attemptedCommand).toBe("pm alpha --bta");
       expect(emptyContext.normalizedInvocationArgs).toEqual(["alpha", "--bta"]);
@@ -913,17 +885,9 @@ describe("CLI bootstrap and usage helper tails", () => {
     const registrySpy = vi.spyOn(typeRegistryModule, "resolveItemTypeRegistry").mockReturnValue({ types: [] } as never);
     try {
       await mkdir(pmRoot, { recursive: true });
-      await writeFile(
-        settingsPath,
-        `${JSON.stringify({ version: 1, id_prefix: "pm", item_format: "toon" })}\n`,
-        "utf8",
-      );
+      await writeFile(settingsPath, `${JSON.stringify({ version: 1, id_prefix: "pm", item_format: "toon" })}\n`, "utf8");
       process.argv = ["node", "pm", "--pm-path", pmRoot, "alpha", "--bta"];
-      const emptyTypes = await resolveCommanderUsageContext(
-        new Error("error: unknown option '--bta'"),
-        command,
-        new Map(),
-      );
+      const emptyTypes = await resolveCommanderUsageContext(new Error("error: unknown option '--bta'"), command, new Map());
       expect(emptyTypes.allowedTypes).toBe(BUILTIN_TYPE_HELP_VALUES);
 
       process.argv = ["node", "pm", "--no-extensions", "--pm-path", pmRoot, "alpha", "--bta"];
@@ -931,11 +895,7 @@ describe("CLI bootstrap and usage helper tails", () => {
       expect(registrySpy.mock.calls.at(-1)?.[1]).toBeUndefined();
 
       process.argv = ["node", "pm", "--pm-path", path.join(tempRoot, "missing"), "alpha", "--bta"];
-      const missingSettings = await resolveCommanderUsageContext(
-        new Error("error: unknown option '--bta'"),
-        command,
-        new Map(),
-      );
+      const missingSettings = await resolveCommanderUsageContext(new Error("error: unknown option '--bta'"), command, new Map());
       expect(missingSettings.allowedTypes).toBe(BUILTIN_TYPE_HELP_VALUES);
     } finally {
       registrySpy.mockRestore();
@@ -949,11 +909,7 @@ describe("CLI settings-read warning surfacing", () => {
   it("surfaces settings_read_invalid_schema on stderr while keeping stdout JSON clean", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
-      await writeFile(
-        settingsPath,
-        `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`,
-        "utf8",
-      );
+      await writeFile(settingsPath, `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`, "utf8");
 
       const result = context.runCli(["list", "--json"], { expectJson: true });
       expect(result.stderr).toContain("settings_read_invalid_schema");
@@ -980,13 +936,11 @@ describe("CLI settings-read warning surfacing", () => {
   it("surfaces the warning even with --no-extensions (the common safe mode)", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
-      await writeFile(
-        settingsPath,
-        `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`,
-        "utf8",
-      );
+      await writeFile(settingsPath, `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`, "utf8");
 
-      const result = context.runCli(["--no-extensions", "list", "--json"], { expectJson: true });
+      const result = context.runCli(["--no-extensions", "list", "--json"], {
+        expectJson: true,
+      });
       expect(result.stderr).toContain("settings_read_invalid_schema");
       expect(result.code).toBe(0);
       expect(() => JSON.parse(result.stdout)).not.toThrow();
@@ -1016,7 +970,12 @@ describe("CLI bootstrap entrypoints", () => {
       process.argv = ["node", "pm", "--no-extensions", "--version"];
       const cliModule = await importFreshSourceModule<typeof CliEntrypointModule>("cli.js", "entryFastVersion");
 
-      expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(CALENDAR_VERSION_PATTERN);
+      expect(
+        logSpy.mock.calls
+          .map((call) => String(call[0]))
+          .join("")
+          .trim(),
+      ).toMatch(CALENDAR_VERSION_PATTERN);
       expect(cliModule._testOnly.findPackageJson(nested)).toBe(path.join(tempRoot, "package.json"));
       expect(cliModule._testOnly.findPackageJson(path.parse(tempRoot).root)).toBeUndefined();
       expect(cliModule._testOnly.readPackageVersionForPath(nested)).toBe("9.8.7");
@@ -1038,7 +997,12 @@ describe("CLI bootstrap entrypoints", () => {
       logSpy.mockClear();
       process.argv = ["node", "pm", "--no-extensions", "-V"];
       expect(cliModule._testOnly.printFastVersionIfRequested()).toBe(true);
-      expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(CALENDAR_VERSION_PATTERN);
+      expect(
+        logSpy.mock.calls
+          .map((call) => String(call[0]))
+          .join("")
+          .trim(),
+      ).toMatch(CALENDAR_VERSION_PATTERN);
 
       process.argv = ["node", "pm", "--no-extensions", "--version", "--json"];
       expect(cliModule._testOnly.printFastVersionIfRequested()).toBe(false);
@@ -1059,10 +1023,16 @@ describe("CLI bootstrap entrypoints", () => {
       delete process.env.PM_CLI_DISABLE_COMPILE_CACHE;
       const originalGetuid = process.getuid;
       try {
-        Object.defineProperty(process, "getuid", { value: undefined, configurable: true });
+        Object.defineProperty(process, "getuid", {
+          value: undefined,
+          configurable: true,
+        });
         expect(cliModule._testOnly.enableNodeCompileCache()).toBeUndefined();
       } finally {
-        Object.defineProperty(process, "getuid", { value: originalGetuid, configurable: true });
+        Object.defineProperty(process, "getuid", {
+          value: originalGetuid,
+          configurable: true,
+        });
       }
       process.env.PM_CLI_DISABLE_COMPILE_CACHE = "1";
     } finally {
@@ -1091,17 +1061,15 @@ describe("CLI bootstrap entrypoints", () => {
     const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
     try {
       process.env.PM_CLI_PACKAGE_ROOT = " ";
-      await importFreshSourceModule<{ runPmCli: (argv: string[]) => Promise<void> }>(
-        "cli/main.js",
-        "packageRootBlank",
-      );
+      await importFreshSourceModule<{
+        runPmCli: (argv: string[]) => Promise<void>;
+      }>("cli/main.js", "packageRootBlank");
       expect(process.env.PM_CLI_PACKAGE_ROOT?.trim()).not.toBe("");
 
       process.env.PM_CLI_PACKAGE_ROOT = "/tmp/existing-pm-package-root";
-      await importFreshSourceModule<{ runPmCli: (argv: string[]) => Promise<void> }>(
-        "cli/main.js",
-        "packageRootPresent",
-      );
+      await importFreshSourceModule<{
+        runPmCli: (argv: string[]) => Promise<void>;
+      }>("cli/main.js", "packageRootPresent");
       expect(process.env.PM_CLI_PACKAGE_ROOT).toBe("/tmp/existing-pm-package-root");
     } finally {
       if (previousPackageRoot === undefined) {
@@ -1134,7 +1102,12 @@ describe("CLI bootstrap entrypoints", () => {
         await importFreshSourceModule<typeof CliEntrypointModule>("cli.js", "entryFallthrough");
 
         expect(process.exitCode ?? EXIT_CODE.SUCCESS).toBe(EXIT_CODE.SUCCESS);
-        expect(stdoutSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(CALENDAR_VERSION_PATTERN);
+        expect(
+          stdoutSpy.mock.calls
+            .map((call) => String(call[0]))
+            .join("")
+            .trim(),
+        ).toMatch(CALENDAR_VERSION_PATTERN);
         expect(stderrSpy).not.toHaveBeenCalled();
       } finally {
         stdoutSpy.mockRestore();
@@ -1171,10 +1144,7 @@ describe("CLI bootstrap entrypoints", () => {
 
   it("refuses bootstrap flag typo corrections until the user retries explicitly", async () => {
     await withTempPmPath(async (context) => {
-      const result = await context.runCliInProcess(
-        ["create", "--titel", "Needs explicit retry"],
-        { preserveDefaultMutationOutput: true },
-      );
+      const result = await context.runCliInProcess(["create", "--titel", "Needs explicit retry"], { preserveDefaultMutationOutput: true });
       expect(result.code).toBe(EXIT_CODE.USAGE);
       expect(result.stderr).toContain("Refusing to auto-correct mutating option --titel to --title");
       expect(result.stderr).toContain("pm create --title");
@@ -1212,8 +1182,8 @@ describe("CLI bootstrap entrypoints", () => {
       expect(typoPayload).toMatchObject({
         code: "mutating_flag_typo_requires_retry",
         recovery: {
-          attempted_command: "pm --no-extensions --json create --title \"Needs retry\"",
-          suggested_retry: "pm --no-extensions --json create --title \"Needs retry\"",
+          attempted_command: 'pm --no-extensions --json create --title "Needs retry"',
+          suggested_retry: 'pm --no-extensions --json create --title "Needs retry"',
         },
       });
 
@@ -1230,10 +1200,7 @@ describe("CLI bootstrap entrypoints", () => {
         }),
       });
 
-      const accountedMissingItem = await runSourceCli(
-        ["--no-extensions", "--json", "--lean", "get", "--token-accounting", "pm-does-not-exist"],
-        context.env,
-      );
+      const accountedMissingItem = await runSourceCli(["--no-extensions", "--json", "--lean", "get", "--token-accounting", "pm-does-not-exist"], context.env);
       expect(accountedMissingItem.code).toBe(EXIT_CODE.NOT_FOUND);
       expect(JSON.parse(accountedMissingItem.stderr)).toMatchObject({
         token_accounting: {
@@ -1259,8 +1226,27 @@ describe("CLI bootstrap entrypoints", () => {
 
       const unknownHelp = await runSourceCli(["--no-extensions", "definitely-missing", "--help"], context.env);
       expect(unknownHelp.code).toBe(EXIT_CODE.USAGE);
-      expect(unknownHelp.stdout).toContain("Usage: pm");
+      expect(unknownHelp.stdout).toBe("");
       expect(unknownHelp.stderr).toContain("Unknown command definitely-missing");
+
+      const reportedUnknownHelp = await runSourceCli(["--no-extensions", "definitely-missing", "--help"], {
+        ...context.env,
+        PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true",
+      });
+      expect(reportedUnknownHelp.code).toBe(EXIT_CODE.USAGE);
+      expect(reportedUnknownHelp.stdout).toBe("");
+      expect(reportedUnknownHelp.stderr).toContain("Unknown command definitely-missing");
+
+      const leanUnknownHelp = await runSourceCli(
+        ["--no-extensions", "--json", "--lean", "definitely-missing", "--help"],
+        context.env,
+      );
+      expect(leanUnknownHelp.code).toBe(EXIT_CODE.USAGE);
+      expect(leanUnknownHelp.stdout).toBe("");
+      expect(JSON.parse(leanUnknownHelp.stderr)).toMatchObject({
+        code: "unknown_command",
+        title: "Unknown command definitely-missing",
+      });
 
       const missingItem = await runSourceCli(["--no-extensions", "get", "pm-does-not-exist"], {
         ...context.env,
@@ -1342,9 +1328,7 @@ describe("CLI bootstrap entrypoints", () => {
       });
       expect(reportingFailureStderr).toContain("visible before telemetry");
       expect(reportingFailureStderr).toContain("Failed to report error: telemetry stalled");
-      expect(reportingFailureStderr.indexOf("visible before telemetry")).toBeLessThan(
-        reportingFailureStderr.indexOf("Failed to report error: telemetry stalled"),
-      );
+      expect(reportingFailureStderr.indexOf("visible before telemetry")).toBeLessThan(reportingFailureStderr.indexOf("Failed to report error: telemetry stalled"));
     } finally {
       process.exitCode = previousExitCode;
     }
@@ -1356,30 +1340,32 @@ describe("CLI bootstrap entrypoints", () => {
       const helpJsonModule = await import("../../../src/cli/help-json-payload.js");
       const bootstrapHelpSpy = vi.spyOn(helpJsonModule, "maybeRenderBootstrapJsonHelp");
       try {
-        parseSpy.mockRejectedValueOnce({ exitCode: 2.8, message: "numeric path" });
+        parseSpy.mockRejectedValueOnce({
+          exitCode: 2.8,
+          message: "numeric path",
+        });
         const numeric = await runSourceCli(["--no-extensions", "list"], context.env);
         expect(numeric.code).toBe(2);
         expect(numeric.stderr).toContain("Command failed");
 
-        parseSpy.mockRejectedValueOnce({ code: undefined, message: "(outputHelp)" });
-        const helpFallback = await runSourceCli(
-          ["--no-extensions", "help", "missing"],
-          { ...context.env, PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true" },
-        );
-        expect(helpFallback.code).toBe(EXIT_CODE.USAGE);
-        expect(helpFallback.stderr).toContain("Unknown command missing");
+        parseSpy.mockRejectedValueOnce({
+          code: undefined,
+          message: "(outputHelp)",
+        });
+        const helpFallback = await runSourceCli(["--no-extensions", "list", "--help"], { ...context.env, PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true" });
+        expect(helpFallback.code).toBe(EXIT_CODE.SUCCESS);
 
         parseSpy.mockRejectedValueOnce({ code: "commander.helpDisplayed" });
-        const helpNoMessage = await runSourceCli(["--no-extensions", "help", "missing"], context.env);
-        expect(helpNoMessage.code).toBe(EXIT_CODE.USAGE);
+        const helpNoMessage = await runSourceCli(["--no-extensions", "list", "--help"], context.env);
+        expect(helpNoMessage.code).toBe(EXIT_CODE.SUCCESS);
 
         bootstrapHelpSpy.mockResolvedValueOnce(false);
-        parseSpy.mockRejectedValueOnce({ code: "commander.helpDisplayed", message: "(outputHelp)" });
-        const jsonHelpFallback = await runSourceCli(
-          ["--json", "help", "missing"],
-          { ...context.env, PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true" },
-        );
-        expect(jsonHelpFallback.code).toBe(EXIT_CODE.USAGE);
+        parseSpy.mockRejectedValueOnce({
+          code: "commander.helpDisplayed",
+          message: "(outputHelp)",
+        });
+        const jsonHelpFallback = await runSourceCli(["--json", "list", "--help"], { ...context.env, PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true" });
+        expect(jsonHelpFallback.code).toBe(EXIT_CODE.SUCCESS);
 
         parseSpy.mockRejectedValueOnce(new Error("parse exploded"));
         const generic = await runSourceCli(["--no-extensions", "list"], context.env);
@@ -1404,10 +1390,7 @@ describe("CLI bootstrap entrypoints", () => {
         next_steps: ["Pass an explicit author identifier with --author <id>."],
       });
 
-      const missingValue = await runSourceCli(
-        ["--author", "--json", "list"],
-        context.env,
-      );
+      const missingValue = await runSourceCli(["--author", "--json", "list"], context.env);
       expect(missingValue.code).toBe(EXIT_CODE.USAGE);
       expect(JSON.parse(missingValue.stderr)).toMatchObject({
         code: "missing_required_argument",
@@ -1508,10 +1491,12 @@ describe("CLI main bootstrap helper coverage", () => {
   it("builds activation probes and extension activation decisions", () => {
     expect(_testOnly.collectLeadingCommandArgs(["daily", "--json", "ignored"])).toEqual(["daily"]);
     expect(_testOnly.collectLeadingCommandArgs([" ", "sub command"])).toEqual(["sub command"]);
-    expect(_testOnly.collectActivationCommandCandidates({ commandPath: "standup", commandArgs: ["daily", "--json"] })).toEqual([
-      "standup",
-      "standup daily",
-    ]);
+    expect(
+      _testOnly.collectActivationCommandCandidates({
+        commandPath: "standup",
+        commandArgs: ["daily", "--json"],
+      }),
+    ).toEqual(["standup", "standup daily"]);
     expect(_testOnly.buildBootstrapActivationProbe(["--json", "standup", "daily"])).toEqual({
       commandPath: "standup",
       commandArgs: ["daily"],
@@ -1525,9 +1510,24 @@ describe("CLI main bootstrap helper coverage", () => {
     expect(_testOnly.buildBootstrapActivationProbe(["--json"])).toEqual({});
     expect(_testOnly.commandPathNeedsSearchExtensions("search-advanced")).toBe(true);
     expect(_testOnly.commandPathNeedsSearchExtensions("list")).toBe(false);
-    expect(_testOnly.commandPathNeedsTemplateExtensions({ commandPath: "create", commandArgs: ["--template=bug"] })).toBe(true);
-    expect(_testOnly.commandPathNeedsTemplateExtensions({ commandPath: "create", commandArgs: ["--template", "bug"] })).toBe(true);
-    expect(_testOnly.commandPathNeedsTemplateExtensions({ commandPath: "create", commandArgs: ["--title", "bug"] })).toBe(false);
+    expect(
+      _testOnly.commandPathNeedsTemplateExtensions({
+        commandPath: "create",
+        commandArgs: ["--template=bug"],
+      }),
+    ).toBe(true);
+    expect(
+      _testOnly.commandPathNeedsTemplateExtensions({
+        commandPath: "create",
+        commandArgs: ["--template", "bug"],
+      }),
+    ).toBe(true);
+    expect(
+      _testOnly.commandPathNeedsTemplateExtensions({
+        commandPath: "create",
+        commandArgs: ["--title", "bug"],
+      }),
+    ).toBe(false);
 
     const extension = (overrides: Record<string, unknown>) => ({
       layer: "project",
@@ -1538,9 +1538,7 @@ describe("CLI main bootstrap helper coverage", () => {
       commands: [],
       ...overrides,
     });
-    expect(
-      _testOnly.hasGlobalExtensionContributions({ schema_version: 1 }),
-    ).toBe(false);
+    expect(_testOnly.hasGlobalExtensionContributions({ schema_version: 1 })).toBe(false);
     expect(
       _testOnly.hasGlobalExtensionContributions({
         schema_version: 1,
@@ -1582,14 +1580,14 @@ describe("CLI main bootstrap helper coverage", () => {
       ),
     ).toBe(true);
     expect(
-      _testOnly.extensionNeedsActivationForProbe(
-        extension({ activation: { commands: ["standup"] }, capabilities: [] }),
-        { commandPath: "standup", commandArgs: ["daily"] },
-      ),
+      _testOnly.extensionNeedsActivationForProbe(extension({ activation: { commands: ["standup"] }, capabilities: [] }), { commandPath: "standup", commandArgs: ["daily"] }),
     ).toBe(true);
     expect(
       _testOnly.extensionNeedsActivationForProbe(
-        extension({ activation: { commands: ["templates"] }, capabilities: [] }),
+        extension({
+          activation: { commands: ["templates"] },
+          capabilities: [],
+        }),
         { commandPath: "create", commandArgs: ["--template"] },
       ),
     ).toBe(true);
@@ -1598,9 +1596,7 @@ describe("CLI main bootstrap helper coverage", () => {
         commandPath: "list",
       }),
     ).toBe(false);
-    expect(
-      _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search"] }), { commandPath: "search" }),
-    ).toBe(true);
+    expect(_testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search"] }), { commandPath: "search" })).toBe(true);
     expect(
       _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["importers"] }), {
         commandPath: "import",
@@ -1627,23 +1623,30 @@ describe("CLI main bootstrap helper coverage", () => {
     ).toBe(true);
     // A pure search provider (no command-bearing capability) stays scoped to the
     // built-in search commands and is not activated for unrelated commands.
-    expect(
-      _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search"] }), { commandPath: "list" }),
-    ).toBe(false);
+    expect(_testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search"] }), { commandPath: "list" })).toBe(false);
     expect(_testOnly.discoveryNeedsActivationForProbe({ effective: [], warnings: [] }, { commandPath: "search" })).toBe(false);
     expect(
       _testOnly.discoveryNeedsActivationForProbe(
-        { effective: [extension({ capabilities: ["services"] })], warnings: [] },
+        {
+          effective: [extension({ capabilities: ["services"] })],
+          warnings: [],
+        },
         {},
       ),
     ).toBe(true);
     expect(_testOnly.collectActivationCommandCandidates({ commandPath: " " })).toEqual([]);
     expect(
-      _testOnly.extensionNeedsActivationForProbe(extension({ activation: { commands: ["daily standup"] }, capabilities: [] }), {
-        commandPath: "daily",
-        commandArgs: [],
-        allowCommandPrefixMatch: true,
-      }),
+      _testOnly.extensionNeedsActivationForProbe(
+        extension({
+          activation: { commands: ["daily standup"] },
+          capabilities: [],
+        }),
+        {
+          commandPath: "daily",
+          commandArgs: [],
+          allowCommandPrefixMatch: true,
+        },
+      ),
     ).toBe(true);
     expect(
       _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["hooks"] }), {
@@ -1652,13 +1655,19 @@ describe("CLI main bootstrap helper coverage", () => {
     ).toBe(true);
     expect(
       _testOnly.extensionNeedsActivationForProbe(
-        extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands", "hooks"] }),
+        extension({
+          activation: { commands: ["maintenance"] },
+          capabilities: ["commands", "hooks"],
+        }),
         { commandPath: "list" },
       ),
     ).toBe(false);
     expect(
       _testOnly.extensionNeedsActivationForProbe(
-        extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands"] }),
+        extension({
+          activation: { commands: ["maintenance"] },
+          capabilities: ["commands"],
+        }),
         { commandPath: "list" },
       ),
     ).toBe(false);
@@ -1674,12 +1683,7 @@ describe("CLI main bootstrap helper coverage", () => {
     ).toBe(true);
     expect(_testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search"] }), {})).toBe(false);
     expect(_testOnly.extensionNeedsActivationForProbe(extension({ capabilities: [] }), { commandPath: "unrelated" })).toBe(false);
-    expect(
-      _testOnly.discoveryNeedsActivationForProbe(
-        { effective: [extension({ capabilities: ["search"] })], warnings: [] },
-        {},
-      ),
-    ).toBe(true);
+    expect(_testOnly.discoveryNeedsActivationForProbe({ effective: [extension({ capabilities: ["search"] })], warnings: [] }, {})).toBe(true);
     expect(_testOnly.buildRuntimeExtensionActivationScope({})).toBe("all");
     expect(
       _testOnly.buildRuntimeExtensionActivationScope({
@@ -1710,22 +1714,13 @@ describe("CLI main bootstrap helper coverage", () => {
 
     expect(_testOnly.collectExtensionFlagDefinitionsForCommand(registrations, " tools ")).toEqual([{ long: "--root-flag" }]);
     expect(_testOnly.collectExtensionFlagDefinitionsForCommand(registrations, " ")).toEqual([]);
-    expect(_testOnly.collectExtensionFlagDefinitionsForInvocation(registrations, "tools", ["export", "--format", "json"])).toEqual([
-      { long: "--format" },
-    ]);
-    expect(_testOnly.collectExtensionFlagDefinitionsForInvocation(registrations, "tools", ["--root-flag"])).toEqual([
-      { long: "--root-flag" },
-    ]);
+    expect(_testOnly.collectExtensionFlagDefinitionsForInvocation(registrations, "tools", ["export", "--format", "json"])).toEqual([{ long: "--format" }]);
+    expect(_testOnly.collectExtensionFlagDefinitionsForInvocation(registrations, "tools", ["--root-flag"])).toEqual([{ long: "--root-flag" }]);
   });
 
   it("extracts command-scoped options without leaking global output controls", () => {
     const command = new Command("tools");
-    command
-      .option("--json", "JSON")
-      .option("--quiet", "quiet")
-      .option("--id-only", "id only")
-      .option("--pm-path <dir>", "pm path")
-      .option("--known <value>", "Known option");
+    command.option("--json", "JSON").option("--quiet", "quiet").option("--id-only", "id only").option("--pm-path <dir>", "pm path").option("--known <value>", "Known option");
     command.allowUnknownOption(true);
     command.parseOptions(["--json", "--quiet", "--id-only", "--pm-path", "/tmp/pm", "--known", "yes", "--loose", "value"]);
     command.args = ["--loose", "value"];
@@ -1740,9 +1735,7 @@ describe("CLI main bootstrap helper coverage", () => {
     expect(scoped).not.toHaveProperty("idOnly");
     expect(scoped).not.toHaveProperty("pmPath");
 
-    const extensionScoped = _testOnly.extractCommandScopedOptions(command, ["--score", "42"], [
-      { long: "--score", type: "number", value_type: "number" },
-    ]);
+    const extensionScoped = _testOnly.extractCommandScopedOptions(command, ["--score", "42"], [{ long: "--score", type: "number", value_type: "number" }]);
     expect(extensionScoped.score).toBe(42);
   });
 
@@ -1769,30 +1762,26 @@ describe("CLI main bootstrap helper coverage", () => {
       failure_hints: [],
     };
 
-    expect(() =>
-      _testOnly.validateDynamicExtensionCommandInvocation(descriptor, [], {}, [{ long: "--format", value_type: "string" }]),
-    ).toThrow(/Missing required argument.*pm tools export <target>/);
-    expect(() =>
-      _testOnly.validateDynamicExtensionCommandInvocation(
-        descriptor,
-        ["report", "extra"],
-        {},
-        [{ long: "--format", value_type: "string" }],
-      ),
-    ).toThrow(/Too many arguments.*extra.*pm tools export <target>/);
-    expect(() =>
-      _testOnly.validateDynamicExtensionCommandInvocation(
-        { ...descriptor, command: "tools", arguments: [], flags: [] },
-        ["extra"],
-        {},
-        [],
-      ),
-    ).toThrow(/Too many arguments.*extra.*Usage: pm tools$/);
+    expect(() => _testOnly.validateDynamicExtensionCommandInvocation(descriptor, [], {}, [{ long: "--format", value_type: "string" }])).toThrow(
+      /Missing required argument.*pm tools export <target>/,
+    );
+    expect(() => _testOnly.validateDynamicExtensionCommandInvocation(descriptor, ["report", "extra"], {}, [{ long: "--format", value_type: "string" }])).toThrow(
+      /Too many arguments.*extra.*pm tools export <target>/,
+    );
+    expect(() => _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, ["extra"], {}, [])).toThrow(
+      /Too many arguments.*extra.*Usage: pm tools$/,
+    );
     // failure_hints are appended to both arity errors so importers/exporters can
     // steer the caller toward the right flag (e.g. --folder).
     expect(() =>
       _testOnly.validateDynamicExtensionCommandInvocation(
-        { ...descriptor, command: "tools import", arguments: [], flags: [], failure_hints: ["Use --folder <path>."] },
+        {
+          ...descriptor,
+          command: "tools import",
+          arguments: [],
+          flags: [],
+          failure_hints: ["Use --folder <path>."],
+        },
         ["stray.md"],
         {},
         [],
@@ -1826,33 +1815,19 @@ describe("CLI main bootstrap helper coverage", () => {
         [{ long: "--format", value_type: "string" }],
       ),
     ).toThrow(/Missing required argument.*pm tools export <target> \[extras\.\.\.\]/);
+    expect(() => _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, [], {}, [])).not.toThrow();
+    expect(() => _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, [], { definitelyNotReal: true }, [])).toThrow(
+      /Unknown option '--definitely-not-real'.*does not define extension flags/,
+    );
     expect(() =>
-      _testOnly.validateDynamicExtensionCommandInvocation(
-        { ...descriptor, command: "tools", arguments: [], flags: [] },
-        [],
-        {},
-        [],
-      ),
-    ).not.toThrow();
-    expect(() =>
-      _testOnly.validateDynamicExtensionCommandInvocation(
-        { ...descriptor, command: "tools", arguments: [], flags: [] },
-        [],
-        { definitelyNotReal: true },
-        [],
-      ),
-    ).toThrow(/Unknown option '--definitely-not-real'.*does not define extension flags/);
-    expect(() =>
-      _testOnly.validateDynamicExtensionCommandInvocation(
-        { ...descriptor, command: "tools", arguments: [], flags: [] },
-        [],
-        { noDefinitelyNotReal: false },
-        [],
-      ),
+      _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, [], { noDefinitelyNotReal: false }, []),
     ).toThrow(/Unknown option '--no-definitely-not-real'.*does not define extension flags/);
     expect(() =>
       _testOnly.validateDynamicExtensionCommandInvocation(
-        { ...descriptor, arguments: [{ name: "target", required: true, variadic: true }] },
+        {
+          ...descriptor,
+          arguments: [{ name: "target", required: true, variadic: true }],
+        },
         ["report", "extra"],
         { format: "json" },
         [{ long: "--format", value_type: "string" }],
@@ -1878,14 +1853,7 @@ describe("CLI main bootstrap helper coverage", () => {
     _testOnly.addRuntimeFieldOption(command, "--score", "Score", false);
 
     expect(command.options.map((option) => option.flags)).toEqual(
-      expect.arrayContaining([
-        "--customer-segment <value>",
-        "-s <value>",
-        "--segment <value>",
-        "-u <value>",
-        "-r <value>",
-        "--score <value>",
-      ]),
+      expect.arrayContaining(["--customer-segment <value>", "-s <value>", "--segment <value>", "-u <value>", "-r <value>", "--score <value>"]),
     );
     expect(command.options.filter((option) => option.long === "--customer-segment")).toHaveLength(1);
     expect(command.options.filter((option) => option.short === "-s")).toHaveLength(1);
@@ -1972,9 +1940,7 @@ describe("CLI main bootstrap helper coverage", () => {
       await _testOnly.registerRuntimeSchemaFieldFlags(root, ["--pm-path", pmRoot, "create"]);
 
       const create = root.commands.find((command) => command.name() === "create");
-      expect(create?.options.map((option) => option.flags)).toEqual(
-        expect.arrayContaining(["--segment <value>", "--cust-seg <value>", "--risk-score <value>"]),
-      );
+      expect(create?.options.map((option) => option.flags)).toEqual(expect.arrayContaining(["--segment <value>", "--cust-seg <value>", "--risk-score <value>"]));
       expect(create?.options.filter((option) => option.long === "--segment")).toHaveLength(1);
     } finally {
       await rm(schemaRoot, { recursive: true, force: true });
@@ -1986,9 +1952,7 @@ describe("CLI main bootstrap helper coverage", () => {
     try {
       const root = new Command().name("pm");
       root.command("create");
-      await expect(
-        _testOnly.registerRuntimeSchemaFieldFlags(root, ["--pm-path", missingSettingsRoot, "create"]),
-      ).resolves.toBeUndefined();
+      await expect(_testOnly.registerRuntimeSchemaFieldFlags(root, ["--pm-path", missingSettingsRoot, "create"])).resolves.toBeUndefined();
       expect(root.commands.find((command) => command.name() === "create")?.options).toHaveLength(0);
     } finally {
       await rm(missingSettingsRoot, { recursive: true, force: true });
@@ -2003,9 +1967,7 @@ describe("CLI main bootstrap helper coverage", () => {
     expect(_testOnly.readRecordNumber(null, "count")).toBeUndefined();
     expect(_testOnly.inferPostActionErrorCode(false, EXIT_CODE.USAGE)).toBe("invalid_command_usage");
 
-    const settingsWarning = captureStderrSync(() =>
-      _testOnly.emitSettingsReadWarnings(["schema_bootstrap_created", "settings_read_invalid_json"]),
-    );
+    const settingsWarning = captureStderrSync(() => _testOnly.emitSettingsReadWarnings(["schema_bootstrap_created", "settings_read_invalid_json"]));
     expect(settingsWarning).toContain("settings_read_invalid_json");
     expect(settingsWarning).not.toContain("schema_bootstrap_created");
 
@@ -2021,29 +1983,13 @@ describe("CLI main bootstrap helper coverage", () => {
 
     const program = new Command().name("pm");
     program.command("create").description("Create item");
-    await expect(
-      _testOnly.maybeAttachCreateUpdatePolicyHelpText(
-        program,
-        "/path/that/does/not/exist",
-        ["list", "--help"],
-        { item_types: [] } as never,
-      ),
-    ).resolves.toBeUndefined();
-    await expect(
-      _testOnly.maybeAttachCreateUpdatePolicyHelpText(
-        program,
-        "/path/that/does/not/exist",
-        ["create", "--help"],
-        { item_types: [] } as never,
-      ),
-    ).resolves.toBeUndefined();
+    await expect(_testOnly.maybeAttachCreateUpdatePolicyHelpText(program, "/path/that/does/not/exist", ["list", "--help"], { item_types: [] } as never)).resolves.toBeUndefined();
+    await expect(_testOnly.maybeAttachCreateUpdatePolicyHelpText(program, "/path/that/does/not/exist", ["create", "--help"], { item_types: [] } as never)).resolves.toBeUndefined();
   });
 
   it("covers activation predicate helpers and profile rendering fallbacks", () => {
     expect(_testOnly.buildRuntimeExtensionSnapshotCacheKey("/tmp/project/.agents/pm")).toBe("pm-root:/tmp/project/.agents/pm");
-    expect(_testOnly.buildRuntimeExtensionDiscoverySnapshotCacheKey("/tmp/project/.agents/pm")).toBe(
-      "pm-root:/tmp/project/.agents/pm",
-    );
+    expect(_testOnly.buildRuntimeExtensionDiscoverySnapshotCacheKey("/tmp/project/.agents/pm")).toBe("pm-root:/tmp/project/.agents/pm");
     expect(_testOnly.bootstrapProfileEnabled(["list", "--profile"])).toBe(true);
     expect(_testOnly.bootstrapProfileEnabled(["list"])).toBe(false);
 
@@ -2068,7 +2014,12 @@ describe("CLI main bootstrap helper coverage", () => {
     expect(_testOnly.probeUsesAnyFlag({ commandArgs: ["--title", "bug"] }, new Set(["--template"]))).toBe(false);
     expect(_testOnly.extensionProvidesTemplatesRuntime(["templates save"])).toBe(true);
     expect(_testOnly.extensionProvidesTemplatesRuntime(["create"])).toBe(false);
-    expect(_testOnly.activationCommandMatchesProbe("standup", { commandPath: "standup", commandArgs: ["daily"] })).toBe(true);
+    expect(
+      _testOnly.activationCommandMatchesProbe("standup", {
+        commandPath: "standup",
+        commandArgs: ["daily"],
+      }),
+    ).toBe(true);
     expect(
       _testOnly.activationCommandMatchesProbe("standup daily", {
         commandPath: "standup",
@@ -2087,7 +2038,13 @@ describe("CLI main bootstrap helper coverage", () => {
           loadWarnings: ["load"],
           activationFailedCount: 1,
           activationWarnings: ["activate"],
-          hooks: { beforeCommand: [1], afterCommand: [2], onWrite: [], onRead: [3], onIndex: [] },
+          hooks: {
+            beforeCommand: [1],
+            afterCommand: [2],
+            onWrite: [],
+            onRead: [3],
+            onIndex: [],
+          },
           commands: { overrides: [], handlers: [1] },
           parsers: { overrides: [1] },
           preflight: { overrides: [] },
@@ -2104,20 +2061,27 @@ describe("CLI main bootstrap helper coverage", () => {
       _testOnly.emitExtensionSkippedProfile(
         true,
         {
-          discovery: { effective: [{ name: "one" }, { name: "two" }], warnings: ["warn"] },
+          discovery: {
+            effective: [{ name: "one" }, { name: "two" }],
+            warnings: ["warn"],
+          },
           discoveryMs: 7,
         } as never,
         {},
       ),
     );
     expect(skipped).toContain("activation=skipped command=<none> effective=2 warnings=1 discovery_ms=7");
-    expect(captureStderrSync(() => _testOnly.emitExtensionSkippedProfile(false, {} as never, { commandPath: "list" }))).toBe("");
+    expect(
+      captureStderrSync(() =>
+        _testOnly.emitExtensionSkippedProfile(false, {} as never, {
+          commandPath: "list",
+        }),
+      ),
+    ).toBe("");
   });
 
   it("executes registered runtime migrations and records failed definitions", async () => {
-    const pmRoot = await mkdtemp(
-      path.join(os.tmpdir(), "pm-runtime-extension-migrations-"),
-    );
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-extension-migrations-"));
     const migrations = [
       {
         layer: "project",
@@ -2132,7 +2096,13 @@ describe("CLI main bootstrap helper coverage", () => {
       {
         layer: "project",
         name: "success",
-        definition: { id: "ok", status: "pending", reason: "queued", error: "old", message: "old" },
+        definition: {
+          id: "ok",
+          status: "pending",
+          reason: "queued",
+          error: "old",
+          message: "old",
+        },
         runtime_definition: {
           run: vi.fn(),
         },
@@ -2157,10 +2127,7 @@ describe("CLI main bootstrap helper coverage", () => {
       },
     ];
 
-    const warnings = await _testOnly.executeRegisteredRuntimeMigrations(
-      migrations as never,
-      pmRoot,
-    );
+    const warnings = await _testOnly.executeRegisteredRuntimeMigrations(migrations as never, pmRoot);
 
     expect(warnings).toEqual(["extension_migration_failed:global:failure:bad"]);
     expect(migrations[2].runtime_definition.run).toHaveBeenCalledWith(
@@ -2282,35 +2249,19 @@ export default {
       throw new Error("settings dependency failed");
     };
 
-    expect(
-      await _testOnly.loadRuntimeExtensionDiscoverySnapshot(discoveryRoot, rejectSettings),
-    ).toBeNull();
+    expect(await _testOnly.loadRuntimeExtensionDiscoverySnapshot(discoveryRoot, rejectSettings)).toBeNull();
     expect(await _testOnly.loadRuntimeExtensionDiscoverySnapshot(discoveryRoot)).toBeNull();
-    expect(
-      await _testOnly.loadRuntimeExtensionSnapshot(activationRoot, undefined, rejectSettings),
-    ).toBeNull();
+    expect(await _testOnly.loadRuntimeExtensionSnapshot(activationRoot, undefined, rejectSettings)).toBeNull();
     expect(await _testOnly.loadRuntimeExtensionSnapshot(activationRoot)).toBeNull();
-    await expect(
-      _testOnly.loadRuntimeExtensionCommandDescriptorsForRecovery(activationRoot),
-    ).resolves.toBeInstanceOf(Map);
+    await expect(_testOnly.loadRuntimeExtensionCommandDescriptorsForRecovery(activationRoot)).resolves.toBeInstanceOf(Map);
 
     const root = new Command().name("pm");
     root.option("--pm-path <dir>", "PM path");
-    await expect(
-      _testOnly.registerDynamicExtensionCommandPaths(root, [
-        "--pm-path",
-        discoveryRoot,
-        "missing",
-      ]),
-    ).resolves.toBeUndefined();
+    await expect(_testOnly.registerDynamicExtensionCommandPaths(root, ["--pm-path", discoveryRoot, "missing"])).resolves.toBeUndefined();
     await expect(
       _testOnly.prepareExtensionServicesForRunPmCliError({
         invocationArgv: ["missing"],
-        bootstrapGlobal: parseBootstrapGlobalOptions([
-          "--pm-path",
-          discoveryRoot,
-          "missing",
-        ]),
+        bootstrapGlobal: parseBootstrapGlobalOptions(["--pm-path", discoveryRoot, "missing"]),
         bootstrapPmRoot: discoveryRoot,
       }),
     ).resolves.toBeUndefined();
@@ -2610,13 +2561,7 @@ export default {
         .configureOutput({ writeOut: () => {}, writeErr: () => {} });
       root.option("--json", "Output JSON").option("--quiet", "Quiet").option("--pm-path <dir>", "PM path").option("--profile", "Profile");
 
-      await _testOnly.registerDynamicExtensionCommandPaths(root, [
-        "--pm-path",
-        context.pmPath,
-        "--json",
-        "tools",
-        "export",
-      ]);
+      await _testOnly.registerDynamicExtensionCommandPaths(root, ["--pm-path", context.pmPath, "--json", "tools", "export"]);
       const probe = _testOnly.buildBootstrapActivationProbe(["--pm-path", context.pmPath, "tools", "--help"]);
       const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath, probe);
       setActiveExtensionRegistrations(snapshot?.registrations ?? null);
@@ -2627,18 +2572,7 @@ export default {
       const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
       const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
       try {
-        await root.parseAsync([
-          "node",
-          "pm",
-          "--pm-path",
-          context.pmPath,
-          "--json",
-          "tools",
-          "export",
-          "backup",
-          "--format",
-          "json",
-        ]);
+        await root.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "tools", "export", "backup", "--format", "json"]);
         const payload = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
         expect(payload).toMatchObject({
           command: "tools export",
@@ -2649,19 +2583,7 @@ export default {
 
         stdoutSpy.mockClear();
         stderrSpy.mockClear();
-        await root.parseAsync([
-          "node",
-          "pm",
-          "--pm-path",
-          context.pmPath,
-          "--json",
-          "--profile",
-          "tools",
-          "export",
-          "archive",
-          "--format",
-          "toon",
-        ]);
+        await root.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "--profile", "tools", "export", "archive", "--format", "toon"]);
         const profilePayload = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
         expect(profilePayload).toMatchObject({
           command: "tools export",
@@ -2796,15 +2718,7 @@ export default {
       const noExtRoot = new Command().name("pm");
       noExtRoot.option("--no-extensions", "Disable extensions").option("--pm-path <dir>", "PM path");
       noExtRoot.command("create").description("Create item");
-      await expect(
-        _testOnly.registerDynamicExtensionCommandPaths(noExtRoot, [
-          "--no-extensions",
-          "--pm-path",
-          context.pmPath,
-          "create",
-          "--help",
-        ]),
-      ).resolves.toBeUndefined();
+      await expect(_testOnly.registerDynamicExtensionCommandPaths(noExtRoot, ["--no-extensions", "--pm-path", context.pmPath, "create", "--help"])).resolves.toBeUndefined();
 
       expect(findCommandByPath(noExtRoot, ["create"])?.description()).toBe("Create item");
     });
@@ -2848,9 +2762,7 @@ export default {
       const root = new Command().name("pm");
       root.option("--pm-path <dir>", "PM path");
       root.command("create").description("Create item");
-      await expect(
-        _testOnly.registerDynamicExtensionCommandPaths(root, ["--pm-path", context.pmPath, "create", "--help"]),
-      ).resolves.toBeUndefined();
+      await expect(_testOnly.registerDynamicExtensionCommandPaths(root, ["--pm-path", context.pmPath, "create", "--help"])).resolves.toBeUndefined();
       expect(findCommandByPath(root, ["broken"])).toBeNull();
     });
   });
@@ -2882,8 +2794,10 @@ export default {
 
       setActiveExtensionCommands({ overrides: [], handlers: [] });
       await expect(
-        _testOnly.runRequiredExtensionCommand(command, {}, { path: context.pmPath } as never),
-      ).rejects.toThrow("Command \"tools\" is provided by extensions and is not currently available.");
+        _testOnly.runRequiredExtensionCommand(command, {}, {
+          path: context.pmPath,
+        } as never),
+      ).rejects.toThrow('Command "tools" is provided by extensions and is not currently available.');
 
       setActiveExtensionCommands({
         overrides: [],
@@ -2899,10 +2813,10 @@ export default {
         ],
       });
       await expect(
-        _testOnly.runRequiredExtensionCommand(command, {}, { path: context.pmPath } as never),
-      ).rejects.toThrow(
-        'Command "tools" failed in extension handler (extension_command_handler_failed:project:broken-tools:tools). handler exploded',
-      );
+        _testOnly.runRequiredExtensionCommand(command, {}, {
+          path: context.pmPath,
+        } as never),
+      ).rejects.toThrow('Command "tools" failed in extension handler (extension_command_handler_failed:project:broken-tools:tools). handler exploded');
 
       setActiveExtensionCommands({
         overrides: [],
@@ -2988,7 +2902,10 @@ export default {
 
       const stderr = await captureStderrAsync(async () => {
         await expect(
-          _testOnly.runRequiredExtensionCommand(command, {}, { path: context.pmPath, profile: true } as never),
+          _testOnly.runRequiredExtensionCommand(command, {}, {
+            path: context.pmPath,
+            profile: true,
+          } as never),
         ).resolves.toEqual({
           args: ["rewritten"],
           parsed: true,
@@ -3035,7 +2952,10 @@ export default {
 
       const stderr = await captureStderrAsync(async () => {
         await expect(
-          _testOnly.runRequiredExtensionCommand(command, {}, { path: context.pmPath, profile: true } as never),
+          _testOnly.runRequiredExtensionCommand(command, {}, {
+            path: context.pmPath,
+            profile: true,
+          } as never),
         ).rejects.toThrow("handler used fallback");
       });
 
@@ -3082,17 +3002,7 @@ export default {
 
       const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
       try {
-        await root.parseAsync([
-          "node",
-          "pm",
-          "--pm-path",
-          context.pmPath,
-          "--json",
-          "demo",
-          "alpha",
-          "--level",
-          "7",
-        ]);
+        await root.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "alpha", "--level", "7"]);
         expect(originalCalled).toBe(false);
         expect(getActiveCommandResult()).toMatchObject({
           source: "extension",
@@ -3154,17 +3064,7 @@ export default {
       _testOnly.wrapProgramActionsForExtensionHandlers(root);
 
       const stderr = await captureStderrAsync(async () => {
-        await root.parseAsync([
-          "node",
-          "pm",
-          "--pm-path",
-          context.pmPath,
-          "--profile",
-          "demo",
-          "alpha",
-          "--level",
-          "7",
-        ]);
+        await root.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--profile", "demo", "alpha", "--level", "7"]);
       });
 
       expect(originalCalls).toBe(1);
@@ -3227,12 +3127,23 @@ export default {
   it("rejects unexpected positionals for importer/exporter commands on the wrapped dispatch path (pm-90hp)", async () => {
     await withTempPmPath(async (context) => {
       const buildRoot = (): Command => {
-        const root = new Command().name("pm").exitOverride().configureOutput({ writeOut: () => {}, writeErr: () => {} });
+        const root = new Command()
+          .name("pm")
+          .exitOverride()
+          .configureOutput({ writeOut: () => {}, writeErr: () => {} });
         root.option("--pm-path <dir>", "PM path");
         root.option("--json", "JSON output");
         const group = root.command("demo");
-        group.command("import").allowExcessArguments(true).allowUnknownOption(true).action(() => {});
-        group.command("run").allowExcessArguments(true).allowUnknownOption(true).action(() => {});
+        group
+          .command("import")
+          .allowExcessArguments(true)
+          .allowUnknownOption(true)
+          .action(() => {});
+        group
+          .command("run")
+          .allowExcessArguments(true)
+          .allowUnknownOption(true)
+          .action(() => {});
         return root;
       };
       const registrations = {
@@ -3246,8 +3157,18 @@ export default {
         setActiveExtensionCommands({
           overrides: [],
           handlers: [
-            { layer: "project", name: "demo-ext", command: "demo import", run: () => ((handled += 1), { ok: true }) },
-            { layer: "project", name: "demo-ext", command: "demo run", run: () => ((handled += 1), { ok: true }) },
+            {
+              layer: "project",
+              name: "demo-ext",
+              command: "demo import",
+              run: () => ((handled += 1), { ok: true }),
+            },
+            {
+              layer: "project",
+              name: "demo-ext",
+              command: "demo run",
+              run: () => ((handled += 1), { ok: true }),
+            },
           ],
         });
         _testOnly.setActiveRuntimeExtensionCommandDescriptorsForTest(descriptors);
@@ -3267,9 +3188,9 @@ export default {
       try {
         // Importer + no declared args + stray positional -> rejected with the hint.
         const rejecting = installRuntime(new Map([["demo import", importerDescriptor([])]]));
-        await expect(
-          rejecting.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "stray.md"]),
-        ).rejects.toThrow(/Too many arguments for extension command 'demo import': stray\.md.*Use --folder <path>\./);
+        await expect(rejecting.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "stray.md"])).rejects.toThrow(
+          /Too many arguments for extension command 'demo import': stray\.md.*Use --folder <path>\./,
+        );
         expect(handled).toBe(0);
 
         // Importer with no positional dispatches to the handler (count-zero path).
@@ -3290,55 +3211,38 @@ export default {
             ],
           ]),
         );
-        await missingArgumentsDescriptor.parseAsync([
-          "node",
-          "pm",
-          "--pm-path",
-          context.pmPath,
-          "--json",
-          "demo",
-          "import",
-          "--folder",
-          "x",
-        ]);
+        await missingArgumentsDescriptor.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "--folder", "x"]);
         expect(handled).toBe(2);
 
         // Importer that declares arguments is validated before the handler.
-        const declaredArgs = installRuntime(
-          new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]),
-        );
+        const declaredArgs = installRuntime(new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]));
         await declaredArgs.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "x"]);
         expect(handled).toBe(3);
 
-        const tooManyDeclaredArgs = installRuntime(
-          new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]),
+        const tooManyDeclaredArgs = installRuntime(new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]));
+        await expect(tooManyDeclaredArgs.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "x", "y"])).rejects.toThrow(
+          /Too many arguments for extension command 'demo import': y.*Use --folder <path>\./,
         );
-        await expect(
-          tooManyDeclaredArgs.parseAsync([
-            "node",
-            "pm",
-            "--pm-path",
-            context.pmPath,
-            "--json",
-            "demo",
-            "import",
-            "x",
-            "y",
-          ]),
-        ).rejects.toThrow(/Too many arguments for extension command 'demo import': y.*Use --folder <path>\./);
         expect(handled).toBe(3);
 
-        const missingRequiredDeclaredArg = installRuntime(
-          new Map([["demo import", importerDescriptor([{ name: "target", required: true, variadic: false }])]]),
+        const missingRequiredDeclaredArg = installRuntime(new Map([["demo import", importerDescriptor([{ name: "target", required: true, variadic: false }])]]));
+        await expect(missingRequiredDeclaredArg.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import"])).rejects.toThrow(
+          /Missing required argument for extension command 'demo import'.*Use --folder <path>\./,
         );
-        await expect(
-          missingRequiredDeclaredArg.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import"]),
-        ).rejects.toThrow(/Missing required argument for extension command 'demo import'.*Use --folder <path>\./);
         expect(handled).toBe(3);
 
         // A non-importer command path accepts free-form positionals via context.args.
         const freeForm = installRuntime(
-          new Map([["demo run", { ...importerDescriptor([]), command: "demo run", action: "demo-run" }]]),
+          new Map([
+            [
+              "demo run",
+              {
+                ...importerDescriptor([]),
+                command: "demo run",
+                action: "demo-run",
+              },
+            ],
+          ]),
         );
         await freeForm.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "run", "anything"]);
         expect(handled).toBe(4);
@@ -3390,9 +3294,12 @@ export default {
       const root = new Command().name("pm").exitOverride();
       root.option("--pm-path <dir>", "PM path");
       let observedOptions: Record<string, unknown> = {};
-      root.command("mutate").option("--original").action((options) => {
-        observedOptions = options;
-      });
+      root
+        .command("mutate")
+        .option("--original")
+        .action((options) => {
+          observedOptions = options;
+        });
 
       setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
       setActiveExtensionParsers({
@@ -3413,14 +3320,7 @@ export default {
       setActiveExtensionCommands({ overrides: [], handlers: [] });
 
       _testOnly.wrapProgramActionsForExtensionHandlers(root);
-      await root.parseAsync([
-        "node",
-        "pm",
-        "--pm-path",
-        context.pmPath,
-        "mutate",
-        "--original",
-      ]);
+      await root.parseAsync(["node", "pm", "--pm-path", context.pmPath, "mutate", "--original"]);
 
       expect(observedOptions).toMatchObject({
         original: true,
@@ -3482,9 +3382,17 @@ export default {
         error: undefined,
       });
 
-      expect(_testOnly.inferPostActionFailureMessage({ failOnSkippedTriggered: true })).toBe("linked_test_fail_on_skipped_triggered");
+      expect(
+        _testOnly.inferPostActionFailureMessage({
+          failOnSkippedTriggered: true,
+        }),
+      ).toBe("linked_test_fail_on_skipped_triggered");
       expect(_testOnly.inferPostActionFailureMessage({ failed: 3 })).toBe("failed_runs:3");
-      expect(_testOnly.inferPostActionFailureMessage({ run_results: [{ status: "failed" }, { status: "passed" }] })).toBe("failed_runs:1");
+      expect(
+        _testOnly.inferPostActionFailureMessage({
+          run_results: [{ status: "failed" }, { status: "passed" }],
+        }),
+      ).toBe("failed_runs:1");
       expect(_testOnly.inferPostActionFailureMessage({})).toBeUndefined();
       expect(_testOnly.inferPostActionErrorCode(false, EXIT_CODE.NOT_FOUND)).toBe("item_not_found");
       expect(_testOnly.inferPostActionErrorCode(false, 99)).toBe("command_failed");
@@ -3544,7 +3452,10 @@ export default {
     const previousAuthor = process.env.PM_AUTHOR;
     delete process.env.PM_AUTHOR;
     try {
-      await writeSettings(pmRoot, { ...(await readSettings(pmRoot)), author_default: "configured-agent" });
+      await writeSettings(pmRoot, {
+        ...(await readSettings(pmRoot)),
+        author_default: "configured-agent",
+      });
       recordAfterCommandAffectedItem({
         id: "pm-default-author",
         type: "Task",
@@ -3553,7 +3464,13 @@ export default {
         snapshot: { id: "pm-default-author", type: "Task", status: "open" },
       });
       _testOnly.setActiveExtensionHookContextForTest({
-        hooks: { beforeCommand: [], afterCommand: [], onWrite: [], onRead: [], onIndex: [] },
+        hooks: {
+          beforeCommand: [],
+          afterCommand: [],
+          onWrite: [],
+          onRead: [],
+          onIndex: [],
+        },
         commandName: "update",
         commandArgs: ["pm-default-author"],
         commandOptions: {},
@@ -3732,12 +3649,8 @@ export default {
         context: {
           examples: [expect.stringContaining(`${canonical}=[redacted]`)],
           recovery: {
-            normalized_args: expect.arrayContaining([
-              `${canonical}=[redacted]`,
-            ]),
-            suggested_retry: expect.stringContaining(
-              `${canonical}=[redacted]`,
-            ),
+            normalized_args: expect.arrayContaining([`${canonical}=[redacted]`]),
+            suggested_retry: expect.stringContaining(`${canonical}=[redacted]`),
           },
         },
       });
@@ -3748,15 +3661,8 @@ export default {
     try {
       _testOnly.enforceExplicitRetryForFlagTypos({
         commandName: "history-redact",
-        argv: [
-          "history-redact",
-          "pm-example",
-          "--litteral",
-          separateValueCanary,
-        ],
-        trace: [
-          { reason: "flag_typo", from: "--litteral", to: "--literal" },
-        ],
+        argv: ["history-redact", "pm-example", "--litteral", separateValueCanary],
+        trace: [{ reason: "flag_typo", from: "--litteral", to: "--literal" }],
       });
     } catch (error) {
       separateValueError = error;
@@ -3764,24 +3670,17 @@ export default {
     expect(separateValueError).toMatchObject({
       context: {
         recovery: {
-          normalized_args: expect.arrayContaining([
-            "--literal",
-            "[redacted]",
-          ]),
+          normalized_args: expect.arrayContaining(["--literal", "[redacted]"]),
         },
       },
     });
-    expect(JSON.stringify(separateValueError)).not.toContain(
-      separateValueCanary,
-    );
+    expect(JSON.stringify(separateValueError)).not.toContain(separateValueCanary);
 
     expect(() =>
       _testOnly.enforceExplicitRetryForFlagTypos({
         commandName: "history-redact",
         argv: ["history-redact", "--literal", "value"],
-        trace: [
-          { reason: "flag_typo", from: undefined, to: "--literal" } as never,
-        ],
+        trace: [{ reason: "flag_typo", from: undefined, to: "--literal" } as never],
       }),
     ).toThrow("Refusing to auto-correct");
   });
@@ -3799,7 +3698,11 @@ describe("CLI migration gate helpers", () => {
         {
           layer: "project",
           name: "beta",
-          definition: { mandatory: true, id: "project-beta", status: "PENDING" },
+          definition: {
+            mandatory: true,
+            id: "project-beta",
+            status: "PENDING",
+          },
         },
         {
           layer: "project",
@@ -3809,7 +3712,11 @@ describe("CLI migration gate helpers", () => {
         {
           layer: "project",
           name: "alpha",
-          definition: { mandatory: true, id: "migration-001", status: "pending" },
+          definition: {
+            mandatory: true,
+            id: "migration-001",
+            status: "pending",
+          },
         },
         {
           layer: "global",
@@ -3819,12 +3726,20 @@ describe("CLI migration gate helpers", () => {
         {
           layer: "global",
           name: "alpha",
-          definition: { mandatory: true, id: "global-alpha", status: "blocked" },
+          definition: {
+            mandatory: true,
+            id: "global-alpha",
+            status: "blocked",
+          },
         },
         {
           layer: "project",
           name: "ignored",
-          definition: { mandatory: false, id: "not-mandatory", status: "pending" },
+          definition: {
+            mandatory: false,
+            id: "not-mandatory",
+            status: "pending",
+          },
         },
       ]),
     ).toEqual([
@@ -3906,78 +3821,51 @@ describe("CLI migration gate helpers", () => {
     expect(() => enforceMandatoryMigrationWriteGate("update", {}, blockers)).toThrow(
       /extension_migration_blocking:project:schema-pack:schema-v2:pending.*Re-run this command with --force to bypass/,
     );
-    expect(() => enforceMandatoryMigrationWriteGate("create", { force: true }, blockers)).toThrow(
-      /This command path does not support --force bypass/,
-    );
+    expect(() => enforceMandatoryMigrationWriteGate("create", { force: true }, blockers)).toThrow(/This command path does not support --force bypass/);
   });
 
   it("short-circuits item-format preflight gates for reads, disabled decisions, and missing settings", async () => {
     const missingSettingsRoot = await mkdtemp(path.join(os.tmpdir(), "pm-migration-gate-"));
     try {
-      await enforceItemFormatWriteGateAndPreflightMigration(
-        "create",
-        {},
-        missingSettingsRoot,
-        {
-          enforce_item_format_gate: true,
-          run_preflight_item_format_sync: true,
-          run_extension_migrations: true,
-          enforce_mandatory_migration_gate: true,
-        },
-      );
+      await enforceItemFormatWriteGateAndPreflightMigration("create", {}, missingSettingsRoot, {
+        enforce_item_format_gate: true,
+        run_preflight_item_format_sync: true,
+        run_extension_migrations: true,
+        enforce_mandatory_migration_gate: true,
+      });
     } finally {
       await rm(missingSettingsRoot, { recursive: true, force: true });
     }
 
     await withTempPmPath(async (context) => {
-      await enforceItemFormatWriteGateAndPreflightMigration(
-        "list",
-        {},
-        context.pmPath,
-        {
-          enforce_item_format_gate: true,
-          run_preflight_item_format_sync: true,
-          run_extension_migrations: true,
-          enforce_mandatory_migration_gate: true,
-        },
-      );
-      await enforceItemFormatWriteGateAndPreflightMigration(
-        "create",
-        {},
-        context.pmPath,
-        {
-          enforce_item_format_gate: false,
-          run_preflight_item_format_sync: false,
-          run_extension_migrations: true,
-          enforce_mandatory_migration_gate: true,
-        },
-      );
-      await enforceItemFormatWriteGateAndPreflightMigration(
-        "create",
-        {},
-        context.pmPath,
-        {
-          enforce_item_format_gate: true,
-          run_preflight_item_format_sync: true,
-          run_extension_migrations: true,
-          enforce_mandatory_migration_gate: true,
-        },
-      );
+      await enforceItemFormatWriteGateAndPreflightMigration("list", {}, context.pmPath, {
+        enforce_item_format_gate: true,
+        run_preflight_item_format_sync: true,
+        run_extension_migrations: true,
+        enforce_mandatory_migration_gate: true,
+      });
+      await enforceItemFormatWriteGateAndPreflightMigration("create", {}, context.pmPath, {
+        enforce_item_format_gate: false,
+        run_preflight_item_format_sync: false,
+        run_extension_migrations: true,
+        enforce_mandatory_migration_gate: true,
+      });
+      await enforceItemFormatWriteGateAndPreflightMigration("create", {}, context.pmPath, {
+        enforce_item_format_gate: true,
+        run_preflight_item_format_sync: true,
+        run_extension_migrations: true,
+        enforce_mandatory_migration_gate: true,
+      });
 
       const settingsPath = path.join(context.pmPath, "settings.json");
       await writeFile(settingsPath, `${JSON.stringify({ version: 1 })}\n`, "utf8");
       const fallbackStderr = await captureStderrAsync(async () => {
-        await enforceItemFormatWriteGateAndPreflightMigration(
-          "create",
-          {},
-          context.pmPath,
-          {
-            enforce_item_format_gate: true,
-            run_preflight_item_format_sync: false,
-            run_extension_migrations: true,
-            enforce_mandatory_migration_gate: true,
-          },
-        );
+        await enforceItemFormatWriteGateAndPreflightMigration("create", {}, context.pmPath, {
+          enforce_item_format_gate: true,
+          run_preflight_item_format_sync: false,
+          run_extension_migrations: true,
+          enforce_mandatory_migration_gate: true,
+        });
       });
       expect(fallbackStderr).toContain("warning:settings_read_invalid_schema");
       expect(await readFile(settingsPath, "utf8")).toContain('"item_format": "toon"');
@@ -3987,18 +3875,7 @@ describe("CLI migration gate helpers", () => {
 
 describe("CLI bootstrap argument helpers", () => {
   it("parses global bootstrap flags with pm-path precedence and help command paths", () => {
-    expect(
-      parseBootstrapGlobalOptions([
-        "--path",
-        "legacy",
-        "--pm-path=preferred",
-        "--no-extensions",
-        "--no-pager",
-        "--json",
-        "--quiet",
-        "list",
-      ]),
-    ).toEqual({
+    expect(parseBootstrapGlobalOptions(["--path", "legacy", "--pm-path=preferred", "--no-extensions", "--no-pager", "--json", "--quiet", "list"])).toEqual({
       path: "preferred",
       noExtensions: true,
       noPager: true,
@@ -4033,9 +3910,7 @@ describe("CLI bootstrap argument helpers", () => {
       lean: false,
       tokenAccounting: false,
     });
-    expect(stripGlobalBootstrapTokens(["--json", "--pm-path", "tracker", "--profile", "list", "--", "--quiet"])).toEqual([
-      "list",
-    ]);
+    expect(stripGlobalBootstrapTokens(["--json", "--pm-path", "tracker", "--profile", "list", "--", "--quiet"])).toEqual(["list"]);
     expect(stripGlobalBootstrapTokens(["--path=tracker", "--pm-path=preferred", "list"])).toEqual(["list"]);
     expect(parseBootstrapCommandName(["--path", "tracker", "--unknown", "list"])).toBe("list");
     expect(parseBootstrapCommandName(["--", "list"])).toBeUndefined();
@@ -4054,7 +3929,10 @@ describe("CLI bootstrap argument helpers", () => {
     const previousLess = process.env.LESS;
     const stdoutDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
     try {
-      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+      Object.defineProperty(process.stdout, "isTTY", {
+        configurable: true,
+        value: true,
+      });
       process.env.PAGER = "less";
       process.env.MANPAGER = "less";
       process.env.GIT_PAGER = "less";
@@ -4062,7 +3940,10 @@ describe("CLI bootstrap argument helpers", () => {
       applyBootstrapPagerPolicy(["list", "--help"]);
       expect(process.env.PAGER).toBe("less");
 
-      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+      Object.defineProperty(process.stdout, "isTTY", {
+        configurable: true,
+        value: false,
+      });
       applyBootstrapPagerPolicy(["list", "--help"]);
       expect(process.env.PAGER).toBe("cat");
       expect(process.env.MANPAGER).toBe("cat");
@@ -4092,33 +3973,15 @@ describe("CLI bootstrap argument helpers", () => {
     expect(normalizeLegacyExtensionActionSyntax(["extension"])).toEqual(["extension"]);
     expect(normalizeLegacyExtensionActionSyntax(["extension", "--doctor"])).toEqual(["extension", "--doctor"]);
     expect(normalizeLegacyExtensionActionSyntax(["extension", "unknown"])).toEqual(["extension", "unknown"]);
-    expect(normalizeLegacyExtensionActionSyntax(["extension", "doctor", "--doctor"])).toEqual([
-      "extension",
-      "doctor",
-      "--doctor",
-    ]);
-    expect(normalizeLegacyExtensionActionSyntax(["extension", "doctor", "pkg"])).toEqual([
-      "extension",
-      "--doctor",
-      "pkg",
-    ]);
-    expect(normalizeLegacyExtensionActionSyntax(["extension", "doctor", "--help"])).toEqual([
-      "extension",
-      "doctor",
-      "--help",
-    ]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "doctor", "--doctor"])).toEqual(["extension", "doctor", "--doctor"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "doctor", "pkg"])).toEqual(["extension", "--doctor", "pkg"]);
+    expect(normalizeLegacyExtensionActionSyntax(["extension", "doctor", "--help"])).toEqual(["extension", "doctor", "--help"]);
 
     expect(listAliasPluralKeys("priority")).toEqual(["prioritys", "priorities"]);
     expect(listAliasPluralKeys("status")).toEqual(["statuss"]);
 
     const trace: Parameters<typeof mergeLinkedTestTwoTokenEntries>[2] = [];
-    expect(mergeLinkedTestTwoTokenEntries(["comments", "pm-1", "--add", "body", "done"], "comments", [])).toEqual([
-      "comments",
-      "pm-1",
-      "--add",
-      "body",
-      "done",
-    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["comments", "pm-1", "--add", "body", "done"], "comments", [])).toEqual(["comments", "pm-1", "--add", "body", "done"]);
     expect(mergeLinkedTestTwoTokenEntries(["test", "pm-1", "--add", "command", "pnpm test -- unit"], "test", trace)).toEqual([
       "test",
       "pm-1",
@@ -4133,20 +3996,9 @@ describe("CLI bootstrap argument helpers", () => {
         confidence: "high",
       },
     ]);
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-1", "--add", "command", "pnpm", "test"], "test", [])).toEqual([
-      "test",
-      "pm-1",
-      "--add",
-      "command",
-      "pnpm",
-      "test",
-    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-1", "--add", "command", "pnpm", "test"], "test", [])).toEqual(["test", "pm-1", "--add", "command", "pnpm", "test"]);
 
-    const coalesced = coalesceRepeatedListFlags(
-      ["--pm-path", "--tags", "create", "--tags", "alpha", "--tags=beta", "--tags"],
-      new Set(["--tags"]),
-      new Set(["--pm-path"]),
-    );
+    const coalesced = coalesceRepeatedListFlags(["--pm-path", "--tags", "create", "--tags", "alpha", "--tags=beta", "--tags"], new Set(["--tags"]), new Set(["--pm-path"]));
     expect(coalesced.argv).toEqual(["--pm-path", "--tags", "create", "--tags=alpha,beta", "--tags"]);
     expect(coalesced.events).toEqual([
       {
@@ -4165,30 +4017,16 @@ describe("CLI bootstrap argument helpers", () => {
       "--tags",
       "alpha",
     ]);
-    expect(coalesceRepeatedListFlags(["--tags", "alpha", "--labels", "beta"], new Set(["--tags", "--labels"])).argv).toEqual([
-      "--tags",
-      "alpha",
-      "--labels",
-      "beta",
-    ]);
+    expect(coalesceRepeatedListFlags(["--tags", "alpha", "--labels", "beta"], new Set(["--tags", "--labels"])).argv).toEqual(["--tags", "alpha", "--labels", "beta"]);
 
-    const normalized = normalizeBootstrapInvocation([
-      "show",
-      "pm-1",
-      "title:Fixed",
-      "--add-tag",
-      "coverage",
-      "--add_tag=cli",
-    ]);
+    const normalized = normalizeBootstrapInvocation(["show", "pm-1", "title:Fixed", "--add-tag", "coverage", "--add_tag=cli"]);
     expect(normalized.commandName).toBe("get");
     expect(normalized.argv[0]).toBe("get");
     expect(normalized.trace.map((entry) => entry.reason)).toEqual(expect.arrayContaining(["command_alias"]));
 
     const createNormalized = normalizeBootstrapInvocation(["create", "add_tag=coverage", "tilte=Bug", "--tags", "one", "--tags=two"]);
     expect(createNormalized.argv).toEqual(expect.arrayContaining(["--add-tags", "coverage", "--title", "Bug", "--tags=one,two"]));
-    expect(createNormalized.trace.map((entry) => entry.reason)).toEqual(
-      expect.arrayContaining(["bare_key_value", "list_merge"]),
-    );
+    expect(createNormalized.trace.map((entry) => entry.reason)).toEqual(expect.arrayContaining(["bare_key_value", "list_merge"]));
 
     expect(normalizeBootstrapInvocation(["test", "pm-1", "--add", "command", "PM_PATH=/tmp/x"])).toMatchObject({
       argv: ["test", "pm-1", "--add", "command=PM_PATH=/tmp/x"],
@@ -4209,9 +4047,7 @@ describe("CLI bootstrap argument helpers", () => {
 
 describe("CLI guide topic helpers", () => {
   it("resolves aliases and returns defensive topic copies", () => {
-    expect(listGuideTopicIds()).toEqual(
-      expect.arrayContaining(["quickstart", "commands", "workflows", "sdk", "extensions", "skills", "harnesses", "release"]),
-    );
+    expect(listGuideTopicIds()).toEqual(expect.arrayContaining(["quickstart", "commands", "workflows", "sdk", "extensions", "skills", "harnesses", "release"]));
     expect(resolveGuideTopic("agent_skills")?.id).toBe("skills");
     expect(resolveGuideTopic("  ")).toBeNull();
     expect(resolveGuideTopic(undefined)).toBeNull();
@@ -4260,9 +4096,7 @@ describe("CLI error guidance helpers", () => {
   it("formats Commander recovery variants and linked-test quoting retries", () => {
     expect(buildLinkedTestQuotedRetryCommand(undefined)).toBeUndefined();
     expect(buildLinkedTestQuotedRetryCommand(["test", "--add", "command", "pnpm", "test"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--add", "command", "pnpm", "test", "--", "unit"])).toBe(
-      'pm test pm-1 --add "command=pnpm test -- unit"',
-    );
+    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--add", "command", "pnpm", "test", "--", "unit"])).toBe('pm test pm-1 --add "command=pnpm test -- unit"');
 
     const missingArgument = classifyCommanderError("missing required argument 'id'", "get", "Task");
     expect(missingArgument).toMatchObject({
@@ -4315,16 +4149,20 @@ describe("CLI error guidance helpers", () => {
           suggested_flags: ["--type"],
           suggested_retry: "pm demo --type Task",
           next_best_command: "pm help",
-          fallback_candidates: [{ source: "package", command: "pm guide", reason: "optional package" }],
+          fallback_candidates: [
+            {
+              source: "package",
+              command: "pm guide",
+              reason: "optional package",
+            },
+          ],
         },
       }),
     ).toContain("fallback_candidates:");
   });
 
   it("formats specific pm errors, commander package hints, and fallback titles", () => {
-    expect(formatPmCliErrorForDisplay("Tracker is not initialized at /tmp/demo. Run pm init first.")).toContain(
-      "Tracker is not initialized",
-    );
+    expect(formatPmCliErrorForDisplay("Tracker is not initialized at /tmp/demo. Run pm init first.")).toContain("Tracker is not initialized");
     expect(formatPmCliErrorForDisplay("pm-1 is assigned to alice. Use --force to override")).toContain("Ownership conflict");
     expect(formatPmCliErrorForJson("pm-1 is locked by another command", EXIT_CODE.CONFLICT)).toMatchObject({
       code: "lock_conflict",
@@ -4345,16 +4183,10 @@ describe("CLI error guidance helpers", () => {
       title: `${"A".repeat(117)}...`,
     });
 
-    const requiredType = formatCommanderErrorForJson(
-      "error: required option '--type <type>' not specified",
-      "create",
-      "Task|Bug",
-      EXIT_CODE.USAGE,
-      {
-        providedOptionFlags: ["--title"],
-        suggestedRetryCommand: 'pm create --title "Bug" --type Task',
-      },
-    );
+    const requiredType = formatCommanderErrorForJson("error: required option '--type <type>' not specified", "create", "Task|Bug", EXIT_CODE.USAGE, {
+      providedOptionFlags: ["--title"],
+      suggestedRetryCommand: 'pm create --title "Bug" --type Task',
+    });
     expect(requiredType).toMatchObject({
       code: "missing_required_option",
       recovery: {
@@ -4376,9 +4208,7 @@ describe("CLI error guidance helpers", () => {
     expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--add", "scope", "unit", "extra"])).toBeUndefined();
     expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--remove", "path", "tests/a.ts", "--json"])).toBeUndefined();
     expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--json"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--remove", "path", "tests/a.ts", "--", "unit"])).toBe(
-      'pm test pm-1 --remove "path=tests/a.ts -- unit"',
-    );
+    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-1", "--remove", "path", "tests/a.ts", "--", "unit"])).toBe('pm test pm-1 --remove "path=tests/a.ts -- unit"');
   });
 
   it("normalizes empty recovery bundles and optional guidance fields defensively", () => {
@@ -4421,17 +4251,11 @@ describe("CLI error guidance helpers", () => {
   });
 
   it("covers package command hints, empty context lists, and generic retry fallbacks", () => {
-    expect(formatCommanderErrorForJson("unknown command 'templates'", "templates", "Task", EXIT_CODE.USAGE).examples).toEqual(
-      expect.arrayContaining(["pm install templates"]),
-    );
+    expect(formatCommanderErrorForJson("unknown command 'templates'", "templates", "Task", EXIT_CODE.USAGE).examples).toEqual(expect.arrayContaining(["pm install templates"]));
     expect(formatCommanderErrorForJson("unknown command 'calendar'", "calendar", "Task", EXIT_CODE.USAGE).next_steps).toEqual(
-      expect.arrayContaining([
-        '"calendar" is provided by the @unbrained/pm-calendar package. Install it with: pm install calendar',
-      ]),
+      expect.arrayContaining(['"calendar" is provided by the @unbrained/pm-calendar package. Install it with: pm install calendar']),
     );
-    expect(formatCommanderErrorForJson("unknown command 'cal'", "cal", "Task", EXIT_CODE.USAGE).examples).toEqual(
-      expect.arrayContaining(["pm install calendar"]),
-    );
+    expect(formatCommanderErrorForJson("unknown command 'cal'", "cal", "Task", EXIT_CODE.USAGE).examples).toEqual(expect.arrayContaining(["pm install calendar"]));
 
     const invalidWithoutRecovery = formatPmCliErrorForJson("Invalid status must be one of: open|closed", EXIT_CODE.USAGE);
     expect(invalidWithoutRecovery.examples).toEqual(["pm <command> --help", "pm contracts --command <command> --flags-only --json"]);
@@ -4523,11 +4347,7 @@ describe("CLI Commander usage recovery helpers", () => {
       ],
     ]);
 
-    _testOnly.applyDynamicExtensionRootHelpVisibility(
-      program,
-      new Set(["built-in"]),
-      descriptors,
-    );
+    _testOnly.applyDynamicExtensionRootHelpVisibility(program, new Set(["built-in"]), descriptors);
 
     expect(getPmCommandHelpVisibilityTier(automation)).toBe("full");
     expect(getPmCommandHelpVisibilityTier(jobs)).toBe("full");
@@ -4545,17 +4365,42 @@ describe("CLI Commander usage recovery helpers", () => {
     program.command("_internal").command("debug").description("Hidden internal command");
 
     const descriptors = new Map([
-      ["standup daily", { command: "standup daily", action: "standup", examples: [], failure_hints: [], arguments: [], flags: [] }],
-      ["_hidden task", { command: "_hidden task", action: "hidden", examples: [], failure_hints: [], arguments: [], flags: [] }],
-      ["   ", { command: "blank", action: "blank", examples: [], failure_hints: [], arguments: [], flags: [] }],
+      [
+        "standup daily",
+        {
+          command: "standup daily",
+          action: "standup",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+        },
+      ],
+      [
+        "_hidden task",
+        {
+          command: "_hidden task",
+          action: "hidden",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+        },
+      ],
+      [
+        "   ",
+        {
+          command: "blank",
+          action: "blank",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+          flags: [],
+        },
+      ],
     ]);
 
-    expect(collectRuntimeCommandPaths(program, descriptors)).toEqual([
-      "list",
-      "package",
-      "package install",
-      "standup daily",
-    ]);
+    expect(collectRuntimeCommandPaths(program, descriptors)).toEqual(["list", "package", "package install", "standup daily"]);
     expect(collectRuntimeCommandPaths(new Command().name("pm"), new Map([["_internal", {} as never]]))).toEqual([]);
 
     const queueHole = new Command().name("pm");
@@ -4582,7 +4427,11 @@ describe("CLI Commander usage recovery helpers", () => {
           failure_hints: [],
           arguments: [],
           flags: [],
-          source: { layer: "project" as const, name: "standup", package: "@unbrained/pm-standup" },
+          source: {
+            layer: "project" as const,
+            name: "standup",
+            package: "@unbrained/pm-standup",
+          },
         },
       ],
     ]);
@@ -4624,16 +4473,34 @@ describe("CLI Commander usage recovery helpers", () => {
     expect(noSourceGuidance?.unknownCommandNextSteps?.[0]).not.toContain("orphan");
 
     const optionalGuidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'cal'", program, descriptors);
-    expect(optionalGuidance?.unknownCommandNextSteps).toContain(
-      "If this command comes from an optional package, install it with: pm install calendar",
-    );
+    expect(optionalGuidance?.unknownCommandNextSteps).toContain("If this command comes from an optional package, install it with: pm install calendar");
 
     const tiedRankGuidance = buildUnknownCommandGuidanceFromRuntime(
       "unknown command 'sta subcommand'",
       program,
       new Map([
-        ["standup alpha", { command: "standup alpha", action: "alpha", examples: [], failure_hints: [], arguments: [], flags: [] }],
-        ["standup beta", { command: "standup beta", action: "beta", examples: [], failure_hints: [], arguments: [], flags: [] }],
+        [
+          "standup alpha",
+          {
+            command: "standup alpha",
+            action: "alpha",
+            examples: [],
+            failure_hints: [],
+            arguments: [],
+            flags: [],
+          },
+        ],
+        [
+          "standup beta",
+          {
+            command: "standup beta",
+            action: "beta",
+            examples: [],
+            failure_hints: [],
+            arguments: [],
+            flags: [],
+          },
+        ],
       ]),
     );
     expect(tiedRankGuidance?.unknownCommandNextSteps?.[0]).toContain("standup alpha, standup beta");
@@ -4716,97 +4583,51 @@ describe("CLI Commander usage recovery helpers", () => {
     const previousArgv = process.argv;
     try {
       process.argv = ["node", "pm", "comments", "pm-123", "--boddy=done"];
-      const unknown = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--boddy'" },
-        program,
-        new Map(),
-      );
+      const unknown = await resolveCommanderUsageContext({ message: "error: unknown option '--boddy'" }, program, new Map());
       expect(unknown.commandName).toBe("comments");
       expect(unknown.unknownOptionSuggestions).toContain("--body");
       expect(unknown.suggestedRetryCommand).toBe("pm comments pm-123 --body=done");
 
       process.argv = ["node", "pm", "test-all", "--type", "Task"];
-      const otherCommand = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--type'" },
-        program,
-        new Map(),
-      );
+      const otherCommand = await resolveCommanderUsageContext({ message: "error: unknown option '--type'" }, program, new Map());
       expect(otherCommand.unknownOptionOtherCommands).toEqual(expect.arrayContaining(["create", "list"]));
-      expect(otherCommand.unknownOptionOtherCommandsTotal).toBe(
-        otherCommand.unknownOptionOtherCommands?.length ?? 0,
-      );
+      expect(otherCommand.unknownOptionOtherCommandsTotal).toBe(otherCommand.unknownOptionOtherCommands?.length ?? 0);
       expect(otherCommand.unknownOptionOtherCommandsTruncated).toBeUndefined();
 
-      const shortUnknown = await resolveCommanderUsageContext(
-        { message: "error: unknown option '-z'" },
-        program,
-        new Map(),
-      );
+      const shortUnknown = await resolveCommanderUsageContext({ message: "error: unknown option '-z'" }, program, new Map());
       expect(shortUnknown.unknownOptionOtherCommands).toBeUndefined();
 
-      const noOtherCommand = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--definitely-not-real'" },
-        program,
-        new Map(),
-      );
+      const noOtherCommand = await resolveCommanderUsageContext({ message: "error: unknown option '--definitely-not-real'" }, program, new Map());
       expect(noOtherCommand.unknownOptionOtherCommands).toBeUndefined();
 
       process.argv = ["node", "pm", "create", "--"];
-      const emptyLong = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--'" },
-        program,
-        new Map(),
-      );
+      const emptyLong = await resolveCommanderUsageContext({ message: "error: unknown option '--'" }, program, new Map());
       expect(emptyLong.unknownOptionSuggestions).toEqual([]);
 
       process.argv = ["node", "pm", "create", "--title"];
-      const exactComparable = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--title'" },
-        program,
-        new Map(),
-      );
+      const exactComparable = await resolveCommanderUsageContext({ message: "error: unknown option '--title'" }, program, new Map());
       expect(exactComparable.unknownOptionSuggestions).not.toContain("--title");
 
       process.argv = ["node", "pm", "comments", "pm-123"];
-      const missing = await resolveCommanderUsageContext(
-        { message: "error: required option '--add <text>,;' not specified" },
-        program,
-        new Map(),
-      );
+      const missing = await resolveCommanderUsageContext({ message: "error: required option '--add <text>,;' not specified" }, program, new Map());
       expect(missing.suggestedRetryCommand).toBe('pm comments pm-123 --add "<value>"');
 
       process.argv = ["node", "pm", "comments", "pm-123", "--add", "done"];
-      const alreadyProvided = await resolveCommanderUsageContext(
-        { message: "error: required option '--add <text>,' not specified" },
-        program,
-        new Map(),
-      );
+      const alreadyProvided = await resolveCommanderUsageContext({ message: "error: required option '--add <text>,' not specified" }, program, new Map());
       expect(alreadyProvided.suggestedRetryCommand).toBeUndefined();
 
       process.argv = ["node", "pm", "comments", "pm-123"];
-      const noRewrite = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--body'" },
-        program,
-        new Map(),
-      );
+      const noRewrite = await resolveCommanderUsageContext({ message: "error: unknown option '--body'" }, program, new Map());
       expect(noRewrite.unknownOptionSuggestions).toContain("--add");
       expect(noRewrite.suggestedRetryCommand).toBeUndefined();
 
       process.argv = ["node", "pm", "comments", "pm-123", "--json"];
-      const mismatchRewrite = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--body'" },
-        program,
-        new Map(),
-      );
+      const mismatchRewrite = await resolveCommanderUsageContext({ message: "error: unknown option '--body'" }, program, new Map());
       expect(mismatchRewrite.unknownOptionSuggestions).toContain("--add");
       expect(mismatchRewrite.suggestedRetryCommand).toBeUndefined();
 
       process.argv = ["node", "pm", "comments", "pm-123"];
-      const compactMissing = await resolveCommanderUsageContext(
-        { message: "error: required option '--add,;' not specified" },
-        program,
-        new Map(),
-      );
+      const compactMissing = await resolveCommanderUsageContext({ message: "error: required option '--add,;' not specified" }, program, new Map());
       expect(compactMissing.suggestedRetryCommand).toBe('pm comments pm-123 --add "<value>"');
 
       process.argv = ["node", "pm", "comments", "pm-123", "--boddy=done"];
@@ -4841,43 +4662,23 @@ describe("CLI Commander usage recovery helpers", () => {
     const previousArgv = process.argv;
     try {
       process.argv = ["node", "pm", "create", "--desc"];
-      const prefix = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--desc'" },
-        program,
-        new Map(),
-      );
+      const prefix = await resolveCommanderUsageContext({ message: "error: unknown option '--desc'" }, program, new Map());
       expect(prefix.unknownOptionSuggestions).toContain("--description");
 
       process.argv = ["node", "pm", "create", "--tilte"];
-      const editDistance = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--tilte'" },
-        program,
-        new Map(),
-      );
+      const editDistance = await resolveCommanderUsageContext({ message: "error: unknown option '--tilte'" }, program, new Map());
       expect(editDistance.unknownOptionSuggestions).toContain("--title");
 
       process.argv = ["node", "pm", "create", "--create"];
-      const noRewrite = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--create'" },
-        program,
-        new Map(),
-      );
+      const noRewrite = await resolveCommanderUsageContext({ message: "error: unknown option '--create'" }, program, new Map());
       expect(noRewrite.suggestedRetryCommand).toBe("pm create --create-mode");
 
       process.argv = ["node", "pm", "create", "--creat"];
-      const distanceThenName = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--creat'" },
-        program,
-        new Map(),
-      );
+      const distanceThenName = await resolveCommanderUsageContext({ message: "error: unknown option '--creat'" }, program, new Map());
       expect(distanceThenName.unknownOptionSuggestions).toContain("--create-mode");
 
       process.argv = ["node", "pm", "update", "--statuz"];
-      const updateTypo = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--statuz'" },
-        program,
-        new Map(),
-      );
+      const updateTypo = await resolveCommanderUsageContext({ message: "error: unknown option '--statuz'" }, program, new Map());
       expect(updateTypo.unknownOptionSuggestions?.[0]).toBe("--status");
     } finally {
       process.argv = previousArgv;
@@ -4897,7 +4698,11 @@ describe("CLI Commander usage recovery helpers", () => {
           failure_hints: [],
           arguments: [],
           flags: [],
-          source: { layer: "project" as const, name: "@unbrained/pm-standup", package: "@unbrained/pm-standup" },
+          source: {
+            layer: "project" as const,
+            name: "@unbrained/pm-standup",
+            package: "@unbrained/pm-standup",
+          },
         },
       ],
       [
@@ -4909,7 +4714,11 @@ describe("CLI Commander usage recovery helpers", () => {
           failure_hints: [],
           arguments: [],
           flags: [],
-          source: { layer: "project" as const, name: "standup", package: "pm-standup" },
+          source: {
+            layer: "project" as const,
+            name: "standup",
+            package: "pm-standup",
+          },
         },
       ],
       [
@@ -4921,7 +4730,11 @@ describe("CLI Commander usage recovery helpers", () => {
           failure_hints: [],
           arguments: [],
           flags: [],
-          source: { layer: "project" as const, name: "pm-standup", package: "@unbrained/pm-standup" },
+          source: {
+            layer: "project" as const,
+            name: "pm-standup",
+            package: "@unbrained/pm-standup",
+          },
         },
       ],
       [
@@ -4933,47 +4746,26 @@ describe("CLI Commander usage recovery helpers", () => {
           failure_hints: [],
           arguments: [],
           flags: [],
-          source: { layer: "project" as const, name: undefined, package: undefined } as never,
+          source: {
+            layer: "project" as const,
+            name: undefined,
+            package: undefined,
+          } as never,
         },
       ],
     ]);
     expect(commanderUsageTestOnly.collectInstalledPackageCommandPathHints("@unbrained/pm-", descriptors)).toEqual([]);
-    expect(commanderUsageTestOnly.collectInstalledPackageCommandPathHints("pm-standup", descriptors)).toEqual([
-      "alpha brief",
-      "standup daily",
-    ]);
-    expect(
-      commanderUsageTestOnly.collectKnownLongFlags("create", [
-        { flag: "-x", aliases: ["-y", "--yes"] },
-      ] as never),
-    ).toEqual(["--yes"]);
+    expect(commanderUsageTestOnly.collectInstalledPackageCommandPathHints("pm-standup", descriptors)).toEqual(["alpha brief", "standup daily"]);
+    expect(commanderUsageTestOnly.collectKnownLongFlags("create", [{ flag: "-x", aliases: ["-y", "--yes"] }] as never)).toEqual(["--yes"]);
 
+    expect(commanderUsageTestOnly.suggestNearestLongFlags("--statu", ["--status", "--stats", "--statu-two", "--statu-one"])).toEqual(["--status", "--statu-one", "--statu-two"]);
+    expect(commanderUsageTestOnly.resolveSuggestedRetryForMissingOption("error: required option '--add <value>' not specified", ["test", "pm-123", "--add-json", "{}"])).toContain(
+      '--add "<value>"',
+    );
     expect(
-      commanderUsageTestOnly.suggestNearestLongFlags("--statu", [
-        "--status",
-        "--stats",
-        "--statu-two",
-        "--statu-one",
-      ]),
-    ).toEqual(["--status", "--statu-one", "--statu-two"]);
-    expect(
-      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
-        "error: required option '--add <value>' not specified",
-        ["test", "pm-123", "--add-json", "{}"],
-      ),
-    ).toContain('--add "<value>"');
-    expect(
-      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
-        "error: required option '--add <value>' not specified",
-        ["test", "pm-123", "--add=command"],
-      ),
+      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption("error: required option '--add <value>' not specified", ["test", "pm-123", "--add=command"]),
     ).toBeUndefined();
-    expect(
-      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
-        "error: required option '--add <value>' not specified",
-        [],
-      ),
-    ).toBeUndefined();
+    expect(commanderUsageTestOnly.resolveSuggestedRetryForMissingOption("error: required option '--add <value>' not specified", [])).toBeUndefined();
   });
 
   it("falls back to a default commander usage message for non-object errors", async () => {
@@ -4989,11 +4781,7 @@ describe("CLI Commander usage recovery helpers", () => {
 
   it("normalizes list flags, linked-test entries, and bare key-value aliases without corrupting values", () => {
     expect(
-      coalesceRepeatedListFlags(
-        ["--pm-path", "--tags", "list", "--tags", "agent", "--tags=coverage", "--", "--tags", "literal"],
-        new Set(["--tags"]),
-        new Set(["--pm-path"]),
-      ),
+      coalesceRepeatedListFlags(["--pm-path", "--tags", "list", "--tags", "agent", "--tags=coverage", "--", "--tags", "literal"], new Set(["--tags"]), new Set(["--pm-path"])),
     ).toEqual({
       argv: ["--pm-path", "--tags", "list", "--tags=agent,coverage", "--", "--tags", "literal"],
       events: [
@@ -5019,44 +4807,35 @@ describe("CLI Commander usage recovery helpers", () => {
       "path=a.spec.ts",
     ]);
     expect(linkedTrace).toHaveLength(2);
-    expect(mergeLinkedTestTwoTokenEntries(["--add", "command", "pnpm", "test"], "test", [])).toEqual([
-      "--add",
-      "command",
-      "pnpm",
-      "test",
-    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["--add", "command", "pnpm", "test"], "test", [])).toEqual(["--add", "command", "pnpm", "test"]);
 
-    const normalized = normalizeBootstrapInvocation([
-      "create",
-      "priority=2",
-      "deadline:2026-06-13",
-      "https://example.test/a=b",
-      "--titel=Bug",
-    ]);
+    const normalized = normalizeBootstrapInvocation(["create", "priority=2", "deadline:2026-06-13", "https://example.test/a=b", "--titel=Bug"]);
     expect(normalized.argv).toContain("--priority");
     expect(normalized.argv).toContain("2");
     expect(normalized.argv).toContain("--deadline");
     expect(normalized.argv).toContain("2026-06-13");
     expect(normalized.argv).toContain("https://example.test/a=b");
-    expect(normalized.trace.map((entry) => entry.reason)).toEqual(
-      expect.arrayContaining(["bare_key_value", "flag_typo"]),
-    );
+    expect(normalized.trace.map((entry) => entry.reason)).toEqual(expect.arrayContaining(["bare_key_value", "flag_typo"]));
 
     expect(normalizeBootstrapInvocation(["extension", "doctor", "target=project"]).commandName).toBe("extension");
-    expect(normalizeBootstrapInvocation(["test", "pm-1", "--add", "command", "PM_PATH=/tmp/pm pnpm test"]).argv).toContain(
-      "command=PM_PATH=/tmp/pm pnpm test",
-    );
+    expect(normalizeBootstrapInvocation(["test", "pm-1", "--add", "command", "PM_PATH=/tmp/pm pnpm test"]).argv).toContain("command=PM_PATH=/tmp/pm pnpm test");
     expect(parseBootstrapTypeValue(["create", "--type=Task"])).toBe("Task");
     expect(parseBootstrapTypeValue(["create", "--type", ""])).toBeUndefined();
   });
 
   it("covers ambiguous bootstrap aliases and terminator edge cases", () => {
-    expect(
-      normalizeBootstrapInvocation(["create", "foo=", "x=1", "tags:agent", "--createmode", "progressive", "--label", "ui"]).trace,
-    ).toEqual(
+    expect(normalizeBootstrapInvocation(["create", "foo=", "x=1", "tags:agent", "--createmode", "progressive", "--label", "ui"]).trace).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ from: "tags:agent", to: ["--tags", "agent"], reason: "bare_key_value" }),
-        expect.objectContaining({ from: "--createmode", to: ["--create-mode"], reason: "flag_alias" }),
+        expect.objectContaining({
+          from: "tags:agent",
+          to: ["--tags", "agent"],
+          reason: "bare_key_value",
+        }),
+        expect.objectContaining({
+          from: "--createmode",
+          to: ["--create-mode"],
+          reason: "flag_alias",
+        }),
       ]),
     );
 
@@ -5122,7 +4901,12 @@ describe("CLI extension command help helpers", () => {
           failure_hints: ["missing token", "missing token"],
           arguments: [
             { name: 123 },
-            { name: " target ", required: true, variadic: true, description: " Target name " },
+            {
+              name: " target ",
+              required: true,
+              variadic: true,
+              description: " Target name ",
+            },
             { name: "plain", description: 123 },
             { name: " " },
           ],
@@ -5142,7 +4926,11 @@ describe("CLI extension command help helpers", () => {
             },
             { long: "--hidden", visible: false },
             { long: "format", short: "--bad" },
-            { long: "--disabled", description: "Disabled flag", enabled: false },
+            {
+              long: "--disabled",
+              description: "Disabled flag",
+              enabled: false,
+            },
             { short: "-q", description: "Short only" },
           ],
         },
@@ -5158,8 +4946,19 @@ describe("CLI extension command help helpers", () => {
       intent: "Ship assets",
       examples: ["pm tools export"],
       failure_hints: ["missing token"],
-      arguments: expect.arrayContaining([{ name: "target", required: true, variadic: true, description: "Target name" }]),
-      source: { layer: "project", name: "tools-ext", package: "@unbrained/pm-tools" },
+      arguments: expect.arrayContaining([
+        {
+          name: "target",
+          required: true,
+          variadic: true,
+          description: "Target name",
+        },
+      ]),
+      source: {
+        layer: "project",
+        name: "tools-ext",
+        package: "@unbrained/pm-tools",
+      },
     });
     expect(descriptors.get("tools sync")).toMatchObject({
       action: "tools-sync",
@@ -5176,7 +4975,12 @@ describe("CLI extension command help helpers", () => {
     });
     expect(descriptor?.arguments).toEqual(
       expect.arrayContaining([
-        { name: "target", required: true, variadic: true, description: "Target name" },
+        {
+          name: "target",
+          required: true,
+          variadic: true,
+          description: "Target name",
+        },
         { name: "plain", required: false, variadic: false },
       ]),
     );
@@ -5194,7 +4998,12 @@ describe("CLI extension command help helpers", () => {
     expect(helpByCommand.get("tools export")).not.toContain("Short only");
     expect(collectDynamicExtensionFlagHelpByCommand([{ target_command: "", flags: [{ long: "--ignored" }] }]).size).toBe(0);
     expect(
-      collectDynamicExtensionFlagHelpByCommand([{ target_command: "tools hidden", flags: [{ long: "--ignored", visible: false }] }]).size,
+      collectDynamicExtensionFlagHelpByCommand([
+        {
+          target_command: "tools hidden",
+          flags: [{ long: "--ignored", visible: false }],
+        },
+      ]).size,
     ).toBe(0);
     // Two distinct command paths exercise the entries sort comparator.
     expect([
@@ -5236,7 +5045,16 @@ describe("CLI extension command help helpers", () => {
     expect(metadata).toContain("Action contract: tools-export");
     expect(metadata).toContain("Examples:");
     expect(metadata).toContain("Common failure hints:");
-    expect(buildDynamicExtensionCommandMetadataHelp({ command: "x", action: "", examples: [], failure_hints: [], arguments: [], flags: [] })).toBeNull();
+    expect(
+      buildDynamicExtensionCommandMetadataHelp({
+        command: "x",
+        action: "",
+        examples: [],
+        failure_hints: [],
+        arguments: [],
+        flags: [],
+      }),
+    ).toBeNull();
   });
 
   it("applies dynamic extension arguments and parse options while compacting duplicates", () => {
@@ -5247,11 +5065,27 @@ describe("CLI extension command help helpers", () => {
       failure_hints: [],
       arguments: [
         { name: "mode", required: false, variadic: false },
-        { name: "target", required: true, variadic: true, description: "Target files" },
+        {
+          name: "target",
+          required: true,
+          variadic: true,
+          description: "Target files",
+        },
       ],
       flags: [
-        { long: "--format", short: "-f", value_name: "kind", value_type: "string", description: "Output format" },
-        { long: "--format", short: "-x", value_name: "kind", description: "Duplicate long" },
+        {
+          long: "--format",
+          short: "-f",
+          value_name: "kind",
+          value_type: "string",
+          description: "Output format",
+        },
+        {
+          long: "--format",
+          short: "-x",
+          value_name: "kind",
+          description: "Duplicate long",
+        },
         { long: "--enabled", type: "boolean", description: "Boolean flag" },
         { short: "-q", description: "Short flag", required: true },
         { long: "--secret", visible: false },
@@ -5268,9 +5102,7 @@ describe("CLI extension command help helpers", () => {
 
     expect(command.registeredArguments.map((argument) => argument.required)).toEqual([false, true]);
     expect(command.registeredArguments.map((argument) => argument.variadic)).toEqual([false, true]);
-    expect(command.options.map((option) => option.flags)).toEqual(
-      expect.arrayContaining(["--existing", "--format <kind>", "--enabled", "-q <value>", "--bad"]),
-    );
+    expect(command.options.map((option) => option.flags)).toEqual(expect.arrayContaining(["--existing", "--format <kind>", "--enabled", "-q <value>", "--bad"]));
     expect(command.options.map((option) => option.flags)).not.toContain("--secret");
     expect(command.options.filter((option) => option.long === "--format")).toHaveLength(1);
     expect(command.options.find((option) => option.flags === "-q <value>")?.description).toBe("Short flag [required]");
@@ -5312,9 +5144,7 @@ describe("CLI extension command help helpers", () => {
       writeErr: () => {},
     });
     ensureCommandPath(helpRoot, ["changelog", "generate"]);
-    expect(() => helpRoot.parse(["changelog"], { from: "user" })).toThrowError(
-      expect.objectContaining({ code: "commander.help" }),
-    );
+    expect(() => helpRoot.parse(["changelog"], { from: "user" })).toThrowError(expect.objectContaining({ code: "commander.help" }));
     expect(bareGroupHelp).toContain("Extension-provided command group.");
     expect(bareGroupHelp).toContain("generate");
 
@@ -5424,41 +5254,76 @@ describe("CLI rich help content", () => {
           required: false,
           alias_for: null,
         },
-      ] as never,
-      )[0],
+      ] as never)[0],
     ).toMatchObject({ long: "--count", aliases: ["--count-alt"] });
 
     const optionSummaries = helpJsonTestOnly.buildHelpOptionSummaries({
       options: [
         { attributeName: () => "  " },
-        { flags: "--title <value>", long: "--title", description: "Title", attributeName: "title" },
-        { flags: "--title-old <value>", long: "--title-old", description: "Alias for --title", attributeName: "title" },
-        { flags: "--ghost [value]", long: "  ", description: 42, attributeName: "ghost" },
+        {
+          flags: "--title <value>",
+          long: "--title",
+          description: "Title",
+          attributeName: "title",
+        },
+        {
+          flags: "--title-old <value>",
+          long: "--title-old",
+          description: "Alias for --title",
+          attributeName: "title",
+        },
+        {
+          flags: "--ghost [value]",
+          long: "  ",
+          description: 42,
+          attributeName: "ghost",
+        },
       ],
     });
-    expect(optionSummaries).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ long: "--title", aliases: ["--title-old"] }),
-        expect.objectContaining({ long: null }),
-      ]),
-    );
+    expect(optionSummaries).toEqual(expect.arrayContaining([expect.objectContaining({ long: "--title", aliases: ["--title-old"] }), expect.objectContaining({ long: null })]));
     const blankValueName = helpJsonTestOnly.buildHelpOptionSummaries({
-      options: [{ flags: "--empty <   >", long: "--empty", description: "Empty value name" }],
+      options: [
+        {
+          flags: "--empty <   >",
+          long: "--empty",
+          description: "Empty value name",
+        },
+      ],
     } as never);
     expect(blankValueName[0]?.value_name).toBeNull();
 
     const argumentSummaries = helpJsonTestOnly.buildHelpArgumentSummaries({
       registeredArguments: "invalid",
       _args: [
-        { name: "target", required: true, variadic: false, description: "Target item" },
-        { name: undefined, required: false, variadic: false, description: "   " },
+        {
+          name: "target",
+          required: true,
+          variadic: false,
+          description: "Target item",
+        },
+        {
+          name: undefined,
+          required: false,
+          variadic: false,
+          description: "   ",
+        },
       ],
     });
     expect(argumentSummaries).toEqual([
-      { name: "target", required: true, variadic: false, description: "Target item" },
+      {
+        name: "target",
+        required: true,
+        variadic: false,
+        description: "Target item",
+      },
       { name: "argument", required: false, variadic: false, description: null },
     ]);
-    expect(helpJsonTestOnly.buildHelpArgumentSummaries({ registeredArguments: "invalid", _args: "invalid" } as never)).toEqual([]);
+    expect(
+      helpJsonTestOnly.buildHelpArgumentSummaries({
+        registeredArguments: "invalid",
+        _args: "invalid",
+      } as never),
+    ).toEqual([]);
   });
 
   it("covers unknown-help runtime fallback payload and quiet/noisy render branches", async () => {
@@ -5470,9 +5335,7 @@ describe("CLI rich help content", () => {
       await expect(maybeRenderBootstrapJsonHelp(program, ["--json", "missing", "--help"], new Map())).resolves.toBe(true);
       const emptyProgram = new Command().name("pm").option("--json", "JSON output").option("--quiet", "Quiet");
       await expect(maybeRenderBootstrapJsonHelp(emptyProgram, ["--json", "missing", "--help"], new Map())).resolves.toBe(true);
-      await expect(
-        maybeRenderBootstrapJsonHelp(program, ["--json", "--quiet", "missing", "--help"], new Map()),
-      ).resolves.toBe(true);
+      await expect(maybeRenderBootstrapJsonHelp(program, ["--json", "--quiet", "missing", "--help"], new Map())).resolves.toBe(true);
       await expect(maybeRenderBootstrapJsonHelp(program, ["--json", "--quiet", "known", "--help"], new Map())).resolves.toBe(true);
     } finally {
       stderrSpy.mockRestore();
@@ -5666,11 +5529,7 @@ describe("CLI rich help content", () => {
     program.option("--json", "JSON output");
     program.option("--quiet", "Suppress output");
     const tools = program.command("tools").description("Tool commands");
-    tools
-      .command("export [target]")
-      .description("Export tools")
-      .option("--format <kind>", "Format")
-      .option("--format_alias <kind>", "Alias for --format");
+    tools.command("export [target]").description("Export tools").option("--format <kind>", "Format").option("--format_alias <kind>", "Alias for --format");
 
     const descriptors = new Map([
       [
@@ -5697,11 +5556,7 @@ describe("CLI rich help content", () => {
     const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     try {
-      const handled = await maybeRenderBootstrapJsonHelp(
-        program,
-        ["--json", "tools", "export", "--help", "--explain"],
-        descriptors,
-      );
+      const handled = await maybeRenderBootstrapJsonHelp(program, ["--json", "tools", "export", "--help", "--explain"], descriptors);
       expect(handled).toBe(true);
       const payload = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
       expect(payload).toMatchObject({
@@ -5722,16 +5577,20 @@ describe("CLI rich help content", () => {
       ]);
       expect(payload.options).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ long: "--format", aliases: ["--format_alias"] }),
-          expect.objectContaining({ long: "--dry-run", description: "Preview export" }),
+          expect.objectContaining({
+            long: "--format",
+            aliases: ["--format_alias"],
+          }),
+          expect.objectContaining({
+            long: "--dry-run",
+            description: "Preview export",
+          }),
         ]),
       );
 
       stdoutSpy.mockClear();
       stderrSpy.mockClear();
-      await expect(maybeRenderBootstrapJsonHelp(program, ["--json", "--quiet", "missing", "--help"], descriptors)).resolves.toBe(
-        true,
-      );
+      await expect(maybeRenderBootstrapJsonHelp(program, ["--json", "--quiet", "missing", "--help"], descriptors)).resolves.toBe(true);
       expect(process.exitCode).toBe(EXIT_CODE.USAGE);
       expect(stdoutSpy).not.toHaveBeenCalled();
       expect(stderrSpy).not.toHaveBeenCalled();
@@ -5767,9 +5626,7 @@ describe("CLI rich help content", () => {
     ]);
     // Descriptor without intent/examples/hints exercises the defensive fallback
     // path for malformed extension descriptors and example/tips defaulting.
-    const sparseDescriptors = new Map([
-      ["tools export", { command: "tools export", flags: [] }],
-    ]);
+    const sparseDescriptors = new Map([["tools export", { command: "tools export", flags: [] }]]);
 
     const originalExitCode = process.exitCode;
     const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
@@ -5859,7 +5716,11 @@ describe("CLI rich help content", () => {
               { command: "create", option: "status", required: true },
               { command: "create", option: "body", enabled: false },
               { command: "create", option: "reviewer", visible: false },
-              { command: "create", option: "not-a-real-option", required: true },
+              {
+                command: "create",
+                option: "not-a-real-option",
+                required: true,
+              },
               { command: "update", option: "force", required: true },
             ],
           },
@@ -5874,22 +5735,11 @@ describe("CLI rich help content", () => {
       },
     } as never);
 
-    expect(helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--help"])).toContain(
-      "pass --type <value>",
-    );
-    expect(helpJsonTestOnly.buildCreateUpdatePolicyHelpText("update", registry, ["update", "--help"])).not.toContain(
-      "scheduling shortcut",
-    );
-    expect(helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--type", "Missing"])).toContain(
-      'type "Missing" is not in the active registry',
-    );
+    expect(helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--help"])).toContain("pass --type <value>");
+    expect(helpJsonTestOnly.buildCreateUpdatePolicyHelpText("update", registry, ["update", "--help"])).not.toContain("scheduling shortcut");
+    expect(helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--type", "Missing"])).toContain('type "Missing" is not in the active registry');
 
-    const createText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, [
-      "create",
-      "--type",
-      "inc",
-      "--help",
-    ]);
+    const createText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--type", "inc", "--help"]);
     expect(createText).toContain("Type-aware option policies for Incident");
     expect(createText).toContain("required: --title, --type, --status");
     expect(createText).toContain("required in strict mode: --comment");
@@ -5903,20 +5753,9 @@ describe("CLI rich help content", () => {
     expect(createText).toContain("values: any non-empty string");
     expect(createText).toContain("aliases: none");
 
-    const strictInlineText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, [
-      "create",
-      "--type",
-      "inc",
-      "--create-mode=strict",
-    ]);
+    const strictInlineText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--type", "inc", "--create-mode=strict"]);
     expect(strictInlineText).toContain("required: --title, --type, --comment, --status");
-    const strictSpacedText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, [
-      "create",
-      "--type",
-      "inc",
-      "--create-mode",
-      "strict",
-    ]);
+    const strictSpacedText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, ["create", "--type", "inc", "--create-mode", "strict"]);
     expect(strictSpacedText).toContain("required: --title, --type, --comment, --status");
 
     const updateText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("update", registry, ["update", "--type=Incident"]);

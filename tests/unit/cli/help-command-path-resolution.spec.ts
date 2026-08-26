@@ -346,6 +346,68 @@ describe("structured help command-path resolution", () => {
     ]);
   });
 
+  it("includes hidden executable aliases with lifecycle metadata in full discovery", () => {
+    const root = new Command("pm");
+    root.command("list").description("List work");
+    root.command("get").description("Get work");
+    root.command("fetch", { hidden: true }).description("Get-work alias");
+    root
+      .command("list-open", { hidden: true })
+      .description("Compatibility open-work list");
+
+    expect(
+      _testOnly.buildHelpSubcommandSummaries(root, new Map(), true),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "list-open",
+          alias_for: "list",
+          alias_lifecycle: "deprecated",
+          deprecated: true,
+        }),
+        expect.objectContaining({
+          name: "fetch",
+          alias_for: "get",
+          alias_lifecycle: "permanent",
+        }),
+      ]),
+    );
+  });
+
+  it("projects the complete root alias contract in full structured discovery", () => {
+    const root = new Command("pm");
+    root.command("list").description("List work");
+
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        root,
+        ["--all", "--help", "--json"],
+        [],
+        new Map(),
+      ),
+    ).toMatchObject({
+      command_aliases: expect.arrayContaining([
+        expect.objectContaining({
+          alias: "list-open",
+          canonical: "list",
+          canonical_argv: ["list", "--status", "open"],
+          lifecycle: "deprecated",
+          hidden: true,
+          deprecated: true,
+        }),
+        expect.objectContaining({
+          alias: "fetch",
+          canonical: "get",
+          canonical_argv: ["get"],
+          lifecycle: "permanent",
+          hidden: false,
+          deprecated: false,
+        }),
+      ]),
+    });
+  });
+
   it("filters action options through aliases and renders every slot shape", () => {
     const projection = _testOnly.buildPositionalActionHelpProjection(
       {

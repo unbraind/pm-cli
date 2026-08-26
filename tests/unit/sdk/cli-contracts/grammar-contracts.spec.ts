@@ -28,15 +28,15 @@ describe("CLI noun-verb grammar contracts", () => {
       ok: true,
       command_count: commands.length,
       destination_count: commands.length,
-      hidden_alias_count: 7,
-      visible_top_level_count: 61,
+      hidden_alias_count: 10,
+      visible_top_level_count: 58,
       visible_top_level_ceiling:
         PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
     });
     expect(
       verifyPmCliGrammar([...commands, "list-open"], PM_COMMAND_ALIAS_CONTRACTS)
         .visible_top_level_count,
-    ).toBe(61);
+    ).toBe(58);
     expect(new Set(PM_CLI_GRAMMAR_NOUNS).size).toBe(12);
   });
 
@@ -168,6 +168,31 @@ describe("CLI noun-verb grammar contracts", () => {
       hidden: false,
       registration: "commander",
     });
+    expect(resolvePmCommandAlias("extension")).toMatchObject({
+      canonical: "package",
+      canonical_argv: ["package"],
+      lifecycle: "deprecated",
+      hidden: true,
+      owner: "pm-tnud",
+    });
+    expect(resolvePmCommandAlias("install")).toMatchObject({
+      canonical: "package install",
+      canonical_argv: ["package", "install"],
+      lifecycle: "deprecated",
+      hidden: true,
+      owner: "pm-tnud",
+    });
+    const upgradeAlias = resolvePmCommandAlias("upgrade");
+    expect(upgradeAlias).toMatchObject({
+      canonical: "package upgrade",
+      canonical_argv: ["package", "upgrade"],
+      lifecycle: "deprecated",
+      hidden: true,
+      owner: "pm-tnud",
+    });
+    expect(renderPmCommandAliasMigrationHint(upgradeAlias!)).toBe(
+      "Deprecated command `upgrade`; use `pm package upgrade`.",
+    );
   });
 
   it("fails when visible top-level growth exceeds the committed ceiling", () => {

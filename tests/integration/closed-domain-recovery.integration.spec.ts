@@ -52,7 +52,7 @@ describe("closed-domain recovery envelopes", () => {
       expect(created.code).toBe(0);
 
       const contracts = listCoreClosedDomainContracts();
-      expect(contracts).toHaveLength(18);
+      expect(contracts).toHaveLength(19);
       for (const contract of contracts) {
         const result = context.runCli([...contract.refusal_args, "--json"]);
         expect(result.code, contract.probe_id).toBe(2);

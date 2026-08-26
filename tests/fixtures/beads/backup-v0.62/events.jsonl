@@ -1,0 +1,2 @@
+{"id":"event-1","issue_id":"Tokenwerk-A1","event_type":"status_changed","actor":"source-agent","old_value":"in_progress","new_value":"closed","comment":"Closure event context","created_at":"2026-03-20T12:00:00.000Z"}
+{"id":"event-2","issue_id":"Tokenwerk-B2","event_type":"metadata_changed","created_at":"not-a-timestamp","metadata":{"attempt":1,"flags":[true,null]}}

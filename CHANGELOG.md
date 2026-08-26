@@ -4,16 +4,22 @@
 
 ### Added
 
+- Tiered contracts-driven help: one-screen core help, full surface via pm help --all, generated from the contract table ([pm-e2bq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e2bq.toon))
 - Skills over MCP: discoverable version-coherent pm workflows with progressive disclosure, capability requirements, and token budgets ([pm-8nzivt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8nzivt.toon))
 - MCP Apps for pm: interactive graph, context, plan, assurance, and long-operation views with consent-safe action boundaries ([pm-pznhee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pznhee.toon))
 
 ### Fixed
 
+- pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
+- GH-862: pm-beads must map Beads close reasons into native resolution metadata ([pm-gus5ft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gus5ft.toon))
+- GH-860: pm-beads --preserve-source-ids changes source ID casing ([pm-f7jj9b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7jj9b.toon))
+- GH-859: pm-beads source export can omit Beads comment bodies and events ([pm-tpwde6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tpwde6.toon))
 - GH-1118: natural-language word-number titles trigger duplicate issue-code false positives ([pm-blvfye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-blvfye.toon))
 - Published-artifact verification rejects the new pm-mcp-http bin before executing its healthy published entrypoint ([pm-fpdne3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fpdne3.toon))
 
 ### Other
 
+- Consolidate package lifecycle: extension/package/install/upgrade under a single pm package namespace ([pm-tnud](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tnud.toon))
 - Refresh compatible ESLint 10.9.1 and Node type 26.3 patches ([pm-crkmmr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-crkmmr.toon))
 - MCP 2026-07-28 conformance and release gate: official schema matrix, protocol-era adapters, real transports, adversarial cases, and published consumers ([pm-55yf1t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55yf1t.toon))
 
@@ -459,7 +465,6 @@
 - Sentry PM-CLI-2Q: expected snapshot-name validation is captured as a high production error ([pm-qyg51h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qyg51h.toon))
 - The release gate classifies production errors by message prose and reads none of the 236 error codes the product declares, so every waiver is a latent re-block and a broad substring is a silent waiver ([pm-dqtzva](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dqtzva.toon))
 - The mandatory command-wiring replication set is enforced only by a prose checklist, and the census shows partial application is the single largest recurring defect class in the record ([pm-7rrqsk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7rrqsk.toon))
-- pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 - GH-919: \_workspace author-attribution coordinates cannot be acknowledged ([pm-ety1qc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ety1qc.toon))
 - pm comments write response replays the entire accumulated history, so one append can emit hundreds of comments ([pm-9stazf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9stazf.toon))
 - GH-457: pm health hangs during vectorization check with no output (never-block violation) ([pm-tu71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tu71.toon))
@@ -1008,12 +1013,12 @@
 
 ### Fixed
 
+- GH-576: unknown-command help probes return structured non-zero errors ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
 - Sentry PM-CLI-2G: make merge-driver installation permission failures actionable ([pm-bnmlsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bnmlsc.toon))
 - Sentry PM-CLI-2F: classify manifest-proven torn bundle call-time TypeError ([pm-pz7xtx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pz7xtx.toon))
 - Compatibility gate rejects compact legacy create envelopes after release promotion ([pm-pkdpyz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pkdpyz.toon))
 - Sentry PM-CLI-2E: directory-shaped settings.json crashes CLI bootstrap ([pm-k0nl2w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k0nl2w.toon))
 - Sentry PM-CLI-2D: storage-integrity history scan reads .jsonl directories as files ([pm-o1c53b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o1c53b.toon))
-- GH-576: unknown-command help probes return structured non-zero errors ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
 - GH-551: dependency seeds accept global source_kind and preserve cross-workspace IDs ([pm-topu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-topu.toon))
 - GH-595: list JSON always emits total/has_more/truncated/next_cursor and omits unset filters ([pm-wrss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wrss.toon))
 - GH-623: opt-in post-merge history reconciliation hook and one-command verify repair ([pm-mfkv92](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfkv92.toon))

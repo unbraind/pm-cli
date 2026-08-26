@@ -6,6 +6,7 @@
 import { Command } from "commander";
 import {
   hasSubcommandFlagContractsForCommand,
+  PM_COMMAND_ALIAS_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
 } from "../sdk/cli-contracts.js";
 import {
@@ -28,6 +29,7 @@ import {
 } from "./extension-command-help.js";
 import {
   getPmCommandHelpVisibilityTier,
+  isFullHelpDiscovery,
   normalizeHelpCommandPath,
   resolveHelpDetailMode,
   resolveHelpNarrative,
@@ -83,6 +85,12 @@ export interface HelpSubcommandSummary {
   tier: PmCommandVisibilityTier;
   /** Shared command capability family. */
   family: PmCommandCapabilityFamily;
+  /** Canonical command path when this row is an executable alias. */
+  alias_for?: string;
+  /** Compatibility lifecycle declared by the canonical alias contract. */
+  alias_lifecycle?: "permanent" | "deprecated";
+  /** True when callers should migrate from this executable spelling. */
+  deprecated?: true;
 }
 
 type ExtensionCommandSurface = Pick<
@@ -361,11 +369,19 @@ function buildHelpSubcommandSummaries(
     string,
     ExtensionCommandHelpDescriptor
   > = new Map(),
+  includeAll = false,
 ): HelpSubcommandSummary[] {
-  return command
-    .createHelp()
-    .visibleCommands(command)
+  const visible = command.createHelp().visibleCommands(command);
+  const candidates = includeAll
+    ? [...new Set([...visible, ...command.commands])]
+    : visible;
+  return candidates
     .filter((entry) => entry.name() !== "help" || command.parent === null)
+    .filter(
+      (entry) =>
+        !includeAll ||
+        resolvePmCommandVisibilityTier(entry.name()) !== "internal",
+    )
     .map((entry) => {
       const commandPath = normalizeHelpCommandPath(getCommandPath(entry));
       const rootCommand = commandPath.split(" ")[0]!;
@@ -373,6 +389,9 @@ function buildHelpSubcommandSummaries(
         commandPath,
         extensionDescriptors,
         getPmCommandHelpVisibilityTier(entry) !== undefined,
+      );
+      const aliasContract = PM_COMMAND_ALIAS_CONTRACTS.find(
+        ({ alias }) => alias === commandPath,
       );
       return {
         name: entry.name().trim(),
@@ -384,6 +403,15 @@ function buildHelpSubcommandSummaries(
         family:
           extensionDescriptor?.family ??
           resolvePmCommandCapabilityFamily(rootCommand),
+        ...(aliasContract
+          ? {
+              alias_for: aliasContract.canonical,
+              alias_lifecycle: aliasContract.lifecycle,
+              ...(aliasContract.lifecycle === "deprecated"
+                ? { deprecated: true as const }
+                : {}),
+            }
+          : {}),
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -450,6 +478,22 @@ interface PositionalActionHelpProjection {
   usage: string;
 }
 
+function projectFullCommandAliases(
+  rootProgram: Command,
+  targetCommand: Command,
+  fullDiscovery: boolean,
+): Array<Record<string, unknown>> | undefined {
+  if (targetCommand !== rootProgram || !fullDiscovery) return undefined;
+  return PM_COMMAND_ALIAS_CONTRACTS.map((contract) => ({
+    alias: contract.alias,
+    canonical: contract.canonical,
+    canonical_argv: [...contract.canonical_argv],
+    lifecycle: contract.lifecycle,
+    hidden: contract.hidden,
+    deprecated: contract.lifecycle === "deprecated",
+  }));
+}
+
 /** Build the command/action structural view shared by every JSON help field. */
 function buildPositionalActionHelpProjection(
   action: PmPositionalActionContract | undefined,
@@ -460,12 +504,14 @@ function buildPositionalActionHelpProjection(
     string,
     ExtensionCommandHelpDescriptor
   > = new Map(),
+  includeAll = false,
 ): PositionalActionHelpProjection {
   if (!action) {
     const argumentsList = buildHelpArgumentSummaries(targetCommand);
     const registeredSubcommands = buildHelpSubcommandSummaries(
       targetCommand,
       extensionDescriptors,
+      includeAll,
     );
     const registeredSubcommandNames = new Set(
       registeredSubcommands.map(({ name }) => name),
@@ -539,6 +585,7 @@ function buildJsonHelpPayload(
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): Record<string, unknown> {
   const detailMode = resolveHelpDetailMode(argv);
+  const fullDiscovery = isFullHelpDiscovery(argv);
   const commanderPath = normalizeHelpCommandPath(getCommandPath(targetCommand));
   const requestedCommandPath = normalizeHelpCommandPath(
     requestedPath.join(" "),
@@ -579,6 +626,12 @@ function buildJsonHelpPayload(
     projectedPath,
     allOptionSummaries,
     extensionDescriptors,
+    fullDiscovery,
+  );
+  const fullCommandAliases = projectFullCommandAliases(
+    rootProgram,
+    targetCommand,
+    fullDiscovery,
   );
   return {
     format: "pm_help_v1",
@@ -608,6 +661,9 @@ function buildJsonHelpPayload(
     options: projection.options,
     subcommands: projection.subcommands,
     has_subcommands: projection.subcommands.length > 0,
+    ...(fullCommandAliases === undefined
+      ? {}
+      : { command_aliases: fullCommandAliases }),
   };
 }
 

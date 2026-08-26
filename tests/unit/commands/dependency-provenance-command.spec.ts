@@ -73,7 +73,7 @@ describe("dependency provenance contracts", () => {
       });
       expect((read.json as FullItemPayload).item.dependencies).toEqual([
         expect.objectContaining({
-          id: "foreign-alpha",
+          id: "Foreign-Alpha",
           kind: "related",
           source_kind: "global",
         }),

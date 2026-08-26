@@ -99,6 +99,21 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
     registration: "commander" as const,
     owner: "pm-pfqi",
   })),
+  ...(
+    [
+      ["extension", "package"],
+      ["install", "package install"],
+      ["upgrade", "package upgrade"],
+    ] as const
+  ).map(([alias, canonical]) => ({
+    alias,
+    canonical,
+    canonical_argv: canonical.split(" "),
+    lifecycle: "deprecated" as const,
+    hidden: true,
+    registration: "commander" as const,
+    owner: "pm-tnud",
+  })),
 ];
 
 /** High-frequency executable aliases whose targets accept identical arguments. */

@@ -37,6 +37,7 @@ function toBeadsImportOptions(
 ): BeadsImportOptions {
   return {
     file: asOptionalString(options.file),
+    backupDir: asOptionalString(options.backupDir),
     author: global.author,
     message: asOptionalString(options.message),
     preserveSourceIds: asBoolean(options.preserveSourceIds),
@@ -68,6 +69,13 @@ export function activate(api: ExtensionApi): void {
           value_name: "path",
           value_type: "string",
           description: "Path to the Beads JSONL source file.",
+        },
+        {
+          long: "--backup-dir",
+          value_name: "path",
+          value_type: "string",
+          description:
+            "Path to a complete bd portable-backup directory with issue, event, comment, dependency, label, and count files.",
         },
         {
           long: "--message",

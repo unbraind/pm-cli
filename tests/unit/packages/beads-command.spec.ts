@@ -1,12 +1,18 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runBeadsImport } from "../../../packages/pm-beads/extensions/beads/runtime.ts";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+} from "../../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
-import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
 import type { TempPmContext } from "../../helpers/withTempPmPath.js";
 import { readJsonlFixture } from "../../helpers/fixtures.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -28,6 +34,9 @@ type BeadsItemJson = {
     status?: string;
     closed_at?: string;
     close_reason?: string;
+    resolution?: string;
+    expected_result?: string;
+    actual_result?: string;
     design?: string;
     external_ref?: string;
     dependencies?: BeadsDependencyJson[];
@@ -37,11 +46,41 @@ type BeadsItemJson = {
     assignee?: string;
     source_owner?: string;
     deadline?: string;
+    comments?: Array<{ created_at: string; author: string; text: string }>;
+    notes?: Array<{
+      created_at: string;
+      author: string;
+      text: string;
+      format?: string;
+      event_type?: string;
+      data?: Record<string, unknown>;
+    }>;
   };
 };
 
-const beadsImportRecordsFixture = readJsonlFixture<BeadsFixtureRecord>("beads", "import-records.jsonl");
-const beadsConversionFixture = readJsonlFixture<BeadsFixtureRecord>("beads", "conversion-branches.jsonl");
+const beadsImportRecordsFixture = readJsonlFixture<BeadsFixtureRecord>(
+  "beads",
+  "import-records.jsonl",
+);
+const beadsConversionFixture = readJsonlFixture<BeadsFixtureRecord>(
+  "beads",
+  "conversion-branches.jsonl",
+);
+const portableBackupFixture = path.resolve(
+  "tests",
+  "fixtures",
+  "beads",
+  "backup-v0.62",
+);
+
+async function copyPortableBackup(
+  tempRoot: string,
+  name: string,
+): Promise<string> {
+  const destination = path.join(tempRoot, name);
+  await cp(portableBackupFixture, destination, { recursive: true });
+  return destination;
+}
 
 function createSeedItem(context: TempPmContext, title: string): string {
   const created = context.runCli(
@@ -104,8 +143,14 @@ describe("runBeadsImport", () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-beads-not-init-"));
     try {
       const sourcePath = path.join(tempDir, "issues.jsonl");
-      await writeFile(sourcePath, `${JSON.stringify({ title: "Uninitialized import" })}\n`, "utf8");
-      await expect(runBeadsImport({ file: sourcePath }, { path: tempDir })).rejects.toMatchObject({
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({ title: "Uninitialized import" })}\n`,
+        "utf8",
+      );
+      await expect(
+        runBeadsImport({ file: sourcePath }, { path: tempDir }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     } finally {
@@ -116,7 +161,9 @@ describe("runBeadsImport", () => {
   it("fails when the source JSONL path is missing", async () => {
     await withTempPmPath(async (context) => {
       const missingPath = path.join(context.tempRoot, "missing-beads.jsonl");
-      await expect(runBeadsImport({ file: missingPath }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runBeadsImport({ file: missingPath }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     });
@@ -127,9 +174,13 @@ describe("runBeadsImport", () => {
       const previousCwd = process.cwd();
       process.chdir(context.tempRoot);
       try {
-        await expect(runBeadsImport({}, { path: context.pmPath })).rejects.toMatchObject({
+        await expect(
+          runBeadsImport({}, { path: context.pmPath }),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.NOT_FOUND,
-          message: expect.stringContaining("Checked .beads/issues.jsonl, issues.jsonl"),
+          message: expect.stringContaining(
+            "Checked .beads/issues.jsonl, issues.jsonl",
+          ),
         });
       } finally {
         process.chdir(previousCwd);
@@ -140,12 +191,22 @@ describe("runBeadsImport", () => {
   it("reads Beads JSONL from stdin when --file - is requested", async () => {
     await withTempPmPath(async (context) => {
       const stdinStream = new PassThrough();
-      stdinStream.end(`${JSON.stringify({ id: "stdin-item", title: "STDIN import" })}\n`);
-      Object.defineProperty(stdinStream, "isTTY", { value: false, configurable: true });
-      const stdinSpy = vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream);
+      stdinStream.end(
+        `${JSON.stringify({ id: "stdin-item", title: "STDIN import" })}\n`,
+      );
+      Object.defineProperty(stdinStream, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const stdinSpy = vi
+        .spyOn(process, "stdin", "get")
+        .mockReturnValue(stdinStream as unknown as NodeJS.ReadStream);
 
       try {
-        const result = await runBeadsImport({ file: "-" }, { path: context.pmPath });
+        const result = await runBeadsImport(
+          { file: "-" },
+          { path: context.pmPath },
+        );
         expect(result.source).toBe("-");
         expect(result.ids).toEqual(["pm-stdin-item"]);
       } finally {
@@ -157,11 +218,18 @@ describe("runBeadsImport", () => {
   it("fails fast for --file - when stdin is an interactive TTY", async () => {
     await withTempPmPath(async (context) => {
       const stdinStream = new PassThrough();
-      Object.defineProperty(stdinStream, "isTTY", { value: true, configurable: true });
-      const stdinSpy = vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream);
+      Object.defineProperty(stdinStream, "isTTY", {
+        value: true,
+        configurable: true,
+      });
+      const stdinSpy = vi
+        .spyOn(process, "stdin", "get")
+        .mockReturnValue(stdinStream as unknown as NodeJS.ReadStream);
 
       try {
-        await expect(runBeadsImport({ file: "-" }, { path: context.pmPath })).rejects.toMatchObject({
+        await expect(
+          runBeadsImport({ file: "-" }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.USAGE,
           message: expect.stringContaining("requires piped stdin input"),
         });
@@ -175,9 +243,16 @@ describe("runBeadsImport", () => {
     await withTempPmPath(async (context) => {
       const sourcePath = path.join(context.tempRoot, "issues.jsonl");
       const records = beadsImportRecordsFixture;
-      const firstRecord = records[0] as { created_at: string; updated_at: string };
+      const firstRecord = records[0] as {
+        created_at: string;
+        updated_at: string;
+      };
       const createdAt = firstRecord.created_at;
-      await writeFile(sourcePath, `${records.map((record) => JSON.stringify(record)).join("\n")}\n`, "utf8");
+      await writeFile(
+        sourcePath,
+        `${records.map((record) => JSON.stringify(record)).join("\n")}\n`,
+        "utf8",
+      );
 
       const result = await runBeadsImport(
         {
@@ -211,7 +286,9 @@ describe("runBeadsImport", () => {
         warnings: [],
       });
 
-      const first = context.runCli(["get", "pm-legacy.1", "--full", "--json"], { expectJson: true });
+      const first = context.runCli(["get", "pm-legacy.1", "--full", "--json"], {
+        expectJson: true,
+      });
       expect(first.code).toBe(0);
       const firstJson = first.json as {
         item: {
@@ -226,7 +303,13 @@ describe("runBeadsImport", () => {
           notes: Array<{ text: string }>;
           learnings: Array<{ text: string }>;
           files: Array<{ path: string; scope: string; note?: string }>;
-          tests: Array<{ command?: string; path?: string; scope: string; timeout_seconds?: number; note?: string }>;
+          tests: Array<{
+            command?: string;
+            path?: string;
+            scope: string;
+            timeout_seconds?: number;
+            note?: string;
+          }>;
           docs: Array<{ path: string; scope: string; note?: string }>;
           body: string;
         };
@@ -237,16 +320,38 @@ describe("runBeadsImport", () => {
       expect(firstJson.item.tags).toEqual(["beads", "import"]);
       expect(firstJson.item.estimated_minutes).toBe(45);
       expect(firstJson.item.acceptance_criteria).toBe("Importer maps fields");
-      expect(firstJson.item.dependencies).toEqual([{ id: "pm-dep-1", kind: "blocks", created_at: createdAt, author: "beads" }]);
-      expect(firstJson.item.comments).toEqual([{ created_at: createdAt, author: "beads", text: "comment-1" }]);
-      expect(firstJson.item.notes).toEqual([{ created_at: createdAt, author: "unit-beads-author", text: "note-1" }]);
-      expect(firstJson.item.learnings).toEqual([{ created_at: createdAt, author: "unit-beads-author", text: "learning-1" }]);
+      expect(firstJson.item.dependencies).toEqual([
+        {
+          id: "pm-dep-1",
+          kind: "blocks",
+          created_at: createdAt,
+          author: "beads",
+        },
+      ]);
+      expect(firstJson.item.comments).toEqual([
+        { created_at: createdAt, author: "beads", text: "comment-1" },
+      ]);
+      expect(firstJson.item.notes).toEqual([
+        { created_at: createdAt, author: "unit-beads-author", text: "note-1" },
+      ]);
+      expect(firstJson.item.learnings).toEqual([
+        {
+          created_at: createdAt,
+          author: "unit-beads-author",
+          text: "learning-1",
+        },
+      ]);
       expect(firstJson.item.files).toEqual([
         { path: "src/foo.ts", scope: "global", note: "global file" },
         { path: "src/bar.ts", scope: "project" },
       ]);
       expect(firstJson.item.tests).toEqual([
-        { command: "pnpm test", scope: "project", timeout_seconds: 120, note: "run tests" },
+        {
+          command: "pnpm test",
+          scope: "project",
+          timeout_seconds: 120,
+          note: "run tests",
+        },
       ]);
       expect(firstJson.item.docs).toEqual([
         { path: "docs/design.md", scope: "project" },
@@ -254,10 +359,18 @@ describe("runBeadsImport", () => {
       ]);
       expect(firstJson.item.body).toBe("beads-body");
 
-      const second = context.runCli(["get", "pm-legacy.2", "--json"], { expectJson: true });
+      const second = context.runCli(["get", "pm-legacy.2", "--json"], {
+        expectJson: true,
+      });
       expect(second.code).toBe(0);
       const secondJson = second.json as {
-        item: { type: string; status: string; priority: number; description: string; author: string };
+        item: {
+          type: string;
+          status: string;
+          priority: number;
+          description: string;
+          author: string;
+        };
       };
       expect(secondJson.item.type).toBe("Task");
       expect(secondJson.item.status).toBe("open");
@@ -265,7 +378,9 @@ describe("runBeadsImport", () => {
       expect(secondJson.item.description).toBe("");
       expect(secondJson.item.author).toBe("source-author");
 
-      const ninth = context.runCli(["get", "pm-legacy.9", "--json"], { expectJson: true });
+      const ninth = context.runCli(["get", "pm-legacy.9", "--json"], {
+        expectJson: true,
+      });
       expect(ninth.code).toBe(0);
       const ninthJson = ninth.json as BeadsItemJson;
       expect(ninthJson.item.type).toBe("Issue");
@@ -286,27 +401,41 @@ describe("runBeadsImport", () => {
         },
       ]);
       expect(ninthJson.item.author).toBe("original_creator");
-      expect(ninthJson.item.body).toBe("## Design\n\nThis is the design doc\n\n## External Reference\nJIRA-123");
+      expect(ninthJson.item.body).toBe(
+        "## Design\n\nThis is the design doc\n\n## External Reference\nJIRA-123",
+      );
 
-      const tenth = context.runCli(["get", "pm-legacy.10", "--json"], { expectJson: true });
+      const tenth = context.runCli(["get", "pm-legacy.10", "--json"], {
+        expectJson: true,
+      });
       expect(tenth.code).toBe(0);
       const tenthJson = tenth.json as { item: { body: string } };
-      expect(tenthJson.item.body).toBe("Existing body\n\n## Design\n\nDesign details\n\n## External Reference\nEXT-456");
+      expect(tenthJson.item.body).toBe(
+        "Existing body\n\n## Design\n\nDesign details\n\n## External Reference\nEXT-456",
+      );
 
-      const eleventh = context.runCli(["get", "pm-legacy.11", "--json"], { expectJson: true });
+      const eleventh = context.runCli(["get", "pm-legacy.11", "--json"], {
+        expectJson: true,
+      });
       expect(eleventh.code).toBe(0);
-      const eleventhJson = eleventh.json as { item: { external_ref: string; body: string } };
+      const eleventhJson = eleventh.json as {
+        item: { external_ref: string; body: string };
+      };
       expect(eleventhJson.item.external_ref).toBe("EXT-ONLY");
       expect(eleventhJson.item.body).toBe("## External Reference\nEXT-ONLY");
 
-      const twelfth = context.runCli(["get", "pm-legacy.12", "--json"], { expectJson: true });
+      const twelfth = context.runCli(["get", "pm-legacy.12", "--json"], {
+        expectJson: true,
+      });
       expect(twelfth.code).toBe(0);
       const twelfthJson = twelfth.json as BeadsItemJson;
       expect(twelfthJson.item.type).toBe("Task");
       expect(twelfthJson.item.source_type).toBe("event");
       expect(twelfthJson.item.assignee).toBe("owner-a");
       expect(twelfthJson.item.source_owner).toBe("owner-a");
-      expect(twelfthJson.item.deadline).toBe("2026-03-15T11:18:44.832869327+01:00");
+      expect(twelfthJson.item.deadline).toBe(
+        "2026-03-15T11:18:44.832869327+01:00",
+      );
       expect(twelfthJson.item.dependencies).toEqual([
         {
           id: "pm-legacy.1",
@@ -317,7 +446,9 @@ describe("runBeadsImport", () => {
         },
       ]);
 
-      const thirteenth = context.runCli(["get", "pm-legacy.13", "--json"], { expectJson: true });
+      const thirteenth = context.runCli(["get", "pm-legacy.13", "--json"], {
+        expectJson: true,
+      });
       expect(thirteenth.code).toBe(0);
       const thirteenthJson = thirteenth.json as BeadsItemJson;
       expect(thirteenthJson.item.dependencies).toEqual([
@@ -330,10 +461,15 @@ describe("runBeadsImport", () => {
         },
       ]);
 
-      const history = context.runCli(["history", "pm-legacy.1", "--json", "--full"], { expectJson: true });
+      const history = context.runCli(
+        ["history", "pm-legacy.1", "--json", "--full"],
+        { expectJson: true },
+      );
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
-      expect(historyJson.history.some((entry) => entry.op === "import")).toBe(true);
+      expect(historyJson.history.some((entry) => entry.op === "import")).toBe(
+        true,
+      );
     });
   });
 
@@ -341,25 +477,69 @@ describe("runBeadsImport", () => {
     await withTempPmPath(async (context) => {
       const sourcePath = path.join(context.tempRoot, "branch-arrays.jsonl");
       const lines = [
-        JSON.stringify({ id: "b1", title: "B1", docs: "   ", tests: "   ", files: "   " }),
-        JSON.stringify({ id: "b2", title: "B2", docs: "doc-str", tests: "test-str", files: "file-str" }),
-        JSON.stringify({ id: "b3", title: "B3", docs: [" ", {}], tests: [" ", {}], files: [" ", {}] }),
-        JSON.stringify({ id: "b4", title: "B4", docs: [{doc: "d", scope: "global"}], tests: [{test: "t", scope: "global"}], files: [{file: "f", scope: "global"}] }),
-        JSON.stringify({ id: "b5", title: "B5", docs: [{path: "p"}], tests: [{path: "p"}], files: [{path: "p"}] }),
+        JSON.stringify({
+          id: "b1",
+          title: "B1",
+          docs: "   ",
+          tests: "   ",
+          files: "   ",
+        }),
+        JSON.stringify({
+          id: "b2",
+          title: "B2",
+          docs: "doc-str",
+          tests: "test-str",
+          files: "file-str",
+        }),
+        JSON.stringify({
+          id: "b3",
+          title: "B3",
+          docs: [" ", {}],
+          tests: [" ", {}],
+          files: [" ", {}],
+        }),
+        JSON.stringify({
+          id: "b4",
+          title: "B4",
+          docs: [{ doc: "d", scope: "global" }],
+          tests: [{ test: "t", scope: "global" }],
+          files: [{ file: "f", scope: "global" }],
+        }),
+        JSON.stringify({
+          id: "b5",
+          title: "B5",
+          docs: [{ path: "p" }],
+          tests: [{ path: "p" }],
+          files: [{ path: "p" }],
+        }),
       ];
       await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(5);
 
-      const commandAlias = context.runCli(["get", "pm-b4", "--full", "--json"], { expectJson: true });
+      const commandAlias = context.runCli(
+        ["get", "pm-b4", "--full", "--json"],
+        { expectJson: true },
+      );
       expect(commandAlias.code).toBe(0);
-      expect((commandAlias.json as { item: { tests?: Array<{ command: string; scope: string }> } }).item.tests).toEqual([
-        { command: "t", scope: "global" },
-      ]);
+      expect(
+        (
+          commandAlias.json as {
+            item: { tests?: Array<{ command: string; scope: string }> };
+          }
+        ).item.tests,
+      ).toEqual([{ command: "t", scope: "global" }]);
 
-      const pathOnly = context.runCli(["get", "pm-b5", "--full", "--json"], { expectJson: true });
+      const pathOnly = context.runCli(["get", "pm-b5", "--full", "--json"], {
+        expectJson: true,
+      });
       expect(pathOnly.code).toBe(0);
-      expect((pathOnly.json as { item: { tests?: unknown } }).item.tests).toEqual([]);
+      expect(
+        (pathOnly.json as { item: { tests?: unknown } }).item.tests,
+      ).toEqual([]);
     });
   });
 
@@ -371,18 +551,40 @@ describe("runBeadsImport", () => {
         `${JSON.stringify({
           id: "negative-timeout",
           title: "Negative timeout import",
-          tests: [{ command: "pnpm test", timeout_seconds: -5, note: "negative timeout must be ignored" }],
+          tests: [
+            {
+              command: "pnpm test",
+              timeout_seconds: -5,
+              note: "negative timeout must be ignored",
+            },
+          ],
         })}\n`,
         "utf8",
       );
 
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(1);
 
-      const imported = context.runCli(["get", "pm-negative-timeout", "--full", "--json"], { expectJson: true });
+      const imported = context.runCli(
+        ["get", "pm-negative-timeout", "--full", "--json"],
+        { expectJson: true },
+      );
       expect(imported.code).toBe(0);
-      expect((imported.json as { item: { tests?: Array<{ timeout_seconds?: number }> } }).item.tests).toEqual([
-        { command: "pnpm test", scope: "project", note: "negative timeout must be ignored" },
+      expect(
+        (
+          imported.json as {
+            item: { tests?: Array<{ timeout_seconds?: number }> };
+          }
+        ).item.tests,
+      ).toEqual([
+        {
+          command: "pnpm test",
+          scope: "project",
+          note: "negative timeout must be ignored",
+        },
       ]);
     });
   });
@@ -395,18 +597,40 @@ describe("runBeadsImport", () => {
         `${JSON.stringify({
           id: "zero-timeout",
           title: "Zero timeout import",
-          tests: [{ command: "pnpm test", timeout_seconds: 0, note: "zero timeout must be ignored" }],
+          tests: [
+            {
+              command: "pnpm test",
+              timeout_seconds: 0,
+              note: "zero timeout must be ignored",
+            },
+          ],
         })}\n`,
         "utf8",
       );
 
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(1);
 
-      const imported = context.runCli(["get", "pm-zero-timeout", "--full", "--json"], { expectJson: true });
+      const imported = context.runCli(
+        ["get", "pm-zero-timeout", "--full", "--json"],
+        { expectJson: true },
+      );
       expect(imported.code).toBe(0);
-      expect((imported.json as { item: { tests?: Array<{ timeout_seconds?: number }> } }).item.tests).toEqual([
-        { command: "pnpm test", scope: "project", note: "zero timeout must be ignored" },
+      expect(
+        (
+          imported.json as {
+            item: { tests?: Array<{ timeout_seconds?: number }> };
+          }
+        ).item.tests,
+      ).toEqual([
+        {
+          command: "pnpm test",
+          scope: "project",
+          note: "zero timeout must be ignored",
+        },
       ]);
     });
   });
@@ -419,42 +643,100 @@ describe("runBeadsImport", () => {
         `${JSON.stringify({
           id: "blank-timeout",
           title: "Blank timeout import",
-          tests: [{ command: "pnpm test", timeout_seconds: "   ", note: "blank timeout must be ignored" }],
+          tests: [
+            {
+              command: "pnpm test",
+              timeout_seconds: "   ",
+              note: "blank timeout must be ignored",
+            },
+          ],
         })}\n`,
         "utf8",
       );
 
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(1);
 
-      const imported = context.runCli(["get", "pm-blank-timeout", "--full", "--json"], { expectJson: true });
+      const imported = context.runCli(
+        ["get", "pm-blank-timeout", "--full", "--json"],
+        { expectJson: true },
+      );
       expect(imported.code).toBe(0);
-      expect((imported.json as { item: { tests?: Array<{ timeout_seconds?: number }> } }).item.tests).toEqual([
-        { command: "pnpm test", scope: "project", note: "blank timeout must be ignored" },
+      expect(
+        (
+          imported.json as {
+            item: { tests?: Array<{ timeout_seconds?: number }> };
+          }
+        ).item.tests,
+      ).toEqual([
+        {
+          command: "pnpm test",
+          scope: "project",
+          note: "blank timeout must be ignored",
+        },
       ]);
     });
   });
 
   it("maps additional Beads dependency kind aliases deterministically", async () => {
     await withTempPmPath(async (context) => {
-      const sourcePath = path.join(context.tempRoot, "dependency-aliases.jsonl");
+      const sourcePath = path.join(
+        context.tempRoot,
+        "dependency-aliases.jsonl",
+      );
       const lines = [
         JSON.stringify({ id: "dep-target", title: "Dependency target" }),
-        JSON.stringify({ id: "kindless", title: "Kindless dependency", dependencies: [{ depends_on_id: "dep-target" }] }),
-        JSON.stringify({ id: "child-of", title: "Child Of dependency", dependencies: [{ depends_on_id: "dep-target", type: "child-of" }] }),
-        JSON.stringify({ id: "blocked-by", title: "Blocked By dependency", dependencies: [{ depends_on_id: "dep-target", type: "blocked-by" }] }),
-        JSON.stringify({ id: "incident-from", title: "Incident From dependency", dependencies: [{ depends_on_id: "dep-target", type: "incident-from" }] }),
-        JSON.stringify({ id: "related-to", title: "Related To dependency", dependencies: [{ depends_on_id: "dep-target", type: "related-to" }] }),
+        JSON.stringify({
+          id: "kindless",
+          title: "Kindless dependency",
+          dependencies: [{ depends_on_id: "dep-target" }],
+        }),
+        JSON.stringify({
+          id: "child-of",
+          title: "Child Of dependency",
+          dependencies: [{ depends_on_id: "dep-target", type: "child-of" }],
+        }),
+        JSON.stringify({
+          id: "blocked-by",
+          title: "Blocked By dependency",
+          dependencies: [{ depends_on_id: "dep-target", type: "blocked-by" }],
+        }),
+        JSON.stringify({
+          id: "incident-from",
+          title: "Incident From dependency",
+          dependencies: [
+            { depends_on_id: "dep-target", type: "incident-from" },
+          ],
+        }),
+        JSON.stringify({
+          id: "related-to",
+          title: "Related To dependency",
+          dependencies: [{ depends_on_id: "dep-target", type: "related-to" }],
+        }),
       ];
       await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
 
       await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
 
-      const kindlessJson = context.runCli(["get", "pm-kindless", "--json"], { expectJson: true }).json as BeadsItemJson;
-      const childOfJson = context.runCli(["get", "pm-child-of", "--json"], { expectJson: true }).json as BeadsItemJson;
-      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--json"], { expectJson: true }).json as BeadsItemJson;
-      const incidentFromJson = context.runCli(["get", "pm-incident-from", "--json"], { expectJson: true }).json as BeadsItemJson;
-      const relatedToJson = context.runCli(["get", "pm-related-to", "--json"], { expectJson: true }).json as BeadsItemJson;
+      const kindlessJson = context.runCli(["get", "pm-kindless", "--json"], {
+        expectJson: true,
+      }).json as BeadsItemJson;
+      const childOfJson = context.runCli(["get", "pm-child-of", "--json"], {
+        expectJson: true,
+      }).json as BeadsItemJson;
+      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--json"], {
+        expectJson: true,
+      }).json as BeadsItemJson;
+      const incidentFromJson = context.runCli(
+        ["get", "pm-incident-from", "--json"],
+        { expectJson: true },
+      ).json as BeadsItemJson;
+      const relatedToJson = context.runCli(["get", "pm-related-to", "--json"], {
+        expectJson: true,
+      }).json as BeadsItemJson;
 
       expect(kindlessJson.item.dependencies).toEqual([
         {
@@ -506,11 +788,18 @@ describe("runBeadsImport", () => {
         "{not-json",
         JSON.stringify({ id: "missing-title" }),
         JSON.stringify({ id: existingId, title: "Duplicate id" }),
-        JSON.stringify({ id: "fresh-1", title: "Fresh imported item", comments: "single-comment" }),
+        JSON.stringify({
+          id: "fresh-1",
+          title: "Fresh imported item",
+          comments: "single-comment",
+        }),
       ];
       await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
 
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(1);
       expect(result.skipped).toBe(3);
       expect(result.ids).toEqual(["pm-fresh-1"]);
@@ -520,10 +809,15 @@ describe("runBeadsImport", () => {
         `beads_import_item_exists:${existingId}`,
       ]);
 
-      const imported = context.runCli(["get", "pm-fresh-1", "--full", "--json"], { expectJson: true });
+      const imported = context.runCli(
+        ["get", "pm-fresh-1", "--full", "--json"],
+        { expectJson: true },
+      );
       expect(imported.code).toBe(0);
       const importedJson = imported.json as {
-        item: { comments: Array<{ created_at: string; author: string; text: string }> };
+        item: {
+          comments: Array<{ created_at: string; author: string; text: string }>;
+        };
       };
       expect(importedJson.item.comments).toEqual([
         {
@@ -537,11 +831,19 @@ describe("runBeadsImport", () => {
 
   it("covers fallback conversions for item type, dependencies, and log entries", async () => {
     await withTempPmPath(async (context) => {
-      const sourcePath = path.join(context.tempRoot, "conversion-branches.jsonl");
-      const lines = beadsConversionFixture.map((record) => JSON.stringify(record));
+      const sourcePath = path.join(
+        context.tempRoot,
+        "conversion-branches.jsonl",
+      );
+      const lines = beadsConversionFixture.map((record) =>
+        JSON.stringify(record),
+      );
       await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
 
-      const result = await runBeadsImport({ file: sourcePath, author: "branch-author" }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath, author: "branch-author" },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(6);
       expect(result.skipped).toBe(0);
       expect(result.ids.slice(0, 5)).toEqual([
@@ -554,7 +856,10 @@ describe("runBeadsImport", () => {
       expect(result.ids).toHaveLength(6);
       expect(result.ids[5]).toMatch(/^pm-/);
 
-      const epicResult = context.runCli(["get", "pm-typed-epic", "--full", "--json"], { expectJson: true });
+      const epicResult = context.runCli(
+        ["get", "pm-typed-epic", "--full", "--json"],
+        { expectJson: true },
+      );
       expect(epicResult.code).toBe(0);
       const epicJson = epicResult.json as {
         item: {
@@ -599,25 +904,47 @@ describe("runBeadsImport", () => {
         },
       ]);
 
-      const taskResult = context.runCli(["get", "pm-typed-task", "--json"], { expectJson: true });
+      const taskResult = context.runCli(["get", "pm-typed-task", "--json"], {
+        expectJson: true,
+      });
       expect(taskResult.code).toBe(0);
-      expect((taskResult.json as { item: { type: string } }).item.type).toBe("Task");
+      expect((taskResult.json as { item: { type: string } }).item.type).toBe(
+        "Task",
+      );
 
-      const choreResult = context.runCli(["get", "pm-typed-chore", "--json"], { expectJson: true });
+      const choreResult = context.runCli(["get", "pm-typed-chore", "--json"], {
+        expectJson: true,
+      });
       expect(choreResult.code).toBe(0);
-      expect((choreResult.json as { item: { type: string } }).item.type).toBe("Chore");
+      expect((choreResult.json as { item: { type: string } }).item.type).toBe(
+        "Chore",
+      );
 
-      const issueResult = context.runCli(["get", "pm-typed-issue", "--json"], { expectJson: true });
+      const issueResult = context.runCli(["get", "pm-typed-issue", "--json"], {
+        expectJson: true,
+      });
       expect(issueResult.code).toBe(0);
-      expect((issueResult.json as { item: { type: string } }).item.type).toBe("Issue");
+      expect((issueResult.json as { item: { type: string } }).item.type).toBe(
+        "Issue",
+      );
 
-      const featureResult = context.runCli(["get", "pm-typed-feature-nullish", "--json"], { expectJson: true });
+      const featureResult = context.runCli(
+        ["get", "pm-typed-feature-nullish", "--json"],
+        { expectJson: true },
+      );
       expect(featureResult.code).toBe(0);
-      expect((featureResult.json as { item: { type: string } }).item.type).toBe("Feature");
+      expect((featureResult.json as { item: { type: string } }).item.type).toBe(
+        "Feature",
+      );
 
-      const generatedIdResult = context.runCli(["get", result.ids[5], "--json"], { expectJson: true });
+      const generatedIdResult = context.runCli(
+        ["get", result.ids[5], "--json"],
+        { expectJson: true },
+      );
       expect(generatedIdResult.code).toBe(0);
-      expect((generatedIdResult.json as { item: { type: string } }).item.type).toBe("Feature");
+      expect(
+        (generatedIdResult.json as { item: { type: string } }).item.type,
+      ).toBe("Feature");
     });
   });
 
@@ -645,7 +972,10 @@ describe("runBeadsImport", () => {
       ];
       await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
 
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(1);
       expect(result.skipped).toBe(2);
       expect(result.ids).toEqual(["pm-fresh-after-conflict"]);
@@ -659,12 +989,23 @@ describe("runBeadsImport", () => {
   it("rolls back written item bytes when history append fails", async () => {
     await withTempPmPath(async (context) => {
       const id = "pm-history-failure";
-      await mkdir(path.join(context.pmPath, "history", `${id}.jsonl`), { recursive: true });
+      await mkdir(path.join(context.pmPath, "history", `${id}.jsonl`), {
+        recursive: true,
+      });
 
-      const sourcePath = path.join(context.tempRoot, "history-append-fail.jsonl");
-      await writeFile(sourcePath, `${JSON.stringify({ id: "history-failure", title: "History failure case" })}\n`, "utf8");
+      const sourcePath = path.join(
+        context.tempRoot,
+        "history-append-fail.jsonl",
+      );
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({ id: "history-failure", title: "History failure case" })}\n`,
+        "utf8",
+      );
 
-      await expect(runBeadsImport({ file: sourcePath }, { path: context.pmPath })).rejects.toBeInstanceOf(Error);
+      await expect(
+        runBeadsImport({ file: sourcePath }, { path: context.pmPath }),
+      ).rejects.toBeInstanceOf(Error);
 
       const getResult = context.runCli(["get", id, "--json"]);
       expect(getResult.code).toBe(EXIT_CODE.NOT_FOUND);
@@ -701,7 +1042,9 @@ describe("runBeadsImport", () => {
         expect(result.ids).toHaveLength(1);
 
         process.chdir(previousCwd);
-        const imported = context.runCli(["get", result.ids[0], "--json"], { expectJson: true });
+        const imported = context.runCli(["get", result.ids[0], "--json"], {
+          expectJson: true,
+        });
         expect(imported.code).toBe(0);
         const importedJson = imported.json as {
           item: {
@@ -742,7 +1085,9 @@ describe("runBeadsImport", () => {
         const result = await runBeadsImport({}, { path: context.pmPath });
         expect(result.source).toBe("issues.jsonl");
         expect(result.ids).toEqual(["pm-root-auto-discovery"]);
-        expect(result.warnings).toEqual(["beads_import_source_autodiscovered:issues.jsonl"]);
+        expect(result.warnings).toEqual([
+          "beads_import_source_autodiscovered:issues.jsonl",
+        ]);
       } finally {
         process.chdir(previousCwd);
       }
@@ -762,9 +1107,13 @@ describe("runBeadsImport", () => {
       const previousCwd = process.cwd();
       process.chdir(context.tempRoot);
       try {
-        await expect(runBeadsImport({}, { path: context.pmPath })).rejects.toMatchObject({
+        await expect(
+          runBeadsImport({}, { path: context.pmPath }),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.NOT_FOUND,
-          message: expect.stringContaining("sync_base snapshots may be partial"),
+          message: expect.stringContaining(
+            "sync_base snapshots may be partial",
+          ),
         });
       } finally {
         process.chdir(previousCwd);
@@ -774,16 +1123,24 @@ describe("runBeadsImport", () => {
 
   it("preserves explicit source ids when requested and keeps them addressable in a default-prefix tracker", async () => {
     await withTempPmPath(async (context) => {
-      const sourcePath = path.join(context.tempRoot, "preserve-source-ids.jsonl");
+      const sourcePath = path.join(
+        context.tempRoot,
+        "preserve-source-ids.jsonl",
+      );
       await writeFile(
         sourcePath,
         `${JSON.stringify({
           id: "clawd-01c8",
           title: "Preserve source id",
-          dependencies: [{ depends_on_id: "clawd-01c8.1", type: "parent-child" }],
+          dependencies: [
+            { depends_on_id: "clawd-01c8.1", type: "parent-child" },
+          ],
         })}\n${JSON.stringify({
           id: "clawd-01c8.1",
           title: "Preserve source dependency target",
+        })}\n${JSON.stringify({
+          title: "Generate an ID while preserving explicit siblings",
+          source_events: [null, "invalid", [], {}, { event_type: "" }],
         })}\n`,
         "utf8",
       );
@@ -795,9 +1152,12 @@ describe("runBeadsImport", () => {
         },
         { path: context.pmPath },
       );
-      expect(result.ids).toEqual(["clawd-01c8", "clawd-01c8.1"]);
+      expect(result.ids.slice(0, 2)).toEqual(["clawd-01c8", "clawd-01c8.1"]);
+      expect(result.ids).toHaveLength(3);
 
-      const imported = context.runCli(["get", "clawd-01c8", "--json"], { expectJson: true });
+      const imported = context.runCli(["get", "clawd-01c8", "--json"], {
+        expectJson: true,
+      });
       expect(imported.code).toBe(0);
       const importedJson = imported.json as BeadsItemJson;
       expect(importedJson.item.id).toBe("clawd-01c8");
@@ -812,20 +1172,479 @@ describe("runBeadsImport", () => {
     });
   });
 
+  it("imports every v0.62 portable-backup relation with exact identity and closure parity", async () => {
+    await withTempPmPath(async (context) => {
+      const backupDir = portableBackupFixture;
+      const result = await runBeadsImport(
+        { backupDir, preserveSourceIds: true },
+        { path: context.pmPath },
+      );
+
+      expect(result).toMatchObject({
+        ok: true,
+        source: backupDir,
+        imported: 3,
+        skipped: 0,
+        ids: ["Tokenwerk-A1", "Tokenwerk-B2", "Tokenwerk-C3"],
+        complete: true,
+        source_counts: {
+          issues: 3,
+          events: 2,
+          comments: 1,
+          dependencies: 1,
+          labels: 2,
+        },
+        imported_counts: {
+          issues: 3,
+          events: 2,
+          comments: 1,
+          dependencies: 1,
+          labels: 2,
+        },
+        id_mapping: [
+          { source_id: "Tokenwerk-A1", imported_id: "Tokenwerk-A1" },
+          { source_id: "Tokenwerk-B2", imported_id: "Tokenwerk-B2" },
+          { source_id: "Tokenwerk-C3", imported_id: "Tokenwerk-C3" },
+        ],
+      });
+
+      const imported = context.runCli(
+        ["get", "Tokenwerk-A1", "--full", "--json"],
+        {
+          expectJson: true,
+        },
+      );
+      expect(imported.code).toBe(0);
+      const importedJson = imported.json as BeadsItemJson;
+      expect(importedJson.item).toMatchObject({
+        id: "Tokenwerk-A1",
+        tags: ["context", "migration"],
+        close_reason: "Fixed without losing migration context",
+        resolution: "Fixed without losing migration context",
+        dependencies: [
+          expect.objectContaining({
+            id: "Tokenwerk-B2",
+            kind: "blocked_by",
+          }),
+        ],
+        comments: [
+          {
+            created_at: "2026-03-20T11:00:00.000Z",
+            author: "source-reviewer",
+            text: "Keep this exact discussion body.",
+          },
+        ],
+      });
+      expect(importedJson.item.expected_result).toBeUndefined();
+      expect(importedJson.item.actual_result).toBeUndefined();
+      expect(importedJson.item.notes).toContainEqual({
+        created_at: "2026-03-20T12:00:00.000Z",
+        author: "source-agent",
+        text: "Closure event context",
+        format: "json",
+        event_type: "beads:status_changed",
+        data: {
+          source: "beads-portable-backup",
+          id: "event-1",
+          issue_id: "Tokenwerk-A1",
+          event_type: "status_changed",
+          actor: "source-agent",
+          old_value: "in_progress",
+          new_value: "closed",
+          comment: "Closure event context",
+          created_at: "2026-03-20T12:00:00.000Z",
+        },
+      });
+
+      const related = context.runCli(
+        ["get", "Tokenwerk-B2", "--full", "--json"],
+        {
+          expectJson: true,
+        },
+      );
+      expect(related.code).toBe(0);
+      const relatedJson = related.json as {
+        item: {
+          parent?: string;
+          notes?: Array<{
+            created_at: string;
+            author: string;
+            text: string;
+            data?: Record<string, unknown>;
+          }>;
+        };
+      };
+      expect(relatedJson.item.parent).toBe("Tokenwerk-A1");
+      expect(relatedJson.item.notes).toContainEqual(
+        expect.objectContaining({
+          created_at: "2026-03-20T09:00:00.000Z",
+          author: "test-author",
+          text: "metadata_changed",
+          data: expect.objectContaining({
+            metadata: { attempt: 1, flags: [true, null] },
+          }),
+        }),
+      );
+
+      const outcome = context.runCli(["get", "Tokenwerk-C3", "--json"], {
+        expectJson: true,
+      });
+      expect(outcome.code).toBe(0);
+      expect((outcome.json as BeadsItemJson).item).toMatchObject({
+        close_reason: "Source closure context",
+        resolution: "Explicit source resolution",
+        expected_result: "Expected source outcome",
+        actual_result: "Actual source outcome",
+      });
+    });
+  });
+
+  it("rejects incomplete or malformed portable backups before any item write", async () => {
+    await withTempPmPath(async (context) => {
+      const cases: Array<{
+        name: string;
+        message: string;
+        mutate: (backupDir: string) => Promise<void>;
+      }> = [
+        {
+          name: "missing-table",
+          message: "missing",
+          mutate: async (backupDir) => {
+            await rm(path.join(backupDir, "comments.jsonl"));
+          },
+        },
+        {
+          name: "invalid-jsonl",
+          message: "invalid JSON",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "comments.jsonl"),
+              "{\n",
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "non-record",
+          message: "non-record row",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "comments.jsonl"),
+              "[]\n",
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-issue-id",
+          message: "issue is missing id",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "issues.jsonl"),
+              '{"title":"No ID"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "duplicate-issue-id",
+          message: "duplicate issue ID",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "issues.jsonl"),
+              '{"id":"same","title":"One"}\n{"id":"same","title":"Two"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-title",
+          message: "missing title",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "issues.jsonl"),
+              '{"id":"no-title"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-relation-issue",
+          message: "missing issue_id",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "comments.jsonl"),
+              '{"text":"orphan"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "unknown-relation-issue",
+          message: "references missing issue",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "comments.jsonl"),
+              '{"issue_id":"absent","text":"orphan"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-comment-text",
+          message: "missing text",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "comments.jsonl"),
+              '{"issue_id":"Tokenwerk-A1"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-event-type",
+          message: "missing event_type",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "events.jsonl"),
+              '{"issue_id":"Tokenwerk-A1"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-dependency-target",
+          message: "missing depends_on_id",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "dependencies.jsonl"),
+              '{"issue_id":"Tokenwerk-A1"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "unknown-dependency-target",
+          message: "references missing target",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "dependencies.jsonl"),
+              '{"issue_id":"Tokenwerk-A1","depends_on_id":"absent"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-label",
+          message: "missing label",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "labels.jsonl"),
+              '{"issue_id":"Tokenwerk-A1"}\n',
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-state",
+          message: "missing",
+          mutate: async (backupDir) => {
+            await rm(path.join(backupDir, "backup_state.json"));
+          },
+        },
+        {
+          name: "invalid-state",
+          message: "invalid JSON",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "backup_state.json"),
+              "{",
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "missing-counts",
+          message: "missing counts",
+          mutate: async (backupDir) => {
+            await writeFile(
+              path.join(backupDir, "backup_state.json"),
+              "{}\n",
+              "utf8",
+            );
+          },
+        },
+        {
+          name: "count-mismatch",
+          message: "count mismatch",
+          mutate: async (backupDir) => {
+            const statePath = path.join(backupDir, "backup_state.json");
+            const state = (await readFile(statePath, "utf8")).replace(
+              '"issues": 3',
+              '"issues": 4',
+            );
+            await writeFile(statePath, state, "utf8");
+          },
+        },
+      ];
+
+      for (const testCase of cases) {
+        const backupDir = await copyPortableBackup(
+          context.tempRoot,
+          `portable-${testCase.name}`,
+        );
+        await testCase.mutate(backupDir);
+        await expect(
+          runBeadsImport(
+            { backupDir, preserveSourceIds: true },
+            { path: context.pmPath },
+          ),
+        ).rejects.toThrow(testCase.message);
+      }
+
+      expect(context.runCli(["get", "Tokenwerk-A1", "--json"]).code).toBe(
+        EXIT_CODE.NOT_FOUND,
+      );
+    });
+  });
+
+  it("rejects conflicting source selection, missing backups, and unsafe preserved IDs", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runBeadsImport(
+          { file: "issues.jsonl", backupDir: "backup" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runBeadsImport(
+          { backupDir: path.join(context.tempRoot, "absent") },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+
+      const sourcePath = path.join(context.tempRoot, "unsafe-id.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({ id: " unsafe/id ", title: "Unsafe ID" })}\n`,
+        "utf8",
+      );
+      await expect(
+        runBeadsImport(
+          { file: sourcePath, preserveSourceIds: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("cannot be preserved safely"),
+      });
+    });
+  });
+
+  it("rejects preserved IDs that already exist in the target before importing siblings", async () => {
+    await withTempPmPath(async (context) => {
+      const seedPath = path.join(context.tempRoot, "seed-preserved.jsonl");
+      await writeFile(
+        seedPath,
+        `${JSON.stringify({ id: "Tokenwerk-A1", title: "Existing exact ID" })}\n`,
+        "utf8",
+      );
+      await runBeadsImport(
+        { file: seedPath, preserveSourceIds: true },
+        { path: context.pmPath },
+      );
+
+      await expect(
+        runBeadsImport(
+          { backupDir: portableBackupFixture, preserveSourceIds: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("target collision"),
+      });
+      expect(context.runCli(["get", "Tokenwerk-B2", "--json"]).code).toBe(
+        EXIT_CODE.NOT_FOUND,
+      );
+    });
+  });
+
+  it("fails closed before writing current exports that advertise omitted comments", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "incomplete-export.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({
+          id: "incomplete-context",
+          title: "Incomplete context",
+          comment_count: 1,
+        })}\n`,
+        "utf8",
+      );
+
+      await expect(
+        runBeadsImport({ file: sourcePath }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--backup-dir"),
+      });
+      expect(
+        context.runCli(["get", "pm-incomplete-context", "--json"]).code,
+      ).toBe(EXIT_CODE.NOT_FOUND);
+    });
+  });
+
+  it("fails closed before writes when source ids collide case-insensitively", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "case-collision.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({ id: "Tokenwerk-A1", title: "Upper" })}\n${JSON.stringify({ id: "tokenwerk-a1", title: "Lower" })}\n`,
+        "utf8",
+      );
+
+      await expect(
+        runBeadsImport(
+          { file: sourcePath, preserveSourceIds: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("case-insensitive ID collision"),
+      });
+      expect(context.runCli(["get", "Tokenwerk-A1", "--json"]).code).toBe(
+        EXIT_CODE.NOT_FOUND,
+      );
+    });
+  });
+
   it("falls back to settings author when explicit and env authors are unset", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { author_default?: string };
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        author_default?: string;
+      };
       settings.author_default = "settings-author";
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
       const sourcePath = path.join(context.tempRoot, "settings-author.jsonl");
-      await writeFile(sourcePath, `${JSON.stringify({ id: "settings-author-id", title: "Settings fallback import" })}\n`, "utf8");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({ id: "settings-author-id", title: "Settings fallback import" })}\n`,
+        "utf8",
+      );
 
       const previousAuthor = process.env.PM_AUTHOR;
       delete process.env.PM_AUTHOR;
       try {
-        const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+        const result = await runBeadsImport(
+          { file: sourcePath },
+          { path: context.pmPath },
+        );
         expect(result.imported).toBe(1);
       } finally {
         if (previousAuthor === undefined) {
@@ -835,16 +1654,25 @@ describe("runBeadsImport", () => {
         }
       }
 
-      const imported = context.runCli(["get", "pm-settings-author-id", "--json"], { expectJson: true });
+      const imported = context.runCli(
+        ["get", "pm-settings-author-id", "--json"],
+        { expectJson: true },
+      );
       expect(imported.code).toBe(0);
-      expect((imported.json as { item: { author: string } }).item.author).toBe("settings-author");
+      expect((imported.json as { item: { author: string } }).item.author).toBe(
+        "settings-author",
+      );
     });
   });
 
   it("dispatches source and import artifact read/write hooks with warning propagation", async () => {
     await withTempPmPath(async (context) => {
       const sourcePath = path.join(context.tempRoot, "hooked-import.jsonl");
-      await writeFile(sourcePath, `${JSON.stringify({ id: "hooked-import", title: "Hooked import" })}\n`, "utf8");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({ id: "hooked-import", title: "Hooked import" })}\n`,
+        "utf8",
+      );
 
       const hookEvents: string[] = [];
       setActiveExtensionHooks({
@@ -871,7 +1699,9 @@ describe("runBeadsImport", () => {
             layer: "project",
             name: "beads-write-hook",
             run: (hookContext) => {
-              hookEvents.push(`write:${hookContext.op}:${path.basename(hookContext.path)}`);
+              hookEvents.push(
+                `write:${hookContext.op}:${path.basename(hookContext.path)}`,
+              );
             },
           },
           {
@@ -885,7 +1715,10 @@ describe("runBeadsImport", () => {
         onIndex: [],
       });
 
-      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      const result = await runBeadsImport(
+        { file: sourcePath },
+        { path: context.pmPath },
+      );
       expect(result.imported).toBe(1);
       expect(result.skipped).toBe(0);
       expect(result.ids).toEqual(["pm-hooked-import"]);
@@ -896,8 +1729,9 @@ describe("runBeadsImport", () => {
       ]);
       expect(hookEvents).toContain("read:hooked-import.jsonl");
       expect(hookEvents).toContain("write:import:pm-hooked-import.toon");
-      expect(hookEvents).toContain("write:import:history:pm-hooked-import.jsonl");
+      expect(hookEvents).toContain(
+        "write:import:history:pm-hooked-import.jsonl",
+      );
     });
   });
-
 });

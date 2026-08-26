@@ -142,6 +142,28 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
       allowed_values_required: false,
     },
     {
+      probe_id: "package-upgrade-mutually-exclusive-modes",
+      command: "package upgrade",
+      flag: "--projection",
+      rejected_value: "--cli-only+--packages-only",
+      refusal_args: [
+        "package",
+        "upgrade",
+        "--cli-only",
+        "--packages-only",
+        "--dry-run",
+      ],
+      allowed_values: [],
+      suggested_retry_args: [
+        "package",
+        "upgrade",
+        "--packages-only",
+        "--dry-run",
+      ],
+      error_code: "projection_options_mutually_exclusive",
+      allowed_values_required: false,
+    },
+    {
       probe_id: "search-invalid-field",
       command: "search",
       flag: "--fields",

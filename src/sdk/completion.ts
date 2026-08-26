@@ -41,6 +41,7 @@ import {
   EVENTS_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
+  UPGRADE_FLAG_CONTRACTS,
   toCompletionFlagString,
 } from "./cli-contracts.js";
 import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../types/index.js";
@@ -127,12 +128,14 @@ const PLAN_SUBCOMMANDS_LIST =
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
-const LIFECYCLE_ACTIONS =
+const EXTENSION_LIFECYCLE_ACTIONS =
   "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate";
+const PACKAGE_LIFECYCLE_ACTIONS = `${EXTENSION_LIFECYCLE_ACTIONS} upgrade`;
 const EXTENSION_LIFECYCLE_FLAGS = toCompletionFlagString(
   EXTENSION_FLAG_CONTRACTS,
 );
 const PACKAGE_LIFECYCLE_FLAGS = toCompletionFlagString(PACKAGE_FLAG_CONTRACTS);
+const UPGRADE_FLAGS = toCompletionFlagString(UPGRADE_FLAG_CONTRACTS);
 
 const MUTATION_FLAGS =
   "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
@@ -146,7 +149,6 @@ const RELEASE_MUTATION_FLAGS =
 const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["init", "Initialize pm storage for the current workspace"],
   ["config", "Read or update pm settings"],
-  ["extension", "Manage extension lifecycle operations"],
   ["package", "Manage package lifecycle operations"],
   ["packages", "Alias for package"],
   ["create", "Create a new project management item"],
@@ -794,10 +796,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${EXTENSION_LIFECYCLE_FLAGS}`)})`,
+    `      COMPREPLY=(${compgen(`${EXTENSION_LIFECYCLE_ACTIONS} ${EXTENSION_LIFECYCLE_FLAGS}`)})`,
     "      ;;",
     "    package|packages)",
-    `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS}`)})`,
+    `      COMPREPLY=(${compgen(`${PACKAGE_LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS} ${UPGRADE_FLAGS}`)})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1888,7 +1890,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         extension)
           _arguments \\
-            '1:extension_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)' \\
+            '1:extension_action:(${EXTENSION_LIFECYCLE_ACTIONS})' \\
             '--init[Generate a starter extension scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
             '--capability[Capability the init scaffold targets]:capability:(${SCAFFOLD_CAPABILITIES.join(" ")})' \\
@@ -1927,7 +1929,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         package|packages)
           _arguments \\
-            '1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)' \\
+            '1:package_action:(${PACKAGE_LIFECYCLE_ACTIONS})' \\
             '--init[Generate a starter package scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
             '--capability[Capability the init scaffold targets]:capability:(${SCAFFOLD_CAPABILITIES.join(" ")})' \\
@@ -1961,6 +1963,12 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--ignore-global[Alias for --isolated]' \\
             '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
+            '--dry-run[Plan upgrades without mutating]' \\
+            '--cli-only[Upgrade only the pm CLI/SDK npm package]' \\
+            '--packages-only[Upgrade only managed pm packages]' \\
+            '--repair[Force npm global reinstall for the CLI/SDK]' \\
+            '--tag[npm version or dist-tag for upgrades]:tag' \\
+            '--package-name[Override the CLI package name]:package_name' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '*:target_or_name:_files -/'
@@ -2918,7 +2926,7 @@ complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d
 complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d 'Templates command'
 
 # extension lifecycle flags
-complete -c pm -n '__fish_seen_subcommand_from extension' -a '${LIFECYCLE_ACTIONS}' -d 'Extension action subcommand'
+complete -c pm -n '__fish_seen_subcommand_from extension' -a '${EXTENSION_LIFECYCLE_ACTIONS}' -d 'Extension action subcommand'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l init -d 'Generate starter extension scaffold'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l scaffold -d 'Alias for --init'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l capability -d 'Capability the init scaffold targets' -r -a '${SCAFFOLD_CAPABILITIES.join(" ")}'
@@ -2954,7 +2962,7 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l fail-on-warn -d 'Al
 
 # package lifecycle flags
 for package_cmd in package packages
-  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -a '${LIFECYCLE_ACTIONS}' -d 'Package action subcommand'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -a '${PACKAGE_LIFECYCLE_ACTIONS}' -d 'Package action subcommand'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l init -d 'Generate starter package scaffold'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l scaffold -d 'Alias for --init'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l capability -d 'Capability the init scaffold targets' -r -a '${SCAFFOLD_CAPABILITIES.join(" ")}'
@@ -2988,6 +2996,12 @@ for package_cmd in package packages
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l ignore-global -d 'Alias for --isolated'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l fail-on-warn -d 'Alias for --strict-exit (doctor)'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l dry-run -d 'Plan upgrades without mutating'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l cli-only -d 'Upgrade only the pm CLI/SDK npm package'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l packages-only -d 'Upgrade only managed pm packages'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l repair -d 'Force npm global reinstall for the CLI/SDK'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l tag -d 'npm version or dist-tag for upgrades' -r
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l package-name -d 'Override the CLI package name' -r
 end`;
 }
 

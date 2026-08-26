@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",output-contract,token-efficiency
 created_at: "2026-08-07T11:16:55.129Z"
-updated_at: "2026-08-07T16:35:55.471Z"
-closed_at: "2026-08-07T16:35:54.946Z"
-completed_at: "2026-08-07T16:35:54.946Z"
+updated_at: "2026-08-26T22:52:01.591Z"
+closed_at: "2026-08-26T22:51:40.146Z"
+completed_at: "2026-08-26T22:51:40.146Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The namespace of --output-include is declared once in the output contract and is identical across entity and collection reads; Field projection works on pm get: requesting id and title returns an item carrying id and title, and the token receipt reflects the reduction; An --output-include token that matches neither a declared field nor a declared section is refused with a recovery hint naming the valid vocabulary for that command, rather than discarded; Mixing section and field names is either supported with defined precedence or refused; it can never silently drop the entity the read exists to return; The omission receipt reports every field and section withheld by an --output-include selection, and a conformance test asserts receipt-versus-payload agreement on both read shapes"
@@ -20,10 +20,10 @@ parent: pm-mpbb
 risk: medium
 confidence: high
 severity: high
-resolution: "Unified get entity projection now validates and applies item fields, item.<field> selectors, full item selection, and present top-level sections through the shared SDK read-output contract."
-expected_result: "pm get and SDK get honor explicit entity field/section selectors, reject invalid combinations deterministically, and emit truthful omission receipts."
-actual_result: CLI and SDK parity integration covers bare/prefixed/full/section selectors and omission receipts; exact-head coverage and all release gates pass.
-dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
+resolution: fixed
+expected_result: "Canonical get collection selectors reach SDK execution, return the requested collections, and disclose omissions without false legacy hints."
+actual_result: "comments, notes, and learnings project losslessly through the SDK and CLI; focused, manual, full-coverage, lint, and security gates pass."
+dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-cha95z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-du93sr,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
@@ -40,29 +40,62 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-tuadp2,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-ydshl9,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+  pm-yql1,implements,"2026-08-26T21:27:30.928Z","harness:codex","cli:update:dep",detected
+comments[9]{created_at,author,text}:
   "2026-08-07T14:58:02.927Z","harness:codex","Final evidence: get projection now accepts bare item fields and item.<field>, supports full item and present sections, rejects unknown or conflicting selectors with stable usage guidance, and emits exact omission receipts. CLI/SDK integration passed inside the 445-file, 6,938-test suite; coverage is 49,824/49,824 statements, 36,260/36,260 branches, 10,203/10,203 functions, and 48,261/48,261 lines."
   "2026-08-07T15:11:53.205Z","harness:codex","PR #929 review correctly noted that the conflict is full item plus projected item fields, not full sections plus fields. Reopened for the precise shared refusal text and test assertion."
   "2026-08-07T15:24:32.605Z","harness:codex","Review implementation evidence: ambiguous get projection refusal now names the exact conflict—a full item cannot be mixed with projected item fields—and the SDK negative contract asserts that vocabulary."
   "2026-08-07T15:48:48.646Z","harness:codex","Final verification: linked selector unit/integration tests passed through pm test; exact repository coverage and contract snapshot gates passed; packed artifact acceptance confirmed no regression to CLI or SDK mutation flows."
   "2026-08-07T16:05:01.230Z","harness:codex","Hosted PR evidence: PR #929 exact head 35f4635a187721b4bcbad643c3185bf33b6571ab completed with 29 successful checks, 3 intentional skips, 0 failures, and 0 pending. CodeRabbit supplied ten actionable first-round findings; all ten were implemented, individually replied to, positively reacted to, and resolved. CodeRabbit and Sourcery exact-head rereviews were provider-rate-limited and are recorded as limitations rather than approvals. Codecov confirms all modified coverable lines covered and no failed tests; DeepScan reports 0 new issues; CodeFactor, CodeQL, Semgrep, Windows, security, compatibility, smoke, static, coverage, and runtime gates are green. CodSpeed completed but its comment compared different runtime environments and reported unrelated pagination/BM25 variance despite no measured implementation or benchmark changes, so it was explicitly acknowledged as non-actionable noise. Final inventory: mergeable CLEAN, zero unresolved threads, and every bot comment/review read, replied or dispositioned, and reacted to."
   "2026-08-07T16:35:52.891Z","harness:codex","Final review correction: get projection now preserves every inherited omission group before appending item-field and section omissions, then recomputes has_omissions and omitted_field_group_count from the combined receipt. The focused CLI/SDK suite and final 445-file, 6,942-test coverage run pass at 49,853/49,853 statements, 36,301/36,301 branches, 10,209/10,209 functions, and 48,288/48,288 lines."
-learnings[3]{created_at,author,text}:
+  "2026-08-26T21:27:33.556Z","harness:codex","GitHub intake: GH-1124 https://github.com/unbraind/pm-cli/issues/1124. Complete all-status census found this closed item as the canonical get projection owner; no duplicate created. Red reproduction: pm get <id> --output-include comments,learnings refuses both selectors even though the item stores both collections."
+  "2026-08-26T21:34:25.863Z","harness:codex","TDD red: focused read-contract spec proves canonical get outputInclude does not yet populate the pre-execution fields projection, so collection payloads are unavailable when shaping runs."
+  "2026-08-26T22:51:36.060Z","harness:codex","Evidence: canonical get collection projection is implemented across the public read-output contract and CLI execution transport. Fresh-directory acceptance returned comments=1, notes=1, learnings=1 under item with legacy_aliases_used=0; the linked sandbox-safe suite passed 13/13. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, command grammar 164/164, flag parity 2839/2839, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit with no known vulnerabilities, and Trivy HIGH/CRITICAL vuln+secret+misconfig with zero findings."
+learnings[4]{created_at,author,text}:
   "2026-08-07T14:58:03.382Z","harness:codex",Entity read projection must derive its selectable top-level vocabulary from the actual result envelope while keeping item-field vocabulary stable; otherwise a selector either lies about absent data or silently disappears.
   "2026-08-07T15:48:49.314Z","harness:codex",Projection conflicts should name the exact entity and depth pair so an agent can repair the selector without translating generic section terminology.
   "2026-08-07T16:35:53.348Z","harness:codex","A projection receipt is additive context, not a replacement envelope: every shaping layer must preserve upstream omission disclosures and recompute aggregate truth from the combined groups."
-files[5]{path,scope,note}:
+  "2026-08-26T22:51:36.521Z","harness:codex",Canonical collection selection must be forwarded before command execution and then mirrored into the CLI parser; shaping only after execution cannot recover collections omitted by the SDK read contract.
+files[6]{path,scope,note}:
+  src/cli/main.ts,project,Synchronizes SDK collection projections into Commander execution options
+  src/sdk/cli-contracts/tool-schema.ts,project,machine-readable get selector contract
   src/sdk/read-output-contracts.ts,project,get projection vocabulary and omission receipts
   src/sdk/runtime.ts,project,SDK transport projection parity
-  src/sdk/cli-contracts/tool-schema.ts,project,machine-readable get selector contract
-  tests/unit/sdk/read-contract-integrity.spec.ts,project,selector unit and refusal coverage
   tests/integration/sdk-context-integrity.integration.spec.ts,project,CLI SDK selector parity acceptance
+  tests/unit/sdk/read-contract-integrity.spec.ts,project,selector unit and refusal coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-msj4d5ru-bh4s0r,test,passed,"2026-08-07T15:48:13.238Z","2026-08-07T15:48:25.337Z","2026-08-07T15:48:25.337Z",1,0,0
-  test-local-msj5ggn9-x6a625,test,passed,"2026-08-07T16:18:47.164Z","2026-08-07T16:18:59.012Z","2026-08-07T16:18:59.012Z",1,0,0
+test_runs[3]:
+  - run_id: test-local-msj4d5ru-bh4s0r
+    kind: test
+    status: passed
+    started_at: "2026-08-07T15:48:13.238Z"
+    finished_at: "2026-08-07T15:48:25.337Z"
+    recorded_at: "2026-08-07T15:48:25.337Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msj5ggn9-x6a625
+    kind: test
+    status: passed
+    started_at: "2026-08-07T16:18:47.164Z"
+    finished_at: "2026-08-07T16:18:59.012Z"
+    recorded_at: "2026-08-07T16:18:59.012Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mtaosomz-g6duwk
+    kind: test
+    status: passed
+    started_at: "2026-08-26T22:49:57.054Z"
+    finished_at: "2026-08-26T22:50:08.699Z"
+    recorded_at: "2026-08-26T22:50:08.699Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,schema,schema,source,legacy
 docs[1]{path,scope,note}:
   docs/SDK_CONTEXT_INTEGRITY.md,project,get projection vocabulary and omission recovery
-close_reason: "Review-hardened get projection now merges inherited and projection-specific omission receipts; linked suites, contracts, static gates, and exact 100/100/100/100 coverage pass."
+close_reason: "Delivered lossless canonical get collection projection across SDK and CLI with focused, integration, manual, full-coverage, lint, and security proof."
 body: "## Reproduction\n\nMeasured 2026-08-07 on the live workspace.\n\n```\npm list --status open --limit 3 --output-include id,title --json\n  -> rows carry exactly {id, title}                       # field projection, correct\n\npm get pm-n7rr --output-include title --json\n  -> item carries all 23 fields, 2,219 estimated tokens   # silently ignored\n  -> omission_receipt.has_omissions = false\n\npm get pm-n7rr --output-include item --json\n  -> children, claim_state and linked dropped; 1,846 tokens  # section filter, works\n\npm get pm-x --output-include body,acceptance_criteria,children --json\n  -> the entire `item` entity is dropped from the response\n  -> omission_receipt.has_omissions = false\n```\n\n## The defect\n\n`--output-include` is documented once, as \"Retain comma-separated fields or sections in read output\", and implemented as two different things.\n\nOn a collection read the argument names **row fields** and projection works. On an entity read the argument names **top-level sections**, so a field name matches nothing, is discarded without a diagnostic, and the caller pays the full entity cost believing it asked for less. Worse, the two namespaces are not disjoint: pass one recognised section name alongside field names and the section filter engages, dropping every unlisted section — including `item` itself, the only section the caller wanted.\n\nBoth failures are silent in the same way and in the same place. The omission receipt exists precisely to name what a bounded read withheld and which flag restores it. It reports `has_omissions: false` for a request that was ignored in full, and for a request that discarded the entity.\n\n## Why this matters more than its size suggests\n\n`pm get` is the highest-frequency read in the documented agent loop — the verification recipe in the operating rules names it first, and every claim about tracked state is supposed to be backed by it. It is also the one read with no working field projection, so the cheapest possible question, \"what is this item's title and status\", costs the same as the most expensive one. At a thousand concurrent agents that difference is the difference between a bounded and an unbounded fleet budget.\n\nThe rule this violates is already written down: a value that a surface accepts and a consumer ignores is a removal that reports success. Here the accepting surface and the blind consumer are the same command.\n\n## Boundary\n\nThe fix is not to make field names work on entity reads by accident. It is to decide, once, whether `--output-include` addresses fields or sections, to give the other concept its own declared spelling, and to make an unmatched token a refusal that teaches rather than a silent discard. Whatever is decided, the omission receipt must report it."

@@ -10,8 +10,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
 - Uncovered error codes: 325
 - Coverage fraction: 0.052478
-- Closed-domain probes: 18
-- Grammar probes: 95
+- Closed-domain probes: 19
+- Grammar probes: 94
 
 | Error code | Canonical code | Disposition | Evidence kinds | Probe count |
 | --- | --- | --- | --- | --- |
@@ -198,7 +198,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `missing_observed_signature` | `missing_observed_signature` | uncovered | none | 0 |
 | `missing_parameter_alias` | `missing_parameter_alias` | uncovered | none | 0 |
 | `missing_probe` | `missing_probe` | uncovered | none | 0 |
-| `missing_required_argument` | `missing_required_argument` | executable | grammar | 58 |
+| `missing_required_argument` | `missing_required_argument` | executable | grammar | 57 |
 | `missing_required_option` | `missing_required_option` | uncovered | none | 0 |
 | `missing_suggested_retry` | `missing_suggested_retry` | uncovered | none | 0 |
 | `missing_suggested_retry_args` | `missing_suggested_retry_args` | uncovered | none | 0 |
@@ -226,7 +226,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `profile_title_empty` | `profile_title_empty` | uncovered | none | 0 |
 | `project_runtime_stale_mutation` | `project_runtime_stale_mutation` | uncovered | none | 0 |
 | `project_runtime_stale_read` | `project_runtime_stale_read` | uncovered | none | 0 |
-| `projection_options_mutually_exclusive` | `projection_options_mutually_exclusive` | executable | closed_domain | 3 |
+| `projection_options_mutually_exclusive` | `projection_options_mutually_exclusive` | executable | closed_domain | 4 |
 | `provenance_value_domain_invalid` | `provenance_value_domain_invalid` | uncovered | none | 0 |
 | `read_output_cursor_command_mismatch` | `read_output_cursor_command_mismatch` | uncovered | none | 0 |
 | `read_output_cursor_invalid` | `read_output_cursor_invalid` | uncovered | none | 0 |

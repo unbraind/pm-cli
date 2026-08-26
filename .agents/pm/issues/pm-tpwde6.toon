@@ -2,11 +2,13 @@ id: pm-tpwde6
 title: "GH-859: pm-beads source export can omit Beads comment bodies and events"
 description: "The current Beads export consumed by pm-beads may omit comment bodies and event history, so migration can appear successful while losing context. The importer must either consume a lossless source or emit a fail-closed completeness receipt before writing PM records."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:extensions",comments,history,migration,pm-beads
 created_at: "2026-08-02T14:10:55.004Z"
-updated_at: "2026-08-14T10:15:03.728Z"
+updated_at: "2026-08-26T20:58:06.029Z"
+closed_at: "2026-08-26T20:51:54.082Z"
+completed_at: "2026-08-26T20:51:54.082Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: A source fixture with comments and events imports every body and event with record/content parity; incomplete export formats fail closed with actionable guidance; immutable backup and source/target parity gates are documented and tested; package and installed-consumer acceptance pass
@@ -17,10 +19,51 @@ why_now: GitHub issue #859 reports a live migration data-loss boundary
 parent: pm-ugqx
 risk: high
 confidence: 95
+resolution: Implemented
+expected_result: "Portable Beads backups import every issue, event, comment, dependency, and label with validated source-target parity, while incomplete plain exports fail before writes."
+actual_result: "Portable backup preflight validates relational files, foreign keys, counts, IDs, and source completeness; manual installed-package import achieved exact 3/2/1/1/2 parity and plain comment-count-only exports refuse with recovery guidance."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-13bn,discovered_from,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
   pm-axl0,supersedes,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-02T14:10:55.004Z","harness:codex","Duplicate-check evidence: all-status searches for GH-859, pm-beads comment loss, Beads export lossiness, and prior importer parity found no active owner. Closed pm-axl0 covered earlier importer lossiness but not current comment/event source completeness; this item preserves that lineage rather than reopening shipped scope."
+  "2026-08-26T18:50:49.932Z","harness:codex","TDD red evidence: current Beads file import silently accepts comment_count with no comments and the new portable-backup acceptance cannot run because --backup-dir is absent; focused package tests failed before implementation."
+  "2026-08-26T20:48:43.065Z","harness:codex","Verification evidence: manual fresh-workspace portable-backup import completed with complete=true and exact source/import parity: issues=3, events=2, comments=1, dependencies=1, labels=2. Readback retained the exact discussion body and a structured JSON status-change event note; full suite 8,020/8,020 and exact coverage 100/100/100/100 passed."
+  "2026-08-26T20:58:06.029Z","harness:codex","Governance evidence: post-closeout defect-evidence correctly failed closed until this production defect had structured prevention evidence. Bound closure to the beads-portable-backup-completeness gate, incomplete-export/count/foreign-key negative controls, focused Beads tests, exact coverage, defect-evidence, and hosted static/coverage checks. No waiver is used."
+files[9]{path,scope,note}:
+  packages/pm-beads/extensions/beads/index.ts,project,Lossless Beads portable backup import and regression proof
+  packages/pm-beads/extensions/beads/runtime.ts,project,Lossless Beads portable backup import and regression proof
+  tests/fixtures/beads/backup-v0.62/backup_state.json,project,Lossless Beads portable backup import and regression proof
+  tests/fixtures/beads/backup-v0.62/comments.jsonl,project,Lossless Beads portable backup import and regression proof
+  tests/fixtures/beads/backup-v0.62/dependencies.jsonl,project,Lossless Beads portable backup import and regression proof
+  tests/fixtures/beads/backup-v0.62/events.jsonl,project,Lossless Beads portable backup import and regression proof
+  tests/fixtures/beads/backup-v0.62/issues.jsonl,project,Lossless Beads portable backup import and regression proof
+  tests/fixtures/beads/backup-v0.62/labels.jsonl,project,Lossless Beads portable backup import and regression proof
+  tests/unit/packages/beads-command.spec.ts,project,Lossless Beads portable backup import and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,project,240,"harness:codex","2026-08-26T19:58:07.740Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[1]:
+  - run_id: test-local-mtakit1a-l51zm0
+    kind: test
+    status: passed
+    started_at: "2026-08-26T20:50:12.605Z"
+    finished_at: "2026-08-26T20:50:29.374Z"
+    recorded_at: "2026-08-26T20:50:29.374Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  packages/pm-beads/README.md,project,Portable backup migration and parity receipt guidance
+close_reason: "Implemented and verified lossless Beads portable-backup migration with complete relational parity, fail-closed incomplete-export handling, installed-package acceptance, 8,020 passing tests, and exact 100/100/100/100 coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: beads-portable-backup-completeness
+  negative_control: "Import a current plain Beads export that reports comment_count without comment bodies, or a portable backup with count or foreign-key drift; the importer must refuse before the first PM write and direct recovery to bd backup --force plus --backup-dir."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,node scripts/release/defect-evidence-gate.mjs --json,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  owner: pm-tpwde6
 body: ""

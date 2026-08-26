@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",defect-class
 created_at: "2026-07-17T04:41:29.345Z"
-updated_at: "2026-07-26T17:10:33.401Z"
-closed_at: "2026-07-21T10:14:20.372Z"
+updated_at: "2026-08-26T22:52:02.127Z"
+closed_at: "2026-08-26T22:51:41.369Z"
+completed_at: "2026-08-26T22:51:41.369Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm <unknown> --help exits non-zero with the unknown-command error and suggestions (parity with pm <unknown>); known-command --help behavior unchanged; regression spec covers both the arbitrary-name and plausible-name (e.g. pm link --help) cases; GH-576 closed with evidence
@@ -15,25 +16,84 @@ parent: pm-mpbb
 risk: low
 confidence: high
 release: v2026.7.22
-resolution: Protected the existing unknown-command help behavior with arbitrary-name and plausible-name real-runtime regression coverage.
-expected_result: Unknown command help probes exit non-zero with structured unknown-command diagnostics and suggestions.
-actual_result: Both definitely-not-a-command --help and link --help exit 2 while known help behavior remains unchanged.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-2tan,related,"2026-07-17T04:41:29.345Z",null,null
-  pm-albl,related,"2026-07-17T04:41:29.345Z",null,null
-  pm-g543,related,"2026-07-17T04:41:29.345Z",null,null
-  pm-gdi7,related,"2026-07-17T04:41:29.345Z",null,null
-  pm-7ufz,related,"2026-07-21T07:32:55.791Z",codex-root-20260721,null
-  pm-mpbb,implements,"2026-07-26T17:10:33.223Z",null,null
-comments[2]{created_at,author,text}:
+resolution: fixed
+expected_result: Unknown command help probes exit non-zero with structured recovery and no root-help stdout leakage.
+actual_result: Unknown help exits 2 with zero stdout bytes and structured stderr suggestions across arbitrary and plausible paths; all linked and repository gates pass.
+dependencies[7]:
+  - id: pm-2tan
+    kind: related
+    created_at: "2026-07-17T04:41:29.345Z"
+  - id: pm-albl
+    kind: related
+    created_at: "2026-07-17T04:41:29.345Z"
+  - id: pm-g543
+    kind: related
+    created_at: "2026-07-17T04:41:29.345Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-17T04:41:29.345Z"
+  - id: pm-7ufz
+    kind: related
+    created_at: "2026-07-21T07:32:55.791Z"
+    author: codex-root-20260721
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T17:10:33.223Z"
+  - id: pm-e2bq
+    kind: implements
+    created_at: "2026-08-26T21:27:31.748Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[5]{created_at,author,text}:
   "2026-07-21T07:33:02.140Z",codex-root-20260721,"Evidence: current runtime already returned exit 2 for arbitrary and plausible unknown --help paths; added the missing real-runtime regression covering definitely-not-a-command and link so the structured usage contract cannot regress."
   "2026-07-21T10:13:38.698Z",codex-root-20260721,"Hosted CodeRabbit remediation: canonical title now avoids angle-bracket shell notation so the generated Markdown changelog remains well formed."
-files[2]{path,scope,note}:
+  "2026-08-26T21:27:34.094Z","harness:codex","GitHub intake: GH-1125 https://github.com/unbraind/pm-cli/issues/1125. Complete all-status census found this closed item as the canonical unknown-help owner; no duplicate created. Red reproduction: pm learn --help exits 2 with the correct did-you-mean on stderr but also emits full root help on stdout, making the probe look successful to stdout-only consumers."
+  "2026-08-26T21:34:26.337Z","harness:codex","TDD red: real-runtime unknown-help regression now asserts stdout never contains root usage; arbitrary, link, and learn probes still leak the root help before the structured usage error."
+  "2026-08-26T22:51:36.963Z","harness:codex","Evidence: unknown help paths now enter the structured Commander error boundary without rendering root usage first. Fresh-directory pm learn --help exited 2, wrote 0 stdout bytes, and emitted the learnings suggestion and recovery bundle on stderr; linked sandbox-safe suites passed 1/1 and 132/132. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean."
+learnings[1]{created_at,author,text}:
+  "2026-08-26T22:51:37.538Z","harness:codex",Commander help discovery must classify an unresolved command path before help rendering; otherwise a structured refusal can be correct while stray root help still corrupts stdout transport.
+files[4]{path,scope,note}:
   src/cli/commander-usage.ts,project,Existing structured unknown-command implementation proven by regression
+  src/cli/main.ts,project,Routes unknown help paths through the structured Commander error boundary without root-help stdout
+  tests/unit/cli/cli-main-errors.spec.ts,project,"Covers structured unknown-help JSON,lean,Sentry,and stdout isolation paths"
   tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Unknown help exit-code regression contract
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,project,240,Arbitrary and plausible unknown help paths exit 2
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-mruc7cb1-y73mtp,test,passed,"2026-07-21T07:33:29.265Z","2026-07-21T07:33:36.397Z","2026-07-21T07:33:36.397Z",1,0,0
-close_reason: Canonical release wording corrected after hosted review; unknown-command help runtime regression evidence remains valid.
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Arbitrary and plausible unknown help paths exit 2
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/cli-main-errors.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-26T22:49:56.527Z"
+      source_kind: local_mutation
+      source_ref: feat/package-lifecycle-and-lossless-beads-migration
+test_runs[2]:
+  - run_id: test-local-mruc7cb1-y73mtp
+    kind: test
+    status: passed
+    started_at: "2026-07-21T07:33:29.265Z"
+    finished_at: "2026-07-21T07:33:36.397Z"
+    recorded_at: "2026-07-21T07:33:36.397Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mtaot8id-qaymvg
+    kind: test
+    status: passed
+    started_at: "2026-08-26T22:50:09.158Z"
+    finished_at: "2026-08-26T22:50:34.453Z"
+    recorded_at: "2026-08-26T22:50:34.453Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CLI_GRAMMAR.md,project,Documents closed-world unknown-command recovery behavior
+close_reason: "Eliminated unknown-help stdout leakage while preserving structured suggestions, errors, telemetry, and recovery guidance with runtime and full-suite proof."
 body: ""

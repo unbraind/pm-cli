@@ -44,7 +44,6 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     for (const cmd of [
       "init",
-      "extension",
       "package",
       "packages",
       "create",
@@ -102,6 +101,13 @@ describe("generateBashScript", () => {
     ]) {
       expect(script).not.toContain(hiddenAlias);
     }
+    const rootCommandCompletion = script.slice(
+      script.indexOf("  if [[ $cword -eq 1 ]]"),
+      script.indexOf('  if [[ "$prev" == "--type" ]]'),
+    );
+    expect(rootCommandCompletion).not.toMatch(
+      /\b(extension|install|upgrade)\b/u,
+    );
   });
 
   it("includes list filter flags", () => {
@@ -386,10 +392,12 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("package|packages)");
     expect(script).toContain(
-      "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate",
+      "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate upgrade",
     );
     expect(script).toContain("--declarative");
     expect(script).toContain("--catalog");
+    expect(script).toContain("--cli-only");
+    expect(script).toContain("--packages-only");
   });
 
   it("includes fail-on-empty-test-run in bash test completions", () => {
@@ -684,7 +692,9 @@ describe("generateZshScript", () => {
   it("includes all pm subcommand descriptions", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
-    expect(script).toContain("extension:Manage extension lifecycle operations");
+    expect(script).not.toContain(
+      "extension:Manage extension lifecycle operations",
+    );
     expect(script).toContain("package:Manage package lifecycle operations");
     expect(script).toContain("packages:Alias for package");
     expect(script).toContain("create:Create a new project management item");
@@ -873,13 +883,16 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("package|packages)");
     expect(script).toContain(
-      "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)",
+      "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate upgrade)",
     );
     expect(script).toContain(
       "--declarative[Generate a composeExtension blueprint starter]",
     );
     expect(script).toContain(
       "--catalog[List bundled first-party package catalog entries]",
+    );
+    expect(script).toContain(
+      "--cli-only[Upgrade only the pm CLI/SDK npm package]",
     );
   });
 
@@ -962,7 +975,6 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     for (const [cmd, desc] of [
       ["init", "Initialize"],
-      ["extension", "Manage extension lifecycle operations"],
       ["package", "Manage package lifecycle operations"],
       ["packages", "Alias for package"],
       ["create", "Create"],
@@ -987,6 +999,9 @@ describe("generateFishScript", () => {
       expect(script).toContain(`-a ${cmd}`);
       expect(script).toContain(desc);
     }
+    expect(script).not.toContain(
+      "complete -c pm -n __pm_no_subcommand -a extension",
+    );
   });
 
   it("includes list filter flags for list commands", () => {
@@ -1085,6 +1100,10 @@ describe("generateFishScript", () => {
     );
     expect(script).toContain(
       "-l fail-on-warn -d 'Alias for --strict-exit (doctor)'",
+    );
+    expect(script).toContain("activate deactivate upgrade");
+    expect(script).toContain(
+      "-l cli-only -d 'Upgrade only the pm CLI/SDK npm package'",
     );
   });
 

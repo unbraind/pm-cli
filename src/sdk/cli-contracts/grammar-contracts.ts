@@ -58,6 +58,7 @@ export const PM_CLI_SHARED_VERBS = [
   "run",
   "show",
   "uninstall",
+  "upgrade",
   "verify",
 ] as const;
 
@@ -500,12 +501,6 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ["deps", [ITEM_ID]],
   ["docs", [ITEM_ID]],
   ["event", [positionalSlot("title", "string", true)]],
-  [
-    "extension",
-    [positionalSlot("target", "string", false, { polymorphic: true })],
-  ],
-  ["extension list", []],
-  ["extension scaffold", [positionalSlot("target", "string", true)]],
   ["files", [ITEM_ID]],
   ["files discover", [ITEM_ID]],
   [
@@ -531,7 +526,6 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
     "init",
     [positionalSlot("prefix-or-path", "string", false, { polymorphic: true })],
   ],
-  ["install", [positionalSlot("targets", "string", false, { variadic: true })]],
   ["item complete", [ITEM_ID, positionalSlot("reason", "string", false)]],
   ["item reopen", [ITEM_ID, positionalSlot("reason", "string", true)]],
   ["learnings", [ITEM_ID, OPTIONAL_TEXT]],
@@ -553,12 +547,14 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ],
   ["package list", []],
   ["package scaffold", [positionalSlot("target", "string", true)]],
+  ["package upgrade", [positionalSlot("target", "string", false)]],
   [
     "packages",
     [positionalSlot("target", "string", false, { polymorphic: true })],
   ],
   ["packages list", []],
   ["packages scaffold", [positionalSlot("target", "string", true)]],
+  ["packages upgrade", [positionalSlot("target", "string", false)]],
   ["pause-task", [ITEM_ID]],
   [
     "plan",
@@ -603,7 +599,6 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ],
   ["test", [ITEM_ID]],
   ["update", [ITEM_ID]],
-  ["upgrade", [positionalSlot("target", "string", false)]],
   [
     "workspace snapshot",
     [
@@ -824,9 +819,9 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "package reload",
       "package scaffold",
       "package uninstall",
+      "package upgrade",
     ]),
     ...destinationRows("package", "package", "consolidation", "pm-tnud", [
-      "extension",
       "extension activate",
       "extension adopt",
       "extension adopt-all",
@@ -837,13 +832,10 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "extension explore",
       "extension init",
       "extension install",
-      "extension list",
       "extension manage",
       "extension migrate",
       "extension reload",
-      "extension scaffold",
       "extension uninstall",
-      "install",
       "packages",
       "packages activate",
       "packages adopt",
@@ -861,7 +853,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "packages reload",
       "packages scaffold",
       "packages uninstall",
-      "upgrade",
+      "packages upgrade",
     ]),
     ...destinationRows("package", "package", "package_owned", "package:beads", [
       "beads import",

@@ -539,8 +539,13 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/query/get.ts", "sdk/query/list.ts", "sdk/query/search-contracts.ts"],
-    emitting_commands: ["get", "list", "search"],
+    sources: [
+      "sdk/governance/upgrade.ts",
+      "sdk/query/get.ts",
+      "sdk/query/list.ts",
+      "sdk/query/search-contracts.ts",
+    ],
+    emitting_commands: ["*", "get", "list", "search"],
     canonical_code: "projection_options_mutually_exclusive",
     aliases: [],
   },

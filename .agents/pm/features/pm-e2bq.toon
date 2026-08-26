@@ -2,20 +2,55 @@ id: pm-e2bq
 title: "Tiered contracts-driven help: one-screen core help, full surface via pm help --all, generated from the contract table"
 description: "Default pm --help shows only the ~15 canonical nouns; pm help --all (and --explain) reveals the full surface incl. deprecated aliases; both views plus completions and docs command tables are generated from sdk/cli-contracts so help can never drift from contracts. Duplicate check: pm-5k2w (closed) trimmed help alias bloat once; no generated-tiered-help item exists."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:35.309Z"
-updated_at: "2026-07-26T05:49:54.520Z"
+updated_at: "2026-08-26T22:52:02.619Z"
+closed_at: "2026-08-26T22:51:42.554Z"
+completed_at: "2026-08-26T22:51:42.554Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm --help renders one screen listing canonical nouns only; pm help --all lists everything incl. aliases marked deprecated; help/completions/docs command tables generated from the contract table with a drift gate; after-measurement (pm-a22j script) shows reduced default help + contracts token cost
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-pbyu,blocked_by,"2026-07-05T04:55:02.379Z",null,null
-  pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z",null,null
-  pm-1kxs,implements,"2026-07-25T06:28:03.187Z",null,null
-  pm-z436,implements,"2026-07-26T05:49:54.251Z",null,null
+resolution: implemented
+expected_result: Default help remains compact while explicit full discovery exposes the complete command and deprecated alias surface from runtime contracts.
+actual_result: Default/full structured help exposes 14/69 subcommands and 23 lifecycle-described aliases; package lifecycle exposes 15 subcommands and all gates pass.
+dependencies[4]{id,kind,created_at}:
+  pm-pbyu,blocked_by,"2026-07-05T04:55:02.379Z"
+  pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z"
+  pm-1kxs,implements,"2026-07-25T06:28:03.187Z"
+  pm-z436,implements,"2026-07-26T05:49:54.251Z"
+comments[3]{created_at,author,text}:
+  "2026-08-26T21:27:35.154Z","harness:codex","GitHub intake: GH-1127 https://github.com/unbraind/pm-cli/issues/1127. Reused the exact tiered-help feature. Red reproduction: default help intentionally stays at 14 canonical commands, but pm help --all is not declared and still returns only the same 14-command view instead of the complete standard/full surface."
+  "2026-08-26T21:34:27.309Z","harness:codex","TDD red: help presentation and structured-help specs prove --all still filters to core commands and does not expose deprecated alias lifecycle metadata."
+  "2026-08-26T22:51:37.953Z","harness:codex","Evidence: root help is now tiered: fresh-directory structured acceptance exposed 14 default subcommands versus 69 with --all, plus 23 lifecycle-described command aliases; package help exposed 15 lifecycle subcommands including install and upgrade. The linked sandbox-safe suite passed 239/239. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, command grammar 164/164, flag parity 2839/2839, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean."
+learnings[1]{created_at,author,text}:
+  "2026-08-26T22:51:38.552Z","harness:codex",A compact default help surface and an explicit full-discovery surface can share one command registry when visibility selection is centralized and structured help carries alias lifecycle metadata.
+files[6]{path,scope,note}:
+  src/cli/help-content.ts,project,Implements compact default and full discovery help tiers
+  src/cli/help-json-payload.ts,project,Publishes hidden command alias lifecycle metadata in full structured help
+  src/sdk/cli-bootstrap.ts,project,Carries full-discovery help through bootstrap parsing
+  src/sdk/cli-program.ts,project,Declares the root full-discovery option
+  tests/unit/cli/help-command-path-resolution.spec.ts,project,Proves alias metadata and exact path resolution
+  tests/unit/cli/help-content.spec.ts,project,Proves default and full help selection
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,"harness:codex","2026-08-26T22:49:41.971Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[1]:
+  - run_id: test-local-mtaotmxu-i63nmv
+    kind: test
+    status: passed
+    started_at: "2026-08-26T22:50:34.905Z"
+    finished_at: "2026-08-26T22:50:53.154Z"
+    recorded_at: "2026-08-26T22:50:53.154Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CLI_GRAMMAR.md,project,Documents default versus full command discovery
+close_reason: Delivered compact default and complete full-discovery help with machine-readable alias lifecycle metadata and verified package namespace discovery.
 body: ""

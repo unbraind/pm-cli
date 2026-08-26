@@ -40,6 +40,7 @@ function assertNoTransposedAnnotationAction(
   }
   const suppliedText =
     readOptionString(options, "add") ??
+    readOptionString(options, "text") ??
     readOptionString(options, "note") ??
     readOptionString(options, "body") ??
     readOptionString(options, "comment");
@@ -50,12 +51,7 @@ function assertNoTransposedAnnotationAction(
   else if (file !== undefined) retryArgs.push("--file", file);
   else retryArgs.push("--add", "-");
   const suggestedRetry = renderPmCommand(retryArgs);
-  const stdinRetry = renderPmCommand([
-    collection,
-    text.trim(),
-    "--add",
-    "-",
-  ]);
+  const stdinRetry = renderPmCommand([collection, text.trim(), "--add", "-"]);
   throw new PmCliError(
     `The positional token "add" was parsed as the item id, while "${text.trim()}" was parsed as annotation text. ${collection} does not use an add subcommand.`,
     EXIT_CODE.USAGE,
@@ -77,6 +73,26 @@ function assertNoTransposedAnnotationAction(
   );
 }
 
+function resolveAnnotationTextAliases(
+  label: string,
+  options: Record<string, unknown>,
+  aliases: readonly string[],
+): string | undefined {
+  const supplied = aliases.flatMap((alias) => {
+    const value = readOptionString(options, alias);
+    return value === undefined ? [] : [{ alias, value }];
+  });
+  const distinctValues = [...new Set(supplied.map(({ value }) => value))];
+  if (distinctValues.length > 1) {
+    throw new PmCliError(
+      `Specify ${label} text with one alias or the same value across aliases: ${supplied.map(({ alias }) => `--${alias}`).join(", ")}`,
+      EXIT_CODE.USAGE,
+      { code: "annotation_alias_conflict" },
+    );
+  }
+  return supplied[0]?.value;
+}
+
 function resolveCommentSources(
   text: string | undefined,
   options: Record<string, unknown>,
@@ -91,10 +107,12 @@ function resolveCommentSources(
   const editIndex = typeof options.edit === "number" ? options.edit : undefined;
   const deleteIndex =
     typeof options.delete === "number" ? options.delete : undefined;
-  const addFromOption =
-    readOptionString(options, "add") ??
-    readOptionString(options, "body") ??
-    readOptionString(options, "comment");
+  const addFromOption = resolveAnnotationTextAliases("comment", options, [
+    "add",
+    "text",
+    "body",
+    "comment",
+  ]);
   const addFromPositional = typeof text === "string" ? text : undefined;
   const readFromStdin = options.stdin === true;
   const readFromFile = readOptionString(options, "file");
@@ -141,21 +159,11 @@ function resolveSingleTextSource(
   positional: string | undefined,
   options: Record<string, unknown>,
 ): string | undefined {
-  const canonicalAdd = readOptionString(options, "add");
-  const aliasAdd =
-    label === "note" ? readOptionString(options, "note") : undefined;
-  if (
-    canonicalAdd !== undefined &&
-    aliasAdd !== undefined &&
-    canonicalAdd !== aliasAdd
-  ) {
-    throw new PmCliError(
-      "Specify note text with either --add or --note, not conflicting values for both aliases",
-      EXIT_CODE.USAGE,
-      { code: "annotation_alias_conflict" },
-    );
-  }
-  const addFromOption = canonicalAdd ?? aliasAdd;
+  const addFromOption = resolveAnnotationTextAliases(
+    label,
+    options,
+    label === "note" ? ["add", "text", "note"] : ["add", "text"],
+  );
   const addFromPositional =
     typeof positional === "string" ? positional : undefined;
   if (addFromOption !== undefined && addFromPositional !== undefined) {
@@ -337,6 +345,7 @@ export function registerAnnotationCommands(
     .description("List, add, edit, or delete comments for an item.")
     .action(runCommentsAction);
   addHiddenOption(commentsCommand, "--body <text>", "Alias for --add", false);
+  addHiddenOption(commentsCommand, "--text <text>", "Alias for --add", false);
   addHiddenOption(
     commentsCommand,
     "--comment <text>",
@@ -344,7 +353,7 @@ export function registerAnnotationCommands(
     false,
   );
 
-  program
+  const notesCommand = program
     .command("notes")
     .argument("<id>", "Item id")
     .argument(
@@ -379,8 +388,9 @@ export function registerAnnotationCommands(
     .option("--force", "Force ownership override")
     .description("Manage merge-safe text notes and JSON context events.")
     .action(runNotesAction);
+  addHiddenOption(notesCommand, "--text <text>", "Alias for --add", false);
 
-  program
+  const learningsCommand = program
     .command("learnings")
     .argument("<id>", "Item id")
     .argument(
@@ -419,4 +429,5 @@ export function registerAnnotationCommands(
     .option("--force", "Force ownership override")
     .description("List, add, edit, or delete learnings for an item.")
     .action(runLearningsAction);
+  addHiddenOption(learningsCommand, "--text <text>", "Alias for --add", false);
 }

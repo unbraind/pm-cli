@@ -2773,6 +2773,11 @@ describe("mutation command actions", () => {
       lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1)
         .add,
     ).toBe("looks good");
+    await runCli("comments", "pm-1", "--text", "text alias");
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1)
+        .add,
+    ).toBe("text alias");
     await expect(runCli("comments", "pm-1", "a", "--add", "b")).rejects.toThrow(
       "either as positional [text] or with --add",
     );
@@ -2780,7 +2785,7 @@ describe("mutation command actions", () => {
       runCli("comments", "pm-1", "a", "--stdin", "--file", "x"),
     ).rejects.toThrow("exactly one source");
     await runCli("comments", "pm-1", "--limit", "3");
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(1);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
 
     // --edit/--delete are coerced to numbers and forwarded; both are mutations that refresh.
     await runCli("comments", "pm-1", "--edit", "2", "fixed text");
@@ -2795,7 +2800,7 @@ describe("mutation command actions", () => {
       lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1)
         .delete,
     ).toBe(1);
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(3);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(4);
 
     await runCli("notes", "pm-1", "--add", "note text");
     expect(
@@ -2805,6 +2810,10 @@ describe("mutation command actions", () => {
     expect(
       lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add,
     ).toBe("alias note");
+    await runCli("notes", "pm-1", "--text", "text note");
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add,
+    ).toBe("text note");
     await expect(
       runCli(
         "notes",
@@ -2832,11 +2841,9 @@ describe("mutation command actions", () => {
     await expect(
       runCli("notes", "add", "pm-1", "--note", "transposed"),
     ).rejects.toThrow("does not use an add subcommand");
-    const transposedWithoutText = await runCli(
-      "notes",
-      "add",
-      "pm-1",
-    ).catch((error: unknown) => error);
+    const transposedWithoutText = await runCli("notes", "add", "pm-1").catch(
+      (error: unknown) => error,
+    );
     expect(transposedWithoutText).toMatchObject<Partial<PmCliError>>({
       code: "annotation_transposed_subcommand",
       context: {
@@ -2905,6 +2912,11 @@ describe("mutation command actions", () => {
     );
     expect(learningsOptions.add).toBe("lesson");
     expect(learningsOptions.ownershipAppendBypass).toBe(false);
+    await runCli("learnings", "pm-1", "--text", "text learning");
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1)
+        .add,
+    ).toBe("text learning");
     await runCli("learnings", "pm-1", "--edit", "2", "revised lesson");
     const learningEditOptions = lastCallArg<Record<string, unknown>>(
       vi.mocked(runLearnings) as never,
@@ -2920,7 +2932,7 @@ describe("mutation command actions", () => {
     await expect(
       runCli("learnings", "pm-1", "a", "--add", "b"),
     ).rejects.toThrow("not both");
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(10);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(13);
   });
 
   it("maps files/docs link management and discover routing", async () => {
@@ -4285,6 +4297,44 @@ describe("setup command actions", () => {
     await runCliRaw("upgrade");
     expect(process.exitCode).toBeUndefined();
     expect(vi.mocked(runUpgrade)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw(
+      "package",
+      "upgrade",
+      "managed-package",
+      "--packages-only",
+      "--dry-run",
+    );
+    expect(vi.mocked(runUpgrade)).toHaveBeenCalledTimes(2);
+    expect(lastCallArg(vi.mocked(runUpgrade) as never, 0)).toBe(
+      "managed-package",
+    );
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runUpgrade) as never, 1),
+    ).toMatchObject({ packagesOnly: true, dryRun: true });
+  });
+
+  it("respects disabled deprecation hints for executable compatibility aliases", async () => {
+    const settingsPath = path.join(tmpRoot, "settings.json");
+    await writeFile(
+      settingsPath,
+      `${JSON.stringify({
+        ...SETTINGS_DEFAULTS,
+        ux: { deprecation_hints: false },
+      })}\n`,
+      "utf8",
+    );
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    let warned: string;
+    try {
+      await runCliRaw("upgrade", "--packages-only", "--dry-run");
+      warned = stderr.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      stderr.mockRestore();
+      await rm(settingsPath, { force: true });
+    }
+    expect(warned).not.toContain("Deprecated command");
+    expect(vi.mocked(runUpgrade)).toHaveBeenCalledTimes(1);
   });
 
   it("routes lifecycle subcommands to forced extension actions", async () => {
@@ -4299,7 +4349,7 @@ describe("setup command actions", () => {
     );
     expect(normalized.explore).toBe(true);
     expect(normalized.global).toBe(true);
-    expect(normalized.vocabulary).toBe("extension");
+    expect(normalized.vocabulary).toBe("package");
 
     await runCli("extension", "explore");
     normalized = lastCallArg<Record<string, unknown>>(
@@ -4340,6 +4390,17 @@ describe("setup command actions", () => {
     await runCli("package", "install", "npm:pm-brief");
     expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe(
       "npm:pm-brief",
+    );
+    normalized = lastCallArg<Record<string, unknown>>(
+      vi.mocked(runExtension) as never,
+      1,
+    );
+    expect(normalized.install).toBe(true);
+    expect(normalized.vocabulary).toBe("package");
+
+    await runCli("extension", "install", "npm:pm-compat");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe(
+      "npm:pm-compat",
     );
     normalized = lastCallArg<Record<string, unknown>>(
       vi.mocked(runExtension) as never,
@@ -4552,7 +4613,7 @@ describe("setup command actions", () => {
       adopt: true,
       github: "owner/repo",
       ref: "main",
-      vocabulary: "extension",
+      vocabulary: "package",
     });
 
     await runCli("extension", "adopt-all");
@@ -4563,7 +4624,7 @@ describe("setup command actions", () => {
     );
     expect(normalized).toMatchObject({
       adoptAll: true,
-      vocabulary: "extension",
+      vocabulary: "package",
     });
 
     await runCli("extension", "activate", "ext-managed");
@@ -4576,7 +4637,7 @@ describe("setup command actions", () => {
     );
     expect(normalized).toMatchObject({
       activate: true,
-      vocabulary: "extension",
+      vocabulary: "package",
     });
 
     await runCli("package", "deactivate", "pkg-managed", "--global");
@@ -4606,7 +4667,7 @@ describe("setup command actions", () => {
     expect(normalized).toMatchObject({
       uninstall: true,
       global: true,
-      vocabulary: "extension",
+      vocabulary: "package",
     });
 
     await runCli("package", "manage", "--runtime-probe", "--fix-managed-state");
@@ -4629,7 +4690,7 @@ describe("setup command actions", () => {
     expect(normalized).toMatchObject({
       reload: true,
       watch: true,
-      vocabulary: "extension",
+      vocabulary: "package",
     });
 
     await runCli("package", "catalog", "--fields", "alias,installed");

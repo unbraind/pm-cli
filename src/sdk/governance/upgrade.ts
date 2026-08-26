@@ -475,6 +475,18 @@ export async function runUpgrade(
     throw new PmCliError(
       'Options "--cli-only" and "--packages-only" are mutually exclusive.',
       EXIT_CODE.USAGE,
+      {
+        code: "projection_options_mutually_exclusive",
+        recovery: {
+          suggested_retry: "pm package upgrade --packages-only --dry-run",
+          suggested_retry_args: [
+            "package",
+            "upgrade",
+            "--packages-only",
+            "--dry-run",
+          ],
+        },
+      },
     );
   }
 

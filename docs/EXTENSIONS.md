@@ -7,42 +7,42 @@ Packages add optional `pm` workflows without changing the core CLI. A package ca
 ```bash
 pm package init ./my-package
 pm package init ./my-hook-package --capability hooks
-pm install ./my-package --project
+pm package install ./my-package --project
 pm package doctor --project --detail summary
 pm package reload --project
-pm upgrade --dry-run
+pm package upgrade --dry-run
 ```
 
-`pm extension ...` remains supported for compatibility and low-level runtime debugging. Related docs: [SDK](SDK.md), [Configuration](CONFIGURATION.md), [Testing](TESTING.md), [Command Reference](COMMANDS.md), [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md).
+Hidden `pm extension ...`, `pm install ...`, and `pm upgrade ...` aliases remain supported for compatibility. They execute the canonical package handlers, keep stdout machine-compatible, and emit one migration hint on stderr unless `ux.deprecation_hints` is disabled. Related docs: [SDK](SDK.md), [Configuration](CONFIGURATION.md), [Testing](TESTING.md), [Command Reference](COMMANDS.md), [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md).
 
 ## Package Sources
 
-`pm install` accepts local, registry, and GitHub sources:
+`pm package install` accepts local, registry, and GitHub sources:
 
 ```bash
-pm install ./local-package --project
-pm install /absolute/path/to/package --project
-pm install ./my-package-1.2.3.tgz --project
-pm install npm:./my-package-1.2.3.tar.gz --project
-pm install npm:@scope/package --project
-pm install npm:package@1.2.3 --project
-pm install https://github.com/org/repo --project
-pm install --github org/repo/path --ref main --project
+pm package install ./local-package --project
+pm package install /absolute/path/to/package --project
+pm package install ./my-package-1.2.3.tgz --project
+pm package install npm:./my-package-1.2.3.tar.gz --project
+pm package install npm:@scope/package --project
+pm package install npm:package@1.2.3 --project
+pm package install https://github.com/org/repo --project
+pm package install --github org/repo/path --ref main --project
 ```
 
 Bundled first-party packages live under `packages/pm-*`:
 
 ```bash
 pm package catalog --project
-pm install all --project
-pm install calendar --project
-pm install search-advanced --project
-pm install kanban --project
+pm package install all --project
+pm package install calendar --project
+pm package install search-advanced --project
+pm package install kanban --project
 ```
 
-`pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name. A bare bundled alias that also names an installed npm package reports both explicit choices in `source_resolution`; see [Extension Lifecycle Contracts](EXTENSION_LIFECYCLE.md).
+`pm package install '*'`, `pm package install all`, and shell-expanded `pm package install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name. A bare bundled alias that also names an installed npm package reports both explicit choices in `source_resolution`; see [Extension Lifecycle Contracts](EXTENSION_LIFECYCLE.md).
 
-External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`. Install results include package-owned `command_paths`, `action_paths`, `contributions`, `command_discovery`, and a light `verification` block covering the target tracker, activation status, registered commands/actions/item types, and health verdict. Agents should consume those fields instead of guessing from the package name or immediately spending another invocation on doctor. A successful activation persists the versioned contribution inventory in `.managed-extensions.json`; subsequent discovery can enumerate command handlers, hooks, parser/renderer targets, schema names, and the other registered surfaces without importing the package module. A failed runtime activation returns `ok: false`, `activated: false`, a non-zero CLI exit, and actionable diagnostics; missing SDK resolution adds an explicit dependency recovery step. Local installs are containment-safe when the extension destination is nested inside the source checkout: pm stages the package outside the source and prunes the destination, `.agents`, `node_modules`, and install-backup directories before copying, so reinstalling cannot recursively copy tracker history, host dependencies, or prior backups.
+External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm package install --project github.com/unbraind/<name>`. Install results include package-owned `command_paths`, `action_paths`, `contributions`, `command_discovery`, and a light `verification` block covering the target tracker, activation status, registered commands/actions/item types, and health verdict. Agents should consume those fields instead of guessing from the package name or immediately spending another invocation on doctor. A successful activation persists the versioned contribution inventory in `.managed-extensions.json`; subsequent discovery can enumerate command handlers, hooks, parser/renderer targets, schema names, and the other registered surfaces without importing the package module. A failed runtime activation returns `ok: false`, `activated: false`, a non-zero CLI exit, and actionable diagnostics; missing SDK resolution adds an explicit dependency recovery step. Local installs are containment-safe when the extension destination is nested inside the source checkout: pm stages the package outside the source and prunes the destination, `.agents`, `node_modules`, and install-backup directories before copying, so reinstalling cannot recursively copy tracker history, host dependencies, or prior backups.
 Local `.tgz` and `.tar.gz` npm archives are inspected and extracted in an isolated temporary directory without invoking a shell. Archives must contain one `package/package.json` root, regular files/directories only, and bounded entry and expanded-byte totals. Absolute paths, traversal, alternate roots, links, device entries, oversized entries, and decompression-ratio abuse fail before installation. The managed source remains the original archive path, so reload and upgrade provenance do not point at a temporary extraction directory.
 Registry dependency names and versions are parsed as npm package specs before the install subprocess starts. Leading-option names and shell control syntax are rejected. npm reads those validated dependencies from an isolated runtime-only manifest; no caller-controlled spec is forwarded through the Windows command shell, and the fixed invocation still ends option parsing with `--`. Runtime verification then activates a temporary snapshot of the complete installed extension directory, so an upgrade cannot silently reuse stale transitive ESM dependencies from the current process. Successful install details expose `module_graph_verification: "fresh_snapshot"` for this check.
 pm-owned npm subprocesses clear any inherited, case-insensitive `npm_config_allow_scripts` value while retaining registry, auth, proxy, and executable-path environment; `--ignore-scripts` remains authoritative. Tracked by [pm-gh1072](../.agents/pm/issues/pm-gh1072.toon).
@@ -50,8 +50,8 @@ An explicit `--pm-path` scopes project installs to that tracker root, including 
 
 ```bash
 npm search "pm-cli pm-package"
-pm install npm:pm-changelog --project
-pm install npm:pm-github --project
+pm package install npm:pm-changelog --project
+pm package install npm:pm-github --project
 pm package doctor --project --detail deep --trace
 pm github validate --repo owner/repo
 ```
@@ -91,7 +91,7 @@ Package roots declare resources in `package.json` under `pm`:
 ```
 
 Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, and `pm.prompts` are catalog metadata (metadata-only — they are discovered and surfaced in the catalog but not executed). Declare agent-facing prompt/slash-command markdown under `pm.prompts` and non-code assets (images, skills, fixtures) under `pm.assets`; their conventional roots are `prompts/` (also `.agents/pm/prompts/`) and `assets/` (also `.agents/pm/assets/`).
-`pm package init` and its compatibility spelling `pm extension init` emit the same publishable root-extension artifact (`"extensions": ["."]`): package metadata, a typed `index.ts`, a colocated `node:test` suite, a strict type-check-only `tsconfig.json`, and `typecheck`/`test` scripts. Both results report the canonical `package_name` and exact `invocation_command`; an already prefixed target such as `pm-my-workflow` stays `pm-my-workflow` instead of becoming `pm-pm-my-workflow`. The manifest `entry` points at `./index.ts` itself (ADR [pm-2c28](../.agents/pm/decisions/pm-2c28.toon) / [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)). pm loads that `.ts` entry directly via Node's native type stripping (Node >=22.18), so there is no build step — run `npm install` (for the peer SDK and type-checking) before `pm install`. The generated README shows how to author exported command/hook definitions with the SDK [define\* builders](../.agents/pm/decisions/pm-3mph.toon). `--capability` selects one of ten starters — one per SDK registration surface (`commands`, `hooks`, `search`, `importers`, `schema`, `profile`, `renderers`, `parser`, `preflight`, `services`) — each keeping a runnable starter command and adding the surface's registration plus a colocated `node:test` suite built on the matching SDK `assertRegistered*`/`runRegistered*ForTest` helpers. The option is repeatable for shell and config composition: repeating the same capability is idempotent, while combining distinct starter shapes fails with a usage error that asks the author to select one explicit scaffold capability. The full per-capability matrix (what each starter registers, which starters also declare `schema` because flag metadata is schema-governed, and why `schema`/`profile` omit `activation.commands` so their global contributions activate conservatively for every command) lives in [SDK.md — Minimal Command Extension](./SDK.md#minimal-command-extension). Starter manifests use the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Declarative starters import `manifest.json` in their generated test and call `assertExtensionManifestMatchesBlueprint`, so capability drift fails locally before publication. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`, which additionally emits the advisory `extension_schema_narrow_activation` warning when a package registers custom item types/fields yet declares narrow `activation.commands` (the schema footgun above), recommending the field be dropped so the type stays globally available.
+`pm package init` and its compatibility spelling `pm extension init` emit the same publishable root-extension artifact (`"extensions": ["."]`): package metadata, a typed `index.ts`, a colocated `node:test` suite, a strict type-check-only `tsconfig.json`, and `typecheck`/`test` scripts. Both results report the canonical `package_name` and exact `invocation_command`; an already prefixed target such as `pm-my-workflow` stays `pm-my-workflow` instead of becoming `pm-pm-my-workflow`. The manifest `entry` points at `./index.ts` itself (ADR [pm-2c28](../.agents/pm/decisions/pm-2c28.toon) / [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)). pm loads that `.ts` entry directly via Node's native type stripping (Node >=22.18), so there is no build step — run `npm install` (for the peer SDK and type-checking) before `pm package install`. The generated README shows how to author exported command/hook definitions with the SDK [define\* builders](../.agents/pm/decisions/pm-3mph.toon). `--capability` selects one of ten starters — one per SDK registration surface (`commands`, `hooks`, `search`, `importers`, `schema`, `profile`, `renderers`, `parser`, `preflight`, `services`) — each keeping a runnable starter command and adding the surface's registration plus a colocated `node:test` suite built on the matching SDK `assertRegistered*`/`runRegistered*ForTest` helpers. The option is repeatable for shell and config composition: repeating the same capability is idempotent, while combining distinct starter shapes fails with a usage error that asks the author to select one explicit scaffold capability. The full per-capability matrix (what each starter registers, which starters also declare `schema` because flag metadata is schema-governed, and why `schema`/`profile` omit `activation.commands` so their global contributions activate conservatively for every command) lives in [SDK.md — Minimal Command Extension](./SDK.md#minimal-command-extension). Starter manifests use the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Declarative starters import `manifest.json` in their generated test and call `assertExtensionManifestMatchesBlueprint`, so capability drift fails locally before publication. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`, which additionally emits the advisory `extension_schema_narrow_activation` warning when a package registers custom item types/fields yet declares narrow `activation.commands` (the schema footgun above), recommending the field be dropped so the type stays globally available.
 Package tests can pair `readPmPackageManifest(packageRoot)` with
 `assertPackageManifest(manifest, { resources: ... })` from
 `@unbrained/pm-cli/sdk` to prove aliases and resource paths without duplicating
@@ -202,7 +202,7 @@ Use [extension-manifest.schema.json](schemas/extension-manifest.schema.json) as 
 - An empty-string or non-string `pm_min_version`/`pm_max_version` makes the whole manifest malformed (`extension_manifest_invalid:<layer>:<name>`). Omit the field instead of leaving it blank.
 - Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version`/`pm_max_version` are the loader-enforced compatibility fields.
 - Declare only capabilities the extension actually uses. Declaring a capability it never registers against is over-broad: `pm package doctor` emits an advisory `extension_capability_unused:<layer>:<name>:<capability>` warning (never blocking) so you can trim the manifest, while the inverse — registering a surface whose capability is undeclared — is the blocking `extension_capability_missing` activation failure. Catch over-declaration earlier with the `assertExtensionCapabilityUsage` SDK testing helper.
-- `contributions` is the versioned, serializable surface inventory. `schema_version: 1` supports command definitions/handlers/overrides, hook phases, flag/parser targets, item types and fields, relationship kinds, migrations, profiles, importers/exporters, search/vector providers, service/renderer targets, renderer command ownership, and the preflight count. `pm install` derives and persists this block mechanically from the real activation result; authors may also declare it in `manifest.json` for build-time/static discovery.
+- `contributions` is the versioned, serializable surface inventory. `schema_version: 1` supports command definitions/handlers/overrides, hook phases, flag/parser targets, item types and fields, relationship kinds, migrations, profiles, importers/exporters, search/vector providers, service/renderer targets, renderer command ownership, and the preflight count. `pm package install` derives and persists this block mechanically from the real activation result; authors may also declare it in `manifest.json` for build-time/static discovery.
 - `activation.commands` is an optional array of the command paths on which the extension may activate (e.g. `["hello", "tickets import"]`). An explicit list is authoritative for every capability, including hooks and parser/preflight/renderer packages: when no declared path matches, pm does not import the module. Omit it and pm first uses the static contribution inventory, then falls back to conservative capability heuristics for legacy packages whose contributions are unknown.
 - Unknown capabilities emit deterministic warnings; legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.
 
@@ -293,9 +293,11 @@ Doctor JSON also includes `triage.collision_plan` with grouped surfaces, ranked 
 ## Runtime APIs
 
 Use the public SDK barrel. Do not deep-import from `src/core` or `dist/core`.
+
 ```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 ```
+
 Common APIs:
 
 - `api.extension` is a read-only identity (`name`, `layer`, `version`, `capabilities`, `pm_min_version?`, `pm_max_version?`, `source_package?`) for self-identifying logs and version gating without re-reading the manifest.
@@ -383,14 +385,14 @@ Compatibility equivalents remain available through `pm extension ...` for existi
 
 ## Upgrade Workflow
 
-`pm upgrade` is the package-first update entrypoint:
+`pm package upgrade` is the package-first update entrypoint:
 
 ```bash
-pm upgrade --dry-run
-pm upgrade
-pm upgrade --packages-only
-pm upgrade todos --dry-run
-pm upgrade --cli-only --repair
+pm package upgrade --dry-run
+pm package upgrade
+pm package upgrade --packages-only
+pm package upgrade todos --dry-run
+pm package upgrade --cli-only --repair
 ```
 
 CLI/SDK upgrades use `npm install -g @unbrained/pm-cli@<tag>`. Managed package upgrades reuse the source recorded at install time, including registry, GitHub, local, and first-party package sources.
@@ -401,7 +403,7 @@ Use non-interactive commands with explicit project scope:
 
 ```bash
 pm init --defaults --author codex-agent
-pm install '*' --project
+pm package install '*' --project
 pm package doctor --project --detail summary --json
 pm contracts --flags-only --json
 pm health --check-only --json
@@ -421,8 +423,7 @@ import { createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";
 import { activateExtensionForTest } from "@unbrained/pm-cli/sdk/testing";
 ```
 
-Runtime modules use static SDK imports; installed copies receive a host SDK link. Use `createPmCliExpectedError(message, { exitCode, context })` for expected user/action failures from package commands. It creates an `Error` named `PmCliError` with a structural `exitCode`, so separately installed package code still gets expected-error handling and Sentry filtering.
-Commands that need to render a structured gate report and still fail CI may instead return an object with `exit_code` from `1` through `255`; optional string `code` and `remediation` fields are preserved by the host. The result is rendered normally, and the CLI exits with the declared status. Thrown plain objects also preserve bounded `code` and `remediation` fields in the host error contract.
+Runtime modules use static SDK imports; installed copies receive a host SDK link. Use `createPmCliExpectedError(message, { exitCode, context })` for expected user/action failures from package commands. It creates an `Error` named `PmCliError` with a structural `exitCode`, so separately installed package code still gets expected-error handling and Sentry filtering. Commands that need to render a structured gate report and still fail CI may instead return an object with `exit_code` from `1` through `255`; optional string `code` and `remediation` fields are preserved by the host. The result is rendered normally, and the CLI exits with the declared status. Thrown plain objects also preserve bounded `code` and `remediation` fields in the host error contract.
 Prefer the `define*` builders for exported registration definitions (`defineCommand`, `defineFlag`, `defineSearchProvider`, `defineAfterCommandHook`, and the matching override/import/export/hook helpers; see ADR [pm-3mph](../.agents/pm/decisions/pm-3mph.toon)). They are zero-cost identity functions that preserve object literal types and contextually type function parameters before the definitions reach `api.register*`; runtime validation remains in the loader, and behavior validation remains in `sdk/testing`.
 Packages that extend core list or search behavior should import `LIST_FILTER_EXTENSION_FLAG_DEFINITIONS`, `SEARCH_EXTENSION_FLAG_DEFINITIONS`, or `toExtensionFlagDefinitions` from `@unbrained/pm-cli/sdk/authoring` instead of copying CLI option tables. For example: `api.registerFlags("my search", SEARCH_EXTENSION_FLAG_DEFINITIONS)`.
 The adapter expands aliases into registration-ready definitions and preserves string/boolean behavior, list accumulation, repeatability, requiredness, descriptions, and value names from the canonical CLI contracts. Use `toExtensionFlagDefinitions` with another exported CLI flag contract for a narrower baseline.

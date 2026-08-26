@@ -5,10 +5,16 @@ import {
   PM_COMMAND_DESTINATION_CONTRACTS,
   PM_COMMAND_POSITIONAL_CONTRACTS,
 } from "../../../../src/sdk/cli-contracts/grammar-contracts.js";
+import { PM_COMMAND_ALIAS_CONTRACTS } from "../../../../src/sdk/cli-contracts/command-aliases.js";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
 
 const harness = createScriptHarness();
 const initialExitCode = process.exitCode;
+const HIDDEN_TOP_LEVEL_ALIASES = new Set(
+  PM_COMMAND_ALIAS_CONTRACTS.filter(
+    ({ alias, hidden }) => hidden && !alias.includes(" "),
+  ).map(({ alias }) => alias),
+);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -115,6 +121,9 @@ async function runGrammarGate(
           if (!command.startsWith(prefix)) return [];
           const remainder = command.slice(prefix.length);
           const name = remainder.split(" ")[0];
+          if (parent.length === 0 && HIDDEN_TOP_LEVEL_ALIASES.has(name ?? "")) {
+            return [];
+          }
           return typeof name === "string" && name.length > 0 ? [name] : [];
         }),
       ),
@@ -230,7 +239,13 @@ describe("command grammar gate", () => {
       },
     });
     expect(result.exitCode ?? 0).toBe(0);
-    expect(result.module.collectLiveCliCommandPaths()).toEqual(
+    expect(
+      result.module.collectLiveCliCommandPaths(
+        undefined,
+        [],
+        liveCommandSummaries.map(({ command }) => command),
+      ),
+    ).toEqual(
       PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command).sort(
         (left, right) => left.localeCompare(right),
       ),
@@ -331,7 +346,10 @@ describe("command grammar gate", () => {
     const result = await runGrammarGate(undefined);
     expect(result.report.ok).toBe(false);
     expect(result.report.command_count).toBe(
-      PM_COMMAND_DESTINATION_CONTRACTS.length,
+      PM_COMMAND_DESTINATION_CONTRACTS.filter(
+        ({ command }) =>
+          !HIDDEN_TOP_LEVEL_ALIASES.has(command.split(" ")[0] ?? ""),
+      ).length,
     );
     expect(result.report.findings).toContainEqual(
       expect.objectContaining({

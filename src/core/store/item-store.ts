@@ -123,12 +123,15 @@ export async function locateItem(
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): Promise<LocatedItem | null> {
+  const trimmedRawId = rawId.trim();
+  const exactRawId = trimmedRawId.startsWith("#")
+    ? trimmedRawId.slice(1)
+    : trimmedRawId;
   const normalizedId = normalizeItemId(rawId, idPrefix);
   const rawNormalizedId = normalizeRawItemId(rawId);
-  const candidateIds =
-    normalizedId === rawNormalizedId
-      ? [normalizedId]
-      : [normalizedId, rawNormalizedId];
+  const candidateIds = [
+    ...new Set([exactRawId, normalizedId, rawNormalizedId]),
+  ].filter((candidateId) => candidateId.length > 0);
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const searchOrder = resolveItemFormatSearchOrder(preferredFormat);
   for (const candidateId of candidateIds) {

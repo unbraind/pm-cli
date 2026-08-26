@@ -1281,6 +1281,16 @@
       ],
       "package_version": "2026.8.26",
       "reason": "Complete the unmerged Skills directory pagination contract with required hasMore metadata"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_CLI_GRAMMAR_CONTRACT",
+        "signature ./sdk:PM_CLI_SHARED_VERBS",
+        "signature ./sdk/contracts:PM_CLI_GRAMMAR_CONTRACT",
+        "signature ./sdk/contracts:PM_CLI_SHARED_VERBS"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "pm-tnud intentionally adds the canonical package upgrade verb to the public CLI grammar contract"
     }
   ],
   "entrypoints": {
@@ -10231,7 +10241,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_GRAMMAR_CONTRACT",
-          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
+          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
         },
         {
           "classification": "contract_data",
@@ -10249,7 +10259,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_SHARED_VERBS",
-          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]"
+          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]"
         },
         {
           "classification": "contract_data",
@@ -20473,7 +20483,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_GRAMMAR_CONTRACT",
-          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
+          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
         },
         {
           "classification": "contract_data",
@@ -20491,7 +20501,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_SHARED_VERBS",
-          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]"
+          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]"
         },
         {
           "classification": "contract_data",

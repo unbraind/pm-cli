@@ -66,7 +66,7 @@ describe("core/item/item-format additional branch coverage", () => {
     expect(normalized.dependencies?.map((value) => `${value.id}:${value.kind}`)).toEqual([
       "pm-aaa:child",
       "pm-dep:blocks",
-      "pm-dep:related",
+      "PM-DEP:related",
     ]);
     expect(normalized.comments?.map((value) => `${value.text}:${value.author}`)).toEqual([
       "alpha:beta",

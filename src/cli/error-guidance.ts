@@ -478,6 +478,7 @@ function renderRecoveryBundle(
     return [];
   }
   const lines = ["Recovery bundle:"];
+  appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
   appendRecoveryTextLine(
     lines,
     "attempted_command",
@@ -540,7 +541,6 @@ function renderRecoveryBundle(
   if (normalized.option_scope !== undefined) {
     lines.push(`  option_scope: ${normalized.option_scope}`);
   }
-  appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
   if (typeof normalized.retry_after_ms === "number") {
     lines.push(`  retry_after_ms: ${normalized.retry_after_ms}`);
   }

@@ -7,7 +7,7 @@ import {
 describe("closed-domain contracts", () => {
   it("publishes every core intent and list-family field refusal once", () => {
     const contracts = listCoreClosedDomainContracts();
-    expect(contracts).toHaveLength(18);
+    expect(contracts).toHaveLength(19);
     expect(new Set(contracts.map(({ probe_id: probeId }) => probeId)).size).toBe(
       contracts.length,
     );
