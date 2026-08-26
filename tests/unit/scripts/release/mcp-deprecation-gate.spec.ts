@@ -57,6 +57,10 @@ describe("MCP deprecation inventory gate", () => {
         'const method = "tasks/result";\n',
       ),
       writeFile(
+        path.join(root, "src/sdk/mcp/apps.ts"),
+        'const method = "ui/notifications/initialized";\n',
+      ),
+      writeFile(
         path.join(root, "node_modules/ignored/mcp/file.ts"),
         'const method = "resources/subscribe";\n',
       ),
@@ -83,6 +87,7 @@ describe("MCP deprecation inventory gate", () => {
       path: "tests/integration/mcp-stateless-protocol.spec.ts",
       disposition: "negative_control",
     });
+    expect(report.findings.some((finding) => finding.path.endsWith("apps.ts"))).toBe(false);
   });
 
   it("permits only exact single-use reviewed source controls", async () => {

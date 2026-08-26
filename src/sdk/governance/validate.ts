@@ -1416,6 +1416,7 @@ function buildMetadataCheck(
   metadataPolicy: ValidateMetadataPolicy,
   statusRegistry: RuntimeStatusRegistry,
   verboseDiagnostics: boolean,
+  configuredIssueCodePrefixes: readonly string[],
 ): {
   check: ValidateCheck;
   warnings: string[];
@@ -1436,7 +1437,9 @@ function buildMetadataCheck(
 
   // Duplicate logical issue-code detection (GH-235): advisory warning when two
   // or more items share a leading title issue code (e.g. `ISSUE-004`).
-  const duplicateIssueCodes = findDuplicateIssueCodes(items);
+  const duplicateIssueCodes = findDuplicateIssueCodes(items, {
+    configuredPrefixes: configuredIssueCodePrefixes,
+  });
   const duplicateIssueCodeSummary = summarizeDuplicateIssueCodes(
     duplicateIssueCodes,
     verboseDiagnostics,
@@ -3418,6 +3421,7 @@ async function executeRequestedValidateChecks(params: {
       params.metadataPolicy,
       params.statusRegistry,
       fullDiagnostics,
+      [params.settings.id_prefix],
     );
     state.closeReasonBackfillRows = built.closeReasonBackfillRows;
     state.estimateBackfillRows = built.estimateBackfillRows;
@@ -3651,7 +3655,8 @@ export async function runValidate(
   const requestedChecks = resolveRequestedChecks(options);
   const itemReadWarnings: string[] = [];
   const items = await readValidateItems({
-    includeBody: requestedChecks.has("history_drift"),
+    includeBody:
+      requestedChecks.has("history_drift") || requestedChecks.has("metadata"),
     pmRoot,
     settings,
     typeToFolder: typeRegistry.type_to_folder,

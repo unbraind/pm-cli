@@ -22,6 +22,16 @@ export interface IssueCodeItem {
   parent?: string | null;
   /** The id of the canonical item this one was closed as a duplicate of, when set. A closed-as-duplicate item has already been adjudicated, so it is excluded from collision detection entirely (GH-278) — re-flagging a resolved duplicate is permanent noise that erodes trust in `validate`. */
   duplicate_of?: string | null;
+  /** Optional body evidence used to disambiguate mixed-case prose compounds. */
+  body?: string | null;
+}
+
+/** Explicit classifier inputs for repository-specific issue-code formats. */
+export interface IssueCodeDetectionOptions {
+  /** Prefixes configured by the repository, compared case-insensitively. */
+  configuredPrefixes?: readonly string[];
+  /** Item body used only for explicit code markers or backtick references. */
+  evidenceText?: string | null;
 }
 
 /** A logical issue code shared by two or more items. */
@@ -46,7 +56,7 @@ export interface DuplicateIssueCode {
  * boundary, so `ISSUE-004-extra` extracts `ISSUE-004` while `ISSUE-004foo`
  * (digit immediately followed by a letter — no boundary) does not match.
  */
-const ISSUE_CODE_PATTERN = /^([A-Z][A-Z0-9]*-\d+)\b/;
+const ISSUE_CODE_PATTERN = /^([A-Z][A-Z0-9]*-\d+)\b/iu;
 
 /**
  * Extract the leading logical issue code from a title, or `null` when the title
@@ -59,16 +69,38 @@ const ISSUE_CODE_PATTERN = /^([A-Z][A-Z0-9]*-\d+)\b/;
  */
 export function extractIssueCode(
   title: string | null | undefined,
+  options: IssueCodeDetectionOptions = {},
 ): string | null {
   if (typeof title !== "string") {
     return null;
   }
-  const normalized = title.trim().toUpperCase();
-  if (normalized.length === 0) {
+  const trimmed = title.trim();
+  if (trimmed.length === 0) {
     return null;
   }
-  const match = ISSUE_CODE_PATTERN.exec(normalized);
-  return match ? match[1] : null;
+  const match = ISSUE_CODE_PATTERN.exec(trimmed);
+  if (!match) return null;
+  const rawCode = match[1];
+  const normalized = rawCode.toUpperCase();
+  const rawPrefix = rawCode.slice(0, rawCode.lastIndexOf("-"));
+  const configured = new Set(
+    (options.configuredPrefixes ?? []).map((prefix) =>
+      prefix.trim().replace(/-+$/u, "").toUpperCase(),
+    ),
+  );
+  const remainder = trimmed.slice(rawCode.length);
+  const evidence = options.evidenceText?.toUpperCase() ?? "";
+  const hasExplicitBodyEvidence =
+    evidence.includes(`ISSUE CODE: ${normalized}`) ||
+    evidence.includes(`ISSUE CODE \`${normalized}\``) ||
+    evidence.includes(`\`${normalized}\``) ||
+    evidence.includes(`[${normalized}]`);
+  const structurallyQualified =
+    rawPrefix === rawPrefix.toUpperCase() ||
+    /^\s*(?::|—|–|\])/u.test(remainder) ||
+    configured.has(rawPrefix.toUpperCase()) ||
+    hasExplicitBodyEvidence;
+  return structurallyQualified ? normalized : null;
 }
 
 /** Test whether a value is a usable (non-empty after trim) item-id reference. */
@@ -104,6 +136,7 @@ function isNonEmptyIdReference(
  */
 export function findDuplicateIssueCodes(
   items: readonly IssueCodeItem[],
+  options: Omit<IssueCodeDetectionOptions, "evidenceText"> = {},
 ): DuplicateIssueCode[] {
   const byCode = new Map<
     string,
@@ -119,7 +152,10 @@ export function findDuplicateIssueCodes(
     if (isNonEmptyIdReference(item.duplicate_of)) {
       continue;
     }
-    const code = extractIssueCode(item.title);
+    const code = extractIssueCode(item.title, {
+      ...options,
+      evidenceText: item.body,
+    });
     if (code === null) {
       continue;
     }

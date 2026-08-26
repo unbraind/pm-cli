@@ -104,6 +104,7 @@
     "scripts/finalize-build.mjs",
     "scripts/install.sh",
     "scripts/install.ps1",
+    ".agents/skills/**",
     "scripts/prepare-build-cache.mjs",
     "marketplace.json"
   ],
@@ -212,17 +213,19 @@
     "fast-glob": "^3.3.3",
     "fast-json-patch": "^3.1.1",
     "npm-package-arg": "^13.0.2",
-    "tar": "7.5.22"
+    "tar": "7.5.22",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/ext-apps": "1.7.5",
     "@codspeed/vitest-plugin": "^5.7.1",
     "@eslint/js": "^10.0.1",
     "@sentry/cli": "^3.6.2",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.3.0",
     "@types/npm-package-arg": "^6.1.4",
     "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "0.28.2",
-    "eslint": "^10.9.0",
+    "eslint": "^10.9.1",
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-unicorn": "^73.0.0",
     "fast-check": "^4.9.0",
@@ -231,7 +234,6 @@
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.68.0",
-    "vitest": "^4.1.11",
-    "yaml": "^2.9.0"
+    "vitest": "^4.1.11"
   }
 }

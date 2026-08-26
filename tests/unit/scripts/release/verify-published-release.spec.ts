@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import {
   mkdtempSync as makeRealTempDirectory,
@@ -150,19 +151,94 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
     return { status: 127, stdout: "", stderr: "executable not found" };
   }
   if (args.includes("pm-mcp")) {
+    const skillText = "pm sdk\n";
+    const skillDigest = `sha256:${createHash("sha256")
+      .update(skillText)
+      .digest("hex")}`;
     return {
       status: 0,
-      stdout: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        result: {
-          supportedVersions: ["2026-07-28"],
-          resultType: "complete",
-          _meta: {
-            "io.modelcontextprotocol/serverInfo": { name: "pm-mcp" },
+      stdout: [
+        {
+          jsonrpc: "2.0",
+          id: 1,
+          result: {
+            supportedVersions: ["2026-07-28"],
+            capabilities: {
+              extensions: {
+                "io.modelcontextprotocol/skills": {
+                  status: "draft",
+                  revision:
+                    "SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03",
+                  directoryRead: true,
+                },
+                "io.modelcontextprotocol/ui": {
+                  mimeTypes: ["text/html;profile=mcp-app"],
+                },
+              },
+            },
+            resultType: "complete",
+            _meta: {
+              "io.modelcontextprotocol/serverInfo": { name: "pm-mcp" },
+            },
           },
         },
-      }),
+        {
+          jsonrpc: "2.0",
+          id: 2,
+          result: {
+            skills: [
+              {
+                uri: "skill://pm-sdk/SKILL.md",
+                resources: [
+                  {
+                    uri: "skill://pm-sdk/SKILL.md",
+                    digest: skillDigest,
+                    size: Buffer.byteLength(skillText),
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          jsonrpc: "2.0",
+          id: 3,
+          result: {
+            tools: [
+              {
+                name: "pm_context",
+                _meta: { ui: { resourceUri: "ui://pm/context.html" } },
+              },
+            ],
+          },
+        },
+        {
+          jsonrpc: "2.0",
+          id: 4,
+          result: {
+            contents: [
+              {
+                mimeType: "text/html;profile=mcp-app",
+                text: "ui/initialize",
+              },
+            ],
+          },
+        },
+        {
+          jsonrpc: "2.0",
+          id: 5,
+          result: {
+            contents: [
+              {
+                uri: "skill://pm-sdk/SKILL.md",
+                mimeType: "text/markdown",
+                text: skillText,
+                _meta: { digest: skillDigest },
+              },
+            ],
+          },
+        },
+      ].map((response) => JSON.stringify(response)).join("\n"),
       stderr: "",
     };
   }
@@ -170,6 +246,20 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
     status: 0,
     stdout: JSON.stringify({ summary: { command_count: 1 } }),
     stderr: "",
+  };
+}
+
+function transformMcpResponses(
+  result: RunCommandResult,
+  transform: (responses: Array<Record<string, unknown>>) => void,
+): RunCommandResult {
+  const responses = result.stdout
+    .split("\n")
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+  transform(responses);
+  return {
+    ...result,
+    stdout: responses.map((response) => JSON.stringify(response)).join("\n"),
   };
 }
 
@@ -185,11 +275,25 @@ function successfulPublishedVerifierResult(
         http_status: 200,
         server_name: "pm-mcp",
         protocol_version: "2026-07-28",
+        extensions: [
+          "io.modelcontextprotocol/skills",
+          "io.modelcontextprotocol/ui",
+        ],
       }),
       stderr: "",
     };
   }
-  return successfulExecutorResult(args);
+  const result = successfulExecutorResult(args);
+  if (!(command === "bunx" && args.includes("pm-mcp"))) return result;
+  return transformMcpResponses(result, (responses) => {
+    const response = responses.find((candidate) => candidate.id === 5);
+    const contents = (response?.result as { contents?: unknown } | undefined)
+      ?.contents;
+    if (!Array.isArray(contents)) return;
+    const content = contents[0] as Record<string, unknown>;
+    content.blob = Buffer.from(String(content.text), "utf8").toString("base64");
+    delete content.text;
+  });
 }
 
 async function reserveLoopbackPort(): Promise<number> {
@@ -749,6 +853,98 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       },
     });
     expect(String(mcp.failure)).toContain("mcp_discovery_response_invalid");
+
+    const malformedSkill = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
+        const result = successfulExecutorResult(args);
+        if (!(command === "npx" && args.includes("pm-mcp"))) return result;
+        return transformMcpResponses(result, (responses) => {
+          const response = responses.find((candidate) => candidate.id === 2);
+          const skills = (response?.result as { skills?: unknown } | undefined)
+            ?.skills;
+          if (!Array.isArray(skills)) return;
+          for (const skill of skills as Array<Record<string, unknown>>) {
+            skill.resources = null;
+          }
+        });
+      },
+    });
+    expect(String(malformedSkill.failure)).toContain(
+      "mcp_discovery_response_invalid",
+    );
+
+    const wrongRevision = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
+        const result = successfulExecutorResult(args);
+        if (!(command === "npx" && args.includes("pm-mcp"))) return result;
+        return transformMcpResponses(result, (responses) => {
+          const response = responses.find((candidate) => candidate.id === 1);
+          const resultValue = response?.result as {
+            capabilities?: {
+              extensions?: Record<string, Record<string, unknown>>;
+            };
+          } | undefined;
+          const capability =
+            resultValue?.capabilities?.extensions?.[
+              "io.modelcontextprotocol/skills"
+            ];
+          if (capability) capability.revision = "SEP-2640@different";
+        });
+      },
+    });
+    expect(String(wrongRevision.failure)).toContain(
+      "mcp_discovery_response_invalid",
+    );
+
+    const wrongDigest = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
+        const result = successfulExecutorResult(args);
+        if (!(command === "npx" && args.includes("pm-mcp"))) return result;
+        return transformMcpResponses(result, (responses) => {
+          const response = responses.find((candidate) => candidate.id === 5);
+          const contents = (response?.result as { contents?: unknown } | undefined)
+            ?.contents;
+          if (!Array.isArray(contents)) return;
+          (contents[0] as { text?: string }).text = "tampered\n";
+        });
+      },
+    });
+    expect(String(wrongDigest.failure)).toContain(
+      "mcp_discovery_response_invalid",
+    );
 
     const scalarVersion = await runVerify({
       argv: [

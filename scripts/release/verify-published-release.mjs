@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -20,21 +21,48 @@ const NPM_PACKAGE =
 const PACKAGE_BINS = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
 ).bin;
-const MCP_DISCOVER_REQUEST = `${JSON.stringify({
-  jsonrpc: "2.0",
-  id: 1,
-  method: "server/discover",
-  params: {
-    _meta: {
-      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-      "io.modelcontextprotocol/clientCapabilities": {},
-      "io.modelcontextprotocol/clientInfo": {
-        name: "published-artifact-verifier",
-        version: "1.0.0",
-      },
+const MCP_SKILLS_DRAFT_REVISION =
+  "SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03";
+const MCP_SKILL_RESOURCE_URI = "skill://pm-sdk/SKILL.md";
+const MCP_EXTENSION_CLIENT_CAPABILITIES = {
+  extensions: {
+    "io.modelcontextprotocol/skills": {
+      revision: MCP_SKILLS_DRAFT_REVISION,
+      directoryRead: true,
+    },
+    "io.modelcontextprotocol/ui": {
+      specVersion: "2026-01-26",
+      mimeTypes: ["text/html;profile=mcp-app"],
     },
   },
-})}\n`;
+};
+const MCP_DISCOVER_REQUEST = `${[
+  [1, "server/discover", {}],
+  [2, "skills/list", {}],
+  [3, "tools/list", {}],
+  [4, "resources/read", { uri: "ui://pm/context.html" }],
+  [5, "resources/read", { uri: MCP_SKILL_RESOURCE_URI }],
+]
+  .map(([id, method, params]) =>
+    JSON.stringify({
+      jsonrpc: "2.0",
+      id,
+      method,
+      params: {
+        ...params,
+        _meta: {
+          "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+          "io.modelcontextprotocol/clientCapabilities":
+            MCP_EXTENSION_CLIENT_CAPABILITIES,
+          "io.modelcontextprotocol/clientInfo": {
+            name: "published-artifact-verifier",
+            version: "1.0.0",
+          },
+        },
+      },
+    }),
+  )
+  .join("\n")}\n`;
 const MCP_DISCOVER_TIMEOUT_MS = 60_000;
 const MCP_HTTP_READY_TIMEOUT_MS = 15_000;
 const MCP_HTTP_EXECUTOR_TIMEOUT_MS = 20_000;
@@ -150,7 +178,8 @@ try {
     params: {
       _meta: {
         "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-        "io.modelcontextprotocol/clientCapabilities": {},
+        "io.modelcontextprotocol/clientCapabilities":
+          ${JSON.stringify(MCP_EXTENSION_CLIENT_CAPABILITIES)},
         "io.modelcontextprotocol/clientInfo": {
           name: "published-http-artifact-verifier",
           version: "1.0.0",
@@ -191,13 +220,19 @@ try {
   const serverName = payload?.result?._meta?.[
     "io.modelcontextprotocol/serverInfo"
   ]?.name;
+  const skillsCapability = payload?.result?.capabilities?.extensions?.[
+    "io.modelcontextprotocol/skills"
+  ];
   if (
     response.status !== 200 ||
     payload?.id !== 1 ||
     payload?.result?.resultType !== "complete" ||
     serverName !== "pm-mcp" ||
     !Array.isArray(payload?.result?.supportedVersions) ||
-    !payload.result.supportedVersions.includes("2026-07-28")
+    !payload.result.supportedVersions.includes("2026-07-28") ||
+    skillsCapability?.status !== "draft" ||
+    skillsCapability?.revision !== ${JSON.stringify(MCP_SKILLS_DRAFT_REVISION)} ||
+    !payload?.result?.capabilities?.extensions?.["io.modelcontextprotocol/ui"]
   ) {
     throw new Error(
       "Published HTTP discovery response was invalid: " +
@@ -210,6 +245,7 @@ try {
     http_status: response.status,
     server_name: serverName,
     protocol_version: "2026-07-28",
+    extensions: ["io.modelcontextprotocol/skills", "io.modelcontextprotocol/ui"],
   }));
 } finally {
   await stopChild();
@@ -230,7 +266,7 @@ function usage() {
 Verifies the public release surfaces after publish:
 - npm registry metadata
 - npx and bunx real CLI command dispatch
-- npx and bunx pm-mcp stateless JSON-RPC discovery
+- npx and bunx pm-mcp stateless discovery, Skills, and Apps journeys
 - package bin-to-entrypoint coverage and missing-bin negative controls
 - GitHub Release metadata
 `);
@@ -397,20 +433,91 @@ function assertCliDispatch(stdout) {
   return { ok: true, command: "contracts", output: "json" };
 }
 
+function verifyListedSkillResource(responses, skills) {
+  const skillContents = Object(responses.get(5)?.result).contents;
+  const skillContent = Object(
+    Array.isArray(skillContents) ? skillContents[0] : null,
+  );
+  const listedSkill = Array.isArray(skills)
+    ? skills.find((skill) => skill.uri === MCP_SKILL_RESOURCE_URI)
+    : undefined;
+  const listedResource = Array.isArray(listedSkill?.resources)
+    ? listedSkill.resources.find(
+        (resource) => resource.uri === MCP_SKILL_RESOURCE_URI,
+      )
+    : undefined;
+  const skillBytes =
+    typeof skillContent.text === "string"
+      ? Buffer.from(skillContent.text, "utf8")
+      : typeof skillContent.blob === "string"
+        ? Buffer.from(skillContent.blob, "base64")
+        : undefined;
+  const computedDigest = skillBytes
+    ? `sha256:${createHash("sha256").update(skillBytes).digest("hex")}`
+    : undefined;
+  return {
+    descriptorsValid:
+      Array.isArray(skills) &&
+      skills.length > 0 &&
+      skills.every(
+        (skill) =>
+          Array.isArray(skill.resources) &&
+          skill.resources.every((resource) =>
+            /^sha256:[a-f0-9]{64}$/u.test(resource.digest),
+          ),
+      ),
+    resourceValid:
+      listedResource?.digest === computedDigest &&
+      Object(skillContent._meta).digest === computedDigest &&
+      skillContent.uri === MCP_SKILL_RESOURCE_URI,
+  };
+}
+
 function assertMcpDiscovery(stdout) {
-  const response = stdout
+  const responses = stdout
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => JSON.parse(line))
-    .find((entry) => entry.id === 1);
-  if (
-    response?.result?._meta?.["io.modelcontextprotocol/serverInfo"]?.name !==
-      "pm-mcp" ||
-    response.result.resultType !== "complete" ||
-    !Array.isArray(response.result.supportedVersions) ||
-    !response.result.supportedVersions.includes("2026-07-28")
-  ) {
+    .reduce((byId, entry) => byId.set(entry.id, entry), new Map());
+  const response = responses.get(1);
+  const discovery = Object(response?.result);
+  const serverInfo = Object(
+    Object(discovery._meta)["io.modelcontextprotocol/serverInfo"],
+  );
+  const extensions = Object(Object(discovery.capabilities).extensions);
+  const skillsCapability = Object(
+    extensions["io.modelcontextprotocol/skills"],
+  );
+  const skills = Object(responses.get(2)?.result).skills;
+  const toolsValue = Object(responses.get(3)?.result).tools;
+  const tools = Array.isArray(toolsValue) ? toolsValue : [];
+  const contextTool = Object(
+    tools.find((tool) => tool.name === "pm_context"),
+  );
+  const contextToolUi = Object(Object(contextTool._meta).ui);
+  const appContents = Object(responses.get(4)?.result).contents;
+  const appContent = Object(Array.isArray(appContents) ? appContents[0] : null);
+  const skillVerification = verifyListedSkillResource(responses, skills);
+  const validity = [
+    serverInfo.name === "pm-mcp",
+    discovery.resultType === "complete",
+    Array.isArray(discovery.supportedVersions),
+    Array.isArray(discovery.supportedVersions) &&
+      discovery.supportedVersions.includes("2026-07-28"),
+    skillsCapability.status === "draft",
+    skillsCapability.revision === MCP_SKILLS_DRAFT_REVISION,
+    extensions["io.modelcontextprotocol/ui"] !== undefined,
+    Array.isArray(skills),
+    skillVerification.descriptorsValid,
+    skillVerification.resourceValid,
+    contextToolUi.resourceUri === "ui://pm/context.html",
+    Array.isArray(appContents),
+    appContent.mimeType === "text/html;profile=mcp-app",
+    typeof appContent.text === "string" &&
+      appContent.text.includes("ui/initialize"),
+  ];
+  if (validity.includes(false)) {
     return { ok: false, reason: "mcp_discovery_response_invalid" };
   }
   return {
@@ -418,6 +525,8 @@ function assertMcpDiscovery(stdout) {
     server_name:
       response.result._meta["io.modelcontextprotocol/serverInfo"].name,
     protocol_version: "2026-07-28",
+    skill_count: skills.length,
+    apps: true,
   };
 }
 
@@ -427,7 +536,10 @@ function assertMcpHttpDiscovery(stdout) {
     parsed?.ok !== true ||
     parsed.http_status !== 200 ||
     parsed.server_name !== "pm-mcp" ||
-    parsed.protocol_version !== "2026-07-28"
+    parsed.protocol_version !== "2026-07-28" ||
+    !Array.isArray(parsed.extensions) ||
+    !parsed.extensions.includes("io.modelcontextprotocol/skills") ||
+    !parsed.extensions.includes("io.modelcontextprotocol/ui")
   ) {
     return { ok: false, reason: "mcp_http_discovery_response_invalid" };
   }
@@ -436,6 +548,7 @@ function assertMcpHttpDiscovery(stdout) {
     http_status: parsed.http_status,
     server_name: parsed.server_name,
     protocol_version: parsed.protocol_version,
+    extensions: parsed.extensions,
   };
 }
 

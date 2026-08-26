@@ -26,6 +26,8 @@ export interface ToolDefinition {
   description: string;
   /** Value that configures or reports input schema for this contract. */
   inputSchema: Record<string, unknown>;
+  /** Optional negotiated extension metadata projected during tools/list. */
+  _meta?: Record<string, unknown>;
 }
 
 const CANONICAL_OUTPUT_SESSION_TOOL_PROPERTY = (
