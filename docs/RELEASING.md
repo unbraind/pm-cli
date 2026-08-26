@@ -390,8 +390,12 @@ git push origin v<version>
   symlink-resolved `pm-mcp` bin under both npx and bunx, and launches the exact
   public `pm-mcp-http` bin under both executors on an isolated loopback port for
   a real Streamable HTTP `server/discover` exchange. Both transports require
-  canonical `2026-07-28` metadata/result envelopes. The verifier derives bin coverage
-  from `package.json`, and proves missing-bin and missing-command controls fail.
+  canonical `2026-07-28` metadata/result envelopes. HTTP startup is bounded to
+  two 20-second attempts per executor so the complete retry budget remains below
+  the hosted step timeout. Signal-aware process-group cleanup escalates from
+  `SIGTERM` to `SIGKILL` after a bounded grace period, including when the outer
+  evaluator times out. The verifier derives bin coverage from `package.json`,
+  and proves missing-bin and missing-command controls fail.
 - exact-package installed acceptance through
   `scripts/release/verify-installed-agent-session.mjs`. Separate npm and Bun
   install roots must contain the resolved executable, then each drives the

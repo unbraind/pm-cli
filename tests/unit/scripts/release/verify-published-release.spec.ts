@@ -1,3 +1,11 @@
+import { spawnSync } from "node:child_process";
+import {
+  mkdtempSync as makeRealTempDirectory,
+  rmSync as removeRealDirectory,
+  writeFileSync as writeRealFile,
+} from "node:fs";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
@@ -182,6 +190,36 @@ function successfulPublishedVerifierResult(
     };
   }
   return successfulExecutorResult(args);
+}
+
+async function reserveLoopbackPort(): Promise<number> {
+  return await new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        server.close();
+        reject(new Error("Could not reserve a loopback port for the test"));
+        return;
+      }
+      server.close((error) =>
+        error === undefined ? resolve(address.port) : reject(error),
+      );
+    });
+  });
+}
+
+async function assertLoopbackPortIsReusable(port: number): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => {
+      server.close((error) =>
+        error === undefined ? resolve() : reject(error),
+      );
+    });
+  });
 }
 
 describe("scripts/release/verify-published-release: usage and validation", () => {
@@ -809,6 +847,102 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       "npx-pm-mcp-http verification failed: mcp_http_discovery_response_invalid",
     );
   });
+
+  it("caps HTTP startup retries so their worst case fits the hosted step", async () => {
+    const { failure, runCommand } = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "10",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") {
+          return npmViewResult("2026.6.14");
+        }
+        if (command === "node" && args.includes("--eval")) {
+          return { status: 1, stdout: "", stderr: "startup timeout" };
+        }
+        return successfulExecutorResult(args);
+      },
+    });
+    expect(String(failure)).toContain("npx-pm-mcp-http verification failed");
+    expect(
+      runCommand.mock.calls.filter(
+        ([command, args]) => command === "node" && args.includes("--eval"),
+      ),
+    ).toHaveLength(2);
+  });
+
+  it("kills a detached HTTP runner tree when the evaluator times out", async () => {
+    const { runCommand } = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) =>
+        command === "npm" && args[0] === "view"
+          ? npmViewResult("2026.6.14")
+          : successfulPublishedVerifierResult(command, args),
+    });
+    const evaluatorCall = runCommand.mock.calls.find(
+      ([command, args]) => command === "node" && args.includes("--eval"),
+    );
+    const evaluatorScript =
+      evaluatorCall?.[1]?.[evaluatorCall[1].indexOf("--eval") + 1];
+    expect(typeof evaluatorScript).toBe("string");
+
+    const tempRoot = makeRealTempDirectory(
+      path.join(tmpdir(), "pm-http-timeout-test-"),
+    );
+    const fakeRunner = path.join(tempRoot, "fake-runner.mjs");
+    const port = await reserveLoopbackPort();
+    writeRealFile(
+      fakeRunner,
+      [
+        'import { createServer } from "node:net";',
+        "const server = createServer(() => {});",
+        'server.listen(Number(process.env.PM_MCP_HTTP_PORT), "127.0.0.1");',
+        'process.on("SIGTERM", () => {});',
+        "setInterval(() => {}, 1_000);",
+      ].join("\n"),
+      "utf8",
+    );
+
+    try {
+      const result = spawnSync(
+        process.execPath,
+        ["--input-type=module", "--eval", String(evaluatorScript)],
+        {
+          encoding: "utf8",
+          timeout: 800,
+          killSignal: "SIGTERM",
+          env: {
+            ...process.env,
+            PM_VERIFY_HTTP_RUNNER: "npx",
+            PM_VERIFY_HTTP_RUNNER_COMMAND: process.execPath,
+            PM_VERIFY_HTTP_PACKAGE_SPEC: "@example/pm-cli@2026.6.14",
+            PM_VERIFY_HTTP_RUNNER_ARGS_JSON: JSON.stringify([fakeRunner]),
+            PM_VERIFY_HTTP_PORT: String(port),
+          },
+        },
+      );
+      expect((result.error as NodeJS.ErrnoException | undefined)?.code).toBe(
+        "ETIMEDOUT",
+      );
+      await assertLoopbackPortIsReusable(port);
+    } finally {
+      removeRealDirectory(tempRoot, { recursive: true, force: true });
+    }
+  }, 10_000);
 });
 
 describe("scripts/release/verify-published-release: github release", () => {

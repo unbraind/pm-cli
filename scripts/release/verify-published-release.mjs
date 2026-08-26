@@ -36,7 +36,10 @@ const MCP_DISCOVER_REQUEST = `${JSON.stringify({
   },
 })}\n`;
 const MCP_DISCOVER_TIMEOUT_MS = 60_000;
-const MCP_HTTP_DISCOVER_TIMEOUT_MS = 90_000;
+const MCP_HTTP_READY_TIMEOUT_MS = 15_000;
+const MCP_HTTP_EXECUTOR_TIMEOUT_MS = 20_000;
+const MCP_HTTP_EXECUTOR_MAX_ATTEMPTS = 2;
+const MCP_HTTP_SHUTDOWN_GRACE_MS = 2_000;
 const MCP_HTTP_EXECUTOR_SCRIPT = String.raw`
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
@@ -48,7 +51,10 @@ if (!runner || !runnerCommand || !packageSpec) {
   throw new Error("Missing published HTTP verifier environment");
 }
 
-const port = await new Promise((resolve, reject) => {
+const requestedPort = Number(process.env.PM_VERIFY_HTTP_PORT);
+const port = Number.isInteger(requestedPort) && requestedPort > 0
+  ? requestedPort
+  : await new Promise((resolve, reject) => {
   const reservation = createServer();
   reservation.once("error", reject);
   reservation.listen(0, "127.0.0.1", () => {
@@ -60,11 +66,14 @@ const port = await new Promise((resolve, reject) => {
     }
     reservation.close((error) => error ? reject(error) : resolve(address.port));
   });
-});
+  });
 
-const args = runner === "npx"
-  ? ["--yes", "--package", packageSpec, "--", "pm-mcp-http"]
-  : ["--silent", "--bun", "--package", packageSpec, "pm-mcp-http"];
+const overrideArgs = process.env.PM_VERIFY_HTTP_RUNNER_ARGS_JSON;
+const args = overrideArgs
+  ? JSON.parse(overrideArgs)
+  : runner === "npx"
+    ? ["--yes", "--package", packageSpec, "--", "pm-mcp-http"]
+    : ["--silent", "--bun", "--package", packageSpec, "pm-mcp-http"];
 const child = spawn(runnerCommand, args, {
   detached: process.platform !== "win32",
   env: {
@@ -84,15 +93,48 @@ child.stderr.on("data", (chunk) => {
   stderr = (stderr + chunk).slice(-4_096);
 });
 
-const stopChild = () => {
+const signalChildTree = (signal) => {
   if (!child.pid || childExit) return;
   try {
-    if (process.platform === "win32") child.kill("SIGTERM");
-    else process.kill(-child.pid, "SIGTERM");
+    if (process.platform === "win32") child.kill(signal);
+    else process.kill(-child.pid, signal);
   } catch {
-    child.kill("SIGTERM");
+    child.kill(signal);
   }
 };
+
+let stopPromise;
+const stopChild = () => {
+  if (!child.pid || childExit) return Promise.resolve();
+  if (stopPromise) return stopPromise;
+  stopPromise = (async () => {
+    const waitForExit = () => childExit
+      ? Promise.resolve()
+      : new Promise((resolve) => child.once("exit", resolve));
+    signalChildTree("SIGTERM");
+    await Promise.race([
+      waitForExit(),
+      new Promise((resolve) => setTimeout(resolve, ${MCP_HTTP_SHUTDOWN_GRACE_MS})),
+    ]);
+    if (!childExit) {
+      signalChildTree("SIGKILL");
+      await Promise.race([
+        waitForExit(),
+        new Promise((resolve) => setTimeout(resolve, ${MCP_HTTP_SHUTDOWN_GRACE_MS})),
+      ]);
+    }
+  })();
+  return stopPromise;
+};
+
+const signalHandlers = new Map();
+for (const [signal, exitCode] of [["SIGINT", 130], ["SIGTERM", 143]]) {
+  const handler = () => {
+    void stopChild().finally(() => process.exit(exitCode));
+  };
+  signalHandlers.set(signal, handler);
+  process.once(signal, handler);
+}
 
 try {
   const request = {
@@ -110,7 +152,7 @@ try {
       },
     },
   };
-  const deadline = Date.now() + 60_000;
+  const deadline = Date.now() + ${MCP_HTTP_READY_TIMEOUT_MS};
   let response;
   let payload;
   while (Date.now() < deadline) {
@@ -164,7 +206,10 @@ try {
     protocol_version: "2026-07-28",
   }));
 } finally {
-  stopChild();
+  await stopChild();
+  for (const [signal, handler] of signalHandlers) {
+    process.off(signal, handler);
+  }
 }
 `;
 
@@ -395,6 +440,7 @@ function verifyMcpHttpExecutor(
   tempRoot,
   publicRegistryEnv,
 ) {
+  const boundedAttempts = Math.min(attempts, MCP_HTTP_EXECUTOR_MAX_ATTEMPTS);
   return verifyRequiredExecutor(
     `${runner}-pm-mcp-http`,
     [
@@ -403,7 +449,7 @@ function verifyMcpHttpExecutor(
       "--eval",
       MCP_HTTP_EXECUTOR_SCRIPT,
     ],
-    attempts,
+    boundedAttempts,
     tempRoot,
     {
       ...publicRegistryEnv,
@@ -413,7 +459,7 @@ function verifyMcpHttpExecutor(
     },
     assertMcpHttpDiscovery,
     undefined,
-    MCP_HTTP_DISCOVER_TIMEOUT_MS,
+    MCP_HTTP_EXECUTOR_TIMEOUT_MS,
   );
 }
 
