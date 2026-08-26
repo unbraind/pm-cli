@@ -2,7 +2,10 @@
 
 Tracker references: [pm-rz9gep](../.agents/pm/features/pm-rz9gep.toon),
 [pm-rzs24j](../.agents/pm/features/pm-rzs24j.toon), and
-[pm-hv1x1x](../.agents/pm/features/pm-hv1x1x.toon).
+[pm-hv1x1x](../.agents/pm/features/pm-hv1x1x.toon). Transport and remote
+trust primitives are tracked by
+[pm-v7e337](../.agents/pm/features/pm-v7e337.toon) and
+[pm-3zh9s4](../.agents/pm/features/pm-3zh9s4.toon).
 
 The aggregate `@unbrained/pm-cli/sdk` entrypoint exposes transport-neutral
 contracts for MCP 2026-07-28 multi round-trip requests (MRTR), explicit cache
@@ -141,8 +144,73 @@ asynchronous execution. Clients retrieve state with `tasks/get`, provide MRTR
 answers with `tasks/update`, and request cancellation with `tasks/cancel`.
 
 Task progress notifications and cross-transport request-scoped streams are a
-separate subscription contract. A client must poll at `pollIntervalMs` until
-that contract is advertised.
+separate concern from change subscriptions. A client polls at `pollIntervalMs`
+for task state; `subscriptions/listen` carries only explicitly acknowledged
+tool, prompt, and resource changes.
+
+## Open change subscriptions
+
+`PmMcpSubscriptionRegistry` is transport-neutral. A stdio or HTTP adapter
+opens a record with the `subscriptions/listen` JSON-RPC id, requested filter,
+and an asynchronous sink. The registry sends the acknowledgment before any
+other notification, intersects filters with advertised server capabilities,
+tags every notification with the subscription id, and awaits each sink so
+transport backpressure is visible.
+
+```ts
+import { PmMcpSubscriptionRegistry } from "@unbrained/pm-cli/sdk";
+
+const subscriptions = new PmMcpSubscriptionRegistry({
+  capabilities: { resources: { listChanged: true, subscribe: true } },
+  serverInfo: { name: "custom-pm-host", version: "1.0.0" },
+});
+
+await subscriptions.open({
+  id: "workspace-changes",
+  notifications: {
+    resourcesListChanged: true,
+    resourceSubscriptions: ["pm://workspace/context"],
+  },
+  sink: async (notification) => sendOnTransport(notification),
+});
+
+await subscriptions.emitResourceUpdated("pm://workspace/context");
+```
+
+Closing returns the final modern result envelope. Abrupt disconnects should
+delete the record without fabricating a replay cursor or redelivery promise.
+
+## Project and validate HTTP headers
+
+`buildMcpHttpRequestHeaders()` constructs the required protocol, method, and
+name headers from a request. `validateMcpHttpRequestHeaders()` checks the
+received headers against both the JSON-RPC body and a tool's input schema.
+`collectMcpHeaderAnnotations()` exposes the validated `x-mcp-header` mapping
+when a custom adapter needs to inspect it.
+
+Header values are strings, numbers, or booleans. The SDK Base64-encodes values
+that cannot be represented unambiguously and rejects control bytes, reserved
+MCP names, duplicate mappings, undeclared arguments, and body/header
+mismatches. Never copy arbitrary client headers into tool arguments.
+
+## Compose remote authorization
+
+Use `buildMcpProtectedResourceMetadata()` for RFC 9728 metadata,
+`buildMcpAuthorizationDiscoveryUrls()` and
+`validateMcpAuthorizationServerMetadata()` for exact issuer discovery, and
+`selectMcpClientRegistrationMode()` to prefer Client ID Metadata Documents
+over deprecated Dynamic Client Registration. Store credentials with
+`PmMcpIssuerCredentialStore`; its exact issuer key prevents cross-issuer
+reuse and its cloned values prevent alias mutation.
+
+At the resource boundary, `authorizeMcpHttpRequest()` accepts bearer tokens
+only in the Authorization header and verifies issuer, audience, and required
+scopes through a host-provided verifier. `extractMcpTraceContext()` validates
+W3C trace fields and retains only allowlisted baggage before
+`runWithMcpTraceContext()` creates a concurrent-request-local scope.
+
+See [MCP remote transport, authorization, and migration](MCP_REMOTE_TRANSPORT_SECURITY.md)
+for executable configuration, lifecycle policy, and the threat model.
 
 ## Failure and trust boundaries
 

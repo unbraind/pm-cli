@@ -19,6 +19,9 @@ export {
 export * from "./mcp/protocol.js";
 export * from "./mcp/interactions.js";
 export * from "./mcp/tasks.js";
+export * from "./mcp/subscriptions.js";
+export * from "./mcp/transport.js";
+export * from "./mcp/authorization.js";
 export * from "./cli-contracts/grammar-contracts.js";
 export * from "./agent-session-context.js";
 export type {

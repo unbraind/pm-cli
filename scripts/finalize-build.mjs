@@ -20,6 +20,7 @@ export async function main(repoRoot = process.cwd()) {
   const executableOutputs = [
     path.join(repoRoot, "dist", "cli.js"),
     path.join(repoRoot, "dist", "mcp", "server.js"),
+    path.join(repoRoot, "dist", "mcp", "http-server.js"),
   ];
 
   for (const outputPath of executableOutputs) {

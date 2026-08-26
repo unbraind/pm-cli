@@ -16,7 +16,8 @@
   "bin": {
     "pm-cli": "dist/cli.js",
     "pm": "dist/cli.js",
-    "pm-mcp": "dist/mcp/server.js"
+    "pm-mcp": "dist/mcp/server.js",
+    "pm-mcp-http": "dist/mcp/http-server.js"
   },
   "types": "dist/sdk/index.d.ts",
   "exports": {
@@ -120,7 +121,7 @@
     "lint:complexity:baseline": "eslint . --suppress-rule complexity --suppress-rule sonarjs/cognitive-complexity",
     "lint:duplicates": "jscpd --config .jscpd.json",
     "lint:codefactor": "pnpm quality:static",
-    "quality:static": "pnpm build && node scripts/contracts-snapshot.mjs --check && node scripts/generate-agent-capability-surfaces.mjs --check && node scripts/generate-error-code-catalog.mjs --check && node scripts/release/repository-assurance.mjs repository-static-quality --trigger ci --json && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs && node scripts/release/refusal-closure-gate.mjs && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",
+    "quality:static": "pnpm build && node scripts/contracts-snapshot.mjs --check && node scripts/generate-agent-capability-surfaces.mjs --check && node scripts/generate-error-code-catalog.mjs --check && node scripts/release/repository-assurance.mjs repository-static-quality --trigger ci --json && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs && node scripts/release/refusal-closure-gate.mjs && pnpm quality:mcp-deprecations && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",
     "quality:command-grammar": "pnpm build && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs",
     "quality:recovery-closure": "pnpm build && node scripts/release/refusal-closure-gate.mjs",
     "quality:token-budget": "node scripts/release/token-budget-gate.mjs",
@@ -139,6 +140,7 @@
     "quality:absence-tolerance": "node scripts/release/absence-tolerance-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
+    "quality:mcp-deprecations": "node --input-type=module --eval 'import { main } from \"./scripts/release/mcp-deprecation-inventory.mjs\"; await main()'",
     "quality:defect-evidence": "pnpm build && node scripts/release/defect-evidence-gate.mjs",
     "quality:hosted-analysis": "node scripts/release/hosted-analysis-gate.mjs",
     "benchmark:scale:generate": "node scripts/bench/scale-workspace.mjs",

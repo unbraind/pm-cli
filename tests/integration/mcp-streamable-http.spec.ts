@@ -1,0 +1,893 @@
+import { EventEmitter } from "node:events";
+import { request as httpRequest, type ServerResponse } from "node:http";
+import type { AddressInfo } from "node:net";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  buildMcpHttpRequestHeaders,
+  buildMcpProtectedResourceMetadata,
+  createMcpStaticBearerVerifier,
+  PM_MCP_META_KEYS,
+  PM_MCP_PROTOCOL_VERSION,
+  PM_MCP_SUBSCRIPTION_ID_META_KEY,
+} from "../../src/sdk/index.js";
+import {
+  _testOnly as serverTestOnly,
+  closeMcpSubscription,
+  openMcpSubscription,
+  processRpcLine,
+} from "../../src/mcp/server.js";
+import {
+  _testOnly as httpServerTestOnly,
+  closePmMcpHttpServer,
+  createPmMcpHttpServer,
+  resolvePmMcpHttpListenAddress,
+  resolvePmMcpHttpServerOptionsFromEnvironment,
+  startPmMcpHttpServer,
+  writePmMcpSseEvent,
+} from "../../src/mcp/http-server.js";
+
+function modernRequest(
+  method: string,
+  params: Record<string, unknown> = {},
+  id: string | number | null = 1,
+): Record<string, unknown> {
+  return {
+    jsonrpc: "2.0",
+    id,
+    method,
+    params: {
+      ...params,
+      _meta: {
+        [PM_MCP_META_KEYS.protocolVersion]: PM_MCP_PROTOCOL_VERSION,
+        [PM_MCP_META_KEYS.clientCapabilities]: {},
+        [PM_MCP_META_KEYS.clientInfo]: { name: "http-test", version: "1" },
+      },
+    },
+  };
+}
+
+const servers: ReturnType<typeof createPmMcpHttpServer>[] = [];
+const directSubscriptions: Array<{
+  id: string | number;
+  key: symbol;
+}> = [];
+
+async function openDirectSubscription(
+  input: Parameters<typeof openMcpSubscription>[0] & { key: symbol },
+): Promise<void> {
+  await openMcpSubscription(input);
+  directSubscriptions.push({
+    id: input.request.id as string | number,
+    key: input.key,
+  });
+}
+
+async function startServer(
+  options: Parameters<typeof startPmMcpHttpServer>[0] = {},
+): Promise<{
+  baseUrl: string;
+  server: ReturnType<typeof createPmMcpHttpServer>;
+}> {
+  const server = await startPmMcpHttpServer({ ...options, port: 0 });
+  servers.push(server);
+  const address = server.address() as AddressInfo;
+  return { baseUrl: `http://127.0.0.1:${address.port}`, server };
+}
+
+async function stopServer(
+  server: ReturnType<typeof createPmMcpHttpServer>,
+): Promise<void> {
+  await closePmMcpHttpServer(server);
+  const index = servers.indexOf(server);
+  if (index >= 0) servers.splice(index, 1);
+}
+
+afterEach(async () => {
+  await Promise.all(servers.splice(0).map(stopServer));
+  serverTestOnly.closeStdioMcpSubscriptions();
+  for (const subscription of directSubscriptions.splice(0)) {
+    closeMcpSubscription(subscription.id, subscription.key);
+  }
+});
+
+describe("MCP 2026-07-28 Streamable HTTP", () => {
+  it("rejects transport adapters that bypass subscription request validation", async () => {
+    const sink = vi.fn();
+    await expect(
+      openMcpSubscription({
+        request: {
+          jsonrpc: "2.0",
+          id: null,
+          method: "subscriptions/listen",
+        },
+        sink,
+      }),
+    ).rejects.toThrow(/Invalid MCP subscriptions/u);
+    await expect(
+      openMcpSubscription({
+        request: { jsonrpc: "2.0", id: "wrong-method", method: "tools/list" },
+        sink,
+      }),
+    ).rejects.toThrow(/Invalid MCP subscriptions/u);
+    expect(sink).not.toHaveBeenCalled();
+  });
+
+  it("scopes duplicate ids and prunes failed transport sinks", async () => {
+    const request = modernRequest(
+      "subscriptions/listen",
+      {
+        notifications: {
+          resourceSubscriptions: ["pm://workspace/context"],
+        },
+      },
+      "transport-scope",
+    );
+    const failedKey = Symbol("failed-http-stream");
+    await openDirectSubscription({
+      request,
+      key: failedKey,
+      sink: (notification) => {
+        if (!notification.method.includes("acknowledged")) {
+          throw new Error("closed transport");
+        }
+      },
+    });
+    await expect(
+      openMcpSubscription({ request, key: failedKey, sink: vi.fn() }),
+    ).rejects.toThrow(/already active/u);
+
+    const healthyKey = Symbol("healthy-http-stream");
+    const healthy = vi.fn();
+    await openDirectSubscription({
+      request: modernRequest(
+        "subscriptions/listen",
+        { notifications: { toolsListChanged: true } },
+        "transport-scope",
+      ),
+      key: healthyKey,
+      sink: healthy,
+    });
+    await serverTestOnly.emitMcpChangeNotifications("install");
+    expect(healthy).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "notifications/tools/list_changed" }),
+    );
+    expect(serverTestOnly.subscriptionCount()).toBe(1);
+    expect(closeMcpSubscription("transport-scope", healthyKey)).toMatchObject({
+      resultType: "complete",
+    });
+  });
+
+  it("closes only stdio-owned streams during stdio shutdown", async () => {
+    const scopedKey = Symbol("http-stream");
+    await openDirectSubscription({
+      request: modernRequest(
+        "subscriptions/listen",
+        { notifications: {} },
+        "shared-id",
+      ),
+      key: scopedKey,
+      sink: vi.fn(),
+    });
+    await openMcpSubscription({
+      request: modernRequest(
+        "subscriptions/listen",
+        { notifications: {} },
+        "stdio-id",
+      ),
+      sink: vi.fn(),
+    });
+    expect(serverTestOnly.closeStdioMcpSubscriptions()).toEqual([
+      expect.objectContaining({ id: "stdio-id" }),
+    ]);
+    expect(closeMcpSubscription("shared-id", scopedKey)).toMatchObject({
+      resultType: "complete",
+    });
+    await openMcpSubscription({
+      request: modernRequest(
+        "subscriptions/listen",
+        { notifications: {} },
+        "stale-stdio",
+      ),
+      sink: vi.fn(),
+    });
+    expect(
+      serverTestOnly.expireMcpSubscriptionRecord("stale-stdio"),
+    ).toMatchObject({ resultType: "complete" });
+    expect(serverTestOnly.closeStdioMcpSubscriptions()).toEqual([]);
+  });
+
+  it("preserves SSE ordering through drain and rejects closed backpressure", async () => {
+    class BackpressuredResponse extends EventEmitter {
+      readonly writes: string[] = [];
+
+      write(value: string): boolean {
+        this.writes.push(value);
+        return false;
+      }
+    }
+    const drained = new BackpressuredResponse();
+    const pendingDrain = writePmMcpSseEvent(
+      drained as unknown as ServerResponse,
+      { ok: true },
+    );
+    drained.emit("drain");
+    await expect(pendingDrain).resolves.toBeUndefined();
+    expect(drained.writes).toEqual(['data: {"ok":true}\n\n']);
+
+    const closed = new BackpressuredResponse();
+    const pendingClose = writePmMcpSseEvent(
+      closed as unknown as ServerResponse,
+      { ok: false },
+    );
+    closed.emit("close");
+    await expect(pendingClose).rejects.toThrow(/backpressure/u);
+
+    class SynchronouslyClosedResponse extends EventEmitter {
+      write(): boolean {
+        this.emit("close");
+        return true;
+      }
+    }
+    await expect(
+      writePmMcpSseEvent(
+        new SynchronouslyClosedResponse() as unknown as ServerResponse,
+        { synchronous: "close" },
+      ),
+    ).rejects.toThrow(/backpressure/u);
+
+    class ThrowingResponse extends EventEmitter {
+      write(): boolean {
+        throw new Error("write failed");
+      }
+    }
+    await expect(
+      writePmMcpSseEvent(new ThrowingResponse() as unknown as ServerResponse, {
+        synchronous: "throw",
+      }),
+    ).rejects.toThrow(/write failed/u);
+  });
+
+  it("enforces endpoint, origin, content negotiation, headers, and JSON-RPC status mapping", async () => {
+    const { baseUrl, server } = await startServer({ maximumBodyBytes: 512 });
+    await expect(fetch(`${baseUrl}/missing`)).resolves.toMatchObject({
+      status: 404,
+    });
+    await expect(fetch(`${baseUrl}/mcp`)).resolves.toMatchObject({
+      status: 405,
+    });
+    await expect(
+      fetch(`${baseUrl}/mcp`, { method: "POST", body: "{}" }),
+    ).resolves.toMatchObject({ status: 406 });
+    await expect(
+      fetch(`${baseUrl}/mcp`, {
+        method: "POST",
+        headers: { Accept: "application/json, text/event-stream" },
+        body: "{}",
+      }),
+    ).resolves.toMatchObject({ status: 406 });
+    await expect(
+      fetch(`${baseUrl}/mcp`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: "{}",
+      }),
+    ).resolves.toMatchObject({ status: 406 });
+    await expect(
+      fetch(`${baseUrl}/mcp`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          Origin: "https://attacker.test",
+        },
+        body: "{}",
+      }),
+    ).resolves.toMatchObject({ status: 403 });
+
+    const invalidSubscription = modernRequest(
+      "subscriptions/listen",
+      { notifications: { toolsListChanged: "yes" } },
+      "invalid-filter",
+    );
+    const invalidSubscriptionResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: invalidSubscription }),
+      body: JSON.stringify(invalidSubscription),
+    });
+    expect(invalidSubscriptionResponse.status).toBe(400);
+    expect(invalidSubscriptionResponse.headers.get("content-type")).toContain(
+      "application/json",
+    );
+    expect(
+      invalidSubscriptionResponse.headers.get("x-accel-buffering"),
+    ).toBeNull();
+
+    const discover = modernRequest("server/discover");
+    const discoverResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: discover }),
+      body: JSON.stringify(discover),
+    });
+    expect(discoverResponse.status).toBe(200);
+    await expect(discoverResponse.json()).resolves.toMatchObject({
+      id: 1,
+      result: {
+        resultType: "complete",
+        capabilities: { resources: { subscribe: true } },
+      },
+    });
+
+    const mismatched = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        ...buildMcpHttpRequestHeaders({ request: discover }),
+        "Mcp-Method": "tools/list",
+      },
+      body: JSON.stringify(discover),
+    });
+    expect(mismatched.status).toBe(400);
+    await expect(mismatched.json()).resolves.toMatchObject({
+      error: { code: -32020 },
+    });
+
+    const missing = modernRequest("missing/current");
+    const missingResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: missing }),
+      body: JSON.stringify(missing),
+    });
+    expect(missingResponse.status).toBe(404);
+    await expect(missingResponse.json()).resolves.toMatchObject({
+      error: { code: -32601 },
+    });
+
+    const invalidJson = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/event-stream",
+        "Content-Type": "application/json",
+      },
+      body: "{",
+    });
+    expect(invalidJson.status).toBe(400);
+    await expect(invalidJson.json()).resolves.toMatchObject({
+      error: { code: -32700 },
+    });
+
+    const oversized = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: discover }),
+      body: JSON.stringify({ ...discover, padding: "x".repeat(600) }),
+    });
+    expect(oversized.status).toBe(400);
+
+    const invalidRequest = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/event-stream",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([]),
+    });
+    expect(invalidRequest.status).toBe(400);
+
+    const notification = modernRequest("notifications/cancelled", {
+      requestId: 999,
+    });
+    delete notification.id;
+    const notificationResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: notification }),
+      body: JSON.stringify(notification),
+    });
+    expect(notificationResponse.status).toBe(202);
+    expect(await notificationResponse.text()).toBe("");
+
+    const missingTool = modernRequest("tools/call", {
+      name: "missing/current-tool",
+      arguments: {},
+    });
+    const toolResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: missingTool }),
+      body: JSON.stringify(missingTool),
+    });
+    expect(toolResponse.status).toBe(200);
+    await expect(toolResponse.json()).resolves.toMatchObject({
+      result: { isError: true, resultType: "complete" },
+    });
+    const anonymousTool = { ...missingTool, id: null };
+    const anonymousToolResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: anonymousTool }),
+      body: JSON.stringify(anonymousTool),
+    });
+    await expect(anonymousToolResponse.json()).resolves.toMatchObject({
+      id: null,
+      result: { isError: true },
+    });
+    const namelessTool = modernRequest("tools/call", { arguments: {} });
+    const namelessToolResponse = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/event-stream",
+        "Content-Type": "application/json",
+        "MCP-Protocol-Version": PM_MCP_PROTOCOL_VERSION,
+        "Mcp-Method": "tools/call",
+      },
+      body: JSON.stringify(namelessTool),
+    });
+    expect(namelessToolResponse.status).toBe(400);
+    await stopServer(server);
+  });
+
+  it("maps embedding failures without exposing non-Error values", async () => {
+    for (const [requestHandler, expectedMessage] of [
+      [() => undefined, undefined],
+      [
+        () => {
+          throw new Error("embedding failed");
+        },
+        "embedding failed",
+      ],
+      [
+        () => {
+          throw "private failure";
+        },
+        "Internal MCP error",
+      ],
+    ] as const) {
+      const { baseUrl, server } = await startServer({ requestHandler });
+      const request = modernRequest("server/discover", {}, null);
+      const response = await fetch(`${baseUrl}/mcp`, {
+        method: "POST",
+        headers: buildMcpHttpRequestHeaders({ request }),
+        body: JSON.stringify(request),
+      });
+      expect(response.status).toBe(expectedMessage ? 500 : 200);
+      const body = await response.json();
+      if (expectedMessage)
+        expect(body).toMatchObject({ error: { message: expectedMessage } });
+      else expect(body).toMatchObject({ id: null, result: {} });
+      await stopServer(server);
+    }
+  });
+
+  it("refuses anonymous subscriptions and resolves hardened executable options", async () => {
+    const { baseUrl, server } = await startServer();
+    const listen = modernRequest("subscriptions/listen", { notifications: {} });
+    delete listen.id;
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: listen }),
+      body: JSON.stringify(listen),
+    });
+    expect(response.status).toBe(400);
+    await stopServer(server);
+
+    expect(resolvePmMcpHttpListenAddress()).toEqual({
+      host: "127.0.0.1",
+      port: 3000,
+    });
+    expect(
+      resolvePmMcpHttpListenAddress({ host: "localhost", port: 0 }),
+    ).toEqual({ host: "localhost", port: 0 });
+    expect(resolvePmMcpHttpServerOptionsFromEnvironment({})).toMatchObject({
+      host: "127.0.0.1",
+      port: 3000,
+      allowedOrigins: [],
+    });
+    for (const blankPort of ["", "   "]) {
+      expect(
+        resolvePmMcpHttpServerOptionsFromEnvironment({
+          PM_MCP_HTTP_PORT: blankPort,
+        }),
+      ).toMatchObject({ port: 3000 });
+    }
+    expect(
+      resolvePmMcpHttpServerOptionsFromEnvironment({
+        PM_MCP_HTTP_HOST: "localhost",
+      }),
+    ).not.toHaveProperty("authorization");
+    for (const port of ["not-a-port", "-1", "65536"]) {
+      expect(() =>
+        resolvePmMcpHttpServerOptionsFromEnvironment({
+          PM_MCP_HTTP_PORT: port,
+        }),
+      ).toThrow(/PM_MCP_HTTP_PORT/u);
+    }
+    expect(() =>
+      resolvePmMcpHttpServerOptionsFromEnvironment({
+        PM_MCP_HTTP_HOST: "0.0.0.0",
+      }),
+    ).toThrow(/Non-loopback/u);
+    const configured = resolvePmMcpHttpServerOptionsFromEnvironment({
+      PM_MCP_HTTP_HOST: " 0.0.0.0 ",
+      PM_MCP_HTTP_PORT: "8443",
+      PM_MCP_HTTP_ALLOWED_ORIGINS: " https://one.test, ,https://two.test ",
+      PM_MCP_HTTP_BEARER_TOKEN: " token ",
+      PM_MCP_HTTP_AUTH_ISSUER: " https://auth.example.test ",
+      PM_MCP_HTTP_RESOURCE: " https://mcp.example.test/mcp ",
+      PM_MCP_HTTP_SCOPES: "pm:read   pm:write",
+    });
+    expect(configured).toMatchObject({
+      host: "0.0.0.0",
+      port: 8443,
+      allowedOrigins: ["https://one.test", "https://two.test"],
+      protectedResourceMetadata: {
+        authorization_servers: ["https://auth.example.test"],
+      },
+    });
+    expect(configured.authorization?.verifyAccessToken("token")).toMatchObject({
+      principal: "configured-remote-client",
+    });
+  });
+
+  it("surfaces bind conflicts and accepts HTTP/1.0 requests without Host", async () => {
+    const { server } = await startServer();
+    const address = server.address() as AddressInfo;
+    await expect(
+      startPmMcpHttpServer({ host: "127.0.0.1", port: address.port }),
+    ).rejects.toMatchObject({ code: "EADDRINUSE" });
+    const status = await new Promise<number | undefined>((resolve, reject) => {
+      const request = httpRequest(
+        {
+          host: "127.0.0.1",
+          port: address.port,
+          path: "/missing",
+          method: "GET",
+          setHost: false,
+        },
+        (response) => {
+          response.resume();
+          response.once("end", () => resolve(response.statusCode));
+        },
+      );
+      request.once("error", reject);
+      request.end();
+    });
+    expect(status).toBe(400);
+    await stopServer(server);
+  });
+
+  it("reports close failures from embedding servers", async () => {
+    const server = {
+      close: (callback: (error?: Error) => void) =>
+        callback(new Error("close failed")),
+      closeAllConnections: vi.fn(),
+    };
+    await expect(closePmMcpHttpServer(server as never)).rejects.toThrow(
+      "close failed",
+    );
+    expect(server.closeAllConnections).not.toHaveBeenCalled();
+  });
+
+  it("finishes committed SSE failures without a second JSON response", () => {
+    for (const state of [
+      { headersSent: true, writableEnded: false, destroyed: false },
+      { headersSent: false, writableEnded: true, destroyed: false },
+      { headersSent: false, writableEnded: false, destroyed: true },
+    ]) {
+      const response = {
+        ...state,
+        end: vi.fn(),
+        writeHead: vi.fn(),
+      } as unknown as ServerResponse;
+      httpServerTestOnly.writeMcpHttpDispatchError(
+        response,
+        undefined,
+        new Error("SSE write failed"),
+      );
+      expect(response.writeHead).not.toHaveBeenCalled();
+      expect(response.end).toHaveBeenCalledTimes(
+        state.headersSent && !state.writableEnded && !state.destroyed ? 1 : 0,
+      );
+    }
+
+    const destroy = vi.fn();
+    httpServerTestOnly.destroyFailedMcpHttpResponse(
+      { destroy } as unknown as ServerResponse,
+      "private rejection",
+    );
+    expect(destroy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unhandled MCP HTTP request failure",
+        cause: "private rejection",
+      }),
+    );
+  });
+
+  it("serves protected-resource metadata and issuer-bound bearer challenges", async () => {
+    const resource = "http://127.0.0.1/mcp";
+    const issuer = "https://auth.example.test";
+    const metadata = buildMcpProtectedResourceMetadata({
+      resource,
+      authorizationServers: [issuer],
+      scopes: ["pm:read"],
+    });
+    const policy = {
+      issuer,
+      resource: metadata.resource,
+      requiredScopes: ["pm:read"],
+      resourceMetadataUrl:
+        "http://127.0.0.1/.well-known/oauth-protected-resource",
+      verifyAccessToken: createMcpStaticBearerVerifier({
+        token: "test-token",
+        claims: {
+          principal: "test-client",
+          issuer,
+          audience: metadata.resource,
+          scopes: ["pm:read"],
+        },
+      }),
+    };
+    const { baseUrl, server } = await startServer({
+      authorization: policy,
+      protectedResourceMetadata: metadata,
+    });
+    const metadataResponse = await fetch(
+      `${baseUrl}/.well-known/oauth-protected-resource/mcp`,
+    );
+    expect(metadataResponse.status).toBe(200);
+    await expect(metadataResponse.json()).resolves.toEqual(metadata);
+
+    const discover = modernRequest("server/discover");
+    const headers = buildMcpHttpRequestHeaders({ request: discover });
+    const unauthorized = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(discover),
+    });
+    expect(unauthorized.status).toBe(401);
+    expect(unauthorized.headers.get("www-authenticate")).toContain(
+      "resource_metadata",
+    );
+    const authorized = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: { ...headers, Authorization: "Bearer test-token" },
+      body: JSON.stringify(discover),
+    });
+    expect(authorized.status).toBe(200);
+    await stopServer(server);
+  });
+
+  it("streams subscription acknowledgment and closes cleanly without SSE replay ids", async () => {
+    const { baseUrl, server } = await startServer({ keepAliveMs: 5 });
+    const controller = new AbortController();
+    const listen = modernRequest(
+      "subscriptions/listen",
+      { notifications: { toolsListChanged: true } },
+      "listen-http",
+    );
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: listen }),
+      body: JSON.stringify(listen),
+      signal: controller.signal,
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(response.headers.get("x-accel-buffering")).toBe("no");
+    const reader = response.body?.getReader();
+    const first = await reader?.read();
+    const decoded = new TextDecoder().decode(first?.value);
+    expect(decoded).toContain("notifications/subscriptions/acknowledged");
+    expect(decoded).not.toContain("id:");
+    await serverTestOnly.emitMcpChangeNotifications("install");
+    let notification = new TextDecoder().decode((await reader?.read())?.value);
+    if (!notification.includes("notifications/tools/list_changed")) {
+      notification += new TextDecoder().decode((await reader?.read())?.value);
+    }
+    expect(notification).toContain("notifications/tools/list_changed");
+    const keepAlive = await Promise.race([
+      reader?.read(),
+      new Promise<never>((_resolve, reject) =>
+        setTimeout(() => reject(new Error("subscription stream stopped")), 100),
+      ),
+    ]);
+    expect(new TextDecoder().decode(keepAlive?.value)).toContain(":");
+    const finalRead = reader?.read();
+    await stopServer(server);
+    const finalEvent = new TextDecoder().decode((await finalRead)?.value);
+    expect(finalEvent).toContain('"resultType":"complete"');
+    controller.abort();
+    await reader?.cancel().catch(() => undefined);
+  });
+
+  it("ends an HTTP stream without a duplicate result after registry pruning", async () => {
+    const { baseUrl, server } = await startServer({ keepAliveMs: 0 });
+    const listen = modernRequest(
+      "subscriptions/listen",
+      { notifications: {} },
+      "pruned-http",
+    );
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: listen }),
+      body: JSON.stringify(listen),
+    });
+    const reader = response.body?.getReader();
+    await reader?.read();
+    const key = httpServerTestOnly.activeSubscriptionKey(server);
+    expect(key).toBeTypeOf("symbol");
+    expect(
+      serverTestOnly.expireMcpSubscriptionRecord("pruned-http", key),
+    ).toMatchObject({ resultType: "complete" });
+    const finalRead = reader?.read();
+    await stopServer(server);
+    await expect(finalRead).resolves.toMatchObject({ done: true });
+  });
+
+  it("removes a subscription when the response closes during acknowledgment", async () => {
+    const { server } = await startServer({ keepAliveMs: 0 });
+    class ClosingResponse extends EventEmitter {
+      destroyed = false;
+      writableEnded = false;
+      #closed = false;
+
+      constructor(private readonly closeMode: "event" | "destroyed" | "ended") {
+        super();
+      }
+
+      setHeader(): void {
+        if (this.#closed) return;
+        this.#closed = true;
+        if (this.closeMode === "event") this.emit("close");
+        if (this.closeMode === "destroyed") this.destroyed = true;
+        if (this.closeMode === "ended") this.writableEnded = true;
+      }
+
+      write(): boolean {
+        return true;
+      }
+    }
+    for (const closeMode of ["event", "destroyed", "ended"] as const) {
+      await httpServerTestOnly.openHttpSubscription(
+        server,
+        modernRequest(
+          "subscriptions/listen",
+          { notifications: {} },
+          `disconnect-during-ack-${closeMode}`,
+        ),
+        new ClosingResponse(closeMode) as unknown as ServerResponse,
+      );
+      expect(httpServerTestOnly.activeSubscriptionKey(server)).toBeUndefined();
+      expect(serverTestOnly.subscriptionCount()).toBe(0);
+    }
+  });
+
+  it("rejects an HTTP subscription whose response is already closed", async () => {
+    const { server } = await startServer({ keepAliveMs: 0 });
+    class ClosedResponse extends EventEmitter {
+      writableEnded: boolean;
+      destroyed: boolean;
+
+      constructor(mode: "destroyed" | "ended") {
+        super();
+        this.destroyed = mode === "destroyed";
+        this.writableEnded = mode === "ended";
+      }
+
+      write(): boolean {
+        return true;
+      }
+    }
+    for (const mode of ["destroyed", "ended"] as const) {
+      await expect(
+        httpServerTestOnly.openHttpSubscription(
+          server,
+          modernRequest(
+            "subscriptions/listen",
+            { notifications: {} },
+            `already-closed-${mode}`,
+          ),
+          new ClosedResponse(mode) as unknown as ServerResponse,
+        ),
+      ).rejects.toThrow(/closed before acknowledgment/u);
+    }
+    expect(serverTestOnly.subscriptionCount()).toBe(0);
+  });
+
+  it("allows independent HTTP clients to reuse a JSON-RPC subscription id", async () => {
+    const { baseUrl, server } = await startServer({ keepAliveMs: 0 });
+    const listen = modernRequest(
+      "subscriptions/listen",
+      { notifications: {} },
+      "client-local-id",
+    );
+    const open = () =>
+      fetch(`${baseUrl}/mcp`, {
+        method: "POST",
+        headers: buildMcpHttpRequestHeaders({ request: listen }),
+        body: JSON.stringify(listen),
+      });
+    const [firstResponse, secondResponse] = await Promise.all([open(), open()]);
+    const firstReader = firstResponse.body?.getReader();
+    const secondReader = secondResponse.body?.getReader();
+    for (const reader of [firstReader, secondReader]) {
+      const acknowledgment = await reader?.read();
+      expect(new TextDecoder().decode(acknowledgment?.value)).toContain(
+        "notifications/subscriptions/acknowledged",
+      );
+    }
+    const firstFinal = firstReader?.read();
+    const secondFinal = secondReader?.read();
+    await stopServer(server);
+    for (const final of [firstFinal, secondFinal]) {
+      expect(new TextDecoder().decode((await final)?.value)).toContain(
+        '"resultType":"complete"',
+      );
+    }
+  });
+
+  it("closes a timer-free stream after a client disconnect", async () => {
+    const { baseUrl, server } = await startServer({ keepAliveMs: 0 });
+    const controller = new AbortController();
+    const listen = modernRequest(
+      "subscriptions/listen",
+      { notifications: {} },
+      "timer-free",
+    );
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: buildMcpHttpRequestHeaders({ request: listen }),
+      body: JSON.stringify(listen),
+      signal: controller.signal,
+    });
+    const reader = response.body?.getReader();
+    const acknowledgment = await reader?.read();
+    expect(new TextDecoder().decode(acknowledgment?.value)).toContain(
+      "notifications/subscriptions/acknowledged",
+    );
+    controller.abort();
+    await reader?.cancel().catch(() => undefined);
+    await stopServer(server);
+  });
+
+  it("supports correlated stdio subscription acknowledgment and cancellation", async () => {
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    try {
+      const listen = modernRequest(
+        "subscriptions/listen",
+        { notifications: { resourcesListChanged: true } },
+        777,
+      );
+      await processRpcLine(JSON.stringify(listen));
+      expect(JSON.parse(String(writeSpy.mock.calls[0]?.[0]))).toMatchObject({
+        method: "notifications/subscriptions/acknowledged",
+        params: { _meta: { [PM_MCP_SUBSCRIPTION_ID_META_KEY]: 777 } },
+      });
+      await processRpcLine(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          method: "notifications/cancelled",
+          params: { requestId: 777 },
+        }),
+      );
+      expect(JSON.parse(String(writeSpy.mock.calls[1]?.[0]))).toMatchObject({
+        id: 777,
+        result: {
+          resultType: "complete",
+          _meta: { [PM_MCP_SUBSCRIPTION_ID_META_KEY]: 777 },
+        },
+      });
+      expect(closeMcpSubscription(777)).toBeUndefined();
+      const writeCount = writeSpy.mock.calls.length;
+      await processRpcLine(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          method: "notifications/cancelled",
+          params: { requestId: "missing-subscription" },
+        }),
+      );
+      expect(writeSpy).toHaveBeenCalledTimes(writeCount);
+    } finally {
+      writeSpy.mockRestore();
+    }
+  });
+});

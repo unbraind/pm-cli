@@ -1256,6 +1256,13 @@
       ],
       "package_version": "2026.8.24",
       "reason": "Add strict requireExisting settlement mode while preserving default idempotency"
+    },
+    {
+      "changes": [
+        "signature ./sdk:validateMcpAuthorizationServerMetadata"
+      ],
+      "package_version": "2026.8.25",
+      "reason": "Covariant return refinement: existing metadata interface remains source-compatible while the validator now exposes endpoints it already requires at runtime"
     }
   ],
   "entrypoints": {
@@ -2709,6 +2716,12 @@
           "signature": "export interface AuthorIdentityVocabulary { version: number; aliases: Readonly<Record<string, string>>; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "authorizeMcpHttpRequest",
+          "signature": "(input: { headers: PmMcpHttpHeaders; requestUrl: string; policy: PmMcpHttpAuthorizationPolicy; }) => Promise<PmMcpAccessTokenClaims> | calls: (input: { headers: PmMcpHttpHeaders; requestUrl: string; policy: PmMcpHttpAuthorizationPolicy; }) => Promise<PmMcpAccessTokenClaims>"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "AuthorSource",
@@ -2945,6 +2958,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "buildMcpAuthorizationDiscoveryUrls",
+          "signature": "(issuer: string) => string[] | calls: (issuer: string) => string[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "buildMcpCompleteResult",
           "signature": "<Payload extends Record<string, unknown>>(payload: Payload, serverInfo: PmMcpImplementation) => Payload & PmMcpResultEnvelope | calls: <Payload extends Record<string, unknown>>(payload: Payload, serverInfo: PmMcpImplementation) => Payload & PmMcpResultEnvelope"
         },
@@ -2957,8 +2976,26 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "buildMcpDynamicRegistrationMetadata",
+          "signature": "(input: { redirectUris: readonly string[]; applicationType: \"native\" | \"web\"; clientName: string; }) => Record<string, unknown> | calls: (input: { redirectUris: readonly string[]; applicationType: \"native\" | \"web\"; clientName: string; }) => Record<string, unknown>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildMcpHttpRequestHeaders",
+          "signature": "(input: { request: Record<string, unknown>; toolSchema?: unknown; }) => Record<string, string> | calls: (input: { request: Record<string, unknown>; toolSchema?: unknown; }) => Record<string, string>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "buildMcpInputRequiredResult",
           "signature": "(input: { requestContext: PmMcpRequestContext; serverInfo: PmMcpImplementation; inputRequests?: unknown; requestState?: string; }) => PmMcpInputRequiredResult | calls: (input: { requestContext: PmMcpRequestContext; serverInfo: PmMcpImplementation; inputRequests?: unknown; requestState?: string; }) => PmMcpInputRequiredResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildMcpProtectedResourceMetadata",
+          "signature": "(input: { resource: string; authorizationServers: readonly string[]; scopes?: readonly string[]; }) => PmMcpProtectedResourceMetadata | calls: (input: { resource: string; authorizationServers: readonly string[]; scopes?: readonly string[]; }) => PmMcpProtectedResourceMetadata"
         },
         {
           "classification": "supported",
@@ -3487,6 +3524,12 @@
           "kind": "function",
           "name": "collectHierarchyRelations",
           "signature": "(items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[] | calls: (items: readonly HierarchyIntegrityItem[], registry?: RelationshipKindRegistry) => HierarchyRelation[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "collectMcpHeaderAnnotations",
+          "signature": "(schema: unknown) => PmMcpHeaderAnnotation[] | calls: (schema: unknown) => PmMcpHeaderAnnotation[]"
         },
         {
           "classification": "supported",
@@ -4433,6 +4476,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "createMcpStaticBearerVerifier",
+          "signature": "(input: { token: string; claims: PmMcpAccessTokenClaims; }) => (token: string) => PmMcpAccessTokenClaims | calls: (input: { token: string; claims: PmMcpAccessTokenClaims; }) => (token: string) => PmMcpAccessTokenClaims"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "createMcpTaskStore",
           "signature": "(options: PmMcpTaskStoreOptions) => PmMcpTaskStore | calls: (options: PmMcpTaskStoreOptions) => PmMcpTaskStore"
         },
@@ -4609,6 +4658,12 @@
           "kind": "function",
           "name": "decodeHtmlEntitiesInOptions",
           "signature": "<T>(options: T) => T | calls: <T>(options: T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "decodeMcpHttpHeaderValue",
+          "signature": "(value: string, header: string) => string | calls: (value: string, header: string) => string"
         },
         {
           "classification": "supported",
@@ -5377,6 +5432,12 @@
           "kind": "function",
           "name": "emptyImportedDocument",
           "signature": "() => ItemDocument | calls: () => ItemDocument"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "encodeMcpHttpHeaderValue",
+          "signature": "(value: string | number | boolean) => string | calls: (value: string | number | boolean) => string"
         },
         {
           "classification": "supported",
@@ -6341,6 +6402,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "extractMcpTraceContext",
+          "signature": "(params: unknown, options?: { baggageAllowlist?: readonly string[]; }) => PmMcpTraceContext | calls: (params: unknown, options?: { baggageAllowlist?: readonly string[]; }) => PmMcpTraceContext"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "extractPatchFailureContext",
           "signature": "(patch: HistoryPatchOp[], error: unknown) => PatchFailureContext | calls: (patch: HistoryPatchOp[], error: unknown) => PatchFailureContext"
         },
@@ -6709,6 +6776,12 @@
           "kind": "function",
           "name": "getActiveExtensionRegistrations",
           "signature": "() => ExtensionRegistrationRegistry | null | calls: () => ExtensionRegistrationRegistry | null"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "getActiveMcpTraceContext",
+          "signature": "() => PmMcpTraceContext | undefined | calls: () => PmMcpTraceContext | undefined"
         },
         {
           "classification": "supported",
@@ -9761,6 +9834,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "parseMcpSubscriptionFilter",
+          "signature": "(value: unknown) => PmMcpSubscriptionFilter | calls: (value: unknown) => PmMcpSubscriptionFilter"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "parseMigrateEntries",
           "signature": "(raw: string[] | undefined) => PathMigration[] | calls: (raw: string[] | undefined) => PathMigration[]"
         },
@@ -10337,6 +10416,12 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_MCP_HTTP_PROTOCOL_VERSION",
+          "signature": "\"2026-07-28\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_MCP_INPUT_REQUEST_METHODS",
           "signature": "readonly [\"elicitation/create\", \"roots/list\", \"sampling/createMessage\"]"
         },
@@ -10369,6 +10454,12 @@
           "kind": "value",
           "name": "PM_MCP_RESOURCE_CONTRACTS",
           "signature": "readonly PmMcpResourceContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_SUBSCRIPTION_ID_META_KEY",
+          "signature": "\"io.modelcontextprotocol/subscriptionId\""
         },
         {
           "classification": "advanced_export",
@@ -11147,6 +11238,24 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "PmMcpAccessTokenClaims",
+          "signature": "export interface PmMcpAccessTokenClaims { principal: string; issuer: string; audience: string | string[]; scopes: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "class",
+          "name": "PmMcpAuthorizationError",
+          "signature": "export declare class PmMcpAuthorizationError extends Error { readonly httpStatus: 401 | 403; readonly challenge?: string; constructor(message: string, httpStatus: 401 | 403, challenge?: string); }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpAuthorizationServerMetadata",
+          "signature": "export interface PmMcpAuthorizationServerMetadata { issuer: string; authorization_endpoint?: string; token_endpoint?: string; code_challenge_methods_supported: string[]; client_id_metadata_document_supported?: boolean; registration_endpoint?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "PmMcpCachePolicy",
           "signature": "export interface PmMcpCachePolicy { ttlMs: number; cacheScope: \"private\" | \"public\"; [key: string]: unknown; }"
         },
@@ -11155,6 +11264,12 @@
           "kind": "type",
           "name": "PmMcpClientCapabilities",
           "signature": "export type PmMcpClientCapabilities = Record<string, unknown>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpClientRegistrationMode",
+          "signature": "export type PmMcpClientRegistrationMode = \"pre_registered\" | \"client_id_metadata_document\" | \"dynamic\" | \"user_supplied\";"
         },
         {
           "classification": "advanced_export",
@@ -11173,6 +11288,24 @@
           "kind": "interface",
           "name": "PmMcpDiscoverResult",
           "signature": "export interface PmMcpDiscoverResult extends PmMcpResultEnvelope { supportedVersions: string[]; capabilities: PmMcpServerCapabilities; ttlMs: number; cacheScope: \"public\"; instructions?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpHeaderAnnotation",
+          "signature": "export interface PmMcpHeaderAnnotation { name: string; path: string[]; type: \"boolean\" | \"integer\" | \"string\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpHttpAuthorizationPolicy",
+          "signature": "export interface PmMcpHttpAuthorizationPolicy { issuer: string; resource: string; requiredScopes?: string[]; resourceMetadataUrl: string; verifyAccessToken: (token: string) => PmMcpAccessTokenClaims | Promise<PmMcpAccessTokenClaims>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpHttpHeaders",
+          "signature": "export type PmMcpHttpHeaders = Record<string, string | readonly string[] | undefined>;"
         },
         {
           "classification": "advanced_export",
@@ -11212,6 +11345,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "class",
+          "name": "PmMcpIssuerCredentialStore",
+          "signature": "export declare class PmMcpIssuerCredentialStore<Credential extends Record<string, unknown>> { #private; set(issuer: string, credential: Credential): void; get(issuer: string): Credential | undefined; delete(issuer: string): boolean; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "PmMcpJsonSchemaBounds",
           "signature": "export interface PmMcpJsonSchemaBounds { maxBytes?: number; maxDepth?: number; maxNodes?: number; }"
@@ -11227,6 +11366,12 @@
           "kind": "interface",
           "name": "PmMcpPromptContract",
           "signature": "export interface PmMcpPromptContract { name: string; description: string; arguments: readonly PmMcpPromptArgumentContract[]; template: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpProtectedResourceMetadata",
+          "signature": "export interface PmMcpProtectedResourceMetadata { resource: string; authorization_servers: string[]; scopes_supported?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -11285,6 +11430,36 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "PmMcpSubscriptionFilter",
+          "signature": "export interface PmMcpSubscriptionFilter { toolsListChanged?: boolean; promptsListChanged?: boolean; resourcesListChanged?: boolean; resourceSubscriptions?: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpSubscriptionId",
+          "signature": "export type PmMcpSubscriptionId = string | number;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpSubscriptionNotification",
+          "signature": "export interface PmMcpSubscriptionNotification { jsonrpc: \"2.0\"; method: string; params: Record<string, unknown>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "class",
+          "name": "PmMcpSubscriptionRegistry",
+          "signature": "export declare class PmMcpSubscriptionRegistry { #private; constructor(input: { capabilities: PmMcpServerCapabilities; serverInfo: PmMcpImplementation; }); get size(): number; open(input: { id: PmMcpSubscriptionId; notifications: unknown; sink: PmMcpSubscriptionSink; }): Promise<PmMcpSubscriptionFilter>; emitListChanged(family: \"tools\" | \"prompts\" | \"resources\"): Promise<number>; emitResourceUpdated(uri: string): Promise<number>; close(id: PmMcpSubscriptionId): Record<string, unknown> | undefined; closeAll(): Array<{ id: PmMcpSubscriptionId; result: Record<string, unknown>; }>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpSubscriptionSink",
+          "signature": "export type PmMcpSubscriptionSink = (notification: PmMcpSubscriptionNotification) => void | Promise<void>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "PmMcpTask",
           "signature": "export interface PmMcpTask { taskId: string; status: PmMcpTaskStatus; statusMessage?: string; createdAt: string; lastUpdatedAt: string; ttlMs: number | null; pollIntervalMs?: number; [key: string]: unknown; }"
         },
@@ -11317,6 +11492,18 @@
           "kind": "type",
           "name": "PmMcpToolProfile",
           "signature": "export type PmMcpToolProfile = \"core\" | \"standard\" | \"full\" | \"custom\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpTraceContext",
+          "signature": "export interface PmMcpTraceContext { traceparent?: string; tracestate?: string; baggage?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpValidatedAuthorizationServerMetadata",
+          "signature": "export interface PmMcpValidatedAuthorizationServerMetadata extends PmMcpAuthorizationServerMetadata { authorization_endpoint: string; token_endpoint: string; }"
         },
         {
           "classification": "contract_data",
@@ -14015,6 +14202,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveMcpAcknowledgedSubscriptionFilter",
+          "signature": "(requested: PmMcpSubscriptionFilter, capabilities: PmMcpServerCapabilities) => PmMcpSubscriptionFilter | calls: (requested: PmMcpSubscriptionFilter, capabilities: PmMcpServerCapabilities) => PmMcpSubscriptionFilter"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveMcpRequestContext",
           "signature": "(params: unknown) => PmMcpRequestContext | calls: (params: unknown) => PmMcpRequestContext"
         },
@@ -15257,6 +15450,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "runWithMcpTraceContext",
+          "signature": "<Result>(context: PmMcpTraceContext, callback: () => Result) => Result | calls: <Result>(context: PmMcpTraceContext, callback: () => Result) => Result"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "runWithReproducibleProcessEnvironment",
           "signature": "<T>(environment: ReproducibleProcessEnvironment, operation: () => Promise<T>) => Promise<T> | calls: <T>(environment: ReproducibleProcessEnvironment, operation: () => Promise<T>) => Promise<T>"
         },
@@ -15913,6 +16112,12 @@
           "kind": "function",
           "name": "selectImportAuthor",
           "signature": "(explicitAuthor: string | undefined, settingsAuthor: string) => string | calls: (explicitAuthor: string | undefined, settingsAuthor: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "selectMcpClientRegistrationMode",
+          "signature": "(input: { hasPreRegisteredClient: boolean; metadata: Pick<PmMcpAuthorizationServerMetadata, \"client_id_metadata_document_supported\" | \"registration_endpoint\">; }) => PmMcpClientRegistrationMode | calls: (input: { hasPreRegisteredClient: boolean; metadata: Pick<PmMcpAuthorizationServerMetadata, \"client_id_metadata_document_supported\" | \"registration_endpoint\">; }) => PmMcpClientRegistrationMode"
         },
         {
           "classification": "supported",
@@ -17287,6 +17492,30 @@
           "kind": "function",
           "name": "validateLinkedPaths",
           "signature": "(paths: string[], workspaceRoot?: string) => Promise<LinkedPathValidation> | calls: (paths: string[], workspaceRoot?: string) => Promise<LinkedPathValidation>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "validateMcpAuthorizationResponseIssuer",
+          "signature": "(input: { expectedIssuer: string; responseIssuer?: string; issuerParameterSupported?: boolean; }) => void | calls: (input: { expectedIssuer: string; responseIssuer?: string; issuerParameterSupported?: boolean; }) => void"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "validateMcpAuthorizationServerMetadata",
+          "signature": "(value: unknown, expectedIssuer: string) => PmMcpValidatedAuthorizationServerMetadata | calls: (value: unknown, expectedIssuer: string) => PmMcpValidatedAuthorizationServerMetadata"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "validateMcpClientMetadataDocument",
+          "signature": "(value: unknown, documentUrl: string) => Record<string, unknown> | calls: (value: unknown, documentUrl: string) => Record<string, unknown>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "validateMcpHttpRequestHeaders",
+          "signature": "(input: { headers: PmMcpHttpHeaders; request: Record<string, unknown>; toolSchema?: unknown; }) => void | calls: (input: { headers: PmMcpHttpHeaders; request: Record<string, unknown>; toolSchema?: unknown; }) => void"
         },
         {
           "classification": "advanced_export",
