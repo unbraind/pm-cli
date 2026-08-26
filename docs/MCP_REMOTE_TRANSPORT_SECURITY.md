@@ -148,8 +148,11 @@ pnpm quality:mcp-deprecations
 ```
 
 The inventory classifies every match as canonical source, the isolated legacy
-adapter, migration documentation, or a negative control. Any canonical match
-for a removed method, session header, SSE resume mechanism, legacy
+adapter, migration documentation, a negative control, or
+`bounded_source_control`. The last disposition applies only to exact,
+single-use source lines in the reviewed fixed allowlist; an adjacent marker or
+an unlisted source path cannot create that exemption. Any canonical match for a
+removed method, session header, SSE resume mechanism, legacy
 resource-subscription method, or deprecated server policy fails the gate.
 
 The compatibility adapter supports only protocol `2025-06-18` on local stdio.

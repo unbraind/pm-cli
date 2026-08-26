@@ -94,6 +94,8 @@ describe("MCP remote authorization and trace contracts", () => {
     );
     expect(metadata).toMatchObject({
       issuer: "https://auth.example.test",
+      authorization_endpoint: "https://auth.example.test/authorize",
+      token_endpoint: "https://auth.example.test/token",
       code_challenge_methods_supported: ["S256"],
       client_id_metadata_document_supported: true,
       registration_endpoint: "https://auth.example.test/register",
@@ -417,5 +419,34 @@ describe("MCP remote authorization and trace contracts", () => {
         },
       }),
     ).rejects.toMatchObject({ httpStatus: 403 });
+    for (const invalidPolicy of [
+      {
+        ...policy,
+        resourceMetadataUrl: "https://mcp.example.test/\r\nInjected: value",
+      },
+      { ...policy, requiredScopes: ['pm:read"'] },
+      { ...policy, requiredScopes: ["pm:read\r\nInjected: value"] },
+    ]) {
+      await expect(
+        authorizeMcpHttpRequest({
+          headers: {},
+          requestUrl: "https://mcp.example.test/mcp",
+          policy: invalidPolicy,
+        }),
+      ).rejects.toMatchObject({ httpStatus: 401, challenge: undefined });
+    }
+    await expect(
+      authorizeMcpHttpRequest({
+        headers: {},
+        requestUrl: "https://mcp.example.test/mcp",
+        policy: {
+          ...policy,
+          resourceMetadataUrl: 'https://mcp.example.test/.well-known/"metadata',
+        },
+      }),
+    ).rejects.toMatchObject({
+      challenge:
+        'Bearer resource_metadata="https://mcp.example.test/.well-known/%22metadata"',
+    });
   });
 });

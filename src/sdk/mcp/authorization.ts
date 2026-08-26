@@ -51,6 +51,14 @@ export interface PmMcpAuthorizationServerMetadata {
   registration_endpoint?: string;
 }
 
+/** Discovery metadata after endpoint and PKCE validation succeeds. */
+export interface PmMcpValidatedAuthorizationServerMetadata extends PmMcpAuthorizationServerMetadata {
+  /** Validated HTTPS authorization endpoint for code flows. */
+  authorization_endpoint: string;
+  /** Validated HTTPS token endpoint used to redeem authorization codes. */
+  token_endpoint: string;
+}
+
 /** Client registration strategy ordered by current MCP preference. */
 export type PmMcpClientRegistrationMode =
   | "pre_registered"
@@ -105,8 +113,7 @@ const TRACE_STATE_VALUE_PATTERN =
   /^[\x20-\x2B\x2D-\x3C\x3E-\x7E]{0,255}[\x21-\x2B\x2D-\x3C\x3E-\x7E]$/u;
 const SCOPE_PATTERN = /^[\x21\x23-\x5B\x5D-\x7E]+$/u;
 const BAGGAGE_KEY_PATTERN = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/u;
-const BAGGAGE_VALUE_PATTERN =
-  /^[\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]*$/u;
+const BAGGAGE_VALUE_PATTERN = /^[\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]*$/u;
 const INVALID_PERCENT_ENCODING_PATTERN = /%(?![0-9A-Fa-f]{2})/u;
 const MAX_TRACE_STATE_BYTES = 512;
 const MAX_TRACE_STATE_MEMBERS = 32;
@@ -120,6 +127,9 @@ function requireAbsoluteAuthorizationUrl(
   field: string,
   allowLocalHttp = false,
 ): URL {
+  if (/\p{Cc}/u.test(value)) {
+    throw new PmMcpAuthorizationError(`Invalid ${field}`, 401);
+  }
   let parsed: URL;
   try {
     parsed = new URL(value);
@@ -208,7 +218,7 @@ export function buildMcpAuthorizationDiscoveryUrls(issuer: string): string[] {
 export function validateMcpAuthorizationServerMetadata(
   value: unknown,
   expectedIssuer: string,
-): PmMcpAuthorizationServerMetadata {
+): PmMcpValidatedAuthorizationServerMetadata {
   if (!isMcpRecord(value) || typeof value.issuer !== "string") {
     throw new PmMcpAuthorizationError(
       "Invalid authorization server metadata",
@@ -508,9 +518,7 @@ function parseMcpBaggageMember(
     separator > 0 ? pair.slice(0, separator) : "",
   );
   const value =
-    separator > 0
-      ? trimOptionalWhitespace(pair.slice(separator + 1))
-      : "";
+    separator > 0 ? trimOptionalWhitespace(pair.slice(separator + 1)) : "";
   if (
     !BAGGAGE_KEY_PATTERN.test(key) ||
     !isValidMcpBaggageValue(value) ||
@@ -585,7 +593,16 @@ export async function authorizeMcpHttpRequest(input: {
   requestUrl: string;
   policy: PmMcpHttpAuthorizationPolicy;
 }): Promise<PmMcpAccessTokenClaims> {
-  const challenge = `Bearer resource_metadata="${input.policy.resourceMetadataUrl}"`;
+  const resourceMetadataUrl = requireAbsoluteAuthorizationUrl(
+    input.policy.resourceMetadataUrl,
+    "protected resource metadata URL",
+    true,
+  ).href;
+  const requiredScopes = [...new Set(input.policy.requiredScopes ?? [])];
+  if (requiredScopes.some((scope) => !SCOPE_PATTERN.test(scope))) {
+    throw new PmMcpAuthorizationError("Invalid authorization scope", 401);
+  }
+  const challenge = `Bearer resource_metadata="${resourceMetadataUrl}"`;
   const parsedUrl = new URL(input.requestUrl, input.policy.resource);
   if (parsedUrl.searchParams.has("access_token")) {
     throw new PmMcpAuthorizationError(
@@ -630,7 +647,7 @@ export async function authorizeMcpHttpRequest(input: {
       challenge,
     );
   }
-  const missingScopes = (input.policy.requiredScopes ?? []).filter(
+  const missingScopes = requiredScopes.filter(
     (scope) => !claims.scopes.includes(scope),
   );
   if (missingScopes.length > 0) {

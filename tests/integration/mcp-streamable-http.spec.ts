@@ -241,10 +241,9 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
       }
     }
     await expect(
-      writePmMcpSseEvent(
-        new ThrowingResponse() as unknown as ServerResponse,
-        { synchronous: "throw" },
-      ),
+      writePmMcpSseEvent(new ThrowingResponse() as unknown as ServerResponse, {
+        synchronous: "throw",
+      }),
     ).rejects.toThrow(/write failed/u);
   });
 
@@ -481,6 +480,13 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
       port: 3000,
       allowedOrigins: [],
     });
+    for (const blankPort of ["", "   "]) {
+      expect(
+        resolvePmMcpHttpServerOptionsFromEnvironment({
+          PM_MCP_HTTP_PORT: blankPort,
+        }),
+      ).toMatchObject({ port: 3000 });
+    }
     expect(
       resolvePmMcpHttpServerOptionsFromEnvironment({
         PM_MCP_HTTP_HOST: "localhost",
@@ -557,6 +563,41 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
       "close failed",
     );
     expect(server.closeAllConnections).not.toHaveBeenCalled();
+  });
+
+  it("finishes committed SSE failures without a second JSON response", () => {
+    for (const state of [
+      { headersSent: true, writableEnded: false, destroyed: false },
+      { headersSent: false, writableEnded: true, destroyed: false },
+      { headersSent: false, writableEnded: false, destroyed: true },
+    ]) {
+      const response = {
+        ...state,
+        end: vi.fn(),
+        writeHead: vi.fn(),
+      } as unknown as ServerResponse;
+      httpServerTestOnly.writeMcpHttpDispatchError(
+        response,
+        undefined,
+        new Error("SSE write failed"),
+      );
+      expect(response.writeHead).not.toHaveBeenCalled();
+      expect(response.end).toHaveBeenCalledTimes(
+        state.headersSent && !state.writableEnded && !state.destroyed ? 1 : 0,
+      );
+    }
+
+    const destroy = vi.fn();
+    httpServerTestOnly.destroyFailedMcpHttpResponse(
+      { destroy } as unknown as ServerResponse,
+      "private rejection",
+    );
+    expect(destroy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unhandled MCP HTTP request failure",
+        cause: "private rejection",
+      }),
+    );
   });
 
   it("serves protected-resource metadata and issuer-bound bearer challenges", async () => {
@@ -687,9 +728,7 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
       writableEnded = false;
       #closed = false;
 
-      constructor(
-        private readonly closeMode: "event" | "destroyed" | "ended",
-      ) {
+      constructor(private readonly closeMode: "event" | "destroyed" | "ended") {
         super();
       }
 

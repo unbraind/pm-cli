@@ -6,10 +6,10 @@ status: closed
 priority: 1
 tags[8]: "area:mcp",cancellation,headers,progress,stdio,streamable-http,streaming,subscriptions
 created_at: "2026-08-25T05:09:03.758Z"
-updated_at: "2026-08-26T00:03:46.082Z"
+updated_at: "2026-08-26T01:38:59.676Z"
 deadline: "2026-10-31T00:00:00.000Z"
-closed_at: "2026-08-26T00:03:45.444Z"
-completed_at: "2026-08-26T00:03:45.444Z"
+closed_at: "2026-08-26T01:38:58.821Z"
+completed_at: "2026-08-26T01:38:58.821Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: "subscriptions/listen supports every specified notification type and tags notifications with the negotiated subscription id; Legacy HTTP GET, resources/subscribe, resources/unsubscribe, session headers, Last-Event-ID, SSE event ids, and redelivery semantics are absent from the canonical path; Progress and logging notifications remain request-scoped and cannot leak across concurrent requests; STDIO and Streamable HTTP pass equivalent tool, resource, prompt, cancellation, backpressure, disconnect, and retry cases; Mcp-Method, Mcp-Name, and x-mcp-header behavior is schema-derived, validated, and covered against injection and mismatch"
@@ -21,14 +21,14 @@ parent: pm-rs9vry
 risk: critical
 confidence: medium
 resolution: Implemented and verified
-expected_result: Transport-neutral subscriptions/listen and sessionless stdio/Streamable HTTP parity with schema-derived headers and bounded retry semantics.
-actual_result: "Public SDK contracts, both transports, packaging, security controls, docs, installed-consumer smoke, and exact full-suite coverage all pass."
+expected_result: "Transport-neutral subscriptions/listen and sessionless stdio/Streamable HTTP parity with schema-derived headers, bounded retry semantics, and committed-response safety."
+actual_result: "Public SDK contracts, both transports, packaging, committed-response cleanup, deterministic environment defaults, docs, installed-consumer smoke, and exact full-suite coverage all pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,blocked_by,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-x705zo,implements,"2026-08-25T05:09:03.758Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-25T05:50:33.335Z","harness:codex","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-25T05:09:03.758Z","harness:codex","Duplicate check evidence: searched all statuses for subscriptions/listen resourceSubscriptions Streamable HTTP Mcp-Session-Id Last-Event-ID Mcp-Method Mcp-Name x-mcp-header and stream retry. No item covers the new transport model."
   "2026-08-25T19:16:13.729Z","harness:codex","Execution scope: SDK-owned subscription contracts, stdio dispatch, Streamable HTTP header validation, request-scoped notification isolation, retry/disconnect semantics, tests, docs, and release evidence."
   "2026-08-25T19:54:19.554Z","harness:codex","Implementation evidence: added SDK-owned subscription filtering/correlation and schema-derived HTTP headers, real sessionless pm-mcp-http POST/SSE transport, stdio parity, asynchronous sink backpressure, response-stream disconnect cleanup, fresh-id retry proof, additive SDK snapshot, and operator docs. Focused transport/stateless tests are green."
@@ -38,6 +38,8 @@ comments[9]{created_at,author,text}:
   "2026-08-25T22:57:38.850Z","harness:codex","Hosted-review remediation evidence (final code before close): addressed subscription/transport findings by delaying SSE headers until registry/filter validation, serializing sink writes with a bounded 5s write deadline, decoupling tool-call responses from notification backpressure, suppressing undefined result payloads, rejecting malformed non-string methods, and adding direct-subscription/stdio/HTTP close-race and stale-registry coverage. Exact local proof: node scripts/run-tests.mjs coverage passed 581 files / 7,990 tests with 59,056/59,056 statements, 44,456/44,456 branches, 12,296/12,296 functions, and 56,887/56,887 lines; CODEFACTOR_BASE_REF=origin/main pnpm lint exited 0, including ESLint, jscpd, static complexity, SDK surface/import-cost, MCP inventory, tracker quality, and record-integrity gates."
   "2026-08-25T23:00:41.068Z","harness:codex","Final linked-test execution after hosted-review remediation: all 3 linked commands passed — 37 focused subscription/transport/HTTP tests, package-artifact plus packed-npx smoke, and package-first dogfood (88 commands). No linked test was skipped."
   "2026-08-26T00:03:44.331Z","harness:codex","Second exact-head review remediation evidence: corrected the governed streaming-model body to state that the subscriptions/listen JSON-RPC request id is the subscription id, matching the official 2026-07-28 schema. Closed the HTTP open-time disconnect race by registering cleanup before acknowledgment, handling already-destroyed/ended responses, and making SSE drain/close listener attachment race-free. Negative controls cover close events and destroyed/writable-ended states during acknowledgment, synchronous close, and synchronous write failure. Literal-final proof: 581 files / 7,992 tests, exact 100% coverage (59,126 statements; 44,508 branches; 12,301 functions; 56,953 lines); full non-interactive lint/static assurance exited 0; all 3 linked commands passed, including 38 focused transport tests, package/npx smoke, and 88-command dogfood."
+  "2026-08-26T01:38:16.755Z","harness:codex","Final exact-head hosted-review remediation evidence before close: committed SSE responses now end without a second JSON write, the HTTP server attaches a terminal promise-rejection handler, and blank PM_MCP_HTTP_PORT values resolve to the documented 3000 default instead of ephemeral port 0. Direct negative controls cover headersSent, writableEnded, destroyed, final rejection destruction, and blank/whitespace environment values. Literal repository coverage passed 581 files / 7,993 tests at exact 100% (59,143 statements; 44,523 branches; 12,305 functions; 56,967 lines); the full noninteractive lint/static assurance chain passed; linked run passed 40 focused tests, package/npx smoke, and 88-command dogfood."
+  "2026-08-26T01:38:57.945Z","harness:codex","Closure repair evidence before close: restored recurrence-current resolution, expected result, and actual result after the reopen lifecycle cleared prior terminal fields; all previously recorded final tests remain unchanged and passing."
 files[16]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Managed changelog extension receipt refreshed by reviewed closeout generation
   package.json,project,Published HTTP binary and quality gate wiring
@@ -59,7 +61,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-25T19:54:18.996Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
   "pnpm quality:package-artifact && pnpm smoke:npx",project,300,"harness:codex","2026-08-25T21:10:30.806Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
   "pnpm dogfood:package-first",project,300,"harness:codex","2026-08-25T21:10:31.358Z",local_mutation,codex/mcp-subscriptions-auth-deprecations
-test_runs[5]:
+test_runs[6]:
   - run_id: test-local-mt933ogb-fdbfv8
     kind: test
     status: passed
@@ -123,6 +125,19 @@ test_runs[5]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
       "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
       "pnpm dogfood:package-first",schema,schema,source,local_source_ref
+  - run_id: test-local-mt9fbzu2-8qyiel
+    kind: test
+    status: passed
+    started_at: "2026-08-26T01:35:17.832Z"
+    finished_at: "2026-08-26T01:37:27.338Z"
+    recorded_at: "2026-08-26T01:37:27.338Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/subscriptions.spec.ts tests/unit/sdk/mcp/transport.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
+      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
 docs[6]{path,scope,note}:
   CHANGELOG.md,project,Reviewed delivery release notes
   docs/MCP_2026_07_28_CONFORMANCE.md,project,Normative owner and evidence matrix
@@ -130,5 +145,5 @@ docs[6]{path,scope,note}:
   docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project,HTTP operation retry and backpressure guide
   docs/README.md,project,Documentation index
   docs/SDK_MCP_INTERACTIONS.md,project,Public subscription and header SDK guide
-close_reason: "Delivered and review-hardened MCP subscriptions and transports with schema-correct JSON-RPC subscription identity, race-free HTTP disconnect cleanup, exact coverage, static assurance, package smoke, and dogfood proof."
+close_reason: "Delivered final hosted-review hardening for committed SSE failure handling, terminal HTTP rejection cleanup, and deterministic blank-port defaults with exact full-suite and consumer proof"
 body: "## Streaming model\n\n- subscriptions/listen is one long-lived POST-response stream whose JSON-RPC request id is the subscription identifier stamped on every delivered notification.\n- tools, prompts, resources, and resource-subscription changes flow only through the opted-in listen stream.\n- progress and message notifications remain on the response stream of their originating request.\n- A broken request stream loses that in-flight request and the client retries with a new JSON-RPC request id.\n- STDIO and Streamable HTTP share SDK handlers, cancellation, ordering, backpressure, heartbeat policy, and structured failures.\n- Streamable HTTP validates Mcp-Method and Mcp-Name and supports declared x-mcp-header parameter mappings without header injection."

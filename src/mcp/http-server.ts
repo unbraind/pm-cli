@@ -160,6 +160,43 @@ function writeJsonRpcError(
   );
 }
 
+function finishCommittedMcpResponse(response: ServerResponse): boolean {
+  if (!response.headersSent && !response.writableEnded && !response.destroyed) {
+    return false;
+  }
+  if (!response.writableEnded && !response.destroyed) response.end();
+  return true;
+}
+
+function writeMcpHttpDispatchError(
+  response: ServerResponse,
+  rpcRequest: JsonRpcRequest | undefined,
+  error: unknown,
+): void {
+  if (finishCommittedMcpResponse(response)) return;
+  const toolError = rpcRequest
+    ? buildMcpToolCallErrorResult(rpcRequest, error)
+    : undefined;
+  if (toolError && rpcRequest) {
+    writeJson(response, 200, {
+      jsonrpc: "2.0",
+      id: rpcRequest.id ?? null,
+      result: toolError,
+    });
+    return;
+  }
+  writeJsonRpcError(response, rpcRequest?.id, error);
+}
+
+function destroyFailedMcpHttpResponse(
+  response: ServerResponse,
+  error: unknown,
+): void {
+  response.destroy(
+    new Error("Unhandled MCP HTTP request failure", { cause: error }),
+  );
+}
+
 async function readRequestBody(
   request: IncomingMessage,
   maximumBytes: number,
@@ -308,7 +345,11 @@ async function openHttpSubscription(input: {
     input.response.off("close", closeActiveSubscription);
     throw error;
   }
-  if (disconnected || input.response.destroyed || input.response.writableEnded) {
+  if (
+    disconnected ||
+    input.response.destroyed ||
+    input.response.writableEnded
+  ) {
     closeActiveSubscription();
     return;
   }
@@ -367,18 +408,7 @@ async function dispatchMcpHttpRpc(input: {
       result: result ?? {},
     });
   } catch (error) {
-    const toolError = rpcRequest
-      ? buildMcpToolCallErrorResult(rpcRequest, error)
-      : undefined;
-    if (toolError && rpcRequest) {
-      writeJson(input.response, 200, {
-        jsonrpc: "2.0",
-        id: rpcRequest.id ?? null,
-        result: toolError,
-      });
-      return;
-    }
-    writeJsonRpcError(input.response, rpcRequest?.id, error);
+    writeMcpHttpDispatchError(input.response, rpcRequest, error);
   }
 }
 
@@ -403,7 +433,9 @@ export function createPmMcpHttpServer(options: PmMcpHttpServerOptions = {}) {
     options,
   };
   const server = createServer((request, response) => {
-    void handleMcpHttpRequest(request, response, runtime);
+    void handleMcpHttpRequest(request, response, runtime).catch(
+      destroyFailedMcpHttpResponse.bind(undefined, response),
+    );
   });
   PM_MCP_HTTP_RUNTIMES.set(server, runtime);
   server.on("close", () => {
@@ -476,7 +508,8 @@ interface PmMcpHttpEnvironment {
 function readMcpHttpEnvironment(
   environment: NodeJS.ProcessEnv,
 ): PmMcpHttpEnvironment {
-  const port = Number(environment.PM_MCP_HTTP_PORT ?? "3000");
+  const configuredPort = environment.PM_MCP_HTTP_PORT?.trim();
+  const port = Number(configuredPort || "3000");
   if (!Number.isInteger(port) || port < 0 || port > 65_535) {
     throw new Error("PM_MCP_HTTP_PORT must be an integer from 0 through 65535");
   }
@@ -589,6 +622,10 @@ export const _testOnly = {
       response,
       runtime: PM_MCP_HTTP_RUNTIMES.get(server)!,
     }),
+  /** Exercise committed-response handling without a network race. */
+  writeMcpHttpDispatchError,
+  /** Exercise the terminal request rejection handler without a live socket. */
+  destroyFailedMcpHttpResponse,
 };
 
 /* c8 ignore start -- executable guard and process lifecycle are integration-tested */

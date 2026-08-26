@@ -1256,6 +1256,13 @@
       ],
       "package_version": "2026.8.24",
       "reason": "Add strict requireExisting settlement mode while preserving default idempotency"
+    },
+    {
+      "changes": [
+        "signature ./sdk:validateMcpAuthorizationServerMetadata"
+      ],
+      "package_version": "2026.8.25",
+      "reason": "Covariant return refinement: existing metadata interface remains source-compatible while the validator now exposes endpoints it already requires at runtime"
     }
   ],
   "entrypoints": {
@@ -11493,6 +11500,12 @@
           "signature": "export interface PmMcpTraceContext { traceparent?: string; tracestate?: string; baggage?: string; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpValidatedAuthorizationServerMetadata",
+          "signature": "export interface PmMcpValidatedAuthorizationServerMetadata extends PmMcpAuthorizationServerMetadata { authorization_endpoint: string; token_endpoint: string; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmMutationAttributionOptions",
@@ -17490,7 +17503,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validateMcpAuthorizationServerMetadata",
-          "signature": "(value: unknown, expectedIssuer: string) => PmMcpAuthorizationServerMetadata | calls: (value: unknown, expectedIssuer: string) => PmMcpAuthorizationServerMetadata"
+          "signature": "(value: unknown, expectedIssuer: string) => PmMcpValidatedAuthorizationServerMetadata | calls: (value: unknown, expectedIssuer: string) => PmMcpValidatedAuthorizationServerMetadata"
         },
         {
           "classification": "advanced_export",
