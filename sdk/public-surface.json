@@ -16784,6 +16784,12 @@
           "signature": "(argv: string[]) => string[] | calls: (argv: string[]) => string[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "StructuredJsonValue",
+          "signature": "export type StructuredJsonValue = null | boolean | number | string | StructuredJsonValue[] | { [key: string]: StructuredJsonValue; };"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "SUBCOMMAND_GLOBAL_FLAG_CONTRACTS",

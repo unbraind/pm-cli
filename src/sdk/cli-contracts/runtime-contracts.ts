@@ -790,11 +790,9 @@ const COMMAND_INTENTS = new Map<string, string>([
   ["history-repair", "Repair history integrity."],
 ]);
 
-// Lifecycle subcommand flag contracts for `pm extension`. Only `init` differs
-// between extension and package: `pm package init` / `pm packages init`
-// additionally accept the package-only `--declarative` flag, so the package
-// variant swaps in PACKAGE_INIT_FLAG_CONTRACTS while every other subcommand is
-// shared verbatim.
+// Lifecycle subcommand flag contracts for `pm extension`. Package lifecycle
+// swaps in the declarative init contract and adds the package-only upgrade
+// command; every shared extension/package subcommand remains byte-identical.
 const EXTENSION_LIFECYCLE_FLAG_CONTRACTS: Array<
   readonly [string, CliFlagContract[]]
 > = [
@@ -816,11 +814,14 @@ const EXTENSION_LIFECYCLE_FLAG_CONTRACTS: Array<
 
 const PACKAGE_LIFECYCLE_FLAG_CONTRACTS: Array<
   readonly [string, CliFlagContract[]]
-> = EXTENSION_LIFECYCLE_FLAG_CONTRACTS.map(([subcommand, flags]) =>
-  subcommand === "init"
-    ? ([subcommand, PACKAGE_INIT_FLAG_CONTRACTS] as const)
-    : ([subcommand, flags] as const),
-);
+> = [
+  ...EXTENSION_LIFECYCLE_FLAG_CONTRACTS.map(([subcommand, flags]) =>
+    subcommand === "init"
+      ? ([subcommand, PACKAGE_INIT_FLAG_CONTRACTS] as const)
+      : ([subcommand, flags] as const),
+  ),
+  ["upgrade", UPGRADE_FLAG_CONTRACTS],
+];
 
 const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   readonly [string, CliFlagContract[]]

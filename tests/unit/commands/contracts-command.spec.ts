@@ -2177,6 +2177,16 @@ describe("contracts command runtime", () => {
           flags: ["--fields", "--project", "--global"],
         },
         {
+          command: "package upgrade",
+          flags: [
+            "--dry-run",
+            "--cli-only",
+            "--packages-only",
+            "--repair",
+            "--tag",
+          ],
+        },
+        {
           command: "install",
           flags: ["--gh", "--github", "--ref", "--project", "--global"],
         },

@@ -91,7 +91,7 @@ function fullContractsPayload(): SpawnResult {
   return pmJson({
     command_flags: [
       { command: "package", flags: flagRows(["--catalog", "--explore", "--doctor", "--install", "--project", "--global"]) },
-      { command: "upgrade", flags: flagRows(["--packages-only", "--dry-run"]) },
+      { command: "package upgrade", flags: flagRows(["--packages-only", "--dry-run"]) },
       { command: "init", flags: flagRows(["--agent-guidance", "--with-packages"]) },
       { command: "get", flags: flagRows(["--fields"]) },
     ],
@@ -160,6 +160,9 @@ function handlePackageCommand(pmArgs: string[]): SpawnResult | undefined {
   }
   if (sub === "init") {
     return pmJson({ details: { extension: { command: "starter scaffold package ping" } } });
+  }
+  if (sub === "upgrade") {
+    return handleUpgradeCommand(pmArgs);
   }
   return undefined;
 }
@@ -866,7 +869,7 @@ describe("dogfood-package-first", () => {
   it("falls back to [] when the package command-alias entry omits its aliases array", async () => {
     const fullCommandFlags = [
       { command: "package", flags: ["--catalog", "--explore", "--doctor", "--install", "--project", "--global"].map((flag) => ({ flag })) },
-      { command: "upgrade", flags: ["--packages-only", "--dry-run"].map((flag) => ({ flag })) },
+      { command: "package upgrade", flags: ["--packages-only", "--dry-run"].map((flag) => ({ flag })) },
       { command: "init", flags: ["--agent-guidance", "--with-packages"].map((flag) => ({ flag })) },
       { command: "get", flags: ["--fields"].map((flag) => ({ flag })) },
     ];

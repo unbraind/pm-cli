@@ -1226,6 +1226,26 @@
           "registration": "commander"
         }
       ]
+    },
+    {
+      "aliases": [
+        "upgrade"
+      ],
+      "canonical": "package upgrade",
+      "contracts": [
+        {
+          "alias": "upgrade",
+          "canonical": "package upgrade",
+          "canonical_argv": [
+            "package",
+            "upgrade"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-tnud",
+          "registration": "commander"
+        }
+      ]
     }
   ],
   "command_exit_contracts": {
@@ -1316,6 +1336,7 @@
           "package migrate",
           "package reload",
           "package uninstall",
+          "package upgrade",
           "packages",
           "packages activate",
           "packages adopt",
@@ -1331,6 +1352,7 @@
           "packages migrate",
           "packages reload",
           "packages uninstall",
+          "packages upgrade",
           "pause-task",
           "plan",
           "plan add-step",
@@ -4701,6 +4723,39 @@
       "provider": "core"
     },
     {
+      "command": "package upgrade",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--cli-only"
+        },
+        {
+          "flag": "--packages-only"
+        },
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--repair"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--package-name"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "packages",
       "flags": [
         {
@@ -5081,6 +5136,39 @@
         },
         {
           "flag": "--global"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages upgrade",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--cli-only"
+        },
+        {
+          "flag": "--packages-only"
+        },
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--repair"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--package-name"
         }
       ],
       "provider": "core"
@@ -10511,6 +10599,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "package upgrade",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package upgrade",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "packages",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -10907,6 +11022,33 @@
       "envelope": {
         "cardinality": "none",
         "command": "packages uninstall",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages upgrade",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages upgrade",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -12964,6 +13106,16 @@
       "intent_source": "generated"
     },
     {
+      "command": "package upgrade",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Run package upgrade.",
+      "intent_source": "generated"
+    },
+    {
       "command": "packages",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -13114,6 +13266,16 @@
         "toon": 3000
       },
       "intent": "Uninstall packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages upgrade",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Run packages upgrade.",
       "intent_source": "generated"
     },
     {
@@ -15017,6 +15179,7 @@
     "package migrate",
     "package reload",
     "package uninstall",
+    "package upgrade",
     "packages",
     "packages activate",
     "packages adopt",
@@ -15032,6 +15195,7 @@
     "packages migrate",
     "packages reload",
     "packages uninstall",
+    "packages upgrade",
     "pause-task",
     "plan",
     "plan add-step",
