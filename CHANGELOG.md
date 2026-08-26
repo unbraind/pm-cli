@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Published-artifact verification rejects the new pm-mcp-http bin before executing its healthy published entrypoint ([pm-fpdne3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fpdne3.toon))
+
 ## 2026.8.26 - 2026-08-26
 
 ### Added

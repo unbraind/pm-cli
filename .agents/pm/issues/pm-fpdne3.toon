@@ -1,0 +1,66 @@
+id: pm-fpdne3
+title: Published-artifact verification rejects the new pm-mcp-http bin before executing its healthy published entrypoint
+description: "Release v2026.8.26 published successfully to npm, but scripts/release/verify-published-release.mjs hardcodes covered entrypoints to pm and pm-mcp. The declared pm-mcp-http bin is executable in the registry tarball yet is classified as uncovered, blocking installed-agent acceptance and GitHub Release creation. Extend the verifier with a real semantic HTTP-bin assertion and preserve fail-closed coverage for future bins."
+type: Issue
+status: closed
+priority: 0
+tags[5]: "area:mcp","area:release",published-artifact,regression,release-gate
+created_at: "2026-08-26T03:05:50.655Z"
+updated_at: "2026-08-26T04:20:49.623Z"
+closed_at: "2026-08-26T03:37:39.469Z"
+completed_at: "2026-08-26T03:37:39.469Z"
+author: "harness:codex"
+acceptance_criteria: "The verifier executes pm-mcp-http from the exact public package under both supported executor/install surfaces or an equivalent contained install; It performs a real HTTP server/discover assertion for protocol 2026-07-28; A missing, non-executable, non-listening, or invalid HTTP bin fails; Package-derived coverage remains fail-closed for any future unhandled bin; Focused tests, exact repository coverage, static quality, installed npm/Bun acceptance, and immutable-tag recovery pass"
+parent: pm-ygli86
+severity: high
+resolution: "Extended published-release verification so every declared pm-mcp-http bin is launched from the exact npm package under npx and bunx, probed with a real MCP 2026-07-28 server/discover HTTP exchange, and included in fail-closed package-derived coverage."
+expected_result: Every declared package bin has an executable semantic assertion; pm-mcp-http is launched from the exact public package and proves server/discover over HTTP before release advertisement.
+actual_result: The repaired verifier accepts the executable public 2026.8.26 pm-mcp-http artifact only after HTTP 200 semantic discovery under both npx and bunx; malformed discovery and future unhandled bins fail in negative controls.
+affected_version: 2026.8.26
+fixed_version: v2026.8.26 same-tag recovery from reviewed main
+component: release verification
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-55yf1t,implements,"2026-08-26T03:05:50.655Z","harness:codex","cli:create:dep",detected
+  pm-u0oz2k,discovered_from,"2026-08-26T03:05:50.655Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-26T03:05:50.655Z","harness:codex","Duplicate check evidence: searched all statuses for published package bins, executable coverage, pm-mcp-http, verifier, and release recovery. pm-u0oz2k is the closed predecessor that created the fail-closed package-derived coverage rule; pm-ygli86 is the open released-artifact parent; pm-55yf1t is the aggregate MCP release gate. None implements semantic execution coverage for the newly declared HTTP bin or owns this v2026.8.26 recovery defect."
+  "2026-08-26T03:37:38.868Z","harness:codex","Evidence: the original tag-push Release run 32923834092 published npm version 2026.8.26 but stopped before installed-agent acceptance and GitHub Release creation because pm-mcp-http was not represented in the verifier coverage map. The immutable registry artifact is executable and healthy. The repaired verifier passed the tracker-linked focused suite (27/27), live exact-public-package verification under npx and bunx including HTTP 200 MCP 2026-07-28 server/discover, and full repository coverage (581 files, 7,994 tests, 100% statements/branches/functions/lines: 59,152/44,529/12,307/56,976). CODEFACTOR_BASE_REF=origin/main pnpm lint also passed ESLint, zero duplication, build/contracts, repository static quality, package/SDK/surface/grammar/flag/refusal gates, MCP deprecation inventory with zero canonical violations, tracker context quality, graph composition, and record integrity."
+  "2026-08-26T03:47:54.533Z","harness:codex","Hosted review remediation: CodeRabbit exact-head review on PR #1121 identified two blocking lifecycle/budget defects. The HTTP verifier now caps startup to two 20-second attempts per executor, keeping the added worst-case budget at 100 seconds within the eight-minute hosted step. The evaluator installs SIGINT/SIGTERM handlers and performs bounded process-group SIGTERM then SIGKILL cleanup. Focused verification is 29/29, including a real forced outer-timeout control with an intentionally SIGTERM-resistant detached runner and proof that its loopback port is immediately reusable. Live immutable npm 2026.8.26 verification remains green for npx and bunx pm-mcp-http HTTP 200 discovery."
+  "2026-08-26T04:06:33.543Z","harness:codex","Hosted review remediation round two: CodeRabbit exact-head review on PR #1121 found that direct npx/bunx exit was not proof its detached process group had terminated. Cleanup now probes the POSIX process group independently with signal 0, signals the group even after direct-child exit, waits a bounded grace period, and escalates to SIGKILL while the group remains. Focused verification is 30/30, including an intermediate runner that starts a SIGTERM-resistant server, exits first, and proves the server port is reusable after evaluator cleanup. Live npm 2026.8.26 npx/bunx HTTP discovery remains green."
+  "2026-08-26T04:20:49.623Z","harness:codex","Evidence: second review remediation is complete. The verifier now probes and terminates the POSIX process group independently of the direct executor child, applies bounded SIGTERM then SIGKILL cleanup, and has a regression proving a detached SIGTERM-resistant descendant is removed and the loopback port can be reused. Verification: focused published-release suite 30/30; live exact npm @unbrained/pm-cli@2026.8.26 verification passed for npx and bunx; full sandbox coverage 581 files / 7,997 tests with exact 100% statements, branches, functions, and lines (59,156 statements / 44,529 branches / 12,307 functions / 56,980 lines); pnpm lint:duplicates passed with zero clones; pnpm lint:eslint passed; CODEFACTOR_BASE_REF=origin/main pnpm lint:codefactor passed all repository static gates."
+files[4]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Managed changelog extension receipt refreshed by canonical generator
+  CHANGELOG.md,project,Generated unreleased defect entry
+  scripts/release/verify-published-release.mjs,project,Execute every published bin including semantic Streamable HTTP discovery
+  tests/unit/scripts/release/verify-published-release.spec.ts,project,Positive and negative coverage for HTTP-bin release verification
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,project,240,"harness:codex","2026-08-26T03:10:20.346Z",local_mutation,codex/release-http-bin-verification
+  "pnpm release:verify-published -- --version 2026.8.26 --skip-github-release --npm-attempts 1 --executor-attempts 1 --json",project,300,"harness:codex","2026-08-26T03:10:20.346Z",local_mutation,codex/release-http-bin-verification
+  node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-08-26T03:10:20.346Z",local_mutation,codex/release-http-bin-verification
+test_runs[1]:
+  - run_id: test-local-mt9jlil8-2gpwxu
+    kind: test
+    status: passed
+    started_at: "2026-08-26T03:30:06.726Z"
+    finished_at: "2026-08-26T03:36:50.012Z"
+    recorded_at: "2026-08-26T03:36:50.012Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+      "pnpm release:verify-published -- --version 2026.8.26 --skip-github-release --npm-attempts 1 --executor-attempts 1 --json",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Document npx and bunx Streamable HTTP published-artifact acceptance
+close_reason: "Implemented fail-closed semantic verification for the published pm-mcp-http bin under npx and bunx; focused, live registry, exact full coverage, and repository lint/static assurance all pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: published-release-verification
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts
+  local_checks[3]: "pnpm release:verify-published -- --version 2026.8.26 --skip-github-release --npm-attempts 1 --executor-attempts 1 --json",node scripts/run-tests.mjs coverage,CODEFACTOR_BASE_REF=origin/main pnpm lint
+  hosted_checks[3]: CI / Full test suite and coverage,Release / Verify published package,Release / Verify installed agent sessions
+  owner: pm-fpdne3
+body: ""
