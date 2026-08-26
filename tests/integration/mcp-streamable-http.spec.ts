@@ -221,6 +221,31 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
     );
     closed.emit("close");
     await expect(pendingClose).rejects.toThrow(/backpressure/u);
+
+    class SynchronouslyClosedResponse extends EventEmitter {
+      write(): boolean {
+        this.emit("close");
+        return true;
+      }
+    }
+    await expect(
+      writePmMcpSseEvent(
+        new SynchronouslyClosedResponse() as unknown as ServerResponse,
+        { synchronous: "close" },
+      ),
+    ).rejects.toThrow(/backpressure/u);
+
+    class ThrowingResponse extends EventEmitter {
+      write(): boolean {
+        throw new Error("write failed");
+      }
+    }
+    await expect(
+      writePmMcpSseEvent(
+        new ThrowingResponse() as unknown as ServerResponse,
+        { synchronous: "throw" },
+      ),
+    ).rejects.toThrow(/write failed/u);
   });
 
   it("enforces endpoint, origin, content negotiation, headers, and JSON-RPC status mapping", async () => {
@@ -653,6 +678,78 @@ describe("MCP 2026-07-28 Streamable HTTP", () => {
     const finalRead = reader?.read();
     await stopServer(server);
     await expect(finalRead).resolves.toMatchObject({ done: true });
+  });
+
+  it("removes a subscription when the response closes during acknowledgment", async () => {
+    const { server } = await startServer({ keepAliveMs: 0 });
+    class ClosingResponse extends EventEmitter {
+      destroyed = false;
+      writableEnded = false;
+      #closed = false;
+
+      constructor(
+        private readonly closeMode: "event" | "destroyed" | "ended",
+      ) {
+        super();
+      }
+
+      setHeader(): void {
+        if (this.#closed) return;
+        this.#closed = true;
+        if (this.closeMode === "event") this.emit("close");
+        if (this.closeMode === "destroyed") this.destroyed = true;
+        if (this.closeMode === "ended") this.writableEnded = true;
+      }
+
+      write(): boolean {
+        return true;
+      }
+    }
+    for (const closeMode of ["event", "destroyed", "ended"] as const) {
+      await httpServerTestOnly.openHttpSubscription(
+        server,
+        modernRequest(
+          "subscriptions/listen",
+          { notifications: {} },
+          `disconnect-during-ack-${closeMode}`,
+        ),
+        new ClosingResponse(closeMode) as unknown as ServerResponse,
+      );
+      expect(httpServerTestOnly.activeSubscriptionKey(server)).toBeUndefined();
+      expect(serverTestOnly.subscriptionCount()).toBe(0);
+    }
+  });
+
+  it("rejects an HTTP subscription whose response is already closed", async () => {
+    const { server } = await startServer({ keepAliveMs: 0 });
+    class ClosedResponse extends EventEmitter {
+      writableEnded: boolean;
+      destroyed: boolean;
+
+      constructor(mode: "destroyed" | "ended") {
+        super();
+        this.destroyed = mode === "destroyed";
+        this.writableEnded = mode === "ended";
+      }
+
+      write(): boolean {
+        return true;
+      }
+    }
+    for (const mode of ["destroyed", "ended"] as const) {
+      await expect(
+        httpServerTestOnly.openHttpSubscription(
+          server,
+          modernRequest(
+            "subscriptions/listen",
+            { notifications: {} },
+            `already-closed-${mode}`,
+          ),
+          new ClosedResponse(mode) as unknown as ServerResponse,
+        ),
+      ).rejects.toThrow(/closed before acknowledgment/u);
+    }
+    expect(serverTestOnly.subscriptionCount()).toBe(0);
   });
 
   it("allows independent HTTP clients to reuse a JSON-RPC subscription id", async () => {

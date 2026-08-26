@@ -272,8 +272,8 @@ describe("MCP remote authorization and trace contracts", () => {
     const params = {
       _meta: {
         traceparent: "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01",
-        tracestate: "vendor=value",
-        baggage: "tenant=public,token=secret,invalid",
+        tracestate: "vendor=value,1@system=tenant, ",
+        baggage: "tenant=public;sampled=true;flag,token=secret",
       },
     };
     const context = extractMcpTraceContext(params, {
@@ -281,8 +281,8 @@ describe("MCP remote authorization and trace contracts", () => {
     });
     expect(context).toEqual({
       traceparent: params._meta.traceparent,
-      tracestate: "vendor=value",
-      baggage: "tenant=public",
+      tracestate: "vendor=value,1@system=tenant, ",
+      baggage: "tenant=public;sampled=true;flag",
     });
     expect(
       extractMcpTraceContext({ _meta: { baggage: "token=secret" } }),
@@ -305,6 +305,29 @@ describe("MCP remote authorization and trace contracts", () => {
         traceparent: "00-0af7651916cd43dd8448eb211c80319c-0000000000000000-01",
       },
       { tracestate: "line\nfeed" },
+      { tracestate: "not-a-member" },
+      { tracestate: "vendor=value,vendor=duplicate" },
+      { tracestate: "Vendor=value" },
+      { tracestate: "vendor=" },
+      { tracestate: "vendor=bad=value" },
+      { tracestate: `vendor=${"x".repeat(513)}` },
+      {
+        tracestate: Array.from(
+          { length: 33 },
+          (_value, index) => `vendor${index}=value`,
+        ).join(","),
+      },
+      { baggage: "tenant=ok\r\nInjected: value" },
+      { baggage: "missing-separator" },
+      { baggage: "tenant=value;invalid property" },
+      { baggage: "tenant=value;flag=bad%value" },
+      { baggage: "tenant=bad%value" },
+      {
+        baggage: Array.from(
+          { length: 181 },
+          (_value, index) => `key${index}=value`,
+        ).join(","),
+      },
       { baggage: "x".repeat(8_193) },
     ]) {
       expect(() => extractMcpTraceContext({ _meta: invalid })).toThrow(

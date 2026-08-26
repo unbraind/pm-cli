@@ -78,23 +78,34 @@ export function writePmMcpSseEvent(
   response: ServerResponse,
   payload: unknown,
 ): Promise<void> {
-  if (response.write(`data: ${JSON.stringify(payload)}\n\n`))
-    return Promise.resolve();
   return new Promise<void>((resolve, reject) => {
+    let settled = false;
     const cleanup = (): void => {
       response.off("drain", onDrain);
       response.off("close", onClose);
     };
     const onDrain = (): void => {
+      settled = true;
       cleanup();
       resolve();
     };
     const onClose = (): void => {
+      settled = true;
       cleanup();
       reject(new Error("MCP response stream closed during backpressure"));
     };
     response.once("drain", onDrain);
     response.once("close", onClose);
+    try {
+      if (response.write(`data: ${JSON.stringify(payload)}\n\n`) && !settled) {
+        settled = true;
+        cleanup();
+        resolve();
+      }
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
   });
 }
 
@@ -257,26 +268,50 @@ async function openHttpSubscription(input: {
   }
   const subscriptionId = input.request.id;
   const subscriptionKey = Symbol("pm-mcp-http-subscription");
-  let responseStarted = false;
-  await openMcpSubscription({
-    request: input.request,
-    key: subscriptionKey,
-    sink: (notification) => {
-      if (!responseStarted) {
-        responseStarted = true;
-        input.response.setHeader("Cache-Control", "no-cache, no-store");
-        input.response.setHeader("Connection", "keep-alive");
-        input.response.setHeader("Content-Type", "text/event-stream");
-        input.response.setHeader("X-Accel-Buffering", "no");
-      }
-      return writePmMcpSseEvent(input.response, notification);
-    },
-  });
   const active: ActiveHttpSubscription = {
     id: subscriptionId,
     key: subscriptionKey,
     response: input.response,
   };
+  let disconnected = input.response.destroyed || input.response.writableEnded;
+  let subscriptionOpened = false;
+  const closeActiveSubscription = (): void => {
+    disconnected = true;
+    if (active.timer) clearInterval(active.timer);
+    input.runtime.activeSubscriptions.delete(subscriptionKey);
+    if (subscriptionOpened) {
+      closeMcpSubscription(subscriptionId, subscriptionKey);
+    }
+  };
+  input.response.once("close", closeActiveSubscription);
+  let responseStarted = false;
+  try {
+    await openMcpSubscription({
+      request: input.request,
+      key: subscriptionKey,
+      sink: (notification) => {
+        if (input.response.destroyed || input.response.writableEnded) {
+          throw new Error("MCP response stream closed before acknowledgment");
+        }
+        if (!responseStarted) {
+          responseStarted = true;
+          input.response.setHeader("Cache-Control", "no-cache, no-store");
+          input.response.setHeader("Connection", "keep-alive");
+          input.response.setHeader("Content-Type", "text/event-stream");
+          input.response.setHeader("X-Accel-Buffering", "no");
+        }
+        return writePmMcpSseEvent(input.response, notification);
+      },
+    });
+    subscriptionOpened = true;
+  } catch (error) {
+    input.response.off("close", closeActiveSubscription);
+    throw error;
+  }
+  if (disconnected || input.response.destroyed || input.response.writableEnded) {
+    closeActiveSubscription();
+    return;
+  }
   if (input.runtime.keepAliveMs > 0) {
     active.timer = setInterval(
       () => input.response.write(":\r\n\r\n"),
@@ -285,11 +320,6 @@ async function openHttpSubscription(input: {
     active.timer.unref();
   }
   input.runtime.activeSubscriptions.set(subscriptionKey, active);
-  input.response.once("close", () => {
-    if (active.timer) clearInterval(active.timer);
-    input.runtime.activeSubscriptions.delete(subscriptionKey);
-    closeMcpSubscription(subscriptionId, subscriptionKey);
-  });
 }
 
 async function dispatchMcpHttpRpc(input: {
@@ -548,6 +578,17 @@ export const _testOnly = {
   /** Return the first active request-scoped transport key for one server. */
   activeSubscriptionKey: (server: Server): symbol | undefined =>
     PM_MCP_HTTP_RUNTIMES.get(server)!.activeSubscriptions.keys().next().value,
+  /** Open a stream against one server runtime without a network socket. */
+  openHttpSubscription: (
+    server: Server,
+    request: JsonRpcRequest,
+    response: ServerResponse,
+  ): Promise<void> =>
+    openHttpSubscription({
+      request,
+      response,
+      runtime: PM_MCP_HTTP_RUNTIMES.get(server)!,
+    }),
 };
 
 /* c8 ignore start -- executable guard and process lifecycle are integration-tested */

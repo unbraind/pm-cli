@@ -98,9 +98,19 @@ export interface PmMcpTraceContext {
 
 const TRACE_PARENT_PATTERN =
   /^00-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/u;
-const TRACE_STATE_PATTERN = /^[\x20-\x7E]{1,512}$/u;
+const TRACE_STATE_SIMPLE_KEY_PATTERN = /^[a-z][a-z0-9_*/-]{0,255}$/u;
+const TRACE_STATE_TENANT_KEY_PATTERN =
+  /^(?:[a-z0-9][a-z0-9_*/-]{0,240})@[a-z][a-z0-9_*/-]{0,13}$/u;
+const TRACE_STATE_VALUE_PATTERN =
+  /^[\x20-\x2B\x2D-\x3C\x3E-\x7E]{0,255}[\x21-\x2B\x2D-\x3C\x3E-\x7E]$/u;
 const SCOPE_PATTERN = /^[\x21\x23-\x5B\x5D-\x7E]+$/u;
-const BAGGAGE_KEY_PATTERN = /^[a-z0-9!#$%&'*+.^_`|~-]+$/u;
+const BAGGAGE_KEY_PATTERN = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/u;
+const BAGGAGE_VALUE_PATTERN =
+  /^[\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]*$/u;
+const INVALID_PERCENT_ENCODING_PATTERN = /%(?![0-9A-Fa-f]{2})/u;
+const MAX_TRACE_STATE_BYTES = 512;
+const MAX_TRACE_STATE_MEMBERS = 32;
+const MAX_BAGGAGE_MEMBERS = 180;
 const MAX_BAGGAGE_BYTES = 8_192;
 const MAX_BEARER_TOKEN_BYTES = 8_192;
 const MCP_TRACE_CONTEXT_STORAGE = new AsyncLocalStorage<PmMcpTraceContext>();
@@ -419,7 +429,7 @@ function validateMcpTraceFields(
   }
   if (
     tracestate !== undefined &&
-    (typeof tracestate !== "string" || !TRACE_STATE_PATTERN.test(tracestate))
+    (typeof tracestate !== "string" || !isValidMcpTraceState(tracestate))
   ) {
     throw new PmMcpAuthorizationError("Invalid MCP tracestate", 403);
   }
@@ -427,6 +437,88 @@ function validateMcpTraceFields(
     ...(typeof traceparent === "string" ? { traceparent } : {}),
     ...(typeof tracestate === "string" ? { tracestate } : {}),
   };
+}
+
+function trimOptionalWhitespace(value: string): string {
+  return value.replace(/^[ \t]*|[ \t]*$/gu, "");
+}
+
+function isValidMcpTraceStateKey(key: string): boolean {
+  return (
+    TRACE_STATE_SIMPLE_KEY_PATTERN.test(key) ||
+    TRACE_STATE_TENANT_KEY_PATTERN.test(key)
+  );
+}
+
+function isValidMcpTraceState(value: string): boolean {
+  if (Buffer.byteLength(value, "utf8") > MAX_TRACE_STATE_BYTES) return false;
+  const members = value.split(",");
+  if (members.length > MAX_TRACE_STATE_MEMBERS) return false;
+  const keys = new Set<string>();
+  for (const source of members) {
+    const member = trimOptionalWhitespace(source);
+    if (member.length === 0) continue;
+    const separator = member.indexOf("=");
+    const key = separator > 0 ? member.slice(0, separator) : "";
+    const memberValue = separator > 0 ? member.slice(separator + 1) : "";
+    if (
+      !isValidMcpTraceStateKey(key) ||
+      !TRACE_STATE_VALUE_PATTERN.test(memberValue) ||
+      keys.has(key)
+    ) {
+      return false;
+    }
+    keys.add(key);
+  }
+  return true;
+}
+
+function isValidMcpBaggageValue(value: string): boolean {
+  return (
+    BAGGAGE_VALUE_PATTERN.test(value) &&
+    !INVALID_PERCENT_ENCODING_PATTERN.test(value)
+  );
+}
+
+function isValidMcpBaggageProperty(source: string): boolean {
+  const property = trimOptionalWhitespace(source);
+  const separator = property.indexOf("=");
+  const key = trimOptionalWhitespace(
+    separator >= 0 ? property.slice(0, separator) : property,
+  );
+  const value =
+    separator >= 0
+      ? trimOptionalWhitespace(property.slice(separator + 1))
+      : undefined;
+  return (
+    BAGGAGE_KEY_PATTERN.test(key) &&
+    (value === undefined || isValidMcpBaggageValue(value))
+  );
+}
+
+function parseMcpBaggageMember(
+  source: string,
+): { key: string; serialized: string } | undefined {
+  const serialized = trimOptionalWhitespace(source);
+  const segments = serialized.split(";");
+  const pair = segments[0] as string;
+  const properties = segments.slice(1);
+  const separator = pair.indexOf("=");
+  const key = trimOptionalWhitespace(
+    separator > 0 ? pair.slice(0, separator) : "",
+  );
+  const value =
+    separator > 0
+      ? trimOptionalWhitespace(pair.slice(separator + 1))
+      : "";
+  if (
+    !BAGGAGE_KEY_PATTERN.test(key) ||
+    !isValidMcpBaggageValue(value) ||
+    !properties.every(isValidMcpBaggageProperty)
+  ) {
+    return undefined;
+  }
+  return { key, serialized };
 }
 
 function filterMcpBaggage(
@@ -441,14 +533,18 @@ function filterMcpBaggage(
     throw new PmMcpAuthorizationError("Invalid MCP baggage", 403);
   }
   const allowlist = new Set(allowlistEntries);
-  const entries = baggage
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => {
-      const separator = entry.indexOf("=");
-      const key = separator > 0 ? entry.slice(0, separator) : "";
-      return BAGGAGE_KEY_PATTERN.test(key) && allowlist.has(key);
-    });
+  const sources = baggage.split(",");
+  if (sources.length > MAX_BAGGAGE_MEMBERS) {
+    throw new PmMcpAuthorizationError("Invalid MCP baggage", 403);
+  }
+  const entries: string[] = [];
+  for (const source of sources) {
+    const entry = parseMcpBaggageMember(source);
+    if (!entry) {
+      throw new PmMcpAuthorizationError("Invalid MCP baggage", 403);
+    }
+    if (allowlist.has(entry.key)) entries.push(entry.serialized);
+  }
   return entries.length > 0 ? entries.join(",") : undefined;
 }
 
