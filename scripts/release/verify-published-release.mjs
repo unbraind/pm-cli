@@ -93,35 +93,41 @@ child.stderr.on("data", (chunk) => {
   stderr = (stderr + chunk).slice(-4_096);
 });
 
-const signalChildTree = (signal) => {
-  if (!child.pid || childExit) return;
+const childTreeIsAlive = () => {
+  if (!child.pid) return false;
+  if (process.platform === "win32") return !childExit;
   try {
-    if (process.platform === "win32") child.kill(signal);
-    else process.kill(-child.pid, signal);
-  } catch {
-    child.kill(signal);
+    process.kill(-child.pid, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === "ESRCH") return false;
+    throw error;
+  }
+};
+
+const signalChildTree = (signal) => {
+  if (!child.pid || !childTreeIsAlive()) return;
+  if (process.platform === "win32") child.kill(signal);
+  else process.kill(-child.pid, signal);
+};
+
+const waitForChildTreeExit = async () => {
+  const deadline = Date.now() + ${MCP_HTTP_SHUTDOWN_GRACE_MS};
+  while (childTreeIsAlive() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 };
 
 let stopPromise;
 const stopChild = () => {
-  if (!child.pid || childExit) return Promise.resolve();
+  if (!child.pid || !childTreeIsAlive()) return Promise.resolve();
   if (stopPromise) return stopPromise;
   stopPromise = (async () => {
-    const waitForExit = () => childExit
-      ? Promise.resolve()
-      : new Promise((resolve) => child.once("exit", resolve));
     signalChildTree("SIGTERM");
-    await Promise.race([
-      waitForExit(),
-      new Promise((resolve) => setTimeout(resolve, ${MCP_HTTP_SHUTDOWN_GRACE_MS})),
-    ]);
-    if (!childExit) {
+    await waitForChildTreeExit();
+    if (childTreeIsAlive()) {
       signalChildTree("SIGKILL");
-      await Promise.race([
-        waitForExit(),
-        new Promise((resolve) => setTimeout(resolve, ${MCP_HTTP_SHUTDOWN_GRACE_MS})),
-      ]);
+      await waitForChildTreeExit();
     }
   })();
   return stopPromise;

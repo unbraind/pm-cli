@@ -222,6 +222,31 @@ async function assertLoopbackPortIsReusable(port: number): Promise<void> {
   });
 }
 
+async function getMcpHttpEvaluatorScript(): Promise<string> {
+  const { runCommand } = await runVerify({
+    argv: [
+      "--version",
+      "2026.6.14",
+      "--skip-github-release",
+      "--npm-attempts",
+      "1",
+      "--executor-attempts",
+      "1",
+    ],
+    runCommand: (command, args) =>
+      command === "npm" && args[0] === "view"
+        ? npmViewResult("2026.6.14")
+        : successfulPublishedVerifierResult(command, args),
+  });
+  const evaluatorCall = runCommand.mock.calls.find(
+    ([command, args]) => command === "node" && args.includes("--eval"),
+  );
+  const evaluatorScript =
+    evaluatorCall?.[1]?.[evaluatorCall[1].indexOf("--eval") + 1];
+  expect(typeof evaluatorScript).toBe("string");
+  return String(evaluatorScript);
+}
+
 describe("scripts/release/verify-published-release: usage and validation", () => {
   it("prints usage for --help and runs nothing", async () => {
     const { logs, runCommand } = await runVerify({ argv: ["--help"] });
@@ -878,27 +903,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
   });
 
   it("kills a detached HTTP runner tree when the evaluator times out", async () => {
-    const { runCommand } = await runVerify({
-      argv: [
-        "--version",
-        "2026.6.14",
-        "--skip-github-release",
-        "--npm-attempts",
-        "1",
-        "--executor-attempts",
-        "1",
-      ],
-      runCommand: (command, args) =>
-        command === "npm" && args[0] === "view"
-          ? npmViewResult("2026.6.14")
-          : successfulPublishedVerifierResult(command, args),
-    });
-    const evaluatorCall = runCommand.mock.calls.find(
-      ([command, args]) => command === "node" && args.includes("--eval"),
-    );
-    const evaluatorScript =
-      evaluatorCall?.[1]?.[evaluatorCall[1].indexOf("--eval") + 1];
-    expect(typeof evaluatorScript).toBe("string");
+    const evaluatorScript = await getMcpHttpEvaluatorScript();
 
     const tempRoot = makeRealTempDirectory(
       path.join(tmpdir(), "pm-http-timeout-test-"),
@@ -943,6 +948,74 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       removeRealDirectory(tempRoot, { recursive: true, force: true });
     }
   }, 10_000);
+
+  it("kills a surviving server after its intermediate runner exits", async () => {
+    const evaluatorScript = await getMcpHttpEvaluatorScript();
+
+    const tempRoot = makeRealTempDirectory(
+      path.join(tmpdir(), "pm-http-runner-exit-test-"),
+    );
+    const serverScript = path.join(tempRoot, "surviving-server.mjs");
+    const runnerScript = path.join(tempRoot, "exiting-runner.mjs");
+    const port = await reserveLoopbackPort();
+    writeRealFile(
+      serverScript,
+      [
+        'import { createServer } from "node:net";',
+        "const body = JSON.stringify({ ok: false });",
+        "const server = createServer((socket) => {",
+        "  setTimeout(() => socket.end(",
+        '    "HTTP/1.1 503 Service Unavailable\\r\\n" +',
+        '    "Content-Type: application/json\\r\\n" +',
+        '    "Content-Length: " + Buffer.byteLength(body) + "\\r\\n" +',
+        '    "Connection: close\\r\\n\\r\\n" + body,',
+        "  ), 700);",
+        "});",
+        'server.listen(Number(process.env.PM_MCP_HTTP_PORT), "127.0.0.1");',
+        'process.on("SIGTERM", () => {});',
+        "setInterval(() => {}, 1_000);",
+      ].join("\n"),
+      "utf8",
+    );
+    writeRealFile(
+      runnerScript,
+      [
+        'import { spawn } from "node:child_process";',
+        `spawn(process.execPath, [${JSON.stringify(serverScript)}], {`,
+        "  env: process.env,",
+        '  stdio: "ignore",',
+        "});",
+        "await new Promise((resolve) => setTimeout(resolve, 200));",
+      ].join("\n"),
+      "utf8",
+    );
+
+    try {
+      const result = spawnSync(
+        process.execPath,
+        ["--input-type=module", "--eval", String(evaluatorScript)],
+        {
+          encoding: "utf8",
+          timeout: 10_000,
+          env: {
+            ...process.env,
+            PM_VERIFY_HTTP_RUNNER: "npx",
+            PM_VERIFY_HTTP_RUNNER_COMMAND: process.execPath,
+            PM_VERIFY_HTTP_PACKAGE_SPEC: "@example/pm-cli@2026.6.14",
+            PM_VERIFY_HTTP_RUNNER_ARGS_JSON: JSON.stringify([runnerScript]),
+            PM_VERIFY_HTTP_PORT: String(port),
+          },
+        },
+      );
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(
+        "Published HTTP discovery response was invalid",
+      );
+      await assertLoopbackPortIsReusable(port);
+    } finally {
+      removeRealDirectory(tempRoot, { recursive: true, force: true });
+    }
+  }, 15_000);
 });
 
 describe("scripts/release/verify-published-release: github release", () => {

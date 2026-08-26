@@ -394,8 +394,10 @@ git push origin v<version>
   two 20-second attempts per executor so the complete retry budget remains below
   the hosted step timeout. Signal-aware process-group cleanup escalates from
   `SIGTERM` to `SIGKILL` after a bounded grace period, including when the outer
-  evaluator times out. The verifier derives bin coverage from `package.json`,
-  and proves missing-bin and missing-command controls fail.
+  evaluator times out or an intermediate executor exits before its server
+  descendant. Direct executor exit is not treated as process-group cleanup. The
+  verifier derives bin coverage from `package.json`, and proves missing-bin and
+  missing-command controls fail.
 - exact-package installed acceptance through
   `scripts/release/verify-installed-agent-session.mjs`. Separate npm and Bun
   install roots must contain the resolved executable, then each drives the
