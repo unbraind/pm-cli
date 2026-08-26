@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -20,10 +21,13 @@ const NPM_PACKAGE =
 const PACKAGE_BINS = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
 ).bin;
+const MCP_SKILLS_DRAFT_REVISION =
+  "SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03";
+const MCP_SKILL_RESOURCE_URI = "skill://pm-sdk/SKILL.md";
 const MCP_EXTENSION_CLIENT_CAPABILITIES = {
   extensions: {
     "io.modelcontextprotocol/skills": {
-      revision: "SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03",
+      revision: MCP_SKILLS_DRAFT_REVISION,
       directoryRead: true,
     },
     "io.modelcontextprotocol/ui": {
@@ -37,6 +41,7 @@ const MCP_DISCOVER_REQUEST = `${[
   [2, "skills/list", {}],
   [3, "tools/list", {}],
   [4, "resources/read", { uri: "ui://pm/context.html" }],
+  [5, "resources/read", { uri: MCP_SKILL_RESOURCE_URI }],
 ]
   .map(([id, method, params]) =>
     JSON.stringify({
@@ -215,6 +220,9 @@ try {
   const serverName = payload?.result?._meta?.[
     "io.modelcontextprotocol/serverInfo"
   ]?.name;
+  const skillsCapability = payload?.result?.capabilities?.extensions?.[
+    "io.modelcontextprotocol/skills"
+  ];
   if (
     response.status !== 200 ||
     payload?.id !== 1 ||
@@ -222,7 +230,8 @@ try {
     serverName !== "pm-mcp" ||
     !Array.isArray(payload?.result?.supportedVersions) ||
     !payload.result.supportedVersions.includes("2026-07-28") ||
-    !payload?.result?.capabilities?.extensions?.["io.modelcontextprotocol/skills"] ||
+    skillsCapability?.status !== "draft" ||
+    skillsCapability?.revision !== ${JSON.stringify(MCP_SKILLS_DRAFT_REVISION)} ||
     !payload?.result?.capabilities?.extensions?.["io.modelcontextprotocol/ui"]
   ) {
     throw new Error(
@@ -424,6 +433,46 @@ function assertCliDispatch(stdout) {
   return { ok: true, command: "contracts", output: "json" };
 }
 
+function verifyListedSkillResource(responses, skills) {
+  const skillContents = Object(responses.get(5)?.result).contents;
+  const skillContent = Object(
+    Array.isArray(skillContents) ? skillContents[0] : null,
+  );
+  const listedSkill = Array.isArray(skills)
+    ? skills.find((skill) => skill.uri === MCP_SKILL_RESOURCE_URI)
+    : undefined;
+  const listedResource = Array.isArray(listedSkill?.resources)
+    ? listedSkill.resources.find(
+        (resource) => resource.uri === MCP_SKILL_RESOURCE_URI,
+      )
+    : undefined;
+  const skillBytes =
+    typeof skillContent.text === "string"
+      ? Buffer.from(skillContent.text, "utf8")
+      : typeof skillContent.blob === "string"
+        ? Buffer.from(skillContent.blob, "base64")
+        : undefined;
+  const computedDigest = skillBytes
+    ? `sha256:${createHash("sha256").update(skillBytes).digest("hex")}`
+    : undefined;
+  return {
+    descriptorsValid:
+      Array.isArray(skills) &&
+      skills.length > 0 &&
+      skills.every(
+        (skill) =>
+          Array.isArray(skill.resources) &&
+          skill.resources.every((resource) =>
+            /^sha256:[a-f0-9]{64}$/u.test(resource.digest),
+          ),
+      ),
+    resourceValid:
+      listedResource?.digest === computedDigest &&
+      Object(skillContent._meta).digest === computedDigest &&
+      skillContent.uri === MCP_SKILL_RESOURCE_URI,
+  };
+}
+
 function assertMcpDiscovery(stdout) {
   const responses = stdout
     .split(/\r?\n/u)
@@ -437,6 +486,9 @@ function assertMcpDiscovery(stdout) {
     Object(discovery._meta)["io.modelcontextprotocol/serverInfo"],
   );
   const extensions = Object(Object(discovery.capabilities).extensions);
+  const skillsCapability = Object(
+    extensions["io.modelcontextprotocol/skills"],
+  );
   const skills = Object(responses.get(2)?.result).skills;
   const toolsValue = Object(responses.get(3)?.result).tools;
   const tools = Array.isArray(toolsValue) ? toolsValue : [];
@@ -446,26 +498,19 @@ function assertMcpDiscovery(stdout) {
   const contextToolUi = Object(Object(contextTool._meta).ui);
   const appContents = Object(responses.get(4)?.result).contents;
   const appContent = Object(Array.isArray(appContents) ? appContents[0] : null);
-  const validSkills = Array.isArray(skills)
-    ? skills.every((skill) =>
-        Array.isArray(skill.resources)
-          ? skill.resources.every((resource) =>
-              /^sha256:[a-f0-9]{64}$/u.test(resource.digest),
-            )
-          : false,
-      )
-    : false;
+  const skillVerification = verifyListedSkillResource(responses, skills);
   const validity = [
     serverInfo.name === "pm-mcp",
     discovery.resultType === "complete",
     Array.isArray(discovery.supportedVersions),
     Array.isArray(discovery.supportedVersions) &&
       discovery.supportedVersions.includes("2026-07-28"),
-    extensions["io.modelcontextprotocol/skills"] !== undefined,
+    skillsCapability.status === "draft",
+    skillsCapability.revision === MCP_SKILLS_DRAFT_REVISION,
     extensions["io.modelcontextprotocol/ui"] !== undefined,
     Array.isArray(skills),
-    Array.isArray(skills) && skills.length > 0,
-    validSkills,
+    skillVerification.descriptorsValid,
+    skillVerification.resourceValid,
     contextToolUi.resourceUri === "ui://pm/context.html",
     Array.isArray(appContents),
     appContent.mimeType === "text/html;profile=mcp-app",

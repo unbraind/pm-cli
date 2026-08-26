@@ -52,6 +52,9 @@ describe("extractIssueCode", () => {
     expect(
       extractIssueCode("Work-4 delivery", { configuredPrefixes: ["work"] }),
     ).toBe("WORK-4");
+    expect(
+      extractIssueCode("Work-4 delivery", { configuredPrefixes: ["work-"] }),
+    ).toBe("WORK-4");
   });
 
   it("does not treat an incidental body repetition as issue-code evidence", () => {

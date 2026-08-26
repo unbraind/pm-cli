@@ -84,7 +84,9 @@ export function extractIssueCode(
   const normalized = rawCode.toUpperCase();
   const rawPrefix = rawCode.slice(0, rawCode.lastIndexOf("-"));
   const configured = new Set(
-    (options.configuredPrefixes ?? []).map((prefix) => prefix.trim().toUpperCase()),
+    (options.configuredPrefixes ?? []).map((prefix) =>
+      prefix.trim().replace(/-+$/u, "").toUpperCase(),
+    ),
   );
   const remainder = trimmed.slice(rawCode.length);
   const evidence = options.evidenceText?.toUpperCase() ?? "";

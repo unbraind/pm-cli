@@ -148,6 +148,11 @@ describe("Skills over MCP SDK registry", () => {
     expect(registry.readDirectory("skill://pm-developer/references").resources.map(({ uri }) => uri)).toEqual([
       "skill://pm-developer/references/DETAIL.md",
     ]);
+    expect(
+      registry
+        .readDirectory("skill://pm-developer/references/")
+        .resources.map(({ uri }) => uri),
+    ).toEqual(["skill://pm-developer/references/DETAIL.md"]);
     const directoryFirst = registry.readDirectory("skill://pm-developer", {
       limit: 1,
     });
@@ -383,5 +388,30 @@ describe("Skills over MCP SDK registry", () => {
     await expect(
       PmMcpSkillRegistry.load({ packageRoot: aggregate, packageVersion: "1" }),
     ).rejects.toThrow(/aggregate byte limit/u);
+
+    const tooManySkills = await tempRoot();
+    const tooManySkillsRoot = path.join(tooManySkills, ".agents", "skills");
+    await Promise.all(
+      Array.from({ length: 101 }, (_, index) =>
+        mkdir(path.join(tooManySkillsRoot, `skill-${index}`), {
+          recursive: true,
+        }),
+      ),
+    );
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: tooManySkills, packageVersion: "1" }),
+    ).rejects.toThrow(/exceeds 100 directories/u);
+
+    const oversizedOrigin = await tempRoot();
+    for (const name of ["origin-one", "origin-two", "origin-three"]) {
+      await writeSkill(oversizedOrigin, name);
+      await writeFile(
+        path.join(oversizedOrigin, ".agents", "skills", name, "large.bin"),
+        Buffer.alloc(11 * 1024 * 1024),
+      );
+    }
+    await expect(
+      PmMcpSkillRegistry.load({ packageRoot: oversizedOrigin, packageVersion: "1" }),
+    ).rejects.toThrow(/origin exceeds the aggregate byte limit/u);
   });
 });

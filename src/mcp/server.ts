@@ -112,6 +112,7 @@ import {
   PM_MCP_SKILLS_SERVER_CAPABILITY,
   PmMcpSkillRegistry,
   assertPmMcpSkillsCapability,
+  type ListPmMcpSkillsOptions,
 } from "../sdk/mcp/skills.js";
 
 /** JSON-RPC request shape accepted by pm MCP transport adapters. */
@@ -1077,7 +1078,7 @@ async function dispatchModernToolMethod(
     return buildMcpCompleteResult(
       withMcpCachePolicy(
         {
-          tools: hasPmMcpAppsCapability(requestContext)
+          tools: hasCompatiblePmMcpAppsCapability(requestContext)
             ? decoratePmMcpToolsWithApps(deterministicMcpTools(surface.tools))
             : deterministicMcpTools(surface.tools),
         },
@@ -1112,7 +1113,7 @@ async function dispatchModernResourceMethod(
   if (request.method === "resources/list") {
     const resources = [
       ...PM_MCP_RESOURCE_CONTRACTS,
-      ...(hasPmMcpAppsCapability(requestContext)
+      ...(hasCompatiblePmMcpAppsCapability(requestContext)
         ? PM_MCP_APP_CONTRACTS.map((contract) => ({
             uri: contract.uri,
             name: contract.name,
@@ -1185,6 +1186,42 @@ async function dispatchModernResourceMethod(
   }
 }
 
+/** Treat an incompatible optional Apps declaration as absent during discovery. */
+function hasCompatiblePmMcpAppsCapability(
+  requestContext: PmMcpRequestContext,
+): boolean {
+  try {
+    return hasPmMcpAppsCapability(requestContext);
+  } catch (error: unknown) {
+    if (error instanceof PmMcpProtocolError) return false;
+    throw error;
+  }
+}
+
+/** Validate Skills pagination inputs before handing them to the SDK registry. */
+function readSkillPageOptions(
+  params: Record<string, unknown>,
+): ListPmMcpSkillsOptions {
+  if (params.cursor !== undefined && typeof params.cursor !== "string") {
+    throw new PmMcpProtocolError(
+      "Skills cursor must be a string",
+      PM_MCP_ERROR_CODES.invalidParams,
+      { field: "cursor" },
+    );
+  }
+  if (params.limit !== undefined && typeof params.limit !== "number") {
+    throw new PmMcpProtocolError(
+      "Skills limit must be a number",
+      PM_MCP_ERROR_CODES.invalidParams,
+      { field: "limit" },
+    );
+  }
+  return {
+    ...(typeof params.cursor === "string" ? { cursor: params.cursor } : {}),
+    ...(typeof params.limit === "number" ? { limit: params.limit } : {}),
+  };
+}
+
 async function dispatchModernSkillMethod(
   request: JsonRpcRequest,
   requestContext: PmMcpRequestContext,
@@ -1195,18 +1232,15 @@ async function dispatchModernSkillMethod(
   const registry = await loadRequestSkillRegistry(request.params);
   let result: Record<string, unknown>;
   if (request.method === "skills/list") {
-    result = { ...registry.list({
-      ...(typeof params.cursor === "string" ? { cursor: params.cursor } : {}),
-      ...(typeof params.limit === "number" ? { limit: params.limit } : {}),
-    }) };
+    result = { ...registry.list(readSkillPageOptions(params)) };
   } else if (request.method === "skills/get") {
     result = { skill: registry.get(readRequiredString(params, "uri")) };
   } else {
     result = {
-      ...registry.readDirectory(readRequiredString(params, "uri"), {
-        ...(typeof params.cursor === "string" ? { cursor: params.cursor } : {}),
-        ...(typeof params.limit === "number" ? { limit: params.limit } : {}),
-      }),
+      ...registry.readDirectory(
+        readRequiredString(params, "uri"),
+        readSkillPageOptions(params),
+      ),
     };
   }
   return buildMcpCompleteResult(

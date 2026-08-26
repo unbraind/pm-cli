@@ -145,6 +145,57 @@ describe("MCP 2026-07-28 stateless server", () => {
         }),
       ]),
     );
+    const incompatibleParams = modernExtensionParams(
+      PM_MCP_APPS_EXTENSION,
+      {
+        specVersion: "1900-01-01",
+        mimeTypes: [PM_MCP_APP_MIME_TYPE],
+      },
+    );
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 3011,
+        method: "tools/list",
+        params: incompatibleParams,
+      }),
+    ).resolves.not.toMatchObject({
+      tools: expect.arrayContaining([
+        expect.objectContaining({ _meta: { ui: expect.anything() } }),
+      ]),
+    });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 3012,
+        method: "resources/list",
+        params: incompatibleParams,
+      }),
+    ).resolves.not.toMatchObject({
+      resources: expect.arrayContaining([
+        expect.objectContaining({ uri: "ui://pm/context.html" }),
+      ]),
+    });
+    const capabilityFailure = new Error("client capability access failed");
+    const failingParams = modernParams();
+    const failingMeta = failingParams._meta as Record<string, unknown>;
+    failingMeta[PM_MCP_META_KEYS.clientCapabilities] = new Proxy(
+      {},
+      {
+        get(_target, property) {
+          if (property === "extensions") throw capabilityFailure;
+          return undefined;
+        },
+      },
+    );
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 3013,
+        method: "tools/list",
+        params: failingParams,
+      }),
+    ).rejects.toBe(capabilityFailure);
     const resource = await handleRequest({
       jsonrpc: "2.0",
       id: 302,
@@ -174,6 +225,19 @@ describe("MCP 2026-07-28 stateless server", () => {
         params: modernParams({ uri: "ui://pm/context.html" }),
       }),
     ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.missingRequiredClientCapability });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 3031,
+        method: "resources/read",
+        params: {
+          ...incompatibleParams,
+          uri: "ui://pm/context.html",
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: PM_MCP_ERROR_CODES.missingRequiredClientCapability,
+    });
   });
 
   it("negotiates draft Skills over MCP list, get, resource, and directory reads", async () => {
@@ -278,6 +342,15 @@ describe("MCP 2026-07-28 stateless server", () => {
         params: modernParams(),
       }),
     ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.missingRequiredClientCapability });
+    for (const [id, method, params] of [
+      [315, "skills/list", extensionParams({ cursor: 123 })],
+      [316, "skills/list", extensionParams({ limit: "2" })],
+      [317, "resources/directory/read", extensionParams({ uri: "skill://pm-sdk", limit: "2" })],
+    ] as const) {
+      await expect(
+        handleRequest({ jsonrpc: "2.0", id, method, params }),
+      ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.invalidParams });
+    }
   });
 
   it("keeps unrelated legacy metadata on the unversioned adapter", async () => {

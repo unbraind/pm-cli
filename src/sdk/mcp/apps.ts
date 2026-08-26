@@ -6,8 +6,8 @@
  * project these contracts.
  */
 import type {
-  McpUiAppResourceConfig,
-  McpUiAppToolConfig,
+  McpUiAppResourceConfig as OfficialMcpUiAppResourceConfig,
+  McpUiAppToolConfig as OfficialMcpUiAppToolConfig,
 } from "@modelcontextprotocol/ext-apps/server";
 import {
   PM_MCP_ERROR_CODES,
@@ -16,10 +16,33 @@ import {
   type PmMcpRequestContext,
 } from "./protocol.js";
 
-type McpUiResourceMeta = NonNullable<
-  NonNullable<McpUiAppResourceConfig["_meta"]>["ui"]
+type OfficialMcpUiResourceMeta = NonNullable<
+  NonNullable<OfficialMcpUiAppResourceConfig["_meta"]>["ui"]
 >;
-type McpUiToolMeta = Extract<McpUiAppToolConfig["_meta"], { ui: unknown }>["ui"];
+type OfficialMcpUiToolMeta = Extract<
+  OfficialMcpUiAppToolConfig["_meta"],
+  { ui: unknown }
+>["ui"];
+
+interface McpUiToolMeta {
+  /** MCP App resource displayed for this tool. */
+  resourceUri: string;
+  /** Principals allowed to discover and invoke the tool. */
+  visibility: Array<"model" | "app">;
+}
+
+interface McpUiResourceMeta {
+  /** Explicitly bounded network and embedding policy. */
+  csp: {
+    connectDomains: string[];
+    resourceDomains: string[];
+    frameDomains: string[];
+  };
+  /** Browser permissions requested by the app. */
+  permissions: Record<string, never>;
+  /** Whether the host should present a visible app boundary. */
+  prefersBorder: boolean;
+}
 
 /** Stable MCP Apps extension identifier. */
 export const PM_MCP_APPS_EXTENSION = "io.modelcontextprotocol/ui" as const;
@@ -86,11 +109,11 @@ export interface PmMcpAppContract {
   resourceMeta: McpUiResourceMeta;
 }
 
-const PRIVATE_APP_RESOURCE_META = {
+const PRIVATE_APP_RESOURCE_META: McpUiResourceMeta = {
   csp: { connectDomains: [], resourceDomains: [], frameDomains: [] },
   permissions: {},
   prefersBorder: true,
-} as const satisfies McpUiResourceMeta;
+} satisfies OfficialMcpUiResourceMeta;
 
 /** Canonical optional pm MCP Apps. */
 export const PM_MCP_APP_CONTRACTS: readonly PmMcpAppContract[] = Object.freeze(
@@ -140,7 +163,7 @@ export const PM_MCP_APP_CONTRACTS: readonly PmMcpAppContract[] = Object.freeze(
     toolMeta: {
       resourceUri: contract.uri,
       visibility: ["model", "app"],
-    },
+    } satisfies OfficialMcpUiToolMeta,
     resourceMeta: PRIVATE_APP_RESOURCE_META,
   })) as PmMcpAppContract[],
 );

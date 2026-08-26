@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: dependencies,quality,supply-chain,types
 created_at: "2026-08-26T14:37:53.572Z"
-updated_at: "2026-08-26T15:50:20.631Z"
+updated_at: "2026-08-26T16:57:18.125Z"
 closed_at: "2026-08-26T15:50:07.702Z"
 completed_at: "2026-08-26T15:50:07.702Z"
 author: "harness:codex"
@@ -31,8 +31,9 @@ comments[3]{created_at,author,text}:
   "2026-08-26T14:37:53.572Z","harness:codex","Duplicate check evidence: searched all statuses for exact ESLint 10.9.1, @types/node 26.3.0, TypeScript 7, npm-package-arg 14, and dependency refresh owners. No item owns the two current compatible patches; pm-do5b and pm-ksr40d remain canonical for the incompatible majors."
   "2026-08-26T15:49:45.715Z","harness:codex","Final dependency evidence: ESLint resolves to 10.9.1 and @types/node to 26.3.0; runtime Node declarations retain the >=22 floor. Registry census leaves only TypeScript 7 (typesript-eslint peer incompatibility, pm-do5b) and npm-package-arg 14 (Node engine incompatibility, pm-ksr40d), now linked as causal discoveries rather than generic related edges. Audit reports zero vulnerabilities; typecheck, ESLint, zero-clone, exact coverage, static quality, package artifact, npx, bunx, and packed consumer proof pass."
   "2026-08-26T15:49:59.988Z","harness:codex","Correction: the canonical TypeScript 7 blocker is the typescript-eslint 8.68 peer range, tracked by pm-do5b."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-08-26T15:49:42.793Z","harness:codex","Compatible patch automation must preserve engine and peer floors: safe ESLint and Node declaration patches can land while TypeScript 7 and npm-package-arg 14 remain with their canonical migration owners."
+  "2026-08-26T16:57:18.125Z","harness:codex","Closure outcome ordering: record resolution, expected_result, actual_result, and evidence comments before the close event so immutable history makes the terminal decision self-contained; append a corrective learning instead of rewriting prior history."
 files[2]{path,scope,note}:
   package.json,project,Compatible patch declarations
   pnpm-lock.yaml,project,Resolved dependency graph

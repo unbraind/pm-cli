@@ -47,8 +47,12 @@ Security limits reject symbolic links, malformed or aliased YAML, mismatched
 directory/frontmatter names, stale cursors, oversized files, excessive file
 counts, and aggregate skill bodies above the declared bound. In accordance with
 the draft, pm accepts at most 512 resources and 16 MiB of total content per
-skill; the same 16 MiB ceiling applies to an individual resource. Each read is
-resolved from the immutable in-memory registry used to compute its digest.
+skill; the same 16 MiB ceiling applies to an individual resource. An origin is
+limited to 100 candidate skill directories and 32 MiB across all retained
+bodies. File counts and both byte budgets are reserved from filesystem metadata
+before a body is read, so an untrusted workspace cannot exceed the declared
+memory envelope before rejection. Each read is resolved from the immutable
+in-memory registry used to compute its digest.
 
 ## MCP Apps
 
@@ -89,6 +93,9 @@ Apps keep no durable project state and expose no hidden mutation path. The
 tracker, task store, mutation guards, consent, idempotency, and immutable
 receipts remain owned by existing SDK-backed MCP tools. A host that cannot or
 does not render Apps still receives meaningful tool text and structured data.
+Missing or incompatible optional Apps declarations therefore leave core tool
+and resource discovery undecorated; an explicit read of a `ui://` resource
+continues to fail closed unless the stable capability was negotiated.
 
 ## Public SDK
 

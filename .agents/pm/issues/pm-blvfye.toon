@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:governance","area:validate",false-positive,github-intake
 created_at: "2026-08-25T16:27:05.142Z"
-updated_at: "2026-08-26T16:06:59.116Z"
-closed_at: "2026-08-26T16:06:56.191Z"
-completed_at: "2026-08-26T16:06:56.191Z"
+updated_at: "2026-08-26T16:57:30.085Z"
+closed_at: "2026-08-26T16:57:29.548Z"
+completed_at: "2026-08-26T16:57:29.548Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "The classifier distinguishes prose compounds from evidence-backed issue identifiers without maintaining an unbounded dictionary; negative controls retain detection for real uppercase and configured code formats; validation output explains the evidence and recovery path; focused tests cover Match-3, Covid-19, Wi-Fi-6, real codes, mixed case, body evidence, and configured formats; the full validation and 100 percent coverage gates pass."
@@ -18,17 +18,18 @@ confidence: high
 reporter: GitHub issue #1118
 severity: medium
 repro_steps: "Create two unrelated items whose titles contain the same natural-language word-number token such as Match-3, then run pm validate --check-metadata."
-resolution: Fixed natural-language word-number false positives while preserving evidence-backed issue-code detection.
-expected_result: Natural-language hyphenated compounds do not create duplicate issue-code findings; explicit identifiers still do.
-actual_result: "Classifier requires uppercase, configured-prefix, delimiter, or body-citation evidence and passes the regression matrix plus defect-evidence gate."
+resolution: Replaced shape-only word-number classification with evidence-backed issue-code recognition and normalized configured prefixes.
+expected_result: "Natural compounds do not create duplicate-code findings while uppercase, delimited, configured, and body-cited real identifiers remain detected."
+actual_result: "Match-3, Covid-19, and Wi-Fi-6 are excluded; real codes and configured prefixes with optional trailing hyphens are preserved under focused, full-coverage, and defect-evidence gates."
 affected_version: 2026.8.23
 component: metadata validation
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-25T16:27:05.142Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-25T16:27:05.142Z","harness:codex","Duplicate check evidence: strict-read inspected all 2,558 items across every lifecycle state with no omissions; searches for GH-1118, duplicate_issue_codes, Match-3, natural-language genre, and hyphenated word-number found adjacent historical false-positive work but no owner for prose compounds. Canonical source: https://github.com/unbraind/pm-cli/issues/1118"
   "2026-08-26T15:49:45.261Z","harness:codex","Final fix evidence: the duplicate issue-code classifier now rejects Match-3, Covid-19, Wi-Fi-6, and other prose compounds unless uppercase, configured-prefix, delimiter, or body-citation evidence establishes identifier intent. True GitHub/project identifiers remain detected. Focused 23-case classifier coverage, command validation, final exact 8,011-test 100/100/100/100 coverage, and full static quality pass; GH-1118 will close through the reviewed PR."
   "2026-08-26T16:06:48.848Z","harness:codex","Exact-head governance remediation: PR #1123 release:gates correctly failed closed because this post-epoch production defect lacked escape_class and structured gate_evidence. Added production_defect classification and bound the fix to the duplicate-issue-code-evidence-classification gate: prose-compound negative controls, true-identifier controls, focused local tests, defect-evidence gate, exact coverage, and hosted static/coverage owners. No waiver is used."
+  "2026-08-26T16:57:17.648Z","harness:codex","PR review remediation evidence: configured issue-code prefixes are normalized with or without trailing separators, preserving evidence-backed detection while natural word-number compounds remain excluded. Focused validation tests, exact coverage, repository static quality, and defect-evidence gates passed."
 learnings[1]{created_at,author,text}:
   "2026-08-26T15:49:42.248Z","harness:codex","Issue-code extraction needs structural evidence, not hyphen shape alone: uppercase/configured prefixes, explicit delimiters, or body citations distinguish identifiers from natural-language compounds."
 files[3]{path,scope,note}:
@@ -39,7 +40,7 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/core/governance/issue-codes.spec.ts tests/unit/commands/validate-command.spec.ts,project,240,"harness:codex","2026-08-26T14:35:55.821Z",local_mutation,main
 docs[1]{path,scope,note}:
   docs/SDK_EVIDENCE_TRACEABILITY.md,project,Classifier evidence and recovery contract
-close_reason: "Fixed GH-1118 issue-code false positives with evidence-backed classification, governed production-defect taxonomy, executable negative controls, and full regression/static proof."
+close_reason: "Fixed evidence-backed issue-code classification and configured-prefix normalization with focused, full-coverage, and defect-gate proof."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

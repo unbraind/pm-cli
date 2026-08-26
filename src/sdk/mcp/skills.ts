@@ -67,6 +67,9 @@ export const PM_MCP_SKILL_LIMITS = Object.freeze({
   maxPageSize: 100,
 });
 
+const MAX_MCP_SKILLS_PER_ORIGIN = 100;
+const MAX_MCP_SKILL_ORIGIN_BYTES = 32 * 1024 * 1024;
+
 /** Origin from which a skill was loaded. */
 export type PmMcpSkillOrigin = "package" | "workspace";
 
@@ -212,9 +215,42 @@ function parseSkillFrontmatter(content: string, source: string): Record<string, 
   return value as Record<string, unknown>;
 }
 
+async function readBoundedSkillFile(
+  filePath: string,
+  relative: string,
+  size: number,
+  budget: {
+    files: number;
+    skillBytes: number;
+    originBytes: { value: number };
+  },
+): Promise<Buffer> {
+  if (size > PM_MCP_SKILL_LIMITS.maxFileBytes) {
+    skillError(`Skill resource exceeds the per-file limit: ${relative}.`);
+  }
+  budget.files += 1;
+  if (budget.files > PM_MCP_SKILL_LIMITS.maxFilesPerSkill) {
+    skillError(`Skill exceeds ${PM_MCP_SKILL_LIMITS.maxFilesPerSkill} files.`);
+  }
+  budget.skillBytes += size;
+  if (budget.skillBytes > PM_MCP_SKILL_LIMITS.maxSkillBytes) {
+    skillError(`Skill exceeds the aggregate byte limit: ${relative}.`);
+  }
+  budget.originBytes.value += size;
+  if (budget.originBytes.value > MAX_MCP_SKILL_ORIGIN_BYTES) {
+    skillError(`Skill origin exceeds the aggregate byte limit: ${relative}.`);
+  }
+  return readFile(filePath);
+}
+
 async function collectSkillFiles(
   root: string,
-  relative = "",
+  relative: string,
+  budget: {
+    files: number;
+    skillBytes: number;
+    originBytes: { value: number };
+  },
 ): Promise<Array<{ relative: string; bytes: Buffer }>> {
   const directory = path.join(root, relative);
   const entries = await readdir(directory, { withFileTypes: true });
@@ -227,17 +263,19 @@ async function collectSkillFiles(
       skillError(`Skill resource must not be a symbolic link: ${childRelative}.`);
     }
     if (stats.isDirectory()) {
-      files.push(...(await collectSkillFiles(root, childRelative)));
+      files.push(...(await collectSkillFiles(root, childRelative, budget)));
     } else if (stats.isFile()) {
-      if (stats.size > PM_MCP_SKILL_LIMITS.maxFileBytes) {
-        skillError(`Skill resource exceeds the per-file limit: ${childRelative}.`);
-      }
-      files.push({ relative: childRelative, bytes: await readFile(childPath) });
+      files.push({
+        relative: childRelative,
+        bytes: await readBoundedSkillFile(
+          childPath,
+          childRelative,
+          stats.size,
+          budget,
+        ),
+      });
     } else {
       skillError(`Skill resource must be a regular file or directory: ${childRelative}.`);
-    }
-    if (files.length > PM_MCP_SKILL_LIMITS.maxFilesPerSkill) {
-      skillError(`Skill exceeds ${PM_MCP_SKILL_LIMITS.maxFilesPerSkill} files.`);
     }
   }
   return files;
@@ -258,13 +296,20 @@ async function loadSkillOrigin(
     }
     throw error;
   }
-  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-    if (!entry.isDirectory() || !SKILL_NAME_PATTERN.test(entry.name)) continue;
-    const files = await collectSkillFiles(path.join(skillsRoot, entry.name));
+  const skillEntries = entries
+    .filter((entry) => entry.isDirectory() && SKILL_NAME_PATTERN.test(entry.name))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  if (skillEntries.length > MAX_MCP_SKILLS_PER_ORIGIN) {
+    skillError(`Skill origin exceeds ${MAX_MCP_SKILLS_PER_ORIGIN} directories.`);
+  }
+  const originBytes = { value: 0 };
+  for (const entry of skillEntries) {
+    const files = await collectSkillFiles(path.join(skillsRoot, entry.name), "", {
+      files: 0,
+      skillBytes: 0,
+      originBytes,
+    });
     const totalBytes = files.reduce((sum, file) => sum + file.bytes.byteLength, 0);
-    if (totalBytes > PM_MCP_SKILL_LIMITS.maxSkillBytes) {
-      skillError(`Skill ${entry.name} exceeds the aggregate byte limit.`);
-    }
     const main = files.find((file) => file.relative === "SKILL.md");
     if (!main) continue;
     const frontmatter = parseSkillFrontmatter(main.bytes.toString("utf8"), entry.name);
@@ -471,13 +516,14 @@ export class PmMcpSkillRegistry {
     if (!skill) skillError(`Unknown pm MCP skill directory: ${uri}.`, { field: "uri" });
     const directory = (match?.[2] ?? "").replace(/\/$/u, "");
     const prefix = directory.length > 0 ? `${directory}/` : "";
+    const base = `skill://${match![1]}`;
     const children = new Map<string, ReadPmMcpSkillDirectoryResult["resources"][number]>();
     for (const resource of skill.resources) {
-      const relative = resource.uri.slice(`skill://${match![1]}/`.length);
+      const relative = resource.uri.slice(`${base}/`.length);
       if (!relative.startsWith(prefix)) continue;
       const remainder = relative.slice(prefix.length);
       const [name, ...descendants] = remainder.split("/");
-      const childUri = `${uri}/${name}`;
+      const childUri = `${base}/${prefix}${name}`;
       const childBytes = skill.files.get(`${prefix}${name}`);
       children.set(name, {
         uri: childUri,
