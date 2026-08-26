@@ -2,12 +2,14 @@ id: pm-8nzivt
 title: "Skills over MCP: discoverable version-coherent pm workflows with progressive disclosure, capability requirements, and token budgets"
 description: "Expose canonical pm skills through negotiated MCP extension contracts so agents can discover only the workflow guidance relevant to their role, surface, version, and current context budget."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[6]: agent-guidance,"area:mcp",progressive-disclosure,skills,token-budget,version-coherence
 created_at: "2026-08-25T05:11:35.408Z"
-updated_at: "2026-08-25T05:11:35.408Z"
+updated_at: "2026-08-26T15:50:19.148Z"
 deadline: "2027-01-31T00:00:00.000Z"
+closed_at: "2026-08-26T15:50:03.123Z"
+completed_at: "2026-08-26T15:50:03.123Z"
 author: "harness:codex"
 estimated_minutes: 600
 acceptance_criteria: "Agents can list and fetch pm skills through a negotiated extension without loading unrelated bodies; Skill versions declare compatible pm, MCP, SDK, package, and contract versions and fail closed on drift; All CLI, SDK, MCP, package, testing, release, governance, and operator families have canonical skill routing or an explicit non-skill disposition; Examples and recovery commands are generated or validated against live runtime contracts in local and hosted CI; Token cost, completion success, stale guidance, and recovery closure are measured and ratcheted"
@@ -18,10 +20,34 @@ why_now: The latest MCP ecosystem identifies Skills over MCP as an extension whi
 parent: pm-rs9vry
 risk: medium
 confidence: medium
+resolution: "Implemented exact-revision, SDK-owned Skills over MCP discovery and bounded resource delivery with package/workspace provenance and fail-closed security."
+expected_result: Negotiated clients discover version-coherent skills progressively and read bounded resources without loading unrelated bodies.
+actual_result: "Exact-revision list/get/read/directory contracts expose four canonical skills with provenance, digests, token estimates, and fail-closed bounds."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,verifies,"2026-08-25T05:11:35.408Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,blocked_by,"2026-08-25T05:11:35.408Z","harness:codex","cli:create:dep",detected
   pm-z3ez,implements,"2026-08-25T05:11:35.408Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-25T05:11:35.408Z","harness:codex","Duplicate check evidence: searched all statuses for Skills over MCP skill discovery progressive disclosure capability requirements version coherence and token budgets. pm-z3ez owns distribution but not the MCP extension protocol."
+  "2026-08-26T15:49:43.766Z","harness:codex","Final implementation evidence: public SDK registry implements exact SEP-2640 revision a3e147ca2710f68214247aecc729731ee1ae8d03 with list/get/read/direct-child directory operations, opaque registry-bound cursors, package/workspace provenance, sha256:<hex> digests, 512-resource and 16 MiB bounds, binary reads, and fail-closed filesystem handling. Final exact repository coverage passed 583 files / 8,011 tests at 100/100/100/100; typecheck, contracts, SDK surface, ESLint, zero-clone, static, secrets, audit, package artifact, and a fresh packed SDK/MCP consumer passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-26T15:49:41.308Z","harness:codex","Skills over MCP remains a draft SEP: pin the exact proposal commit, require request-local revision negotiation, expose sha256-prefixed digests, list only direct directory children, and fail closed on links, special files, stale cursors, or resource bounds."
+files[10]{path,scope,note}:
+  package.json,project,Published canonical skills and runtime YAML parser
+  pnpm-lock.yaml,project,Locked runtime dependencies
+  scripts/release/verify-published-release.mjs,project,Published Skills npx and bunx gate
+  sdk/public-surface.json,project,Classified public registry API
+  src/mcp/server.ts,project,Negotiated thin server dispatch
+  src/sdk/index.ts,project,Published SDK export
+  src/sdk/mcp/skills.ts,project,Public draft Skills over MCP registry and security contracts
+  tests/integration/mcp-stateless-protocol.spec.ts,project,Real stateless extension coverage
+  tests/unit/scripts/release/verify-published-release.spec.ts,project,Published verifier coverage
+  tests/unit/sdk/mcp/skills.spec.ts,project,Registry and adversarial coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/skills.spec.ts tests/integration/mcp-stateless-protocol.spec.ts,project,240,"harness:codex","2026-08-26T14:35:50.813Z",local_mutation,main
+docs[3]{path,scope,note}:
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,Executable conformance row
+  docs/MCP_2026_07_28.md,project,Canonical protocol decision extension section
+  docs/MCP_SKILLS_AND_APPS.md,project,Skills wire contract and trust model
+close_reason: "Delivered exact-revision Skills over MCP SDK/server contracts, security bounds, docs, release verification, packed-consumer proof, and exact 100% coverage."
 body: "## Skill contract\n\n- Discover skill identity, version, purpose, required capabilities, supported surfaces, input contract, output budget, and linked runtime commands.\n- Fetch brief, standard, deep, or exact referenced sections on demand.\n- Bind skill compatibility to pm package version, MCP protocol version, active extensions, and contract schema version.\n- Generate or validate command examples against live contracts and execute negative controls in CI.\n- Preserve repository-local overrides with explicit provenance and precedence.\n- Measure tokens loaded, steps completed, refusal recovery, and stale-guidance escapes."

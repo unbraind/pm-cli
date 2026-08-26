@@ -6,6 +6,11 @@ import {
   PM_MCP_ERROR_CODES,
   PM_MCP_META_KEYS,
   PM_MCP_PROTOCOL_VERSION,
+  PM_MCP_APPS_EXTENSION,
+  PM_MCP_APPS_SERVER_CAPABILITY,
+  PM_MCP_APP_MIME_TYPE,
+  PM_MCP_SKILLS_EXTENSION,
+  PM_MCP_SKILLS_SERVER_CAPABILITY,
   PM_MCP_TASKS_EXTENSION,
   PmMcpProtocolError,
 } from "../../src/sdk/index.js";
@@ -33,6 +38,19 @@ function modernTaskParams(
   const meta = result._meta as Record<string, unknown>;
   meta[PM_MCP_META_KEYS.clientCapabilities] = {
     extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
+  };
+  return result;
+}
+
+function modernExtensionParams(
+  extension: string,
+  capability: Record<string, unknown>,
+  params: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const result = modernParams(params);
+  const meta = result._meta as Record<string, unknown>;
+  meta[PM_MCP_META_KEYS.clientCapabilities] = {
+    extensions: { [extension]: capability },
   };
   return result;
 }
@@ -88,6 +106,178 @@ describe("MCP 2026-07-28 stateless server", () => {
       },
     });
     expect(Array.isArray(result?.tools)).toBe(true);
+  });
+
+  it("negotiates stable MCP Apps tools and self-contained UI resources", async () => {
+    const tools = await handleRequest({
+      jsonrpc: "2.0",
+      id: 300,
+      method: "tools/list",
+      params: modernExtensionParams(
+        PM_MCP_APPS_EXTENSION,
+        PM_MCP_APPS_SERVER_CAPABILITY,
+      ),
+    });
+    expect(tools?.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "pm_context",
+          _meta: expect.objectContaining({
+            ui: expect.objectContaining({ resourceUri: "ui://pm/context.html" }),
+          }),
+        }),
+      ]),
+    );
+    const resources = await handleRequest({
+      jsonrpc: "2.0",
+      id: 301,
+      method: "resources/list",
+      params: modernExtensionParams(
+        PM_MCP_APPS_EXTENSION,
+        PM_MCP_APPS_SERVER_CAPABILITY,
+      ),
+    });
+    expect(resources?.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          uri: "ui://pm/context.html",
+          mimeType: PM_MCP_APP_MIME_TYPE,
+        }),
+      ]),
+    );
+    const resource = await handleRequest({
+      jsonrpc: "2.0",
+      id: 302,
+      method: "resources/read",
+      params: modernExtensionParams(
+        PM_MCP_APPS_EXTENSION,
+        PM_MCP_APPS_SERVER_CAPABILITY,
+        { uri: "ui://pm/context.html" },
+      ),
+    });
+    expect(resource).toMatchObject({
+      resultType: "complete",
+      contents: [
+        {
+          uri: "ui://pm/context.html",
+          mimeType: PM_MCP_APP_MIME_TYPE,
+          text: expect.stringContaining("ui/initialize"),
+          _meta: { ui: { prefersBorder: true } },
+        },
+      ],
+    });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 303,
+        method: "resources/read",
+        params: modernParams({ uri: "ui://pm/context.html" }),
+      }),
+    ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.missingRequiredClientCapability });
+  });
+
+  it("negotiates draft Skills over MCP list, get, resource, and directory reads", async () => {
+    const extensionParams = (params: Record<string, unknown> = {}) =>
+      modernExtensionParams(
+        PM_MCP_SKILLS_EXTENSION,
+        PM_MCP_SKILLS_SERVER_CAPABILITY,
+        params,
+      );
+    const listed = await handleRequest({
+      jsonrpc: "2.0",
+      id: 310,
+      method: "skills/list",
+      params: extensionParams({ limit: 2 }),
+    });
+    expect(listed).toMatchObject({
+      resultType: "complete",
+      hasMore: true,
+      skills: expect.arrayContaining([
+        expect.objectContaining({ uri: "skill://pm-developer/SKILL.md" }),
+      ]),
+    });
+    const listedNext = await handleRequest({
+      jsonrpc: "2.0",
+      id: 3101,
+      method: "skills/list",
+      params: extensionParams({ cursor: listed?.nextCursor }),
+    });
+    expect(listedNext).toMatchObject({ resultType: "complete", hasMore: false });
+    const skill = await handleRequest({
+      jsonrpc: "2.0",
+      id: 311,
+      method: "skills/get",
+      params: extensionParams({ uri: "skill://pm-sdk/SKILL.md" }),
+    });
+    expect(skill).toMatchObject({
+      skill: {
+        frontmatter: { name: "pm-sdk" },
+        _meta: { origin: "package", trust: "untrusted" },
+      },
+    });
+    const file = await handleRequest({
+      jsonrpc: "2.0",
+      id: 312,
+      method: "resources/read",
+      params: extensionParams({ uri: "skill://pm-sdk/SKILL.md" }),
+    });
+    expect(file).toMatchObject({
+      contents: [
+        {
+          uri: "skill://pm-sdk/SKILL.md",
+          text: expect.stringContaining("# pm SDK Skill"),
+          _meta: { digest: expect.stringMatching(/^sha256:[a-f0-9]{64}$/u) },
+        },
+      ],
+    });
+    const directory = await handleRequest({
+      jsonrpc: "2.0",
+      id: 313,
+      method: "resources/directory/read",
+      params: extensionParams({ uri: "skill://pm-sdk", limit: 1 }),
+    });
+    expect(directory?.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ uri: expect.stringMatching(/^skill:\/\/pm-sdk\//u) }),
+      ]),
+    );
+    const directoryNext = await handleRequest({
+      jsonrpc: "2.0",
+      id: 3131,
+      method: "resources/directory/read",
+      params: extensionParams({
+        uri: "skill://pm-sdk",
+        cursor: directory?.nextCursor,
+      }),
+    });
+    expect([...(directory?.resources ?? []), ...(directoryNext?.resources ?? [])]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ uri: "skill://pm-sdk/SKILL.md" }),
+        expect.objectContaining({
+          uri: "skill://pm-sdk/references",
+          mimeType: "inode/directory",
+        }),
+      ]),
+    );
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 3132,
+        method: "skills/get",
+        params: extensionParams({
+          uri: "skill://pm-user/SKILL.md",
+          cwd: process.cwd(),
+        }),
+      }),
+    ).resolves.toMatchObject({ skill: { frontmatter: { name: "pm-user" } } });
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 314,
+        method: "skills/list",
+        params: modernParams(),
+      }),
+    ).rejects.toMatchObject({ code: PM_MCP_ERROR_CODES.missingRequiredClientCapability });
   });
 
   it("keeps unrelated legacy metadata on the unversioned adapter", async () => {

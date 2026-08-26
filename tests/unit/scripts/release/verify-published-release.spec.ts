@@ -152,17 +152,69 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
   if (args.includes("pm-mcp")) {
     return {
       status: 0,
-      stdout: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        result: {
-          supportedVersions: ["2026-07-28"],
-          resultType: "complete",
-          _meta: {
-            "io.modelcontextprotocol/serverInfo": { name: "pm-mcp" },
+      stdout: [
+        {
+          jsonrpc: "2.0",
+          id: 1,
+          result: {
+            supportedVersions: ["2026-07-28"],
+            capabilities: {
+              extensions: {
+                "io.modelcontextprotocol/skills": { directoryRead: true },
+                "io.modelcontextprotocol/ui": {
+                  mimeTypes: ["text/html;profile=mcp-app"],
+                },
+              },
+            },
+            resultType: "complete",
+            _meta: {
+              "io.modelcontextprotocol/serverInfo": { name: "pm-mcp" },
+            },
           },
         },
-      }),
+        {
+          jsonrpc: "2.0",
+          id: 2,
+          result: {
+            skills: [
+              {
+                uri: "skill://pm-sdk/SKILL.md",
+                resources: [
+                  {
+                    uri: "skill://pm-sdk/SKILL.md",
+                    digest: `sha256:${"a".repeat(64)}`,
+                    size: 10,
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          jsonrpc: "2.0",
+          id: 3,
+          result: {
+            tools: [
+              {
+                name: "pm_context",
+                _meta: { ui: { resourceUri: "ui://pm/context.html" } },
+              },
+            ],
+          },
+        },
+        {
+          jsonrpc: "2.0",
+          id: 4,
+          result: {
+            contents: [
+              {
+                mimeType: "text/html;profile=mcp-app",
+                text: "ui/initialize",
+              },
+            ],
+          },
+        },
+      ].map((response) => JSON.stringify(response)).join("\n"),
       stderr: "",
     };
   }
@@ -185,6 +237,10 @@ function successfulPublishedVerifierResult(
         http_status: 200,
         server_name: "pm-mcp",
         protocol_version: "2026-07-28",
+        extensions: [
+          "io.modelcontextprotocol/skills",
+          "io.modelcontextprotocol/ui",
+        ],
       }),
       stderr: "",
     };
@@ -749,6 +805,35 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       },
     });
     expect(String(mcp.failure)).toContain("mcp_discovery_response_invalid");
+
+    const malformedSkill = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
+        const result = successfulExecutorResult(args);
+        return command === "npx" && args.includes("pm-mcp")
+          ? {
+              ...result,
+              stdout: result.stdout.replace(
+                /"resources":\[\{"uri":"skill:\/\/pm-sdk\/SKILL\.md"[^\]]+\]/u,
+                '"resources":null',
+              ),
+            }
+          : result;
+      },
+    });
+    expect(String(malformedSkill.failure)).toContain(
+      "mcp_discovery_response_invalid",
+    );
 
     const scalarVersion = await runVerify({
       argv: [

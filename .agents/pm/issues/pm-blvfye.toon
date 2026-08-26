@@ -2,11 +2,13 @@ id: pm-blvfye
 title: "GH-1118: natural-language word-number titles trigger duplicate issue-code false positives"
 description: "The duplicate issue-code title heuristic treats prose such as Match-3, Covid-19, or Wi-Fi-6 as tracker identifiers and emits an impossible rename-or-merge remediation for unrelated items."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:governance","area:validate",false-positive,github-intake
 created_at: "2026-08-25T16:27:05.142Z"
-updated_at: "2026-08-25T17:23:17.294Z"
+updated_at: "2026-08-26T15:50:07.085Z"
+closed_at: "2026-08-26T15:50:06.486Z"
+completed_at: "2026-08-26T15:50:06.486Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "The classifier distinguishes prose compounds from evidence-backed issue identifiers without maintaining an unbounded dictionary; negative controls retain detection for real uppercase and configured code formats; validation output explains the evidence and recovery path; focused tests cover Match-3, Covid-19, Wi-Fi-6, real codes, mixed case, body evidence, and configured formats; the full validation and 100 percent coverage gates pass."
@@ -16,12 +18,25 @@ confidence: high
 reporter: GitHub issue #1118
 severity: medium
 repro_steps: "Create two unrelated items whose titles contain the same natural-language word-number token such as Match-3, then run pm validate --check-metadata."
-expected_result: Natural-language compounds are not classified as logical issue codes; true structured issue codes and genuine collisions remain detected with actionable evidence.
-actual_result: The generic title regex groups unrelated prose tokens as issue codes and recommends dishonest renames or merges.
+resolution: Fixed natural-language word-number false positives while preserving evidence-backed issue-code detection.
+expected_result: Natural-language hyphenated compounds do not create duplicate issue-code findings; explicit identifiers still do.
+actual_result: "Classifier requires uppercase, configured-prefix, delimiter, or body-citation evidence and passes the regression matrix."
 affected_version: 2026.8.23
 component: metadata validation
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-25T16:27:05.142Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-25T16:27:05.142Z","harness:codex","Duplicate check evidence: strict-read inspected all 2,558 items across every lifecycle state with no omissions; searches for GH-1118, duplicate_issue_codes, Match-3, natural-language genre, and hyphenated word-number found adjacent historical false-positive work but no owner for prose compounds. Canonical source: https://github.com/unbraind/pm-cli/issues/1118"
+  "2026-08-26T15:49:45.261Z","harness:codex","Final fix evidence: the duplicate issue-code classifier now rejects Match-3, Covid-19, Wi-Fi-6, and other prose compounds unless uppercase, configured-prefix, delimiter, or body-citation evidence establishes identifier intent. True GitHub/project identifiers remain detected. Focused 23-case classifier coverage, command validation, final exact 8,011-test 100/100/100/100 coverage, and full static quality pass; GH-1118 will close through the reviewed PR."
+learnings[1]{created_at,author,text}:
+  "2026-08-26T15:49:42.248Z","harness:codex","Issue-code extraction needs structural evidence, not hyphen shape alone: uppercase/configured prefixes, explicit delimiters, or body citations distinguish identifiers from natural-language compounds."
+files[3]{path,scope,note}:
+  src/core/governance/issue-codes.ts,project,Evidence-backed logical code classifier
+  src/sdk/governance/validate.ts,project,Configured prefix and body evidence integration
+  tests/unit/core/governance/issue-codes.spec.ts,project,Natural-language and true-code regression matrix
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/governance/issue-codes.spec.ts tests/unit/commands/validate-command.spec.ts,project,240,"harness:codex","2026-08-26T14:35:55.821Z",local_mutation,main
+docs[1]{path,scope,note}:
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project,Classifier evidence and recovery contract
+close_reason: Fixed GH-1118 issue-code false positives with evidence-backed classification and full regression/static proof.
 body: ""

@@ -1,6 +1,6 @@
 # SDK Evidence Traceability and Integrity
 
-Tracker references: [pm-f86lth](../.agents/pm/features/pm-f86lth.toon), [pm-cstuys](../.agents/pm/issues/pm-cstuys.toon), [pm-jb1ron](../.agents/pm/issues/pm-jb1ron.toon), [pm-2irc1p](../.agents/pm/issues/pm-2irc1p.toon), and [pm-u5c27w](../.agents/pm/issues/pm-u5c27w.toon).
+Tracker references: [pm-f86lth](../.agents/pm/features/pm-f86lth.toon), [pm-cstuys](../.agents/pm/issues/pm-cstuys.toon), [pm-jb1ron](../.agents/pm/issues/pm-jb1ron.toon), [pm-2irc1p](../.agents/pm/issues/pm-2irc1p.toon), [pm-u5c27w](../.agents/pm/issues/pm-u5c27w.toon), and [pm-blvfye](../.agents/pm/issues/pm-blvfye.toon).
 
 This contract turns linked evidence into a bidirectional context primitive. Items can continue to declare the files that explain their implementation, while agents and packages can resolve a source path back to its owning work without scanning tracker files at indexed scale.
 
@@ -127,3 +127,11 @@ such as `BD-30-A` and `BD-30-B` are distinct sibling work and receive only their
 ordinary title-token similarity; exact repetitions of the full code retain the
 strong `issue_code` signal. This keeps duplicate-close guidance from collapsing
 decomposed work that shares a numeric family prefix.
+
+Metadata validation applies a separate, evidence-backed title classifier.
+Upper-case prefixes remain conventional issue codes. Mixed-case prefixes must
+have a code delimiter, an explicit body marker/backtick reference, or match the
+configured item-id prefix. Natural-language compounds such as `Match-3`,
+`Covid-19`, and `Wi-Fi-6` therefore do not produce dishonest rename-or-merge
+warnings, while `GH-1118`, `Bug-12: ...`, and configured formats remain
+detectable without an ever-growing word dictionary.

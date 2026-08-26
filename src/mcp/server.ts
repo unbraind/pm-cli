@@ -97,6 +97,22 @@ import {
   runWithMcpTraceContext,
 } from "../sdk/mcp/authorization.js";
 import { LegacyMcpAdapter } from "./legacy-adapter.js";
+import {
+  PM_MCP_APP_CONTRACTS,
+  PM_MCP_APP_MIME_TYPE,
+  PM_MCP_APPS_EXTENSION,
+  PM_MCP_APPS_SERVER_CAPABILITY,
+  decoratePmMcpToolsWithApps,
+  findPmMcpAppByUri,
+  hasPmMcpAppsCapability,
+  renderPmMcpAppHtml,
+} from "../sdk/mcp/apps.js";
+import {
+  PM_MCP_SKILLS_EXTENSION,
+  PM_MCP_SKILLS_SERVER_CAPABILITY,
+  PmMcpSkillRegistry,
+  assertPmMcpSkillsCapability,
+} from "../sdk/mcp/skills.js";
 
 /** JSON-RPC request shape accepted by pm MCP transport adapters. */
 export interface JsonRpcRequest {
@@ -143,7 +159,11 @@ const PM_MCP_SERVER_CAPABILITIES: PmMcpServerCapabilities = {
   prompts: { listChanged: true },
   resources: { listChanged: true, subscribe: true },
   tools: { listChanged: true },
-  extensions: { [PM_MCP_TASKS_EXTENSION]: {} },
+  extensions: {
+    [PM_MCP_TASKS_EXTENSION]: {},
+    [PM_MCP_APPS_EXTENSION]: PM_MCP_APPS_SERVER_CAPABILITY,
+    [PM_MCP_SKILLS_EXTENSION]: PM_MCP_SKILLS_SERVER_CAPABILITY,
+  },
 };
 type PmMcpTransportSubscriptionKey = PmMcpSubscriptionId | symbol;
 interface PmMcpTransportSubscription {
@@ -185,6 +205,11 @@ const PM_MCP_RUN_TASK_ACTIONS = new Set([
   "reindex",
   "test-all",
   "validate",
+]);
+const PM_MCP_SKILL_METHODS = new Set([
+  "skills/list",
+  "skills/get",
+  "resources/directory/read",
 ]);
 const PM_MCP_INSTRUCTIONS =
   "You have access to native pm CLI tools for git-based project management. " +
@@ -767,6 +792,18 @@ async function readWorkspaceResource(
   };
 }
 
+async function loadRequestSkillRegistry(
+  params: Record<string, unknown> | undefined,
+): Promise<PmMcpSkillRegistry> {
+  const args = requestWorkspaceArgs(params);
+  const workspaceRoot = typeof args.cwd === "string" ? args.cwd : process.cwd();
+  return PmMcpSkillRegistry.load({
+    packageRoot: resolvePmPackageRoot(),
+    workspaceRoot,
+    packageVersion: PM_MCP_SERVER_VERSION,
+  });
+}
+
 function renderWorkflowPrompt(
   params: Record<string, unknown> | undefined,
 ): Record<string, unknown> {
@@ -1039,7 +1076,11 @@ async function dispatchModernToolMethod(
     );
     return buildMcpCompleteResult(
       withMcpCachePolicy(
-        { tools: deterministicMcpTools(surface.tools) },
+        {
+          tools: hasPmMcpAppsCapability(requestContext)
+            ? decoratePmMcpToolsWithApps(deterministicMcpTools(surface.tools))
+            : deterministicMcpTools(surface.tools),
+        },
         PM_MCP_CACHE_POLICIES.tools,
       ),
       PM_MCP_SERVER_INFO,
@@ -1066,11 +1107,21 @@ async function dispatchModernToolMethod(
 
 async function dispatchModernResourceMethod(
   request: JsonRpcRequest,
+  requestContext: PmMcpRequestContext,
 ): Promise<Record<string, unknown>> {
   if (request.method === "resources/list") {
-    const resources = [...PM_MCP_RESOURCE_CONTRACTS].sort((left, right) =>
-      left.uri.localeCompare(right.uri),
-    );
+    const resources = [
+      ...PM_MCP_RESOURCE_CONTRACTS,
+      ...(hasPmMcpAppsCapability(requestContext)
+        ? PM_MCP_APP_CONTRACTS.map((contract) => ({
+            uri: contract.uri,
+            name: contract.name,
+            description: contract.description,
+            mimeType: PM_MCP_APP_MIME_TYPE,
+            _meta: { ui: contract.resourceMeta },
+          }))
+        : []),
+    ].sort((left, right) => left.uri.localeCompare(right.uri));
     return buildMcpCompleteResult(
       withMcpCachePolicy({ resources }, PM_MCP_CACHE_POLICIES.resources),
       PM_MCP_SERVER_INFO,
@@ -1086,10 +1137,35 @@ async function dispatchModernResourceMethod(
     );
   }
   try {
-    const resource = await readWorkspaceResource(
-      readRequiredString(asRecordClone(request.params), "uri"),
-      request.params,
-    );
+    const uri = readRequiredString(asRecordClone(request.params), "uri");
+    const app = findPmMcpAppByUri(uri);
+    let resource: Record<string, unknown>;
+    if (app) {
+      if (!hasPmMcpAppsCapability(requestContext)) {
+        throw new PmMcpProtocolError(
+          "MCP App resource requires negotiated client capability",
+          PM_MCP_ERROR_CODES.missingRequiredClientCapability,
+          { requiredCapabilities: { extensions: { [PM_MCP_APPS_EXTENSION]: PM_MCP_APPS_SERVER_CAPABILITY } } },
+        );
+      }
+      resource = {
+        contents: [
+          {
+            uri,
+            mimeType: PM_MCP_APP_MIME_TYPE,
+            text: renderPmMcpAppHtml(app),
+            _meta: { ui: app.resourceMeta },
+          },
+        ],
+      };
+    } else if (uri.startsWith("skill://")) {
+      assertPmMcpSkillsCapability(requestContext);
+      resource = {
+        ...(await loadRequestSkillRegistry(request.params)).read(uri),
+      };
+    } else {
+      resource = await readWorkspaceResource(uri, request.params);
+    }
     return buildMcpCompleteResult(
       withMcpCachePolicy(resource, PM_MCP_CACHE_POLICIES.resource),
       PM_MCP_SERVER_INFO,
@@ -1107,6 +1183,36 @@ async function dispatchModernResourceMethod(
       { field: "uri" },
     );
   }
+}
+
+async function dispatchModernSkillMethod(
+  request: JsonRpcRequest,
+  requestContext: PmMcpRequestContext,
+): Promise<Record<string, unknown>> {
+  const directoryRead = request.method === "resources/directory/read";
+  assertPmMcpSkillsCapability(requestContext, directoryRead);
+  const params = asRecordClone(request.params);
+  const registry = await loadRequestSkillRegistry(request.params);
+  let result: Record<string, unknown>;
+  if (request.method === "skills/list") {
+    result = { ...registry.list({
+      ...(typeof params.cursor === "string" ? { cursor: params.cursor } : {}),
+      ...(typeof params.limit === "number" ? { limit: params.limit } : {}),
+    }) };
+  } else if (request.method === "skills/get") {
+    result = { skill: registry.get(readRequiredString(params, "uri")) };
+  } else {
+    result = {
+      ...registry.readDirectory(readRequiredString(params, "uri"), {
+        ...(typeof params.cursor === "string" ? { cursor: params.cursor } : {}),
+        ...(typeof params.limit === "number" ? { limit: params.limit } : {}),
+      }),
+    };
+  }
+  return buildMcpCompleteResult(
+    withMcpCachePolicy(result, PM_MCP_CACHE_POLICIES.resource),
+    PM_MCP_SERVER_INFO,
+  );
 }
 
 function dispatchModernPromptMethod(
@@ -1148,6 +1254,9 @@ async function dispatchModernMcpRequest(
       removedIn: PM_MCP_PROTOCOL_VERSION,
     });
   }
+  if (PM_MCP_SKILL_METHODS.has(request.method ?? "")) {
+    return dispatchModernSkillMethod(request, requestContext);
+  }
   if (
     request.method === "tasks/get" ||
     request.method === "tasks/update" ||
@@ -1163,7 +1272,7 @@ async function dispatchModernMcpRequest(
     request.method === "resources/templates/list" ||
     request.method === "resources/read"
   ) {
-    return dispatchModernResourceMethod(request);
+    return dispatchModernResourceMethod(request, requestContext);
   }
   if (request.method === "prompts/list" || request.method === "prompts/get") {
     return dispatchModernPromptMethod(request);

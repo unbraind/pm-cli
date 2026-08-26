@@ -16,7 +16,10 @@ const RULES = [
   ["legacy-log-level-rpc", /logging\/setLevel/gu],
   ["legacy-roots-notification", /notifications\/roots\/list_changed/gu],
   ["legacy-task-result", /tasks\/result/gu],
-  ["legacy-initialized-notification", /notifications\/initialized/gu],
+  [
+    "legacy-initialized-notification",
+    /(?<!ui\/)notifications\/initialized/gu,
+  ],
   ["deprecated-sampling-context", /includeContext/gu],
   ["removed-ping", /["'`]ping["'`]/gu],
   ["removed-initialize", /["'`]initialize["'`]/gu],

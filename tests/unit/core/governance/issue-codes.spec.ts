@@ -18,7 +18,7 @@ describe("extractIssueCode", () => {
 
   it("normalizes case and surrounding whitespace to an upper-case code", () => {
     expect(extractIssueCode("  issue-004: lowercase ")).toBe("ISSUE-004");
-    expect(extractIssueCode("Bug-12")).toBe("BUG-12");
+    expect(extractIssueCode("Bug-12")).toBeNull();
   });
 
   it("respects the trailing word boundary after the digit run", () => {
@@ -34,6 +34,32 @@ describe("extractIssueCode", () => {
     expect(extractIssueCode("ISSUE: no number")).toBeNull();
     expect(extractIssueCode("123-456 starts with digit")).toBeNull();
     expect(extractIssueCode("-9 leading separator")).toBeNull();
+  });
+
+  it("rejects natural-language word-number compounds without explicit evidence", () => {
+    expect(extractIssueCode("Match-3 game design")).toBeNull();
+    expect(extractIssueCode("Covid-19 response planning")).toBeNull();
+    expect(extractIssueCode("Wi-Fi-6 rollout")).toBeNull();
+  });
+
+  it("accepts mixed-case codes with delimiters, body evidence, or configured prefixes", () => {
+    expect(extractIssueCode("Bug-12: fix race")).toBe("BUG-12");
+    expect(
+      extractIssueCode("Case-7 follow-up", {
+        evidenceText: "Issue code: CASE-7",
+      }),
+    ).toBe("CASE-7");
+    expect(
+      extractIssueCode("Work-4 delivery", { configuredPrefixes: ["work"] }),
+    ).toBe("WORK-4");
+  });
+
+  it("does not treat an incidental body repetition as issue-code evidence", () => {
+    expect(
+      extractIssueCode("Match-3 mechanics", {
+        evidenceText: "Compare Match-3 mechanics across games.",
+      }),
+    ).toBeNull();
   });
 
   it("returns null for empty, whitespace-only, or non-string input", () => {

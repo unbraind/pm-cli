@@ -1263,6 +1263,17 @@
       ],
       "package_version": "2026.8.25",
       "reason": "Covariant return refinement: existing metadata interface remains source-compatible while the validator now exposes endpoints it already requires at runtime"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_MCP_APPS_SERVER_CAPABILITY",
+        "signature ./sdk:PM_MCP_SKILL_LIMITS",
+        "signature ./sdk:PmMcpSkillRegistry",
+        "signature ./sdk:PmMcpSkillResource",
+        "signature ./sdk:ReadPmMcpSkillResourceResult"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Align the new unshipped MCP Skills draft contracts with the exact SEP-2640 digest, directory-read, and resource-limit schema before first publication."
     }
   ],
   "entrypoints": {
@@ -2108,6 +2119,12 @@
           "kind": "function",
           "name": "assertParentReferenceIsNotSelf",
           "signature": "(itemId: string, parentId: string, prefix: string) => void | calls: (itemId: string, parentId: string, prefix: string) => void"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertPmMcpSkillsCapability",
+          "signature": "(context: PmMcpRequestContext, directoryRead?: boolean) => void | calls: (context: PmMcpRequestContext, directoryRead?: boolean) => void"
         },
         {
           "classification": "advanced_export",
@@ -4692,6 +4709,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "decoratePmMcpToolsWithApps",
+          "signature": "<Tool extends { name: string; _meta?: Record<string, unknown>; }>(tools: readonly Tool[]) => Tool[] | calls: <Tool extends { name: string; _meta?: Record<string, unknown>; }>(tools: readonly Tool[]) => Tool[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "dedupeLinkedArtifacts",
           "signature": "(artifacts: LinkedArtifact[]) => LinkedArtifact[] | calls: (artifacts: LinkedArtifact[]) => LinkedArtifact[]"
         },
@@ -6532,6 +6555,12 @@
           "signature": "(packageName: string, cwd?: string) => Promise<InstalledNpmPackageCandidate | null> | calls: (packageName: string, cwd?: string) => Promise<InstalledNpmPackageCandidate | null>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "findPmMcpAppByUri",
+          "signature": "(uri: string) => PmMcpAppContract | undefined | calls: (uri: string) => PmMcpAppContract | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "findRedundantRelationshipEdges",
@@ -7232,6 +7261,12 @@
           "kind": "function",
           "name": "hasMcpClientExtension",
           "signature": "(requestContext: PmMcpRequestContext, extension: string) => boolean | calls: (requestContext: PmMcpRequestContext, extension: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "hasPmMcpAppsCapability",
+          "signature": "(context: PmMcpRequestContext) => boolean | calls: (context: PmMcpRequestContext) => boolean"
         },
         {
           "classification": "contract_data",
@@ -8609,6 +8644,18 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ListPmMcpSkillsOptions",
+          "signature": "export interface ListPmMcpSkillsOptions { cursor?: string; limit?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ListPmMcpSkillsResult",
+          "signature": "export interface ListPmMcpSkillsResult { skills: PmMcpSkillDescriptor[]; nextCursor?: string; hasMore: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "listPmMcpToolsForProfile",
           "signature": "(availableTools: readonly string[], profile: Exclude<PmMcpToolProfile, \"custom\">) => string[] | calls: (availableTools: readonly string[], profile: Exclude<PmMcpToolProfile, \"custom\">) => string[]"
@@ -8738,6 +8785,12 @@
           "kind": "function",
           "name": "loadMutationCheckpoint",
           "signature": "(pmRoot: string, subdir: string, rawCheckpointId: string, schemaVersion: number) => Promise<LoadedMutationCheckpoint> | calls: (pmRoot: string, subdir: string, rawCheckpointId: string, schemaVersion: number) => Promise<LoadedMutationCheckpoint>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LoadPmMcpSkillsOptions",
+          "signature": "export interface LoadPmMcpSkillsOptions { packageRoot: string; workspaceRoot?: string; packageVersion: string; }"
         },
         {
           "classification": "supported",
@@ -10410,6 +10463,36 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_MCP_APP_CONTRACTS",
+          "signature": "readonly PmMcpAppContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_APP_MIME_TYPE",
+          "signature": "\"text/html;profile=mcp-app\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_APPS_EXTENSION",
+          "signature": "\"io.modelcontextprotocol/ui\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_APPS_SERVER_CAPABILITY",
+          "signature": "Readonly<{ specVersion: \"2026-01-26\"; mimeTypes: \"text/html;profile=mcp-app\"[]; }>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_APPS_SPEC_VERSION",
+          "signature": "\"2026-01-26\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_MCP_ERROR_CODES",
           "signature": "{ readonly headerMismatch: -32020; readonly missingRequiredClientCapability: -32021; readonly unsupportedProtocolVersion: -32022; readonly invalidParams: -32602; }"
         },
@@ -10454,6 +10537,30 @@
           "kind": "value",
           "name": "PM_MCP_RESOURCE_CONTRACTS",
           "signature": "readonly PmMcpResourceContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_SKILL_LIMITS",
+          "signature": "Readonly<{ maxFilesPerSkill: 512; maxFileBytes: number; maxSkillBytes: number; defaultPageSize: 20; maxPageSize: 100; }>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_SKILLS_DRAFT_REVISION",
+          "signature": "\"SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_SKILLS_EXTENSION",
+          "signature": "\"io.modelcontextprotocol/skills\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_SKILLS_SERVER_CAPABILITY",
+          "signature": "Readonly<{ revision: \"SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03\"; status: \"draft\"; directoryRead: true; }>"
         },
         {
           "classification": "advanced_export",
@@ -11243,6 +11350,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpAppContract",
+          "signature": "export interface PmMcpAppContract { id: \"context\" | \"graph\" | \"plan\" | \"assurance\" | \"operations\"; name: string; description: string; toolName: string; uri: string; toolMeta: McpUiToolMeta; resourceMeta: McpUiResourceMeta; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "class",
           "name": "PmMcpAuthorizationError",
           "signature": "export declare class PmMcpAuthorizationError extends Error { readonly httpStatus: 401 | 403; readonly challenge?: string; constructor(message: string, httpStatus: 401 | 403, challenge?: string); }"
@@ -11426,6 +11539,30 @@
           "kind": "interface",
           "name": "PmMcpServerResultMetadata",
           "signature": "export interface PmMcpServerResultMetadata { _meta: { \"io.modelcontextprotocol/serverInfo\": PmMcpImplementation; [key: string]: unknown; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpSkillDescriptor",
+          "signature": "export interface PmMcpSkillDescriptor { uri: string; frontmatter: Record<string, unknown>; resources: PmMcpSkillResource[]; _meta: { contractVersion: 1; extensionRevision: typeof PM_MCP_SKILLS_DRAFT_REVISION; origin: PmMcpSkillOrigin; packageVersion: string; protocolVersion: typeof PM_MCP_PROTOCOL_VERSION; trust: \"untrusted\"; estimatedTokens: number; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpSkillOrigin",
+          "signature": "export type PmMcpSkillOrigin = \"package\" | \"workspace\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "class",
+          "name": "PmMcpSkillRegistry",
+          "signature": "export declare class PmMcpSkillRegistry { #private; private constructor(); static load(options: LoadPmMcpSkillsOptions): Promise<PmMcpSkillRegistry>; list(options?: ListPmMcpSkillsOptions): ListPmMcpSkillsResult; get(uri: string): PmMcpSkillDescriptor; read(uri: string): ReadPmMcpSkillResourceResult; readDirectory(uri: string, options?: ListPmMcpSkillsOptions): ReadPmMcpSkillDirectoryResult; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpSkillResource",
+          "signature": "export interface PmMcpSkillResource { uri: string; digest: string; size: number; }"
         },
         {
           "classification": "advanced_export",
@@ -12700,6 +12837,18 @@
           "signature": "(state: PmReadOutputSessionState) => number | calls: (state: PmReadOutputSessionState) => number"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReadPmMcpSkillDirectoryResult",
+          "signature": "export interface ReadPmMcpSkillDirectoryResult { resources: Array<{ uri: string; name: string; mimeType: \"application/octet-stream\" | \"inode/directory\" | \"text/markdown\" | \"text/plain\"; }>; nextCursor?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReadPmMcpSkillResourceResult",
+          "signature": "export interface ReadPmMcpSkillResourceResult { contents: Array<{ uri: string; mimeType: \"text/markdown\" | \"text/plain\"; text: string; _meta: { digest: string; origin: PmMcpSkillOrigin; trust: \"untrusted\"; }; } | { uri: string; mimeType: \"application/octet-stream\"; blob: string; _meta: { digest: string; origin: PmMcpSkillOrigin; trust: \"untrusted\"; }; }>; }"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "readPmPackageManifest",
@@ -13790,6 +13939,12 @@
           "kind": "function",
           "name": "renderPmFlagLexiconMarkdown",
           "signature": "() => string | calls: () => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "renderPmMcpAppHtml",
+          "signature": "(contract: PmMcpAppContract) => string | calls: (contract: PmMcpAppContract) => string"
         },
         {
           "classification": "advanced_export",
