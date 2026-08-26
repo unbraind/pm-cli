@@ -43,6 +43,7 @@ async function runVerify(options: ScenarioOptions) {
           pm: "dist/cli.js",
           "pm-cli": "dist/cli.js",
           "pm-mcp": "dist/mcp/server.js",
+          "pm-mcp-http": "dist/mcp/http-server.js",
         },
       },
     ),
@@ -164,6 +165,25 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
   };
 }
 
+function successfulPublishedVerifierResult(
+  command: string,
+  args: string[],
+): RunCommandResult {
+  if (command === "node" && args.includes("--eval")) {
+    return {
+      status: 0,
+      stdout: JSON.stringify({
+        ok: true,
+        http_status: 200,
+        server_name: "pm-mcp",
+        protocol_version: "2026-07-28",
+      }),
+      stderr: "",
+    };
+  }
+  return successfulExecutorResult(args);
+}
+
 describe("scripts/release/verify-published-release: usage and validation", () => {
   it("prints usage for --help and runs nothing", async () => {
     const { logs, runCommand } = await runVerify({ argv: ["--help"] });
@@ -235,8 +255,8 @@ describe("scripts/release/verify-published-release: success path", () => {
         if (command === "npm" && args[0] === "view") {
           return npmViewResult("2026.6.14");
         }
-        if (command === "npx" || command === "bunx") {
-          return successfulExecutorResult(args);
+        if (command === "npx" || command === "bunx" || command === "node") {
+          return successfulPublishedVerifierResult(command, args);
         }
         if (command === "gh") {
           return {
@@ -259,9 +279,16 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.package.executors.npx.pm.ok).toBe(true);
     expect(json.package.executors.npx["package-default-pm"].ok).toBe(true);
     expect(json.package.executors.npx["pm-mcp"].ok).toBe(true);
+    expect(json.package.executors.npx["pm-mcp-http"]).toMatchObject({
+      ok: true,
+      http_status: 200,
+      server_name: "pm-mcp",
+      protocol_version: "2026-07-28",
+    });
     expect(json.package.executors.bunx.pm.ok).toBe(true);
     expect(json.package.executors.bunx["package-default-pm"].ok).toBe(true);
     expect(json.package.executors.bunx["pm-mcp"].ok).toBe(true);
+    expect(json.package.executors.bunx["pm-mcp-http"].ok).toBe(true);
     expect(json.package.negative_controls).toMatchObject({
       npx: { ok: true },
       npx_package_default: { ok: true },
@@ -274,8 +301,12 @@ describe("scripts/release/verify-published-release: success path", () => {
       expect(call[2]).toMatchObject({ timeout: 60_000 });
     }
     expect(json.package.bin_coverage).toEqual({
-      covered_bins: ["pm", "pm-cli", "pm-mcp"],
-      distinct_entrypoints: ["dist/cli.js", "dist/mcp/server.js"],
+      covered_bins: ["pm", "pm-cli", "pm-mcp", "pm-mcp-http"],
+      distinct_entrypoints: [
+        "dist/cli.js",
+        "dist/mcp/http-server.js",
+        "dist/mcp/server.js",
+      ],
       uncovered_bins: [],
     });
     expect(json.github_release.tagName).toBe("v2026.6.14");
@@ -338,7 +369,7 @@ describe("scripts/release/verify-published-release: success path", () => {
         if (command === "npm" && args[0] === "view") {
           return npmViewResult("2026.6.14");
         }
-        return successfulExecutorResult(args);
+        return successfulPublishedVerifierResult(command, args);
       },
     });
     expect(runCommand.mock.calls.slice(0, 7).map((call) => call[1])).toEqual([
@@ -418,8 +449,8 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
             ? { status: 1, stdout: "", stderr: "registry timeout" }
             : npmViewResult("2026.6.14");
         }
-        if (command === "npx" || command === "bunx") {
-          return successfulExecutorResult(args);
+        if (command === "npx" || command === "bunx" || command === "node") {
+          return successfulPublishedVerifierResult(command, args);
         }
         return { status: 0, stdout: "", stderr: "" };
       },
@@ -707,7 +738,8 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view")
           return npmViewResult("2026.6.14");
-        return successfulExecutorResult(
+        return successfulPublishedVerifierResult(
+          command,
           args.includes("pm-definitely-missing") ? [] : args,
         );
       },
@@ -738,7 +770,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       runCommand: (command, args) =>
         command === "npm" && args[0] === "view"
           ? npmViewResult("2026.6.14")
-          : successfulExecutorResult(args),
+          : successfulPublishedVerifierResult(command, args),
     });
     expect(String(uncovered.failure)).toContain(
       "Published package bins lack executable coverage: pm-extra",
@@ -746,6 +778,36 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     expect(uncovered.runCommand).toHaveBeenCalledTimes(1);
     expect(uncovered.runCommand.mock.calls[0]?.[0]).toBe("npm");
     expect(uncovered.runCommand.mock.calls[0]?.[1]?.[0]).toBe("view");
+  });
+
+  it("fails when the published HTTP bin returns an invalid discovery receipt", async () => {
+    const { failure } = await runVerify({
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") {
+          return npmViewResult("2026.6.14");
+        }
+        if (command === "node" && args.includes("--eval")) {
+          return {
+            status: 0,
+            stdout: JSON.stringify({ ok: true, http_status: 503 }),
+            stderr: "",
+          };
+        }
+        return successfulExecutorResult(args);
+      },
+    });
+    expect(String(failure)).toContain(
+      "npx-pm-mcp-http verification failed: mcp_http_discovery_response_invalid",
+    );
   });
 });
 
