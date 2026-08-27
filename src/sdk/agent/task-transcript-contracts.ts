@@ -24,7 +24,7 @@ export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | "refusal";
 export interface PmAgentTaskTranscriptStep {
   /** Stable step identifier unique within its task. */
   id: string;
-  /** Shell-free CLI arguments, excluding the pm executable. */
+  /** Shell-free CLI arguments, excluding the pm executable, preserved exactly. */
   args: readonly string[];
   /** Process status required for the step to satisfy the transcript. */
   expected_exit_code: number;
@@ -69,13 +69,21 @@ function readTranscriptString(value: unknown, field: string): string {
   return value.trim();
 }
 
-function readTranscriptStringArray(value: unknown, field: string): string[] {
+function readTranscriptStringArray(
+  value: unknown,
+  field: string,
+  preserveWhitespace = false,
+): string[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new TypeError(`${field} must be a non-empty string array`);
   }
-  return value.map((entry, index) =>
-    readTranscriptString(entry, `${field}[${String(index)}]`),
-  );
+  return value.map((entry, index) => {
+    const normalized = readTranscriptString(
+      entry,
+      `${field}[${String(index)}]`,
+    );
+    return preserveWhitespace ? (entry as string) : normalized;
+  });
 }
 
 function readOptionalTranscriptString(
@@ -142,7 +150,7 @@ function parseAgentTaskTranscriptStep(
   }
   const field = `tasks.${taskId}.steps[${String(index)}]`;
   const id = readTranscriptString(value.id, `${field}.id`);
-  const args = readTranscriptStringArray(value.args, `${field}.args`);
+  const args = readTranscriptStringArray(value.args, `${field}.args`, true);
   const expectedExitCode = value.expected_exit_code;
   if (
     typeof expectedExitCode !== "number" ||

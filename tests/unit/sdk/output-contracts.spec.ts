@@ -151,7 +151,7 @@ describe("SDK output envelope contracts", () => {
             },
             {
               id: "retry",
-              args: ["list", "--for", "triage"],
+              args: ["list", "--for", "  triage  "],
               expected_exit_code: 0,
               expected_output_kind: "collection",
               required_fields: ["items"],
@@ -175,6 +175,11 @@ describe("SDK output envelope contracts", () => {
         },
       ],
     });
+    expect(corpus.tasks[0]?.steps[1]?.args).toEqual([
+      "list",
+      "--for",
+      "  triage  ",
+    ]);
   });
 
   it.each([

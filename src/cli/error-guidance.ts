@@ -1560,6 +1560,7 @@ function resolveUnknownOptionRetry(
   );
   if (
     optionIndex < 0 ||
+    normalizedArgs.includes("--") ||
     (!normalizedArgs[optionIndex]?.includes("=") &&
       optionIndex !== normalizedArgs.length - 1 &&
       normalizedArgs[optionIndex + 1]?.startsWith("-") !== true)

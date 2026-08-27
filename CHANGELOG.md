@@ -4,16 +4,16 @@
 
 ### Fixed
 
-- Agent-task closeout claims lack linked full-verification commands ([pm-ervmsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ervmsc.toon))
 - Completed-task transcripts accept terminal refusals and contradictory recovery metadata ([pm-wa39rl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wa39rl.toon))
-- Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
 - Unknown-option refusals report the first valid provided flag as the failing surface ([pm-fo8g7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fo8g7j.toon))
-- Agent-task token replay trusts missing or incorrect accounting estimates ([pm-ok2kdn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok2kdn.toon))
 - Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))
+- Agent-task transcript parser rejects declared successful no-effect and partial-effect exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
+- Agent-task closeout claims lack linked full-verification commands ([pm-ervmsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ervmsc.toon))
+- Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
+- Agent-task token replay trusts missing or incorrect accounting estimates ([pm-ok2kdn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok2kdn.toon))
 - Unknown-option refusal textual flags bypass structured global-option filtering ([pm-x4wbui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x4wbui.toon))
 - Agent-task baselines accept missing task and composite token ceilings ([pm-aksavu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aksavu.toon))
 - Agent-task gate accepts incidental substrings as required-field completeness ([pm-o7u08u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o7u08u.toon))
-- Agent-task transcript parser rejects declared successful no-effect and partial-effect exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
 
 ### Security
 

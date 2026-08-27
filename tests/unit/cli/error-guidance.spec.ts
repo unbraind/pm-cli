@@ -549,6 +549,25 @@ describe("pm cli error guidance context plumbing", () => {
       },
     );
     expect(ambiguous.recovery?.suggested_retry).toBeUndefined();
+
+    const explicitArgumentBoundary = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: [
+          "search",
+          "--bogus",
+          "--",
+          "literal-filter",
+        ],
+      },
+    );
+    expect(explicitArgumentBoundary.recovery?.suggested_retry).toBeUndefined();
+    expect(
+      explicitArgumentBoundary.recovery?.suggested_retry_args,
+    ).toBeUndefined();
   });
 
   it("applies runtime unknown-command guidance examples for commander errors", () => {
