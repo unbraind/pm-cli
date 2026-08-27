@@ -386,10 +386,11 @@ function buildHelpSubcommandSummaries(
     .map((entry) => {
       const commandPath = normalizeHelpCommandPath(getCommandPath(entry));
       const rootCommand = commandPath.split(" ")[0]!;
+      const declaredTier = getPmCommandHelpVisibilityTier(entry);
       const extensionDescriptor = resolveExtensionCommandSurface(
         commandPath,
         extensionDescriptors,
-        getPmCommandHelpVisibilityTier(entry) !== undefined,
+        declaredTier !== undefined,
       );
       const aliasContract = PM_COMMAND_ALIAS_CONTRACTS.find(
         ({ alias }) => alias === commandPath,
@@ -400,6 +401,7 @@ function buildHelpSubcommandSummaries(
         description: entry.description().trim(),
         tier:
           extensionDescriptor?.tier ??
+          declaredTier ??
           resolvePmCommandVisibilityTier(rootCommand),
         family:
           extensionDescriptor?.family ??

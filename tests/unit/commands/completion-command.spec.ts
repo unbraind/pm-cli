@@ -296,6 +296,33 @@ describe("generateBashScript", () => {
     );
   });
 
+  it("offers the convergent --text alias for every annotation command in every shell", () => {
+    const bash = generateBashScript();
+    const zsh = generateZshScript();
+    const bashAnnotationAliasStart = bash.indexOf(
+      '  if [[ "$cmd" == "comments"',
+    );
+    const bashAnnotationAliasBlock = bash.slice(
+      bashAnnotationAliasStart,
+      bash.indexOf("  fi", bashAnnotationAliasStart),
+    );
+    expect(bashAnnotationAliasStart).toBeGreaterThan(-1);
+    expect(bashAnnotationAliasBlock).toContain('"$cmd" == "notes"');
+    expect(bashAnnotationAliasBlock).toContain('"$cmd" == "learnings"');
+    expect(bashAnnotationAliasBlock).toContain('--text" -- "$cur"');
+
+    for (const command of ["comments", "notes", "learnings"]) {
+      const zshStart = zsh.indexOf(`        ${command})`);
+      const zshBlock = zsh.slice(zshStart, zsh.indexOf("          ;;", zshStart));
+      expect(zshStart).toBeGreaterThan(-1);
+      expect(zshBlock).toContain("--text[");
+    }
+
+    expect(generateFishScript()).toContain(
+      "__fish_seen_subcommand_from comments notes learnings' -l text",
+    );
+  });
+
   it("includes files/docs add-glob flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain("--add");

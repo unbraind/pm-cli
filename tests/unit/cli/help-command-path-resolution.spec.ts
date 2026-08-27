@@ -390,6 +390,20 @@ describe("structured help command-path resolution", () => {
     ).toEqual(["help", "visible"]);
   });
 
+  it("preserves a dynamically registered full visibility tier in full discovery", () => {
+    const root = new Command("pm");
+    const dynamicFull = root
+      .command("dynamic-full")
+      .description("Full-discovery extension command");
+    setPmCommandHelpVisibilityTier(dynamicFull, "full");
+
+    expect(
+      _testOnly
+        .buildHelpSubcommandSummaries(root, new Map(), true)
+        .find(({ name }) => name === "dynamic-full"),
+    ).toMatchObject({ tier: "full" });
+  });
+
   it("projects the complete root alias contract in full structured discovery", () => {
     const root = new Command("pm");
     root.command("list").description("List work");

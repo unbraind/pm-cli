@@ -2459,6 +2459,9 @@ function shouldRegisterDynamicExtensionPaths(_rootProgram: Command, invocationAr
   if (invocationRequestsVersion(invocationArgv)) {
     return false;
   }
+  if (isFullHelpDiscovery(invocationArgv)) {
+    return true;
+  }
   const helpRequest = parseBootstrapHelpRequest(invocationArgv);
   if (helpRequest.requested) {
     return true;

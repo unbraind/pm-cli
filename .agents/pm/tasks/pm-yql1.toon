@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-08-27T02:27:12.211Z"
+updated_at: "2026-08-27T04:43:11.335Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
@@ -38,22 +38,28 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-26T21:27:34.572Z","harness:codex","GitHub intake: GH-1126 https://github.com/unbraind/pm-cli/issues/1126. Reused the canonical annotation-facet grammar task. Red reproduction: comments/learnings reject --text even though notes/remind and collection concepts use text; human recovery can truncate before suggested_retry."
   "2026-08-26T21:34:26.811Z","harness:codex","TDD red: shared registration spec proves comments, notes, and learnings all reject the convergent --text alias before reaching their SDK adapters."
   "2026-08-26T22:51:39.094Z","harness:codex","Evidence for the implemented slice: comments, notes, and learnings now accept the convergent --text alias and reject conflicting positional/text payloads through one typed resolver; recovery bundles put suggested_retry first. Fresh-directory acceptance persisted and projected one entry from each collection. The linked sandbox-safe suite passed 134/134, while repository gates passed pnpm build, pnpm lint, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean. This closes only the GitHub #1126 alias slice; the broader convergent grammar programme remains open for its other command families."
   "2026-08-27T02:27:12.211Z","harness:codex","Quality-gate evidence for PR 1128 review: pnpm build passed; pnpm lint passed ESLint, zero jscpd clones, repository static quality, 100 percent docstring coverage, SDK/package parity, refusal closure, graph composition, and record integrity; node scripts/run-tests.mjs coverage passed 584 files and 8031 tests with statements 59690/59690, branches 44928/44928, functions 12416/12416, and lines 57481/57481; pnpm security:scan found no credential-like tracked secrets; pnpm audit --audit-level high found no known vulnerabilities. pm-yql1 remains open because its broader programme scope is not complete."
+  "2026-08-27T04:01:43.379Z","harness:codex","Review TDD red: CodeRabbit exact-head review 5037100816 reports the public --text contracts for comments, notes, and learnings are absent from generated Bash, Zsh, and Fish completion surfaces."
+  "2026-08-27T04:07:19.515Z","harness:codex","TDD red (CodeRabbit exact-head follow-up): annotation completion regression fails because comments/notes/learnings command blocks omit the convergent public --text alias in Bash, Zsh, and Fish. Command: node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts."
+  "2026-08-27T04:43:00.240Z","harness:codex","Review completion-slice evidence: generated Bash, Zsh, and Fish completion surfaces now expose the public --text alias for comments, notes, and learnings, with one shared Bash branch to avoid duplicated command blocks. Focused completion and surface-replication plans pass 122/122 with zero active semantic replication sets; linked annotation plans pass 134/134 plus completion 104/104. Full repository coverage remains exact 100/100/100/100. This completes the review-requested alias slice; the broader facet convergence programme remains unfinished."
 learnings[1]{created_at,author,text}:
   "2026-08-26T22:51:39.542Z","harness:codex","Convergent mutation grammar should resolve positional and named text at a shared registration boundary, with a typed conflict refusal before any SDK mutation adapter runs."
-files[5]{path,scope,note}:
+files[7]{path,scope,note}:
   src/cli/error-guidance.ts,project,Prioritizes the immediately executable retry in recovery bundles
   src/cli/register-annotations.ts,project,Adds the convergent --text alias and conflict validation for all annotation commands
   src/sdk/cli-contracts/flag-contracts.ts,project,Declares annotation alias grammar in the public SDK contracts
+  src/sdk/completion.ts,project,Annotation alias shell completion surface
   tests/unit/cli/error-guidance.spec.ts,project,Proves recovery bundle ordering
+  tests/unit/commands/completion-command.spec.ts,project,Cross-shell annotation alias regression
   tests/unit/commands/register-commands.spec.ts,project,"Proves comments,notes,and learnings accept --text and reject conflicts"
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/cli-contracts/flag-contracts.spec.ts,project,240,"harness:codex","2026-08-26T22:49:46.113Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-08-27T04:08:43.424Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[2]:
   - run_id: test-local-mtaotyfb-zypfbs
     kind: test
     status: passed
@@ -65,6 +71,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/cli-contracts/flag-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtb08kgg-hk378u
+    kind: test
+    status: passed
+    started_at: "2026-08-27T04:10:01.606Z"
+    finished_at: "2026-08-27T04:10:25.552Z"
+    recorded_at: "2026-08-27T04:10:25.552Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/cli-contracts/flag-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/CLI_GRAMMAR.md,project,Documents canonical and alias flag behavior
   docs/COMMANDS.md,project,Documents the convergent annotation grammar

@@ -913,6 +913,9 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(GLOBAL_FLAGS)})`,
     "      ;;",
     "  esac",
+    '  if [[ "$cmd" == "comments" || "$cmd" == "notes" || "$cmd" == "learnings" ]]; then',
+    `    COMPREPLY+=(${compgen("--text")})`,
+    "  fi",
     "  return 0",
     "}",
     "",
@@ -1578,6 +1581,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         comments)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--text[Alias for --add]:text' \\
             '--stdin[Read comment text from stdin (supports multiline markdown)]' \\
             '--file[Read comment text from file (supports multiline markdown)]:path' \\
             '--edit[Replace the comment at 1-based index (text from positional/--add/--stdin/--file)]:index' \\
@@ -1593,6 +1597,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         notes)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--text[Alias for --add]:text' \\
             '--add-json[Append one validated JSON context event]:json' \\
             '--stdin[Read entry text from stdin]' \\
             '--file[Read entry text from file]:path' \\
@@ -1612,6 +1617,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         learnings)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--text[Alias for --add]:text' \\
             '--stdin[Read entry text from stdin]' \\
             '--file[Read entry text from file]:path' \\
             '--edit[Replace the entry at a 1-based index]:index' \\
@@ -2683,6 +2689,7 @@ complete -c pm -n '__fish_seen_subcommand_from graph' -l summary -d 'Return coun
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l text -d 'Alias for --add' -r
 complete -c pm -n '__fish_seen_subcommand_from notes' -l add-json -d 'Append one validated JSON context event' -r
 complete -c pm -n '__fish_seen_subcommand_from notes' -l since -d 'Return structured events at or after an ISO timestamp' -r
 complete -c pm -n '__fish_seen_subcommand_from notes' -l event-type -d 'Return structured events with this top-level type' -r

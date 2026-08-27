@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:extensions",comments,history,migration,pm-beads
 created_at: "2026-08-02T14:10:55.004Z"
-updated_at: "2026-08-27T02:27:21.689Z"
-closed_at: "2026-08-27T02:27:21.115Z"
-completed_at: "2026-08-27T02:27:21.115Z"
+updated_at: "2026-08-27T04:43:10.136Z"
+closed_at: "2026-08-27T04:43:09.473Z"
+completed_at: "2026-08-27T04:43:09.473Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: A source fixture with comments and events imports every body and event with record/content parity; incomplete export formats fail closed with actionable guidance; immutable backup and source/target parity gates are documented and tested; package and installed-consumer acceptance pass
@@ -26,7 +26,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-13bn,discovered_from,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
   pm-axl0,supersedes,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-02T14:10:55.004Z","harness:codex","Duplicate-check evidence: all-status searches for GH-859, pm-beads comment loss, Beads export lossiness, and prior importer parity found no active owner. Closed pm-axl0 covered earlier importer lossiness but not current comment/event source completeness; this item preserves that lineage rather than reopening shipped scope."
   "2026-08-26T18:50:49.932Z","harness:codex","TDD red evidence: current Beads file import silently accepts comment_count with no comments and the new portable-backup acceptance cannot run because --backup-dir is absent; focused package tests failed before implementation."
   "2026-08-26T20:48:43.065Z","harness:codex","Verification evidence: manual fresh-workspace portable-backup import completed with complete=true and exact source/import parity: issues=3, events=2, comments=1, dependencies=1, labels=2. Readback retained the exact discussion body and a structured JSON status-change event note; full suite 8,020/8,020 and exact coverage 100/100/100/100 passed."
@@ -35,6 +35,8 @@ comments[8]{created_at,author,text}:
   "2026-08-27T01:10:22.201Z","harness:codex","Final verification: portable-backup preflight now validates preserved parent plus string and object dependency IDs before the first write; regression suite passes 28/28. Manual isolated install imported 3 issues, 2 events, 1 comment, 1 dependency, and 2 labels with exact preserved IDs and parity receipts. Full repository coverage passes 8029 tests at 100/100/100/100; static quality, 100% source/exported/member docstrings, lint, zero-clone jscpd, 88-command package dogfood, and credential scan all pass."
   "2026-08-27T01:33:29.858Z","harness:codex","TDD red evidence from exact-head CodeRabbit round: a realistic portable dependency row carrying its own id and item_id imported dependency-row-1 instead of depends_on_id Tokenwerk-B2; focused Beads acceptance failed on exact target identity."
   "2026-08-27T02:27:09.972Z","harness:codex","Evidence: Corrected portable Beads dependency import so depends_on_id is authoritative even when a backup row also carries its own id or item_id. The realistic v0.62 fixture now proves the source row identity cannot replace the target. Linked plan passed 28/28; full repository gate passed 584 files and 8031 tests at exact 100/100/100/100."
+  "2026-08-27T04:01:42.413Z","harness:codex","Review TDD red: CodeRabbit exact-head review 5037100816 reports the package README now embeds the detailed portable and legacy migration runbook instead of routing it to focused documentation."
+  "2026-08-27T04:42:59.559Z","harness:codex","Review-fix evidence: the package README now routes operational migration detail to packages/pm-beads/docs/MIGRATION.md, which retains the complete portable-backup, completeness, parity, and legacy recovery runbook. Documentation links pass, Beads regression suite passes 28/28, repository lint/typecheck pass, dependency audit is clean, and full coverage remains exact 100/100/100/100."
 files[9]{path,scope,note}:
   packages/pm-beads/extensions/beads/index.ts,project,Lossless Beads portable backup import and regression proof
   packages/pm-beads/extensions/beads/runtime.ts,project,Lossless Beads portable backup import and regression proof
@@ -47,7 +49,7 @@ files[9]{path,scope,note}:
   tests/unit/packages/beads-command.spec.ts,project,Lossless Beads portable backup import and regression proof
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,project,240,"harness:codex","2026-08-26T19:58:07.740Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtakit1a-l51zm0
     kind: test
     status: passed
@@ -81,9 +83,21 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope,note}:
+  - run_id: test-local-mtb08zr4-t5c69u
+    kind: test
+    status: passed
+    started_at: "2026-08-27T04:10:29.976Z"
+    finished_at: "2026-08-27T04:10:45.375Z"
+    recorded_at: "2026-08-27T04:10:45.375Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  packages/pm-beads/docs/MIGRATION.md,project,Focused lossless portable-backup and legacy migration runbook
   packages/pm-beads/README.md,project,Portable backup migration and parity receipt guidance
-close_reason: "Completed lossless portable Beads dependency import with authoritative target precedence, realistic regression fixture, linked test proof, and exact full coverage."
+close_reason: "Implemented lossless Beads portable-backup import with fail-closed preflight, full issue/event/comment/dependency/label parity, immutable backup guidance, legacy recovery, focused package documentation, and exact automated/manual evidence."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
