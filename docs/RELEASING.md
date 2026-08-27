@@ -29,6 +29,8 @@ provenance is tracked by [pm-u1baah](../.agents/pm/issues/pm-u1baah.toon), and
 authoritative blocker-recovery run selection by
 [pm-db8onn](../.agents/pm/issues/pm-db8onn.toon), and queued automatic
 same-day recovery by [pm-dm2vfz](../.agents/pm/issues/pm-dm2vfz.toon).
+Bounded Sentry request latency is tracked by
+[pm-b9g2cs](../.agents/pm/issues/pm-b9g2cs.toon).
 
 ## Version Policy
 
@@ -210,6 +212,12 @@ events, and every `generic_failure` or `dependency_failed` remain blocking.
 This keeps rewording independent from release policy and makes stale or broad
 message allowlists impossible.
 
+Sentry API requests use a 120-second deadline by default. Operators can set
+`--sentry-request-timeout-ms` between `1` and `300000` when reproducing
+provider latency, while the emitted gate receipt records the effective value.
+The release workflow pins `120000`; query timeouts remain fail-closed and must
+not be treated as an empty issue set.
+
 If private reliability checks identify repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
 
 The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 digests for every emitted bundle file. At startup, `pm` reports `bundle_integrity_torn_install` only when a module-loader failure is accompanied by manifest proof that an upgrade or rebuild changed, removed, or corrupted the active bundle. Reinstall `@unbrained/pm-cli` and retry after that diagnostic. Ordinary `ERR_MODULE_NOT_FOUND` and export failures with an intact manifest remain unexpected failures and must continue to block reliability gates.
@@ -358,7 +366,7 @@ git push origin v<version>
   tracked source path (apart from managed-extension install metadata).
 - static quality gate (shared complexity, duplication, dead/orphan module, file/folder hygiene, source/exported docstring coverage profile)
 - temporary-project compatibility gate against latest published tracker data
-- reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
+- reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; Sentry requests use the fail-closed bounded `--sentry-request-timeout-ms` contract (default `120000`, maximum `300000`); `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
 - sandboxed `pm` coverage
 - optional Sentry release metadata and sourcemap upload when `SENTRY_AUTH_TOKEN` is configured
 - npm pack dry run and npx tarball smoke test

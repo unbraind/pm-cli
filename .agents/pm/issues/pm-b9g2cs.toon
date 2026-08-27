@@ -1,0 +1,46 @@
+id: pm-b9g2cs
+title: Sentry release gate aborts valid API queries at a fixed 15-second deadline
+description: Exact-tag recovery run 33062893310 failed before package acceptance because the Sentry issues query was aborted at the gate's hard-coded 15-second deadline. The same authenticated query completed successfully with HTTP 200 and an empty issue set in 28.0 seconds under a 60-second diagnostic bound. Replace the brittle constant with a bounded configurable request timeout shared by issue-list and enrichment requests and preserve fail-closed behavior.
+type: Issue
+status: open
+priority: 1
+tags[4]: quality-gate,release,reliability,sentry
+created_at: "2026-08-27T10:46:02.012Z"
+updated_at: "2026-08-27T11:42:42.677Z"
+author: "harness:codex"
+acceptance_criteria: Default Sentry API request deadline safely covers observed valid latency while remaining bounded; A validated CLI option configures the deadline for deterministic tests and operators; Issue-list and latest-event enrichment use the same deadline contract; Negative-control coverage proves timeout failure remains fail-closed; Live authenticated Sentry query and exact-tag recovery complete without npm republish
+parent: pm-ygli86
+repro_steps: Run the release Sentry gate with the configured token; observe sentry_query_error timeout at 15 seconds while the identical query succeeds in about 28 seconds with a 60-second bound.
+expected_result: The gate allows current valid Sentry latency within a bounded configurable deadline and still fails closed when the deadline is exceeded.
+actual_result: A valid Sentry query is aborted after 15 seconds and blocks immutable release recovery.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-k6t4yb,implements,"2026-08-27T10:46:02.012Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-27T10:46:02.012Z","harness:codex",Duplicate search covered all statuses for Sentry reliability threshold timeout retry and release Sentry API timeout; no item owns the fixed 15-second API deadline defect. pm-ygli86 remains the canonical parent and pm-k6t4yb owns the gate contract.
+  "2026-08-27T11:21:24.979Z","harness:codex","Implementation evidence: exact-tag recovery run 33062893310 failed at the reliability gate because the fixed 15-second AbortSignal deadline expired before Sentry answered. A direct authenticated request needed about 28 seconds. TDD captured four red assertions against the hardcoded 15000ms behavior, then the focused linked suite passed 79/79 after the request-timeout contract was implemented for both issue listing and latest-event enrichment. The first live 60000ms probe subsequently timed out, disproving that production bound; the explicit 120000ms probe passed with checked=true, access_ok=true, zero critical/high issues, and request_timeout_ms=120000. Full local coverage passed 585 files and 8045 tests at exact 100/100/100/100; lint, typecheck, duplication, static assurance, graph assurance, docs links, secret scanning, and pnpm audit all passed."
+  "2026-08-27T11:34:03.044Z","harness:codex","Review-loop evidence: CodeRabbit identified that per-request API bounds could accumulate across up to 20 sequential enrichment batches and that Sentry CLI fallback commands omitted the configured timeout. The implementation now gives API and CLI enrichment one shared request-timeout budget, leaves un-enriched rows blocking when that budget is exhausted, and passes the bound to CLI issue-list and event commands. Focused regression coverage passes 80/80, including deterministic budget exhaustion and CLI timeout propagation; eslint, typecheck, and diff checks pass."
+  "2026-08-27T11:42:41.611Z","harness:codex","Hosted exact-head evidence: all four coverage shards passed, but the aggregation/Codecov patch gate exposed the untested CLI budget-exhaustion branch. Added a deterministic negative control proving no CLI event request starts after the shared deadline and both untouched issue rows remain blocking. Focused suite now passes 81/81; eslint and typecheck pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-27T11:21:25.480Z","harness:codex","Provider latency must be validated against the live fail-closed path: a bound that passes once can still be too narrow under transient Sentry latency. Keep the timeout explicit in the workflow, bounded in the CLI contract, recorded in receipts, and shared across list/enrichment requests."
+files[4]{path,scope,note}:
+  .github/workflows/release.yml,project,explicit hosted reliability-gate deadline
+  scripts/release/sentry-telemetry-gate.mjs,project,bounded configurable Sentry API request deadline
+  tests/integration/ci-workflow-contract.spec.ts,project,hosted workflow invocation contract
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,timeout bounds and shared-signal contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-08-27T10:49:07.955Z",local_mutation,fix/sentry-release-query-deadline,Sentry deadline unit and hosted workflow contracts
+test_runs[1]:
+  - run_id: test-local-mtbehopf-v208mk
+    kind: test
+    status: passed
+    started_at: "2026-08-27T10:49:15.605Z"
+    finished_at: "2026-08-27T10:49:25.587Z"
+    recorded_at: "2026-08-27T10:49:25.587Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,operator timeout range and fail-closed policy
+body: ""

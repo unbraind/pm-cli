@@ -125,6 +125,8 @@ const EXPECTED_HANDLED_ERROR_CLASSES = new Set([
 ]);
 
 const SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION = "2026.8.7";
+const DEFAULT_SENTRY_REQUEST_TIMEOUT_MS = 120_000;
+const MAX_SENTRY_REQUEST_TIMEOUT_MS = 300_000;
 
 function readIssueTag(issue, key) {
   if (!issue || typeof issue !== "object") {
@@ -307,7 +309,12 @@ function needsSentryContractEnrichment(issue) {
   );
 }
 
-async function enrichSentryIssueWithLatestEvent(issue, org, token) {
+async function enrichSentryIssueWithLatestEvent(
+  issue,
+  org,
+  token,
+  requestTimeoutMs,
+) {
   if (!needsSentryContractEnrichment(issue) || typeof issue.id !== "string") {
     return issue;
   }
@@ -325,7 +332,7 @@ async function enrichSentryIssueWithLatestEvent(issue, org, token) {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(requestTimeoutMs),
     });
     if (!response.ok) {
       return issue;
@@ -347,28 +354,59 @@ async function enrichSentryIssueWithLatestEvent(issue, org, token) {
   }
 }
 
-async function enrichSentryIssuesWithLatestEvents(issues, project, token) {
+async function enrichSentryIssuesWithLatestEvents(
+  issues,
+  project,
+  token,
+  requestTimeoutMs,
+) {
   const { org } = parseSentryProject(project);
   const enriched = [];
+  const deadline = Date.now() + requestTimeoutMs;
   for (let index = 0; index < issues.length; index += 10) {
+    const remainingTimeoutMs = deadline - Date.now();
+    if (remainingTimeoutMs <= 0) {
+      enriched.push(...issues.slice(index));
+      break;
+    }
     const batch = await Promise.all(
       issues
         .slice(index, index + 10)
-        .map((issue) => enrichSentryIssueWithLatestEvent(issue, org, token)),
+        .map((issue) =>
+          enrichSentryIssueWithLatestEvent(
+            issue,
+            org,
+            token,
+            remainingTimeoutMs,
+          ),
+        ),
     );
     enriched.push(...batch);
   }
   return enriched;
 }
 
-function enrichSentryIssuesViaCli(issues, project, windowDays) {
+function enrichSentryIssuesViaCli(
+  issues,
+  project,
+  windowDays,
+  requestTimeoutMs,
+) {
   const { org } = parseSentryProject(project);
-  return issues.map((issue) => {
+  const enriched = [];
+  const deadline = Date.now() + requestTimeoutMs;
+  for (const issue of issues) {
     if (
       !needsSentryContractEnrichment(issue) ||
       typeof issue.shortId !== "string"
     ) {
-      return issue;
+      enriched.push(issue);
+      continue;
+    }
+    const remainingTimeoutMs = deadline - Date.now();
+    if (remainingTimeoutMs <= 0) {
+      enriched.push(issue);
+      continue;
     }
     const eventResult = runCommand(
       commandFor("sentry"),
@@ -385,10 +423,15 @@ function enrichSentryIssuesViaCli(issues, project, windowDays) {
         "--fields",
         "tags,metadata,release",
       ],
-      { capture: true, allowFailure: true },
+      {
+        capture: true,
+        allowFailure: true,
+        timeout: remainingTimeoutMs,
+      },
     );
     if (eventResult.status !== 0) {
-      return issue;
+      enriched.push(issue);
+      continue;
     }
     try {
       const payload =
@@ -397,18 +440,20 @@ function enrichSentryIssuesViaCli(issues, project, windowDays) {
           : [];
       const event = parseIssuePayload(payload)[0];
       if (!event || typeof event !== "object") {
-        return issue;
+        enriched.push(issue);
+        continue;
       }
-      return {
+      enriched.push({
         ...issue,
         tags: event.tags ?? issue.tags,
         metadata: event.metadata ?? issue.metadata,
         release: event.release ?? issue.release,
-      };
+      });
     } catch {
-      return issue;
+      enriched.push(issue);
     }
-  });
+  }
+  return enriched;
 }
 
 function fetchSentryIssuesViaCli(
@@ -417,6 +462,7 @@ function fetchSentryIssuesViaCli(
   limit,
   priorFailure,
   windowDays,
+  requestTimeoutMs,
 ) {
   const result = runCommand(
     commandFor("sentry"),
@@ -435,6 +481,7 @@ function fetchSentryIssuesViaCli(
     {
       capture: true,
       allowFailure: true,
+      timeout: requestTimeoutMs,
     },
   );
   if (result.status !== 0) {
@@ -459,6 +506,7 @@ function fetchSentryIssuesViaCli(
         parseIssuePayload(payload),
         project,
         windowDays,
+        requestTimeoutMs,
       ),
     };
   } catch (error) {
@@ -478,6 +526,7 @@ async function fetchSentryIssues(
   limit,
   allowCliFallback,
   windowDays,
+  requestTimeoutMs,
 ) {
   const tokens = redactedTokenCandidates();
   if (tokens.length === 0) {
@@ -488,6 +537,7 @@ async function fetchSentryIssues(
         limit,
         "missing_sentry_auth_token",
         windowDays,
+        requestTimeoutMs,
       );
     }
     return {
@@ -507,7 +557,7 @@ async function fetchSentryIssues(
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(requestTimeoutMs),
       });
       const body = await response.text();
       if (!response.ok) {
@@ -524,6 +574,7 @@ async function fetchSentryIssues(
           issues,
           project,
           token,
+          requestTimeoutMs,
         ),
       };
     } catch (error) {
@@ -539,6 +590,7 @@ async function fetchSentryIssues(
       limit,
       lastFailure,
       windowDays,
+      requestTimeoutMs,
     );
   }
 
@@ -556,6 +608,7 @@ function usage() {
     [--sentry-project unbrained/pm-cli]
     [--sentry-limit 200]
     [--sentry-window-days 14]
+    [--sentry-request-timeout-ms 120000]
     [--max-critical 0]
     [--max-high 0]
     [--telemetry-mode off|best-effort|required]
@@ -568,7 +621,12 @@ Blocks release automation when Sentry or telemetry reliability thresholds are ex
 `);
 }
 
-function parseNumber(value, key, fallback, { integer = false } = {}) {
+function parseNumber(
+  value,
+  key,
+  fallback,
+  { integer = false, minimum = 0, maximum = Number.POSITIVE_INFINITY } = {},
+) {
   if (value == null) {
     return fallback;
   }
@@ -578,7 +636,8 @@ function parseNumber(value, key, fallback, { integer = false } = {}) {
   const parsed = value.trim() === "" ? Number.NaN : Number(value);
   if (
     !Number.isFinite(parsed) ||
-    parsed < 0 ||
+    parsed < minimum ||
+    parsed > maximum ||
     (integer && !Number.isInteger(parsed))
   ) {
     fail(`Invalid --${key} value "${value}".`);
@@ -703,6 +762,7 @@ function buildSentryTelemetryGateResult(params) {
       sentry: {
         max_critical: params.maxCritical,
         max_high: params.maxHigh,
+        request_timeout_ms: params.sentryRequestTimeoutMs,
         minimum_contract_producer_version:
           SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION,
       },
@@ -802,6 +862,16 @@ async function main() {
       integer: true,
     },
   );
+  const sentryRequestTimeoutMs = parseNumber(
+    flagString(flags, "sentry-request-timeout-ms", null),
+    "sentry-request-timeout-ms",
+    DEFAULT_SENTRY_REQUEST_TIMEOUT_MS,
+    {
+      integer: true,
+      minimum: 1,
+      maximum: MAX_SENTRY_REQUEST_TIMEOUT_MS,
+    },
+  );
   const maxCritical = parseNumber(
     flagString(flags, "max-critical", null),
     "max-critical",
@@ -853,6 +923,7 @@ async function main() {
     sentryLimit,
     allowSentryCliFallback,
     sentryWindowDays,
+    sentryRequestTimeoutMs,
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
   const sentryPartition = partitionSentryIssuesForGate(sentryIssues);
@@ -881,6 +952,7 @@ async function main() {
     maxTelemetryMissingRows,
     sentryProject,
     sentryWindowDays,
+    sentryRequestTimeoutMs,
     sentryFetch,
     sentrySummary,
     sentryPartition,
