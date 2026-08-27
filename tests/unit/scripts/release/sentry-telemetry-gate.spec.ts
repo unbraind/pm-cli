@@ -188,6 +188,18 @@ describe("scripts/release/sentry-telemetry-gate: usage and arg validation", () =
       'Invalid --sentry-window-days value " "',
     );
   });
+
+  it.each(["0", "300001"])(
+    "rejects out-of-contract --sentry-request-timeout-ms value %s",
+    async (value) => {
+      const { errors } = await runSentryGate({
+        argv: ["--sentry-request-timeout-ms", value],
+      });
+      expect(errors.join("\n")).toContain(
+        `Invalid --sentry-request-timeout-ms value "${value}"`,
+      );
+    },
+  );
 });
 
 describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => {
@@ -207,6 +219,56 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       "is:unresolved level:[fatal,error] lastSeen:-14d",
     );
     expect(json.sentry.window_days).toBe(14);
+    expect(json.thresholds.sentry.request_timeout_ms).toBe(120_000);
+  });
+
+  it("shares a custom bounded request timeout across issue listing and latest-event enrichment", async () => {
+    const timeoutSignal = new AbortController().signal;
+    const timeoutSpy = vi
+      .spyOn(AbortSignal, "timeout")
+      .mockReturnValue(timeoutSignal);
+    const fetchSpy = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      const payload = url.pathname.endsWith("/issues/")
+        ? [
+            {
+              id: "request-timeout-contract",
+              shortId: "PM-TIMEOUT-CONTRACT",
+              level: "error",
+              isUnhandled: false,
+            },
+          ]
+        : {
+            tags: [
+              { key: "pm.error_code", value: "item_not_found" },
+              { key: "pm.exit_code", value: "3" },
+            ],
+          };
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(payload),
+      };
+    });
+    const { json } = await runSentryGate({
+      argv: [
+        "--json",
+        "--telemetry-mode",
+        "off",
+        "--sentry-request-timeout-ms",
+        "45000",
+      ],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+
+    expect(timeoutSpy).toHaveBeenCalledTimes(2);
+    expect(timeoutSpy).toHaveBeenNthCalledWith(1, 45_000);
+    expect(timeoutSpy).toHaveBeenNthCalledWith(2, 45_000);
+    expect(json.thresholds.sentry.request_timeout_ms).toBe(45_000);
+    expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
+      "PM-TIMEOUT-CONTRACT",
+    ]);
   });
 
   it("honors a custom --sentry-window-days value in the query and output", async () => {

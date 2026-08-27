@@ -615,7 +615,7 @@ describe("GitHub workflow contract", () => {
       "pnpm changelog:pm",
       "Exact-tag changelog recovery changed unexpected tracked paths",
       "run: node scripts/release/compatibility-check.mjs --json",
-      "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --max-critical 0 --max-high 0",
+      "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --sentry-request-timeout-ms 120000 --max-critical 0 --max-high 0",
       "name: Upload Sentry sourcemaps",
       "SENTRY_AUTH_TOKEN",
       "SENTRY_PERSONAL_ADMIN_TOKEN",

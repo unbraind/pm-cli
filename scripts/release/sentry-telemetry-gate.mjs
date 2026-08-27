@@ -125,6 +125,8 @@ const EXPECTED_HANDLED_ERROR_CLASSES = new Set([
 ]);
 
 const SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION = "2026.8.7";
+const DEFAULT_SENTRY_REQUEST_TIMEOUT_MS = 120_000;
+const MAX_SENTRY_REQUEST_TIMEOUT_MS = 300_000;
 
 function readIssueTag(issue, key) {
   if (!issue || typeof issue !== "object") {
@@ -307,7 +309,12 @@ function needsSentryContractEnrichment(issue) {
   );
 }
 
-async function enrichSentryIssueWithLatestEvent(issue, org, token) {
+async function enrichSentryIssueWithLatestEvent(
+  issue,
+  org,
+  token,
+  requestTimeoutMs,
+) {
   if (!needsSentryContractEnrichment(issue) || typeof issue.id !== "string") {
     return issue;
   }
@@ -325,7 +332,7 @@ async function enrichSentryIssueWithLatestEvent(issue, org, token) {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(requestTimeoutMs),
     });
     if (!response.ok) {
       return issue;
@@ -347,14 +354,26 @@ async function enrichSentryIssueWithLatestEvent(issue, org, token) {
   }
 }
 
-async function enrichSentryIssuesWithLatestEvents(issues, project, token) {
+async function enrichSentryIssuesWithLatestEvents(
+  issues,
+  project,
+  token,
+  requestTimeoutMs,
+) {
   const { org } = parseSentryProject(project);
   const enriched = [];
   for (let index = 0; index < issues.length; index += 10) {
     const batch = await Promise.all(
       issues
         .slice(index, index + 10)
-        .map((issue) => enrichSentryIssueWithLatestEvent(issue, org, token)),
+        .map((issue) =>
+          enrichSentryIssueWithLatestEvent(
+            issue,
+            org,
+            token,
+            requestTimeoutMs,
+          ),
+        ),
     );
     enriched.push(...batch);
   }
@@ -478,6 +497,7 @@ async function fetchSentryIssues(
   limit,
   allowCliFallback,
   windowDays,
+  requestTimeoutMs,
 ) {
   const tokens = redactedTokenCandidates();
   if (tokens.length === 0) {
@@ -507,7 +527,7 @@ async function fetchSentryIssues(
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(requestTimeoutMs),
       });
       const body = await response.text();
       if (!response.ok) {
@@ -524,6 +544,7 @@ async function fetchSentryIssues(
           issues,
           project,
           token,
+          requestTimeoutMs,
         ),
       };
     } catch (error) {
@@ -556,6 +577,7 @@ function usage() {
     [--sentry-project unbrained/pm-cli]
     [--sentry-limit 200]
     [--sentry-window-days 14]
+    [--sentry-request-timeout-ms 120000]
     [--max-critical 0]
     [--max-high 0]
     [--telemetry-mode off|best-effort|required]
@@ -568,7 +590,12 @@ Blocks release automation when Sentry or telemetry reliability thresholds are ex
 `);
 }
 
-function parseNumber(value, key, fallback, { integer = false } = {}) {
+function parseNumber(
+  value,
+  key,
+  fallback,
+  { integer = false, minimum = 0, maximum = Number.POSITIVE_INFINITY } = {},
+) {
   if (value == null) {
     return fallback;
   }
@@ -578,7 +605,8 @@ function parseNumber(value, key, fallback, { integer = false } = {}) {
   const parsed = value.trim() === "" ? Number.NaN : Number(value);
   if (
     !Number.isFinite(parsed) ||
-    parsed < 0 ||
+    parsed < minimum ||
+    parsed > maximum ||
     (integer && !Number.isInteger(parsed))
   ) {
     fail(`Invalid --${key} value "${value}".`);
@@ -703,6 +731,7 @@ function buildSentryTelemetryGateResult(params) {
       sentry: {
         max_critical: params.maxCritical,
         max_high: params.maxHigh,
+        request_timeout_ms: params.sentryRequestTimeoutMs,
         minimum_contract_producer_version:
           SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION,
       },
@@ -802,6 +831,16 @@ async function main() {
       integer: true,
     },
   );
+  const sentryRequestTimeoutMs = parseNumber(
+    flagString(flags, "sentry-request-timeout-ms", null),
+    "sentry-request-timeout-ms",
+    DEFAULT_SENTRY_REQUEST_TIMEOUT_MS,
+    {
+      integer: true,
+      minimum: 1,
+      maximum: MAX_SENTRY_REQUEST_TIMEOUT_MS,
+    },
+  );
   const maxCritical = parseNumber(
     flagString(flags, "max-critical", null),
     "max-critical",
@@ -853,6 +892,7 @@ async function main() {
     sentryLimit,
     allowSentryCliFallback,
     sentryWindowDays,
+    sentryRequestTimeoutMs,
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
   const sentryPartition = partitionSentryIssuesForGate(sentryIssues);
@@ -881,6 +921,7 @@ async function main() {
     maxTelemetryMissingRows,
     sentryProject,
     sentryWindowDays,
+    sentryRequestTimeoutMs,
     sentryFetch,
     sentrySummary,
     sentryPartition,
