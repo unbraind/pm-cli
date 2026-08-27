@@ -176,6 +176,15 @@ describe("core/store/item-store", () => {
     });
   });
 
+  it("rejects empty item identifiers before prefix normalization", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskItem(pmPath, "pm-");
+      for (const rawId of ["", "   ", "#"]) {
+        await expect(locateItem(pmPath, rawId, "pm-")).resolves.toBeNull();
+      }
+    });
+  });
+
   it("prefers configured format when both markdown and toon files exist", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-format-preference";

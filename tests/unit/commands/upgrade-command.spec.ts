@@ -174,7 +174,7 @@ describe("upgrade command", () => {
           "global",
           githubSource.ref,
         ),
-      ).toEqual(["pm", "install", "Owner/Repo", "--global"]);
+      ).toEqual(["pm", "package", "install", "Owner/Repo", "--global"]);
       expect(
         upgradeInternals.packageCommandFor(
           { ...githubSource, ref: " feature " },
@@ -184,6 +184,7 @@ describe("upgrade command", () => {
         ),
       ).toEqual([
         "pm",
+        "package",
         "install",
         "Owner/Repo",
         "--project",
@@ -282,7 +283,7 @@ describe("upgrade command", () => {
       expect(result.packages[0]).toMatchObject({
         name: "upgrade-plan-ext",
         status: "planned",
-        command: ["pm", "install", packageRoot, "--project"],
+        command: ["pm", "package", "install", packageRoot, "--project"],
       });
       expect(result.summary).toMatchObject({
         requested_cli: true,
@@ -335,6 +336,7 @@ describe("upgrade command", () => {
         status: "planned",
         command: [
           "pm",
+          "package",
           "install",
           "npm:@example/registry-ext@next",
           "--project",
@@ -483,7 +485,15 @@ describe("upgrade command", () => {
       expect(result.packages[0]).toMatchObject({
         name: "github-ext",
         status: "planned",
-        command: ["pm", "install", "owner/repo", "--global", "--ref", "main"],
+        command: [
+          "pm",
+          "package",
+          "install",
+          "owner/repo",
+          "--global",
+          "--ref",
+          "main",
+        ],
       });
       expect(result.summary).toMatchObject({
         requested_cli: false,
@@ -530,6 +540,7 @@ describe("upgrade command", () => {
 
       expect(result.packages[0]?.command).toEqual([
         "pm",
+        "package",
         "install",
         "npm:file:../local-npm-ext",
         "--project",
@@ -791,6 +802,47 @@ describe("upgrade command", () => {
               "upgrade",
               "--packages-only",
               "--dry-run",
+            ],
+          },
+        },
+      });
+      await expect(
+        runUpgrade(
+          "global-target",
+          { cliOnly: true, packagesOnly: true, global: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        context: {
+          recovery: {
+            suggested_retry:
+              "pm package upgrade global-target --packages-only --dry-run --global",
+            suggested_retry_args: [
+              "package",
+              "upgrade",
+              "global-target",
+              "--packages-only",
+              "--dry-run",
+              "--global",
+            ],
+          },
+        },
+      });
+      await expect(
+        runUpgrade(
+          undefined,
+          { cliOnly: true, packagesOnly: true, scope: "global" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        context: {
+          recovery: {
+            suggested_retry_args: [
+              "package",
+              "upgrade",
+              "--packages-only",
+              "--dry-run",
+              "--global",
             ],
           },
         },

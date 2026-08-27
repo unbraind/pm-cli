@@ -640,6 +640,23 @@ describe("generateBashScript", () => {
     expect(lazyFish).toContain("pm completion-types");
   });
 
+  it("does not offer tracker tags for package upgrade npm tags", () => {
+    for (const script of [
+      generateBashScript(),
+      generateBashScript([], ["tracker-tag"], true),
+    ]) {
+      const trackerTagBranch = script.slice(
+        script.indexOf('if [[ ( "$prev" == "--tag"'),
+        script.indexOf('local cmd="${COMP_WORDS[1]}"'),
+      );
+      expect(trackerTagBranch).toContain(
+        '"${COMP_WORDS[2]}" == "upgrade"',
+      );
+      expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "package"');
+      expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "packages"');
+    }
+  });
+
   it("includes context-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("context|ctx");

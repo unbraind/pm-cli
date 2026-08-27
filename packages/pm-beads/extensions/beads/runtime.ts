@@ -628,7 +628,12 @@ function attachPortableRelations(
           EXIT_CODE.CONFLICT,
         );
       }
-      return row;
+      return {
+        ...row,
+        id: undefined,
+        item_id: undefined,
+        depends_on_id: targetId,
+      };
     },
   );
   attachPortableRelationRows(

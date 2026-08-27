@@ -35,6 +35,10 @@ function setGovernancePreset(
 describe("CLI help runtime coverage (sandboxed)", () => {
   it("describes top-level help as a universal extensible CLI", async () => {
     await withTempPmPath(async (context) => {
+      const bareHelp = await context.runCliInProcess([]);
+      expect(bareHelp.code).toBe(0);
+      expect(bareHelp.stdout).toContain("Usage: pm [options] [command]");
+
       const compactHelp = context.runCli(["--help"]);
       expect(compactHelp.code).toBe(0);
       expect(compactHelp.stdout.replaceAll(/\s+/g, " ").trim()).toContain(
@@ -61,6 +65,28 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(detailedHelp.stdout).toContain("pm install guide-shell --project");
       expect(detailedHelp.stdout).toContain(
         "Install guide-shell before using pm guide",
+      );
+
+      for (const discoveryFlag of ["--all", "--explain"]) {
+        const standaloneDiscovery = await context.runCliInProcess([
+          discoveryFlag,
+        ]);
+        expect(standaloneDiscovery.code).toBe(0);
+        expect(standaloneDiscovery.stdout).toContain(
+          "Usage: pm [options] [command]",
+        );
+      }
+
+      const lifecycleList = context.runCli(["list", "--all"]);
+      expect(lifecycleList.code).toBe(0);
+      expect(lifecycleList.stdout).not.toContain(
+        "Usage: pm [options] [command]",
+      );
+
+      const explainedLifecycleList = context.runCli(["list", "--explain"]);
+      expect(explainedLifecycleList.code).toBe(0);
+      expect(explainedLifecycleList.stdout).not.toContain(
+        "Usage: pm [options] [command]",
       );
     });
   });

@@ -127,6 +127,9 @@ export async function locateItem(
   const exactRawId = trimmedRawId.startsWith("#")
     ? trimmedRawId.slice(1)
     : trimmedRawId;
+  if (exactRawId.length === 0) {
+    return null;
+  }
   const normalizedId = normalizeItemId(rawId, idPrefix);
   const rawNormalizedId = normalizeRawItemId(rawId);
   const candidateIds = [

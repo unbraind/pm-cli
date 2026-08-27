@@ -26,6 +26,12 @@ import {
 const execFileAsync = promisify(execFile);
 const DEFAULT_CLI_PACKAGE = "@unbrained/pm-cli";
 const DEFAULT_TAG = "latest";
+const PACKAGE_UPGRADE_RETRY_SCOPE_FLAGS: Readonly<
+  Record<ExtensionScope, readonly string[]>
+> = {
+  global: ["--global"],
+  project: [],
+};
 
 /** Documents the upgrade command options payload exchanged by command, SDK, and package integrations. */
 export interface UpgradeCommandOptions {
@@ -359,6 +365,7 @@ function packageCommandFor(
 ): string[] {
   const command = [
     "pm",
+    "package",
     "install",
     installSource,
     scope === "global" ? "--global" : "--project",
@@ -488,6 +495,7 @@ export async function runUpgrade(
       ...(normalizedTarget ? [normalizedTarget] : []),
       "--packages-only",
       "--dry-run",
+      ...PACKAGE_UPGRADE_RETRY_SCOPE_FLAGS[resolveScope(options)],
     ];
     throw new PmCliError(
       'Options "--cli-only" and "--packages-only" are mutually exclusive.',

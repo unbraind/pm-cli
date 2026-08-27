@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-08-26T22:51:44.208Z"
+updated_at: "2026-08-27T02:27:12.211Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
@@ -38,10 +38,11 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-26T21:27:34.572Z","harness:codex","GitHub intake: GH-1126 https://github.com/unbraind/pm-cli/issues/1126. Reused the canonical annotation-facet grammar task. Red reproduction: comments/learnings reject --text even though notes/remind and collection concepts use text; human recovery can truncate before suggested_retry."
   "2026-08-26T21:34:26.811Z","harness:codex","TDD red: shared registration spec proves comments, notes, and learnings all reject the convergent --text alias before reaching their SDK adapters."
   "2026-08-26T22:51:39.094Z","harness:codex","Evidence for the implemented slice: comments, notes, and learnings now accept the convergent --text alias and reject conflicting positional/text payloads through one typed resolver; recovery bundles put suggested_retry first. Fresh-directory acceptance persisted and projected one entry from each collection. The linked sandbox-safe suite passed 134/134, while repository gates passed pnpm build, pnpm lint, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean. This closes only the GitHub #1126 alias slice; the broader convergent grammar programme remains open for its other command families."
+  "2026-08-27T02:27:12.211Z","harness:codex","Quality-gate evidence for PR 1128 review: pnpm build passed; pnpm lint passed ESLint, zero jscpd clones, repository static quality, 100 percent docstring coverage, SDK/package parity, refusal closure, graph composition, and record integrity; node scripts/run-tests.mjs coverage passed 584 files and 8031 tests with statements 59690/59690, branches 44928/44928, functions 12416/12416, and lines 57481/57481; pnpm security:scan found no credential-like tracked secrets; pnpm audit --audit-level high found no known vulnerabilities. pm-yql1 remains open because its broader programme scope is not complete."
 learnings[1]{created_at,author,text}:
   "2026-08-26T22:51:39.542Z","harness:codex","Convergent mutation grammar should resolve positional and named text at a shared registration boundary, with a typed conflict refusal before any SDK mutation adapter runs."
 files[5]{path,scope,note}:

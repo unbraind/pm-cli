@@ -1170,6 +1170,14 @@ describe("CLI bootstrap entrypoints", () => {
       expect(bareHelp.stdout).toContain("Usage: pm");
       expect(bareHelp.stderr).toBe("");
 
+      const fullHelp = await runSourceCli(
+        ["--no-extensions", "--all"],
+        context.env,
+      );
+      expect(fullHelp.code).toBe(EXIT_CODE.SUCCESS);
+      expect(fullHelp.stdout).toContain("Usage: pm");
+      expect(fullHelp.stderr).toBe("");
+
       const jsonHelp = await runSourceCli(["--json", "--help"], context.env);
       expect(jsonHelp.code).toBe(EXIT_CODE.SUCCESS);
       expect(jsonHelp.stdout).toContain('"format": "pm_help_v1"');

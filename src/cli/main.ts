@@ -91,7 +91,11 @@ import {
   validateLooseCommandOptionsWithFlagDefinitions,
   type LooseCommandFlagDefinition,
 } from "./extension-command-options.js";
-import { attachRichHelpText, setPmCommandHelpVisibilityTier } from "./help-content.js";
+import {
+  attachRichHelpText,
+  isFullHelpDiscovery,
+  setPmCommandHelpVisibilityTier,
+} from "./help-content.js";
 import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
 import { extractProvidedOptionFlags, normalizeLongOptionFlag, redactSensitiveCommandArgs, renderPmCommand } from "./argv-utils.js";
 import {
@@ -2964,7 +2968,11 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
     if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
       throw new CommanderError(EXIT_CODE.USAGE, "commander.helpDisplayed", "(outputHelp)");
     }
-    if (isBareInvocation) {
+    if (
+      isBareInvocation ||
+      (isFullHelpDiscovery(invocationArgv) &&
+        parseBootstrapCommandName(invocationArgv) === undefined)
+    ) {
       program.outputHelp();
       return;
     }

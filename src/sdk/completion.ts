@@ -722,13 +722,13 @@ export function generateBashScript(
     "",
     ...(useEagerTagExpansion
       ? [
-          '  if [[ "$prev" == "--tag" || "$prev" == "--tags" ]]; then',
+          '  if [[ ( "$prev" == "--tag" || "$prev" == "--tags" ) && ! ( ( "${COMP_WORDS[1]}" == "package" || "${COMP_WORDS[1]}" == "packages" ) && "${COMP_WORDS[2]}" == "upgrade" ) ]]; then',
           `    COMPREPLY=(${compgen(tagValues)})`,
           "    return 0",
           "  fi",
         ]
       : [
-          '  if [[ "$prev" == "--tag" || "$prev" == "--tags" ]]; then',
+          '  if [[ ( "$prev" == "--tag" || "$prev" == "--tags" ) && ! ( ( "${COMP_WORDS[1]}" == "package" || "${COMP_WORDS[1]}" == "packages" ) && "${COMP_WORDS[2]}" == "upgrade" ) ]]; then',
           "    local now ttl cache_ts tag_values",
           '    now="$(date +%s 2>/dev/null || echo 0)"',
           '    ttl="${PM_COMPLETION_TAG_TTL:-120}"',
