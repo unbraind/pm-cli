@@ -692,7 +692,13 @@ describe("runBeadsImport", () => {
         JSON.stringify({
           id: "kindless",
           title: "Kindless dependency",
-          dependencies: [{ depends_on_id: "dep-target" }],
+          dependencies: [
+            {
+              id: "dependency-row-identity",
+              item_id: "kindless",
+              depends_on_id: "dep-target",
+            },
+          ],
         }),
         JSON.stringify({
           id: "child-of",
@@ -1479,11 +1485,15 @@ describe("runBeadsImport", () => {
           message: "count mismatch",
           mutate: async (backupDir) => {
             const statePath = path.join(backupDir, "backup_state.json");
-            const state = (await readFile(statePath, "utf8")).replace(
-              '"issues": 3',
-              '"issues": 4',
+            const state = JSON.parse(await readFile(statePath, "utf8")) as {
+              counts: { issues: number };
+            };
+            state.counts.issues += 1;
+            await writeFile(
+              statePath,
+              `${JSON.stringify(state, null, 2)}\n`,
+              "utf8",
             );
-            await writeFile(statePath, state, "utf8");
           },
         },
       ];

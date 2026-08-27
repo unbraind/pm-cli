@@ -27,7 +27,7 @@ describe("closed-domain contracts", () => {
         expect.objectContaining({
           probe_id: "package-upgrade-mutually-exclusive-modes",
           flag: "--cli-only/--packages-only",
-          error_code: "projection_options_mutually_exclusive",
+          error_code: "package_upgrade_modes_mutually_exclusive",
         }),
       ]),
     );

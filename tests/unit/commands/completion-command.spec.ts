@@ -691,6 +691,10 @@ describe("generateBashScript", () => {
       );
       expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "package"');
       expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "packages"');
+      expect(trackerTagBranch).toContain(
+        'if [[ "$prev" == "--tag" && ( ( "${COMP_WORDS[1]}" == "package" || "${COMP_WORDS[1]}" == "packages" ) && "${COMP_WORDS[2]}" == "upgrade" ) ]]; then',
+      );
+      expect(trackerTagBranch).toContain("    COMPREPLY=()\n    return 0");
     }
   });
 

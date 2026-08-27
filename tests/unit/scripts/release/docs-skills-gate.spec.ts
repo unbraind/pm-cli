@@ -461,7 +461,9 @@ describe("docs-skills-gate", () => {
         expect.any(String),
         expect.any(Array),
         expect.objectContaining({
-          env: expect.objectContaining({ PM_CLI_PACKAGE_ROOT: expect.any(String) }),
+          env: expect.objectContaining({
+            PM_CLI_PACKAGE_ROOT: expect.stringMatching(/\S/u),
+          }),
         }),
       );
     });

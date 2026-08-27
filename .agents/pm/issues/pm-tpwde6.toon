@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:extensions",comments,history,migration,pm-beads
 created_at: "2026-08-02T14:10:55.004Z"
-updated_at: "2026-08-27T06:47:25.362Z"
-closed_at: "2026-08-27T06:47:24.826Z"
-completed_at: "2026-08-27T06:47:24.826Z"
+updated_at: "2026-08-27T08:20:22.585Z"
+closed_at: "2026-08-27T08:20:21.948Z"
+completed_at: "2026-08-27T08:20:21.948Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: A source fixture with comments and events imports every body and event with record/content parity; incomplete export formats fail closed with actionable guidance; immutable backup and source/target parity gates are documented and tested; package and installed-consumer acceptance pass
@@ -26,7 +26,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-13bn,discovered_from,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
   pm-axl0,supersedes,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
-comments[15]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-08-02T14:10:55.004Z","harness:codex","Duplicate-check evidence: all-status searches for GH-859, pm-beads comment loss, Beads export lossiness, and prior importer parity found no active owner. Closed pm-axl0 covered earlier importer lossiness but not current comment/event source completeness; this item preserves that lineage rather than reopening shipped scope."
   "2026-08-26T18:50:49.932Z","harness:codex","TDD red evidence: current Beads file import silently accepts comment_count with no comments and the new portable-backup acceptance cannot run because --backup-dir is absent; focused package tests failed before implementation."
   "2026-08-26T20:48:43.065Z","harness:codex","Verification evidence: manual fresh-workspace portable-backup import completed with complete=true and exact source/import parity: issues=3, events=2, comments=1, dependencies=1, labels=2. Readback retained the exact discussion body and a structured JSON status-change event note; full suite 8,020/8,020 and exact coverage 100/100/100/100 passed."
@@ -42,6 +42,10 @@ comments[15]{created_at,author,text}:
   "2026-08-27T05:22:44.451Z","harness:codex","Review closure evidence: Beads legacy imports now accept explicit comment_count=0 while still refusing positive counts without relational comment data; missing portable-backup table diagnostics identify the exact filename. Focused linked suite passed 29/29 and repository coverage passed 8,037/8,037 at exact 100/100/100/100. Fresh temp acceptance at /tmp/pm-cli-review-e2e-Cgqkrk imported pm-manual-zero, refused comment_count=1 with exit 2 before writes, and confirmed pm-manual-positive remained absent."
   "2026-08-27T06:19:57.333Z","harness:codex","Review intake: CodeRabbit review 5037755674 found the negative-control text still says any comment_count despite the new zero-count positive control, and the migration guide overstates exact label identity even though canonical tags lowercase label text."
   "2026-08-27T06:47:19.626Z","harness:codex","Exact-head evidence: Beads migration docs now state label text normalizes to lowercase canonical tags; defect evidence now correctly requires comment_count > 0 while proving no comment bodies. The linked Beads suite passed 29/29; full repository proof passed 8,038 tests and exact 100/100/100/100 coverage."
+  "2026-08-27T07:46:26.329Z","harness:codex","Exact-head review intake: CodeRabbit review 5038390809 verified the portable dependency target precedence regression and a brittle count-mismatch fixture. Reopening this canonical migration owner for TDD correction."
+  "2026-08-27T07:54:22.583Z","harness:codex","TDD review remediation evidence: the focused suite first failed because kindless Beads dependency rows selected the row identity instead of depends_on_id and because count-mismatch test setup used brittle regex mutation. Reordered import precedence to depends_on_id, id, then item_id and replaced the fixture mutation with parsed JSON state. Focused suite now passes: 214 tests across six files."
+  "2026-08-27T08:17:41.809Z","harness:codex","Verification evidence: full repository coverage passed 585 files and 8,041 tests at exact 100% statements, branches, functions, and lines. Repo-wide lint/static quality, typecheck, zero-vulnerability audit, secret scan, contract checks, docs links, tracker history integrity, and the 88-command temporary-directory package dogfood flow also passed."
+  "2026-08-27T08:20:20.907Z","harness:codex","Linked test plan evidence: 1/1 declared test commands passed in sandboxed PM context; 29 focused Beads migration tests passed with zero failure categories."
 files[9]{path,scope,note}:
   packages/pm-beads/extensions/beads/index.ts,project,Lossless Beads portable backup import and regression proof
   packages/pm-beads/extensions/beads/runtime.ts,project,Lossless Beads portable backup import and regression proof
@@ -54,7 +58,7 @@ files[9]{path,scope,note}:
   tests/unit/packages/beads-command.spec.ts,project,Lossless Beads portable backup import and regression proof
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,project,240,"harness:codex","2026-08-26T19:58:07.740Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[6]:
+test_runs[7]:
   - run_id: test-local-mtakit1a-l51zm0
     kind: test
     status: passed
@@ -121,10 +125,21 @@ test_runs[6]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtb931ll-qggdbn
+    kind: test
+    status: passed
+    started_at: "2026-08-27T08:17:48.122Z"
+    finished_at: "2026-08-27T08:18:04.377Z"
+    recorded_at: "2026-08-27T08:18:04.377Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   packages/pm-beads/docs/MIGRATION.md,project,Focused lossless portable-backup and legacy migration runbook
   packages/pm-beads/README.md,project,Portable backup migration and parity receipt guidance
-close_reason: Completed Beads label normalization documentation and losslessness evidence correction with linked and full-suite proof.
+close_reason: "Delivered lossless Beads backup migration with source ID preservation, dependency target precedence, relationship reconstruction, count verification, robust fixtures, manual dogfood proof, and exact full coverage."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

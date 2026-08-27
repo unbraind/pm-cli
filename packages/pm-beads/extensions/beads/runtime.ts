@@ -364,9 +364,9 @@ function toBeadsDependencyId(value: unknown): string | undefined {
   }
   const candidate = value as Record<string, unknown>;
   return (
+    toNonEmptyString(candidate.depends_on_id) ??
     toNonEmptyString(candidate.id) ??
-    toNonEmptyString(candidate.item_id) ??
-    toNonEmptyString(candidate.depends_on_id)
+    toNonEmptyString(candidate.item_id)
   );
 }
 

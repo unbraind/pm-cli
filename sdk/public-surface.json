@@ -1308,6 +1308,14 @@
       ],
       "package_version": "2026.8.26",
       "reason": "Adds structured upgrade scope while preserving project local and global boolean compatibility"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmClosedDomainContract",
+        "signature ./sdk/contracts:PmClosedDomainContract"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Add a domain-specific package upgrade mode-conflict refusal code so SDK consumers can distinguish lifecycle validation from query projection validation."
     }
   ],
   "entrypoints": {
@@ -10978,7 +10986,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmClosedDomainContract",
-          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
+          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"package_upgrade_modes_mutually_exclusive\" | \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -20854,7 +20862,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmClosedDomainContract",
-          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
+          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"package_upgrade_modes_mutually_exclusive\" | \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -31564,6 +31572,7 @@
     "ownership_dependency_bypass_restricted_options",
     "ownership_metadata_bypass_restricted_options",
     "package_spec_empty",
+    "package_upgrade_modes_mutually_exclusive",
     "positional_shape_budget_exceeded",
     "positional_signature_mismatch",
     "profile_name_empty",

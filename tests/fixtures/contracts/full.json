@@ -18971,6 +18971,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "package_upgrade_modes_mutually_exclusive",
+      "class": "usage",
+      "code": "package_upgrade_modes_mutually_exclusive",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Package upgrade modes mutually exclusive condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/governance/upgrade.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "positional_shape_budget_exceeded",
       "class": "generic_failure",
       "code": "positional_shape_budget_exceeded",
@@ -19111,7 +19128,6 @@
       "class": "usage",
       "code": "projection_options_mutually_exclusive",
       "emitting_commands": [
-        "*",
         "get",
         "list",
         "search"
@@ -19121,7 +19137,6 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/governance/upgrade.ts",
         "sdk/query/get.ts",
         "sdk/query/list.ts",
         "sdk/query/search-contracts.ts"

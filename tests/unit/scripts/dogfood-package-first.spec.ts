@@ -98,6 +98,7 @@ function fullContractsPayload(): SpawnResult {
     command_aliases: [
       { canonical: "package", aliases: ["extension", "packages"] },
       { canonical: "package install", aliases: ["install"] },
+      { canonical: "package upgrade", aliases: ["upgrade"] },
     ],
   });
 }
@@ -911,6 +912,28 @@ describe("dogfood-package-first", () => {
     await harness.importModule(SCRIPT);
     const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0] ?? "{}")) as { ok: boolean };
     expect(payload.ok).toBe(true);
+  });
+
+  it("rejects contracts that omit the package upgrade compatibility alias", async () => {
+    const spawnSync = buildSpawnSync({
+      pm: (cmd, pmArgs) => {
+        if (cmd === "contracts" && pmArgs.includes("--flags-only") && !pmArgs.includes("--command") && !pmArgs.includes("--availability-only")) {
+          const payload = JSON.parse(String(fullContractsPayload().stdout)) as { command_aliases: Array<{ canonical: string; aliases: string[] }> };
+          payload.command_aliases = payload.command_aliases.filter((entry) => entry.canonical !== "package upgrade");
+          return pmJson(payload);
+        }
+        return undefined;
+      },
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((call) => String(call[0]).includes("missing package upgrade command alias"))).toBe(true);
+    expect(process.exitCode).toBe(1);
   });
 
   it("falls back to [] when the package install command-alias entry omits its aliases array", async () => {

@@ -31,6 +31,7 @@ export interface PmClosedDomainContract {
   suggested_retry_args: readonly string[];
   /** Stable machine-readable error code that owns the refusal. */
   error_code:
+    | "package_upgrade_modes_mutually_exclusive"
     | "projection_options_mutually_exclusive"
     | "unknown_context_intent"
     | "unknown_field_projection";
@@ -160,7 +161,7 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
         "--packages-only",
         "--dry-run",
       ],
-      error_code: "projection_options_mutually_exclusive",
+      error_code: "package_upgrade_modes_mutually_exclusive",
       allowed_values_required: false,
     },
     {

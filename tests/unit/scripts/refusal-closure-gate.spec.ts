@@ -100,8 +100,8 @@ describe("executable refusal closure gate", () => {
         },
         catalog_closure: {
           complete: false,
-          executable_error_code_count: 18,
-          ratchet: { ok: true, baseline: 18, actual: 18 },
+          executable_error_code_count: 19,
+          ratchet: { ok: true, baseline: 18, actual: 19 },
           restore_with: "docs/generated/REFUSAL_CLOSURE_CENSUS.md",
         },
         findings: [],

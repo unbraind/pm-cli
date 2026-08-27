@@ -501,7 +501,7 @@ export async function runUpgrade(
       'Options "--cli-only" and "--packages-only" are mutually exclusive.',
       EXIT_CODE.USAGE,
       {
-        code: "projection_options_mutually_exclusive",
+        code: "package_upgrade_modes_mutually_exclusive",
         recovery: {
           suggested_retry: renderPmCommand(suggestedRetryArguments),
           suggested_retry_args: suggestedRetryArguments,

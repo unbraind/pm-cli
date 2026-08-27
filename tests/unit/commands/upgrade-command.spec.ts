@@ -774,7 +774,9 @@ describe("upgrade command", () => {
       ).rejects.toMatchObject({
         message:
           'Options "--cli-only" and "--packages-only" are mutually exclusive.',
+        code: "package_upgrade_modes_mutually_exclusive",
         context: {
+          code: "package_upgrade_modes_mutually_exclusive",
           recovery: {
             suggested_retry:
               'pm package upgrade "@example/package with spaces" --packages-only --dry-run',

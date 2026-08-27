@@ -353,6 +353,9 @@ try {
   const packageInstallAliasesFromContracts =
     allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package install")?.aliases ?? [];
   assert(packageInstallAliasesFromContracts.includes("install"), "contracts --flags-only missing package install command alias");
+  const packageUpgradeAliasesFromContracts =
+    allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package upgrade")?.aliases ?? [];
+  assert(packageUpgradeAliasesFromContracts.includes("upgrade"), "contracts --flags-only missing package upgrade command alias");
 
   run("calendar after init packages", [
     "calendar",
