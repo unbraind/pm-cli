@@ -1245,6 +1245,14 @@ describe("CLI bootstrap entrypoints", () => {
       expect(partialHelpPath.stdout).toBe("");
       expect(partialHelpPath.stderr).toContain("Unknown command");
 
+      const positionalActionHelp = await runSourceCli(
+        ["plan", "create", "--help"],
+        context.env,
+      );
+      expect(positionalActionHelp.code).toBe(EXIT_CODE.SUCCESS);
+      expect(positionalActionHelp.stdout).toContain("Usage: pm plan");
+      expect(positionalActionHelp.stderr).toBe("");
+
       const reportedUnknownHelp = await runSourceCli(["--no-extensions", "definitely-missing", "--help"], {
         ...context.env,
         PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true",
@@ -4572,8 +4580,19 @@ describe("CLI Commander usage recovery helpers", () => {
   it("resolves complete child command paths through aliases", () => {
     const program = new Command().name("pm");
     program.command("context").alias("ctx").description("Context");
-    const packageCommand = program.command("package").alias("pkg").description("Package");
+    const packageCommand = program
+      .command("package")
+      .alias("pkg")
+      .argument("[target]")
+      .description("Package");
     packageCommand.command("install").alias("add").description("Install");
+    program
+      .command("plan")
+      .argument("[subcommand]")
+      .argument("[id]")
+      .description("Plan");
+    program.command("labels").argument("<values...>");
+    program.command("version");
 
     expect(resolveChildCommandByToken(program, "package")?.name()).toBe("package");
     expect(resolveChildCommandByToken(program, "CTX")?.name()).toBe("context");
@@ -4590,6 +4609,17 @@ describe("CLI Commander usage recovery helpers", () => {
     expect(isKnownHelpCommandPath(program, [])).toBe(true);
     expect(isKnownHelpCommandPath(program, ["pkg", "add"])).toBe(true);
     expect(isKnownHelpCommandPath(program, ["pkg", "missing"])).toBe(false);
+    expect(isKnownHelpCommandPath(program, ["plan", "create"])).toBe(true);
+    expect(isKnownHelpCommandPath(program, ["plan", "show", "pm-1"])).toBe(
+      true,
+    );
+    expect(
+      isKnownHelpCommandPath(program, ["plan", "show", "pm-1", "extra"]),
+    ).toBe(false);
+    expect(isKnownHelpCommandPath(program, ["labels", "one", "two"])).toBe(
+      true,
+    );
+    expect(isKnownHelpCommandPath(program, ["version", "extra"])).toBe(false);
     expect(isKnownHelpCommandPath(program, ["missing"])).toBe(false);
   });
 
