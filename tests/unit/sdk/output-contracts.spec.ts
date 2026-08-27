@@ -248,6 +248,14 @@ describe("SDK output envelope contracts", () => {
         ".expected_refusal_surface must be a non-empty string",
       ],
       [
+        { ...validStep, expected_error_code: "unexpected" },
+        "only refusal steps may declare expected_error_code",
+      ],
+      [
+        { ...validStep, expected_refusal_surface: "--for" },
+        "only refusal steps may declare expected_error_code or expected_refusal_surface",
+      ],
+      [
         { ...validStep, recovery_for: " " },
         ".recovery_for must be a non-empty string",
       ],
@@ -361,6 +369,31 @@ describe("SDK output envelope contracts", () => {
     ).toThrow(
       "recovery_for must reference an earlier refusal and declare successful output",
     );
+    const refusal = {
+      id: "refuse",
+      args: ["list", "--for", "invalid"],
+      expected_exit_code: 2,
+      expected_output_kind: "refusal",
+      required_fields: ["code"],
+      expected_error_code: "unknown_context_intent",
+      expected_refusal_surface: "--for",
+    };
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 1,
+        tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [
+              refusal,
+              { ...success, id: "retry", recovery_for: "refuse" },
+              { ...refusal, id: "terminal-refusal" },
+            ],
+          },
+        ],
+      }),
+    ).toThrow("completed task must terminate with successful output");
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
         version: 1,

@@ -77,7 +77,8 @@
           "args": ["search", "agent task", "--status", "open", "--limit", "5"],
           "expected_exit_code": 0,
           "expected_output_kind": "collection",
-          "required_fields": ["items"]
+          "required_fields": ["items"],
+          "recovery_for": "refuse-option"
         }
       ]
     },

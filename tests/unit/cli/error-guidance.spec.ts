@@ -299,8 +299,22 @@ describe("pm cli error guidance context plumbing", () => {
       2,
       {
         recovery: {
-          normalized_args: ["--json", "get", "pm-demo", "--depth", "verbose"],
-          provided_fields: ["--json", "--depth"],
+          normalized_args: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "/private/project/.agents/pm",
+            "get",
+            "pm-demo",
+            "--depth",
+            "verbose",
+          ],
+          provided_fields: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "--depth",
+          ],
         },
       },
     );
@@ -308,6 +322,37 @@ describe("pm cli error guidance context plumbing", () => {
       surface: "--depth",
       rejected_value: "verbose",
     });
+
+    const inlineValue = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: ["get", "pm-demo", "--depth=verbose"],
+          provided_fields: ["--depth"],
+        },
+      },
+    );
+    expect(inlineValue.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+
+    const missingCandidateArgument = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        flag: "--depth",
+        recovery: {
+          normalized_args: ["get", "pm-demo"],
+          provided_fields: ["--depth"],
+        },
+      },
+    );
+    expect(missingCandidateArgument.refusal.surface).toBe("--depth");
+    expect(missingCandidateArgument.refusal).not.toHaveProperty(
+      "rejected_value",
+    );
   });
 
   it("preserves structured fallback recovery candidates in JSON and text output", () => {
@@ -447,7 +492,63 @@ describe("pm cli error guidance context plumbing", () => {
         rejected_value: "--include-body",
         exit_code: 2,
       },
+      recovery: {
+        suggested_retry: 'pm search "agent task" --status open --limit 5',
+        suggested_retry_args: [
+          "search",
+          "agent task",
+          "--status",
+          "open",
+          "--limit",
+          "5",
+        ],
+      },
     });
+  });
+
+  it("keeps explicit unknown-option corrections authoritative over removal retries", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--statu'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["search", "agent", "--statu"],
+        providedOptionFlags: ["--statu"],
+        unknownOptionSuggestions: ["--status"],
+        suggestedRetryCommand: "pm search agent --status open",
+      },
+    );
+
+    expect(envelope.recovery?.suggested_retry).toBe(
+      "pm search agent --status open",
+    );
+    expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+
+    const inline = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["--json", "search", "agent", "--bogus=1"],
+      },
+    );
+    expect(inline.recovery?.suggested_retry_args).toEqual([
+      "search",
+      "agent",
+    ]);
+
+    const ambiguous = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["search", "--bogus", "agent"],
+      },
+    );
+    expect(ambiguous.recovery?.suggested_retry).toBeUndefined();
   });
 
   it("applies runtime unknown-command guidance examples for commander errors", () => {

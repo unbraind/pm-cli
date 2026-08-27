@@ -237,6 +237,32 @@ describe("agent-task transcript token gate", () => {
         ),
       ).toThrow();
     }
+    const validEstimate = accounted.token_accounting.total_estimated_tokens;
+    for (const invalidEstimate of [
+      undefined,
+      validEstimate - 1,
+      validEstimate + 1,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      String(validEstimate),
+    ]) {
+      expect(() =>
+        validateAgentTaskTokenInvocation(
+          validBaseline,
+          {
+            ...validAccounted,
+            stdout: render({
+              ...accounted,
+              token_accounting: {
+                ...accounted.token_accounting,
+                total_estimated_tokens: invalidEstimate,
+              },
+            }),
+          },
+          step,
+        ),
+      ).toThrow();
+    }
     expect(() =>
       validateAgentTaskTokenInvocation(
         { ...validBaseline, stdout: render(accounted) },
@@ -405,7 +431,7 @@ describe("agent-task transcript token gate", () => {
       task_count: 5,
       completed_task_count: 5,
       step_count: 14,
-      retry_count: 1,
+      retry_count: 2,
     });
     const updatedBaseline = JSON.parse(
       await readFile(baselinePath, "utf8"),

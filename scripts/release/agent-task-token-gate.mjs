@@ -194,6 +194,12 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
       `Agent-task transcript step ${step.id} accounting drift: reported=${receipt.total_bytes}, independent=${baselineBytes}`,
     );
   }
+  const expectedEstimatedTokens = Math.ceil(baselineBytes / 4);
+  if (receipt.total_estimated_tokens !== expectedEstimatedTokens) {
+    fail(
+      `Agent-task transcript step ${step.id} token estimate drift: reported=${String(receipt.total_estimated_tokens)}, expected=${expectedEstimatedTokens}`,
+    );
+  }
   const sectionBytes = Object.values(receipt.sections ?? {}).reduce(
     (total, section) =>
       total + (Number.isFinite(section?.bytes) ? section.bytes : 0),

@@ -291,6 +291,11 @@ function assertTranscriptStepOutputContract(
     }
     return;
   }
+  if (errorCode !== undefined || refusalSurface !== undefined) {
+    throw new TypeError(
+      `${field} only refusal steps may declare expected_error_code or expected_refusal_surface`,
+    );
+  }
   const exitContract = resolvePmCommandExitContract(args[0]);
   if (
     !isPmSuccessfulExitCode(exitCode) ||
@@ -421,6 +426,11 @@ function parseAgentTaskTranscript(
       }
     }
     priorSteps.set(step.id, step);
+  }
+  if (steps.at(-1)?.expected_output_kind === "refusal") {
+    throw new TypeError(
+      `tasks.${id} completed task must terminate with successful output`,
+    );
   }
   return { id, description, steps };
 }

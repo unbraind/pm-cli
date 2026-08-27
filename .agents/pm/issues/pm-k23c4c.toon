@@ -2,13 +2,13 @@ id: pm-k23c4c
 title: "GH-1131: macOS Node 24 nightly cannot create the Skills-over-MCP special-file socket fixture"
 description: Nightly Validation run 33085691675 failed only on macos-latest / Node 24 because tests/unit/sdk/mcp/skills.spec.ts binds resource.sock beneath a long temporary skill path. macOS rejects that AF_UNIX path with EINVAL before PmMcpSkillRegistry can exercise the intended special-file rejection contract. Preserve the real non-regular-file security negative control using a platform-safe socket path and prove cleanup plus cross-platform nightly behavior.
 type: Issue
-status: closed
+status: in_progress
 priority: 1
 tags[7]: "area:ci","area:mcp",macos,nightly,portability,security,test-reliability
 created_at: "2026-08-27T16:23:46.474Z"
-updated_at: "2026-08-27T17:39:19.491Z"
-closed_at: "2026-08-27T17:34:31.500Z"
-completed_at: "2026-08-27T17:34:31.500Z"
+updated_at: "2026-08-27T20:30:22.861Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#143da6b99c6d50ff73f411da"
 author: "harness:codex"
 acceptance_criteria: "The special-file negative control executes on macOS, Linux, and Windows without exceeding platform socket-path limits; The test still proves Skills-over-MCP rejects a non-regular resource rather than weakening or skipping the security assertion; Socket and temporary resources are cleaned deterministically on success and failure; Focused tests and the Nightly Validation matrix pass"
 parent: pm-rs9vry
@@ -42,7 +42,6 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/skills.spec.ts,schema,schema,source,local_source_ref
-close_reason: Short native socket fixtures preserve real Skills path-security coverage and eliminate the macOS Node 24 pathname overflow.
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

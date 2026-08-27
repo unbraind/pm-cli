@@ -16,6 +16,7 @@ import {
 } from "../sdk/cli-contracts/agent-output-contracts.js";
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
+import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
 
 interface GuidanceMessage {
   code: string;
@@ -626,19 +627,57 @@ function attachStructuredGuidanceDetails<
   return payload;
 }
 
+const REFUSAL_GLOBAL_OPTION_FLAGS = new Set([
+  "--all",
+  "--author",
+  "--explain",
+  "--full-changed-fields",
+  "--help",
+  "--id-only",
+  "--json",
+  "--lean",
+  "--no-changed-fields",
+  "--no-extensions",
+  "--no-pager",
+  "--output-budget",
+  "--output-cursor",
+  "--output-format",
+  "--output-include",
+  "--output-limit",
+  "--output-row-contract",
+  "--output-session",
+  "--path",
+  "--pm-path",
+  "--profile",
+  "--quiet",
+  "--token-accounting",
+  "--version",
+]);
+
 function resolveRefusalCandidateFlag(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
 ): string | undefined {
   if (message.flag) return message.flag;
-  const isAdmissibleCandidate = (flag: string): boolean =>
-    flag !== "--json" && flag !== "--quiet" && normalizedArgs.includes(flag);
-  const mentionedFlag = `${message.title} ${message.happened}`.match(
-    /--[A-Za-z0-9][A-Za-z0-9_-]*/u,
-  )?.[0];
-  if (mentionedFlag && isAdmissibleCandidate(mentionedFlag)) {
-    return mentionedFlag;
-  }
+  const isAdmissibleCandidate = (flag: string): boolean => {
+    const canonicalFlag = flag.split("=", 1)[0];
+    return (
+      !REFUSAL_GLOBAL_OPTION_FLAGS.has(canonicalFlag) &&
+      normalizedArgs.some(
+        (argument) =>
+          argument === canonicalFlag ||
+          argument.startsWith(`${canonicalFlag}=`),
+      )
+    );
+  };
+  const mentionedFlag = [
+    ...`${message.title} ${message.happened}`.matchAll(
+      /--[A-Za-z0-9][A-Za-z0-9_-]*/gu,
+    ),
+  ]
+    .map((match) => match[0])
+    .find((flag) => isAdmissibleCandidate(flag));
+  if (mentionedFlag) return mentionedFlag;
   return message.recovery?.provided_fields?.find(
     (field) => isAdmissibleCandidate(field),
   );
@@ -651,7 +690,17 @@ function resolveRefusalRejectedValue(
 ): string | undefined {
   if (message.value !== undefined) return message.value;
   if (candidateFlag) {
-    return normalizedArgs[normalizedArgs.indexOf(candidateFlag) + 1];
+    const candidateArgument = normalizedArgs.find(
+      (argument) =>
+        argument === candidateFlag || argument.startsWith(`${candidateFlag}=`),
+    );
+    if (candidateArgument?.startsWith(`${candidateFlag}=`)) {
+      return candidateArgument.slice(candidateFlag.length + 1);
+    }
+    const candidateIndex = normalizedArgs.indexOf(candidateFlag);
+    return candidateIndex >= 0
+      ? normalizedArgs[candidateIndex + 1]
+      : undefined;
   }
   const allowedValues = message.recovery?.allowed_values;
   if (!allowedValues?.length) return undefined;
@@ -1516,6 +1565,40 @@ function buildUnknownOptionNextSteps(
   ].filter((entry): entry is string => typeof entry === "string");
 }
 
+/**
+ * Publish a shell-free correction only when removing the unknown token leaves
+ * positional ownership unambiguous; explicit producer guidance stays authoritative.
+ */
+function resolveUnknownOptionRetry(
+  context: CommanderGuidanceContext,
+  optionName: string,
+): { retryCommand?: string; suggestedRetryArgs?: string[] } {
+  if (context.suggestedRetryCommand !== undefined) {
+    return { retryCommand: context.suggestedRetryCommand };
+  }
+  const normalizedArgs = context.normalizedInvocationArgs;
+  if (normalizedArgs === undefined) return {};
+  const optionIndex = normalizedArgs.findIndex(
+    (argument) =>
+      argument === optionName || argument.startsWith(`${optionName}=`),
+  );
+  if (
+    optionIndex < 0 ||
+    (!normalizedArgs[optionIndex]?.includes("=") &&
+      optionIndex !== normalizedArgs.length - 1 &&
+      normalizedArgs[optionIndex + 1]?.startsWith("-") !== true)
+  ) {
+    return {};
+  }
+  const suggestedRetryArgs = stripGlobalBootstrapTokens(
+    normalizedArgs.filter((_, index) => index !== optionIndex),
+  );
+  return {
+    retryCommand: renderPmCommand(suggestedRetryArgs),
+    suggestedRetryArgs,
+  };
+}
+
 function buildUnknownOptionGuidance(
   message: string,
   commandName: string | undefined,
@@ -1529,7 +1612,10 @@ function buildUnknownOptionGuidance(
   const optionName = unknownOption[1];
   const suggestions =
     normalizeOptionFlags(guidanceContext.unknownOptionSuggestions) ?? [];
-  const retryCommand = guidanceContext.suggestedRetryCommand;
+  const { retryCommand, suggestedRetryArgs } = resolveUnknownOptionRetry(
+    guidanceContext,
+    optionName,
+  );
   if (
     commandName === "update" &&
     (optionName === "--file" || optionName === "--doc")
@@ -1565,6 +1651,8 @@ function buildUnknownOptionGuidance(
     nextSteps,
     recovery: buildCommanderRecoveryPayload(context, {
       suggested_flags: suggestions.length > 0 ? suggestions : undefined,
+      suggested_retry: retryCommand,
+      suggested_retry_args: suggestedRetryArgs,
       candidate_commands: candidateContext.otherCommands,
       candidate_commands_total: candidateContext.candidateTotal || undefined,
       candidate_commands_truncated:
