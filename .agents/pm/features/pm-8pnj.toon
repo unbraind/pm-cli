@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:ci",measurement,simplification
 created_at: "2026-07-11T16:22:48.239Z"
-updated_at: "2026-08-27T17:35:17.272Z"
+updated_at: "2026-08-27T17:46:08.995Z"
 closed_at: "2026-08-27T17:34:29.187Z"
 completed_at: "2026-08-27T17:34:29.187Z"
 author: maintainer-agent
@@ -27,9 +27,10 @@ dependencies[8]{id,kind,created_at}:
   pm-mpbb,implements,"2026-07-26T05:54:46.785Z"
   pm-cxr0jb,verifies,"2026-07-26T05:59:44.678Z"
   pm-kvxqp1,verifies,"2026-07-26T05:59:45.921Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-27T16:25:47.755Z","harness:codex","Start: build a versioned, SDK-owned multi-step agent transcript contract and upgrade the existing token gate to measure complete tasks, recovery retries, output-envelope conformance, and ratcheted bytes/tokens. This is one connected delivery with pm-f05lsg, pm-srns, pm-k23c4c, and pm-fo8g7j."
   "2026-08-27T17:34:22.018Z","harness:codex","Completion evidence: shipped a public SDK-owned versioned transcript parser plus a four-task, eleven-step corpus covering context bootstrap, closed-domain refusal recovery, unknown-option correction, and lifecycle mutation. The mandatory static gate replays independent accounting-off/accounting-on workspaces, verifies output envelopes, exact shell-free retries, mutation receipts, per-step and completed-task ceilings, corpus identity, and a seeded million-token negative control. Final local verification passed 585 files and 8,062 tests at exact 100/100/100/100; all three linked tests passed with sandboxed PM contexts; the gate reports 3,935 composite tokens. Packed npx, packed bunx, and the 88-command dogfood workflow passed."
+  "2026-08-27T17:46:08.995Z","harness:codex","Pre-PR documentation verification: corrected tracker links in docs/OUTPUT_TOKEN_ACCOUNTING.md to the canonical feature and issue directories; all five referenced .toon targets now exist in the repository."
 learnings[1]{created_at,author,text}:
   "2026-08-27T17:34:22.496Z","harness:codex","Completed-task token budgets are trustworthy only when corpus identity, task and step identities, independent transport bytes, self-reported accounting, executable recovery, and a seeded regression are all checked together."
 files[6]{path,scope,note}:

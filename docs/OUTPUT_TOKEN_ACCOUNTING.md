@@ -1,6 +1,6 @@
 # Output Token Accounting
 
-Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon), [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon), [pm-8pnj](../.agents/pm/tasks/pm-8pnj.toon), [pm-f05lsg](../.agents/pm/tasks/pm-f05lsg.toon), and [pm-srns](../.agents/pm/tasks/pm-srns.toon).
+Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon), [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon), [pm-8pnj](../.agents/pm/features/pm-8pnj.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
 
 ## Agent Quick Context
 
