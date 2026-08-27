@@ -432,6 +432,20 @@ describe("SDK output envelope contracts", () => {
       parsePmAgentTaskTranscriptCorpus({
         version: 1,
         tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [refusal, { ...success, id: "unrelated-success" }],
+          },
+        ],
+      }),
+    ).toThrow(
+      "tasks.task.refuse refusal must have a later successful recovery_for step",
+    );
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 1,
+        tasks: [
           { id: "task", description: "x", steps: [success] },
           { id: "task", description: "y", steps: [success] },
         ],

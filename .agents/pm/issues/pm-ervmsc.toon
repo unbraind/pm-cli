@@ -2,27 +2,33 @@ id: pm-ervmsc
 title: Agent-task closeout claims lack linked full-verification commands
 description: "CodeRabbit review on PR #1133 found that pm-8pnj completion comments name exact full coverage, packed npx, packed bunx, and 88-command dogfood evidence while its linked tests record only focused transcript and release commands. Add runnable PM-linked commands and test-run receipts for reproducible claims; document the evidence-before-close ordering lesson without rewriting append-only history."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:governance",evidence,review-feedback,testing
 created_at: "2026-08-27T19:11:55.197Z"
-updated_at: "2026-08-27T21:13:33.341Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#143da6b99c6d50ff73f411da"
+updated_at: "2026-08-27T22:10:54.315Z"
+closed_at: "2026-08-27T22:10:53.657Z"
+completed_at: "2026-08-27T22:10:53.657Z"
 author: "harness:codex"
 acceptance_criteria: "Coverage, npx package smoke, bunx packed acceptance, and dogfood claims have runnable linked PM tests or are corrected; executed test-run receipts are recorded; append-only history is not rewritten; future evidence is recorded before close and release"
 parent: pm-8pnj
 resolution: Appended reproducible feature evidence without rewriting history and established evidence-before-close ordering for all new review findings.
 expected_result: Every broad closeout claim is reproducible from linked PM commands and append-only evidence preserves lifecycle ordering.
 actual_result: "pm-8pnj now links and records passing exact coverage, npx package smoke, 88-command package-first dogfood, and packed bunx acceptance alongside its focused gates."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,verifies,"2026-08-27T19:15:48.581Z","harness:codex","cli:update:dep",detected
   pm-kpftft,discovered_from,"2026-08-27T19:15:48.581Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+  pm-fo8g7j,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+  pm-k23c4c,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+  pm-ok2kdn,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+  pm-wa39rl,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-08-27T19:29:06.473Z","harness:codex","Evidence: pm test pm-8pnj --run --progress executed all seven linked commands successfully. Exact coverage is 59,885/59,885 statements, 45,077/45,077 branches, 12,452/12,452 functions, and 57,669/57,669 lines; packed npx, 88-command package-first dogfood, and packed bunx acceptance all exited 0."
   "2026-08-27T19:30:08.193Z","harness:codex","Investigation note: the initial linked history-drift command refused under schema context because the source tracker has 2,572 items and the sandbox schema context has zero. The link now explicitly declares pm_context_mode=tracker; no trust override or real tracker mutation was used by the test runner."
   "2026-08-27T20:37:19.855Z","harness:codex","Corrective lifecycle started after exact-head review: preserve all earlier hash-chain entries, append current verification and hosted receipts before the new close events, then release the reopened canonical items. No prior close/release evidence will be rewritten."
   "2026-08-27T21:13:32.776Z","harness:codex","Corrective lifecycle evidence 2026-08-27: the canonical items were reopened, claimed, and kept in progress while implementation and all available local verification were appended. pm test pm-8pnj then recorded seven passing linked commands before any renewed close or release, including exact coverage plus real packed npx, bunx, and package-first temporary-directory acceptance. No historical event was rewritten."
+  "2026-08-27T21:32:00.011Z","harness:codex","Final lifecycle proof 2026-08-27: pm-wa39rl, pm-ok2kdn, pm-fo8g7j, and pm-k23c4c were each closed and released only after their focused, exact-coverage, package, and where applicable full hosted-matrix evidence had been appended. This corrective sequence preserves every prior hash-chained event."
+  "2026-08-27T22:10:52.786Z","harness:codex","Graph evidence: base head had 1,342 prose-edge gaps; the lifecycle-proof comment added exactly four untyped pairs from pm-ervmsc to pm-wa39rl, pm-ok2kdn, pm-fo8g7j, and pm-k23c4c. Added directed verifies edges for those four evidence-backed relationships; no generic or inverse duplicate edges were added."
 learnings[2]{created_at,author,text}:
   "2026-08-27T19:29:07.001Z","harness:codex","Lifecycle evidence is append-only: gate evidence and reproducible test links should be recorded before close and release. When a review detects an older ordering defect, append follow-up receipts and govern the recurrence; never rewrite the original history."
   "2026-08-27T21:13:33.341Z","harness:codex","Closeout evidence is a lifecycle invariant, not just prose quality: every reproducible command and result available at delivery time must be linked and appended before close/release so history order itself proves the claim."
@@ -53,6 +59,7 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       pm validate --check-history-drift,tracker,tracker,source,local_source_ref
+close_reason: "Done: final lifecycle-proof prose is backed by four directed verifies edges, restoring graph composition without changing its threshold."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

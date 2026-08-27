@@ -2,13 +2,13 @@ id: pm-fo8g7j
 title: Unknown-option refusals report the first valid provided flag as the failing surface
 description: "A real invocation of pm search with the unsupported --include-body option emits code=unknown_option and correctly names --include-body in its title/detail, but refusal.surface is --status because the shared envelope builder selects the first provided field. That machine-readable contradiction sends SDK, MCP, and CLI agents toward a valid option instead of the rejected one and undermines recovery-closure scoring. Derive the refused surface and rejected value from the actual unknown-option diagnostic while preserving redaction and fallback behavior."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,recovery,structured-errors
 created_at: "2026-08-27T16:23:50.108Z"
-updated_at: "2026-08-27T21:13:32.251Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#143da6b99c6d50ff73f411da"
+updated_at: "2026-08-27T21:31:58.169Z"
+closed_at: "2026-08-27T21:31:57.446Z"
+completed_at: "2026-08-27T21:31:57.446Z"
 author: "harness:codex"
 acceptance_criteria: "unknown_option refusal.surface equals the actual rejected option regardless of valid options that precede it; refusal.rejected_value and recovery metadata remain internally consistent and redaction-safe; CLI JSON, SDK normalization, and executable recovery-corpus tests cover mixed valid-plus-unknown option orderings; The regression is represented in task-transcript and refusal-closure assurance"
 parent: pm-f05lsg
@@ -47,6 +47,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/agent-task-transcripts.json,project,real unknown-option regression workflow
+close_reason: "Completed corrective closeout: refusal surfaces, inline rejected values, root-global filtering, and unambiguous shell-free recovery are covered by focused replay, manual package acceptance, and exact repository coverage recorded before closure."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

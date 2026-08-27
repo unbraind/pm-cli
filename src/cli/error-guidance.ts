@@ -627,33 +627,6 @@ function attachStructuredGuidanceDetails<
   return payload;
 }
 
-const REFUSAL_GLOBAL_OPTION_FLAGS = new Set([
-  "--all",
-  "--author",
-  "--explain",
-  "--full-changed-fields",
-  "--help",
-  "--id-only",
-  "--json",
-  "--lean",
-  "--no-changed-fields",
-  "--no-extensions",
-  "--no-pager",
-  "--output-budget",
-  "--output-cursor",
-  "--output-format",
-  "--output-include",
-  "--output-limit",
-  "--output-row-contract",
-  "--output-session",
-  "--path",
-  "--pm-path",
-  "--profile",
-  "--quiet",
-  "--token-accounting",
-  "--version",
-]);
-
 function resolveRefusalCandidateFlag(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
@@ -662,7 +635,10 @@ function resolveRefusalCandidateFlag(
   const isAdmissibleCandidate = (flag: string): boolean => {
     const canonicalFlag = flag.split("=", 1)[0];
     return (
-      !REFUSAL_GLOBAL_OPTION_FLAGS.has(canonicalFlag) &&
+      stripGlobalBootstrapTokens([canonicalFlag]).length > 0 &&
+      !["--help", "--no-changed-fields", "--version"].includes(
+        canonicalFlag,
+      ) &&
       normalizedArgs.some(
         (argument) =>
           argument === canonicalFlag ||

@@ -2,36 +2,43 @@ id: pm-wa39rl
 title: Completed-task transcripts accept terminal refusals and contradictory recovery metadata
 description: "Greptile and CodeRabbit exact-head review on PR #1133 found that the public transcript parser can accept a task ending in refusal, successful steps can carry refusal-only metadata, and the retry-option fixture lacks its recovery_for edge. Enforce terminal-success topology and mutually exclusive refusal/recovery metadata in the SDK contract and replay corpus."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:contracts","area:sdk",recovery,review-feedback,testing
 created_at: "2026-08-27T20:29:24.256Z"
-updated_at: "2026-08-27T21:13:28.188Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#143da6b99c6d50ff73f411da"
+updated_at: "2026-08-27T22:07:31.275Z"
+closed_at: "2026-08-27T22:07:30.761Z"
+completed_at: "2026-08-27T22:07:30.761Z"
 author: "harness:codex"
 acceptance_criteria: Every completed task terminates in a non-refusal output; successful outputs reject refusal-only metadata; every corrected retry binds to the refusal it recovers; adversarial parser and replay regressions pass
 parent: pm-f05lsg
 risk: high
 confidence: high
 severity: high
+resolution: "Enforced complete refusal-recovery topology, terminal-success semantics, and refusal metadata exclusivity in the public transcript parser and replay contract."
 expected_result: The public SDK transcript contract cannot represent an unsuccessfully terminated completed task or contradictory refusal metadata.
 actual_result: The public transcript parser now rejects completed tasks whose terminal step is a refusal and rejects refusal-only metadata on successful steps; the canonical unknown-option retry is bound to refuse-option and replays through shell-free suggested_retry_args.
 component: sdk-output-contracts
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,verifies,"2026-08-27T20:29:24.256Z","harness:codex","cli:create:dep",detected
   pm-o360q6,recurs_from,"2026-08-27T20:29:24.256Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-27T20:29:24.256Z","harness:codex","Duplicate check evidence: all-status searches for terminal refusal completion, refusal metadata on successful transcripts, and retry recovery binding found the canonical pm-f05lsg/pm-8pnj lineage plus closed precursor pm-o360q6, but no item covering this combined terminal-topology recurrence. Review sources: Greptile and CodeRabbit on PR #1133 head baae93c."
   "2026-08-27T21:13:27.651Z","harness:codex","Evidence 2026-08-27: focused parser/error-guidance/replay suite passed 74/74 tests. Repository exact coverage passed 8,067/8,067 tests with statements 59,914/59,914, branches 45,102/45,102, functions 12,459/12,459, and lines 57,696/57,696. The versioned replay passes five completed tasks, 14 steps, two executable retries, and a 4,349-token composite ceiling at digest sha256:0eeb3296a4bcd5edeb13f6488ae0ebc806adc96b6caa89d87a0f528d37af5c4e."
+  "2026-08-27T21:22:06.939Z","harness:codex","Exact-head recurrence 2026-08-27 (Greptile review thread PRRT_kwDORSgRDc6c-7LC): verified valid. Terminal-success alone does not prove recovery closure because an earlier refusal can be followed by an unrelated success without recovery_for. Extend the existing terminal-recovery issue, rather than creating a duplicate, so every refusal in a completed task must have a later successful recovery edge; add the missing adversarial parser case and rerun replay plus exact coverage."
+  "2026-08-27T21:31:37.739Z","harness:codex","Final recurrence evidence 2026-08-27: the parser now rejects any completed task containing an unrecovered refusal, even when an unrelated successful step terminates the transcript. The PM-linked focused suite passed 74/74 tests after this change; repository exact coverage passed 8,067/8,067 tests with statements 59,920/59,920, branches 45,108/45,108, functions 12,461/12,461, and lines 57,702/57,702."
+  "2026-08-27T21:44:17.171Z","harness:codex","Implementation note: the valid refusal-recovery recurrence exposed an architectural bundling issue: SDK-only transcript parsing currently shares src/sdk/output-contracts.ts with every CLI output envelope. Split the transcript contract behind the aggregate SDK entrypoint, preserve the public surface, and prove the CLI transport floor before re-closing."
+  "2026-08-27T22:07:24.312Z","harness:codex","Final architecture evidence 2026-08-28: the transcript parser is isolated under src/sdk/agent while remaining exported from both @unbrained/pm-cli/sdk and @unbrained/pm-cli/sdk/contracts. The public surface snapshot reports zero classified changes; 10 SDK entrypoint budgets and all six CLI transport-floor operations pass. Static quality reports 567/567 source docstrings, 4,507/4,507 exported docstrings, 8,184/8,184 member docstrings, zero directory-load/complexity/duplication/import-boundary violations. Exact repository coverage passed 8,067/8,067 tests with statements 59,918/59,918, branches 45,110/45,110, functions 12,461/12,461, and lines 57,700/57,700."
 learnings[1]{created_at,author,text}:
   "2026-08-27T21:13:28.188Z","harness:codex","A task-level completed boolean is insufficient evidence of successful completion: transcript validity must require a successful terminal step, mutually exclusive refusal metadata, and an explicit recovery_for edge for every retry."
-files[2]{path,scope,note}:
+files[4]{path,scope,note}:
   src/cli/error-guidance.ts,project,shell-free unknown-option recovery and global-flag attribution
+  src/sdk/agent/task-transcript-contracts.ts,project,isolated public transcript parser and refusal-recovery invariants
+  src/sdk/contracts.ts,project,preserve transcript contracts on the public contract-data entrypoint
   src/sdk/output-contracts.ts,project,terminal-success and refusal-metadata parser invariants
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-27T20:37:16.351Z",local_mutation,feat/agent-transcript-recovery-contracts,Parser recovery and replay regressions
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtbzif8s-bznldw
     kind: test
     status: passed
@@ -54,9 +61,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtc1f467-vq52og
+    kind: test
+    status: passed
+    started_at: "2026-08-27T21:30:53.217Z"
+    finished_at: "2026-08-27T21:31:16.831Z"
+    recorded_at: "2026-08-27T21:31:16.831Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/agent-task-transcripts.json,project,bound executable unknown-option recovery
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,terminal task and receipt integrity contract
+close_reason: "Done: every refusal requires a later successful recovery edge, adversarial recurrence tests pass, the public contract surface is preserved, and SDK-only parsing no longer burdens ordinary CLI cold starts; exact 100/100/100/100 coverage passes."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened
