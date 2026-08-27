@@ -2388,7 +2388,12 @@ function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): Core
 }
 
 function shouldAttachRichHelpTextForInvocation(invocationArgv: string[]): boolean {
-  return invocationArgv.length === 0 || parseBootstrapHelpRequest(invocationArgv).requested;
+  return (
+    invocationArgv.length === 0 ||
+    parseBootstrapHelpRequest(invocationArgv).requested ||
+    (invocationArgv.includes("--explain") &&
+      parseBootstrapCommandName(invocationArgv) === undefined)
+  );
 }
 
 const IDEMPOTENT_TOP_LEVEL_REGISTRATION = Symbol("pmCliIdempotentTopLevelRegistration");

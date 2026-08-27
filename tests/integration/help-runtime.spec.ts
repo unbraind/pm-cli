@@ -75,6 +75,13 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         expect(standaloneDiscovery.stdout).toContain(
           "Usage: pm [options] [command]",
         );
+        if (discoveryFlag === "--explain") {
+          expect(standaloneDiscovery.stdout).toContain(
+            "Why use this command:",
+          );
+          expect(standaloneDiscovery.stdout).toContain("Examples:");
+          expect(standaloneDiscovery.stdout).toContain("Tips:");
+        }
       }
 
       const lifecycleList = context.runCli(["list", "--all"]);

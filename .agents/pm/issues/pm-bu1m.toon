@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",defect-class
 created_at: "2026-07-17T04:41:29.345Z"
-updated_at: "2026-08-26T23:26:28.764Z"
+updated_at: "2026-08-27T06:47:20.604Z"
 closed_at: "2026-08-26T22:51:41.369Z"
 completed_at: "2026-08-26T22:51:41.369Z"
 author: maintainer-agent
@@ -45,13 +45,14 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-21T07:33:02.140Z",codex-root-20260721,"Evidence: current runtime already returned exit 2 for arbitrary and plausible unknown --help paths; added the missing real-runtime regression covering definitely-not-a-command and link so the structured usage contract cannot regress."
   "2026-07-21T10:13:38.698Z",codex-root-20260721,"Hosted CodeRabbit remediation: canonical title now avoids angle-bracket shell notation so the generated Markdown changelog remains well formed."
   "2026-08-26T21:27:34.094Z","harness:codex","GitHub intake: GH-1125 https://github.com/unbraind/pm-cli/issues/1125. Complete all-status census found this closed item as the canonical unknown-help owner; no duplicate created. Red reproduction: pm learn --help exits 2 with the correct did-you-mean on stderr but also emits full root help on stdout, making the probe look successful to stdout-only consumers."
   "2026-08-26T21:34:26.337Z","harness:codex","TDD red: real-runtime unknown-help regression now asserts stdout never contains root usage; arbitrary, link, and learn probes still leak the root help before the structured usage error."
   "2026-08-26T22:51:36.963Z","harness:codex","Evidence: unknown help paths now enter the structured Commander error boundary without rendering root usage first. Fresh-directory pm learn --help exited 2, wrote 0 stdout bytes, and emitted the learnings suggestion and recovery bundle on stderr; linked sandbox-safe suites passed 1/1 and 132/132. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean."
   "2026-08-26T23:26:28.764Z","harness:codex","Hosted exact-head remediation: PR #1128 static CI correctly failed closed because this reopened production defect lacked escape_class and structured gate_evidence. Added production_defect classification and bound the fix to the runtime stdout-isolation negative control, local defect-evidence and exact-coverage gates, and hosted static/coverage checks; no waiver is used."
+  "2026-08-27T06:47:20.604Z","harness:codex","Review disposition (PR #1128 exact-head round): history is append-only and must not be reordered. Live state is closed/fixed with a complete close_reason. The earlier closure-metadata gap was repaired through the supported index 33 update at 2026-08-26T22:52:02.127Z changing resolution/expected_result/actual_result after the historical close. Record-integrity and history-drift gates pass, so no immutable-history rewrite is warranted."
 learnings[1]{created_at,author,text}:
   "2026-08-26T22:51:37.538Z","harness:codex",Commander help discovery must classify an unresolved command path before help rendering; otherwise a structured refusal can be correct while stray root help still corrupts stdout transport.
 files[4]{path,scope,note}:

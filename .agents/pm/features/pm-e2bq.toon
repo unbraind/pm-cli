@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:35.309Z"
-updated_at: "2026-08-27T05:22:50.470Z"
-closed_at: "2026-08-27T05:22:49.855Z"
-completed_at: "2026-08-27T05:22:49.855Z"
+updated_at: "2026-08-27T06:47:22.982Z"
+closed_at: "2026-08-27T06:47:22.410Z"
+completed_at: "2026-08-27T06:47:22.410Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm --help renders one screen listing canonical nouns only; pm help --all lists everything incl. aliases marked deprecated; help/completions/docs command tables generated from the contract table with a drift gate; after-measurement (pm-a22j script) shows reduced default help + contracts token cost
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at}:
   pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z"
   pm-1kxs,implements,"2026-07-25T06:28:03.187Z"
   pm-z436,implements,"2026-07-26T05:49:54.251Z"
-comments[18]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-08-26T21:27:35.154Z","harness:codex","GitHub intake: GH-1127 https://github.com/unbraind/pm-cli/issues/1127. Reused the exact tiered-help feature. Red reproduction: default help intentionally stays at 14 canonical commands, but pm help --all is not declared and still returns only the same 14-command view instead of the complete standard/full surface."
   "2026-08-26T21:34:27.309Z","harness:codex","TDD red: help presentation and structured-help specs prove --all still filters to core commands and does not expose deprecated alias lifecycle metadata."
   "2026-08-26T22:51:37.953Z","harness:codex","Evidence: root help is now tiered: fresh-directory structured acceptance exposed 14 default subcommands versus 69 with --all, plus 23 lifecycle-described command aliases; package help exposed 15 lifecycle subcommands including install and upgrade. The linked sandbox-safe suite passed 239/239. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, command grammar 164/164, flag parity 2839/2839, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean."
@@ -42,6 +42,9 @@ comments[18]{created_at,author,text}:
   "2026-08-27T04:58:01.853Z","harness:codex","Review TDD intake: CodeRabbit exact-head review 5037361338 identified missing root --all discovery in Zsh and Fish completion surfaces."
   "2026-08-27T05:00:31.251Z","harness:codex","TDD red: root full-discovery completion assertion failed because generated Zsh and Fish global option lists omit --all; Bash already inherits it from the root flag contract."
   "2026-08-27T05:22:45.459Z","harness:codex","Review closure evidence: generated Zsh and Fish completions now expose root --all alongside Bash so full public discovery is reachable across supported shells. Focused linked suites passed 389/389 and repository coverage passed 8,037/8,037 at exact 100/100/100/100. Fresh temp guide-shell installation confirmed the exact root --all descriptions in Zsh and Fish output."
+  "2026-08-27T06:19:56.840Z","harness:codex","TDD red for CodeRabbit review 5037755674: in-process standalone pm --explain renders root usage but omits Why use this command, Examples, and Tips because rich help is not attached before outputHelp."
+  "2026-08-27T06:31:47.572Z","harness:codex","Quality-gate red evidence: the first repository lint run rejected runPmCliInReproducibleContext at complexity 17 (limit 16) after standalone --explain support. The decision now lives in the existing shouldAttachRichHelpTextForInvocation policy helper, with direct root/global-option unit cases; the orchestration function returns below the ceiling without suppressions."
+  "2026-08-27T06:47:18.590Z","harness:codex","Exact-head evidence: standalone pm --explain now attaches the same rich root Why/Examples/Tips bundle as help requests, including with leading global options. The policy-helper refactor keeps orchestration complexity within the mandatory limit. Linked plan passed 5/5 commands and 562 assertions; full repository proof passed 8,038 tests and exact 100/100/100/100 coverage; fresh temp runtime acceptance passed."
 learnings[1]{created_at,author,text}:
   "2026-08-26T22:51:38.552Z","harness:codex",A compact default help surface and an explicit full-discovery surface can share one command registry when visibility selection is centralized and structured help carries alias lifecycle metadata.
 files[13]{path,scope,note}:
@@ -58,12 +61,13 @@ files[13]{path,scope,note}:
   tests/unit/cli/help-command-path-resolution.spec.ts,project,Proves alias metadata and exact path resolution
   tests/unit/cli/help-content.spec.ts,project,Proves default and full help selection
   tests/unit/commands/completion-command.spec.ts,project,Root --all completion regression
-tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,"harness:codex","2026-08-26T22:49:41.971Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,240,"harness:codex","2026-08-27T01:35:10.515Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts,project,240,"harness:codex","2026-08-27T04:08:41.605Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-08-27T05:04:58.960Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[7]:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,"harness:codex","2026-08-27T06:18:42.081Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[8]:
   - run_id: test-local-mtaotmxu-i63nmv
     kind: test
     status: passed
@@ -149,7 +153,22 @@ test_runs[7]:
       node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtb55u7r-q67fyj
+    kind: test
+    status: passed
+    started_at: "2026-08-27T06:27:01.489Z"
+    finished_at: "2026-08-27T06:28:16.310Z"
+    recorded_at: "2026-08-27T06:28:16.310Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CLI_GRAMMAR.md,project,Documents default versus full command discovery
-close_reason: "Completed cross-shell root full-discovery completion parity with Bash, Zsh, and Fish regression and manual acceptance evidence."
+close_reason: "Completed standalone rich explain behavior within complexity limits with linked, full-suite, and temporary-runtime proof."
 body: ""

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:extensions",simplification
 created_at: "2026-07-05T04:53:32.408Z"
-updated_at: "2026-08-27T05:22:46.686Z"
-closed_at: "2026-08-27T05:22:46.067Z"
-completed_at: "2026-08-27T05:22:46.067Z"
+updated_at: "2026-08-27T06:47:21.793Z"
+closed_at: "2026-08-27T06:47:21.185Z"
+completed_at: "2026-08-27T06:47:21.185Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm package covers the full extension/install/upgrade verb set with flag parity; extension/install/upgrade spellings alias-shimmed with identical output; scope semantics (project/global) unchanged; contracts/MCP/completions/docs regenerated; existing extension+install+upgrade specs pass via aliases
@@ -46,7 +46,7 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[18]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-07-07T17:45:24.101Z",codex-agent,"Related SDK evidence: this PR does not complete the CLI namespace consolidation, but it preserves package vocabulary in the SDK via PmClient.package and top-level packageLifecycle helpers while exposing package install/uninstall/doctor/manage/describe/reload/catalog/activate/deactivate/upgrade primitives. pm-tnud remains open because hidden alias shims, CLI full verb parity, contracts/MCP/completions regeneration, and install/upgrade alias specs are still outstanding."
   "2026-07-07T18:07:11.560Z",codex-agent,"Bundle note: SDK package lifecycle helpers now preserve package vocabulary in PmClient.package(...) even if caller options include a conflicting vocabulary value; this supports package namespace consistency while broader CLI namespace consolidation remains open."
   "2026-07-22T06:10:48.766Z",codex-root-20260722,"Dogfood finding from PR #643 (duplicate-safe reuse): unversioned pm install npm:pm-changelog --project preserved the existing managed 2026.7.18 package even after npm latest advanced to 2026.7.22, while a fresh CI checkout installed 2026.7.22. Explicit npm:pm-changelog@2026.7.22 upgraded correctly. The consolidated pm package install/upgrade surface should make current-versus-latest visible and give agents an explicit idempotent refresh path; this belongs to the existing pm-tnud lineage, not a duplicate item."
@@ -65,6 +65,8 @@ comments[18]{created_at,author,text}:
   "2026-08-27T04:57:54.486Z","harness:codex","Review TDD intake: CodeRabbit exact-head review 5037361338 identified lifecycle documentation, positional alias, upgrade scope alias, and upgrade intent contract gaps."
   "2026-08-27T05:00:29.485Z","harness:codex","TDD red: review regression run failed lifecycle alias positional metadata (install returned undefined), nested upgrade scope aliases (project/local/global absent), and upgrade intent summaries (generic Run package upgrade). The combined focused command reported 7 expected failures and 216 passes."
   "2026-08-27T05:22:43.998Z","harness:codex","Review closure evidence: implemented package lifecycle alias positional parity, nested project/local/global scope parity, specific install/upgrade operation intents, safe wildcard documentation, and regenerated full SDK contract fixtures. Focused linked suites passed 418/418; full lint/static quality passed; repository coverage passed 8,037/8,037 tests across 585 files at exact 100/100/100/100 (59,704 statements, 44,940 branches, 12,419 functions, 57,492 lines); typecheck, dependency audit, secret scan, and docs-links gate passed. Fresh temp acceptance at /tmp/pm-cli-review-e2e-Cgqkrk confirmed install/upgrade targets and specific intents from built CLI contracts."
+  "2026-08-27T06:19:56.323Z","harness:codex","TDD red for CodeRabbit review 5037755674: runtime alias regression shows install is exposed by both package and package install; Bash, Zsh, and Fish lifecycle completion assertions show migrate is absent. Focused run: 5 intended failures, 144 passes across alias, completion, and standalone help suites."
+  "2026-08-27T06:47:18.052Z","harness:codex","Exact-head evidence: aggregate package aliases are now only extension/packages while package install alone owns install; extension/package shell completion action sets include migrate. Focused contract/completion/SDK linked plan passed 5/5 commands and 578 assertions. Full repository proof passed 585 files, 8,038 tests, exact 100/100/100/100 coverage, lint/static/type/security/docs gates, and fresh temp acceptance across bash/zsh/fish plus runtime contract JSON."
 files[40]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.8.17 managed package provenance
   CHANGELOG.md,project,Generated closeout changelog for canonical package lifecycle and Beads migration delivery
@@ -106,12 +108,13 @@ files[40]{path,scope,note}:
   tests/unit/sdk/agent/closed-domain-contracts.spec.ts,project,Canonical upgrade closed-domain coverage
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Canonical package lifecycle implementation and contract proof
   tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,Proves flat canonical package-upgrade dispatch is dry-run and scope safe
-tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,240,"harness:codex","2026-08-26T19:58:07.186Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240,"harness:codex","2026-08-26T23:41:57.492Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/commands/upgrade-command.spec.ts,project,240,"harness:codex","2026-08-27T00:27:27.412Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,240,"harness:codex","2026-08-27T00:43:28.281Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[5]:
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,240,"harness:codex","2026-08-27T06:18:40.853Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[6]:
   - run_id: test-local-mtakifr2-0vmgwd
     kind: test
     status: passed
@@ -179,11 +182,26 @@ test_runs[5]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/commands/upgrade-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtb5484v-5s38ab
+    kind: test
+    status: passed
+    started_at: "2026-08-27T06:24:57.998Z"
+    finished_at: "2026-08-27T06:27:01.039Z"
+    recorded_at: "2026-08-27T06:27:01.039Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/commands/upgrade-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,schema,schema,source,local_source_ref
 docs[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/QUICKSTART.md,project,Canonical package lifecycle guidance and generated routing evidence
   README.md,project,Canonical package lifecycle guidance and generated routing evidence
-close_reason: "Completed review-driven package lifecycle contract parity across aliases, nested scope options, specific operation intents, wildcard documentation, fixtures, and tests; all focused, static, full coverage, and manual acceptance gates pass."
+close_reason: "Completed exact lifecycle alias ownership and migrate completion coverage with linked, full-suite, and temporary-runtime proof."
 body: ""

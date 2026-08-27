@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",output-contract,token-efficiency
 created_at: "2026-08-07T11:16:55.129Z"
-updated_at: "2026-08-27T05:22:49.226Z"
+updated_at: "2026-08-27T06:47:20.105Z"
 closed_at: "2026-08-27T05:22:48.573Z"
 completed_at: "2026-08-27T05:22:48.573Z"
 author: "harness:claude-code"
@@ -41,7 +41,7 @@ dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-x4nn3z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-ydshl9,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-yql1,implements,"2026-08-26T21:27:30.928Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-08-07T14:58:02.927Z","harness:codex","Final evidence: get projection now accepts bare item fields and item.<field>, supports full item and present sections, rejects unknown or conflicting selectors with stable usage guidance, and emits exact omission receipts. CLI/SDK integration passed inside the 445-file, 6,938-test suite; coverage is 49,824/49,824 statements, 36,260/36,260 branches, 10,203/10,203 functions, and 48,261/48,261 lines."
   "2026-08-07T15:11:53.205Z","harness:codex","PR #929 review correctly noted that the conflict is full item plus projected item fields, not full sections plus fields. Reopened for the precise shared refusal text and test assertion."
   "2026-08-07T15:24:32.605Z","harness:codex","Review implementation evidence: ambiguous get projection refusal now names the exact conflict—a full item cannot be mixed with projected item fields—and the SDK negative contract asserts that vocabulary."
@@ -55,6 +55,7 @@ comments[13]{created_at,author,text}:
   "2026-08-27T04:57:59.975Z","harness:codex","Review TDD intake: CodeRabbit exact-head review 5037361338 identified mixed item/collection selector loss and explicit fields overwrite in get projection forwarding."
   "2026-08-27T05:00:30.590Z","harness:codex","TDD red: mixed outputInclude item,comments,item.learnings left preexisting fields=notes unchanged, proving non-item selectors were not forwarded and merged before get execution."
   "2026-08-27T05:22:44.934Z","harness:codex","Review closure evidence: SDK get projection preprocessing now removes only the item execution selector, forwards collection selectors such as comments, and deduplicates them with pre-existing fields. Focused linked suite passed 13/13 and repository coverage passed 8,037/8,037 at exact 100/100/100/100. Fresh built-SDK acceptance produced selectors=[item,comments] and fields=notes,comments."
+  "2026-08-27T06:47:20.105Z","harness:codex","Review disposition (PR #1128 exact-head round): history is append-only and must not be reordered. Live state is closed/fixed with a complete close_reason. The earlier closure-metadata gap was repaired through supported update events (including index 42 at 2026-08-26T22:52:01.591Z changing resolution/expected_result/actual_result), and the item was subsequently closed again at index 51 with final metadata already present. Record-integrity and history-drift gates pass, so no immutable-history rewrite is warranted."
 learnings[4]{created_at,author,text}:
   "2026-08-07T14:58:03.382Z","harness:codex",Entity read projection must derive its selectable top-level vocabulary from the actual result envelope while keeping item-field vocabulary stable; otherwise a selector either lies about absent data or silently disappears.
   "2026-08-07T15:48:49.314Z","harness:codex",Projection conflicts should name the exact entity and depth pair so an agent can repair the selector without translating generic section terminology.

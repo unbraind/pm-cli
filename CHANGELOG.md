@@ -10,8 +10,8 @@
 
 ### Fixed
 
-- pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 - GH-859: pm-beads source export can omit Beads comment bodies and events ([pm-tpwde6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tpwde6.toon))
+- pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 - GH-860: pm-beads --preserve-source-ids changes source ID casing ([pm-f7jj9b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7jj9b.toon))
 - GH-862: pm-beads must map Beads close reasons into native resolution metadata ([pm-gus5ft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gus5ft.toon))
 - GH-1118: natural-language word-number titles trigger duplicate issue-code false positives ([pm-blvfye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-blvfye.toon))
@@ -1484,6 +1484,7 @@
 
 ### Added
 
+- pm package/extension init --capability profile: scaffold a project-profile starter package ([pm-h2hk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h2hk.toon))
 - Describe --markdown writes reference docs to a file ([pm-u2tm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u2tm.toon))
 - Complete scaffold capability matrix: --capability renderers/parser/preflight/services starters ([pm-i5p5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i5p5.toon))
 - Scaffolded & authored command-bearing extensions reliably activate for their own commands ([pm-yxb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yxb5.toon))
@@ -1491,7 +1492,6 @@
 - pm next: recommend the next actionable (unblocked, ready) work item with rationale + blocked companion ([pm-nj90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nj90.toon))
 - Add pm package / pm packages shell completion (bash/zsh/fish), including the package-only --declarative flag ([pm-mthy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mthy.toon))
 - Project profile author-time validation: lintProjectProfile + assertProjectProfile + pm profile lint ([pm-j1fj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-j1fj.toon))
-- pm package/extension init --capability profile: scaffold a project-profile starter package ([pm-h2hk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h2hk.toon))
 - SDK + CLI: render extension/package surfaces to Markdown reference docs (renderExtensionSurfaceMarkdown + describe --markdown) ([pm-dmum](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dmum.toon))
 - pm package/extension init --capability schema: scaffold custom item type/field/migration starter ([pm-d1ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-d1ig.toon))
 - First-party baseline profile package built on public SDK primitives ([pm-a7o4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a7o4.toon))

@@ -847,7 +847,7 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ canonical: "context", aliases: ["ctx"] }),
         expect.objectContaining({
           canonical: "package",
-          aliases: ["extension", "packages", "install"],
+          aliases: ["extension", "packages"],
         }),
       ]),
     );
@@ -1930,7 +1930,7 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ canonical: "context", aliases: ["ctx"] }),
         expect.objectContaining({
           canonical: "package",
-          aliases: ["extension", "packages", "install"],
+          aliases: ["extension", "packages"],
         }),
       ]),
     );

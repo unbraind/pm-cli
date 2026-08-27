@@ -1500,6 +1500,8 @@ describe("CLI main bootstrap helper coverage", () => {
 
     expect(_testOnly.shouldAttachRichHelpTextForInvocation([])).toBe(true);
     expect(_testOnly.shouldAttachRichHelpTextForInvocation(["create", "--help"])).toBe(true);
+    expect(_testOnly.shouldAttachRichHelpTextForInvocation(["--explain"])).toBe(true);
+    expect(_testOnly.shouldAttachRichHelpTextForInvocation(["--json", "--explain"])).toBe(true);
     expect(_testOnly.shouldAttachRichHelpTextForInvocation(["create"])).toBe(false);
     expect(_testOnly.shouldRegisterDynamicExtensionPaths(new Command(), ["--version"])).toBe(false);
     expect(_testOnly.shouldRegisterDynamicExtensionPaths(new Command(), ["create"])).toBe(true);

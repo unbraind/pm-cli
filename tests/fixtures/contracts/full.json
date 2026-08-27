@@ -1200,8 +1200,7 @@
     {
       "aliases": [
         "extension",
-        "packages",
-        "install"
+        "packages"
       ],
       "canonical": "package",
       "contracts": [

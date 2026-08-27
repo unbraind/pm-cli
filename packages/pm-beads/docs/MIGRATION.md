@@ -25,9 +25,10 @@ Successful output includes `complete: true`, source and imported counts for
 each relation, and an exact `id_mapping`. Source IDs are preserved only when
 they are safe path identifiers and do not collide case-insensitively with one
 another or with the target tracker. Comments remain comments, Beads events are
-stored as structured JSON notes, dependencies and labels retain their source
-identity, and a terminal Beads close reason becomes the pm resolution when no
-explicit source resolution exists.
+stored as structured JSON notes, dependencies retain their source identity,
+label text is normalized to canonical lowercase pm tags, and a
+terminal Beads close reason becomes the pm resolution when no explicit source
+resolution exists.
 
 Verify representative records and the final tracker after import:
 

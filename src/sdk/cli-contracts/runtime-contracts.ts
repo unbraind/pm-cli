@@ -686,7 +686,7 @@ const CANONICAL_COMMAND_ALIASES: CommandAliasSurface[] = [
   },
   {
     canonical: "package",
-    aliases: ["extension", "packages", "install"],
+    aliases: ["extension", "packages"],
   },
 ];
 

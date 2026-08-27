@@ -398,6 +398,7 @@ export async function runGuideChecks(failures) {
     PM_PATH: path.join(tempRoot, "project", ".agents", "pm"),
     PM_GLOBAL_PATH: path.join(tempRoot, "global"),
     PM_AUTHOR: "docs-skills-gate",
+    PM_CLI_PACKAGE_ROOT: REPO_ROOT,
   };
   try {
     initializeGuideRuntime(runtimeEnv);
