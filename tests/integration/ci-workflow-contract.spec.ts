@@ -725,6 +725,34 @@ describe("GitHub workflow contract", () => {
     expect("! npm publish --access public").toMatch(untaggedNpmPublish);
   });
 
+  it("budgets the serial auto-release and exact-artifact acceptance workflows", async () => {
+    const releaseWorkflow = parse(
+      await readFile(
+        path.resolve(repoRoot, ".github/workflows/release.yml"),
+        "utf8",
+      ),
+    ) as {
+      jobs?: { release?: { "timeout-minutes"?: unknown } };
+    };
+    const autoReleaseWorkflow = parse(
+      await readFile(
+        path.resolve(repoRoot, ".github/workflows/auto-release.yml"),
+        "utf8",
+      ),
+    ) as {
+      jobs?: { "auto-release"?: { "timeout-minutes"?: unknown } };
+    };
+    const releaseTimeout = releaseWorkflow.jobs?.release?.["timeout-minutes"];
+    const autoReleaseTimeout =
+      autoReleaseWorkflow.jobs?.["auto-release"]?.["timeout-minutes"];
+
+    expect(releaseTimeout).toBe(45);
+    expect(autoReleaseTimeout).toBe(90);
+    expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
+      (releaseTimeout as number) + 30,
+    );
+  });
+
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {
     const productionFiles = await fg(
       [".github/workflows/**/*", "scripts/**/*", "src/**/*"],
