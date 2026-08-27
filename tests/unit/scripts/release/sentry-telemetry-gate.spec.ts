@@ -1426,6 +1426,50 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     expect(sentryCalls[1]?.[2]).toMatchObject({ timeout: 120_000 });
   });
 
+  it("leaves CLI issue rows blocking after the shared enrichment budget expires", async () => {
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(1_000)
+      .mockReturnValue(121_001);
+    const { json, runCommand } = await runSentryGate({
+      argv: [
+        "--json",
+        "--telemetry-mode",
+        "required",
+        "--telemetry-command",
+        "telemetry.sh",
+        "--max-high",
+        "2",
+      ],
+      existsSync: true,
+      runCommand: (command, args) => {
+        if (command === "sentry" && args[1] === "list") {
+          return {
+            status: 0,
+            stdout: JSON.stringify([
+              { shortId: "PM-CLI-BUDGET-1", level: "error" },
+              { shortId: "PM-CLI-BUDGET-2", level: "error" },
+            ]),
+            stderr: "",
+          };
+        }
+        if (command === "bash") {
+          return { status: 0, stdout: TELEMETRY_CSV, stderr: "" };
+        }
+        return { status: 0, stdout: "[]", stderr: "" };
+      },
+    });
+
+    expect(json.sentry.blocking_short_ids).toEqual([
+      "PM-CLI-BUDGET-1",
+      "PM-CLI-BUDGET-2",
+    ]);
+    expect(
+      runCommand.mock.calls.some(
+        ([command, args]) => command === "sentry" && args[1] === "events",
+      ),
+    ).toBe(false);
+  });
+
   it("fails safe across skipped, failed, empty, and malformed CLI event enrichment", async () => {
     const { json, runCommand } = await runSentryGate({
       argv: [
