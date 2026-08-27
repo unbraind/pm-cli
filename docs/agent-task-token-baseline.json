@@ -1,7 +1,7 @@
 {
   "version": 2,
   "transcript_version": 1,
-  "transcript_digest": "sha256:2f223ceea8cb08936aeb600467be4f486b3fb61da63518d2dfdd7f87ab06c0d7",
+  "transcript_digest": "sha256:f5eb14c17d925b61e40459b2e9677917e8265055c1da314cf3a3b851a5ae96e0",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
@@ -73,7 +73,25 @@
           "max_estimated_tokens": 398
         }
       ]
+    },
+    {
+      "id": "bulk-effect-outcomes",
+      "max_estimated_tokens": 326,
+      "steps": [
+        {
+          "id": "create-bulk-target",
+          "max_estimated_tokens": 20
+        },
+        {
+          "id": "partial-effect",
+          "max_estimated_tokens": 174
+        },
+        {
+          "id": "no-effect",
+          "max_estimated_tokens": 132
+        }
+      ]
     }
   ],
-  "composite_max_estimated_tokens": 3935
+  "composite_max_estimated_tokens": 4261
 }

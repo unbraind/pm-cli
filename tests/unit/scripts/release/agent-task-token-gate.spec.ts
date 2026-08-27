@@ -151,7 +151,7 @@ describe("agent-task transcript token gate", () => {
       args: ["list"],
       expected_exit_code: 0,
       expected_output_kind: "collection",
-      required_fields: ["items"],
+      required_fields: ["items.0.id"],
     };
     const payload = { items: [{ id: "pm-one" }] };
     const render = (value: unknown): string =>
@@ -230,6 +230,23 @@ describe("agent-task transcript token gate", () => {
         ...step,
         required_fields: ["missing-field"],
       }),
+    ).toThrow();
+    const misleadingPayload = {
+      items: [{ id: "pm-one" }],
+      message: "The missing-field name appears only in prose",
+    };
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 0, stdout: render(misleadingPayload), stderr: "" },
+        {
+          status: 0,
+          stdout: render(
+            attachOutputTokenAccounting(misleadingPayload, render),
+          ),
+          stderr: "",
+        },
+        { ...step, required_fields: ["missing-field"] },
+      ),
     ).toThrow();
     expect(() =>
       validateAgentTaskTokenInvocation(
@@ -366,9 +383,9 @@ describe("agent-task transcript token gate", () => {
 
     const updated = await main(["--update", "--baseline", baselinePath]);
     expect(updated).toMatchObject({
-      task_count: 4,
-      completed_task_count: 4,
-      step_count: 11,
+      task_count: 5,
+      completed_task_count: 5,
+      step_count: 14,
       retry_count: 1,
     });
     const updatedBaseline = JSON.parse(

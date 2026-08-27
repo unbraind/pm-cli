@@ -236,6 +236,10 @@ describe("SDK output envelope contracts", () => {
         ".required_fields must be a non-empty string array",
       ],
       [
+        { ...validStep, required_fields: ["items..id"] },
+        ".required_fields must contain dot-separated own-property paths",
+      ],
+      [
         { ...validStep, expected_error_code: " " },
         ".expected_error_code must be a non-empty string",
       ],
@@ -249,7 +253,11 @@ describe("SDK output envelope contracts", () => {
       ],
       [
         { ...validStep, expected_exit_code: 2 },
-        "successful output must use exit code 0",
+        "successful output must use exit code 0 or a command-declared successful effect exit",
+      ],
+      [
+        { ...validStep, expected_exit_code: 6 },
+        "successful output must use exit code 0 or a command-declared successful effect exit",
       ],
       [
         { ...validStep, expected_output_kind: "entity" },
@@ -278,11 +286,51 @@ describe("SDK output envelope contracts", () => {
         expected_output_kind: "refusal",
         expected_error_code: "bad",
       },
+      {
+        ...validStep,
+        expected_exit_code: 6,
+        expected_output_kind: "refusal",
+        expected_error_code: "bad",
+        expected_refusal_surface: "--for",
+      },
     ]) {
       expect(() => parseStep(refusal)).toThrow(
-        "refusal steps require a non-zero exit, error code, and refusal surface",
+        "refusal steps require a non-success exit, error code, and refusal surface",
       );
     }
+  });
+
+  it("accepts command-declared no-effect and partial-effect success exits", () => {
+    const corpus = parsePmAgentTaskTranscriptCorpus({
+      version: 1,
+      tasks: [
+        {
+          id: "bulk-effects",
+          description:
+            "Represent successful bulk commands without collapsing effect semantics.",
+          steps: [
+            {
+              id: "no-effect",
+              args: ["close-many", "pm-missing"],
+              expected_exit_code: 6,
+              expected_output_kind: "collection",
+              required_fields: ["rows"],
+            },
+            {
+              id: "partial-effect",
+              args: ["update-many", "pm-one,pm-missing"],
+              expected_exit_code: 7,
+              expected_output_kind: "collection",
+              required_fields: ["rows"],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      corpus.tasks[0]?.steps.map((step) => step.expected_exit_code),
+    ).toEqual([6, 7]);
   });
 
   it("rejects duplicate identities and recovery that does not follow a refusal", () => {

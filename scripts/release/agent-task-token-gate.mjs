@@ -34,12 +34,13 @@ function fixtureId(key) {
   return `pm-${createHash("sha256").update(key).digest("hex").slice(0, 12)}`;
 }
 
-function parseJsonOutput(result, stepId) {
-  const source = result.status === 0 ? result.stdout : result.stderr;
+function parseJsonOutput(result, step, label = step.id) {
+  const source =
+    step.expected_output_kind === "refusal" ? result.stderr : result.stdout;
   try {
     return JSON.parse(source);
   } catch {
-    fail(`Agent-task transcript step ${stepId} did not emit one JSON document`);
+    fail(`Agent-task transcript step ${label} did not emit one JSON document`);
   }
 }
 
@@ -69,11 +70,22 @@ function readReceipt(payload, stepId) {
 }
 
 function assertComplete(payload, requiredFields, stepId) {
-  const serialized = JSON.stringify(payload);
   for (const requiredField of requiredFields) {
-    if (!serialized.includes(requiredField)) {
+    let cursor = payload;
+    const present = requiredField.split(".").every((segment) => {
+      if (
+        typeof cursor !== "object" ||
+        cursor === null ||
+        !Object.hasOwn(cursor, segment)
+      ) {
+        return false;
+      }
+      cursor = cursor[segment];
+      return true;
+    });
+    if (!present) {
       fail(
-        `Agent-task transcript step ${stepId} omitted required consumed field ${requiredField}`,
+        `Agent-task transcript step ${stepId} omitted required consumed field path ${requiredField}`,
       );
     }
   }
@@ -136,6 +148,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
   }
   const baselinePayload = parseJsonOutput(
     baseline,
+    step,
     `${step.id}:accounting-off`,
   );
   if (baselinePayload.token_accounting !== undefined) {
@@ -143,7 +156,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
       `Agent-task transcript step ${step.id} paid accounting cost while accounting was disabled`,
     );
   }
-  const accountedPayload = parseJsonOutput(accounted, step.id);
+  const accountedPayload = parseJsonOutput(accounted, step);
   if (
     step.expected_output_kind === "refusal" &&
     (typeof accountedPayload?.token_accounting !== "object" ||
@@ -214,10 +227,6 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
     completeness: "required_fields_present",
     payload: independentlyProjectedPayload,
   };
-}
-
-function expandTranscriptTokens(values, replacements) {
-  return values.map((value) => replacements.get(value) ?? value);
 }
 
 /** Require a recovery step to replay the exact shell-free refusal arguments. */
@@ -466,15 +475,18 @@ export async function main(argv = process.argv.slice(2)) {
     const replacements = new Map([
       ["$ANCHOR_ID", baselineFixture.anchorId],
       ["$LIFECYCLE_ID", fixtureId("agent-task-transcript-lifecycle")],
+      ["$BULK_ID", fixtureId("agent-task-transcript-bulk-effects")],
     ]);
     const tasks = corpus.tasks.map((task) => ({
       ...task,
       steps: task.steps.map((step) => ({
         ...step,
-        args: expandTranscriptTokens(step.args, replacements),
-        required_fields: expandTranscriptTokens(
-          step.required_fields,
-          replacements,
+        args: step.args.map((argument) =>
+          [...replacements].reduce(
+            (expanded, [token, replacement]) =>
+              expanded.replaceAll(token, replacement),
+            argument,
+          ),
         ),
       })),
     }));

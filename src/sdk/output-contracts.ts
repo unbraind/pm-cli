@@ -5,6 +5,10 @@
  * for CLI, SDK, MCP, and package consumers.
  */
 import { PM_CORE_COMMAND_NAMES } from "./cli-contracts/enum-contracts.js";
+import {
+  isPmSuccessfulExitCode,
+  resolvePmCommandExitContract,
+} from "./cli-contracts/command-exit-contracts.js";
 
 /** Stable machine-readable result families used across pm transports. */
 export const PM_OUTPUT_ENVELOPE_KINDS = [
@@ -34,7 +38,7 @@ export interface PmAgentTaskTranscriptStep {
   expected_exit_code: number;
   /** Semantic output family required from the transport. */
   expected_output_kind: PmAgentTaskStepOutputKind;
-  /** Serialized fields that prove the task consumed its required context. */
+  /** Dot-separated own-property paths proving required context was consumed. */
   required_fields: readonly string[];
   /** Stable diagnostic code required from a refusal step. */
   expected_error_code?: string;
@@ -277,18 +281,27 @@ function assertTranscriptStepOutputContract(
 ): void {
   if (outputKind === "refusal") {
     if (
-      exitCode === 0 ||
+      isPmSuccessfulExitCode(exitCode) ||
       errorCode === undefined ||
       refusalSurface === undefined
     ) {
       throw new TypeError(
-        `${field} refusal steps require a non-zero exit, error code, and refusal surface`,
+        `${field} refusal steps require a non-success exit, error code, and refusal surface`,
       );
     }
     return;
   }
-  if (exitCode !== 0) {
-    throw new TypeError(`${field} successful output must use exit code 0`);
+  const exitContract = resolvePmCommandExitContract(args[0]);
+  if (
+    !isPmSuccessfulExitCode(exitCode) ||
+    (exitCode !== 0 &&
+      !exitContract?.exit_codes.some(
+        (declaredExitCode) => declaredExitCode === exitCode,
+      ))
+  ) {
+    throw new TypeError(
+      `${field} successful output must use exit code 0 or a command-declared successful effect exit`,
+    );
   }
   const declaredKind = resolvePmCommandOutputEnvelope(args[0]).kind;
   if (outputKind !== declaredKind) {
@@ -330,6 +343,15 @@ function parseAgentTaskTranscriptStep(
     value.required_fields,
     `${field}.required_fields`,
   );
+  if (
+    requiredFields.some((requiredField) =>
+      requiredField.split(".").some((segment) => segment.length === 0),
+    )
+  ) {
+    throw new TypeError(
+      `${field}.required_fields must contain dot-separated own-property paths`,
+    );
+  }
   const expectedErrorCode = readOptionalTranscriptString(
     value.expected_error_code,
     `${field}.expected_error_code`,

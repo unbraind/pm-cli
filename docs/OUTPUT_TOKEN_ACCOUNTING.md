@@ -39,14 +39,15 @@ The command still exits with its normal non-zero status; the receipt is additive
 
 ## Release-Level Task Entitlement
 
-[`agent-task-transcripts.json`](agent-task-transcripts.json) is the SDK-validated, versioned golden corpus. [`agent-task-token-baseline.json`](agent-task-token-baseline.json) is its externally shipped release ratchet. The gate executes the built CLI against independent, identically seeded accounting-on and accounting-off workspaces. Its four complete workflows cover:
+[`agent-task-transcripts.json`](agent-task-transcripts.json) is the SDK-validated, versioned golden corpus. [`agent-task-token-baseline.json`](agent-task-token-baseline.json) is its externally shipped release ratchet. The gate executes the built CLI against independent, identically seeded accounting-on and accounting-off workspaces. Its five complete workflows cover:
 
 - bounded triage, scaled-workspace orientation, and returning-agent inspection;
 - a closed-domain refusal followed by the exact advertised shell-free retry;
 - an unknown option after valid flags followed by a corrected command;
-- create, inspect, close, and final-state confirmation through mutation receipts.
+- create, inspect, close, and final-state confirmation through mutation receipts;
+- successful bulk partial-effect and no-effect exits without collapsing them into exit zero.
 
-Every step verifies its public SDK output family, exit status, required consumed fields, and refusal identity where applicable. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Runtime refusals verify their self-reported accounting receipt; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
+Every step verifies its public SDK output family, canonical successful or refusal exit status, required consumed own-property paths, and refusal identity where applicable. Dot-separated `required_fields` paths are traversed structurally from the output root, so incidental prose or nested key names cannot satisfy completeness. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Runtime refusals verify their self-reported accounting receipt; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
 
 The baseline fails closed on corpus digest, task identity, step identity, per-step ceilings, per-task ceilings, and composite cost. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
 

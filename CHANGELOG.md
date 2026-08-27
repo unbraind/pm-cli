@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Agent-task gate accepts incidental substrings as required-field completeness ([pm-o7u08u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o7u08u.toon))
+- Agent-task transcript parser rejects declared successful no-effect and partial-effect exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
 - Unknown-option refusals report the first valid provided flag as the failing surface ([pm-fo8g7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fo8g7j.toon))
 - Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
 

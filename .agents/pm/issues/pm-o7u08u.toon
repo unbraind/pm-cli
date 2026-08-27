@@ -1,0 +1,55 @@
+id: pm-o7u08u
+title: Agent-task gate accepts incidental substrings as required-field completeness
+description: "Greptile review on PR #1133 found that the mandatory agent-task token gate serializes the whole payload and searches for required-field text. Generic names such as code or recovery can therefore be satisfied by unrelated nested keys or message values. Make required_fields explicit dot-separated own-property paths, update the golden corpus to describe structural consumption, and prove misleading substring payloads fail."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:ci","area:sdk",completeness,review-feedback
+created_at: "2026-08-27T17:58:02.801Z"
+updated_at: "2026-08-27T18:17:47.917Z"
+closed_at: "2026-08-27T18:17:33.378Z"
+completed_at: "2026-08-27T18:17:33.378Z"
+author: "harness:codex"
+acceptance_criteria: "Every required_fields entry is resolved as an own-property path from the output root; Incidental keys and string values cannot satisfy completeness; The golden corpus uses structural paths for entity and mutation outputs; Exact unit, transcript replay, and full coverage gates pass"
+parent: pm-8pnj
+resolution: completed
+expected_result: Required transcript fields are proven by exact structural own-property paths rather than incidental serialized text.
+actual_result: "The gate traverses dot-separated paths, the corpus declares real output coordinates, and adversarial prose-only matches fail."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-57ir3b,recurs_from,"2026-08-27T17:58:02.801Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-27T17:58:02.801Z","harness:codex","Duplicate check: all-status search for required-field structural completeness and serialized payload substrings found historical completeness work including pm-57ir3b and the active transcript owner pm-8pnj, but no item for this PR #1133 gate defect; creating one review-caught child issue."
+  "2026-08-27T18:17:31.612Z","harness:codex","Review resolution evidence for PR #1133: replaced serialized substring matching with dot-separated Object.hasOwn traversal from the payload root; entity/context/mutation corpus steps now declare structural paths, and an adversarial payload containing the missing field name only in prose is rejected. Focused linked tests passed; full coverage passed 8,063 tests at exact 100/100/100/100; pnpm quality:static passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-27T18:17:32.166Z","harness:codex","Completeness evidence must name and traverse structural coordinates; searching serialized bytes conflates keys with values and nested context, allowing a token-efficient gate to certify data the agent never received."
+files[2]{path,scope,note}:
+  scripts/release/agent-task-token-gate.mjs,project,structural own-property path traversal
+  src/sdk/output-contracts.ts,project,required field path validation
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,project,240,"harness:codex","2026-08-27T18:04:02.141Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[1]:
+  - run_id: test-local-mtbuhdea-ooev0y
+    kind: test
+    status: passed
+    started_at: "2026-08-27T18:16:39.751Z"
+    finished_at: "2026-08-27T18:17:04.786Z"
+    recorded_at: "2026-08-27T18:17:04.786Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated reviewed closeout entry
+  docs/agent-task-transcripts.json,project,structural completeness paths
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,required_fields path contract
+close_reason: "Required-field completeness now uses structural own-property paths with adversarial regression proof, exact full coverage, and static assurance."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-o7u08u
+  gate_id: agent-task-structural-completeness
+  negative_control: Place a required field name only inside a message string; the focused gate test must refuse completeness even though JSON serialization contains the text.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),Greptile Review
+body: ""

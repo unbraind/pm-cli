@@ -17,14 +17,14 @@
           "args": ["context", "--for", "orient", "--limit", "5"],
           "expected_exit_code": 0,
           "expected_output_kind": "diagnostic",
-          "required_fields": ["items"]
+          "required_fields": ["summary.active_items", "hierarchy", "activity"]
         },
         {
           "id": "inspect",
           "args": ["get", "$ANCHOR_ID", "--for", "inspect"],
           "expected_exit_code": 0,
           "expected_output_kind": "entity",
-          "required_fields": ["$ANCHOR_ID"]
+          "required_fields": ["item.id"]
         }
       ]
     },
@@ -46,7 +46,7 @@
           "args": ["get", "$ANCHOR_ID", "--for", "inspect"],
           "expected_exit_code": 0,
           "expected_output_kind": "entity",
-          "required_fields": ["$ANCHOR_ID"],
+          "required_fields": ["item.id"],
           "recovery_for": "refuse-intent"
         }
       ]
@@ -104,28 +104,87 @@
           ],
           "expected_exit_code": 0,
           "expected_output_kind": "mutation_receipt",
-          "required_fields": ["$LIFECYCLE_ID", "changed_field_count"]
+          "required_fields": ["id", "changed_field_count"]
         },
         {
           "id": "inspect-open",
           "args": ["get", "$LIFECYCLE_ID", "--for", "inspect"],
           "expected_exit_code": 0,
           "expected_output_kind": "entity",
-          "required_fields": ["$LIFECYCLE_ID", "open"]
+          "required_fields": ["item.id", "item.status"]
         },
         {
           "id": "close",
           "args": ["close", "$LIFECYCLE_ID", "Golden task completed"],
           "expected_exit_code": 0,
           "expected_output_kind": "mutation_receipt",
-          "required_fields": ["$LIFECYCLE_ID", "closed", "close_reason"]
+          "required_fields": ["id", "status", "close_reason"]
         },
         {
           "id": "inspect-closed",
           "args": ["get", "$LIFECYCLE_ID", "--for", "inspect"],
           "expected_exit_code": 0,
           "expected_output_kind": "entity",
-          "required_fields": ["$LIFECYCLE_ID", "closed"]
+          "required_fields": ["item.id", "item.status"]
+        }
+      ]
+    },
+    {
+      "id": "bulk-effect-outcomes",
+      "description": "Preserve successful partial-effect and no-effect outcomes across a bulk lifecycle task.",
+      "steps": [
+        {
+          "id": "create-bulk-target",
+          "args": [
+            "create",
+            "--id",
+            "$BULK_ID",
+            "--title",
+            "Transcript bulk effect target",
+            "--description",
+            "Golden bulk outcome transcript target",
+            "--type",
+            "Task",
+            "--status",
+            "open",
+            "--create-mode",
+            "progressive"
+          ],
+          "expected_exit_code": 0,
+          "expected_output_kind": "mutation_receipt",
+          "required_fields": ["id", "status", "changed_field_count"]
+        },
+        {
+          "id": "partial-effect",
+          "args": [
+            "close-many",
+            "--ids",
+            "$BULK_ID,pm-transcript-missing",
+            "--reason",
+            "Golden partial-effect transcript",
+            "--validate-close",
+            "off",
+            "--no-checkpoint"
+          ],
+          "expected_exit_code": 7,
+          "expected_output_kind": "collection",
+          "required_fields": ["rows", "outcome", "exit_code"]
+        },
+        {
+          "id": "no-effect",
+          "args": [
+            "close-many",
+            "--ids",
+            "$BULK_ID",
+            "--reason",
+            "Golden no-effect transcript",
+            "--validate-close",
+            "off",
+            "--no-checkpoint"
+          ],
+          "expected_exit_code": 6,
+          "expected_output_kind": "collection",
+          "required_fields": ["rows", "outcome", "exit_code"]
         }
       ]
     }
