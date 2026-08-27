@@ -23,7 +23,10 @@ jobs:
   release:
     name: Build, Test, Publish
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The full quality suite currently reaches post-publish verification near
+    # minute 20. Leave enough time for both clean installed-agent sessions and
+    # GitHub Release advertisement after the immutable npm publish succeeds.
+    timeout-minutes: 45
     permissions:
       contents: write
       id-token: write
