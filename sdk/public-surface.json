@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1801,
+    "covered_symbols": 1802,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1802
+    "required_symbols": 1803
   },
   "breaking_acknowledgements": [
     {
@@ -1291,6 +1291,23 @@
       ],
       "package_version": "2026.8.26",
       "reason": "pm-tnud intentionally adds the canonical package upgrade verb to the public CLI grammar contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmToolAction",
+        "signature ./sdk/contracts:PmToolAction"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Adds canonical package-upgrade action while retaining deprecated upgrade compatibility routing"
+    },
+    {
+      "changes": [
+        "signature ./sdk:UpgradeCommandOptions",
+        "signature ./sdk/governance:UpgradeCommandOptions",
+        "signature ./sdk/runtime:UpgradeCommandOptions"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Adds structured upgrade scope while preserving project local and global boolean compatibility"
     }
   ],
   "entrypoints": {
@@ -10646,6 +10663,12 @@
           "signature": "Readonly<Record<\"assets\" | \"docs\" | \"examples\" | \"extensions\" | \"prompts\", readonly string[]>>"
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS",
+          "signature": "readonly [\"upgrade\"]"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "PM_PACKAGE_RESOURCE_KINDS",
@@ -12083,7 +12106,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmItemAction;"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmPackageOnlyAction | PmItemAction;"
         },
         {
           "classification": "contract_data",
@@ -17579,7 +17602,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
-          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+          "signature": "export interface UpgradeCommandOptions { scope?: ExtensionScope; dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
           "classification": "supported",
@@ -20674,6 +20697,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS",
+          "signature": "readonly [\"upgrade\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_POSITIONAL_ACTION_CONTRACTS",
           "signature": "readonly PmPositionalActionContract[]"
         },
@@ -21335,7 +21364,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmItemAction;"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmPackageOnlyAction | PmItemAction;"
         },
         {
           "classification": "contract_data",
@@ -24491,7 +24520,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
-          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+          "signature": "export interface UpgradeCommandOptions { scope?: ExtensionScope; dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
           "classification": "supported",
@@ -30671,7 +30700,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
-          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+          "signature": "export interface UpgradeCommandOptions { scope?: ExtensionScope; dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
           "classification": "supported",

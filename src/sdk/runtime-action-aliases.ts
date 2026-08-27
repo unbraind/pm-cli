@@ -3,7 +3,10 @@
  *
  * Declares canonical native-action routes for public SDK aliases.
  */
-import { PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS } from "./cli-contracts/enum-contracts.js";
+import {
+  PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS,
+  PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS,
+} from "./cli-contracts/enum-contracts.js";
 
 interface SdkActionAlias {
   action: string;
@@ -61,4 +64,10 @@ export const SDK_ACTION_ALIASES: Readonly<Record<string, SdkActionAlias>> = {
   ...LIST_ACTION_ALIASES,
   ...buildExtensionPackageActionAliases("extension"),
   ...buildExtensionPackageActionAliases("package"),
+  ...Object.fromEntries(
+    PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS.map((subcommand) => [
+      `package-${subcommand}`,
+      { action: subcommand },
+    ]),
+  ),
 };

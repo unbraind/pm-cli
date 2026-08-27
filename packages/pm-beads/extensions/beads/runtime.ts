@@ -355,31 +355,39 @@ function toDependencies(
   return dependencies.length > 0 ? dependencies : undefined;
 }
 
+function toBeadsDependencyId(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return toNonEmptyString(value);
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return undefined;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    toNonEmptyString(candidate.id) ??
+    toNonEmptyString(candidate.item_id) ??
+    toNonEmptyString(candidate.depends_on_id)
+  );
+}
+
 function toDependency(
   value: unknown,
   fallbackCreatedAt: string,
   prefix: string,
   preserveSourceIds: boolean,
 ): Dependency | undefined {
-  if (typeof value === "string") {
-    return toDependencyFromString(
-      value,
-      fallbackCreatedAt,
-      prefix,
-      preserveSourceIds,
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return undefined;
-  }
-  const candidate = value as Record<string, unknown>;
-  const id =
-    toNonEmptyString(candidate.id) ??
-    toNonEmptyString(candidate.item_id) ??
-    toNonEmptyString(candidate.depends_on_id);
+  const id = toBeadsDependencyId(value);
   if (!id) {
     return undefined;
   }
+  if (typeof value === "string") {
+    return {
+      id: normalizeImportedId(id, prefix, preserveSourceIds),
+      kind: "related",
+      created_at: fallbackCreatedAt,
+    };
+  }
+  const candidate = value as Record<string, unknown>;
   const dependencyKind = toDependencyKind(candidate.type ?? candidate.kind);
   return {
     id: normalizeImportedId(id, prefix, preserveSourceIds),
@@ -389,23 +397,6 @@ function toDependency(
       toNonEmptyString(candidate.author) ??
       toNonEmptyString(candidate.created_by),
     source_kind: dependencyKind.sourceKind,
-  };
-}
-
-function toDependencyFromString(
-  value: string,
-  fallbackCreatedAt: string,
-  prefix: string,
-  preserveSourceIds: boolean,
-): Dependency | undefined {
-  const id = toNonEmptyString(value);
-  if (!id) {
-    return undefined;
-  }
-  return {
-    id: normalizeImportedId(id, prefix, preserveSourceIds),
-    kind: "related",
-    created_at: fallbackCreatedAt,
   };
 }
 
@@ -833,6 +824,16 @@ function assertLosslessSourceFormat(
   }
 }
 
+function assertPreservedRelationshipIdSafety(record: BeadsRecord): void {
+  const parent = toNonEmptyString(record.parent);
+  if (parent) preserveBeadsSourceId(parent);
+  if (!Array.isArray(record.dependencies)) return;
+  for (const dependency of record.dependencies) {
+    const dependencyId = toBeadsDependencyId(dependency);
+    if (dependencyId) preserveBeadsSourceId(dependencyId);
+  }
+}
+
 async function assertPreservedIdSafety(
   records: Array<{ record: BeadsRecord; lineNumber: number }>,
   runtime: BeadsImportRuntime,
@@ -843,6 +844,7 @@ async function assertPreservedIdSafety(
     { id: string; lineNumber: number }
   >();
   for (const { record, lineNumber } of records) {
+    assertPreservedRelationshipIdSafety(record);
     if (typeof record.id !== "string" || record.id.trim().length === 0) {
       continue;
     }

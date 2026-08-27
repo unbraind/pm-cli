@@ -340,6 +340,7 @@ const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
   "list-draft",
   "list-in-progress",
   "list-open",
+  "packages",
   "upgrade",
 ]);
 

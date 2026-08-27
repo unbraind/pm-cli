@@ -101,9 +101,13 @@ describe("generateBashScript", () => {
     ]) {
       expect(script).not.toContain(hiddenAlias);
     }
+    const rootCompletionStart = script.indexOf("  if [[ $cword -eq 1 ]]");
+    const rootCompletionEnd = script.indexOf('  if [[ "$prev" == "--type" ]]');
+    expect(rootCompletionStart).toBeGreaterThanOrEqual(0);
+    expect(rootCompletionEnd).toBeGreaterThan(rootCompletionStart);
     const rootCommandCompletion = script.slice(
-      script.indexOf("  if [[ $cword -eq 1 ]]"),
-      script.indexOf('  if [[ "$prev" == "--type" ]]'),
+      rootCompletionStart,
+      rootCompletionEnd,
     );
     expect(rootCommandCompletion).not.toMatch(
       /\b(extension|install|upgrade)\b/u,

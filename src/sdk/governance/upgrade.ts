@@ -6,6 +6,7 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import { renderPmCommand } from "../command-line.js";
 import {
   readManagedExtensionState,
   runExtension,
@@ -28,6 +29,8 @@ const DEFAULT_TAG = "latest";
 
 /** Documents the upgrade command options payload exchanged by command, SDK, and package integrations. */
 export interface UpgradeCommandOptions {
+  /** Managed package scope selected by structured SDK and MCP clients. */
+  scope?: ExtensionScope;
   /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
   /** Value that configures or reports cli only for this contract. */
@@ -156,8 +159,11 @@ export interface UpgradeResult {
 }
 
 function resolveScope(options: UpgradeCommandOptions): ExtensionScope {
-  const projectLike = options.project === true || options.local === true;
-  const global = options.global === true;
+  const projectLike =
+    options.project === true ||
+    options.local === true ||
+    options.scope === "project";
+  const global = options.global === true || options.scope === "global";
   if (projectLike && global) {
     throw new PmCliError(
       'Options "--project/--local" and "--global" are mutually exclusive.',
@@ -471,20 +477,26 @@ export async function runUpgrade(
   options: UpgradeCommandOptions,
   global: GlobalOptions,
 ): Promise<UpgradeResult> {
+  const normalizedTarget =
+    typeof target === "string" && target.trim().length > 0
+      ? target.trim()
+      : undefined;
   if (options.cliOnly === true && options.packagesOnly === true) {
+    const suggestedRetryArguments = [
+      "package",
+      "upgrade",
+      ...(normalizedTarget ? [normalizedTarget] : []),
+      "--packages-only",
+      "--dry-run",
+    ];
     throw new PmCliError(
       'Options "--cli-only" and "--packages-only" are mutually exclusive.',
       EXIT_CODE.USAGE,
       {
         code: "projection_options_mutually_exclusive",
         recovery: {
-          suggested_retry: "pm package upgrade --packages-only --dry-run",
-          suggested_retry_args: [
-            "package",
-            "upgrade",
-            "--packages-only",
-            "--dry-run",
-          ],
+          suggested_retry: renderPmCommand(suggestedRetryArguments),
+          suggested_retry_args: suggestedRetryArguments,
         },
       },
     );
@@ -492,10 +504,6 @@ export async function runUpgrade(
 
   const scope = resolveScope(options);
   const dryRun = options.dryRun === true;
-  const normalizedTarget =
-    typeof target === "string" && target.trim().length > 0
-      ? target.trim()
-      : undefined;
   if (options.cliOnly === true && normalizedTarget) {
     throw new PmCliError(
       'A package target cannot be used with "--cli-only".',

@@ -187,6 +187,9 @@ export const PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS = [
   "deactivate",
 ] as const;
 
+/** Package-only lifecycle verbs flattened by SDK and MCP package actions. */
+export const PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS = ["upgrade"] as const;
+
 /** Noun-first item lifecycle verbs flattened for SDK and MCP dispatch. */
 export const PM_ITEM_ACTION_SUBCOMMANDS = ["reopen"] as const;
 
@@ -200,12 +203,15 @@ type PmCoreCommandName = (typeof PM_CORE_COMMAND_NAMES)[number];
 type PmCliOnlyToolAction = keyof typeof PM_CLI_ONLY_TOOL_ACTION_WAIVERS;
 type PmExtensionPackageAction =
   `${"extension" | "package"}-${(typeof PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS)[number]}`;
+type PmPackageOnlyAction =
+  `package-${(typeof PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS)[number]}`;
 type PmItemAction = `item-${(typeof PM_ITEM_ACTION_SUBCOMMANDS)[number]}`;
 
 /** Restricts pm tool action values accepted by command, SDK, and storage contracts. */
 export type PmToolAction =
   | Exclude<PmCoreCommandName, PmCliOnlyToolAction | "item">
   | PmExtensionPackageAction
+  | PmPackageOnlyAction
   | PmItemAction;
 
 /**
@@ -220,6 +226,11 @@ export const PM_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
         ...PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS.map(
           (subcommand): PmExtensionPackageAction => `${command}-${subcommand}`,
         ),
+        ...(command === "package"
+          ? PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS.map(
+              (subcommand): PmPackageOnlyAction => `package-${subcommand}`,
+            )
+          : []),
         command,
       ];
     }

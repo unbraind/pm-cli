@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { describe, expect, it } from "vitest";
 import { _testOnly } from "../../../src/cli/help-json-payload.js";
+import { setPmCommandHelpVisibilityTier } from "../../../src/cli/help-content.js";
 import { hasSubcommandFlagContractsForCommand } from "../../../src/sdk/index.js";
 
 describe("structured help command-path resolution", () => {
@@ -372,6 +373,21 @@ describe("structured help command-path resolution", () => {
         }),
       ]),
     );
+  });
+
+  it("keeps dynamically registered internal commands out of full discovery", () => {
+    const root = new Command("pm");
+    root.command("visible").description("Visible command");
+    const dynamicInternal = root
+      .command("dynamic-internal")
+      .description("Internal extension command");
+    setPmCommandHelpVisibilityTier(dynamicInternal, "internal");
+
+    expect(
+      _testOnly
+        .buildHelpSubcommandSummaries(root, new Map(), true)
+        .map(({ name }) => name),
+    ).toEqual(["help", "visible"]);
   });
 
   it("projects the complete root alias contract in full structured discovery", () => {

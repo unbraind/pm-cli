@@ -681,6 +681,16 @@
       "requires_extension": false
     },
     {
+      "action": "package-upgrade",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "package upgrade",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "pause-task",
       "available": true,
       "cli_exposed": true,
@@ -920,6 +930,7 @@
     "package-manage",
     "package-reload",
     "package-uninstall",
+    "package-upgrade",
     "pause-task",
     "plan",
     "profile",
@@ -31603,7 +31614,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package-upgrade, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -31633,6 +31644,7 @@
               "package-adopt-all",
               "package-activate",
               "package-deactivate",
+              "package-upgrade",
               "package",
               "create",
               "item-reopen",
@@ -38658,6 +38670,120 @@
           "target"
         ],
         "title": "pm action \"package-deactivate\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "package-upgrade",
+            "description": "Tool action to execute."
+          },
+          "cliOnly": {
+            "description": "Restrict upgrade to the pm CLI/SDK npm package.",
+            "type": "boolean"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "packageName": {
+            "description": "Override the pm CLI package name for self-upgrade automation and tests.",
+            "examples": [
+              "@unbrained/pm-cli"
+            ],
+            "type": "string"
+          },
+          "packagesOnly": {
+            "description": "Restrict upgrade to managed installable pm packages.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "repair": {
+            "description": "Force npm global reinstall semantics when upgrading the pm CLI/SDK.",
+            "type": "boolean"
+          },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "tag": {
+            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "examples": [
+              "latest",
+              "next",
+              "2026.5.11"
+            ],
+            "type": "string"
+          },
+          "target": {
+            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
+            "examples": [
+              "pm-a1b2",
+              ".agents/pm/extensions/sample",
+              "sample-extension"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"package-upgrade\" parameters",
         "type": "object"
       },
       {

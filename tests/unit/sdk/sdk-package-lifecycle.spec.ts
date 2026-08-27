@@ -19,6 +19,7 @@ import {
   packageMigrate,
   packageReload,
   packageUninstall,
+  runAction,
   upgrade,
   type ExtensionCommandResult,
   type PackageCommandResult,
@@ -37,7 +38,9 @@ describe("SDK package and extension lifecycle primitives", () => {
         action: "explore",
         scope: "project",
       });
-      const defaultExtension = await client.extension(undefined, { project: true });
+      const defaultExtension = await client.extension(undefined, {
+        project: true,
+      });
       expect(defaultExtension).toMatchObject({
         ok: true,
         action: "explore",
@@ -57,38 +60,58 @@ describe("SDK package and extension lifecycle primitives", () => {
         scope: "project",
       });
 
-      const directPackage = await packageLifecycle("list", { project: true }, { pmRoot: pmPath, noExtensions: true });
+      const directPackage = await packageLifecycle(
+        "list",
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(directPackage).toMatchObject({
         ok: true,
         action: "explore",
         scope: "project",
       });
 
-      const catalog = await packageCatalog({ project: true }, { pmRoot: pmPath, noExtensions: true });
+      const catalog = await packageCatalog(
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(catalog).toMatchObject({
         ok: true,
         action: "catalog",
         scope: "project",
       });
 
-      const doctor = await packageDoctor({ project: true, isolated: true }, { pmRoot: pmPath, noExtensions: true });
+      const doctor = await packageDoctor(
+        { project: true, isolated: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(doctor).toMatchObject({
         ok: true,
         action: "doctor",
         scope: "project",
       });
-      await expect(client.run("package-doctor", { target: "missing-package", options: { project: true, isolated: true } })).rejects.toThrow(
-        'Action "doctor" does not accept a target argument.',
-      );
+      await expect(
+        client.run("package-doctor", {
+          target: "missing-package",
+          options: { project: true, isolated: true },
+        }),
+      ).rejects.toThrow('Action "doctor" does not accept a target argument.');
 
-      const topLevelExtensions = await extensionList({ project: true }, { pmRoot: pmPath, noExtensions: true });
+      const topLevelExtensions = await extensionList(
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(topLevelExtensions).toMatchObject({
         ok: true,
         action: "explore",
         scope: "project",
       });
 
-      const genericExtension = await extension("list", { project: true }, { pmRoot: pmPath, noExtensions: true });
+      const genericExtension = await extension(
+        "list",
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(genericExtension).toMatchObject({
         ok: true,
         action: "explore",
@@ -101,20 +124,29 @@ describe("SDK package and extension lifecycle primitives", () => {
         ),
       ).resolves.toMatchObject({ action: "migrate" });
 
-      const topLevelPackages = await packageList({ project: true }, { pmRoot: pmPath, noExtensions: true });
+      const topLevelPackages = await packageList(
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(topLevelPackages).toMatchObject({
         ok: true,
         action: "explore",
         scope: "project",
       });
 
-      const managed = await packageManage(undefined, { project: true }, { pmRoot: pmPath, noExtensions: true });
+      const managed = await packageManage(
+        undefined,
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(managed).toMatchObject({
         ok: true,
         action: "manage",
         scope: "project",
       });
-      const targetedManaged = await client.packageManage("missing-package", { project: true });
+      const targetedManaged = await client.packageManage("missing-package", {
+        project: true,
+      });
       expect(targetedManaged).toMatchObject({
         ok: true,
         action: "manage",
@@ -140,49 +172,98 @@ describe("SDK package and extension lifecycle primitives", () => {
         details: { migration: { dry_run: true, total: 0 } },
       });
 
-      const described = await packageDescribe(undefined, { project: true }, { pmRoot: pmPath, noExtensions: true });
+      const described = await packageDescribe(
+        undefined,
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(described).toMatchObject({
         ok: true,
         action: "describe",
         scope: "project",
       });
-      await expect(client.packageDescribe("missing-package", { project: true })).rejects.toThrow(/No loaded package named/);
       await expect(
-        client.run("package-describe", { target: "missing-package", options: { project: true, vocabulary: "extension" } }),
+        client.packageDescribe("missing-package", { project: true }),
       ).rejects.toThrow(/No loaded package named/);
       await expect(
-        client.run("package", { target: "missing-package", options: { project: true, describe: true, vocabulary: "extension" } }),
+        client.run("package-describe", {
+          target: "missing-package",
+          options: { project: true, vocabulary: "extension" },
+        }),
+      ).rejects.toThrow(/No loaded package named/);
+      await expect(
+        client.run("package", {
+          target: "missing-package",
+          options: { project: true, describe: true, vocabulary: "extension" },
+        }),
       ).rejects.toThrow(/No loaded package named/);
 
-      const reloaded = await packageReload({ project: true }, { pmRoot: pmPath, noExtensions: true });
+      const reloaded = await packageReload(
+        { project: true },
+        { pmRoot: pmPath, noExtensions: true },
+      );
       expect(reloaded).toMatchObject({
         ok: true,
         action: "reload",
         scope: "project",
       });
 
-      await expect(client.extensionActivate("missing-extension", { project: true })).rejects.toThrow(/not installed|not found/i);
-      await expect(extensionActivate("missing-extension", { project: true }, { pmRoot: pmPath, noExtensions: true })).rejects.toThrow(
-        /not installed|not found/i,
-      );
-      await expect(client.extensionDeactivate("missing-extension", { project: true })).rejects.toThrow(/not installed|not found/i);
       await expect(
-        extensionDeactivate("missing-extension", { project: true }, { pmRoot: pmPath, noExtensions: true }),
+        client.extensionActivate("missing-extension", { project: true }),
       ).rejects.toThrow(/not installed|not found/i);
-      await expect(client.packageInstall(path.join(tempRoot, "missing-package"), { project: true })).rejects.toThrow();
       await expect(
-        packageInstall(path.join(tempRoot, "missing-package"), { project: true }, { pmRoot: pmPath, noExtensions: true }),
+        extensionActivate(
+          "missing-extension",
+          { project: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).rejects.toThrow(/not installed|not found/i);
+      await expect(
+        client.extensionDeactivate("missing-extension", { project: true }),
+      ).rejects.toThrow(/not installed|not found/i);
+      await expect(
+        extensionDeactivate(
+          "missing-extension",
+          { project: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).rejects.toThrow(/not installed|not found/i);
+      await expect(
+        client.packageInstall(path.join(tempRoot, "missing-package"), {
+          project: true,
+        }),
       ).rejects.toThrow();
-      await expect(client.packageUninstall("missing-package", { project: true })).rejects.toThrow(/not installed|not found/i);
-      await expect(packageUninstall("missing-package", { project: true }, { pmRoot: pmPath, noExtensions: true })).rejects.toThrow(
-        /not installed|not found/i,
-      );
-      await expect(packageActivate("missing-package", { project: true }, { pmRoot: pmPath, noExtensions: true })).rejects.toThrow(
-        /not installed|not found/i,
-      );
-      await expect(packageDeactivate("missing-package", { project: true }, { pmRoot: pmPath, noExtensions: true })).rejects.toThrow(
-        /not installed|not found/i,
-      );
+      await expect(
+        packageInstall(
+          path.join(tempRoot, "missing-package"),
+          { project: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).rejects.toThrow();
+      await expect(
+        client.packageUninstall("missing-package", { project: true }),
+      ).rejects.toThrow(/not installed|not found/i);
+      await expect(
+        packageUninstall(
+          "missing-package",
+          { project: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).rejects.toThrow(/not installed|not found/i);
+      await expect(
+        packageActivate(
+          "missing-package",
+          { project: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).rejects.toThrow(/not installed|not found/i);
+      await expect(
+        packageDeactivate(
+          "missing-package",
+          { project: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).rejects.toThrow(/not installed|not found/i);
 
       await expect(
         client.upgrade("missing-package", {
@@ -190,7 +271,9 @@ describe("SDK package and extension lifecycle primitives", () => {
           packagesOnly: true,
           commandRunner: async () => ({ stdout: "", stderr: "" }),
         }),
-      ).rejects.toThrow('Managed package "missing-package" was not found in project scope.');
+      ).rejects.toThrow(
+        'Managed package "missing-package" was not found in project scope.',
+      );
     });
   });
 
@@ -219,17 +302,46 @@ describe("SDK package and extension lifecycle primitives", () => {
     });
   });
 
+  it("forwards flat canonical package-upgrade inputs through SDK alias dispatch", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const result = (await runAction({
+        action: "package-upgrade",
+        path: pmPath,
+        noExtensions: true,
+        dryRun: true,
+        packagesOnly: true,
+        scope: "global",
+        options: {
+          commandRunner: async () => ({ stdout: "2026.8.26", stderr: "" }),
+        },
+      })) as UpgradeResult;
+
+      expect(result).toMatchObject({
+        ok: true,
+        action: "upgrade",
+        dry_run: true,
+        scope: "global",
+        cli: { requested: false, status: "skipped" },
+        summary: { requested_cli: false, requested_packages: true },
+      });
+    });
+  });
+
   it("keeps lifecycle result contracts available as public SDK types", () => {
-    const extensionResult: Pick<ExtensionCommandResult, "ok" | "action" | "scope"> = {
+    const extensionResult: Pick<
+      ExtensionCommandResult,
+      "ok" | "action" | "scope"
+    > = {
       ok: true,
       action: "catalog",
       scope: "project",
     };
-    const packageResult: Pick<PackageCommandResult, "ok" | "action" | "scope"> = {
-      ok: true,
-      action: "catalog",
-      scope: "project",
-    };
+    const packageResult: Pick<PackageCommandResult, "ok" | "action" | "scope"> =
+      {
+        ok: true,
+        action: "catalog",
+        scope: "project",
+      };
     const upgradeResult: Pick<UpgradeResult, "ok" | "action" | "dry_run"> = {
       ok: true,
       action: "upgrade",

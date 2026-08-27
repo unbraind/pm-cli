@@ -4,16 +4,16 @@
 
 ### Added
 
-- Tiered contracts-driven help: one-screen core help, full surface via pm help --all, generated from the contract table ([pm-e2bq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e2bq.toon))
+- Tiered contract-driven help: one-screen core help, full surface via pm help --all, generated from the contract table ([pm-e2bq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e2bq.toon))
 - Skills over MCP: discoverable version-coherent pm workflows with progressive disclosure, capability requirements, and token budgets ([pm-8nzivt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8nzivt.toon))
 - MCP Apps for pm: interactive graph, context, plan, assurance, and long-operation views with consent-safe action boundaries ([pm-pznhee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pznhee.toon))
 
 ### Fixed
 
+- GH-859: pm-beads source export can omit Beads comment bodies and events ([pm-tpwde6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tpwde6.toon))
 - pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 - GH-862: pm-beads must map Beads close reasons into native resolution metadata ([pm-gus5ft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gus5ft.toon))
 - GH-860: pm-beads --preserve-source-ids changes source ID casing ([pm-f7jj9b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7jj9b.toon))
-- GH-859: pm-beads source export can omit Beads comment bodies and events ([pm-tpwde6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tpwde6.toon))
 - GH-1118: natural-language word-number titles trigger duplicate issue-code false positives ([pm-blvfye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-blvfye.toon))
 - Published-artifact verification rejects the new pm-mcp-http bin before executing its healthy published entrypoint ([pm-fpdne3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fpdne3.toon))
 

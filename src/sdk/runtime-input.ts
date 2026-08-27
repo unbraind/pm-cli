@@ -284,6 +284,15 @@ const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
     update: ["parent", "allowMissingParent", "completedAt"],
     copy: ["allowDuplicate"],
     close: ["duplicateOf", "completedAt"],
+    upgrade: [
+      "scope",
+      "dryRun",
+      "cliOnly",
+      "packagesOnly",
+      "repair",
+      "tag",
+      "packageName",
+    ],
     // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
     // reads it from options, while schema/config consume their top-level values
     // directly in runAction and therefore need no hoisting.
@@ -320,10 +329,7 @@ export function normalizeMcpOptionsArrays(
       result[key] = value;
       continue;
     }
-    if (
-      typeof value === "string" &&
-      scalarToArrayFields.has(key)
-    ) {
+    if (typeof value === "string" && scalarToArrayFields.has(key)) {
       result[key] = [value];
       continue;
     }

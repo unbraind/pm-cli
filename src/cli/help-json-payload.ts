@@ -380,7 +380,8 @@ function buildHelpSubcommandSummaries(
     .filter(
       (entry) =>
         !includeAll ||
-        resolvePmCommandVisibilityTier(entry.name()) !== "internal",
+        (getPmCommandHelpVisibilityTier(entry) ??
+          resolvePmCommandVisibilityTier(entry.name())) !== "internal",
     )
     .map((entry) => {
       const commandPath = normalizeHelpCommandPath(getCommandPath(entry));

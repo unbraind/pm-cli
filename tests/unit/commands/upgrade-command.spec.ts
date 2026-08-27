@@ -1,11 +1,22 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { runExtension, writeManagedExtensionState } from "../../../src/cli/commands/extension.js";
-import { _testOnly as upgradeInternals, runUpgrade, type UpgradeCommandRunner } from "../../../src/sdk/governance/upgrade.js";
+import {
+  runExtension,
+  writeManagedExtensionState,
+} from "../../../src/cli/commands/extension.js";
+import {
+  _testOnly as upgradeInternals,
+  runUpgrade,
+  type UpgradeCommandRunner,
+} from "../../../src/sdk/governance/upgrade.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-async function createPackage(root: string, name: string, version = "1.0.0"): Promise<string> {
+async function createPackage(
+  root: string,
+  name: string,
+  version = "1.0.0",
+): Promise<string> {
   const packageRoot = path.join(root, name);
   const extensionRoot = path.join(packageRoot, "extensions", name);
   await mkdir(extensionRoot, { recursive: true });
@@ -38,7 +49,11 @@ async function createPackage(root: string, name: string, version = "1.0.0"): Pro
     )}\n`,
     "utf8",
   );
-  await writeFile(path.join(extensionRoot, "index.js"), "export default { activate() {} };\n", "utf8");
+  await writeFile(
+    path.join(extensionRoot, "index.js"),
+    "export default { activate() {} };\n",
+    "utf8",
+  );
   return packageRoot;
 }
 
@@ -83,39 +98,91 @@ describe("upgrade command", () => {
       expect(upgradeInternals.resolveScope({})).toBe("project");
       expect(upgradeInternals.resolveScope({ local: true })).toBe("project");
       expect(upgradeInternals.resolveScope({ global: true })).toBe("global");
-      expect(() => upgradeInternals.resolveScope({ project: true, global: true })).toThrow(/mutually exclusive/);
+      expect(() =>
+        upgradeInternals.resolveScope({ project: true, global: true }),
+      ).toThrow(/mutually exclusive/);
       expect(upgradeInternals.resolveTag({ tag: " beta " })).toBe("beta");
       expect(upgradeInternals.resolveTag({ tag: " " })).toBe("latest");
-      expect(upgradeInternals.resolveCliPackage({ packageName: " @example/pm " })).toBe("@example/pm");
-      expect(upgradeInternals.resolveCliPackage({ packageName: " " })).toBe("@unbrained/pm-cli");
+      expect(
+        upgradeInternals.resolveCliPackage({ packageName: " @example/pm " }),
+      ).toBe("@example/pm");
+      expect(upgradeInternals.resolveCliPackage({ packageName: " " })).toBe(
+        "@unbrained/pm-cli",
+      );
       expect(upgradeInternals.isLocalNpmSpec("/tmp/pkg")).toBe(true);
       expect(upgradeInternals.isLocalNpmSpec("file:../pkg")).toBe(true);
       expect(upgradeInternals.isLocalNpmSpec("@example/plain")).toBe(false);
-      expect(upgradeInternals.normalizeTarget("  Owner/Repo  ")).toBe("owner/repo");
-      expect(upgradeInternals.packageRecordMatchesTarget(record, "plain-dir")).toBe(true);
-      expect(upgradeInternals.packageRecordMatchesTarget(record, "npm:@example/plain")).toBe(true);
-      expect(upgradeInternals.packageRecordMatchesTarget(record, "@example/missing")).toBe(false);
-      expect(upgradeInternals.resolvePackageInstallSource(npmSource, "next")).toBe("npm:@example/plain@next");
-      expect(upgradeInternals.resolvePackageInstallSource({ ...npmSource, package: undefined, input: "@example/no-pkg" }, "next")).toBe(
-        "npm:@example/no-pkg",
+      expect(upgradeInternals.normalizeTarget("  Owner/Repo  ")).toBe(
+        "owner/repo",
       );
-      expect(upgradeInternals.resolvePackageInstallSource({ ...npmSource, input: "../local" }, "next")).toBe("npm:../local");
-      expect(upgradeInternals.resolvePackageInstallSource(githubSource, "next")).toBe("Owner/Repo");
-      expect(await upgradeInternals.resolveRunnablePackageSource({ ...localSource, input: packageRoot }, "latest")).toBe(packageRoot);
-      expect(await upgradeInternals.resolveRunnablePackageSource(localSource, "latest")).toBe(packageRoot);
+      expect(
+        upgradeInternals.packageRecordMatchesTarget(record, "plain-dir"),
+      ).toBe(true);
+      expect(
+        upgradeInternals.packageRecordMatchesTarget(
+          record,
+          "npm:@example/plain",
+        ),
+      ).toBe(true);
+      expect(
+        upgradeInternals.packageRecordMatchesTarget(record, "@example/missing"),
+      ).toBe(false);
+      expect(
+        upgradeInternals.resolvePackageInstallSource(npmSource, "next"),
+      ).toBe("npm:@example/plain@next");
+      expect(
+        upgradeInternals.resolvePackageInstallSource(
+          { ...npmSource, package: undefined, input: "@example/no-pkg" },
+          "next",
+        ),
+      ).toBe("npm:@example/no-pkg");
+      expect(
+        upgradeInternals.resolvePackageInstallSource(
+          { ...npmSource, input: "../local" },
+          "next",
+        ),
+      ).toBe("npm:../local");
+      expect(
+        upgradeInternals.resolvePackageInstallSource(githubSource, "next"),
+      ).toBe("Owner/Repo");
       expect(
         await upgradeInternals.resolveRunnablePackageSource(
-          { ...localSource, input: path.join(context.tempRoot, "missing-input"), location: path.join(context.tempRoot, "missing-location") },
+          { ...localSource, input: packageRoot },
+          "latest",
+        ),
+      ).toBe(packageRoot);
+      expect(
+        await upgradeInternals.resolveRunnablePackageSource(
+          localSource,
+          "latest",
+        ),
+      ).toBe(packageRoot);
+      expect(
+        await upgradeInternals.resolveRunnablePackageSource(
+          {
+            ...localSource,
+            input: path.join(context.tempRoot, "missing-input"),
+            location: path.join(context.tempRoot, "missing-location"),
+          },
           "latest",
         ),
       ).toBe(path.join(context.tempRoot, "missing-input"));
-      expect(upgradeInternals.packageCommandFor(githubSource, "Owner/Repo", "global", githubSource.ref)).toEqual([
-        "pm",
-        "install",
-        "Owner/Repo",
-        "--global",
-      ]);
-      expect(upgradeInternals.packageCommandFor({ ...githubSource, ref: " feature " }, "Owner/Repo", "project", " feature ")).toEqual([
+      expect(
+        upgradeInternals.packageCommandFor(
+          githubSource,
+          "Owner/Repo",
+          "global",
+          githubSource.ref,
+        ),
+      ).toEqual(["pm", "install", "Owner/Repo", "--global"]);
+      expect(
+        upgradeInternals.packageCommandFor(
+          { ...githubSource, ref: " feature " },
+          "Owner/Repo",
+          "project",
+          " feature ",
+        ),
+      ).toEqual([
         "pm",
         "install",
         "Owner/Repo",
@@ -147,7 +214,13 @@ describe("upgrade command", () => {
           true,
           true,
         ),
-      ).toMatchObject({ requested_cli: true, requested_packages: true, updated: 1, failed: 1, skipped: 0 });
+      ).toMatchObject({
+        requested_cli: true,
+        requested_packages: true,
+        updated: 1,
+        failed: 1,
+        skipped: 0,
+      });
     });
   });
 
@@ -165,22 +238,38 @@ describe("upgrade command", () => {
 
   it("surfaces stderr from the default command runner", async () => {
     await expect(
-      upgradeInternals.defaultCommandRunner(process.execPath, ["-e", "process.stderr.write('nope'); process.exit(7)"]),
+      upgradeInternals.defaultCommandRunner(process.execPath, [
+        "-e",
+        "process.stderr.write('nope'); process.exit(7)",
+      ]),
     ).rejects.toThrow("nope");
   });
 
   it("falls back to the thrown command error message when stderr is empty", async () => {
-    await expect(upgradeInternals.defaultCommandRunner(process.execPath, ["--definitely-not-a-node-flag"])).rejects.toThrow(
-      "bad option",
-    );
+    await expect(
+      upgradeInternals.defaultCommandRunner(process.execPath, [
+        "--definitely-not-a-node-flag",
+      ]),
+    ).rejects.toThrow("bad option");
   });
 
   it("plans CLI and managed package upgrades without mutating on dry-run", async () => {
     await withTempPmPath(async (context) => {
-      const packageRoot = await createPackage(context.tempRoot, "upgrade-plan-ext");
-      await runExtension(packageRoot, { install: true, project: true }, { path: context.pmPath });
+      const packageRoot = await createPackage(
+        context.tempRoot,
+        "upgrade-plan-ext",
+      );
+      await runExtension(
+        packageRoot,
+        { install: true, project: true },
+        { path: context.pmPath },
+      );
 
-      const result = await runUpgrade(undefined, { dryRun: true }, { path: context.pmPath });
+      const result = await runUpgrade(
+        undefined,
+        { dryRun: true },
+        { path: context.pmPath },
+      );
 
       expect(result.ok).toBe(true);
       expect(result.dry_run).toBe(true);
@@ -206,38 +295,50 @@ describe("upgrade command", () => {
 
   it("plans registry npm package refreshes against the requested tag", async () => {
     await withTempPmPath(async (context) => {
-      await writeManagedExtensionState(path.join(context.pmPath, "extensions"), {
-        version: 1,
-        updated_at: "2026-05-11T00:00:00.000Z",
-        entries: [
-          {
-            name: "registry-ext",
-            directory: "registry-ext",
-            scope: "project",
-            manifest_version: "1.0.0",
-            manifest_entry: "./index.js",
-            capabilities: ["commands"],
-            installed_at: "2026-05-11T00:00:00.000Z",
-            updated_at: "2026-05-11T00:00:00.000Z",
-            source: {
-              kind: "npm",
-              input: "npm:@example/registry-ext",
-              location: ".",
-              package: "@example/registry-ext",
-              version: "1.0.0",
+      await writeManagedExtensionState(
+        path.join(context.pmPath, "extensions"),
+        {
+          version: 1,
+          updated_at: "2026-05-11T00:00:00.000Z",
+          entries: [
+            {
+              name: "registry-ext",
+              directory: "registry-ext",
+              scope: "project",
+              manifest_version: "1.0.0",
+              manifest_entry: "./index.js",
+              capabilities: ["commands"],
+              installed_at: "2026-05-11T00:00:00.000Z",
+              updated_at: "2026-05-11T00:00:00.000Z",
+              source: {
+                kind: "npm",
+                input: "npm:@example/registry-ext",
+                location: ".",
+                package: "@example/registry-ext",
+                version: "1.0.0",
+              },
             },
-          },
-        ],
-      });
+          ],
+        },
+      );
 
-      const result = await runUpgrade(undefined, { dryRun: true, packagesOnly: true, tag: "next" }, { path: context.pmPath });
+      const result = await runUpgrade(
+        undefined,
+        { dryRun: true, packagesOnly: true, tag: "next" },
+        { path: context.pmPath },
+      );
 
       expect(result.cli.status).toBe("skipped");
       expect(result.packages).toHaveLength(1);
       expect(result.packages[0]).toMatchObject({
         name: "registry-ext",
         status: "planned",
-        command: ["pm", "install", "npm:@example/registry-ext@next", "--project"],
+        command: [
+          "pm",
+          "install",
+          "npm:@example/registry-ext@next",
+          "--project",
+        ],
       });
       expect(result.summary).toMatchObject({
         requested_cli: false,
@@ -277,7 +378,10 @@ describe("upgrade command", () => {
         after_version: "2099.1.2",
       });
       expect(calls).toEqual([
-        { command: "npm", args: ["install", "-g", "@example/pm-cli@next", "--force"] },
+        {
+          command: "npm",
+          args: ["install", "-g", "@example/pm-cli@next", "--force"],
+        },
         { command: "pm", args: ["--version"] },
       ]);
     });
@@ -289,7 +393,11 @@ describe("upgrade command", () => {
         throw new Error("npm unavailable");
       };
 
-      const result = await runUpgrade(undefined, { cliOnly: true, commandRunner }, { path: context.pmPath });
+      const result = await runUpgrade(
+        undefined,
+        { cliOnly: true, commandRunner },
+        { path: context.pmPath },
+      );
 
       expect(result.ok).toBe(false);
       expect(result.cli.status).toBe("failed");
@@ -333,33 +441,40 @@ describe("upgrade command", () => {
 
   it("plans targeted global GitHub package upgrades with refs", async () => {
     await withTempPmPath(async (context) => {
-      await writeManagedExtensionState(path.join(String(context.env.PM_GLOBAL_PATH), "extensions"), {
-        version: 1,
-        updated_at: "2026-05-11T00:00:00.000Z",
-        entries: [
-          {
-            name: "github-ext",
-            directory: "github-ext-dir",
-            scope: "global",
-            manifest_version: "1.0.0",
-            manifest_entry: "./index.js",
-            capabilities: ["commands"],
-            installed_at: "2026-05-11T00:00:00.000Z",
-            updated_at: "2026-05-11T00:00:00.000Z",
-            source: {
-              kind: "github",
-              input: "owner/repo",
-              location: "owner/repo",
-              owner: "owner",
-              repo: "repo",
-              repository: "https://github.com/owner/repo",
-              ref: "main",
+      await writeManagedExtensionState(
+        path.join(String(context.env.PM_GLOBAL_PATH), "extensions"),
+        {
+          version: 1,
+          updated_at: "2026-05-11T00:00:00.000Z",
+          entries: [
+            {
+              name: "github-ext",
+              directory: "github-ext-dir",
+              scope: "global",
+              manifest_version: "1.0.0",
+              manifest_entry: "./index.js",
+              capabilities: ["commands"],
+              installed_at: "2026-05-11T00:00:00.000Z",
+              updated_at: "2026-05-11T00:00:00.000Z",
+              source: {
+                kind: "github",
+                input: "owner/repo",
+                location: "owner/repo",
+                owner: "owner",
+                repo: "repo",
+                repository: "https://github.com/owner/repo",
+                ref: "main",
+              },
             },
-          },
-        ],
-      });
+          ],
+        },
+      );
 
-      const result = await runUpgrade("owner/repo", { dryRun: true, global: true, tag: "next" }, { path: context.pmPath });
+      const result = await runUpgrade(
+        "owner/repo",
+        { dryRun: true, global: true, tag: "next" },
+        { path: context.pmPath },
+      );
 
       expect(result.scope).toBe("global");
       expect(result.target).toBe("owner/repo");
@@ -370,48 +485,77 @@ describe("upgrade command", () => {
         status: "planned",
         command: ["pm", "install", "owner/repo", "--global", "--ref", "main"],
       });
-      expect(result.summary).toMatchObject({ requested_cli: false, requested_packages: true, planned: 1 });
+      expect(result.summary).toMatchObject({
+        requested_cli: false,
+        requested_packages: true,
+        planned: 1,
+      });
     });
   });
 
   it("keeps local npm specs untagged during dry-run planning", async () => {
     await withTempPmPath(async (context) => {
-      await writeManagedExtensionState(path.join(context.pmPath, "extensions"), {
-        version: 1,
-        updated_at: "2026-05-11T00:00:00.000Z",
-        entries: [
-          {
-            name: "local-npm-ext",
-            directory: "local-npm-ext",
-            scope: "project",
-            manifest_version: "1.0.0",
-            manifest_entry: "./index.js",
-            capabilities: ["commands"],
-            installed_at: "2026-05-11T00:00:00.000Z",
-            updated_at: "2026-05-11T00:00:00.000Z",
-            source: {
-              kind: "npm",
-              input: "npm:file:../local-npm-ext",
-              location: ".",
-              package: "@example/local-npm-ext",
-              version: "1.0.0",
+      await writeManagedExtensionState(
+        path.join(context.pmPath, "extensions"),
+        {
+          version: 1,
+          updated_at: "2026-05-11T00:00:00.000Z",
+          entries: [
+            {
+              name: "local-npm-ext",
+              directory: "local-npm-ext",
+              scope: "project",
+              manifest_version: "1.0.0",
+              manifest_entry: "./index.js",
+              capabilities: ["commands"],
+              installed_at: "2026-05-11T00:00:00.000Z",
+              updated_at: "2026-05-11T00:00:00.000Z",
+              source: {
+                kind: "npm",
+                input: "npm:file:../local-npm-ext",
+                location: ".",
+                package: "@example/local-npm-ext",
+                version: "1.0.0",
+              },
             },
-          },
-        ],
-      });
+          ],
+        },
+      );
 
-      const result = await runUpgrade("local-npm-ext", { dryRun: true, packagesOnly: true, tag: "next" }, { path: context.pmPath });
+      const result = await runUpgrade(
+        "local-npm-ext",
+        { dryRun: true, packagesOnly: true, tag: "next" },
+        { path: context.pmPath },
+      );
 
-      expect(result.packages[0]?.command).toEqual(["pm", "install", "npm:file:../local-npm-ext", "--project"]);
+      expect(result.packages[0]?.command).toEqual([
+        "pm",
+        "install",
+        "npm:file:../local-npm-ext",
+        "--project",
+      ]);
     });
   });
 
   it("executes managed local package upgrades and refreshes installed versions", async () => {
     await withTempPmPath(async (context) => {
-      const packageRoot = await createPackage(context.tempRoot, "upgrade-apply-ext", "1.0.0");
-      await runExtension(packageRoot, { install: true, project: true }, { path: context.pmPath });
+      const packageRoot = await createPackage(
+        context.tempRoot,
+        "upgrade-apply-ext",
+        "1.0.0",
+      );
+      await runExtension(
+        packageRoot,
+        { install: true, project: true },
+        { path: context.pmPath },
+      );
       await writeFile(
-        path.join(packageRoot, "extensions", "upgrade-apply-ext", "manifest.json"),
+        path.join(
+          packageRoot,
+          "extensions",
+          "upgrade-apply-ext",
+          "manifest.json",
+        ),
         `${JSON.stringify(
           {
             name: "upgrade-apply-ext",
@@ -425,7 +569,11 @@ describe("upgrade command", () => {
         "utf8",
       );
 
-      const result = await runUpgrade("upgrade-apply-ext", { packagesOnly: true }, { path: context.pmPath });
+      const result = await runUpgrade(
+        "upgrade-apply-ext",
+        { packagesOnly: true },
+        { path: context.pmPath },
+      );
 
       expect(result.ok).toBe(true);
       expect(result.packages[0]).toMatchObject({
@@ -440,21 +588,51 @@ describe("upgrade command", () => {
     vi.resetModules();
     const execFileMock = vi
       .fn()
-      .mockImplementationOnce((_command: string, _args: string[], _options: object, callback: (error: unknown, stdout?: unknown, stderr?: unknown) => void) => {
-        const errorWithUndefinedStderr = Object.assign(new Error("undefined-stderr"), { stderr: undefined });
-        callback(errorWithUndefinedStderr);
-      })
-      .mockImplementationOnce((_command: string, _args: string[], _options: object, callback: (error: unknown, stdout?: unknown, stderr?: unknown) => void) => {
-        callback("plain-command-failure");
-      });
+      .mockImplementationOnce(
+        (
+          _command: string,
+          _args: string[],
+          _options: object,
+          callback: (
+            error: unknown,
+            stdout?: unknown,
+            stderr?: unknown,
+          ) => void,
+        ) => {
+          const errorWithUndefinedStderr = Object.assign(
+            new Error("undefined-stderr"),
+            { stderr: undefined },
+          );
+          callback(errorWithUndefinedStderr);
+        },
+      )
+      .mockImplementationOnce(
+        (
+          _command: string,
+          _args: string[],
+          _options: object,
+          callback: (
+            error: unknown,
+            stdout?: unknown,
+            stderr?: unknown,
+          ) => void,
+        ) => {
+          callback("plain-command-failure");
+        },
+      );
     vi.doMock("node:child_process", () => ({
       execFile: execFileMock,
     }));
 
     try {
-      const mockedUpgrade = await import("../../../src/sdk/governance/upgrade.js");
-      await expect(mockedUpgrade._testOnly.defaultCommandRunner("mock-cmd", [])).rejects.toThrow("undefined-stderr");
-      await expect(mockedUpgrade._testOnly.defaultCommandRunner("mock-cmd", [])).rejects.toThrow("Command failed: mock-cmd");
+      const mockedUpgrade =
+        await import("../../../src/sdk/governance/upgrade.js");
+      await expect(
+        mockedUpgrade._testOnly.defaultCommandRunner("mock-cmd", []),
+      ).rejects.toThrow("undefined-stderr");
+      await expect(
+        mockedUpgrade._testOnly.defaultCommandRunner("mock-cmd", []),
+      ).rejects.toThrow("Command failed: mock-cmd");
     } finally {
       vi.doUnmock("node:child_process");
       vi.resetModules();
@@ -521,7 +699,8 @@ describe("upgrade command", () => {
     }));
 
     try {
-      const mockedUpgrade = await import("../../../src/sdk/governance/upgrade.js");
+      const mockedUpgrade =
+        await import("../../../src/sdk/governance/upgrade.js");
       const upgraded = await mockedUpgrade.runUpgrade(
         "github-ext",
         {
@@ -574,10 +753,55 @@ describe("upgrade command", () => {
 
   it("rejects mutually exclusive scope and mode flags", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runUpgrade(undefined, { cliOnly: true, packagesOnly: true }, { path: context.pmPath })).rejects.toThrow(
-        'Options "--cli-only" and "--packages-only" are mutually exclusive.',
-      );
-      await expect(runUpgrade(undefined, { project: true, global: true }, { path: context.pmPath })).rejects.toThrow(
+      const target = " @example/package with spaces ";
+      await expect(
+        runUpgrade(
+          target,
+          { cliOnly: true, packagesOnly: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        message:
+          'Options "--cli-only" and "--packages-only" are mutually exclusive.',
+        context: {
+          recovery: {
+            suggested_retry:
+              'pm package upgrade "@example/package with spaces" --packages-only --dry-run',
+            suggested_retry_args: [
+              "package",
+              "upgrade",
+              "@example/package with spaces",
+              "--packages-only",
+              "--dry-run",
+            ],
+          },
+        },
+      });
+      await expect(
+        runUpgrade(
+          undefined,
+          { cliOnly: true, packagesOnly: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        context: {
+          recovery: {
+            suggested_retry_args: [
+              "package",
+              "upgrade",
+              "--packages-only",
+              "--dry-run",
+            ],
+          },
+        },
+      });
+      await expect(
+        runUpgrade(
+          undefined,
+          { project: true, global: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow(
         'Options "--project/--local" and "--global" are mutually exclusive.',
       );
     });
@@ -585,15 +809,21 @@ describe("upgrade command", () => {
 
   it("rejects package targets when CLI-only mode is requested", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runUpgrade("registry-ext", { cliOnly: true }, { path: context.pmPath })).rejects.toThrow(
-        'A package target cannot be used with "--cli-only".',
-      );
+      await expect(
+        runUpgrade("registry-ext", { cliOnly: true }, { path: context.pmPath }),
+      ).rejects.toThrow('A package target cannot be used with "--cli-only".');
     });
   });
 
   it("rejects missing targeted managed packages", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runUpgrade("missing-ext", { dryRun: true, packagesOnly: true }, { path: context.pmPath })).rejects.toThrow(
+      await expect(
+        runUpgrade(
+          "missing-ext",
+          { dryRun: true, packagesOnly: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow(
         'Managed package "missing-ext" was not found in project scope.',
       );
     });

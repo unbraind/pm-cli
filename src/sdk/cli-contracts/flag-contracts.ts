@@ -2098,6 +2098,12 @@ export function resolveSubcommandFlagContractsForCommand(
     lifecycleSubcommand !== undefined &&
     extraParts.length === 0
   ) {
+    if (
+      (rootCommand === "package" || rootCommand === "packages") &&
+      lifecycleSubcommand === "upgrade"
+    ) {
+      return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
+    }
     return withSubcommandGlobalFlags(
       resolveExtensionLifecycleFlagContracts(rootCommand, lifecycleSubcommand),
     );

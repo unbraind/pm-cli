@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  PM_DEPRECATED_TOOL_ACTIONS,
+  PM_DISCOVERABLE_TOOL_ACTIONS,
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   analyzePmToolActionParity,
@@ -26,6 +28,18 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("discovers the canonical package upgrade action without its deprecated alias", () => {
+    expect(PM_DISCOVERABLE_TOOL_ACTIONS).toContain("package-upgrade");
+    expect(PM_DISCOVERABLE_TOOL_ACTIONS).not.toContain("upgrade");
+    expect(PM_DEPRECATED_TOOL_ACTIONS).toContain("upgrade");
+    expect(PM_TOOL_ACTIONS).not.toContain("extension-upgrade");
+    expect(
+      resolveSubcommandFlagContractsForCommand("package upgrade").map(
+        ({ flag }) => flag,
+      ),
+    ).toEqual(expect.arrayContaining(["--dry-run", "--packages-only"]));
+  });
+
   it("derives CLI action reachability with explicit, shrinking waivers", () => {
     expect(analyzePmToolActionParity()).toEqual({
       missing_cli_actions: [],

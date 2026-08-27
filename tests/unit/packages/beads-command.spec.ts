@@ -1541,6 +1541,56 @@ describe("runBeadsImport", () => {
     });
   });
 
+  it("validates every preserved relationship ID before writing any sibling", async () => {
+    const cases = [
+      { name: "parent", relationship: { parent: " unsafe/parent " } },
+      {
+        name: "string-dependency",
+        relationship: { dependencies: [" unsafe/dependency "] },
+      },
+      {
+        name: "object-dependency",
+        relationship: {
+          dependencies: [{}, { depends_on_id: " unsafe/dependency " }],
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      await withTempPmPath(async (context) => {
+        const sourcePath = path.join(
+          context.tempRoot,
+          `unsafe-${testCase.name}.jsonl`,
+        );
+        await writeFile(
+          sourcePath,
+          [
+            JSON.stringify({ id: "Safe-A1", title: "Safe sibling" }),
+            JSON.stringify({
+              id: "Unsafe-B2",
+              title: "Unsafe relationship",
+              ...testCase.relationship,
+            }),
+          ].join("\n") + "\n",
+          "utf8",
+        );
+
+        await expect(
+          runBeadsImport(
+            { file: sourcePath, preserveSourceIds: true },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringContaining("cannot be preserved safely"),
+        });
+        expect(context.runCli(["get", "Safe-A1", "--json"]).code).toBe(
+          EXIT_CODE.NOT_FOUND,
+        );
+      });
+    }
+  });
+
   it("rejects preserved IDs that already exist in the target before importing siblings", async () => {
     await withTempPmPath(async (context) => {
       const seedPath = path.join(context.tempRoot, "seed-preserved.jsonl");
