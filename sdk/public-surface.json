@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1802,
+    "covered_symbols": 1808,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1803
+    "required_symbols": 1809
   },
   "breaking_acknowledgements": [
     {
@@ -9963,6 +9963,12 @@
           "signature": "(raw: string, optionName: string) => number | calls: (raw: string, optionName: string) => number"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "parsePmAgentTaskTranscriptCorpus",
+          "signature": "(value: unknown) => PmAgentTaskTranscriptCorpus | calls: (value: unknown) => PmAgentTaskTranscriptCorpus"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "parsePriority",
@@ -10255,6 +10261,12 @@
           "kind": "function",
           "name": "planWorkspaceSnapshotRestore",
           "signature": "(pmRoot: string, target: string) => Promise<WorkspaceSnapshotRestorePlan> | calls: (pmRoot: string, target: string) => Promise<WorkspaceSnapshotRestorePlan>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_AGENT_TASK_TRANSCRIPT_VERSION",
+          "signature": "1"
         },
         {
           "classification": "supported",
@@ -10879,6 +10891,30 @@
           "kind": "interface",
           "name": "PmActionToolInputSchemaOptions",
           "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskStepOutputKind",
+          "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscript",
+          "signature": "export interface PmAgentTaskTranscript { id: string; description: string; steps: readonly PmAgentTaskTranscriptStep[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptCorpus",
+          "signature": "export interface PmAgentTaskTranscriptCorpus { version: typeof PM_AGENT_TASK_TRANSCRIPT_VERSION; tasks: readonly PmAgentTaskTranscript[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptStep",
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",
@@ -20500,6 +20536,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "parsePmAgentTaskTranscriptCorpus",
+          "signature": "(value: unknown) => PmAgentTaskTranscriptCorpus | calls: (value: unknown) => PmAgentTaskTranscriptCorpus"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "PAUSE_TASK_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -20515,6 +20557,12 @@
           "kind": "value",
           "name": "PLAN_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_AGENT_TASK_TRANSCRIPT_VERSION",
+          "signature": "1"
         },
         {
           "classification": "contract_data",
@@ -20815,6 +20863,30 @@
           "kind": "interface",
           "name": "PmActionToolInputSchemaOptions",
           "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskStepOutputKind",
+          "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscript",
+          "signature": "export interface PmAgentTaskTranscript { id: string; description: string; steps: readonly PmAgentTaskTranscriptStep[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptCorpus",
+          "signature": "export interface PmAgentTaskTranscriptCorpus { version: typeof PM_AGENT_TASK_TRANSCRIPT_VERSION; tasks: readonly PmAgentTaskTranscript[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptStep",
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",

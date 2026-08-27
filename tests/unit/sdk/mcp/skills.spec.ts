@@ -414,7 +414,8 @@ describe("Skills over MCP SDK registry", () => {
     ).rejects.toThrow(/symbolic link/u);
 
     if (process.platform !== "win32") {
-      const special = await tempRoot();
+      const special = await mkdtemp(path.join("/tmp", "pm-s-"));
+      roots.push(special);
       await writeSkill(special, "special-file");
       const socketPath = path.join(
         special,

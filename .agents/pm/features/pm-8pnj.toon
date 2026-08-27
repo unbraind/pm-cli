@@ -2,24 +2,87 @@ id: pm-8pnj
 title: "Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate"
 description: "Replay versioned golden agent task transcripts in CI to measure and gate total tokens per completed task, complementing context-quality evaluation."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:ci",measurement,simplification
 created_at: "2026-07-11T16:22:48.239Z"
-updated_at: "2026-07-26T05:59:46.149Z"
+updated_at: "2026-08-27T17:35:17.272Z"
+closed_at: "2026-08-27T17:34:29.187Z"
+completed_at: "2026-08-27T17:34:29.187Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Golden transcript corpus (canonical agent task sequences) versioned in-repo; replay runner reports bytes+approx-tokens per completed task against the current build; wired into the existing token-cost CI gate lineage with a documented regression threshold; boundary with pm-atfm quality harness documented; workflow for adding transcripts documented
 parent: pm-mpbb
 risk: medium
 confidence: medium
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-atfm,related,"2026-07-11T16:22:48.239Z",null,null
-  pm-j82fd3,verifies,"2026-07-25T06:27:46.129Z",null,null
-  pm-g3n00m,related,"2026-07-25T12:40:24.062Z",null,null
-  pm-t5dt4z,related,"2026-07-25T12:40:24.062Z",null,null
-  pm-g3n00m,verifies,"2026-07-26T05:50:01.484Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:54:46.785Z",null,null
-  pm-cxr0jb,verifies,"2026-07-26T05:59:44.678Z",null,null
-  pm-kvxqp1,verifies,"2026-07-26T05:59:45.921Z",null,null
+resolution: completed
+expected_result: Versioned golden agent workflows are replayed against current CLI transports and enforce per-step and completed-task token ceilings.
+actual_result: "A public SDK parser and mandatory four-task, eleven-step replay gate now enforce envelope completeness, recovery, mutation, transport accounting, corpus identity, and a 3,935-token composite baseline."
+dependencies[8]{id,kind,created_at}:
+  pm-atfm,related,"2026-07-11T16:22:48.239Z"
+  pm-j82fd3,verifies,"2026-07-25T06:27:46.129Z"
+  pm-g3n00m,related,"2026-07-25T12:40:24.062Z"
+  pm-t5dt4z,related,"2026-07-25T12:40:24.062Z"
+  pm-g3n00m,verifies,"2026-07-26T05:50:01.484Z"
+  pm-mpbb,implements,"2026-07-26T05:54:46.785Z"
+  pm-cxr0jb,verifies,"2026-07-26T05:59:44.678Z"
+  pm-kvxqp1,verifies,"2026-07-26T05:59:45.921Z"
+comments[2]{created_at,author,text}:
+  "2026-08-27T16:25:47.755Z","harness:codex","Start: build a versioned, SDK-owned multi-step agent transcript contract and upgrade the existing token gate to measure complete tasks, recovery retries, output-envelope conformance, and ratcheted bytes/tokens. This is one connected delivery with pm-f05lsg, pm-srns, pm-k23c4c, and pm-fo8g7j."
+  "2026-08-27T17:34:22.018Z","harness:codex","Completion evidence: shipped a public SDK-owned versioned transcript parser plus a four-task, eleven-step corpus covering context bootstrap, closed-domain refusal recovery, unknown-option correction, and lifecycle mutation. The mandatory static gate replays independent accounting-off/accounting-on workspaces, verifies output envelopes, exact shell-free retries, mutation receipts, per-step and completed-task ceilings, corpus identity, and a seeded million-token negative control. Final local verification passed 585 files and 8,062 tests at exact 100/100/100/100; all three linked tests passed with sandboxed PM contexts; the gate reports 3,935 composite tokens. Packed npx, packed bunx, and the 88-command dogfood workflow passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-27T17:34:22.496Z","harness:codex","Completed-task token budgets are trustworthy only when corpus identity, task and step identities, independent transport bytes, self-reported accounting, executable recovery, and a seeded regression are all checked together."
+files[6]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Records latest pm-changelog package verification used for generation
+  package.json,project,mandatory static-quality gate wiring
+  scripts/release/agent-task-token-gate.mjs,project,real multi-step task replay and token ratchet
+  sdk/public-surface.json,project,published SDK surface snapshot
+  src/sdk/output-contracts.ts,project,public versioned agent-task transcript schema and parser
+  tests/helpers/releaseContracts.ts,project,Pins the transcript gate in the mandatory static-quality contract
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T16:44:48.454Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+  - command: "pnpm quality:agent-task-token"
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T16:44:49.161Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T17:12:12.441Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Release wiring and packaging contract coverage
+test_runs[1]:
+  - run_id: test-local-mtbswy8s-yidsle
+    kind: test
+    status: passed
+    started_at: "2026-08-27T17:32:18.769Z"
+    finished_at: "2026-08-27T17:33:12.412Z"
+    recorded_at: "2026-08-27T17:33:12.412Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:agent-task-token",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,"Generated release notes for the connected SDK transcript,refusal,and portability delivery"
+  docs/agent-task-token-baseline.json,project,per-step and completed-task ceilings
+  docs/agent-task-transcripts.json,project,versioned golden task corpus
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,operator and SDK contract documentation
+close_reason: "Versioned SDK transcript contracts and the mandatory real-transport completed-task token gate are implemented, documented, and proven at exact full coverage."
 body: "Promoted from the pm-mpbb DX ledger (candidate lever a) on 2026-07-11, when the pm-a22j baseline gate opened (full AC met: checked-in script scripts/measure-agent-token-surface.mjs + MCP tools/list = 32,979 B ~= 8.2k tok / 28 tools).\n\nThe a22j baseline measures the cost of the SURFACE (help/contracts/tools-list payload sizes). Nothing measures what an agent actually pays per completed task: tokens read + retries burned across a realistic command sequence. Without that, DX regressions (verbose new output, envelope bloat, extra confirmation rounds) stay invisible until a human notices.\n\nApproach (per the ledger fence: extend, never a new harness):\n- Record golden agent transcripts (ordered pm command sequences with expected envelopes) for a handful of canonical tasks: triage-and-claim, create-with-deps, close-with-resolution, context bootstrap.\n- Replay them against the current build and report total bytes/approx-tokens per completed task.\n- Wire the result into the existing token-cost CI gate lineage (pm-cu1i, shipped PR#487) with a documented regression threshold, exactly like the changelog and contracts drift gates.\n\nBoundary: pm-atfm (related) grades context/next assembly QUALITY with rank-aware metrics; this item measures token COST per task. Keep the corpora separate; the replay runner may share golden-workspace fixtures."

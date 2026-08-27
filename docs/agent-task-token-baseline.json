@@ -1,25 +1,79 @@
 {
-  "version": 1,
+  "version": 2,
+  "transcript_version": 1,
+  "transcript_digest": "sha256:2f223ceea8cb08936aeb600467be4f486b3fb61da63518d2dfdd7f87ab06c0d7",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
-  "scenarios": [
+  "tasks": [
     {
-      "id": "small-workspace",
-      "max_estimated_tokens": 552
+      "id": "context-bootstrap",
+      "max_estimated_tokens": 1978,
+      "steps": [
+        {
+          "id": "triage",
+          "max_estimated_tokens": 552
+        },
+        {
+          "id": "orient",
+          "max_estimated_tokens": 1055
+        },
+        {
+          "id": "inspect",
+          "max_estimated_tokens": 371
+        }
+      ]
     },
     {
-      "id": "large-workspace",
-      "max_estimated_tokens": 1055
+      "id": "closed-domain-recovery",
+      "max_estimated_tokens": 630,
+      "steps": [
+        {
+          "id": "refuse-intent",
+          "max_estimated_tokens": 259
+        },
+        {
+          "id": "retry-intent",
+          "max_estimated_tokens": 371
+        }
+      ]
     },
     {
-      "id": "returning-agent",
-      "max_estimated_tokens": 371
+      "id": "unknown-option-recovery",
+      "max_estimated_tokens": 515,
+      "steps": [
+        {
+          "id": "refuse-option",
+          "max_estimated_tokens": 352
+        },
+        {
+          "id": "retry-option",
+          "max_estimated_tokens": 163
+        }
+      ]
     },
     {
-      "id": "failing-command",
-      "max_estimated_tokens": 219
+      "id": "lifecycle-mutation",
+      "max_estimated_tokens": 812,
+      "steps": [
+        {
+          "id": "create",
+          "max_estimated_tokens": 20
+        },
+        {
+          "id": "inspect-open",
+          "max_estimated_tokens": 363
+        },
+        {
+          "id": "close",
+          "max_estimated_tokens": 31
+        },
+        {
+          "id": "inspect-closed",
+          "max_estimated_tokens": 398
+        }
+      ]
     }
   ],
-  "composite_max_estimated_tokens": 2197
+  "composite_max_estimated_tokens": 3935
 }

@@ -1,0 +1,20 @@
+id: pm-bfa1ob
+title: Commander usage refusals omit token_accounting even when --token-accounting is parsed
+description: "The CLI attaches token_accounting to successful commands and runtime PmCliError failures, but Commander usage failures such as an unknown option render before the accounting attachment path. A caller explicitly requesting --json --token-accounting therefore receives no receipt. The agent-task transcript gate currently measures these refusals independently and labels that boundary; the CLI should eventually make the self-reported contract uniform without changing exit semantics."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-08-27T16:44:18.236Z"
+updated_at: "2026-08-27T16:53:58.663Z"
+author: "harness:codex"
+acceptance_criteria: Commander JSON usage errors attach the same bounded token_accounting receipt when requested; accounting-off bytes remain unchanged; CLI order and alias forms behave identically; focused process tests and the golden transcript switch from independent_transport to self_reported.
+parent: pm-srns
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8pnj,discovered_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
+  pm-t5dt4z,recurs_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-27T16:44:18.236Z","harness:codex","Duplicate check: exact phrase and all-term searches across every status returned zero matching items. Discovery evidence: pm --json --token-accounting search ... --include-body exits 2 with a structured unknown_option envelope but no token_accounting field; the transcript gate records an explicit independent transport measurement until this separate contract gap is implemented."
+  "2026-08-27T16:53:58.663Z","harness:codex","Relationship rationale: pm-bfa1ob was discovered_from pm-8pnj because the versioned transcript observed the missing receipt; it recurs_from pm-t5dt4z because that closed item established self-reported token accounting, and parent pm-srns owns uniform transport envelopes."
+escape_class: production_defect
+body: ""

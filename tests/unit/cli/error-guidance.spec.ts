@@ -263,6 +263,38 @@ describe("pm cli error guidance context plumbing", () => {
     expect(afterCommand.examples?.join(" ")).not.toContain("/private/");
   });
 
+  it("does not identify a preceding global flag as an invalid value surface", () => {
+    const envelope = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "/private/project/.agents/pm",
+            "get",
+            "pm-demo",
+            "--depth",
+            "verbose",
+          ],
+          provided_fields: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "--depth",
+          ],
+        },
+      },
+    );
+
+    expect(envelope.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+  });
+
   it("preserves structured fallback recovery candidates in JSON and text output", () => {
     const recovery = {
       attempted_command: "pm install --project npm:pm-brief",
@@ -361,6 +393,45 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.recovery).toMatchObject({
       suggested_flags: ["--deadline-after"],
       option_scope: "declared_nowhere",
+    });
+  });
+
+  it("identifies the unknown option after valid flags as the refusal surface", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--include-body'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: [
+          "search",
+          "agent task",
+          "--status",
+          "open",
+          "--limit",
+          "5",
+          "--json",
+          "--include-body",
+        ],
+        providedOptionFlags: [
+          "--status",
+          "--limit",
+          "--json",
+          "--include-body",
+        ],
+        unknownOptionScope: "declared_nowhere",
+      },
+    );
+
+    expect(envelope).toMatchObject({
+      code: "unknown_option",
+      flag: "--include-body",
+      value: "--include-body",
+      refusal: {
+        surface: "--include-body",
+        rejected_value: "--include-body",
+        exit_code: 2,
+      },
     });
   });
 

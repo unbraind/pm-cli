@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "context-bootstrap",
+      "description": "Orient in a scaled workspace and inspect the canonical focus item.",
+      "steps": [
+        {
+          "id": "triage",
+          "args": ["list", "--for", "triage", "--limit", "2"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "collection",
+          "required_fields": ["items"]
+        },
+        {
+          "id": "orient",
+          "args": ["context", "--for", "orient", "--limit", "5"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "required_fields": ["items"]
+        },
+        {
+          "id": "inspect",
+          "args": ["get", "$ANCHOR_ID", "--for", "inspect"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "entity",
+          "required_fields": ["$ANCHOR_ID"]
+        }
+      ]
+    },
+    {
+      "id": "closed-domain-recovery",
+      "description": "Reject an invalid context intent and execute the advertised shell-free retry.",
+      "steps": [
+        {
+          "id": "refuse-intent",
+          "args": ["get", "$ANCHOR_ID", "--for", "invalid-agent-intent"],
+          "expected_exit_code": 2,
+          "expected_output_kind": "refusal",
+          "required_fields": ["code", "refusal", "recovery"],
+          "expected_error_code": "unknown_context_intent",
+          "expected_refusal_surface": "--for"
+        },
+        {
+          "id": "retry-intent",
+          "args": ["get", "$ANCHOR_ID", "--for", "inspect"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "entity",
+          "required_fields": ["$ANCHOR_ID"],
+          "recovery_for": "refuse-intent"
+        }
+      ]
+    },
+    {
+      "id": "unknown-option-recovery",
+      "description": "Identify an unsupported option after valid flags and continue with the corrected command.",
+      "steps": [
+        {
+          "id": "refuse-option",
+          "args": [
+            "search",
+            "agent task",
+            "--status",
+            "open",
+            "--limit",
+            "5",
+            "--include-body"
+          ],
+          "expected_exit_code": 2,
+          "expected_output_kind": "refusal",
+          "required_fields": ["code", "refusal", "recovery"],
+          "expected_error_code": "unknown_option",
+          "expected_refusal_surface": "--include-body"
+        },
+        {
+          "id": "retry-option",
+          "args": ["search", "agent task", "--status", "open", "--limit", "5"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "collection",
+          "required_fields": ["items"]
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-mutation",
+      "description": "Create, inspect, close, and confirm a project item through public CLI receipts.",
+      "steps": [
+        {
+          "id": "create",
+          "args": [
+            "create",
+            "--id",
+            "$LIFECYCLE_ID",
+            "--title",
+            "Transcript lifecycle item",
+            "--description",
+            "Golden multi-step lifecycle task",
+            "--type",
+            "Task",
+            "--status",
+            "open",
+            "--create-mode",
+            "progressive"
+          ],
+          "expected_exit_code": 0,
+          "expected_output_kind": "mutation_receipt",
+          "required_fields": ["$LIFECYCLE_ID", "changed_field_count"]
+        },
+        {
+          "id": "inspect-open",
+          "args": ["get", "$LIFECYCLE_ID", "--for", "inspect"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "entity",
+          "required_fields": ["$LIFECYCLE_ID", "open"]
+        },
+        {
+          "id": "close",
+          "args": ["close", "$LIFECYCLE_ID", "Golden task completed"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "mutation_receipt",
+          "required_fields": ["$LIFECYCLE_ID", "closed", "close_reason"]
+        },
+        {
+          "id": "inspect-closed",
+          "args": ["get", "$LIFECYCLE_ID", "--for", "inspect"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "entity",
+          "required_fields": ["$LIFECYCLE_ID", "closed"]
+        }
+      ]
+    }
+  ]
+}

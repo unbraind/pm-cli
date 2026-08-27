@@ -1,6 +1,6 @@
 # Output Token Accounting
 
-Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon) and [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon).
+Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon), [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon), [pm-8pnj](../.agents/pm/tasks/pm-8pnj.toon), [pm-f05lsg](../.agents/pm/tasks/pm-f05lsg.toon), and [pm-srns](../.agents/pm/tasks/pm-srns.toon).
 
 ## Agent Quick Context
 
@@ -39,19 +39,31 @@ The command still exits with its normal non-zero status; the receipt is additive
 
 ## Release-Level Task Entitlement
 
-[`agent-task-token-baseline.json`](agent-task-token-baseline.json) is the externally shipped release baseline. The gate executes the built CLI in an isolated workspace and covers:
+[`agent-task-transcripts.json`](agent-task-transcripts.json) is the SDK-validated, versioned golden corpus. [`agent-task-token-baseline.json`](agent-task-token-baseline.json) is its externally shipped release ratchet. The gate executes the built CLI against independent, identically seeded accounting-on and accounting-off workspaces. Its four complete workflows cover:
 
-- a small-workspace read;
-- a scaled-workspace context read;
-- a returning-agent item read with a required-field completeness assertion;
-- a failing command with bounded recovery output.
+- bounded triage, scaled-workspace orientation, and returning-agent inspection;
+- a closed-domain refusal followed by the exact advertised shell-free retry;
+- an unknown option after valid flags followed by a corrected command;
+- create, inspect, close, and final-state confirmation through mutation receipts.
 
-Each invocation is independently byte-counted, its section sum is checked, and its consumed field is retained. A seeded million-token regression proves the ratchet fails. Run it with:
+Every step verifies its public SDK output family, exit status, required consumed fields, and refusal identity where applicable. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Runtime refusals verify their self-reported accounting receipt; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
+
+The baseline fails closed on corpus digest, task identity, step identity, per-step ceilings, per-task ceilings, and composite cost. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
 
 ```bash
 pnpm quality:agent-task-token
 node scripts/release/agent-task-token-gate.mjs --negative-control
 ```
+
+Package authors can validate their own corpus with the same public contract before replay:
+
+```ts
+import { parsePmAgentTaskTranscriptCorpus } from "@unbrained/pm-cli/sdk/contracts";
+
+const corpus = parsePmAgentTaskTranscriptCorpus(JSON.parse(source));
+```
+
+The parser rejects unknown versions, empty tasks or steps, duplicate identities, output families that disagree with the command contract, and recovery edges that do not point to an earlier refusal.
 
 Refresh the committed ceiling only after an intentional reviewed output change:
 

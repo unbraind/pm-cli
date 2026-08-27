@@ -631,6 +631,12 @@ function resolveRefusalCandidateFlag(
   normalizedArgs: readonly string[],
 ): string | undefined {
   if (message.flag) return message.flag;
+  const mentionedFlag = `${message.title} ${message.happened}`.match(
+    /--[A-Za-z0-9][A-Za-z0-9_-]*/u,
+  )?.[0];
+  if (mentionedFlag && normalizedArgs.includes(mentionedFlag)) {
+    return mentionedFlag;
+  }
   return message.recovery?.provided_fields?.find(
     (field) =>
       field !== "--json" &&
@@ -1554,6 +1560,8 @@ function buildUnknownOptionGuidance(
     happened: `Commander does not recognize option ${optionName} for this command path.`,
     required: UNKNOWN_OPTION_REQUIRED_BY_SCOPE[candidateContext.optionScope],
     why: "Option contracts are command-specific and intentionally validated.",
+    flag: optionName,
+    value: optionName,
     examples,
     nextSteps,
     recovery: buildCommanderRecoveryPayload(context, {

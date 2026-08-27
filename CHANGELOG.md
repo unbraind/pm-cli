@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Unknown-option refusals report the first valid provided flag as the failing surface ([pm-fo8g7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fo8g7j.toon))
+- Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
+
+### Security
+
+- GH-1131: macOS Node 24 nightly cannot create the Skills-over-MCP special-file socket fixture ([pm-k23c4c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k23c4c.toon))
+
 ## 2026.8.27 - 2026-08-27
 
 ### Added
