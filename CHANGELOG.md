@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Agent-task closeout claims lack linked full-verification commands ([pm-ervmsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ervmsc.toon))
+- Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))
+- Unknown-option refusal textual flags bypass structured global-option filtering ([pm-x4wbui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x4wbui.toon))
+- Agent-task baselines accept missing task and composite token ceilings ([pm-aksavu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aksavu.toon))
 - Agent-task gate accepts incidental substrings as required-field completeness ([pm-o7u08u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o7u08u.toon))
 - Agent-task transcript parser rejects declared successful no-effect and partial-effect exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
 - Unknown-option refusals report the first valid provided flag as the failing surface ([pm-fo8g7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fo8g7j.toon))

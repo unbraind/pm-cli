@@ -358,7 +358,43 @@ describe("SDK output envelope contracts", () => {
           },
         ],
       }),
-    ).toThrow("recovery_for must reference an earlier refusal");
+    ).toThrow(
+      "recovery_for must reference an earlier refusal and declare successful output",
+    );
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 1,
+        tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [
+              {
+                id: "refuse",
+                args: ["list", "--for", "invalid"],
+                expected_exit_code: 2,
+                expected_output_kind: "refusal",
+                required_fields: ["code"],
+                expected_error_code: "unknown_context_intent",
+                expected_refusal_surface: "--for",
+              },
+              {
+                id: "refuse-again",
+                args: ["list", "--for", "still-invalid"],
+                expected_exit_code: 2,
+                expected_output_kind: "refusal",
+                required_fields: ["code"],
+                expected_error_code: "unknown_context_intent",
+                expected_refusal_surface: "--for",
+                recovery_for: "refuse",
+              },
+            ],
+          },
+        ],
+      }),
+    ).toThrow(
+      "recovery_for must reference an earlier refusal and declare successful output",
+    );
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
         version: 1,

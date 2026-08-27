@@ -293,6 +293,21 @@ describe("pm cli error guidance context plumbing", () => {
       surface: "--depth",
       rejected_value: "verbose",
     });
+
+    const textualGlobal = formatPmCliErrorForJson(
+      "Global --json output was enabled; Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: ["--json", "get", "pm-demo", "--depth", "verbose"],
+          provided_fields: ["--json", "--depth"],
+        },
+      },
+    );
+    expect(textualGlobal.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
   });
 
   it("preserves structured fallback recovery candidates in JSON and text output", () => {

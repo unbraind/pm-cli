@@ -47,9 +47,9 @@ The command still exits with its normal non-zero status; the receipt is additive
 - create, inspect, close, and final-state confirmation through mutation receipts;
 - successful bulk partial-effect and no-effect exits without collapsing them into exit zero.
 
-Every step verifies its public SDK output family, canonical successful or refusal exit status, required consumed own-property paths, and refusal identity where applicable. Dot-separated `required_fields` paths are traversed structurally from the output root, so incidental prose or nested key names cannot satisfy completeness. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Runtime refusals verify their self-reported accounting receipt; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
+Every step verifies its public SDK output family, canonical successful or refusal exit status, required own-property paths, and refusal identity where applicable. Recovery steps must declare a successful output family instead of chaining one refusal to another. Dot-separated `required_fields` paths are traversed structurally from the output root, so incidental prose or nested key names cannot satisfy completeness. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Runtime refusals verify their self-reported accounting receipt; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
 
-The baseline fails closed on corpus digest, task identity, step identity, per-step ceilings, per-task ceilings, and composite cost. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
+The baseline fails closed on corpus digest, task identity, step identity, missing or non-finite per-step and per-task ceilings, and missing or non-finite composite cost ceilings. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
 
 ```bash
 pnpm quality:agent-task-token
@@ -64,7 +64,7 @@ import { parsePmAgentTaskTranscriptCorpus } from "@unbrained/pm-cli/sdk/contract
 const corpus = parsePmAgentTaskTranscriptCorpus(JSON.parse(source));
 ```
 
-The parser rejects unknown versions, empty tasks or steps, duplicate identities, output families that disagree with the command contract, and recovery edges that do not point to an earlier refusal.
+The parser rejects unknown versions, empty tasks or steps, duplicate identities, output families that disagree with the command contract, and recovery edges that do not point from a successful step to an earlier refusal.
 
 Refresh the committed ceiling only after an intentional reviewed output change:
 

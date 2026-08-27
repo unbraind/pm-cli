@@ -411,9 +411,12 @@ function parseAgentTaskTranscript(
     }
     if (step.recovery_for !== undefined) {
       const refusal = priorSteps.get(step.recovery_for);
-      if (refusal?.expected_output_kind !== "refusal") {
+      if (
+        refusal?.expected_output_kind !== "refusal" ||
+        step.expected_output_kind === "refusal"
+      ) {
         throw new TypeError(
-          `tasks.${id}.${step.id} recovery_for must reference an earlier refusal`,
+          `tasks.${id}.${step.id} recovery_for must reference an earlier refusal and declare successful output`,
         );
       }
     }

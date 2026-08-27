@@ -145,6 +145,25 @@ describe("agent-task transcript token gate", () => {
     ).toThrow();
   });
 
+  it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY])(
+    "fails closed on absent or non-finite task and composite ceilings (%s)",
+    (invalidLimit) => {
+      expect(
+        compareAgentTaskTokenBaseline(report, {
+          ...baseline,
+          composite_max_estimated_tokens: invalidLimit,
+          tasks: baseline.tasks.map((task) => ({
+            ...task,
+            max_estimated_tokens: invalidLimit,
+          })),
+        }),
+      ).toEqual([
+        "task:context:missing_baseline_limit",
+        "composite:missing_baseline_limit",
+      ]);
+    },
+  );
+
   it("rejects invalid accounting, incomplete output, and envelope drift", () => {
     const step = {
       id: "validation",

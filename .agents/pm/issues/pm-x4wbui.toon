@@ -1,0 +1,48 @@
+id: pm-x4wbui
+title: Unknown-option refusal textual flags bypass structured global-option filtering
+description: CodeRabbit review on PR #1133 found that resolveRefusalCandidateFlag may select the first flag mentioned in guidance prose before its structured provided_fields scan excludes global flags. A message naming --json before invalid --depth can therefore report the global flag and its following argument instead of the rejected option. Apply one admissibility predicate to both paths and prove exact surface/value attribution.
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",contracts,recovery,review-feedback
+created_at: "2026-08-27T19:11:44.445Z"
+updated_at: "2026-08-27T19:31:08.379Z"
+closed_at: "2026-08-27T19:31:07.757Z"
+completed_at: "2026-08-27T19:31:07.757Z"
+author: "harness:codex"
+acceptance_criteria: Textual and structured refusal candidates share one admissibility predicate; valid global flags cannot override an invalid command option; a regression proves surface --depth and rejected_value verbose when --json is mentioned first; exact coverage and static gates pass
+parent: pm-f05lsg
+resolution: Unified refusal candidate admissibility and added a textual --json precedence regression.
+expected_result: Structured refusal identity always names the actual rejected non-global option.
+actual_result: "Textual and structured refusal candidates now share the same global-output-flag filter, preserving --depth and verbose attribution."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fo8g7j,recurs_from,"2026-08-27T19:15:46.929Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-27T19:29:05.430Z","harness:codex","Evidence: error-guidance regression passes when refusal prose mentions --json before --depth; refusal.surface remains --depth and rejected_value remains verbose."
+files[2]{path,scope,note}:
+  src/cli/error-guidance.ts,project,Use one global-option admissibility predicate across structured and textual refusal candidates
+  tests/unit/cli/error-guidance.spec.ts,project,Prove a textual global flag cannot displace the actionable structured flag
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,project,240,"harness:codex","2026-08-27T19:15:46.929Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[1]:
+  - run_id: test-local-mtbx2t04-cyo4gr
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:29:37.079Z"
+    finished_at: "2026-08-27T19:29:44.020Z"
+    recorded_at: "2026-08-27T19:29:44.020Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+close_reason: Refusal attribution now applies one admissibility predicate to textual and structured candidates; the --json-before---depth regression and exact full coverage passed.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-x4wbui
+  gate_id: refusal-global-flag-admissibility
+  negative_control: Mention --json before the actionable --depth flag in refusal prose; structured refusal identity must remain --depth with rejected value verbose.
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

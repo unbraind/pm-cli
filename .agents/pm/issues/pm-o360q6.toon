@@ -1,0 +1,50 @@
+id: pm-o360q6
+title: Agent-task transcript recovery accepts a refusal as a successful retry
+description: "CodeRabbit review on PR #1133 found that a step with recovery_for may itself declare expected_output_kind=refusal. The parser verifies only that the referenced prior step is a refusal, allowing a failed retry to satisfy the recovery topology. Require recovery steps to be non-refusal successful outcomes and add adversarial parser coverage."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:sdk",contracts,recovery,review-feedback
+created_at: "2026-08-27T19:11:48.651Z"
+updated_at: "2026-08-27T19:31:09.645Z"
+closed_at: "2026-08-27T19:31:09.083Z"
+completed_at: "2026-08-27T19:31:09.083Z"
+author: "harness:codex"
+acceptance_criteria: recovery_for still references an earlier refusal; the recovery step cannot declare refusal output; adversarial parser coverage proves failed retries are rejected; exact coverage and static gates pass
+parent: pm-8pnj
+resolution: Closed refusal-as-recovery topology in the public SDK parser with regression coverage and contract documentation.
+expected_result: Every declared transcript recovery terminates in a successful output family.
+actual_result: Recovery edges now require both an earlier refusal target and a non-refusal successful output family on the recovering step.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,discovered_from,"2026-08-27T19:15:47.793Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-27T19:29:05.921Z","harness:codex","Evidence: public SDK parser tests reject a refusal step that declares recovery_for while preserving valid refusal-to-success recovery and effect-aware exit 6/7 workflows."
+files[2]{path,scope,note}:
+  src/sdk/output-contracts.ts,project,Require recovery steps to declare a successful output family
+  tests/unit/sdk/output-contracts.spec.ts,project,Reject refusal-as-recovery transcript topology
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,project,240,"harness:codex","2026-08-27T19:15:47.793Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[1]:
+  - run_id: test-local-mtbx321r-3eg1tw
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:29:44.470Z"
+    finished_at: "2026-08-27T19:29:55.743Z"
+    recorded_at: "2026-08-27T19:29:55.743Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Clarify successful recovery and structural field contracts
+close_reason: "Transcript recovery now requires an earlier refusal and a successful recovery output; public SDK parser regression, real transcript ratchet, and exact full coverage passed."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-o360q6
+  gate_id: agent-task-successful-recovery-topology
+  negative_control: Attach recovery_for to a second refusal step; the public transcript parser must reject the corpus before replay.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,"pnpm quality:agent-task-token",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

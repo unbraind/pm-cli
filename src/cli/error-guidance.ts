@@ -631,17 +631,16 @@ function resolveRefusalCandidateFlag(
   normalizedArgs: readonly string[],
 ): string | undefined {
   if (message.flag) return message.flag;
+  const isAdmissibleCandidate = (flag: string): boolean =>
+    flag !== "--json" && flag !== "--quiet" && normalizedArgs.includes(flag);
   const mentionedFlag = `${message.title} ${message.happened}`.match(
     /--[A-Za-z0-9][A-Za-z0-9_-]*/u,
   )?.[0];
-  if (mentionedFlag && normalizedArgs.includes(mentionedFlag)) {
+  if (mentionedFlag && isAdmissibleCandidate(mentionedFlag)) {
     return mentionedFlag;
   }
   return message.recovery?.provided_fields?.find(
-    (field) =>
-      field !== "--json" &&
-      field !== "--quiet" &&
-      normalizedArgs.includes(field),
+    (field) => isAdmissibleCandidate(field),
   );
 }
 

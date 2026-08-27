@@ -1,0 +1,50 @@
+id: pm-aksavu
+title: Agent-task baselines accept missing task and composite token ceilings
+description: "CodeRabbit review on PR #1133 found that undefined or non-finite task and composite max_estimated_tokens values make JavaScript comparisons false, silently disabling mandatory token ratchets. Validate every baseline ceiling before comparison and add negative controls for absent and non-finite values."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:ci",contracts,review-feedback,token-efficiency
+created_at: "2026-08-27T19:11:43.456Z"
+updated_at: "2026-08-27T19:31:07.149Z"
+closed_at: "2026-08-27T19:31:06.591Z"
+completed_at: "2026-08-27T19:31:06.591Z"
+author: "harness:codex"
+acceptance_criteria: Missing or non-finite task ceilings fail closed; missing or non-finite composite ceilings fail closed; focused negative controls and the real transcript gate pass; exact coverage and static gates pass
+parent: pm-8pnj
+resolution: Added finite-value guards and three-value negative controls for task and composite token ceilings.
+expected_result: Every task and composite baseline contains a finite enforceable token ceiling.
+actual_result: "Baseline comparison now refuses absent, NaN, and infinite task or composite ceilings with stable missing_baseline_limit findings."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o7u08u,recurs_from,"2026-08-27T19:15:46.166Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-27T19:29:04.961Z","harness:codex","Evidence: focused baseline tests pass for absent, NaN, and infinite task/composite ceilings; the real five-task 14-step token ratchet remains green at 4,261 composite estimated tokens."
+files[2]{path,scope,note}:
+  scripts/release/agent-task-token-gate.mjs,project,Fail closed when task or composite ceilings are missing or non-finite
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Negative controls for absent and non-finite ceilings
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-27T19:15:46.166Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[1]:
+  - run_id: test-local-mtbx2n9r-83pgdu
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:29:13.164Z"
+    finished_at: "2026-08-27T19:29:36.591Z"
+    recorded_at: "2026-08-27T19:29:36.591Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Document fail-closed baseline ceiling validation
+close_reason: "Token baselines now fail closed on absent, NaN, or infinite task and composite ceilings; focused regression, real transcript ratchet, and exact full coverage passed."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-aksavu
+  gate_id: agent-task-finite-baseline-ceilings
+  negative_control: "Remove a task or composite ceiling, or set it to NaN or Infinity; baseline comparison must emit a missing_baseline_limit failure."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,"pnpm quality:agent-task-token",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

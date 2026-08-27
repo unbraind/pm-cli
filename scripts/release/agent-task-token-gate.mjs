@@ -312,7 +312,9 @@ async function seedWorkspace(workspaceRoot) {
 
 function listTaskTokenBaselineFailures(task, taskLimit) {
   const failures = [];
-  if (task.estimated_tokens > taskLimit.max_estimated_tokens) {
+  if (!Number.isFinite(taskLimit.max_estimated_tokens)) {
+    failures.push(`task:${task.id}:missing_baseline_limit`);
+  } else if (task.estimated_tokens > taskLimit.max_estimated_tokens) {
     failures.push(
       `task:${task.id}:${task.estimated_tokens}>baseline:${taskLimit.max_estimated_tokens}`,
     );
@@ -358,7 +360,9 @@ export function compareAgentTaskTokenBaseline(report, baseline) {
   }
   if (taskLimits.size !== report.tasks.length)
     failures.push(`task_count:${report.tasks.length}!=${taskLimits.size}`);
-  if (
+  if (!Number.isFinite(baseline.composite_max_estimated_tokens)) {
+    failures.push("composite:missing_baseline_limit");
+  } else if (
     report.composite_estimated_tokens > baseline.composite_max_estimated_tokens
   ) {
     failures.push(

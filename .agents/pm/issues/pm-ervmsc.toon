@@ -1,0 +1,62 @@
+id: pm-ervmsc
+title: Agent-task closeout claims lack linked full-verification commands
+description: "CodeRabbit review on PR #1133 found that pm-8pnj completion comments name exact full coverage, packed npx, packed bunx, and 88-command dogfood evidence while its linked tests record only focused transcript and release commands. Add runnable PM-linked commands and test-run receipts for reproducible claims; document the evidence-before-close ordering lesson without rewriting append-only history."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:governance",evidence,review-feedback,testing
+created_at: "2026-08-27T19:11:55.197Z"
+updated_at: "2026-08-27T19:31:10.817Z"
+closed_at: "2026-08-27T19:31:10.199Z"
+completed_at: "2026-08-27T19:31:10.199Z"
+author: "harness:codex"
+acceptance_criteria: "Coverage, npx package smoke, bunx packed acceptance, and dogfood claims have runnable linked PM tests or are corrected; executed test-run receipts are recorded; append-only history is not rewritten; future evidence is recorded before close and release"
+parent: pm-8pnj
+resolution: Appended reproducible feature evidence without rewriting history and established evidence-before-close ordering for all new review findings.
+expected_result: Every broad closeout claim is reproducible from linked PM commands and append-only evidence preserves lifecycle ordering.
+actual_result: "pm-8pnj now links and records passing exact coverage, npx package smoke, 88-command package-first dogfood, and packed bunx acceptance alongside its focused gates."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8pnj,verifies,"2026-08-27T19:15:48.581Z","harness:codex","cli:update:dep",detected
+  pm-kpftft,discovered_from,"2026-08-27T19:15:48.581Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-27T19:29:06.473Z","harness:codex","Evidence: pm test pm-8pnj --run --progress executed all seven linked commands successfully. Exact coverage is 59,885/59,885 statements, 45,077/45,077 branches, 12,452/12,452 functions, and 57,669/57,669 lines; packed npx, 88-command package-first dogfood, and packed bunx acceptance all exited 0."
+  "2026-08-27T19:30:08.193Z","harness:codex","Investigation note: the initial linked history-drift command refused under schema context because the source tracker has 2,572 items and the sandbox schema context has zero. The link now explicitly declares pm_context_mode=tracker; no trust override or real tracker mutation was used by the test runner."
+learnings[1]{created_at,author,text}:
+  "2026-08-27T19:29:07.001Z","harness:codex","Lifecycle evidence is append-only: gate evidence and reproducible test links should be recorded before close and release. When a review detects an older ordering defect, append follow-up receipts and govern the recurrence; never rewrite the original history."
+files[1]{path,scope,note}:
+  .agents/pm/features/pm-8pnj.toon,project,Append linked full-verification commands and execution receipts supporting closeout claims
+tests[1]{command,scope,timeout_seconds,pm_context_mode,provenance{author,created_at,source_kind,source_ref},note}:
+  pm validate --check-history-drift,project,240,tracker,"harness:codex","2026-08-27T19:30:07.591Z",local_mutation,feat/agent-transcript-recovery-contracts,Validate append-only tracker history against the seeded real tracker context
+test_runs[2]:
+  - run_id: test-local-mtbx32gm-5vo7xn
+    kind: test
+    status: failed
+    started_at: "2026-08-27T19:29:56.198Z"
+    finished_at: "2026-08-27T19:29:56.278Z"
+    recorded_at: "2026-08-27T19:29:56.278Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pm validate --check-history-drift,schema,schema,source,local_source_ref
+  - run_id: test-local-mtbx4be3-qblprl
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:30:08.820Z"
+    finished_at: "2026-08-27T19:30:54.507Z"
+    recorded_at: "2026-08-27T19:30:54.507Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pm validate --check-history-drift,tracker,tracker,source,local_source_ref
+close_reason: "pm-8pnj now carries passing runnable receipts for exact coverage, packed npx, packed bunx, and 88-command dogfood; append-only history drift is zero and the evidence-ordering recurrence gate is recorded."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ervmsc
+  gate_id: pm-closeout-runnable-evidence-ordering
+  negative_control: "Claim full coverage, packed npx, packed bunx, or dogfood without a linked runnable command and PM execution receipt; review must refuse the closeout claim."
+  local_checks[3]: pm test pm-8pnj --run --progress,pm validate --check-history-drift,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""
