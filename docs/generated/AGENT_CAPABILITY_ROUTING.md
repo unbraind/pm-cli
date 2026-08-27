@@ -14,4 +14,4 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | graph | `graph`, `deps`, `plan` |
 | quality | `test`, `test-all`, `validate`, `assurance`, `contracts` |
 | automation | `meet`, `event`, `remind` |
-| extensions | `extension`, `package`, `packages`, `install`, `upgrade` |
+| extensions | `package` |

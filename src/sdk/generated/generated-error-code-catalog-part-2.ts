@@ -428,6 +428,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "package_upgrade_modes_mutually_exclusive",
+    meaning: "Package upgrade modes mutually exclusive condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/governance/upgrade.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "package_upgrade_modes_mutually_exclusive",
+    aliases: [],
+  },
+  {
     code: "positional_shape_budget_exceeded",
     meaning: "Positional shape budget exceeded condition.",
     stability: "provisional",

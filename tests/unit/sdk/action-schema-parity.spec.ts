@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  PM_DEPRECATED_TOOL_ACTIONS,
+  PM_DISCOVERABLE_TOOL_ACTIONS,
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   analyzePmToolActionParity,
@@ -14,6 +16,7 @@ import {
 } from "../../../src/sdk/cli-contracts.js";
 import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
 import { PM_POSITIONAL_ACTION_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
+import { pmToolActionNestedOptionKeys } from "../../../src/sdk/cli-contracts/tool-schema.js";
 import { analyzeSdkActionCoverage } from "../../../src/sdk/runtime.js";
 
 type SchemaWithProperties = {
@@ -26,6 +29,26 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("discovers the canonical package upgrade action without its deprecated alias", () => {
+    expect(PM_DISCOVERABLE_TOOL_ACTIONS).toContain("package-upgrade");
+    expect(PM_DISCOVERABLE_TOOL_ACTIONS).not.toContain("upgrade");
+    expect(PM_DEPRECATED_TOOL_ACTIONS).toContain("upgrade");
+    expect(PM_TOOL_ACTIONS).not.toContain("extension-upgrade");
+    expect(
+      resolveSubcommandFlagContractsForCommand("package upgrade").map(
+        ({ flag }) => flag,
+      ),
+    ).toEqual(expect.arrayContaining(["--dry-run", "--packages-only"]));
+  });
+
+  it("accepts scope compatibility aliases in nested upgrade options", () => {
+    for (const action of ["upgrade", "package-upgrade"]) {
+      expect(pmToolActionNestedOptionKeys(action)).toEqual(
+        expect.arrayContaining(["project", "local", "global"]),
+      );
+    }
+  });
+
   it("derives CLI action reachability with explicit, shrinking waivers", () => {
     expect(analyzePmToolActionParity()).toEqual({
       missing_cli_actions: [],

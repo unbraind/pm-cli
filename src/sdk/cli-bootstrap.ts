@@ -111,6 +111,7 @@ const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
   "--lean",
   "--token-accounting",
   "--output-row-contract",
+  "--all",
 ]);
 
 interface BootstrapGlobalParseState {

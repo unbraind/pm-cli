@@ -342,14 +342,20 @@ try {
   requireContractFlag("package", "--install");
   requireContractFlag("package", "--project");
   requireContractFlag("package", "--global");
-  requireContractFlag("upgrade", "--packages-only");
-  requireContractFlag("upgrade", "--dry-run");
+  requireContractFlag("package upgrade", "--packages-only");
+  requireContractFlag("package upgrade", "--dry-run");
   requireContractFlag("init", "--agent-guidance");
   requireContractFlag("init", "--with-packages");
   requireContractFlag("get", "--fields");
   const packageAliasesFromContracts =
     allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package")?.aliases ?? [];
-  assert(packageAliasesFromContracts.includes("install"), "contracts --flags-only missing install command alias");
+  assert(!packageAliasesFromContracts.includes("install"), "contracts --flags-only exposed install as aggregate package alias");
+  const packageInstallAliasesFromContracts =
+    allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package install")?.aliases ?? [];
+  assert(packageInstallAliasesFromContracts.includes("install"), "contracts --flags-only missing package install command alias");
+  const packageUpgradeAliasesFromContracts =
+    allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package upgrade")?.aliases ?? [];
+  assert(packageUpgradeAliasesFromContracts.includes("upgrade"), "contracts --flags-only missing package upgrade command alias");
 
   run("calendar after init packages", [
     "calendar",
@@ -477,13 +483,13 @@ try {
   const todosExportFolder = path.join(tempRoot, "todos-export");
   const todosExport = run("package command todos export", ["todos", "export", "--folder", todosExportFolder]);
   assert(todosExport?.exported >= 1, "todos export package command did not export any items");
-  const upgradePackages = run("upgrade packages", ["upgrade", "--packages-only"]);
-  assert(upgradePackages?.summary?.requested_packages === true, "upgrade --packages-only did not request packages");
-  assert(upgradePackages?.summary?.failed === 0, "upgrade --packages-only reported failed package upgrades");
-  const upgradeDryRun = run("upgrade dry-run", ["upgrade", "--dry-run"]);
-  assert(upgradeDryRun?.dry_run === true, "upgrade --dry-run did not report dry_run=true");
-  assert(upgradeDryRun?.summary?.requested_cli === true, "upgrade --dry-run did not include CLI planning");
-  assert(upgradeDryRun?.summary?.requested_packages === true, "upgrade --dry-run did not include package planning");
+  const upgradePackages = run("upgrade packages", ["package", "upgrade", "--packages-only"]);
+  assert(upgradePackages?.summary?.requested_packages === true, "package upgrade --packages-only did not request packages");
+  assert(upgradePackages?.summary?.failed === 0, "package upgrade --packages-only reported failed package upgrades");
+  const upgradeDryRun = run("upgrade dry-run", ["package", "upgrade", "--dry-run"]);
+  assert(upgradeDryRun?.dry_run === true, "package upgrade --dry-run did not report dry_run=true");
+  assert(upgradeDryRun?.summary?.requested_cli === true, "package upgrade --dry-run did not include CLI planning");
+  assert(upgradeDryRun?.summary?.requested_packages === true, "package upgrade --dry-run did not include package planning");
 
   const runtimeContracts = run("sdk import", ["contracts", "--availability-only", "--runtime-only", "--output-budget", "unbounded"]);
   const availableRuntimeActions = new Set(

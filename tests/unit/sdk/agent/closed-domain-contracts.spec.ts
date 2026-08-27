@@ -7,7 +7,7 @@ import {
 describe("closed-domain contracts", () => {
   it("publishes every core intent and list-family field refusal once", () => {
     const contracts = listCoreClosedDomainContracts();
-    expect(contracts).toHaveLength(18);
+    expect(contracts).toHaveLength(19);
     expect(new Set(contracts.map(({ probe_id: probeId }) => probeId)).size).toBe(
       contracts.length,
     );
@@ -23,6 +23,11 @@ describe("closed-domain contracts", () => {
         expect.objectContaining({
           probe_id: "search-invalid-intent",
           allowed_values: ["discover"],
+        }),
+        expect.objectContaining({
+          probe_id: "package-upgrade-mutually-exclusive-modes",
+          flag: "--cli-only/--packages-only",
+          error_code: "package_upgrade_modes_mutually_exclusive",
         }),
       ]),
     );

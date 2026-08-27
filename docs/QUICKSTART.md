@@ -9,7 +9,7 @@ Use this page to get from a clean repository to a tracked, verified item.
 - Claim before implementation.
 - Link changed files, docs, and tests to the item.
 - Close only after evidence is recorded.
-- Use `pm install guide-shell --project` before `pm guide quickstart` or `pm guide workflows` when you need local docs routing.
+- Use `pm package install guide-shell --project` before `pm guide quickstart` or `pm guide workflows` when you need local docs routing.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
@@ -23,10 +23,10 @@ pm --version
 For updates, use the registry package again:
 
 ```bash
-pm upgrade --cli-only
+pm package upgrade --cli-only
 ```
 
-`pm upgrade` uses `npm install -g @unbrained/pm-cli@latest` for the CLI/SDK and can also refresh installed pm packages. Do not use the GitHub git URL as the normal global update path. If a previous git-sourced install left a stale `pm` shim, run `pm upgrade --cli-only --repair`, run `bash scripts/install.sh --repair` from a checkout, or uninstall the package before reinstalling from npm.
+`pm package upgrade` uses `npm install -g @unbrained/pm-cli@latest` for the CLI/SDK and can also refresh installed pm packages. Do not use the GitHub git URL as the normal global update path. If a previous git-sourced install left a stale `pm` shim, run `pm package upgrade --cli-only --repair`, run `bash scripts/install.sh --repair` from a checkout, or uninstall the package before reinstalling from npm. The hidden `pm upgrade` alias remains compatible with existing automation and emits a migration hint on stderr.
 
 For one-off use:
 
@@ -39,8 +39,8 @@ Optional first-party packages are installable during init or on demand:
 ```bash
 pm init --defaults --with-packages
 pm package catalog --project
-pm install '*' --project
-pm install all --project
+pm package install '*' --project
+pm package install all --project
 pm package doctor --project --detail summary
 ```
 
@@ -78,16 +78,16 @@ pm create \
 
 Useful item types:
 
-| Type | Use |
-|------|-----|
-| `Epic` | broad outcome or initiative |
-| `Feature` | user-facing capability or major slice |
-| `Task` | implementation work |
-| `Chore` | maintenance, refactoring, or housekeeping work |
-| `Issue` | bug or defect |
-| `Decision` | recorded choice and rationale |
-| `Plan` | agent-optimized living plan with ordered steps and evidence |
-| `Event`, `Reminder`, `Milestone`, `Meeting` | calendar-aware planning |
+| Type                                        | Use                                                         |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `Epic`                                      | broad outcome or initiative                                 |
+| `Feature`                                   | user-facing capability or major slice                       |
+| `Task`                                      | implementation work                                         |
+| `Chore`                                     | maintenance, refactoring, or housekeeping work              |
+| `Issue`                                     | bug or defect                                               |
+| `Decision`                                  | recorded choice and rationale                               |
+| `Plan`                                      | agent-optimized living plan with ordered steps and evidence |
+| `Event`, `Reminder`, `Milestone`, `Meeting` | calendar-aware planning                                     |
 
 ## Find and Claim Work
 

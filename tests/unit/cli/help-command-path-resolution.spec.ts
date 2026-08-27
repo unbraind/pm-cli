@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { describe, expect, it } from "vitest";
 import { _testOnly } from "../../../src/cli/help-json-payload.js";
+import { setPmCommandHelpVisibilityTier } from "../../../src/cli/help-content.js";
 import { hasSubcommandFlagContractsForCommand } from "../../../src/sdk/index.js";
 
 describe("structured help command-path resolution", () => {
@@ -344,6 +345,97 @@ describe("structured help command-path resolution", () => {
       expect.objectContaining({ name: "help" }),
       expect.objectContaining({ name: "visible" }),
     ]);
+  });
+
+  it("includes hidden executable aliases with lifecycle metadata in full discovery", () => {
+    const root = new Command("pm");
+    root.command("list").description("List work");
+    root.command("get").description("Get work");
+    root.command("fetch", { hidden: true }).description("Get-work alias");
+    root
+      .command("list-open", { hidden: true })
+      .description("Compatibility open-work list");
+
+    expect(
+      _testOnly.buildHelpSubcommandSummaries(root, new Map(), true),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "list-open",
+          alias_for: "list",
+          alias_lifecycle: "deprecated",
+          deprecated: true,
+        }),
+        expect.objectContaining({
+          name: "fetch",
+          alias_for: "get",
+          alias_lifecycle: "permanent",
+        }),
+      ]),
+    );
+  });
+
+  it("keeps dynamically registered internal commands out of full discovery", () => {
+    const root = new Command("pm");
+    root.command("visible").description("Visible command");
+    const dynamicInternal = root
+      .command("dynamic-internal")
+      .description("Internal extension command");
+    setPmCommandHelpVisibilityTier(dynamicInternal, "internal");
+
+    expect(
+      _testOnly
+        .buildHelpSubcommandSummaries(root, new Map(), true)
+        .map(({ name }) => name),
+    ).toEqual(["help", "visible"]);
+  });
+
+  it("preserves a dynamically registered full visibility tier in full discovery", () => {
+    const root = new Command("pm");
+    const dynamicFull = root
+      .command("dynamic-full")
+      .description("Full-discovery extension command");
+    setPmCommandHelpVisibilityTier(dynamicFull, "full");
+
+    expect(
+      _testOnly
+        .buildHelpSubcommandSummaries(root, new Map(), true)
+        .find(({ name }) => name === "dynamic-full"),
+    ).toMatchObject({ tier: "full" });
+  });
+
+  it("projects the complete root alias contract in full structured discovery", () => {
+    const root = new Command("pm");
+    root.command("list").description("List work");
+
+    expect(
+      _testOnly.buildJsonHelpPayload(
+        root,
+        root,
+        ["--all", "--help", "--json"],
+        [],
+        new Map(),
+      ),
+    ).toMatchObject({
+      command_aliases: expect.arrayContaining([
+        expect.objectContaining({
+          alias: "list-open",
+          canonical: "list",
+          canonical_argv: ["list", "--status", "open"],
+          lifecycle: "deprecated",
+          hidden: true,
+          deprecated: true,
+        }),
+        expect.objectContaining({
+          alias: "fetch",
+          canonical: "get",
+          canonical_argv: ["get"],
+          lifecycle: "permanent",
+          hidden: false,
+          deprecated: false,
+        }),
+      ]),
+    });
   });
 
   it("filters action options through aliases and renders every slot shape", () => {

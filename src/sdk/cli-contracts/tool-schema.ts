@@ -202,6 +202,7 @@ const PM_TOOL_ACTION_NESTED_OPTION_COMPATIBILITY_KEYS = Object.freeze({
   ...Object.fromEntries(
     PM_TOOL_ACTIONS.filter(
       (action) =>
+        action === "upgrade" ||
         action === "install" ||
         action === "extension" ||
         action === "package" ||
@@ -519,6 +520,19 @@ const SCHEDULING_ACTION_SCHEMA_CONTRACT: PmActionSchemaContract = {
   ],
 };
 
+const UPGRADE_ACTION_SCHEMA_CONTRACT: PmActionSchemaContract = {
+  optional: [
+    "target",
+    "scope",
+    "dryRun",
+    "cliOnly",
+    "packagesOnly",
+    "repair",
+    "tag",
+    "packageName",
+  ],
+};
+
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
   {
     init: {
@@ -550,22 +564,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     ...managedLifecycleSchemaContracts("extension"),
     ...managedLifecycleSchemaContracts("package"),
+    "package-upgrade": UPGRADE_ACTION_SCHEMA_CONTRACT,
     install: {
       optional: ["target", "github", "scope", "ref"],
       anyOfRequired: [["target"], ["github"]],
     },
-    upgrade: {
-      optional: [
-        "target",
-        "scope",
-        "dryRun",
-        "cliOnly",
-        "packagesOnly",
-        "repair",
-        "tag",
-        "packageName",
-      ],
-    },
+    upgrade: UPGRADE_ACTION_SCHEMA_CONTRACT,
     create: {
       required: [
         "title",

@@ -176,4 +176,33 @@ describe("help-content rendering helpers", () => {
       configuredHelp.visibleOptions?.(graph).map((option) => option.long),
     ).toContain("--scope");
   });
+
+  it("reveals every non-internal command and alias lifecycle in full help", () => {
+    const program = new Command("pm");
+    program.command("context").description("Orient to current work");
+    program.command("health").description("Run health checks");
+    const graph = program.command("graph").description("Inspect relationships");
+    graph.command("validate").description("Validate relationships");
+    const internalChild = graph
+      .command("internal-index")
+      .description("Internal graph index operation");
+    setPmCommandHelpVisibilityTier(internalChild, "internal");
+
+    attachRichHelpText(program, ["help", "--all"]);
+
+    let fullHelp = "";
+    program.configureOutput({ writeOut: (text) => (fullHelp += text) });
+    program.outputHelp();
+    expect(fullHelp).toContain("context");
+    expect(fullHelp).toContain("health");
+    expect(fullHelp).toContain("graph");
+    expect(fullHelp).toContain("Deprecated aliases:");
+    expect(fullHelp).toContain("list-open -> pm list --status open");
+    expect(
+      program
+        .configureHelp()
+        .visibleCommands?.(graph)
+        .map((command) => command.name()),
+    ).toEqual(["validate", "help"]);
+  });
 });

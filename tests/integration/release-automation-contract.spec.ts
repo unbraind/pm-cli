@@ -76,7 +76,7 @@ describe("release automation contract", () => {
       "node scripts/release/verify-published-release.mjs",
     );
     expect(packageJson.scripts?.["changelog:pm:install"]).toBe(
-      "node dist/cli.js install npm:pm-changelog --project",
+      "node dist/cli.js package install npm:pm-changelog --project",
     );
     expect(packageJson.scripts?.["changelog:pm"]).toContain(
       "changelog:pm:install",

@@ -10,7 +10,13 @@ import {
   type GlobalOptions,
   EXIT_CODE,
   PmCliError,
+  readSettings,
+  resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
+import {
+  renderPmCommandAliasMigrationHint,
+  resolvePmCommandAlias,
+} from "../sdk/cli-contracts.js";
 import {
   collect,
   getGlobalOptions,
@@ -48,6 +54,29 @@ type ExtensionSubcommandAction =
   | "migrate";
 
 type LifecycleCommandVocabulary = "extension" | "package";
+
+const LIFECYCLE_DEPRECATION_ALIASES: Record<
+  LifecycleCommandVocabulary,
+  "extension" | undefined
+> = {
+  extension: "extension",
+  package: undefined,
+};
+
+async function emitDeprecatedAliasHint(
+  alias: "extension" | "install" | "upgrade" | undefined,
+  command: Command,
+): Promise<void> {
+  if (!alias) return;
+  const aliasContract = resolvePmCommandAlias(alias)!;
+  const globalOptions = getGlobalOptions(command);
+  const deprecationHints = await readSettings(
+    resolvePmRoot(process.cwd(), globalOptions.path),
+  ).then((settings) => settings.ux!.deprecation_hints!);
+  if (deprecationHints) {
+    printError(renderPmCommandAliasMigrationHint(aliasContract));
+  }
+}
 
 const EXTENSION_ACTION_OPTION_KEYS: Record<ExtensionSubcommandAction, string> =
   {
@@ -294,10 +323,16 @@ async function executeExtensionCommand(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  const effectiveVocabulary =
+    vocabulary === "extension" ? "package" : vocabulary;
+  await emitDeprecatedAliasHint(
+    LIFECYCLE_DEPRECATION_ALIASES[vocabulary],
+    command,
+  );
   const normalizedOptions = normalizeExtensionOptions(
     options,
     forcedAction,
-    vocabulary,
+    effectiveVocabulary,
   );
   const outputOption =
     typeof normalizedOptions.output === "string"
@@ -313,7 +348,7 @@ async function executeExtensionCommand(
   if (normalizedOptions.markdown === true) {
     await emitExtensionMarkdownResult({
       result,
-      vocabulary,
+      vocabulary: effectiveVocabulary,
       outputPath,
       globalOptions,
     });
@@ -353,62 +388,21 @@ function serializeExtensionInstallError(
   };
 }
 
-async function executeExtensionInstallCommand(
-  targets: string[] | undefined,
+async function runMultiTargetExtensionInstalls(
+  targets: string[],
   options: Record<string, unknown>,
-  command: Command,
-  vocabulary: LifecycleCommandVocabulary,
-): Promise<void> {
-  const normalizedTargets = await normalizeInstallTargets(targets);
-  if (normalizedTargets === undefined || normalizedTargets.length <= 1) {
-    await executeExtensionCommand(
-      normalizedTargets?.[0],
-      options,
-      command,
-      "install",
-      vocabulary,
-    );
-    return;
-  }
-
-  const globalOptions = getGlobalOptions(command);
-  const startedAt = Date.now();
-  const normalizedOptions = normalizeExtensionOptions(
-    options,
-    "install",
-    vocabulary,
-  );
-  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, undefined);
-  const hasForcedGithubSource = [
-    normalizedOptions.gh,
-    normalizedOptions.github,
-  ].some((value) => typeof value === "string" && value.trim().length > 0);
-  if (hasForcedGithubSource) {
-    throw new PmCliError(
-      "Multiple install targets cannot be combined with --gh/--github. Install one GitHub source per command, or pass multiple explicit local, bundled, or npm: targets.",
-      EXIT_CODE.USAGE,
-      {
-        code: "multi_target_github_install_ambiguous",
-        required:
-          "Use exactly one positional target with --gh/--github, or omit --gh/--github when installing multiple targets.",
-        examples: [
-          "pm install --gh owner/repo",
-          "pm install npm:pm-guide-shell pm-todos",
-        ],
-      },
-    );
-  }
-
+  globalOptions: GlobalOptions,
+): Promise<{
+  rows: Array<Record<string, unknown>>;
+  warnings: string[];
+  failureExitCode: number;
+}> {
   const rows: Array<Record<string, unknown>> = [];
   const warnings: string[] = [];
   let failureExitCode: number = EXIT_CODE.GENERIC_FAILURE;
-  for (const target of normalizedTargets) {
+  for (const target of targets) {
     try {
-      const result = await runExtension(
-        target,
-        normalizedOptions,
-        globalOptions,
-      );
+      const result = await runExtension(target, options, globalOptions);
       const details = extractExtensionInstallDetails(result);
       const targetWarnings = Array.isArray(result.warnings)
         ? result.warnings
@@ -458,6 +452,67 @@ async function executeExtensionInstallCommand(
       });
     }
   }
+  return { rows, warnings, failureExitCode };
+}
+
+async function executeExtensionInstallCommand(
+  targets: string[] | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+  vocabulary: LifecycleCommandVocabulary,
+): Promise<void> {
+  const effectiveVocabulary =
+    vocabulary === "extension" ? "package" : vocabulary;
+  await emitDeprecatedAliasHint(
+    LIFECYCLE_DEPRECATION_ALIASES[vocabulary],
+    command,
+  );
+  const normalizedTargets = await normalizeInstallTargets(targets);
+  if (normalizedTargets === undefined || normalizedTargets.length <= 1) {
+    await executeExtensionCommand(
+      normalizedTargets?.[0],
+      options,
+      command,
+      "install",
+      effectiveVocabulary,
+    );
+    return;
+  }
+
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const normalizedOptions = normalizeExtensionOptions(
+    options,
+    "install",
+    effectiveVocabulary,
+  );
+  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, undefined);
+  const hasForcedGithubSource = [
+    normalizedOptions.gh,
+    normalizedOptions.github,
+  ].some((value) => typeof value === "string" && value.trim().length > 0);
+  if (hasForcedGithubSource) {
+    throw new PmCliError(
+      "Multiple install targets cannot be combined with --gh/--github. Install one GitHub source per command, or pass multiple explicit local, bundled, or npm: targets.",
+      EXIT_CODE.USAGE,
+      {
+        code: "multi_target_github_install_ambiguous",
+        required:
+          "Use exactly one positional target with --gh/--github, or omit --gh/--github when installing multiple targets.",
+        examples: [
+          "pm install --gh owner/repo",
+          "pm install npm:pm-guide-shell pm-todos",
+        ],
+      },
+    );
+  }
+
+  const { rows, warnings, failureExitCode } =
+    await runMultiTargetExtensionInstalls(
+      normalizedTargets,
+      normalizedOptions,
+      globalOptions,
+    );
 
   const failedCount = rows.filter((row) => row.ok !== true).length;
   const result = {
@@ -503,6 +558,54 @@ function addLifecycleScopeOptions<T extends Command>(
     : addExtensionScopeOptions(command);
 }
 
+function addUpgradeOptions<T extends Command>(command: T): T {
+  return command
+    .option(
+      "--dry-run",
+      "Plan CLI/package upgrades without running npm or reinstalling packages",
+    )
+    .option("--cli-only", "Upgrade only the pm CLI/SDK npm package")
+    .option("--packages-only", "Upgrade only managed pm packages")
+    .option(
+      "--repair",
+      "Force npm global reinstall when upgrading the pm CLI/SDK",
+    )
+    .option(
+      "--tag <value>",
+      "npm dist-tag/version for CLI and registry package upgrades",
+    )
+    .option(
+      "--package-name <value>",
+      "Override the CLI package name for self-upgrade testing",
+    );
+}
+
+async function executeUpgradeCommand(
+  target: string | undefined,
+  command: Command,
+  legacyAlias: boolean,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  if (legacyAlias) {
+    await emitDeprecatedAliasHint("upgrade", command);
+  }
+  const result = await runUpgrade(
+    target,
+    command.opts() as Record<string, unknown>,
+    globalOptions,
+  );
+  printResult(result, globalOptions);
+  if (!result.ok) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+  if (globalOptions.profile) {
+    printError(
+      `profile:command=package-upgrade took_ms=${Date.now() - startedAt}`,
+    );
+  }
+}
+
 function registerLifecycleCommand(
   program: Command,
   vocabulary: LifecycleCommandVocabulary,
@@ -511,22 +614,19 @@ function registerLifecycleCommand(
   const plural = vocabulary === "package" ? "packages" : "extensions";
   const commandName = vocabulary;
   const lifecycleCommand = program
-    .command(commandName)
+    .command(commandName, { hidden: vocabulary === "extension" })
     .argument(
       "[target]",
-      `${noun[0]!.toUpperCase()}${noun.slice(1)} source/name or scaffold target path (for --init/--scaffold)`,
+      `${noun[0]!.toUpperCase()}${noun.slice(1)} source, name, or scaffold path`,
     )
     .option("--init", `Generate a starter ${noun} scaffold at target path`)
     .option("--scaffold", "Alias for --init")
     .option(
       "--capability <kind>",
-      `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`,
+      "Starter capability for --init (default: commands)",
       collect,
     )
-    .option(
-      "--install",
-      `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`,
-    )
+    .option("--install", `Install a ${noun} source`)
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--list", "Alias for --explore")
@@ -597,8 +697,8 @@ function registerLifecycleCommand(
     .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
     .description(
       vocabulary === "package"
-        ? "Manage package lifecycle operations for project or global scope. Backward-compatible with extension packages."
-        : "Manage extension lifecycle operations for project or global scope.",
+        ? "Manage package lifecycle in project or global scope."
+        : "Manage extension lifecycle in project or global scope.",
     )
     .action(
       async (
@@ -957,6 +1057,30 @@ function registerLifecycleCommand(
       );
     },
   );
+
+  if (vocabulary === "package") {
+    addUpgradeOptions(
+      addPackageScopeOptions(
+        lifecycleCommand
+          .command("upgrade")
+          .argument(
+            "[target]",
+            "Optional managed package name/source to upgrade; omit to upgrade pm CLI and all managed packages",
+          )
+          .description(
+            "Upgrade the pm CLI/SDK and refresh managed installable pm packages.",
+          ),
+      ),
+    ).action(
+      async (
+        target: string | undefined,
+        _options: Record<string, unknown>,
+        command,
+      ) => {
+        await executeUpgradeCommand(target, command, false);
+      },
+    );
+  }
 }
 
 async function runInitCommandAction(
@@ -1270,7 +1394,7 @@ export function registerSetupCommands(program: Command): void {
 
   addPackageScopeOptions(
     program
-      .command("install")
+      .command("install", { hidden: true })
       .argument(
         "[targets...]",
         "Package source (local path, bundled alias, npm: source, wildcard, or GitHub source)",
@@ -1290,6 +1414,7 @@ export function registerSetupCommands(program: Command): void {
       _options: Record<string, unknown>,
       command,
     ) => {
+      await emitDeprecatedAliasHint("install", command);
       await executeExtensionInstallCommand(
         targets,
         command.optsWithGlobals() as Record<string, unknown>,
@@ -1299,54 +1424,25 @@ export function registerSetupCommands(program: Command): void {
     },
   );
 
-  addPackageScopeOptions(
-    program
-      .command("upgrade")
-      .argument(
-        "[target]",
-        "Optional managed package name/source to upgrade; omit to upgrade pm CLI and all managed packages",
-      )
-      .option(
-        "--dry-run",
-        "Plan CLI/package upgrades without running npm or reinstalling packages",
-      )
-      .option("--cli-only", "Upgrade only the pm CLI/SDK npm package")
-      .option("--packages-only", "Upgrade only managed pm packages")
-      .option(
-        "--repair",
-        "Force npm global reinstall when upgrading the pm CLI/SDK",
-      )
-      .option(
-        "--tag <value>",
-        "npm dist-tag/version for CLI and registry package upgrades",
-      )
-      .option(
-        "--package-name <value>",
-        "Override the CLI package name for self-upgrade testing",
-      )
-      .description(
-        "Upgrade the pm CLI/SDK and refresh managed installable pm packages.",
-      ),
+  addUpgradeOptions(
+    addPackageScopeOptions(
+      program
+        .command("upgrade", { hidden: true })
+        .argument(
+          "[target]",
+          "Optional managed package name/source to upgrade; omit to upgrade pm CLI and all managed packages",
+        )
+        .description(
+          "Upgrade the pm CLI/SDK and refresh managed installable pm packages.",
+        ),
+    ),
   ).action(
     async (
       target: string | undefined,
       _options: Record<string, unknown>,
       command,
     ) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runUpgrade(
-        target,
-        command.opts() as Record<string, unknown>,
-        globalOptions,
-      );
-      printResult(result, globalOptions);
-      if (!result.ok) {
-        process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=upgrade took_ms=${Date.now() - startedAt}`);
-      }
+      await executeUpgradeCommand(target, command, true);
     },
   );
 }

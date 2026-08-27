@@ -1,0 +1,12 @@
+{
+  "last_dolt_commit": "fixture-commit",
+  "timestamp": "2026-03-20T12:01:00.000Z",
+  "counts": {
+    "issues": 3,
+    "events": 2,
+    "comments": 1,
+    "dependencies": 1,
+    "labels": 2,
+    "config": 0
+  }
+}

@@ -1,10 +1,16 @@
 # Noun–Verb CLI Grammar and Compatibility Policy
 
-Tracked by [pm-pbyu](../.agents/pm/decisions/pm-pbyu.toon), implemented through [pm-0z7n](../.agents/pm/features/pm-0z7n.toon), [pm-pfqi](../.agents/pm/tasks/pm-pfqi.toon), [pm-yy8rmx](../.agents/pm/tasks/pm-yy8rmx.toon), and [pm-wt43zj](../.agents/pm/tasks/pm-wt43zj.toon).
+Tracked by [pm-pbyu](../.agents/pm/decisions/pm-pbyu.toon), implemented through [pm-0z7n](../.agents/pm/features/pm-0z7n.toon), [pm-pfqi](../.agents/pm/tasks/pm-pfqi.toon), [pm-yy8rmx](../.agents/pm/tasks/pm-yy8rmx.toon), [pm-wt43zj](../.agents/pm/tasks/pm-wt43zj.toon), [pm-e2bq](../.agents/pm/features/pm-e2bq.toon), and [pm-yql1](../.agents/pm/tasks/pm-yql1.toon).
 
 ## Agent Quick Context
 
 Use the canonical noun-first form when generating commands. Existing spellings remain executable, but deprecated compatibility aliases are absent from default help and completion discovery and emit one migration hint on stderr. Machine clients can read alias lifecycle and replacement tokens from `pm contracts --full --json`.
+
+Default `pm --help` stays within the core one-screen budget. Use
+`pm help --all` for every public command or `pm help --all --json` for the same
+surface with per-command visibility/family metadata and the complete alias
+lifecycle table. `--explain` also expands command discovery while adding the
+detailed narrative.
 
 The first completed consolidation is the list family:
 

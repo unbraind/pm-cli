@@ -16,9 +16,15 @@ These contracts keep project management equal to context management: reads say w
 pm get pm-a1b2 --output-include id,title
 pm get pm-a1b2 --output-include item.id,item.title,linked
 pm get pm-a1b2 --output-include item,claim_state
+pm get pm-a1b2 --output-include comments,learnings,tests
 ```
 
 An unknown selector is a usage refusal that lists the valid vocabulary. Selecting the complete `item` object together with an item field is also refused because the two selectors express conflicting projection depths. Every successful projection carries an `omission_receipt` with the exact selectors needed to restore withheld item fields or sections.
+
+Collection selectors participate in the same pre-execution projection on CLI,
+SDK, and MCP transports. Requesting `comments`, `notes`, `learnings`, `files`,
+`tests`, `docs`, `reminders`, or `events` therefore loads only the named item
+collections before the universal output layer removes unrequested fields.
 
 Automatic receipts cover every heavy item collection (`comments`, `notes`,
 `learnings`, `files`, `tests`, `docs`, `reminders`, and `events`) plus `body`,

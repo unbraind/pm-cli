@@ -3,6 +3,23 @@ import { buildCommandAliasSurface } from "../../../../src/cli/commands/contracts
 import { PM_COMMAND_ALIAS_CONTRACTS } from "../../../../src/sdk/cli-contracts.js";
 
 describe("runtime command alias surface defenses", () => {
+  it("assigns the install alias only to the package install command", () => {
+    const aliases = buildCommandAliasSurface([
+      "package",
+      "package install",
+      "extension",
+      "packages",
+      "install",
+    ]);
+
+    expect(
+      aliases.find((entry) => entry.canonical === "package")?.aliases,
+    ).toEqual(["extension", "packages"]);
+    expect(
+      aliases.find((entry) => entry.canonical === "package install")?.aliases,
+    ).toEqual(["install"]);
+  });
+
   it("omits declarations whose canonical or Commander alias is absent", () => {
     const aliases = buildCommandAliasSurface(
       ["list", "list-all"],

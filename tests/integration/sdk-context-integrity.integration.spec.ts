@@ -44,8 +44,8 @@ describe("SDK context integrity transports", () => {
           has_omissions: true,
           omitted_field_groups: expect.arrayContaining([
             {
-              name: "item.description",
-              restore_with: "--output-include item.description",
+              name: "children",
+              restore_with: "--fields children",
             },
           ]),
         },

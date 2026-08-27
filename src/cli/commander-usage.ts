@@ -733,16 +733,22 @@ export function isKnownHelpCommandPath(
     return true;
   }
   let current = root;
-  let matchedAny = false;
-  for (const token of commandPathTokens) {
+  for (const [tokenIndex, token] of commandPathTokens.entries()) {
     const next = resolveChildCommandByToken(current, token);
     if (!next) {
-      return matchedAny;
+      if (current.commands.some((candidate) => candidate.name() !== "help")) {
+        return false;
+      }
+      const declaredArguments = current.registeredArguments;
+      return (
+        declaredArguments.length > 0 &&
+        (declaredArguments.at(-1)?.variadic === true ||
+          commandPathTokens.length - tokenIndex <= declaredArguments.length)
+      );
     }
-    matchedAny = true;
     current = next;
   }
-  return matchedAny;
+  return true;
 }
 
 async function resolveWorkspaceUsageContext(

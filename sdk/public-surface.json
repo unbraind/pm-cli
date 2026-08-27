@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1801,
+    "covered_symbols": 1802,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1802
+    "required_symbols": 1803
   },
   "breaking_acknowledgements": [
     {
@@ -1281,6 +1281,41 @@
       ],
       "package_version": "2026.8.26",
       "reason": "Complete the unmerged Skills directory pagination contract with required hasMore metadata"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_CLI_GRAMMAR_CONTRACT",
+        "signature ./sdk:PM_CLI_SHARED_VERBS",
+        "signature ./sdk/contracts:PM_CLI_GRAMMAR_CONTRACT",
+        "signature ./sdk/contracts:PM_CLI_SHARED_VERBS"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "pm-tnud intentionally adds the canonical package upgrade verb to the public CLI grammar contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmToolAction",
+        "signature ./sdk/contracts:PmToolAction"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Adds canonical package-upgrade action while retaining deprecated upgrade compatibility routing"
+    },
+    {
+      "changes": [
+        "signature ./sdk:UpgradeCommandOptions",
+        "signature ./sdk/governance:UpgradeCommandOptions",
+        "signature ./sdk/runtime:UpgradeCommandOptions"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Adds structured upgrade scope while preserving project local and global boolean compatibility"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmClosedDomainContract",
+        "signature ./sdk/contracts:PmClosedDomainContract"
+      ],
+      "package_version": "2026.8.26",
+      "reason": "Add a domain-specific package upgrade mode-conflict refusal code so SDK consumers can distinguish lifecycle validation from query projection validation."
     }
   ],
   "entrypoints": {
@@ -10231,7 +10266,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_GRAMMAR_CONTRACT",
-          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
+          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
         },
         {
           "classification": "contract_data",
@@ -10249,7 +10284,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_SHARED_VERBS",
-          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]"
+          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]"
         },
         {
           "classification": "contract_data",
@@ -10636,6 +10671,12 @@
           "signature": "Readonly<Record<\"assets\" | \"docs\" | \"examples\" | \"extensions\" | \"prompts\", readonly string[]>>"
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS",
+          "signature": "readonly [\"upgrade\"]"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "PM_PACKAGE_RESOURCE_KINDS",
@@ -10945,7 +10986,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmClosedDomainContract",
-          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
+          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"package_upgrade_modes_mutually_exclusive\" | \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -12073,7 +12114,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmItemAction;"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmPackageOnlyAction | PmItemAction;"
         },
         {
           "classification": "contract_data",
@@ -16774,6 +16815,12 @@
           "signature": "(argv: string[]) => string[] | calls: (argv: string[]) => string[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "StructuredJsonValue",
+          "signature": "export type StructuredJsonValue = null | boolean | number | string | StructuredJsonValue[] | { [key: string]: StructuredJsonValue; };"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "SUBCOMMAND_GLOBAL_FLAG_CONTRACTS",
@@ -17563,7 +17610,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
-          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+          "signature": "export interface UpgradeCommandOptions { scope?: ExtensionScope; dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
           "classification": "supported",
@@ -20473,7 +20520,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_GRAMMAR_CONTRACT",
-          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
+          "signature": "{ readonly nouns: readonly [\"item\", \"list\", \"context\", \"search\", \"graph\", \"history\", \"workspace\", \"package\", \"ops\", \"plan\", \"contracts\", \"help\"]; readonly shared_verbs: readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]; readonly scope_before_verb: true; readonly visible_top_level_ceiling: 69; readonly ceiling_raise_requires_pm_item: true; readonly positional_shape_budget: 21; }"
         },
         {
           "classification": "contract_data",
@@ -20491,7 +20538,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CLI_SHARED_VERBS",
-          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"verify\"]"
+          "signature": "readonly [\"activate\", \"add\", \"adopt\", \"adopt-all\", \"catalog\", \"compact\", \"complete\", \"create\", \"deactivate\", \"delete\", \"describe\", \"doctor\", \"edit\", \"explore\", \"import\", \"init\", \"inspect\", \"install\", \"list\", \"manage\", \"migrate\", \"mutate\", \"read\", \"redact\", \"reload\", \"remove\", \"reopen\", \"repair\", \"restore\", \"run\", \"show\", \"uninstall\", \"upgrade\", \"verify\"]"
         },
         {
           "classification": "contract_data",
@@ -20658,6 +20705,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_PACKAGE_ONLY_ACTION_SUBCOMMANDS",
+          "signature": "readonly [\"upgrade\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_POSITIONAL_ACTION_CONTRACTS",
           "signature": "readonly PmPositionalActionContract[]"
         },
@@ -20809,7 +20862,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmClosedDomainContract",
-          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
+          "signature": "export interface PmClosedDomainContract { probe_id: string; command: string; flag: string; rejected_value: string; refusal_args: readonly string[]; allowed_values: readonly string[]; suggested_retry_args: readonly string[]; error_code: \"package_upgrade_modes_mutually_exclusive\" | \"projection_options_mutually_exclusive\" | \"unknown_context_intent\" | \"unknown_field_projection\"; allowed_values_required?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -21319,7 +21372,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmItemAction;"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction | \"item\"> | PmExtensionPackageAction | PmPackageOnlyAction | PmItemAction;"
         },
         {
           "classification": "contract_data",
@@ -24475,7 +24528,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
-          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+          "signature": "export interface UpgradeCommandOptions { scope?: ExtensionScope; dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
           "classification": "supported",
@@ -30655,7 +30708,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
-          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+          "signature": "export interface UpgradeCommandOptions { scope?: ExtensionScope; dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
           "classification": "supported",
@@ -31519,6 +31572,7 @@
     "ownership_dependency_bypass_restricted_options",
     "ownership_metadata_bypass_restricted_options",
     "package_spec_empty",
+    "package_upgrade_modes_mutually_exclusive",
     "positional_shape_budget_exceeded",
     "positional_signature_mismatch",
     "profile_name_empty",

@@ -21,6 +21,9 @@ describe("agent capability contracts", () => {
       groups.find(({ family }) => family === "extensions")?.commands,
     ).toContain("package");
     expect(
+      groups.find(({ family }) => family === "extensions")?.commands,
+    ).not.toContain("packages");
+    expect(
       groups.find(({ family }) => family === "context")?.commands,
     ).toContain("context");
     expect(

@@ -6,7 +6,9 @@ status: closed
 priority: 2
 tags[6]: "area:extensions","area:profile",dx,living-map,pm-cli,scaffold
 created_at: "2026-06-29T14:36:07.310Z"
-updated_at: "2026-07-26T17:15:08.564Z"
+updated_at: "2026-08-27T06:47:24.217Z"
+closed_at: "2026-08-27T06:47:23.605Z"
+completed_at: "2026-08-27T06:47:23.605Z"
 author: claude-code-agent
 acceptance_criteria: "pm package init --capability profile and pm extension init --capability profile both emit a runnable starter that registers a project profile via api.registerProfile (imperative) and composeExtension blueprint.profiles (declarative); the colocated index.test.ts asserts the profile registration via the harness and passes preflight; derived capabilities resolve to [commands, schema]; completion + register-setup + cli-contracts + docs updated; 100% test + docstring coverage; manual e2e proves pm profile list/show/apply surfaces the scaffolded profile"
 goal: project management = context management
@@ -17,12 +19,48 @@ release: v2026.6.30
 resolution: "Added profile to SCAFFOLD_CAPABILITIES with a shared buildProfileArchetypeFieldLines single-source archetype builder feeding both imperative (api.registerProfile) and declarative (composeExtension blueprint.profiles via defineProjectProfile) starters; manifest grants the existing schema capability; activation.commands omitted (conservative tier) so pm profile list/show/apply resolve the contributed profile; colocated node:test uses harness assertProfile (+ assertExtensionPreflight in declarative mode); completion/register-setup auto-update via SCAFFOLD_CAPABILITIES interpolation; EXTENSIONS.md + SDK.md updated; two README helpers extracted to remove repeated schema-only ternaries."
 expected_result: pm package init --capability profile and pm extension init --capability profile emit a runnable profile-contributing starter that installs and resolves via pm profile; 100/100/100/100 coverage and 100% docstrings maintained.
 actual_result: "Both styles verified end-to-end in a temp tracker: scaffold -> tsc --noEmit + node --test green against the real SDK; pm install --project -> pm profile list/show/apply (idempotent) -> pm schema list shows staged type/status/field -> pm create custom-typed item -> pm package doctor green (0 warnings) -> command dispatches. Full suite 5174 tests, coverage 100% stmts/branches/funcs/lines."
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-08sv,related,"2026-06-29T14:36:16.802Z",null,null
-  pm-a7o4,related,"2026-06-29T14:36:16.802Z",null,null
-  pm-d1ig,related,"2026-06-29T14:36:16.802Z",null,null
-  pm-l8fl,related,"2026-06-29T14:36:16.802Z",null,null
-  pm-nhby,related,"2026-06-29T14:36:16.802Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:15:08.351Z",null,null
-close_reason: Delivered pm package/extension init --capability profile
+dependencies[6]{id,kind,created_at}:
+  pm-08sv,related,"2026-06-29T14:36:16.802Z"
+  pm-a7o4,related,"2026-06-29T14:36:16.802Z"
+  pm-d1ig,related,"2026-06-29T14:36:16.802Z"
+  pm-l8fl,related,"2026-06-29T14:36:16.802Z"
+  pm-nhby,related,"2026-06-29T14:36:16.802Z"
+  pm-ugqx,implements,"2026-07-26T17:15:08.351Z"
+comments[3]{created_at,author,text}:
+  "2026-08-27T06:19:57.907Z","harness:codex","Review intake: CodeRabbit review 5037755674 found docs conflate the profile scaffold selector with manifest capabilities; the canonical design maps the profile archetype to schema rather than adding a profile manifest capability."
+  "2026-08-27T06:29:52.142Z","harness:codex","TDD/red isolation evidence: the direct docs/skills gate passed, while its canonical linked run failed because the linked runner correctly replaced PM_PATH with an empty schema sandbox and nested guide processes then lacked the source PM_CLI_PACKAGE_ROOT. The supported fix binds only the CLI package/document root to the checkout while keeping PM_PATH and PM_GLOBAL_PATH isolated."
+  "2026-08-27T06:47:19.092Z","harness:codex","Exact-head evidence: EXTENSIONS.md now distinguishes the profile scaffold selector from manifest capabilities, and the profile starter declares commands+schema, never profile. The docs gate now pins nested guide subprocesses to PM_CLI_PACKAGE_ROOT while leaving PM_PATH/PM_GLOBAL_PATH in the linked schema sandbox. Direct and canonical linked docs gates plus 23 regression tests passed; full repository quality and fresh temp profile scaffold acceptance passed."
+files[2]{path,scope,note}:
+  scripts/release/docs-skills-gate.mjs,project,Bind nested guide checks to the source package root under linked-test tracker isolation
+  tests/unit/scripts/release/docs-skills-gate.spec.ts,project,Regression coverage for package-root propagation
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs,project,240,"harness:codex","2026-08-27T06:18:43.707Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,project,240,"harness:codex","2026-08-27T06:29:51.555Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[2]:
+  - run_id: test-local-mtb560xk-x6r7ke
+    kind: test
+    status: failed
+    started_at: "2026-08-27T06:28:16.780Z"
+    finished_at: "2026-08-27T06:28:25.015Z"
+    recorded_at: "2026-08-27T06:28:25.015Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mtb58cvc-pcu0nr
+    kind: test
+    status: passed
+    started_at: "2026-08-27T06:29:59.648Z"
+    finished_at: "2026-08-27T06:30:13.800Z"
+    recorded_at: "2026-08-27T06:30:13.800Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Clarify profile scaffold selector capability mapping
+close_reason: Completed profile scaffold contract documentation and isolated docs-gate package-root propagation with linked and full-suite proof.
 body: ""

@@ -262,8 +262,8 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     intent:
       "Use this for package management, extension capability registration, and runtime diagnostics.",
     commands: [
-      "pm install <target> --project",
-      "pm upgrade --dry-run",
+      "pm package install <target> --project",
+      "pm package upgrade --dry-run",
       "pm package explore --project",
       "pm package manage --detail summary",
       "pm package doctor --detail deep",
@@ -280,7 +280,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
           "pm package explore --project",
           "pm package manage --detail summary",
           "pm package doctor --detail deep",
-          "pm upgrade --packages-only --dry-run",
+          "pm package upgrade --packages-only --dry-run",
         ],
       },
     ],
@@ -517,7 +517,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
         prompt:
           "Set parent lineage first, then add typed edges that cite durable evidence. Never add an edge to satisfy a count.",
         commands: [
-          "pm search \"<topic>\" --limit 10",
+          'pm search "<topic>" --limit 10',
           'pm update <ID> --dep "id=<parent-goal>,kind=implements"',
           "pm graph ancestors <ID>",
         ],

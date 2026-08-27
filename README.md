@@ -60,14 +60,17 @@ npx --yes @unbrained/pm-cli@latest --help
 `pm` packages use the same package-first vocabulary:
 
 ```bash
-pm install '*'
-pm install ./my-package
+pm package install '*'
+pm package install ./my-package
 pm package manage --project
 pm package doctor --detail summary
-pm upgrade --dry-run
+pm package upgrade --dry-run
 ```
 
-The legacy `pm extension ...` command remains available for existing automation.
+The hidden legacy `pm extension ...`, `pm install ...`, and `pm upgrade ...`
+aliases remain available for existing automation. They preserve canonical output
+and emit one migration hint on stderr unless `ux.deprecation_hints` is disabled;
+for example, `pm install guide-shell --project` maps to the canonical command.
 
 ## 60 Second Example
 
@@ -108,7 +111,7 @@ pm list --status in_progress --limit 20
 
 If no relevant item exists, create a parent lineage before child work, claim the child item, link changed files/docs/tests, and leave evidence comments before closing. The full workflow is in the [Agent Guide](docs/AGENT_GUIDE.md).
 
-For token-aware local routing, install `guide-shell` with `pm install guide-shell --project`, then use `pm guide workflows` and drill into related topics (`commands`, `skills`, `release`) only when needed.
+For token-aware local routing, install `guide-shell` with `pm package install guide-shell --project`, then use `pm guide workflows` and drill into related topics (`commands`, `skills`, `release`) only when needed.
 
 ## Core Model
 

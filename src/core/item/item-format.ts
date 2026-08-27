@@ -765,7 +765,7 @@ function sortDependencies(
   if (!values || values.length === 0) return undefined;
   return [...values]
     .map((value) => ({
-      id: value.id.trim().toLowerCase(),
+      id: value.id.trim(),
       kind: value.kind,
       created_at: value.created_at,
       author: value.author?.trim() || undefined,

@@ -14,8 +14,13 @@ import {
   listPmCommandsForTier,
   measurePmCoreHelp,
   PM_CORE_HELP_OPTION_FLAGS,
+  resolvePmCommandVisibilityTier,
   type PmCommandVisibilityTier,
 } from "../sdk/agent-capability-contracts.js";
+import {
+  PM_COMMAND_ALIAS_CONTRACTS,
+  renderPmCommandAliasMigrationHint,
+} from "../sdk/cli-contracts.js";
 
 const COMMAND_HELP_VISIBILITY_TIERS = new WeakMap<
   Command,
@@ -161,6 +166,11 @@ export function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
     return "detailed";
   }
   return "compact";
+}
+
+/** Whether an invocation requests the complete public command discovery tier. */
+export function isFullHelpDiscovery(argv: readonly string[]): boolean {
+  return argv.includes("--all") || argv.includes("--explain");
 }
 
 const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
@@ -965,33 +975,71 @@ export function resolveHelpNarrative(
   };
 }
 
-/** Implements attach rich help text for the public runtime surface of this module. */
-export function attachRichHelpText(
+/** Render the complete permanent and deprecated command-alias discovery appendix. */
+function renderFullCommandAliasHelp(): string {
+  const permanentAliases = PM_COMMAND_ALIAS_CONTRACTS.filter(
+    ({ lifecycle }) => lifecycle === "permanent",
+  );
+  const deprecatedAliases = PM_COMMAND_ALIAS_CONTRACTS.filter(
+    ({ lifecycle }) => lifecycle === "deprecated",
+  );
+  return [
+    "",
+    "Command aliases:",
+    ...permanentAliases.map(
+      ({ alias, canonical_argv: canonicalArgv }) =>
+        `  ${alias} -> pm ${canonicalArgv.join(" ")}`,
+    ),
+    "",
+    "Deprecated aliases:",
+    ...deprecatedAliases.map(
+      (contract) =>
+        `  ${contract.alias} -> pm ${contract.canonical_argv.join(" ")} (${renderPmCommandAliasMigrationHint(contract)})`,
+    ),
+  ].join("\n");
+}
+
+/** Configure Commander visibility without changing the registered command graph. */
+function configureTieredHelpVisibility(
   program: Command,
-  argv: string[] = process.argv.slice(2),
+  baselineHelp: ReturnType<Command["createHelp"]>,
+  fullDiscovery: boolean,
+  selectedRootCommands: ReadonlySet<Command>,
 ): void {
-  const baselineHelp = program.createHelp();
-  const coreCommands = new Set(listPmCommandsForTier("core"));
   const coreOptions = new Set(PM_CORE_HELP_OPTION_FLAGS);
-  const selectedRootCommands = new Set<Command>();
   program.configureHelp({
     visibleCommands(command) {
       const visible = baselineHelp.visibleCommands(command);
-      if (command !== program) {
-        return visible;
+      if (!fullDiscovery) {
+        if (command !== program) return visible;
+        return visible.filter((candidate) =>
+          selectedRootCommands.has(candidate),
+        );
       }
-      return visible.filter((candidate) => selectedRootCommands.has(candidate));
+      return visible.filter((candidate) => {
+        const declaredTier = getPmCommandHelpVisibilityTier(candidate);
+        return (
+          (declaredTier ?? resolvePmCommandVisibilityTier(candidate.name())) !==
+          "internal"
+        );
+      });
     },
     visibleOptions(command) {
       const visible = baselineHelp.visibleOptions(command);
-      return command === program
-        ? visible.filter((option) => coreOptions.has(option.flags))
-        : visible;
+      if (command !== program || fullDiscovery) return visible;
+      return visible.filter((option) => coreOptions.has(option.flags));
     },
   });
-  const detailMode = resolveHelpDetailMode(argv);
-  const rootHelpText = renderHelpBundle(ROOT_HELP_BUNDLE, detailMode);
-  program.addHelpText("after", rootHelpText);
+}
+
+/** Populate the root core tier while enforcing the public help-size budget. */
+function selectBudgetedRootCommands(
+  program: Command,
+  baselineHelp: ReturnType<Command["createHelp"]>,
+  selectedRootCommands: Set<Command>,
+  rootHelpText: string,
+): void {
+  const coreCommands = new Set(listPmCommandsForTier("core"));
   const budgetHelp = program.createHelp();
   budgetHelp.prepareContext({
     error: false,
@@ -1017,6 +1065,34 @@ export function attachRichHelpText(
       selectedRootCommands.delete(candidate);
     }
   }
+}
+
+/** Implements attach rich help text for the public runtime surface of this module. */
+export function attachRichHelpText(
+  program: Command,
+  argv: string[] = process.argv.slice(2),
+): void {
+  const baselineHelp = program.createHelp();
+  const fullDiscovery = isFullHelpDiscovery(argv);
+  const selectedRootCommands = new Set<Command>();
+  configureTieredHelpVisibility(
+    program,
+    baselineHelp,
+    fullDiscovery,
+    selectedRootCommands,
+  );
+  const detailMode = resolveHelpDetailMode(argv);
+  const rootHelpText = renderHelpBundle(ROOT_HELP_BUNDLE, detailMode);
+  program.addHelpText("after", rootHelpText);
+  if (fullDiscovery) {
+    program.addHelpText("after", renderFullCommandAliasHelp());
+  }
+  selectBudgetedRootCommands(
+    program,
+    baselineHelp,
+    selectedRootCommands,
+    rootHelpText,
+  );
   for (const [commandPath, bundle] of Object.entries(HELP_BY_COMMAND_PATH)) {
     attachBundleByPath(program, commandPath, bundle, detailMode);
   }

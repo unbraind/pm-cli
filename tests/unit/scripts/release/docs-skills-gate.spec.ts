@@ -457,6 +457,15 @@ describe("docs-skills-gate", () => {
       const failures: string[] = [];
       await mod.runGuideChecks(failures);
       expect(failures).toEqual([]);
+      expect(runCommand).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({
+          env: expect.objectContaining({
+            PM_CLI_PACKAGE_ROOT: expect.stringMatching(/\S/u),
+          }),
+        }),
+      );
     });
 
     it("runGuideChecks: non-index payload pushes failure", async () => {

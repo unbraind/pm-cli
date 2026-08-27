@@ -576,7 +576,7 @@ describe("built-in todos extension import/export", () => {
       expect(item.close_reason).toBe("not closed yet");
       expect(item.dependencies).toEqual([
         {
-          id: "pm-blocker-a",
+          id: "PM-BLOCKER-A",
           kind: "blocked_by",
           created_at: "2026-02-07T00:00:00.000Z",
           author: "dependency-author",

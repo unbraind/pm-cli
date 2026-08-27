@@ -221,16 +221,6 @@
       "requires_extension": false
     },
     {
-      "action": "extension",
-      "available": true,
-      "cli_exposed": true,
-      "command_path": "extension",
-      "disabled_reason": null,
-      "invocable": true,
-      "provider": "core",
-      "requires_extension": false
-    },
-    {
       "action": "extension-activate",
       "available": true,
       "cli_exposed": true,
@@ -481,16 +471,6 @@
       "requires_extension": false
     },
     {
-      "action": "install",
-      "available": true,
-      "cli_exposed": true,
-      "command_path": "install",
-      "disabled_reason": null,
-      "invocable": true,
-      "provider": "core",
-      "requires_extension": false
-    },
-    {
       "action": "item-reopen",
       "available": true,
       "cli_exposed": true,
@@ -701,6 +681,16 @@
       "requires_extension": false
     },
     {
+      "action": "package-upgrade",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "package upgrade",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "pause-task",
       "available": true,
       "cli_exposed": true,
@@ -851,16 +841,6 @@
       "requires_extension": false
     },
     {
-      "action": "upgrade",
-      "available": true,
-      "cli_exposed": true,
-      "command_path": "upgrade",
-      "disabled_reason": null,
-      "invocable": true,
-      "provider": "core",
-      "requires_extension": false
-    },
-    {
       "action": "validate",
       "available": true,
       "cli_exposed": true,
@@ -904,7 +884,6 @@
     "eval",
     "event",
     "events",
-    "extension",
     "extension-activate",
     "extension-adopt",
     "extension-adopt-all",
@@ -930,7 +909,6 @@
     "history-redact",
     "history-repair",
     "init",
-    "install",
     "item-reopen",
     "learnings",
     "list",
@@ -952,6 +930,7 @@
     "package-manage",
     "package-reload",
     "package-uninstall",
+    "package-upgrade",
     "pause-task",
     "plan",
     "profile",
@@ -967,7 +946,6 @@
     "test-all",
     "update",
     "update-many",
-    "upgrade",
     "validate",
     "workspace"
   ],
@@ -1222,10 +1200,62 @@
     {
       "aliases": [
         "extension",
-        "packages",
+        "packages"
+      ],
+      "canonical": "package",
+      "contracts": [
+        {
+          "alias": "extension",
+          "canonical": "package",
+          "canonical_argv": [
+            "package"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-tnud",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "install"
       ],
-      "canonical": "package"
+      "canonical": "package install",
+      "contracts": [
+        {
+          "alias": "install",
+          "canonical": "package install",
+          "canonical_argv": [
+            "package",
+            "install"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-tnud",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "upgrade"
+      ],
+      "canonical": "package upgrade",
+      "contracts": [
+        {
+          "alias": "upgrade",
+          "canonical": "package upgrade",
+          "canonical_argv": [
+            "package",
+            "upgrade"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-tnud",
+          "registration": "commander"
+        }
+      ]
     }
   ],
   "command_exit_contracts": {
@@ -1264,7 +1294,6 @@
           "eval",
           "event",
           "events",
-          "extension",
           "extension activate",
           "extension adopt",
           "extension adopt-all",
@@ -1292,7 +1321,6 @@
           "history-redact",
           "history-repair",
           "init",
-          "install",
           "item",
           "item complete",
           "item mutate",
@@ -1318,6 +1346,7 @@
           "package migrate",
           "package reload",
           "package uninstall",
+          "package upgrade",
           "packages",
           "packages activate",
           "packages adopt",
@@ -1333,6 +1362,7 @@
           "packages migrate",
           "packages reload",
           "packages uninstall",
+          "packages upgrade",
           "pause-task",
           "plan",
           "plan add-step",
@@ -1363,7 +1393,6 @@
           "test",
           "test-all",
           "update",
-          "upgrade",
           "validate",
           "workspace",
           "workspace snapshot",
@@ -2153,7 +2182,8 @@
         {
           "aliases": [
             "--comment",
-            "--body"
+            "--body",
+            "--text"
           ],
           "flag": "--add"
         },
@@ -2987,111 +3017,6 @@
       "provider": "extension"
     },
     {
-      "command": "extension",
-      "flags": [
-        {
-          "flag": "--init"
-        },
-        {
-          "flag": "--scaffold"
-        },
-        {
-          "flag": "--capability"
-        },
-        {
-          "flag": "--install"
-        },
-        {
-          "flag": "--uninstall"
-        },
-        {
-          "flag": "--explore"
-        },
-        {
-          "flag": "--list"
-        },
-        {
-          "flag": "--manage"
-        },
-        {
-          "flag": "--describe"
-        },
-        {
-          "flag": "--markdown"
-        },
-        {
-          "flag": "--output"
-        },
-        {
-          "flag": "--reload"
-        },
-        {
-          "flag": "--watch"
-        },
-        {
-          "flag": "--doctor"
-        },
-        {
-          "flag": "--catalog"
-        },
-        {
-          "flag": "--adopt"
-        },
-        {
-          "flag": "--adopt-all"
-        },
-        {
-          "flag": "--activate"
-        },
-        {
-          "flag": "--deactivate"
-        },
-        {
-          "flag": "--project"
-        },
-        {
-          "flag": "--local"
-        },
-        {
-          "flag": "--global"
-        },
-        {
-          "flag": "--gh"
-        },
-        {
-          "flag": "--github"
-        },
-        {
-          "flag": "--ref"
-        },
-        {
-          "flag": "--detail"
-        },
-        {
-          "flag": "--trace"
-        },
-        {
-          "flag": "--runtime-probe"
-        },
-        {
-          "flag": "--fix-managed-state"
-        },
-        {
-          "flag": "--isolated"
-        },
-        {
-          "flag": "--ignore-global"
-        },
-        {
-          "flag": "--strict-exit"
-        },
-        {
-          "flag": "--fail-on-warn"
-        }
-      ],
-      "provider": "core"
-    },
-    {
       "command": "extension activate",
       "flags": [
         {
@@ -3855,30 +3780,6 @@
       "provider": "core"
     },
     {
-      "command": "install",
-      "flags": [
-        {
-          "flag": "--project"
-        },
-        {
-          "flag": "--local"
-        },
-        {
-          "flag": "--global"
-        },
-        {
-          "flag": "--gh"
-        },
-        {
-          "flag": "--github"
-        },
-        {
-          "flag": "--ref"
-        }
-      ],
-      "provider": "core"
-    },
-    {
       "command": "item",
       "flags": [],
       "provider": "extension"
@@ -4036,7 +3937,8 @@
         },
         {
           "aliases": [
-            "--learning"
+            "--learning",
+            "--text"
           ],
           "flag": "--add"
         },
@@ -4398,7 +4300,8 @@
         },
         {
           "aliases": [
-            "--note"
+            "--note",
+            "--text"
           ],
           "flag": "--add"
         },
@@ -4830,6 +4733,39 @@
       "provider": "core"
     },
     {
+      "command": "package upgrade",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--cli-only"
+        },
+        {
+          "flag": "--packages-only"
+        },
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--repair"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--package-name"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "packages",
       "flags": [
         {
@@ -5210,6 +5146,39 @@
         },
         {
           "flag": "--global"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages upgrade",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--cli-only"
+        },
+        {
+          "flag": "--packages-only"
+        },
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--repair"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--package-name"
         }
       ],
       "provider": "core"
@@ -8185,39 +8154,6 @@
       "provider": "core"
     },
     {
-      "command": "upgrade",
-      "flags": [
-        {
-          "flag": "--dry-run"
-        },
-        {
-          "flag": "--cli-only"
-        },
-        {
-          "flag": "--packages-only"
-        },
-        {
-          "flag": "--project"
-        },
-        {
-          "flag": "--local"
-        },
-        {
-          "flag": "--global"
-        },
-        {
-          "flag": "--repair"
-        },
-        {
-          "flag": "--tag"
-        },
-        {
-          "flag": "--package-name"
-        }
-      ],
-      "provider": "core"
-    },
-    {
       "command": "validate",
       "flags": [
         {
@@ -9269,33 +9205,6 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
-        "default_max_estimated_tokens": 3000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 4500,
-          "toon": 3000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "extension",
-        "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
-        "budget_class": "discovery",
         "command": "extension activate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -10024,33 +9933,6 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
-        "budget_class": "discovery",
-        "command": "install",
-        "default_max_estimated_tokens": 3000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 4500,
-          "toon": 3000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "install",
-        "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
         "command": "item",
         "default_max_estimated_tokens": 2000,
@@ -10727,6 +10609,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "package upgrade",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package upgrade",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "packages",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -11123,6 +11032,33 @@
       "envelope": {
         "cardinality": "none",
         "command": "packages uninstall",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages upgrade",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages upgrade",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -11968,33 +11904,6 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
-        "budget_class": "discovery",
-        "command": "upgrade",
-        "default_max_estimated_tokens": 3000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 4500,
-          "toon": 3000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "upgrade",
-        "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
         "budget_class": "governance",
         "command": "validate",
         "default_max_estimated_tokens": 6000,
@@ -12623,16 +12532,6 @@
       "intent_source": "command"
     },
     {
-      "command": "extension",
-      "default_max_estimated_tokens": 3000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 4500,
-        "toon": 3000
-      },
-      "intent": "Manage packages.",
-      "intent_source": "command"
-    },
-    {
       "command": "extension activate",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -12941,16 +12840,6 @@
       "intent_source": "command"
     },
     {
-      "command": "install",
-      "default_max_estimated_tokens": 3000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 4500,
-        "toon": 3000
-      },
-      "intent": "Install packages.",
-      "intent_source": "command"
-    },
-    {
       "command": "item",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -13227,6 +13116,16 @@
       "intent_source": "generated"
     },
     {
+      "command": "package upgrade",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Upgrade package.",
+      "intent_source": "generated"
+    },
+    {
       "command": "packages",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -13377,6 +13276,16 @@
         "toon": 3000
       },
       "intent": "Uninstall packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages upgrade",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Upgrade packages.",
       "intent_source": "generated"
     },
     {
@@ -13720,16 +13629,6 @@
         "--offset"
       ],
       "intent": "Update matching work.",
-      "intent_source": "command"
-    },
-    {
-      "command": "upgrade",
-      "default_max_estimated_tokens": 3000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 4500,
-        "toon": 3000
-      },
-      "intent": "Upgrade packages.",
       "intent_source": "command"
     },
     {
@@ -15238,7 +15137,6 @@
     "eval",
     "event",
     "events",
-    "extension",
     "extension activate",
     "extension adopt",
     "extension adopt-all",
@@ -15266,7 +15164,6 @@
     "history-redact",
     "history-repair",
     "init",
-    "install",
     "item",
     "item complete",
     "item mutate",
@@ -15292,6 +15189,7 @@
     "package migrate",
     "package reload",
     "package uninstall",
+    "package upgrade",
     "packages",
     "packages activate",
     "packages adopt",
@@ -15307,6 +15205,7 @@
     "packages migrate",
     "packages reload",
     "packages uninstall",
+    "packages upgrade",
     "pause-task",
     "plan",
     "plan add-step",
@@ -15338,7 +15237,6 @@
     "test-all",
     "update",
     "update-many",
-    "upgrade",
     "validate",
     "workspace",
     "workspace snapshot",
@@ -19073,6 +18971,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "package_upgrade_modes_mutually_exclusive",
+      "class": "usage",
+      "code": "package_upgrade_modes_mutually_exclusive",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Package upgrade modes mutually exclusive condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/governance/upgrade.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "positional_shape_budget_exceeded",
       "class": "generic_failure",
       "code": "positional_shape_budget_exceeded",
@@ -22206,10 +22121,10 @@
         "target": "package"
       },
       {
-        "command": "extension",
-        "disposition": "consolidation",
+        "command": "package upgrade",
+        "disposition": "target_noun",
         "noun": "package",
-        "owner": "pm-tnud",
+        "owner": "pm-pbyu",
         "target": "package"
       },
       {
@@ -22283,13 +22198,6 @@
         "target": "package"
       },
       {
-        "command": "extension list",
-        "disposition": "consolidation",
-        "noun": "package",
-        "owner": "pm-tnud",
-        "target": "package"
-      },
-      {
         "command": "extension manage",
         "disposition": "consolidation",
         "noun": "package",
@@ -22311,21 +22219,7 @@
         "target": "package"
       },
       {
-        "command": "extension scaffold",
-        "disposition": "consolidation",
-        "noun": "package",
-        "owner": "pm-tnud",
-        "target": "package"
-      },
-      {
         "command": "extension uninstall",
-        "disposition": "consolidation",
-        "noun": "package",
-        "owner": "pm-tnud",
-        "target": "package"
-      },
-      {
-        "command": "install",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -22451,7 +22345,7 @@
         "target": "package"
       },
       {
-        "command": "upgrade",
+        "command": "packages upgrade",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -23713,11 +23607,11 @@
         ]
       },
       {
-        "command": "extension",
+        "command": "package upgrade",
         "slots": [
           {
             "name": "target",
-            "polymorphic": true,
+            "polymorphic": false,
             "required": false,
             "value_kind": "string",
             "variadic": false
@@ -23813,10 +23707,6 @@
         ]
       },
       {
-        "command": "extension list",
-        "slots": []
-      },
-      {
         "command": "extension manage",
         "slots": []
       },
@@ -23829,18 +23719,6 @@
         "slots": []
       },
       {
-        "command": "extension scaffold",
-        "slots": [
-          {
-            "name": "target",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
-      },
-      {
         "command": "extension uninstall",
         "slots": [
           {
@@ -23849,18 +23727,6 @@
             "required": true,
             "value_kind": "string",
             "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "install",
-        "slots": [
-          {
-            "name": "targets",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": true
           }
         ]
       },
@@ -24005,7 +23871,7 @@
         ]
       },
       {
-        "command": "upgrade",
+        "command": "packages upgrade",
         "slots": [
           {
             "name": "target",
@@ -24717,6 +24583,7 @@
       "run",
       "show",
       "uninstall",
+      "upgrade",
       "verify"
     ],
     "visible_top_level_ceiling": 69
@@ -31761,7 +31628,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package-upgrade, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -31778,7 +31645,6 @@
               "extension-adopt-all",
               "extension-activate",
               "extension-deactivate",
-              "extension",
               "package-init",
               "package-install",
               "package-uninstall",
@@ -31792,9 +31658,8 @@
               "package-adopt-all",
               "package-activate",
               "package-deactivate",
+              "package-upgrade",
               "package",
-              "install",
-              "upgrade",
               "create",
               "item-reopen",
               "copy",
@@ -37445,236 +37310,6 @@
         "additionalProperties": false,
         "properties": {
           "action": {
-            "const": "extension",
-            "description": "Tool action to execute."
-          },
-          "activate": {
-            "description": "Activate.",
-            "type": "boolean"
-          },
-          "adopt": {
-            "description": "Adopt.",
-            "type": "boolean"
-          },
-          "adoptAll": {
-            "description": "Adopt All.",
-            "type": "boolean"
-          },
-          "capability": {
-            "description": "Starter capability selected by extension-init or package-init scaffolding.",
-            "examples": [
-              "commands",
-              "hooks",
-              "search",
-              "schema"
-            ],
-            "minLength": 1,
-            "type": "string"
-          },
-          "catalog": {
-            "description": "Catalog.",
-            "type": "boolean"
-          },
-          "deactivate": {
-            "description": "Deactivate.",
-            "type": "boolean"
-          },
-          "declarative": {
-            "description": "Generate the package composeExtension declarative blueprint starter.",
-            "type": "boolean"
-          },
-          "describe": {
-            "description": "Describe.",
-            "type": "boolean"
-          },
-          "detail": {
-            "description": "Detail mode for commands that support concise and deep diagnostics.",
-            "enum": [
-              "summary",
-              "deep"
-            ],
-            "examples": [
-              "summary",
-              "deep"
-            ],
-            "type": "string"
-          },
-          "doctor": {
-            "description": "Doctor.",
-            "type": "boolean"
-          },
-          "explore": {
-            "description": "Explore.",
-            "type": "boolean"
-          },
-          "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
-            "type": "boolean"
-          },
-          "fixManagedState": {
-            "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
-            "type": "boolean"
-          },
-          "github": {
-            "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
-            "examples": [
-              "org/repo/extensions/sample"
-            ],
-            "type": "string"
-          },
-          "ignoreGlobal": {
-            "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
-            "type": "boolean"
-          },
-          "init": {
-            "description": "Init.",
-            "type": "boolean"
-          },
-          "install": {
-            "description": "Install.",
-            "type": "boolean"
-          },
-          "isolated": {
-            "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
-            "type": "boolean"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "list": {
-            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
-            "examples": [
-              true
-            ],
-            "type": "boolean"
-          },
-          "manage": {
-            "description": "Manage.",
-            "type": "boolean"
-          },
-          "markdown": {
-            "description": "Render the package or extension description as Markdown instead of structured output.",
-            "examples": [
-              true
-            ],
-            "type": "boolean"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "output": {
-            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
-            "examples": [
-              "docs/pm-package-reference.md"
-            ],
-            "minLength": 1,
-            "type": "string"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "ref": {
-            "description": "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
-            "examples": [
-              "main",
-              "v1.0.0"
-            ],
-            "type": "string"
-          },
-          "reload": {
-            "description": "When true for extension action payloads, trigger cache-busted extension module reload.",
-            "type": "boolean"
-          },
-          "runtimeProbe": {
-            "description": "When true for extension-manage, run a doctor-like runtime activation probe for parity fields.",
-            "type": "boolean"
-          },
-          "scope": {
-            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
-            "enum": [
-              "project",
-              "global"
-            ],
-            "examples": [
-              "project",
-              "global"
-            ],
-            "type": "string"
-          },
-          "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
-            "type": "boolean"
-          },
-          "target": {
-            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
-            "examples": [
-              "pm-a1b2",
-              ".agents/pm/extensions/sample",
-              "sample-extension"
-            ],
-            "type": "string"
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "tokenAccounting": {
-            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
-            "type": "boolean"
-          },
-          "trace": {
-            "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
-            "type": "boolean"
-          },
-          "uninstall": {
-            "description": "Uninstall.",
-            "type": "boolean"
-          },
-          "watch": {
-            "description": "When true for extension-reload/extension action payloads, enable watch mode semantics.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "action"
-        ],
-        "title": "pm action \"extension\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
-        "properties": {
-          "action": {
             "const": "package-init",
             "description": "Tool action to execute."
           },
@@ -39055,6 +38690,120 @@
         "additionalProperties": false,
         "properties": {
           "action": {
+            "const": "package-upgrade",
+            "description": "Tool action to execute."
+          },
+          "cliOnly": {
+            "description": "Restrict upgrade to the pm CLI/SDK npm package.",
+            "type": "boolean"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "packageName": {
+            "description": "Override the pm CLI package name for self-upgrade automation and tests.",
+            "examples": [
+              "@unbrained/pm-cli"
+            ],
+            "type": "string"
+          },
+          "packagesOnly": {
+            "description": "Restrict upgrade to managed installable pm packages.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "repair": {
+            "description": "Force npm global reinstall semantics when upgrading the pm CLI/SDK.",
+            "type": "boolean"
+          },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "tag": {
+            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "examples": [
+              "latest",
+              "next",
+              "2026.5.11"
+            ],
+            "type": "string"
+          },
+          "target": {
+            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
+            "examples": [
+              "pm-a1b2",
+              ".agents/pm/extensions/sample",
+              "sample-extension"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"package-upgrade\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
             "const": "package",
             "description": "Tool action to execute."
           },
@@ -39279,229 +39028,6 @@
           "action"
         ],
         "title": "pm action \"package\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
-        "anyOf": [
-          {
-            "required": [
-              "target"
-            ]
-          },
-          {
-            "required": [
-              "github"
-            ]
-          }
-        ],
-        "properties": {
-          "action": {
-            "const": "install",
-            "description": "Tool action to execute."
-          },
-          "github": {
-            "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
-            "examples": [
-              "org/repo/extensions/sample"
-            ],
-            "type": "string"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "ref": {
-            "description": "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
-            "examples": [
-              "main",
-              "v1.0.0"
-            ],
-            "type": "string"
-          },
-          "scope": {
-            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
-            "enum": [
-              "project",
-              "global"
-            ],
-            "examples": [
-              "project",
-              "global"
-            ],
-            "type": "string"
-          },
-          "target": {
-            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
-            "examples": [
-              "pm-a1b2",
-              ".agents/pm/extensions/sample",
-              "sample-extension"
-            ],
-            "type": "string"
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "tokenAccounting": {
-            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "action"
-        ],
-        "title": "pm action \"install\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
-        "properties": {
-          "action": {
-            "const": "upgrade",
-            "description": "Tool action to execute."
-          },
-          "cliOnly": {
-            "description": "Restrict upgrade to the pm CLI/SDK npm package.",
-            "type": "boolean"
-          },
-          "dryRun": {
-            "description": "Preview command effects without mutating storage artifacts.",
-            "type": "boolean"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "packageName": {
-            "description": "Override the pm CLI package name for self-upgrade automation and tests.",
-            "examples": [
-              "@unbrained/pm-cli"
-            ],
-            "type": "string"
-          },
-          "packagesOnly": {
-            "description": "Restrict upgrade to managed installable pm packages.",
-            "type": "boolean"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "repair": {
-            "description": "Force npm global reinstall semantics when upgrading the pm CLI/SDK.",
-            "type": "boolean"
-          },
-          "scope": {
-            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
-            "enum": [
-              "project",
-              "global"
-            ],
-            "examples": [
-              "project",
-              "global"
-            ],
-            "type": "string"
-          },
-          "tag": {
-            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
-            "examples": [
-              "latest",
-              "next",
-              "2026.5.11"
-            ],
-            "type": "string"
-          },
-          "target": {
-            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
-            "examples": [
-              "pm-a1b2",
-              ".agents/pm/extensions/sample",
-              "sample-extension"
-            ],
-            "type": "string"
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "tokenAccounting": {
-            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "action"
-        ],
-        "title": "pm action \"upgrade\" parameters",
         "type": "object"
       },
       {

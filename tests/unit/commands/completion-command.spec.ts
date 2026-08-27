@@ -40,11 +40,20 @@ describe("generateBashScript", () => {
     }
   });
 
+  it("exposes root full-discovery help in every shell", () => {
+    expect(generateBashScript()).toContain("--all");
+    expect(generateZshScript()).toContain(
+      "--all[Reveal every public command and compatibility alias]",
+    );
+    expect(generateFishScript()).toContain(
+      "complete -c pm -l all -d 'Reveal every public command and compatibility alias'",
+    );
+  });
+
   it("includes all pm subcommands in the command list", () => {
     const script = generateBashScript();
     for (const cmd of [
       "init",
-      "extension",
       "package",
       "packages",
       "create",
@@ -102,6 +111,17 @@ describe("generateBashScript", () => {
     ]) {
       expect(script).not.toContain(hiddenAlias);
     }
+    const rootCompletionStart = script.indexOf("  if [[ $cword -eq 1 ]]");
+    const rootCompletionEnd = script.indexOf('  if [[ "$prev" == "--type" ]]');
+    expect(rootCompletionStart).toBeGreaterThanOrEqual(0);
+    expect(rootCompletionEnd).toBeGreaterThan(rootCompletionStart);
+    const rootCommandCompletion = script.slice(
+      rootCompletionStart,
+      rootCompletionEnd,
+    );
+    expect(rootCommandCompletion).not.toMatch(
+      /\b(extension|install|upgrade)\b/u,
+    );
   });
 
   it("includes list filter flags", () => {
@@ -286,6 +306,33 @@ describe("generateBashScript", () => {
     );
   });
 
+  it("offers the convergent --text alias for every annotation command in every shell", () => {
+    const bash = generateBashScript();
+    const zsh = generateZshScript();
+    const bashAnnotationAliasStart = bash.indexOf(
+      '  if [[ "$cmd" == "comments"',
+    );
+    const bashAnnotationAliasBlock = bash.slice(
+      bashAnnotationAliasStart,
+      bash.indexOf("  fi", bashAnnotationAliasStart),
+    );
+    expect(bashAnnotationAliasStart).toBeGreaterThan(-1);
+    expect(bashAnnotationAliasBlock).toContain('"$cmd" == "notes"');
+    expect(bashAnnotationAliasBlock).toContain('"$cmd" == "learnings"');
+    expect(bashAnnotationAliasBlock).toContain('--text" -- "$cur"');
+
+    for (const command of ["comments", "notes", "learnings"]) {
+      const zshStart = zsh.indexOf(`        ${command})`);
+      const zshBlock = zsh.slice(zshStart, zsh.indexOf("          ;;", zshStart));
+      expect(zshStart).toBeGreaterThan(-1);
+      expect(zshBlock).toContain("--text[");
+    }
+
+    expect(generateFishScript()).toContain(
+      "__fish_seen_subcommand_from comments notes learnings' -l text",
+    );
+  });
+
   it("includes files/docs add-glob flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain("--add");
@@ -386,10 +433,12 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("package|packages)");
     expect(script).toContain(
-      "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate",
+      "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate upgrade",
     );
     expect(script).toContain("--declarative");
     expect(script).toContain("--catalog");
+    expect(script).toContain("--cli-only");
+    expect(script).toContain("--packages-only");
   });
 
   it("includes fail-on-empty-test-run in bash test completions", () => {
@@ -628,6 +677,27 @@ describe("generateBashScript", () => {
     expect(lazyFish).toContain("pm completion-types");
   });
 
+  it("does not offer tracker tags for package upgrade npm tags", () => {
+    for (const script of [
+      generateBashScript(),
+      generateBashScript([], ["tracker-tag"], true),
+    ]) {
+      const trackerTagBranch = script.slice(
+        script.indexOf('if [[ ( "$prev" == "--tag"'),
+        script.indexOf('local cmd="${COMP_WORDS[1]}"'),
+      );
+      expect(trackerTagBranch).toContain(
+        '"${COMP_WORDS[2]}" == "upgrade"',
+      );
+      expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "package"');
+      expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "packages"');
+      expect(trackerTagBranch).toContain(
+        'if [[ "$prev" == "--tag" && ( ( "${COMP_WORDS[1]}" == "package" || "${COMP_WORDS[1]}" == "packages" ) && "${COMP_WORDS[2]}" == "upgrade" ) ]]; then',
+      );
+      expect(trackerTagBranch).toContain("    COMPREPLY=()\n    return 0");
+    }
+  });
+
   it("includes context-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("context|ctx");
@@ -684,7 +754,9 @@ describe("generateZshScript", () => {
   it("includes all pm subcommand descriptions", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
-    expect(script).toContain("extension:Manage extension lifecycle operations");
+    expect(script).not.toContain(
+      "extension:Manage extension lifecycle operations",
+    );
     expect(script).toContain("package:Manage package lifecycle operations");
     expect(script).toContain("packages:Alias for package");
     expect(script).toContain("create:Create a new project management item");
@@ -873,13 +945,16 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("package|packages)");
     expect(script).toContain(
-      "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)",
+      "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate migrate upgrade)",
     );
     expect(script).toContain(
       "--declarative[Generate a composeExtension blueprint starter]",
     );
     expect(script).toContain(
       "--catalog[List bundled first-party package catalog entries]",
+    );
+    expect(script).toContain(
+      "--cli-only[Upgrade only the pm CLI/SDK npm package]",
     );
   });
 
@@ -962,7 +1037,6 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     for (const [cmd, desc] of [
       ["init", "Initialize"],
-      ["extension", "Manage extension lifecycle operations"],
       ["package", "Manage package lifecycle operations"],
       ["packages", "Alias for package"],
       ["create", "Create"],
@@ -987,6 +1061,9 @@ describe("generateFishScript", () => {
       expect(script).toContain(`-a ${cmd}`);
       expect(script).toContain(desc);
     }
+    expect(script).not.toContain(
+      "complete -c pm -n __pm_no_subcommand -a extension",
+    );
   });
 
   it("includes list filter flags for list commands", () => {
@@ -1085,6 +1162,10 @@ describe("generateFishScript", () => {
     );
     expect(script).toContain(
       "-l fail-on-warn -d 'Alias for --strict-exit (doctor)'",
+    );
+    expect(script).toContain("activate deactivate migrate upgrade");
+    expect(script).toContain(
+      "-l cli-only -d 'Upgrade only the pm CLI/SDK npm package'",
     );
   });
 

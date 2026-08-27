@@ -81,6 +81,7 @@ export function createPmCliProgram(version: string): Command {
       "--explain",
       "Render extended rationale and examples in help output",
     )
+    .option("--all", "Reveal every public command and compatibility alias")
     .option("--profile", "Print deterministic timing diagnostics")
     .option("--author <id>", "Override mutation author for this invocation")
     .exitOverride();

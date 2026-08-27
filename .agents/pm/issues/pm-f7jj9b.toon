@@ -2,11 +2,13 @@ id: pm-f7jj9b
 title: "GH-860: pm-beads --preserve-source-ids changes source ID casing"
 description: "The pm-beads preserve-source-ids path changes the casing of imported Beads IDs, breaking exact identity preservation and downstream references. Preserve the authoritative source spelling byte-for-byte while retaining collision and filesystem safety."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:extensions",identity,migration,pm-beads,source-preservation
 created_at: "2026-08-02T14:11:08.877Z"
-updated_at: "2026-08-14T10:15:03.118Z"
+updated_at: "2026-08-27T05:04:10.307Z"
+closed_at: "2026-08-27T05:04:09.719Z"
+completed_at: "2026-08-27T05:04:09.719Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Mixed-case and lowercase Beads IDs round-trip without spelling changes; all dependency, parent, comment, and history references resolve to the preserved IDs; collision detection remains fail-closed across case-sensitive and case-insensitive filesystems; Windows, Linux, package, and installed-consumer tests pass"
@@ -17,9 +19,67 @@ why_now: GitHub issue #860 reports an active identity-corruption defect in migra
 parent: pm-ugqx
 risk: high
 confidence: 95
+resolution: Implemented
+expected_result: "Preserved Beads source IDs retain exact spelling across item files, parents, dependencies, history, lookup, and collision checks."
+actual_result: "Mixed-case IDs and relationships now round-trip exactly, hash shorthand resolves exact case, and case-insensitive duplicate/collision preflight fails before any importer write."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-13bn,discovered_from,"2026-08-02T14:11:08.877Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-02T14:11:08.877Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-02T14:11:08.877Z","harness:codex","Duplicate-check evidence: exact GH-860 and all-status preserve-source-ids casing searches found no canonical owner. Historical ID preservation and importer items are closed and do not cover source spelling parity."
+  "2026-08-26T18:50:50.476Z","harness:codex","TDD red evidence: mixed-case preserve-source-ids still lowercases through normalizeRawItemId and case-only collisions are skipped after partial writes instead of failing closed; focused package tests failed before implementation."
+  "2026-08-26T20:48:43.518Z","harness:codex","Verification evidence: manual installed-package import preserved Tokenwerk-A1, Tokenwerk-B2, and Tokenwerk-C3 byte-for-byte in source casing; dependency Tokenwerk-A1 -> Tokenwerk-B2 retained exact casing and hash-shorthand lookup is covered. Full suite 8,020/8,020 and exact coverage 100/100/100/100 passed."
+  "2026-08-26T20:58:07.175Z","harness:codex","Governance evidence: post-closeout defect-evidence correctly failed closed until this production defect had structured prevention evidence. Bound closure to the beads-source-identity-preservation gate, case-only source/target collision negative controls, exact-case readback, focused Beads/store tests, exact coverage, and hosted static/coverage checks. No waiver is used."
+  "2026-08-27T01:33:30.958Z","harness:codex","TDD red evidence from exact-head CodeRabbit round: locateItem accepted empty, whitespace-only, and hash-only identifiers after prefix normalization and located a real pm-.toon record; the new negative control failed on the prefix-only item."
+  "2026-08-27T02:27:11.690Z","harness:codex","Evidence: Item lookup rejects empty, whitespace-only, and prefix-only raw identifiers before filesystem resolution, with a prefix-only item negative control. Linked plans passed 76/76 and 34/34; full repository gate passed exact 100/100/100/100."
+  "2026-08-27T04:57:58.155Z","harness:codex","Review TDD intake: CodeRabbit exact-head review 5037361338 identified an unrelated empty-identifier close reason on the GH-860 case-preservation issue."
+  "2026-08-27T05:00:31.795Z","harness:codex","Live tracker verification confirms GH-860 currently carries an unrelated empty/prefix-only lookup close_reason despite casing/collision title, acceptance, and actual_result; correction will be recorded through pm close history."
+files[9]{path,scope,note}:
+  packages/pm-beads/extensions/beads/runtime.ts,project,Case-preserved source identity implementation and regression proof
+  src/core/item/item-format.ts,project,Case-preserved source identity implementation and regression proof
+  src/core/store/item-store.ts,project,Case-preserved source identity implementation and regression proof
+  tests/fixtures/beads/backup-v0.62/issues.jsonl,project,Case-preserved source identity implementation and regression proof
+  tests/unit/commands/dependency-provenance-command.spec.ts,project,Case-preserved external relationship behavior
+  tests/unit/core/item/core-item-lock-coverage.spec.ts,project,Case-preserved source identity implementation and regression proof
+  tests/unit/core/store/item-store.spec.ts,project,Exact mixed-case and hash shorthand lookup coverage
+  tests/unit/packages/beads-command.spec.ts,project,Case-preserved source identity implementation and regression proof
+  tests/unit/packages/todos-extension.spec.ts,project,Case-preserved imported dependency coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts,project,240,"harness:codex","2026-08-26T19:58:08.289Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+  node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts,project,240,"harness:codex","2026-08-27T01:35:11.125Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[2]:
+  - run_id: test-local-mtakj6uf-qprkob
+    kind: test
+    status: passed
+    started_at: "2026-08-26T20:50:29.816Z"
+    finished_at: "2026-08-26T20:50:47.271Z"
+    recorded_at: "2026-08-26T20:50:47.271Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtawj5t4-m88y8r
+    kind: test
+    status: passed
+    started_at: "2026-08-27T02:26:17.479Z"
+    finished_at: "2026-08-27T02:26:41.320Z"
+    recorded_at: "2026-08-27T02:26:41.320Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  packages/pm-beads/README.md,project,Case-preserved identity migration guidance
+close_reason: "Implemented exact case-preserved Beads source IDs with pre-write case-insensitive source and target collision refusal, stable source mapping, and exact identifier lookup/readback evidence."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: beads-source-identity-preservation
+  negative_control: "Import mixed-case source IDs with a case-only duplicate or target collision; the importer must reject before writes, while the valid fixture must retain exact item, parent, dependency, history, and hash-shorthand lookup spelling."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/store/item-store.spec.ts,node scripts/release/defect-evidence-gate.mjs --json,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  owner: pm-f7jj9b
 body: ""

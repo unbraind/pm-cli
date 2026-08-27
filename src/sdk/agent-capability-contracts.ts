@@ -330,6 +330,8 @@ const CAPABILITY_FAMILY_ORDER: readonly PmCommandCapabilityFamily[] = [
 
 const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
   "ctx",
+  "extension",
+  "install",
   "item-reopen",
   "list-all",
   "list-blocked",
@@ -338,6 +340,8 @@ const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
   "list-draft",
   "list-in-progress",
   "list-open",
+  "packages",
+  "upgrade",
 ]);
 
 /** Group the command registry for progressive-disclosure routing surfaces. */

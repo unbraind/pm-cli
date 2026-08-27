@@ -834,18 +834,21 @@ describe("contracts command runtime", () => {
     expect(result.actions ?? []).toContain("extension-reload");
     expect(result.actions ?? []).toContain("package-install");
     expect(result.actions ?? []).toContain("package-catalog");
-    expect(result.actions ?? []).toContain("install");
-    expect(result.actions ?? []).toContain("upgrade");
+    expect(result.actions ?? []).not.toContain("install");
+    expect(result.actions ?? []).not.toContain("upgrade");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("package");
     expect(result.commands).toContain("packages");
-    expect(result.commands).toContain("install");
-    expect(result.commands).toContain("upgrade");
+    expect(result.commands).not.toContain("install");
+    expect(result.commands).not.toContain("upgrade");
     expect(result.command_aliases).toEqual(
       expect.arrayContaining([
-        { canonical: "context", aliases: ["ctx"] },
-        { canonical: "package", aliases: ["extension", "packages", "install"] },
+        expect.objectContaining({ canonical: "context", aliases: ["ctx"] }),
+        expect.objectContaining({
+          canonical: "package",
+          aliases: ["extension", "packages"],
+        }),
       ]),
     );
     expect(result.schema).toBeDefined();
@@ -1240,6 +1243,12 @@ describe("contracts command runtime", () => {
     expect(
       summaries.find((entry) => entry.command === "package install")?.intent,
     ).not.toBe(summaries.find((entry) => entry.command === "package")?.intent);
+    expect(
+      summaries.find((entry) => entry.command === "package upgrade")?.intent,
+    ).toBe("Upgrade package.");
+    expect(
+      summaries.find((entry) => entry.command === "packages upgrade")?.intent,
+    ).toBe("Upgrade packages.");
   });
 
   it("contracts every workspace snapshot command path", async () => {
@@ -1899,9 +1908,9 @@ describe("contracts command runtime", () => {
     expect(compactFlags.commands).toContain("context");
     expect(compactFlags.commands).toContain("package");
     expect(compactFlags.commands).toContain("ctx");
-    expect(compactFlags.commands).toContain("extension");
+    expect(compactFlags.commands).not.toContain("extension");
     expect(compactFlags.commands).toContain("packages");
-    expect(compactFlags.commands).toContain("install");
+    expect(compactFlags.commands).not.toContain("install");
     expect(
       compactFlags.command_flags?.some((entry) => entry.command === "ctx"),
     ).toBe(true);
@@ -1909,17 +1918,20 @@ describe("contracts command runtime", () => {
       compactFlags.command_flags?.some(
         (entry) => entry.command === "extension",
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       compactFlags.command_flags?.some((entry) => entry.command === "packages"),
     ).toBe(true);
     expect(
       compactFlags.command_flags?.some((entry) => entry.command === "install"),
-    ).toBe(true);
+    ).toBe(false);
     expect(compactFlags.command_aliases).toEqual(
       expect.arrayContaining([
-        { canonical: "context", aliases: ["ctx"] },
-        { canonical: "package", aliases: ["extension", "packages", "install"] },
+        expect.objectContaining({ canonical: "context", aliases: ["ctx"] }),
+        expect.objectContaining({
+          canonical: "package",
+          aliases: ["extension", "packages"],
+        }),
       ]),
     );
 
@@ -2169,6 +2181,16 @@ describe("contracts command runtime", () => {
         {
           command: "package catalog",
           flags: ["--fields", "--project", "--global"],
+        },
+        {
+          command: "package upgrade",
+          flags: [
+            "--dry-run",
+            "--cli-only",
+            "--packages-only",
+            "--repair",
+            "--tag",
+          ],
         },
         {
           command: "install",

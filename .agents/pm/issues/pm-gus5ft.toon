@@ -2,11 +2,13 @@ id: pm-gus5ft
 title: "GH-862: pm-beads must map Beads close reasons into native resolution metadata"
 description: "Closed Beads records can carry close rationale that is not mapped into pm resolution, expected_result, actual_result, and close_reason metadata. Import must preserve source meaning in native terminal fields without inventing evidence."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:extensions",compatibility,migration,pm-beads,resolution
 created_at: "2026-08-02T14:11:22.529Z"
-updated_at: "2026-08-14T10:15:02.447Z"
+updated_at: "2026-08-26T20:58:08.220Z"
+closed_at: "2026-08-26T20:51:57.803Z"
+completed_at: "2026-08-26T20:51:57.803Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Known Beads close-reason variants map deterministically into native PM terminal metadata; absent source fields remain explicitly unavailable rather than fabricated; comments/events remain lossless; imported closed records satisfy resolution validation where the source provides sufficient evidence; package and installed-consumer acceptance pass
@@ -17,11 +19,47 @@ why_now: GitHub issue #862 identifies a live terminal-metadata parity gap
 parent: pm-ugqx
 risk: high
 confidence: 92
+resolution: Implemented
+expected_result: "Beads terminal evidence maps deterministically to native resolution, close_reason, expected_result, and actual_result fields without inventing unavailable source facts."
+actual_result: Explicit source terminal fields round-trip exactly; close_reason supplies resolution only when explicit resolution is absent; missing expected/actual evidence remains absent and is honestly reported by validation.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-13bn,discovered_from,"2026-08-02T14:11:22.529Z","harness:codex","cli:create:dep",detected
   pm-f7jj9b,blocked_by,"2026-08-02T14:11:22.529Z","harness:codex","cli:create:dep",detected
   pm-tpwde6,blocked_by,"2026-08-02T14:11:22.529Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-02T14:11:22.529Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-02T14:11:22.529Z","harness:codex","Duplicate-check evidence: exact GH-862 and all-status Beads close-reason/resolution searches found no canonical owner. Existing terminal-validation and importer items cover PM-native closure or prior package delivery, not semantic migration of external close evidence."
+  "2026-08-26T18:50:50.968Z","harness:codex","TDD red evidence: portable-backup closure acceptance cannot map source close_reason into resolution because the relational backup path is absent; new test also asserts expected_result and actual_result stay unavailable when source evidence is absent."
+  "2026-08-26T20:48:44.041Z","harness:codex","Verification evidence: manual installed-package readback preserved fallback closure resolution/close_reason for Tokenwerk-A1 and explicit resolution, expected_result, actual_result, and close_reason for Tokenwerk-C3. History-drift validation checked 3 items with zero drift; resolution validation accurately warned that Tokenwerk-A1's upstream source lacks expected/actual fields rather than fabricating them. Full suite 8,020/8,020 and exact coverage 100/100/100/100 passed."
+  "2026-08-26T20:58:08.220Z","harness:codex","Governance evidence: post-closeout defect-evidence correctly failed closed until this production defect had structured prevention evidence. Bound closure to the beads-terminal-metadata-parity gate, fallback/explicit/absent-evidence negative controls, focused Beads tests, exact coverage, defect-evidence, and hosted static/coverage checks. No waiver is used."
+files[4]{path,scope,note}:
+  packages/pm-beads/extensions/beads/runtime.ts,project,Beads closure field parity and regression proof
+  tests/fixtures/beads/backup-v0.62/backup_state.json,project,Beads closure field parity and regression proof
+  tests/fixtures/beads/backup-v0.62/issues.jsonl,project,Beads closure field parity and regression proof
+  tests/unit/packages/beads-command.spec.ts,project,Beads closure field parity and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,project,240,"harness:codex","2026-08-26T19:58:08.909Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[1]:
+  - run_id: test-local-mtakjk2u-bhjxm3
+    kind: test
+    status: passed
+    started_at: "2026-08-26T20:50:47.745Z"
+    finished_at: "2026-08-26T20:51:04.422Z"
+    recorded_at: "2026-08-26T20:51:04.422Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  packages/pm-beads/README.md,project,Closure parity and fallback migration guidance
+close_reason: "Implemented and verified deterministic Beads closure metadata mapping without fabricated evidence, including installed-package readback, zero history drift, 8,020 passing tests, and exact 100/100/100/100 coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: beads-terminal-metadata-parity
+  negative_control: "Remove fallback close_reason-to-resolution mapping, drop explicit expected/actual fields, or synthesize absent source evidence; the portable-backup assertions and installed readback must fail while history remains drift-free."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,node scripts/release/defect-evidence-gate.mjs --json,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  owner: pm-gus5ft
 body: ""

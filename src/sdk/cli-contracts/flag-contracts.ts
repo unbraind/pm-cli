@@ -278,7 +278,7 @@ export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for comments flag contracts, shared by SDK and presentation-layer consumers. */
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
-  { flag: "--add", aliases: ["--comment", "--body"] },
+  { flag: "--add", aliases: ["--comment", "--body", "--text"] },
   { flag: "--stdin" },
   { flag: "--file" },
   { flag: "--edit" },
@@ -304,7 +304,7 @@ function withCursorSemantics(
 /** Public contract for notes flag contracts, shared by SDK and presentation-layer consumers. */
 export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
-  { flag: "--add", aliases: ["--note"] },
+  { flag: "--add", aliases: ["--note", "--text"] },
   { flag: "--add-json" },
   { flag: "--stdin" },
   { flag: "--file" },
@@ -323,7 +323,7 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for learnings flag contracts, shared by SDK and presentation-layer consumers. */
 export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
-  { flag: "--add", aliases: ["--learning"] },
+  { flag: "--add", aliases: ["--learning", "--text"] },
   { flag: "--limit" },
   { flag: "--full-history" },
   { flag: "--author" },
@@ -2098,6 +2098,12 @@ export function resolveSubcommandFlagContractsForCommand(
     lifecycleSubcommand !== undefined &&
     extraParts.length === 0
   ) {
+    if (
+      (rootCommand === "package" || rootCommand === "packages") &&
+      lifecycleSubcommand === "upgrade"
+    ) {
+      return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
+    }
     return withSubcommandGlobalFlags(
       resolveExtensionLifecycleFlagContracts(rootCommand, lifecycleSubcommand),
     );

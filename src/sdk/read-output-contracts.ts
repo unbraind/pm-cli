@@ -752,10 +752,10 @@ export function applyReadOutputIncludeModes(
   const modeOptions = readOutputIncludeModeOptions(command);
   const selectors: string[] = [];
   const modes: string[] = [];
-  const optionsWithProvenance = commandOptions as PmReadOutputOptionsWithProvenance;
-  const existingProvenance = optionsWithProvenance[
-    READ_OUTPUT_INVOCATION_PROVENANCE
-  ];
+  const optionsWithProvenance =
+    commandOptions as PmReadOutputOptionsWithProvenance;
+  const existingProvenance =
+    optionsWithProvenance[READ_OUTPUT_INVOCATION_PROVENANCE];
   const canonicalModes = new Set(
     existingProvenance?.canonical_include_modes ?? [],
   );
@@ -776,7 +776,21 @@ export function applyReadOutputIncludeModes(
     modes.push(token);
     canonicalModes.add(token);
   }
-  if (modes.length > 0) {
+  const forwardedGetFieldSelectors =
+    resolveReadOutputSurface(command) === "get"
+      ? selectors.filter((selector) => selector !== "item")
+      : [];
+  const forwardedGetFields = forwardedGetFieldSelectors.length > 0;
+  if (forwardedGetFields) {
+    commandOptions.fields = [
+      ...new Set([
+        ...(stringList(commandOptions.fields) ?? []),
+        ...forwardedGetFieldSelectors,
+      ]),
+    ].join(",");
+    canonicalModes.add("fields");
+  }
+  if (modes.length > 0 || forwardedGetFields) {
     optionsWithProvenance[READ_OUTPUT_INVOCATION_PROVENANCE] = {
       canonical_include_modes: [...canonicalModes],
       explicit_legacy_aliases: [...explicitLegacyAliases],
@@ -1085,9 +1099,7 @@ export function resolveReadOutputDimensions(
       : {
           source: "default" as const,
           value:
-            budget.default_max_estimated_tokens_by_format[
-              resolvedOutputFormat
-            ],
+            budget.default_max_estimated_tokens_by_format[resolvedOutputFormat],
         });
   const resolvedByDimension = { include, amount, cost, encoding };
   return {
@@ -1364,9 +1376,7 @@ function requestedDimensions(
     (dimension) =>
       (resolved[dimension] !== undefined &&
         resolved[dimension]?.source !== "default") ||
-      resolved.canonical_options_used!.includes(
-        CANONICAL_OPTIONS[dimension],
-      ),
+      resolved.canonical_options_used!.includes(CANONICAL_OPTIONS[dimension]),
   );
 }
 

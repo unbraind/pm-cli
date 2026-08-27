@@ -11,6 +11,7 @@ import {
 import { _testOnlyHealthCommand } from "../../../src/sdk/governance/health.js";
 import {
   applyReadOutputDimensions,
+  normalizeReadOutputIncludeModeOptions,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   readOutputIncludeModeOptions,
 } from "../../../src/sdk/read-output-contracts.js";
@@ -168,6 +169,28 @@ describe("SDK read contract integrity", () => {
           { name: "children", restore_with: "--output-include children" },
         ],
       },
+    });
+  });
+
+  it("forwards get collection selectors into the pre-execution field projection", () => {
+    const options: Record<string, unknown> = {
+      outputInclude: "item,comments",
+      fields: "notes",
+    };
+
+    normalizeReadOutputIncludeModeOptions("get", options);
+
+    expect(options).toMatchObject({
+      outputInclude: "item,comments",
+      fields: "notes,comments",
+    });
+    expect(
+      attachReadOutputContracts("get", options, {
+        item: { id: "pm-1", title: "One" },
+        comments: [],
+      }),
+    ).toMatchObject({
+      read_output: { legacy_aliases_used: [], migration_hints: [] },
     });
   });
 

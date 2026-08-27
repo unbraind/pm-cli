@@ -1,10 +1,10 @@
 {
-  "minimum_public_actions": 93,
+  "minimum_public_actions": 96,
   "maximum_waivers": {
     "cli_adapter": 5,
     "cli_positional": 60,
-    "cli_presentation": 190,
-    "cli_scope_selector": 90,
+    "cli_presentation": 192,
+    "cli_scope_selector": 93,
     "cli_transport": 433,
     "compatibility_alias": 14,
     "sdk_native": 50,
