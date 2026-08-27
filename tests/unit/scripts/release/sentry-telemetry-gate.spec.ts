@@ -11,7 +11,11 @@ type RunCommandResult = { status: number; stdout: string; stderr: string };
 interface ScenarioOptions {
   argv: string[];
   existsSync?: boolean;
-  runCommand?: (command: string, args: string[]) => RunCommandResult;
+  runCommand?: (
+    command: string,
+    args: string[],
+    options?: Record<string, unknown>,
+  ) => RunCommandResult;
   fetchImpl?: typeof fetch;
   env?: Record<string, string | undefined>;
   failThrows?: boolean;
@@ -223,6 +227,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
   });
 
   it("shares a custom bounded request timeout across issue listing and latest-event enrichment", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(1_000);
     const timeoutSignal = new AbortController().signal;
     const timeoutSpy = vi
       .spyOn(AbortSignal, "timeout")
@@ -269,6 +274,54 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
       "PM-TIMEOUT-CONTRACT",
     ]);
+  });
+
+  it("stops event enrichment when its shared request-timeout budget is exhausted", async () => {
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(1_000)
+      .mockReturnValueOnce(1_000)
+      .mockReturnValueOnce(46_001);
+    const timeoutSpy = vi
+      .spyOn(AbortSignal, "timeout")
+      .mockReturnValue(new AbortController().signal);
+    const issues = Array.from({ length: 11 }, (_, index) => ({
+      id: `budget-${index}`,
+      shortId: `PM-BUDGET-${index}`,
+      level: "error",
+      isUnhandled: false,
+    }));
+    const fetchSpy = vi.fn(async (input: string | URL | Request) => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify(
+          new URL(String(input)).pathname.endsWith("/issues/")
+            ? issues
+            : {
+                tags: [
+                  { key: "pm.error_code", value: "item_not_found" },
+                  { key: "pm.exit_code", value: "3" },
+                ],
+              },
+        ),
+    }));
+
+    const { json } = await runSentryGate({
+      argv: [
+        "--json",
+        "--telemetry-mode",
+        "off",
+        "--sentry-request-timeout-ms",
+        "45000",
+      ],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(11);
+    expect(timeoutSpy).toHaveBeenCalledTimes(11);
+    expect(json.sentry.ignored_expected_handled_total).toBe(10);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-BUDGET-10"]);
   });
 
   it("honors a custom --sentry-window-days value in the query and output", async () => {
@@ -1306,6 +1359,7 @@ describe("scripts/release/sentry-telemetry-gate: telemetry metric parsing", () =
 
 describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => {
   it("enriches sentry CLI issue rows from their latest event contracts", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(1_000);
     const { json, runCommand } = await runSentryGate({
       argv: [
         "--json",
@@ -1364,6 +1418,12 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
           command === "sentry" && args[0] === "issue" && args[1] === "events",
       ),
     ).toBe(true);
+    const sentryCalls = runCommand.mock.calls.filter(
+      ([command]) => command === "sentry",
+    );
+    expect(sentryCalls).toHaveLength(2);
+    expect(sentryCalls[0]?.[2]).toMatchObject({ timeout: 120_000 });
+    expect(sentryCalls[1]?.[2]).toMatchObject({ timeout: 120_000 });
   });
 
   it("fails safe across skipped, failed, empty, and malformed CLI event enrichment", async () => {

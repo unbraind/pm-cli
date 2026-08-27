@@ -362,7 +362,13 @@ async function enrichSentryIssuesWithLatestEvents(
 ) {
   const { org } = parseSentryProject(project);
   const enriched = [];
+  const deadline = Date.now() + requestTimeoutMs;
   for (let index = 0; index < issues.length; index += 10) {
+    const remainingTimeoutMs = deadline - Date.now();
+    if (remainingTimeoutMs <= 0) {
+      enriched.push(...issues.slice(index));
+      break;
+    }
     const batch = await Promise.all(
       issues
         .slice(index, index + 10)
@@ -371,7 +377,7 @@ async function enrichSentryIssuesWithLatestEvents(
             issue,
             org,
             token,
-            requestTimeoutMs,
+            remainingTimeoutMs,
           ),
         ),
     );
@@ -380,14 +386,27 @@ async function enrichSentryIssuesWithLatestEvents(
   return enriched;
 }
 
-function enrichSentryIssuesViaCli(issues, project, windowDays) {
+function enrichSentryIssuesViaCli(
+  issues,
+  project,
+  windowDays,
+  requestTimeoutMs,
+) {
   const { org } = parseSentryProject(project);
-  return issues.map((issue) => {
+  const enriched = [];
+  const deadline = Date.now() + requestTimeoutMs;
+  for (const issue of issues) {
     if (
       !needsSentryContractEnrichment(issue) ||
       typeof issue.shortId !== "string"
     ) {
-      return issue;
+      enriched.push(issue);
+      continue;
+    }
+    const remainingTimeoutMs = deadline - Date.now();
+    if (remainingTimeoutMs <= 0) {
+      enriched.push(issue);
+      continue;
     }
     const eventResult = runCommand(
       commandFor("sentry"),
@@ -404,10 +423,15 @@ function enrichSentryIssuesViaCli(issues, project, windowDays) {
         "--fields",
         "tags,metadata,release",
       ],
-      { capture: true, allowFailure: true },
+      {
+        capture: true,
+        allowFailure: true,
+        timeout: remainingTimeoutMs,
+      },
     );
     if (eventResult.status !== 0) {
-      return issue;
+      enriched.push(issue);
+      continue;
     }
     try {
       const payload =
@@ -416,18 +440,20 @@ function enrichSentryIssuesViaCli(issues, project, windowDays) {
           : [];
       const event = parseIssuePayload(payload)[0];
       if (!event || typeof event !== "object") {
-        return issue;
+        enriched.push(issue);
+        continue;
       }
-      return {
+      enriched.push({
         ...issue,
         tags: event.tags ?? issue.tags,
         metadata: event.metadata ?? issue.metadata,
         release: event.release ?? issue.release,
-      };
+      });
     } catch {
-      return issue;
+      enriched.push(issue);
     }
-  });
+  }
+  return enriched;
 }
 
 function fetchSentryIssuesViaCli(
@@ -436,6 +462,7 @@ function fetchSentryIssuesViaCli(
   limit,
   priorFailure,
   windowDays,
+  requestTimeoutMs,
 ) {
   const result = runCommand(
     commandFor("sentry"),
@@ -454,6 +481,7 @@ function fetchSentryIssuesViaCli(
     {
       capture: true,
       allowFailure: true,
+      timeout: requestTimeoutMs,
     },
   );
   if (result.status !== 0) {
@@ -478,6 +506,7 @@ function fetchSentryIssuesViaCli(
         parseIssuePayload(payload),
         project,
         windowDays,
+        requestTimeoutMs,
       ),
     };
   } catch (error) {
@@ -508,6 +537,7 @@ async function fetchSentryIssues(
         limit,
         "missing_sentry_auth_token",
         windowDays,
+        requestTimeoutMs,
       );
     }
     return {
@@ -560,6 +590,7 @@ async function fetchSentryIssues(
       limit,
       lastFailure,
       windowDays,
+      requestTimeoutMs,
     );
   }
 
