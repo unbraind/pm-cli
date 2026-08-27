@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:35.309Z"
-updated_at: "2026-08-27T02:27:22.982Z"
-closed_at: "2026-08-27T02:27:22.317Z"
-completed_at: "2026-08-27T02:27:22.317Z"
+updated_at: "2026-08-27T03:09:44.966Z"
+closed_at: "2026-08-27T03:09:44.354Z"
+completed_at: "2026-08-27T03:09:44.354Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm --help renders one screen listing canonical nouns only; pm help --all lists everything incl. aliases marked deprecated; help/completions/docs command tables generated from the contract table with a drift gate; after-measurement (pm-a22j script) shows reduced default help + contracts token cost
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at}:
   pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z"
   pm-1kxs,implements,"2026-07-25T06:28:03.187Z"
   pm-z436,implements,"2026-07-26T05:49:54.251Z"
-comments[7]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-26T21:27:35.154Z","harness:codex","GitHub intake: GH-1127 https://github.com/unbraind/pm-cli/issues/1127. Reused the exact tiered-help feature. Red reproduction: default help intentionally stays at 14 canonical commands, but pm help --all is not declared and still returns only the same 14-command view instead of the complete standard/full surface."
   "2026-08-26T21:34:27.309Z","harness:codex","TDD red: help presentation and structured-help specs prove --all still filters to core commands and does not expose deprecated alias lifecycle metadata."
   "2026-08-26T22:51:37.953Z","harness:codex","Evidence: root help is now tiered: fresh-directory structured acceptance exposed 14 default subcommands versus 69 with --all, plus 23 lifecycle-described command aliases; package help exposed 15 lifecycle subcommands including install and upgrade. The linked sandbox-safe suite passed 239/239. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, command grammar 164/164, flag parity 2839/2839, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean."
@@ -31,21 +31,26 @@ comments[7]{created_at,author,text}:
   "2026-08-27T01:10:22.756Z","harness:codex","Final verification: full structured discovery applies each dynamic command visibility tier and excludes internal commands while preserving compact default help and explicit full discovery. Linked help plan passes 240/240. Full repository coverage passes 8029 tests at 100/100/100/100; static quality, 100% source/exported/member docstrings, lint, zero-clone jscpd, 88-command package dogfood, and credential scan all pass."
   "2026-08-27T01:33:30.392Z","harness:codex","TDD red evidence from exact-head CodeRabbit round: standalone pm --all and pm --explain returned success with empty stdout instead of root discovery help, while the new list --all guard establishes that command-scoped lifecycle filtering must remain executable."
   "2026-08-27T02:27:10.531Z","harness:codex","Evidence: Standalone pm --all and pm --explain now render root discovery while command-scoped list --all and list --explain remain command executions. Source-instrumented and process-level negative controls pass. Linked plans passed 240/240 plus 42/42; full repository gate passed exact 100/100/100/100."
+  "2026-08-27T02:51:37.940Z","harness:codex","TDD evidence for final PR review findings: focused regression run failed exactly the intended help cases before production edits. Full discovery leaked nested internal-index (and Commander's built-in help command remains visible), while isKnownHelpCommandPath incorrectly accepted the partial alias path pkg missing. Command: node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/sdk/agent/closed-domain-contracts.spec.ts; result: 3 failed, 137 passed."
+  "2026-08-27T02:54:04.585Z","harness:codex","Implementation evidence: full discovery now applies internal-tier filtering at every command depth; compact help preserves existing nested behavior; complete-path validation now rejects any unmatched child token. Focused source/unit regression command passed 140/140 tests, including a real pm help package definitely-missing usage refusal."
+  "2026-08-27T03:09:43.310Z","harness:codex","Final verification: linked plans passed (240/240 unit/registration tests plus 42/42 help runtime integration tests); pnpm lint passed; full repository coverage passed 584 files and 8031 tests at exact 100/100/100/100; security scan and high-severity audit found no secrets or vulnerabilities. Clean npm-pack consumer acceptance proved npx and bun x version execution, sandbox init, full package discovery, and pm help package definitely-missing exiting 2 with empty stdout."
 learnings[1]{created_at,author,text}:
   "2026-08-26T22:51:38.552Z","harness:codex",A compact default help surface and an explicit full-discovery surface can share one command registry when visibility selection is centralized and structured help carries alias lifecycle metadata.
-files[8]{path,scope,note}:
+files[10]{path,scope,note}:
+  src/cli/commander-usage.ts,project,Reject partial nested help command matches
   src/cli/help-content.ts,project,Implements compact default and full discovery help tiers
   src/cli/help-json-payload.ts,project,Publishes hidden command alias lifecycle metadata in full structured help
   src/cli/main.ts,project,Standalone full-discovery root help dispatch
   src/sdk/cli-bootstrap.ts,project,Carries full-discovery help through bootstrap parsing
   src/sdk/cli-program.ts,project,Declares the root full-discovery option
   tests/integration/help-runtime.spec.ts,project,Standalone discovery and list --all regression proof
+  tests/unit/cli/cli-main-errors.spec.ts,project,Regression coverage for complete nested help paths
   tests/unit/cli/help-command-path-resolution.spec.ts,project,Proves alias metadata and exact path resolution
   tests/unit/cli/help-content.spec.ts,project,Proves default and full help selection
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,"harness:codex","2026-08-26T22:49:41.971Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,240,"harness:codex","2026-08-27T01:35:10.515Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtaotmxu-i63nmv
     kind: test
     status: passed
@@ -80,7 +85,19 @@ test_runs[3]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtaxj61p-fdrl8u
+    kind: test
+    status: passed
+    started_at: "2026-08-27T02:54:05.517Z"
+    finished_at: "2026-08-27T02:54:41.245Z"
+    recorded_at: "2026-08-27T02:54:41.245Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CLI_GRAMMAR.md,project,Documents default versus full command discovery
-close_reason: "Completed context-efficient standalone full discovery while preserving command-scoped flags, with source and process integration proof plus exact full coverage."
+close_reason: "Closed final help review gaps: full discovery filters internal descendants and partial nested help paths fail closed; linked, full-coverage, static, security, and clean-install acceptance evidence passed."
 body: ""

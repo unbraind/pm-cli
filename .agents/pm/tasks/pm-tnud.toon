@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:extensions",simplification
 created_at: "2026-07-05T04:53:32.408Z"
-updated_at: "2026-08-27T02:27:24.283Z"
-closed_at: "2026-08-27T02:27:23.651Z"
-completed_at: "2026-08-27T02:27:23.651Z"
+updated_at: "2026-08-27T03:09:46.125Z"
+closed_at: "2026-08-27T03:09:45.502Z"
+completed_at: "2026-08-27T03:09:45.502Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm package covers the full extension/install/upgrade verb set with flag parity; extension/install/upgrade spellings alias-shimmed with identical output; scope semantics (project/global) unchanged; contracts/MCP/completions/docs regenerated; existing extension+install+upgrade specs pass via aliases
@@ -46,7 +46,7 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[12]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-07T17:45:24.101Z",codex-agent,"Related SDK evidence: this PR does not complete the CLI namespace consolidation, but it preserves package vocabulary in the SDK via PmClient.package and top-level packageLifecycle helpers while exposing package install/uninstall/doctor/manage/describe/reload/catalog/activate/deactivate/upgrade primitives. pm-tnud remains open because hidden alias shims, CLI full verb parity, contracts/MCP/completions regeneration, and install/upgrade alias specs are still outstanding."
   "2026-07-07T18:07:11.560Z",codex-agent,"Bundle note: SDK package lifecycle helpers now preserve package vocabulary in PmClient.package(...) even if caller options include a conflicting vocabulary value; this supports package namespace consistency while broader CLI namespace consolidation remains open."
   "2026-07-22T06:10:48.766Z",codex-root-20260722,"Dogfood finding from PR #643 (duplicate-safe reuse): unversioned pm install npm:pm-changelog --project preserved the existing managed 2026.7.18 package even after npm latest advanced to 2026.7.22, while a fresh CI checkout installed 2026.7.22. Explicit npm:pm-changelog@2026.7.22 upgraded correctly. The consolidated pm package install/upgrade surface should make current-versus-latest visible and give agents an explicit idempotent refresh path; this belongs to the existing pm-tnud lineage, not a duplicate item."
@@ -59,6 +59,9 @@ comments[12]{created_at,author,text}:
   "2026-08-27T01:10:23.312Z","harness:codex","Final verification: package-upgrade is the canonical discoverable SDK/MCP action, deprecated upgrade remains executable but undiscoverable, packages stays out of capability routing, strict flat upgrade inputs preserve dry-run/scope/target, and nested package upgrade shares the runtime flag contract. Linked plan passes 414/414; manual isolated CLI and SDK dry runs planned packages-only global work without CLI mutation. Full repository coverage passes 8029 tests at exact 100/100/100/100; static quality, 100% source/exported/member docstrings, lint, zero-clone jscpd, 88-command package dogfood, and credential scan all pass."
   "2026-08-27T01:33:31.613Z","harness:codex","TDD red evidence from exact-head CodeRabbit round: focused completion and upgrade tests prove package upgrade --tag reaches tracker-tag completion, global recovery omits --global, and UpgradePackageResult still emits deprecated pm install instead of canonical pm package install."
   "2026-08-27T02:27:11.085Z","harness:codex","Evidence: Package upgrade completion now avoids tracker-tag interception, recovery preserves global scope, and UpgradePackageResult emits canonical pm package install commands. Four linked plans passed 120/120, 218/218, 73/73, and 4/4. Repo lint, SDK parity, refusal closure, security secret scan, and pnpm audit all pass."
+  "2026-08-27T02:51:38.411Z","harness:codex","TDD evidence for final PR review finding: focused regression run failed the new package-upgrade contract assertion because package-upgrade-mutually-exclusive-modes advertises flag --projection instead of the actual constrained flags --cli-only/--packages-only. Same focused command result: 3 failed, 137 passed across the three intentional red assertions."
+  "2026-08-27T02:54:05.056Z","harness:codex","Implementation evidence: the package-upgrade closed-domain probe now names the actual mutually exclusive --cli-only/--packages-only flags. Focused contract/help regression command passed 140/140 tests."
+  "2026-08-27T03:09:43.789Z","harness:codex","Final verification: all four linked plans passed (120 + 218 + 73 + 4 tests); pnpm lint and exact full coverage passed; clean packed SDK consumer imported listCoreClosedDomainContracts and observed package-upgrade-mutually-exclusive-modes flag=--cli-only/--packages-only. Security scan and high-severity audit were clean."
 files[40]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.8.17 managed package provenance
   CHANGELOG.md,project,Generated closeout changelog for canonical package lifecycle and Beads migration delivery
@@ -105,7 +108,7 @@ tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240,"harness:codex","2026-08-26T23:41:57.492Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/commands/upgrade-command.spec.ts,project,240,"harness:codex","2026-08-27T00:27:27.412Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,240,"harness:codex","2026-08-27T00:43:28.281Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtakifr2-0vmgwd
     kind: test
     status: passed
@@ -145,11 +148,25 @@ test_runs[3]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/commands/upgrade-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtaxlmaa-9wiht2
+    kind: test
+    status: passed
+    started_at: "2026-08-27T02:54:41.699Z"
+    finished_at: "2026-08-27T02:56:35.602Z"
+    recorded_at: "2026-08-27T02:56:35.602Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/package-lifecycle-namespace.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/agent/agent-capability-contracts.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/commands/upgrade-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,schema,schema,source,local_source_ref
 docs[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/QUICKSTART.md,project,Canonical package lifecycle guidance and generated routing evidence
   README.md,project,Canonical package lifecycle guidance and generated routing evidence
-close_reason: "Completed canonical package lifecycle completion, global recovery scope, canonical install result commands, SDK and CLI parity, and linked acceptance proof."
+close_reason: "Closed final package lifecycle contract review gap: upgrade mode refusal metadata now identifies its actual mutually exclusive flags; linked, SDK consumer, full-coverage, static, and security evidence passed."
 body: ""

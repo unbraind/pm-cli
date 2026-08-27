@@ -1010,8 +1010,8 @@ function configureTieredHelpVisibility(
   program.configureHelp({
     visibleCommands(command) {
       const visible = baselineHelp.visibleCommands(command);
-      if (command !== program) return visible;
       if (!fullDiscovery) {
+        if (command !== program) return visible;
         return visible.filter((candidate) =>
           selectedRootCommands.has(candidate),
         );

@@ -1237,6 +1237,14 @@ describe("CLI bootstrap entrypoints", () => {
       expect(unknownHelp.stdout).toBe("");
       expect(unknownHelp.stderr).toContain("Unknown command definitely-missing");
 
+      const partialHelpPath = await runSourceCli(
+        ["help", "package", "definitely-missing"],
+        context.env,
+      );
+      expect(partialHelpPath.code).toBe(EXIT_CODE.USAGE);
+      expect(partialHelpPath.stdout).toBe("");
+      expect(partialHelpPath.stderr).toContain("Unknown command");
+
       const reportedUnknownHelp = await runSourceCli(["--no-extensions", "definitely-missing", "--help"], {
         ...context.env,
         PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true",
@@ -4561,7 +4569,7 @@ describe("CLI Commander usage recovery helpers", () => {
     expect(noCanonical?.unknownCommandNextSteps?.[0] ?? "").not.toContain("comments");
   });
 
-  it("resolves child commands and partial help paths through aliases", () => {
+  it("resolves complete child command paths through aliases", () => {
     const program = new Command().name("pm");
     program.command("context").alias("ctx").description("Context");
     const packageCommand = program.command("package").alias("pkg").description("Package");
@@ -4581,7 +4589,7 @@ describe("CLI Commander usage recovery helpers", () => {
     expect(resolveChildCommandByToken(nonFunctionAliasesParent, "sh")).toBeUndefined();
     expect(isKnownHelpCommandPath(program, [])).toBe(true);
     expect(isKnownHelpCommandPath(program, ["pkg", "add"])).toBe(true);
-    expect(isKnownHelpCommandPath(program, ["pkg", "missing"])).toBe(true);
+    expect(isKnownHelpCommandPath(program, ["pkg", "missing"])).toBe(false);
     expect(isKnownHelpCommandPath(program, ["missing"])).toBe(false);
   });
 

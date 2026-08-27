@@ -144,7 +144,7 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
     {
       probe_id: "package-upgrade-mutually-exclusive-modes",
       command: "package upgrade",
-      flag: "--projection",
+      flag: "--cli-only/--packages-only",
       rejected_value: "--cli-only+--packages-only",
       refusal_args: [
         "package",

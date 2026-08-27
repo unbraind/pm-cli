@@ -24,6 +24,11 @@ describe("closed-domain contracts", () => {
           probe_id: "search-invalid-intent",
           allowed_values: ["discover"],
         }),
+        expect.objectContaining({
+          probe_id: "package-upgrade-mutually-exclusive-modes",
+          flag: "--cli-only/--packages-only",
+          error_code: "projection_options_mutually_exclusive",
+        }),
       ]),
     );
     expect(

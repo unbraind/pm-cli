@@ -733,16 +733,14 @@ export function isKnownHelpCommandPath(
     return true;
   }
   let current = root;
-  let matchedAny = false;
   for (const token of commandPathTokens) {
     const next = resolveChildCommandByToken(current, token);
     if (!next) {
-      return matchedAny;
+      return false;
     }
-    matchedAny = true;
     current = next;
   }
-  return matchedAny;
+  return true;
 }
 
 async function resolveWorkspaceUsageContext(
