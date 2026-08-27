@@ -95,7 +95,10 @@ function fullContractsPayload(): SpawnResult {
       { command: "init", flags: flagRows(["--agent-guidance", "--with-packages"]) },
       { command: "get", flags: flagRows(["--fields"]) },
     ],
-    command_aliases: [{ canonical: "package", aliases: ["install"] }],
+    command_aliases: [
+      { canonical: "package", aliases: ["extension", "packages"] },
+      { canonical: "package install", aliases: ["install"] },
+    ],
   });
 }
 
@@ -866,18 +869,13 @@ describe("dogfood-package-first", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("falls back to [] when the package command-alias entry omits its aliases array", async () => {
-    const fullCommandFlags = [
-      { command: "package", flags: ["--catalog", "--explore", "--doctor", "--install", "--project", "--global"].map((flag) => ({ flag })) },
-      { command: "package upgrade", flags: ["--packages-only", "--dry-run"].map((flag) => ({ flag })) },
-      { command: "init", flags: ["--agent-guidance", "--with-packages"].map((flag) => ({ flag })) },
-      { command: "get", flags: ["--fields"].map((flag) => ({ flag })) },
-    ];
+  it("rejects install when the aggregate package command claims the nested alias", async () => {
     const spawnSync = buildSpawnSync({
       pm: (cmd, pmArgs) => {
         if (cmd === "contracts" && pmArgs.includes("--flags-only") && !pmArgs.includes("--command") && !pmArgs.includes("--availability-only")) {
-          // All requireContractFlag assertions pass; the package alias entry lacks `aliases`.
-          return pmJson({ command_flags: fullCommandFlags, command_aliases: [{ canonical: "package" }] });
+          const payload = JSON.parse(String(fullContractsPayload().stdout)) as { command_aliases: Array<{ canonical: string; aliases: string[] }> };
+          payload.command_aliases[0]?.aliases.push("install");
+          return pmJson(payload);
         }
         return undefined;
       },
@@ -889,7 +887,62 @@ describe("dogfood-package-first", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await harness.importModule(SCRIPT);
-    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("missing install command alias"))).toBe(true);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("exposed install as aggregate package alias"))).toBe(true);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("accepts a missing aggregate package alias row when package install owns install", async () => {
+    const spawnSync = buildSpawnSync({
+      pm: (cmd, pmArgs) => {
+        if (cmd === "contracts" && pmArgs.includes("--flags-only") && !pmArgs.includes("--command") && !pmArgs.includes("--availability-only")) {
+          const payload = JSON.parse(String(fullContractsPayload().stdout)) as { command_aliases: Array<{ canonical: string; aliases: string[] }> };
+          payload.command_aliases = payload.command_aliases.filter((entry) => entry.canonical !== "package");
+          return pmJson(payload);
+        }
+        return undefined;
+      },
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0] ?? "{}")) as { ok: boolean };
+    expect(payload.ok).toBe(true);
+  });
+
+  it("falls back to [] when the package install command-alias entry omits its aliases array", async () => {
+    const fullCommandFlags = [
+      { command: "package", flags: ["--catalog", "--explore", "--doctor", "--install", "--project", "--global"].map((flag) => ({ flag })) },
+      { command: "package upgrade", flags: ["--packages-only", "--dry-run"].map((flag) => ({ flag })) },
+      { command: "init", flags: ["--agent-guidance", "--with-packages"].map((flag) => ({ flag })) },
+      { command: "get", flags: ["--fields"].map((flag) => ({ flag })) },
+    ];
+    const spawnSync = buildSpawnSync({
+      pm: (cmd, pmArgs) => {
+        if (cmd === "contracts" && pmArgs.includes("--flags-only") && !pmArgs.includes("--command") && !pmArgs.includes("--availability-only")) {
+          // All requireContractFlag assertions pass; the canonical nested alias entry lacks `aliases`.
+          return pmJson({
+            command_flags: fullCommandFlags,
+            command_aliases: [
+              { canonical: "package", aliases: ["extension", "packages"] },
+              { canonical: "package install" },
+            ],
+          });
+        }
+        return undefined;
+      },
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("missing package install command alias"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 

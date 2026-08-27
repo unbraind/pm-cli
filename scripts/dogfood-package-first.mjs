@@ -349,7 +349,10 @@ try {
   requireContractFlag("get", "--fields");
   const packageAliasesFromContracts =
     allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package")?.aliases ?? [];
-  assert(packageAliasesFromContracts.includes("install"), "contracts --flags-only missing install command alias");
+  assert(!packageAliasesFromContracts.includes("install"), "contracts --flags-only exposed install as aggregate package alias");
+  const packageInstallAliasesFromContracts =
+    allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package install")?.aliases ?? [];
+  assert(packageInstallAliasesFromContracts.includes("install"), "contracts --flags-only missing package install command alias");
 
   run("calendar after init packages", [
     "calendar",

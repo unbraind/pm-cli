@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:extensions",simplification
 created_at: "2026-07-05T04:53:32.408Z"
-updated_at: "2026-08-27T06:47:21.793Z"
-closed_at: "2026-08-27T06:47:21.185Z"
-completed_at: "2026-08-27T06:47:21.185Z"
+updated_at: "2026-08-27T07:22:09.230Z"
+closed_at: "2026-08-27T07:22:08.619Z"
+completed_at: "2026-08-27T07:22:08.619Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm package covers the full extension/install/upgrade verb set with flag parity; extension/install/upgrade spellings alias-shimmed with identical output; scope semantics (project/global) unchanged; contracts/MCP/completions/docs regenerated; existing extension+install+upgrade specs pass via aliases
@@ -46,7 +46,7 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[20]{created_at,author,text}:
+comments[22]{created_at,author,text}:
   "2026-07-07T17:45:24.101Z",codex-agent,"Related SDK evidence: this PR does not complete the CLI namespace consolidation, but it preserves package vocabulary in the SDK via PmClient.package and top-level packageLifecycle helpers while exposing package install/uninstall/doctor/manage/describe/reload/catalog/activate/deactivate/upgrade primitives. pm-tnud remains open because hidden alias shims, CLI full verb parity, contracts/MCP/completions regeneration, and install/upgrade alias specs are still outstanding."
   "2026-07-07T18:07:11.560Z",codex-agent,"Bundle note: SDK package lifecycle helpers now preserve package vocabulary in PmClient.package(...) even if caller options include a conflicting vocabulary value; this supports package namespace consistency while broader CLI namespace consolidation remains open."
   "2026-07-22T06:10:48.766Z",codex-root-20260722,"Dogfood finding from PR #643 (duplicate-safe reuse): unversioned pm install npm:pm-changelog --project preserved the existing managed 2026.7.18 package even after npm latest advanced to 2026.7.22, while a fresh CI checkout installed 2026.7.22. Explicit npm:pm-changelog@2026.7.22 upgraded correctly. The consolidated pm package install/upgrade surface should make current-versus-latest visible and give agents an explicit idempotent refresh path; this belongs to the existing pm-tnud lineage, not a duplicate item."
@@ -67,6 +67,8 @@ comments[20]{created_at,author,text}:
   "2026-08-27T05:22:43.998Z","harness:codex","Review closure evidence: implemented package lifecycle alias positional parity, nested project/local/global scope parity, specific install/upgrade operation intents, safe wildcard documentation, and regenerated full SDK contract fixtures. Focused linked suites passed 418/418; full lint/static quality passed; repository coverage passed 8,037/8,037 tests across 585 files at exact 100/100/100/100 (59,704 statements, 44,940 branches, 12,419 functions, 57,492 lines); typecheck, dependency audit, secret scan, and docs-links gate passed. Fresh temp acceptance at /tmp/pm-cli-review-e2e-Cgqkrk confirmed install/upgrade targets and specific intents from built CLI contracts."
   "2026-08-27T06:19:56.323Z","harness:codex","TDD red for CodeRabbit review 5037755674: runtime alias regression shows install is exposed by both package and package install; Bash, Zsh, and Fish lifecycle completion assertions show migrate is absent. Focused run: 5 intended failures, 144 passes across alias, completion, and standalone help suites."
   "2026-08-27T06:47:18.052Z","harness:codex","Exact-head evidence: aggregate package aliases are now only extension/packages while package install alone owns install; extension/package shell completion action sets include migrate. Focused contract/completion/SDK linked plan passed 5/5 commands and 578 assertions. Full repository proof passed 585 files, 8,038 tests, exact 100/100/100/100 coverage, lint/static/type/security/docs gates, and fresh temp acceptance across bash/zsh/fish plus runtime contract JSON."
+  "2026-08-27T07:00:54.877Z","harness:codex","Hosted TDD red evidence: PR #1128 exact head 1135646 failed Gates (smokes), run 33047273811 job 98434331752, because dogfood still required install on the aggregate package alias row after the reviewed runtime contract correctly moved install ownership to canonical package install. The product contract and manual runtime proof pass; the stale dogfood assertion is now the active regression under this canonical lifecycle item."
+  "2026-08-27T07:22:08.071Z","harness:codex","Hosted smoke remediation evidence: dogfood now rejects install on the aggregate package alias row, requires it on canonical package install, and accepts a contract that omits an aggregate alias row. Focused unit coverage passed 37/37 with the modified script at 305/305 statements, 116/116 branches, 28/28 functions, and 299/299 lines. Real isolated package-first dogfood passed all 88 commands. Full repository coverage passed 585 files and 8,040 tests at exact 100/100/100/100 (59,707 statements, 44,944 branches, 12,420 functions, 57,494 lines); lint/static gates, TypeScript, dependency audit, and tracked secret scan all passed."
 files[40]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.8.17 managed package provenance
   CHANGELOG.md,project,Generated closeout changelog for canonical package lifecycle and Beads migration delivery
@@ -203,5 +205,5 @@ docs[5]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Canonical package lifecycle guidance and generated routing evidence
   docs/QUICKSTART.md,project,Canonical package lifecycle guidance and generated routing evidence
   README.md,project,Canonical package lifecycle guidance and generated routing evidence
-close_reason: "Completed exact lifecycle alias ownership and migrate completion coverage with linked, full-suite, and temporary-runtime proof."
+close_reason: Aligned exact-head package alias dogfood with canonical nested alias ownership and proved the hosted smoke regression locally.
 body: ""
