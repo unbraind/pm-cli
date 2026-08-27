@@ -16,6 +16,7 @@ import {
 } from "../../../src/sdk/cli-contracts.js";
 import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
 import { PM_POSITIONAL_ACTION_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
+import { pmToolActionNestedOptionKeys } from "../../../src/sdk/cli-contracts/tool-schema.js";
 import { analyzeSdkActionCoverage } from "../../../src/sdk/runtime.js";
 
 type SchemaWithProperties = {
@@ -38,6 +39,14 @@ describe("action-scoped MCP schema parity", () => {
         ({ flag }) => flag,
       ),
     ).toEqual(expect.arrayContaining(["--dry-run", "--packages-only"]));
+  });
+
+  it("accepts scope compatibility aliases in nested upgrade options", () => {
+    for (const action of ["upgrade", "package-upgrade"]) {
+      expect(pmToolActionNestedOptionKeys(action)).toEqual(
+        expect.arrayContaining(["project", "local", "global"]),
+      );
+    }
   });
 
   it("derives CLI action reachability with explicit, shrinking waivers", () => {

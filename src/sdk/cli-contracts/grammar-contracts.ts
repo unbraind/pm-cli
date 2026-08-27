@@ -6,7 +6,10 @@
  * this checked-in table in both directions so adding or removing a command
  * cannot silently bypass the architecture decision.
  */
-import type { PmCommandAliasContract } from "./command-aliases.js";
+import {
+  resolvePmCommandAlias,
+  type PmCommandAliasContract,
+} from "./command-aliases.js";
 
 /** Canonical top-level domains an agent must retain to route pm operations. */
 export const PM_CLI_GRAMMAR_NOUNS = [
@@ -649,8 +652,14 @@ export function resolvePmCommandPositionalContract(
   command: string,
 ): PmCommandPositionalContract | undefined {
   const normalized = normalizePositionalCommandPath(command);
-  return PM_COMMAND_POSITIONAL_CONTRACTS.find(
+  const direct = PM_COMMAND_POSITIONAL_CONTRACTS.find(
     (contract) => contract.command === normalized,
+  );
+  if (direct) return direct;
+  const canonical = resolvePmCommandAlias(normalized)?.canonical;
+  if (!canonical) return undefined;
+  return PM_COMMAND_POSITIONAL_CONTRACTS.find(
+    (contract) => contract.command === canonical,
   );
 }
 

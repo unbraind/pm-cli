@@ -820,7 +820,10 @@ function assertLosslessSourceFormat(
 ): void {
   if (
     source.counts === undefined &&
-    records.some(({ record }) => Object.hasOwn(record, "comment_count"))
+    records.some(
+      ({ record }) =>
+        typeof record.comment_count === "number" && record.comment_count > 0,
+    )
   ) {
     throw new PmCliError(
       "This Beads issue export advertises comment counts but omits the relational comment/event tables. Run `bd backup --force` and import the resulting directory with `pm beads import --backup-dir <path>`; no pm items were written.",

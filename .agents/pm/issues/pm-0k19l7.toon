@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",output-contract,token-efficiency
 created_at: "2026-08-07T11:16:55.129Z"
-updated_at: "2026-08-26T23:26:27.785Z"
-closed_at: "2026-08-26T22:51:40.146Z"
-completed_at: "2026-08-26T22:51:40.146Z"
+updated_at: "2026-08-27T05:22:49.226Z"
+closed_at: "2026-08-27T05:22:48.573Z"
+completed_at: "2026-08-27T05:22:48.573Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The namespace of --output-include is declared once in the output contract and is identical across entity and collection reads; Field projection works on pm get: requesting id and title returns an item carrying id and title, and the token receipt reflects the reduction; An --output-include token that matches neither a declared field nor a declared section is refused with a recovery hint naming the valid vocabulary for that command, rather than discarded; Mixing section and field names is either supported with defined precedence or refused; it can never silently drop the entity the read exists to return; The omission receipt reports every field and section withheld by an --output-include selection, and a conformance test asserts receipt-versus-payload agreement on both read shapes"
@@ -41,7 +41,7 @@ dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-x4nn3z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-ydshl9,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-yql1,implements,"2026-08-26T21:27:30.928Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-08-07T14:58:02.927Z","harness:codex","Final evidence: get projection now accepts bare item fields and item.<field>, supports full item and present sections, rejects unknown or conflicting selectors with stable usage guidance, and emits exact omission receipts. CLI/SDK integration passed inside the 445-file, 6,938-test suite; coverage is 49,824/49,824 statements, 36,260/36,260 branches, 10,203/10,203 functions, and 48,261/48,261 lines."
   "2026-08-07T15:11:53.205Z","harness:codex","PR #929 review correctly noted that the conflict is full item plus projected item fields, not full sections plus fields. Reopened for the precise shared refusal text and test assertion."
   "2026-08-07T15:24:32.605Z","harness:codex","Review implementation evidence: ambiguous get projection refusal now names the exact conflict—a full item cannot be mixed with projected item fields—and the SDK negative contract asserts that vocabulary."
@@ -52,6 +52,9 @@ comments[10]{created_at,author,text}:
   "2026-08-26T21:34:25.863Z","harness:codex","TDD red: focused read-contract spec proves canonical get outputInclude does not yet populate the pre-execution fields projection, so collection payloads are unavailable when shaping runs."
   "2026-08-26T22:51:36.060Z","harness:codex","Evidence: canonical get collection projection is implemented across the public read-output contract and CLI execution transport. Fresh-directory acceptance returned comments=1, notes=1, learnings=1 under item with legacy_aliases_used=0; the linked sandbox-safe suite passed 13/13. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, command grammar 164/164, flag parity 2839/2839, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit with no known vulnerabilities, and Trivy HIGH/CRITICAL vuln+secret+misconfig with zero findings."
   "2026-08-26T23:26:27.785Z","harness:codex","Hosted exact-head remediation: PR #1128 static CI correctly failed closed because this reopened production defect lacked escape_class and structured gate_evidence. Added production_defect classification and bound the fix to the collection-projection unit/integration negative control, local defect-evidence and exact-coverage gates, and hosted static/coverage checks; no waiver is used."
+  "2026-08-27T04:57:59.975Z","harness:codex","Review TDD intake: CodeRabbit exact-head review 5037361338 identified mixed item/collection selector loss and explicit fields overwrite in get projection forwarding."
+  "2026-08-27T05:00:30.590Z","harness:codex","TDD red: mixed outputInclude item,comments,item.learnings left preexisting fields=notes unchanged, proving non-item selectors were not forwarded and merged before get execution."
+  "2026-08-27T05:22:44.934Z","harness:codex","Review closure evidence: SDK get projection preprocessing now removes only the item execution selector, forwards collection selectors such as comments, and deduplicates them with pre-existing fields. Focused linked suite passed 13/13 and repository coverage passed 8,037/8,037 at exact 100/100/100/100. Fresh built-SDK acceptance produced selectors=[item,comments] and fields=notes,comments."
 learnings[4]{created_at,author,text}:
   "2026-08-07T14:58:03.382Z","harness:codex",Entity read projection must derive its selectable top-level vocabulary from the actual result envelope while keeping item-field vocabulary stable; otherwise a selector either lies about absent data or silently disappears.
   "2026-08-07T15:48:49.314Z","harness:codex",Projection conflicts should name the exact entity and depth pair so an agent can repair the selector without translating generic section terminology.
@@ -66,7 +69,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/read-contract-integrity.spec.ts,project,selector unit and refusal coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-msj4d5ru-bh4s0r
     kind: test
     status: passed
@@ -96,9 +99,20 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,schema,schema,source,legacy
+  - run_id: test-local-mtb2a1o2-xvkvrw
+    kind: test
+    status: passed
+    started_at: "2026-08-27T05:07:21.817Z"
+    finished_at: "2026-08-27T05:07:33.745Z"
+    recorded_at: "2026-08-27T05:07:33.745Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,schema,schema,source,legacy
 docs[1]{path,scope,note}:
   docs/SDK_CONTEXT_INTEGRITY.md,project,get projection vocabulary and omission recovery
-close_reason: "Delivered lossless canonical get collection projection across SDK and CLI with focused, integration, manual, full-coverage, lint, and security proof."
+close_reason: Completed lossless SDK get selector forwarding and field merge semantics with regression and built-SDK acceptance evidence.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

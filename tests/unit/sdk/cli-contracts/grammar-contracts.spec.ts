@@ -5,6 +5,7 @@ import {
   PM_COMMAND_DESTINATION_CONTRACTS,
   PM_COMMAND_POSITIONAL_CONTRACTS,
   PM_POSITIONAL_ACTION_CONTRACTS,
+  resolvePmCommandPositionalContract,
   verifyExplicitPositionalSlotCensus,
   verifyPmCliGrammar,
   verifyPmCommandPositionalContracts,
@@ -192,6 +193,12 @@ describe("CLI noun-verb grammar contracts", () => {
     });
     expect(renderPmCommandAliasMigrationHint(upgradeAlias!)).toBe(
       "Deprecated command `upgrade`; use `pm package upgrade`.",
+    );
+    expect(resolvePmCommandPositionalContract("install")?.slots).toEqual(
+      resolvePmCommandPositionalContract("package install")?.slots,
+    );
+    expect(resolvePmCommandPositionalContract("upgrade")?.slots).toEqual(
+      resolvePmCommandPositionalContract("package upgrade")?.slots,
     );
   });
 

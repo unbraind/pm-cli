@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:35.309Z"
-updated_at: "2026-08-27T04:43:08.843Z"
-closed_at: "2026-08-27T04:43:08.218Z"
-completed_at: "2026-08-27T04:43:08.218Z"
+updated_at: "2026-08-27T05:22:50.470Z"
+closed_at: "2026-08-27T05:22:49.855Z"
+completed_at: "2026-08-27T05:22:49.855Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm --help renders one screen listing canonical nouns only; pm help --all lists everything incl. aliases marked deprecated; help/completions/docs command tables generated from the contract table with a drift gate; after-measurement (pm-a22j script) shows reduced default help + contracts token cost
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at}:
   pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z"
   pm-1kxs,implements,"2026-07-25T06:28:03.187Z"
   pm-z436,implements,"2026-07-26T05:49:54.251Z"
-comments[15]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-08-26T21:27:35.154Z","harness:codex","GitHub intake: GH-1127 https://github.com/unbraind/pm-cli/issues/1127. Reused the exact tiered-help feature. Red reproduction: default help intentionally stays at 14 canonical commands, but pm help --all is not declared and still returns only the same 14-command view instead of the complete standard/full surface."
   "2026-08-26T21:34:27.309Z","harness:codex","TDD red: help presentation and structured-help specs prove --all still filters to core commands and does not expose deprecated alias lifecycle metadata."
   "2026-08-26T22:51:37.953Z","harness:codex","Evidence: root help is now tiered: fresh-directory structured acceptance exposed 14 default subcommands versus 69 with --all, plus 23 lifecycle-described command aliases; package help exposed 15 lifecycle subcommands including install and upgrade. The linked sandbox-safe suite passed 239/239. Repository gates passed pnpm build, pnpm lint, zero jscpd clones, command grammar 164/164, flag parity 2839/2839, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean."
@@ -39,25 +39,31 @@ comments[15]{created_at,author,text}:
   "2026-08-27T04:01:42.909Z","harness:codex","Review TDD red: CodeRabbit exact-head review 5037100816 reports full-discovery summaries can downgrade declared dynamic tier full to standard, and standalone pm --all/--explain can skip public extension registration."
   "2026-08-27T04:07:19.423Z","harness:codex","TDD red (CodeRabbit exact-head follow-up): focused help tests fail before implementation. Dynamic full-tier regression reports tier=standard instead of full; standalone --all/--explain integration omits the project extension command. Command: node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts tests/integration/help-extension-discovery.integration.spec.ts."
   "2026-08-27T04:42:59.032Z","harness:codex","Review-fix evidence: dynamic command summaries preserve explicit extension-declared full visibility; standalone pm --all and pm --explain register and expose public project extension commands. Focused linked plans passed 241/241 help unit and 43/43 process/integration tests. Manual isolated workspace installed templates and guide-shell, discovered templates through both standalone full-help forms, and completed a write/read annotation flow. Repository gates passed pnpm lint, pnpm typecheck, npm dependency audit, and full coverage at exact 100 percent: statements 59695/59695, branches 44932/44932, functions 12417/12417, lines 57485/57485."
+  "2026-08-27T04:58:01.853Z","harness:codex","Review TDD intake: CodeRabbit exact-head review 5037361338 identified missing root --all discovery in Zsh and Fish completion surfaces."
+  "2026-08-27T05:00:31.251Z","harness:codex","TDD red: root full-discovery completion assertion failed because generated Zsh and Fish global option lists omit --all; Bash already inherits it from the root flag contract."
+  "2026-08-27T05:22:45.459Z","harness:codex","Review closure evidence: generated Zsh and Fish completions now expose root --all alongside Bash so full public discovery is reachable across supported shells. Focused linked suites passed 389/389 and repository coverage passed 8,037/8,037 at exact 100/100/100/100. Fresh temp guide-shell installation confirmed the exact root --all descriptions in Zsh and Fish output."
 learnings[1]{created_at,author,text}:
   "2026-08-26T22:51:38.552Z","harness:codex",A compact default help surface and an explicit full-discovery surface can share one command registry when visibility selection is centralized and structured help carries alias lifecycle metadata.
-files[11]{path,scope,note}:
+files[13]{path,scope,note}:
   src/cli/commander-usage.ts,project,Reject partial nested help command matches
   src/cli/help-content.ts,project,Implements compact default and full discovery help tiers
   src/cli/help-json-payload.ts,project,Publishes hidden command alias lifecycle metadata in full structured help
   src/cli/main.ts,project,Standalone full-discovery root help dispatch
   src/sdk/cli-bootstrap.ts,project,Carries full-discovery help through bootstrap parsing
   src/sdk/cli-program.ts,project,Declares the root full-discovery option
+  src/sdk/completion.ts,project,Root full-discovery completion parity
   tests/integration/help-extension-discovery.integration.spec.ts,project,Standalone full-help extension discovery regression
   tests/integration/help-runtime.spec.ts,project,Standalone discovery and list --all regression proof
   tests/unit/cli/cli-main-errors.spec.ts,project,Regression coverage for complete nested help paths
   tests/unit/cli/help-command-path-resolution.spec.ts,project,Proves alias metadata and exact path resolution
   tests/unit/cli/help-content.spec.ts,project,Proves default and full help selection
-tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/commands/completion-command.spec.ts,project,Root --all completion regression
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,"harness:codex","2026-08-26T22:49:41.971Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,240,"harness:codex","2026-08-27T01:35:10.515Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts,project,240,"harness:codex","2026-08-27T04:08:41.605Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[6]:
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-08-27T05:04:58.960Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
+test_runs[7]:
   - run_id: test-local-mtaotmxu-i63nmv
     kind: test
     status: passed
@@ -129,7 +135,21 @@ test_runs[6]:
       node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtb2b8j4-152pbq
+    kind: test
+    status: passed
+    started_at: "2026-08-27T05:07:34.279Z"
+    finished_at: "2026-08-27T05:08:29.296Z"
+    recorded_at: "2026-08-27T05:08:29.296Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CLI_GRAMMAR.md,project,Documents default versus full command discovery
-close_reason: "Implemented tiered contract-driven help end to end: compact default discovery, complete full/alias discovery, nested-path validation, dynamic tier preservation, public extension registration for standalone --all/--explain, lifecycle metadata, and exact regression/manual/full-gate evidence."
+close_reason: "Completed cross-shell root full-discovery completion parity with Bash, Zsh, and Fish regression and manual acceptance evidence."
 body: ""

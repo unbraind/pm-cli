@@ -40,6 +40,16 @@ describe("generateBashScript", () => {
     }
   });
 
+  it("exposes root full-discovery help in every shell", () => {
+    expect(generateBashScript()).toContain("--all");
+    expect(generateZshScript()).toContain(
+      "--all[Reveal every public command and compatibility alias]",
+    );
+    expect(generateFishScript()).toContain(
+      "complete -c pm -l all -d 'Reveal every public command and compatibility alias'",
+    );
+  });
+
   it("includes all pm subcommands in the command list", () => {
     const script = generateBashScript();
     for (const cmd of [

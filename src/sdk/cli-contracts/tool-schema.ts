@@ -202,6 +202,7 @@ const PM_TOOL_ACTION_NESTED_OPTION_COMPATIBILITY_KEYS = Object.freeze({
   ...Object.fromEntries(
     PM_TOOL_ACTIONS.filter(
       (action) =>
+        action === "upgrade" ||
         action === "install" ||
         action === "extension" ||
         action === "package" ||

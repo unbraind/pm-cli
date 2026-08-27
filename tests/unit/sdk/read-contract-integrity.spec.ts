@@ -174,18 +174,20 @@ describe("SDK read contract integrity", () => {
 
   it("forwards get collection selectors into the pre-execution field projection", () => {
     const options: Record<string, unknown> = {
-      outputInclude: "comments,item.learnings",
+      outputInclude: "item,comments",
+      fields: "notes",
     };
 
     normalizeReadOutputIncludeModeOptions("get", options);
 
     expect(options).toMatchObject({
-      outputInclude: "comments,item.learnings",
-      fields: "comments,item.learnings",
+      outputInclude: "item,comments",
+      fields: "notes,comments",
     });
     expect(
       attachReadOutputContracts("get", options, {
-        item: { comments: [], learnings: [] },
+        item: { id: "pm-1", title: "One" },
+        comments: [],
       }),
     ).toMatchObject({
       read_output: { legacy_aliases_used: [], migration_hints: [] },

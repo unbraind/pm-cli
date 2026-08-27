@@ -13123,7 +13123,7 @@
         "json": 4500,
         "toon": 3000
       },
-      "intent": "Run package upgrade.",
+      "intent": "Upgrade package.",
       "intent_source": "generated"
     },
     {
@@ -13286,7 +13286,7 @@
         "json": 4500,
         "toon": 3000
       },
-      "intent": "Run packages upgrade.",
+      "intent": "Upgrade packages.",
       "intent_source": "generated"
     },
     {

@@ -776,12 +776,18 @@ export function applyReadOutputIncludeModes(
     modes.push(token);
     canonicalModes.add(token);
   }
-  const forwardedGetFields =
-    resolveReadOutputSurface(command) === "get" &&
-    selectors.length > 0 &&
-    !selectors.includes("item");
+  const forwardedGetFieldSelectors =
+    resolveReadOutputSurface(command) === "get"
+      ? selectors.filter((selector) => selector !== "item")
+      : [];
+  const forwardedGetFields = forwardedGetFieldSelectors.length > 0;
   if (forwardedGetFields) {
-    commandOptions.fields = selectors.join(",");
+    commandOptions.fields = [
+      ...new Set([
+        ...(stringList(commandOptions.fields) ?? []),
+        ...forwardedGetFieldSelectors,
+      ]),
+    ].join(",");
     canonicalModes.add("fields");
   }
   if (modes.length > 0 || forwardedGetFields) {

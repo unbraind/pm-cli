@@ -1308,7 +1308,7 @@ describe("runBeadsImport", () => {
       }> = [
         {
           name: "missing-table",
-          message: "missing",
+          message: "comments.jsonl",
           mutate: async (backupDir) => {
             await rm(path.join(backupDir, "comments.jsonl"));
           },
@@ -1447,7 +1447,7 @@ describe("runBeadsImport", () => {
         },
         {
           name: "missing-state",
-          message: "missing",
+          message: "backup_state.json",
           mutate: async (backupDir) => {
             await rm(path.join(backupDir, "backup_state.json"));
           },
@@ -1641,6 +1641,27 @@ describe("runBeadsImport", () => {
       expect(
         context.runCli(["get", "pm-incomplete-context", "--json"]).code,
       ).toBe(EXIT_CODE.NOT_FOUND);
+    });
+  });
+
+  it("accepts a count-bearing export when every issue advertises zero comments", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "empty-comments-export.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({
+          id: "empty-context",
+          title: "No source comments",
+          comment_count: 0,
+        })}\n`,
+        "utf8",
+      );
+
+      await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+
+      expect(
+        context.runCli(["get", "pm-empty-context", "--json"]).code,
+      ).toBe(0);
     });
   });
 

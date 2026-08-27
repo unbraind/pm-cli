@@ -1243,6 +1243,12 @@ describe("contracts command runtime", () => {
     expect(
       summaries.find((entry) => entry.command === "package install")?.intent,
     ).not.toBe(summaries.find((entry) => entry.command === "package")?.intent);
+    expect(
+      summaries.find((entry) => entry.command === "package upgrade")?.intent,
+    ).toBe("Upgrade package.");
+    expect(
+      summaries.find((entry) => entry.command === "packages upgrade")?.intent,
+    ).toBe("Upgrade packages.");
   });
 
   it("contracts every workspace snapshot command path", async () => {

@@ -1006,6 +1006,7 @@ _pm() {
   local context state line
   _arguments -C \\
     '--json[Output JSON instead of TOON]' \\
+    '--all[Reveal every public command and compatibility alias]' \\
     '--quiet[Suppress stdout output]' \\
     '--output-include[Retain comma-separated read fields or sections]:selectors' \\
     '--output-limit[Set the universal read row ceiling]:limit' \\
@@ -2084,6 +2085,7 @@ complete -c pm -f
 
 # Global flags (available for all subcommands)
 complete -c pm -l json -d 'Output JSON instead of TOON'
+complete -c pm -l all -d 'Reveal every public command and compatibility alias'
 complete -c pm -l quiet -d 'Suppress stdout output'
 complete -c pm -l output-include -d 'Retain comma-separated read fields or sections' -r
 complete -c pm -l output-limit -d 'Set the universal read row ceiling' -r

@@ -2690,6 +2690,7 @@ const COMMAND_OPERATION_INTENTS = new Map<string, string>([
   ["run", "Run"],
   ["snapshot", "Manage snapshots for"],
   ["uninstall", "Uninstall"],
+  ["upgrade", "Upgrade"],
 ]);
 
 const COMMAND_INTENT_SUBJECT_OVERRIDES = new Map<string, string>([
