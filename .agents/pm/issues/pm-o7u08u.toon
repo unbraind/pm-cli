@@ -6,21 +6,23 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:ci","area:sdk",completeness,review-feedback
 created_at: "2026-08-27T17:58:02.801Z"
-updated_at: "2026-08-28T03:21:22.146Z"
-closed_at: "2026-08-28T03:21:21.592Z"
-completed_at: "2026-08-28T03:21:21.592Z"
+updated_at: "2026-08-28T07:52:20.228Z"
+closed_at: "2026-08-28T07:52:19.672Z"
+completed_at: "2026-08-28T07:52:19.672Z"
 author: "harness:codex"
 acceptance_criteria: "Every required_fields entry is resolved as an own-property path from the output root; Incidental keys and string values cannot satisfy completeness; The golden corpus uses structural paths for entity and mutation outputs; Exact unit, transcript replay, and full coverage gates pass"
 parent: pm-8pnj
-resolution: completed
+resolution: "completed: completeness is evaluated on the exact projected public payload after accounting metadata is removed"
 expected_result: Required transcript fields are proven by exact structural own-property paths rather than incidental serialized text.
-actual_result: "The gate traverses dot-separated paths, the corpus declares real output coordinates, and adversarial prose-only matches fail."
+actual_result: "validateAgentTaskTokenInvocation now resolves required_fields against independentlyProjectedPayload, the same value validated and reported; token_accounting.total_bytes cannot certify projected completeness."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-57ir3b,recurs_from,"2026-08-27T17:58:02.801Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-27T17:58:02.801Z","harness:codex","Duplicate check: all-status search for required-field structural completeness and serialized payload substrings found historical completeness work including pm-57ir3b and the active transcript owner pm-8pnj, but no item for this PR #1133 gate defect; creating one review-caught child issue."
   "2026-08-27T18:17:31.612Z","harness:codex","Review resolution evidence for PR #1133: replaced serialized substring matching with dot-separated Object.hasOwn traversal from the payload root; entity/context/mutation corpus steps now declare structural paths, and an adversarial payload containing the missing field name only in prose is rejected. Focused linked tests passed; full coverage passed 8,063 tests at exact 100/100/100/100; pnpm quality:static passed."
   "2026-08-28T03:21:21.035Z","harness:codex","Review lifecycle reconciliation: a docs-link mutation was appended after the previous release event without a fresh ownership interval. This corrective append-only interval reacquires ownership, preserves the original implementation and verification evidence, and restores an unambiguous terminal lifecycle."
+  "2026-08-28T07:33:24.854Z","harness:codex","TDD red for Greptile P1 recurrence: a negative control declaring required_fields=[token_accounting.total_bytes] against a collection payload failed because validateAgentTaskTokenInvocation returned success after satisfying completeness from accountedPayload even though the reported and validated independentlyProjectedPayload omits token_accounting. Focused result: 1 failed / 8 passed, exact assertion expected the invocation to throw."
+  "2026-08-28T07:52:19.012Z","harness:codex","Greptile P1 recurrence resolution: moved structural required_fields completeness from accountedPayload to independentlyProjectedPayload, so accounting-only coordinates cannot certify the public projection. The new negative control failed before the fix (1 failed / 8 passed) and now passes. Focused suite: 29/29. Full coverage: 585 files, 8,083 tests, 59,952/59,952 statements, 45,139/45,139 branches, 12,469/12,469 functions, and 57,732/57,732 lines (100/100/100/100). Standalone transcript replay: 5/5 tasks, 14 steps, 2 recoveries, 4,349 estimated tokens. CI=1 pnpm quality:static passed including graph-composition and record-integrity."
 learnings[1]{created_at,author,text}:
   "2026-08-27T18:17:32.166Z","harness:codex","Completeness evidence must name and traverse structural coordinates; searching serialized bytes conflates keys with values and nested context, allowing a token-efficient gate to certify data the agent never received."
 files[2]{path,scope,note}:
@@ -28,7 +30,7 @@ files[2]{path,scope,note}:
   src/sdk/output-contracts.ts,project,required field path validation
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,project,240,"harness:codex","2026-08-27T18:04:02.141Z",local_mutation,feat/agent-transcript-recovery-contracts
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtbuhdea-ooev0y
     kind: test
     status: passed
@@ -40,11 +42,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcmys77-1k42gg
+    kind: test
+    status: passed
+    started_at: "2026-08-28T07:34:02.529Z"
+    finished_at: "2026-08-28T07:34:26.371Z"
+    recorded_at: "2026-08-28T07:34:26.371Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed closeout entry
   docs/agent-task-transcripts.json,project,structural completeness paths
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,required_fields path contract
-close_reason: Original SDK transcript implementation remains complete; append-only review reconciliation restored ownership provenance for the later docs-link mutation.
+close_reason: "Resolved Greptile P1 recurrence by validating required structural paths on the independently projected public payload; negative control, focused tests, exact full coverage, transcript replay, and strict static gates all pass."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

@@ -225,7 +225,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
       `Agent-task transcript step ${step.id} accounting receipt exceeded its 1024-byte bound`,
     );
   }
-  assertComplete(accountedPayload, step.required_fields, step.id);
+  assertComplete(independentlyProjectedPayload, step.required_fields, step.id);
   validateExpectedOutput(independentlyProjectedPayload, step);
   return {
     id: step.id,

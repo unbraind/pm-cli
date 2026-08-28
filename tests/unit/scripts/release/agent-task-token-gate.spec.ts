@@ -276,6 +276,12 @@ describe("agent-task transcript token gate", () => {
         required_fields: ["missing-field"],
       }),
     ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        required_fields: ["token_accounting.total_bytes"],
+      }),
+    ).toThrow();
     const misleadingPayload = {
       items: [{ id: "pm-one" }],
       message: "The missing-field name appears only in prose",
