@@ -2278,4 +2278,17 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     canonical_code: "merge_root_not_found",
     aliases: [],
   },
+  {
+    code: "missing_allowed_values",
+    meaning: "Missing allowed values condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_allowed_values",
+    aliases: [],
+  },
 ];

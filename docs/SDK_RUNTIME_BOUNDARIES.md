@@ -61,6 +61,16 @@ published error vocabulary while still sharing classification, path redaction,
 and recovery guidance. Workspace snapshots use this compatibility path for
 their stable storage, resource, and permission fault codes.
 
+Package archives use one bounded validation and extraction boundary whether
+they come from a local path or `npm pack`. The SDK rejects links, escaping
+paths, unsupported entry types, oversized archives, and decompression growth
+before extraction. If npm reports an archive it did not create, callers receive
+the path-redacted `npm_package_archive_missing` refusal instead of a raw system
+`tar` exception; an archive reported outside the isolated pack destination is
+rejected as `npm_package_archive_unsafe`. This keeps package install behavior
+portable and prevents an untrusted registry artifact or package-manager result
+from bypassing the local-archive policy.
+
 ## CLI refusal ownership
 
 CLI adapters preserve SDK error codes, exit semantics, and actionable recovery

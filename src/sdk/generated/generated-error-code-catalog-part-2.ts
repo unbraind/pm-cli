@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_allowed_values",
-    meaning: "Missing allowed values condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_allowed_values",
-    aliases: [],
-  },
-  {
     code: "missing_budget",
     meaning: "Missing budget condition.",
     stability: "provisional",
@@ -360,6 +347,32 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/agent/refusal-closure.ts"],
     emitting_commands: ["*"],
     canonical_code: "non_refusal_exit",
+    aliases: [],
+  },
+  {
+    code: "npm_package_archive_missing",
+    meaning: "Npm package archive missing condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/install-sources.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "npm_package_archive_missing",
+    aliases: [],
+  },
+  {
+    code: "npm_package_archive_unsafe",
+    meaning: "Npm package archive unsafe condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/install-sources.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "npm_package_archive_unsafe",
     aliases: [],
   },
   {

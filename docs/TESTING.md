@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon), [pm-xa3t0o](../.agents/pm/issues/pm-xa3t0o.toon), [pm-e97jyf](../.agents/pm/issues/pm-e97jyf.toon), [pm-efkvdy](../.agents/pm/issues/pm-efkvdy.toon), and [pm-ed28wi](../.agents/pm/issues/pm-ed28wi.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon), [pm-xa3t0o](../.agents/pm/issues/pm-xa3t0o.toon), [pm-e97jyf](../.agents/pm/issues/pm-e97jyf.toon), [pm-efkvdy](../.agents/pm/issues/pm-efkvdy.toon), [pm-ed28wi](../.agents/pm/issues/pm-ed28wi.toon), and [pm-5ug5xq](../.agents/pm/issues/pm-5ug5xq.toon).
 
 ## Agent Quick Context
 
@@ -43,7 +43,11 @@ claims to the same canonical gate IDs. Hosted-only environment isolation and
 tracker-integrity steps remain explicit entries with reasons rather than
 silently disappearing from local parity.
 
-`node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, then cleans them up.
+`node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, disables
+external Sentry delivery for the build, test workers, and their nested CLI
+children, then cleans the roots up. Instrumentation tests can still exercise
+Sentry initialization through their mocked module boundary; ordinary negative
+fixtures must never create production incidents from a developer host.
 
 Public SDK changes additionally run semantic surface and import-cost contracts:
 

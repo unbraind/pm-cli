@@ -34,6 +34,13 @@ function runChild(command, args, env) {
   });
 }
 
+/**
+ * Build and execute the requested Vitest mode in disposable tracker roots.
+ *
+ * Every child receives an explicit external-Sentry opt-out so negative test
+ * fixtures cannot escape the repository boundary, even when the parent shell
+ * is configured for production observability.
+ */
 async function run() {
   const resolved = resolveMode(process.argv);
   if (!resolved.ok) {
@@ -64,6 +71,7 @@ async function run() {
       ...process.env,
       PM_PATH: pmPath,
       PM_GLOBAL_PATH: pmGlobalPath,
+      PM_SENTRY_DISABLED: "1",
     };
     delete baseEnv.PM_CLI_PACKAGE_ROOT;
     delete baseEnv.PM_SOURCE_PM_PATH;

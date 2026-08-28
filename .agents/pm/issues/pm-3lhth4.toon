@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-08-17T05:24:46.557Z"
+updated_at: "2026-08-28T17:15:15.690Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
 parent: pm-o2kc
 risk: medium
 confidence: high
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-4odf0c,discovered_from,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-f05lsg,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
@@ -21,7 +21,9 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-qxo5iu,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+  pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
+  pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
   "2026-08-08T10:32:51.895Z","harness:codex","Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
   "2026-08-10T00:19:43.045Z","harness:codex","Live reliability evidence 2026-08-10: the 14-day release gate reports critical=0 and high=1 for Sentry group PM-CLI-2X, an unexpected ENOTDIR open fault. This is another member of the untyped host-filesystem family owned by this item; no duplicate item was created. The active SDK/CLI PR does not claim to complete this item's remaining all-call-site routing and recurrence-gate acceptance criteria, so the item remains open and unclaimed. No paths, payloads, or private endpoint data are retained here."
   "2026-08-17T02:03:50.281Z","harness:codex","Start evidence 2026-08-17: Sentry PM-CLI-36 exposes Linux EDQUOT as code='Unknown system error -122' plus errno=-122 and syscall=copyfile, which the existing shared classifier misses because it recognizes only symbolic code strings. This active partial tranche will normalize declared numeric errno values through node:os constants and wrap linked-test sandbox copy stages in the shared path-redacted boundary. Whole-repository call-site/gate acceptance remains separately outstanding unless completed in this tranche."
@@ -29,26 +31,92 @@ comments[7]{created_at,author,text}:
   "2026-08-17T05:02:01.000Z","harness:codex","Nightly recurrence evidence 2026-08-17: GH-1048 / run 31995604146 passed 7,450 tests on Windows Node 24 but failed the two newly added numeric-EDQUOT cases because node:os.constants.errno.EDQUOT is absent on Windows, producing NaN and code='Unknown system error -undefined'. This is test-fixture platform coupling in the active host-environment fault tranche, not a failure of symbolic fault translation. Active work will preserve the real Linux -122 negative control while selecting a locally declared numeric errno for cross-platform boundary coverage."
   "2026-08-17T05:18:48.964Z","harness:codex","Verification evidence 2026-08-17: linked host-boundary plans pass 24/24 and 74/74; full repository coverage passes 511 files / 7,459 tests at exact 100/100/100/100 (54,509 statements, 40,594 branches, 11,206 functions, 52,610 lines); typecheck, ESLint, zero-duplicate jscpd, repository assurance, SDK/package/surface/graph gates, secret scan, and isolated SDK/CLI performance gates pass. The broader all-filesystem-boundary/gate acceptance remains outstanding, so this item returns to open rather than being falsely closed."
   "2026-08-17T05:24:46.557Z","harness:codex","Incident delivery update: concrete child pm-y4kovm is implemented in PR #1050 (https://github.com/unbraind/pm-cli/pull/1050), commit 8937ac7c8. The umbrella remains open and unclaimed for broader call-site adoption and recurrence governance; only the concrete child was closed."
+  "2026-08-28T16:50:23.597Z","harness:codex","Active tranche 2026-08-28: the v2026.8.28 release blocker exposed raw system-tar failures in the SDK npm-source resolver. This tranche will route registry tarballs through the existing bounded archive validator, reject links/path escapes before extraction, and return typed path-redacted missing-archive diagnostics. The umbrella remains open after this tranche because its all-filesystem-call-site enforcement acceptance is broader."
+  "2026-08-28T16:50:57.772Z","harness:codex","TDD red evidence: a registry tarball containing a symbolic link was accepted by the raw system-tar path and fully resolved; the focused suite failed with unsafe registry archive resolved. The same regression also requires a stable npm_package_archive_missing diagnostic when npm reports a filename it did not create. No resolver implementation changed before this negative control."
+  "2026-08-28T17:15:14.607Z","harness:codex","Tranche verification 2026-08-28: registry npm tarballs now use the bounded local archive validator before extraction, link/path/type/size controls apply uniformly, and an absent reported artifact returns npm_package_archive_missing without a path or raw tar frame. Linked plans passed 24/24, 76/76, 11/11, and the focused npm package integration slice 6/6. Full repository coverage passed 585 files and 8,089 tests at exact 100/100/100/100: statements 59,999/59,999, branches 45,196/45,196, functions 12,477/12,477, lines 57,778/57,778. Temporary-project pm-changelog registry install and deep doctor passed with zero warnings/errors. The umbrella returns to open because its remaining all-filesystem-site migration and recurrence gate are not complete."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
-files[9]{path,scope,note}:
+files[13]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
   src/sdk/environment/host-environment-errors.ts,project,Shared path-redacted host errno classifier translator and async boundary
+  src/sdk/extension/install-sources.ts,project,Validate registry archives and type missing npm pack artifacts
   src/sdk/generated-error-code-catalog.ts,project,Generated host fault codes and preserved snapshot aliases
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated npm package archive refusal contract
   src/sdk/index.ts,project,Exports the public host environment primitives
   src/sdk/test/execution.ts,project,Apply the shared host-environment boundary to linked-test tracker seeding
   src/sdk/workspace-snapshot.ts,project,Snapshot create and restore stages consume the shared boundary while preserving stable codes
+  tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot for typed archive refusal
   tests/unit/commands/test-command.spec.ts,project,Portable numeric capacity-fault fixture at linked-test sandbox boundary
+  tests/unit/extensions/extension-install-security.spec.ts,project,Registry archive link and missing-artifact negative controls
   tests/unit/sdk/host-environment-errors.spec.ts,project,All errno classes redaction recovery and non-errno negative controls
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Snapshot integration coverage for compatible shared-boundary codes
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts,project,240
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-msk8hb2h-vcmjua,test,passed,"2026-08-08T10:31:07.212Z","2026-08-08T10:31:23.465Z","2026-08-08T10:31:23.465Z",1,0,0
-  test-local-mswm0e5d-tlp801,test,passed,"2026-08-17T02:23:01.110Z","2026-08-17T02:23:23.041Z","2026-08-17T02:23:23.041Z",1,0,0
-  test-local-msws9dnw-6pfw04,test,passed,"2026-08-17T05:17:37.133Z","2026-08-17T05:18:20.012Z","2026-08-17T05:18:20.012Z",2,0,0
-docs[1]{path,scope,note}:
+tests[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T16:50:24.178Z"
+      source_kind: local_mutation
+      source_ref: fix/repository-test-sentry-isolation
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/cli.integration.spec.ts -t 'npm package'
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T16:52:21.885Z"
+      source_kind: local_mutation
+      source_ref: fix/repository-test-sentry-isolation
+test_runs[4]:
+  - run_id: test-local-msk8hb2h-vcmjua
+    kind: test
+    status: passed
+    started_at: "2026-08-08T10:31:07.212Z"
+    finished_at: "2026-08-08T10:31:23.465Z"
+    recorded_at: "2026-08-08T10:31:23.465Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mswm0e5d-tlp801
+    kind: test
+    status: passed
+    started_at: "2026-08-17T02:23:01.110Z"
+    finished_at: "2026-08-17T02:23:23.041Z"
+    recorded_at: "2026-08-17T02:23:23.041Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msws9dnw-6pfw04
+    kind: test
+    status: passed
+    started_at: "2026-08-17T05:17:37.133Z"
+    finished_at: "2026-08-17T05:18:20.012Z"
+    recorded_at: "2026-08-17T05:18:20.012Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mtd7p47b-44v2hm
+    kind: test
+    status: passed
+    started_at: "2026-08-28T17:13:54.191Z"
+    finished_at: "2026-08-28T17:14:47.303Z"
+    recorded_at: "2026-08-28T17:14:47.303Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/cli.integration.spec.ts -t 'npm package',schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated reachability inventory includes the new typed archive refusal
   docs/SDK_RUNTIME_BOUNDARIES.md,project,Package author guidance for host fault translation and compatibility codes
 body: ""

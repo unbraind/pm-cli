@@ -31737,6 +31737,8 @@
     "no_update_fields",
     "no_version_bounds_declared",
     "non_refusal_exit",
+    "npm_package_archive_missing",
+    "npm_package_archive_unsafe",
     "npm_package_not_found",
     "ownership_conflict",
     "ownership_dependency_bypass_restricted_options",
