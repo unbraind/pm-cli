@@ -1,0 +1,29 @@
+id: pm-2qahia
+title: "GH-1135: item_hash_version 2 still masks writer hash divergence as corruption"
+description: "GitHub #1135 reproduces supported pm writers computing different history hashes while stamping the same item_hash_version=2, so pinned readers classify version skew as hash/chain corruption and history-repair can truthfully report changed=false while rewriting bytes."
+type: Issue
+status: open
+priority: 0
+tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
+created_at: "2026-08-28T08:13:08.155Z"
+updated_at: "2026-08-28T08:13:51.701Z"
+author: "harness:codex"
+acceptance_criteria: A released-version fixture proves whether identical epoch-2 content can hash differently; every hash-input or algorithm change advances a format capability or preserves the previous comparator; drift diagnostics distinguish unsupported writer/version skew from same-version corruption; history events expose sufficient writer capability provenance for deterministic diagnosis; repair changed receipts match actual byte writes; SDK CLI health validate and repair contracts carry the distinction; focused cross-version packed-consumer and exact repository coverage gates pass
+parent: pm-o2kc
+risk: critical
+confidence: high
+severity: critical
+environment: Global pm 2026.8.23 writes trackers read by repository-pinned 2026.8.20 and 2026.8.21 binaries
+repro_steps: "Create and mutate an item with pm 2026.8.23, run pinned health --strict-exit, compare item_hash_version and hashes, run pinned history-repair, then compare changed receipt, bytes, and both readers' verdicts."
+expected_result: "Supported readers attribute incompatible persisted hash capabilities as version skew, and repair never reports a no-op when bytes changed."
+actual_result: Three repositories reproduced opposite integrity verdicts while both writers stamped item_hash_version 2; pinned repair rewrote the stream despite changed=false and inverted which reader accepted it.
+component: "history hashing, drift diagnostics, and repair receipts"
+regression: true
+customer_impact: "Ordinary cross-version mutations make CI report corruption, train operators to normalize real integrity alarms away, and hide evidence-rewriting repairs behind a false no-change receipt."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
+  pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
+  "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
+body: "Source: https://github.com/unbraind/pm-cli/issues/1135"
