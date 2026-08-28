@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Broad squash commits overflow hosted-analysis tree lookup and falsely lose reviewed PR provenance ([pm-gactwj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gactwj.toon))
 - Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
 - Unknown-option refusal textual flags bypass structured global-option filtering ([pm-x4wbui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x4wbui.toon))
 - Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))
