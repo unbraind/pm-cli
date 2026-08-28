@@ -28,6 +28,9 @@ export const PM_AGENT_TASK_ACCOUNTING_MODES = [
 export type PmAgentTaskAccountingMode =
   (typeof PM_AGENT_TASK_ACCOUNTING_MODES)[number];
 
+/** Scalar value that a replayed transcript must observe at one output path. */
+export type PmAgentTaskExpectedFieldValue = string | number | boolean | null;
+
 /** Output family expected from one replayed agent-task step. */
 export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | "refusal";
 
@@ -45,6 +48,10 @@ export interface PmAgentTaskTranscriptStep {
   expected_accounting_mode: PmAgentTaskAccountingMode;
   /** Dot-separated own-property paths proving required context was consumed. */
   required_fields: readonly string[];
+  /** Exact terminal scalar values required at selected output paths. */
+  expected_field_values?: Readonly<
+    Record<string, PmAgentTaskExpectedFieldValue>
+  >;
   /** Stable diagnostic code required from a refusal step. */
   expected_error_code?: string;
   /** Exact command or flag required in a refusal identity. */
@@ -104,6 +111,34 @@ function readOptionalTranscriptString(
   field: string,
 ): string | undefined {
   return value === undefined ? undefined : readTranscriptString(value, field);
+}
+
+function readExpectedFieldValues(
+  value: unknown,
+  field: string,
+): Record<string, PmAgentTaskExpectedFieldValue> | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value) || Object.keys(value).length === 0) {
+    throw new TypeError(`${field} must be a non-empty object`);
+  }
+  const entries = Object.entries(value).map(([path, expectedValue]) => {
+    if (
+      path.length === 0 ||
+      path.split(".").some((segment) => segment.length === 0)
+    ) {
+      throw new TypeError(`${field} must use dot-separated own-property paths`);
+    }
+    if (
+      expectedValue !== null &&
+      typeof expectedValue !== "string" &&
+      typeof expectedValue !== "boolean" &&
+      (typeof expectedValue !== "number" || !Number.isFinite(expectedValue))
+    ) {
+      throw new TypeError(`${field} values must be JSON primitives`);
+    }
+    return [path, expectedValue] as const;
+  });
+  return Object.fromEntries(entries);
 }
 
 function assertTranscriptStepOutputContract(
@@ -207,6 +242,10 @@ function parseAgentTaskTranscriptStep(
       `${field}.required_fields must contain dot-separated own-property paths`,
     );
   }
+  const expectedFieldValues = readExpectedFieldValues(
+    value.expected_field_values,
+    `${field}.expected_field_values`,
+  );
   const expectedErrorCode = readOptionalTranscriptString(
     value.expected_error_code,
     `${field}.expected_error_code`,
@@ -234,6 +273,9 @@ function parseAgentTaskTranscriptStep(
     expected_output_kind: expectedOutputKind,
     expected_accounting_mode: expectedAccountingMode,
     required_fields: requiredFields,
+    ...(expectedFieldValues
+      ? { expected_field_values: expectedFieldValues }
+      : {}),
     ...(expectedErrorCode ? { expected_error_code: expectedErrorCode } : {}),
     ...(expectedRefusalSurface
       ? { expected_refusal_surface: expectedRefusalSurface }

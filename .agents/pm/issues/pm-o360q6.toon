@@ -6,26 +6,31 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:sdk",contracts,recovery,review-feedback
 created_at: "2026-08-27T19:11:48.651Z"
-updated_at: "2026-08-27T22:35:02.283Z"
-closed_at: "2026-08-27T22:35:01.713Z"
-completed_at: "2026-08-27T22:35:01.713Z"
+updated_at: "2026-08-28T12:52:27.789Z"
+closed_at: "2026-08-28T12:52:27.068Z"
+completed_at: "2026-08-28T12:52:27.068Z"
 author: "harness:codex"
 acceptance_criteria: recovery_for still references an earlier refusal; the recovery step cannot declare refusal output; adversarial parser coverage proves failed retries are rejected; exact coverage and static gates pass
 parent: pm-8pnj
-resolution: Closed refusal-as-recovery topology in the public SDK parser with regression coverage and contract documentation.
-expected_result: Every declared transcript recovery terminates in a successful output family.
-actual_result: Recovery edges now require both an earlier refusal target and a non-refusal successful output family on the recovering step.
+resolution: The SDK transcript parser requires every recovery_for step to use a successful output family; its defining parser module is canonically linked and terminal field-value assertions are parsed and validated.
+expected_result: Recovery topology rejects refusal-as-retry and canonical PM evidence identifies the defining parser source.
+actual_result: "The parser rejects refusal recovery, malformed and non-finite field-value assertions, and the focused 20-test SDK output-contract suite passes with the parser module linked."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,discovered_from,"2026-08-27T19:15:47.793Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-27T19:29:05.921Z","harness:codex","Evidence: public SDK parser tests reject a refusal step that declares recovery_for while preserving valid refusal-to-success recovery and effect-aware exit 6/7 workflows."
   "2026-08-27T22:35:01.159Z","harness:codex","Lifecycle reconciliation: the historical resolution update is immutable and remains visible after its original close/release. Ownership is now explicitly reacquired before this corrective evidence entry; future resolution metadata must precede close and release."
-files[2]{path,scope,note}:
+  "2026-08-28T12:18:33.028Z","harness:codex","Attribution correction: the defining parser module is now linked through pm files; src/sdk/output-contracts.ts remains because this lineage independently changed exported output contracts."
+  "2026-08-28T12:18:54.970Z","harness:codex","Lifecycle recovery note: the runtime correctly refused the deprecated bare reopen path; this now-active claimed interval confirms the supported pm files attribution mutation before re-close."
+  "2026-08-28T12:21:09.920Z","harness:codex","Verification scope: the existing parser-focused linked test will be rerun after the defining-module attribution and transcript value-contract correction."
+  "2026-08-28T12:52:16.853Z","harness:codex","Final review-correction evidence: src/sdk/agent/task-transcript-contracts.ts is linked as the defining parser source. The parser-focused linked test passes 20/20 including successful-recovery topology, terminal field values, malformed paths, non-primitives, and non-finite numeric controls."
+files[3]{path,scope,note}:
+  src/sdk/agent/task-transcript-contracts.ts,project,Defines parsePmAgentTaskTranscriptCorpus and recovery transcript validation
   src/sdk/output-contracts.ts,project,Require recovery steps to declare a successful output family
   tests/unit/sdk/output-contracts.spec.ts,project,Reject refusal-as-recovery transcript topology
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,project,240,"harness:codex","2026-08-27T19:15:47.793Z",local_mutation,feat/agent-transcript-recovery-contracts
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtbx321r-3eg1tw
     kind: test
     status: passed
@@ -37,9 +42,20 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcxrg8a-a86v26
+    kind: test
+    status: passed
+    started_at: "2026-08-28T12:36:28.994Z"
+    finished_at: "2026-08-28T12:36:40.042Z"
+    recorded_at: "2026-08-28T12:36:40.042Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Clarify successful recovery and structural field contracts
-close_reason: "Done: append-only lifecycle reconciliation was recorded while claimed; the historical event remains immutable and the evidence-before-close recurrence is governed."
+close_reason: "Recovery topology, defining-source attribution, and terminal-value parser controls are complete and verified"
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

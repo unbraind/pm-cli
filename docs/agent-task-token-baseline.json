@@ -1,7 +1,7 @@
 {
   "version": 3,
   "transcript_version": 2,
-  "transcript_digest": "sha256:0bd7f1a9dbacb71847025613f8d6db37b112e144dfbbc4c8dc677aaa08466cc6",
+  "transcript_digest": "sha256:2bf91406426d2a9e5de1da10ba67f7b8e9d4a4baa09eb488fe89ae3925c78f3f",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
@@ -45,11 +45,11 @@
     },
     {
       "id": "unknown-option-recovery",
-      "max_estimated_tokens": 603,
+      "max_estimated_tokens": 585,
       "steps": [
         {
           "id": "refuse-option",
-          "max_estimated_tokens": 440,
+          "max_estimated_tokens": 422,
           "accounting_mode": "independent_transport"
         },
         {
@@ -107,5 +107,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 4349
+  "composite_max_estimated_tokens": 4331
 }

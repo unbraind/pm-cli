@@ -121,7 +121,8 @@
           "expected_exit_code": 0,
           "expected_output_kind": "entity",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["item.id", "item.status"]
+          "required_fields": ["item.id", "item.status"],
+          "expected_field_values": { "item.status": "open" }
         },
         {
           "id": "close",
@@ -137,7 +138,8 @@
           "expected_exit_code": 0,
           "expected_output_kind": "entity",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["item.id", "item.status"]
+          "required_fields": ["item.id", "item.status"],
+          "expected_field_values": { "item.status": "closed" }
         }
       ]
     },
@@ -182,7 +184,8 @@
           "expected_exit_code": 7,
           "expected_output_kind": "collection",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["rows", "outcome", "exit_code"]
+          "required_fields": ["rows", "outcome", "exit_code"],
+          "expected_field_values": { "outcome": "partial_effect" }
         },
         {
           "id": "no-effect",
@@ -199,7 +202,8 @@
           "expected_exit_code": 6,
           "expected_output_kind": "collection",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["rows", "outcome", "exit_code"]
+          "required_fields": ["rows", "outcome", "exit_code"],
+          "expected_field_values": { "outcome": "no_effect" }
         }
       ]
     }

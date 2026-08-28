@@ -170,6 +170,7 @@ describe("SDK output envelope contracts", () => {
               expected_output_kind: "collection",
               expected_accounting_mode: "self_reported",
               required_fields: ["items"],
+              expected_field_values: { "items.0.status": "open" },
               recovery_for: "refuse",
             },
           ],
@@ -185,7 +186,11 @@ describe("SDK output envelope contracts", () => {
           description: "Refuse an invalid intent and execute its recovery.",
           steps: [
             { id: "refuse", expected_output_kind: "refusal" },
-            { id: "retry", recovery_for: "refuse" },
+            {
+              id: "retry",
+              recovery_for: "refuse",
+              expected_field_values: { "items.0.status": "open" },
+            },
           ],
         },
       ],
@@ -267,6 +272,25 @@ describe("SDK output envelope contracts", () => {
       [
         { ...validStep, required_fields: ["items..id"] },
         ".required_fields must contain dot-separated own-property paths",
+      ],
+      [
+        { ...validStep, expected_field_values: [] },
+        ".expected_field_values must be a non-empty object",
+      ],
+      [
+        { ...validStep, expected_field_values: { "items..id": "pm-one" } },
+        ".expected_field_values must use dot-separated own-property paths",
+      ],
+      [
+        { ...validStep, expected_field_values: { "items.0.id": {} } },
+        ".expected_field_values values must be JSON primitives",
+      ],
+      [
+        {
+          ...validStep,
+          expected_field_values: { "items.0.score": Number.POSITIVE_INFINITY },
+        },
+        ".expected_field_values values must be JSON primitives",
       ],
       [
         { ...validStep, expected_error_code: " " },

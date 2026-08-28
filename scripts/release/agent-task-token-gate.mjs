@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   PmClient,
+  createReproducibleProcessRunner,
   isPmMutationReceipt,
   parseBootstrapCommandName,
   parsePmAgentTaskTranscriptCorpus,
@@ -30,6 +31,8 @@ const TRANSCRIPT_PATH = path.join(
 );
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
 const BASELINE_VERSION = 3;
+const REPLAY_CLOCK = "2026-08-28T00:00:00.000Z";
+const REPLAY_SEED = "agent-task-token-gate";
 
 function fixtureId(key) {
   return `pm-${createHash("sha256").update(key).digest("hex").slice(0, 12)}`;
@@ -53,28 +56,45 @@ function runCli(pmRoot, args) {
       ...process.env,
       PM_PATH: pmRoot,
       PM_GLOBAL_PATH: path.join(path.dirname(pmRoot), ".pm-global"),
+      PM_CLOCK: REPLAY_CLOCK,
+      PM_CLOCK_TICK_MS: "1",
+      PM_SEED: REPLAY_SEED,
       PM_TELEMETRY: "0",
     },
   });
 }
 
-function assertComplete(payload, requiredFields, stepId) {
-  for (const requiredField of requiredFields) {
-    let cursor = payload;
-    const present = requiredField.split(".").every((segment) => {
-      if (
-        typeof cursor !== "object" ||
-        cursor === null ||
-        !Object.hasOwn(cursor, segment)
-      ) {
-        return false;
-      }
-      cursor = cursor[segment];
-      return true;
-    });
-    if (!present) {
+function readOutputPath(payload, fieldPath) {
+  let cursor = payload;
+  const present = fieldPath.split(".").every((segment) => {
+    if (
+      typeof cursor !== "object" ||
+      cursor === null ||
+      !Object.hasOwn(cursor, segment)
+    ) {
+      return false;
+    }
+    cursor = cursor[segment];
+    return true;
+  });
+  return { present, value: cursor };
+}
+
+function assertComplete(payload, step) {
+  for (const requiredField of step.required_fields) {
+    if (!readOutputPath(payload, requiredField).present) {
       fail(
-        `Agent-task transcript step ${stepId} omitted required consumed field path ${requiredField}`,
+        `Agent-task transcript step ${step.id} omitted required consumed field path ${requiredField}`,
+      );
+    }
+  }
+  for (const [fieldPath, expectedValue] of Object.entries(
+    step.expected_field_values ?? {},
+  )) {
+    const observed = readOutputPath(payload, fieldPath);
+    if (!observed.present || !Object.is(observed.value, expectedValue)) {
+      fail(
+        `Agent-task transcript step ${step.id} field ${fieldPath} value drift: ${JSON.stringify(observed.value)} != ${JSON.stringify(expectedValue)}`,
       );
     }
   }
@@ -124,6 +144,7 @@ function validateSuccessfulOutput(payload, step) {
 }
 
 function validateExpectedOutput(payload, step) {
+  assertComplete(payload, step);
   if (step.expected_output_kind === "refusal") {
     validateRefusalOutput(payload, step);
   } else {
@@ -142,6 +163,11 @@ function validateSelfReportedAccounting(accountedPayload, step) {
     `${JSON.stringify(independentlyProjectedPayload, null, 2)}\n`,
     "utf8",
   );
+  const accountedBytes = Buffer.byteLength(
+    `${JSON.stringify(accountedPayload, null, 2)}\n`,
+    "utf8",
+  );
+  const measuredReceiptBytes = accountedBytes - baselineBytes;
   if (receipt.total_bytes !== baselineBytes) {
     fail(
       `Agent-task transcript step ${step.id} accounting drift: reported=${receipt.total_bytes}, independent=${baselineBytes}`,
@@ -165,13 +191,26 @@ function validateSelfReportedAccounting(accountedPayload, step) {
   }
   if (
     !Number.isFinite(receipt.accounting_receipt_bytes) ||
+    receipt.accounting_receipt_bytes !== measuredReceiptBytes ||
+    receipt.accounting_receipt_estimated_tokens !==
+      Math.ceil(measuredReceiptBytes / 4) ||
     receipt.accounting_receipt_bytes >= 1_024
   ) {
     fail(
-      `Agent-task transcript step ${step.id} accounting receipt exceeded its 1024-byte bound`,
+      `Agent-task transcript step ${step.id} accounting receipt size drift: reported=${String(receipt.accounting_receipt_bytes)}, independent=${measuredReceiptBytes}`,
     );
   }
   return { receipt, independentlyProjectedPayload };
+}
+
+function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
+  validateExpectedOutput(baselinePayload, step);
+  validateExpectedOutput(measuredPayload, step);
+  if (JSON.stringify(baselinePayload) !== JSON.stringify(measuredPayload)) {
+    fail(
+      `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled`,
+    );
+  }
 }
 
 /** Validate and summarize one pair of independently captured CLI transports. */
@@ -211,8 +250,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
     accountingMode === "independent_transport"
   ) {
     const emittedBytes = Buffer.byteLength(accounted.stderr, "utf8");
-    assertComplete(accountedPayload, step.required_fields, step.id);
-    validateExpectedOutput(accountedPayload, step);
+    assertTransportPayloadParity(baselinePayload, accountedPayload, step);
     return {
       id: step.id,
       command: step.args.join(" "),
@@ -229,8 +267,11 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
   }
   const { receipt, independentlyProjectedPayload } =
     validateSelfReportedAccounting(accountedPayload, step);
-  assertComplete(independentlyProjectedPayload, step.required_fields, step.id);
-  validateExpectedOutput(independentlyProjectedPayload, step);
+  assertTransportPayloadParity(
+    baselinePayload,
+    independentlyProjectedPayload,
+    step,
+  );
   return {
     id: step.id,
     command: step.args.join(" "),
@@ -265,7 +306,12 @@ function measureTask(baselineRoot, accountedRoot, task) {
   for (const step of task.steps) {
     const measured = validateAgentTaskTokenInvocation(
       runCli(baselineRoot, ["--json", ...step.args]),
-      runCli(accountedRoot, ["--json", "--token-accounting", ...step.args]),
+      runCli(
+        accountedRoot,
+        step.expected_accounting_mode === "self_reported"
+          ? ["--json", "--token-accounting", ...step.args]
+          : ["--json", ...step.args],
+      ),
       step,
     );
     if (step.recovery_for !== undefined) {
@@ -302,28 +348,34 @@ async function seedWorkspace(workspaceRoot) {
     author: "agent-task-token-gate",
     noExtensions: true,
   });
-  await client.init(undefined, { defaults: true });
   const anchorId = fixtureId("agent-task-token-anchor");
-  await client.create({
-    id: anchorId,
-    title: "Token accounting anchor",
-    description:
-      "Required context for the returning-agent completeness assertion.",
-    type: "Task",
-    status: "open",
-    priority: 1,
-  });
-  for (let index = 0; index < 100; index += 1) {
-    const suffix = String(index).padStart(3, "0");
+  await createReproducibleProcessRunner({
+    PM_CLOCK: REPLAY_CLOCK,
+    PM_CLOCK_TICK_MS: "1",
+    PM_SEED: REPLAY_SEED,
+  })(async () => {
+    await client.init(undefined, { defaults: true });
     await client.create({
-      id: fixtureId(`agent-task-token-scale-${suffix}`),
-      title: `Scaled context row ${suffix}`,
-      description: "Deterministic scaled-workspace context fixture.",
+      id: anchorId,
+      title: "Token accounting anchor",
+      description:
+        "Required context for the returning-agent completeness assertion.",
       type: "Task",
       status: "open",
-      priority: (index % 4) + 1,
+      priority: 1,
     });
-  }
+    for (let index = 0; index < 100; index += 1) {
+      const suffix = String(index).padStart(3, "0");
+      await client.create({
+        id: fixtureId(`agent-task-token-scale-${suffix}`),
+        title: `Scaled context row ${suffix}`,
+        description: "Deterministic scaled-workspace context fixture.",
+        type: "Task",
+        status: "open",
+        priority: (index % 4) + 1,
+      });
+    }
+  });
   return { pmRoot, anchorId };
 }
 

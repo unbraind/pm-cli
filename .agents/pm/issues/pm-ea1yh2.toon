@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-27T23:17:20.508Z"
-updated_at: "2026-08-28T11:53:58.490Z"
-closed_at: "2026-08-28T11:53:57.611Z"
-completed_at: "2026-08-28T11:53:57.611Z"
+updated_at: "2026-08-28T12:52:29.239Z"
+closed_at: "2026-08-28T12:52:28.560Z"
+completed_at: "2026-08-28T12:52:28.560Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Public SDK options and result types expose idempotent if-absent semantics for comments, text/JSON notes, and learnings; CLI --if-absent and MCP ifAbsent share the SDK implementation; resolved author plus normalized stored text define equality; first adds report changed true and exact retries changed false without history or cache mutation; default adds still permit intentional duplicates; concurrency, help, contracts, completions, SDK surface, docs, unit/integration/MCP/manual tests, exact coverage, static quality, security, and packed-consumer gates pass."
@@ -17,9 +17,9 @@ risk: medium
 confidence: high
 severity: medium
 repro_steps: "Run pm comments, pm notes, or pm learnings twice with the same add payload and author, then inspect annotation collections and history; before this fix each retry stored another identical entry and add event."
-resolution: "SDK-owned lock-scoped opt-in idempotency now covers comments, text and JSON notes, and learnings; strict action schemas reject ifAbsent with edit or delete while default duplicate appends remain compatible."
-expected_result: "Explicit ifAbsent appends are atomic and retry-safe across SDK, CLI, and MCP; default appends remain unchanged; published schemas refuse non-append edit/delete combinations."
-actual_result: "Runtime and public schemas agree across all annotation families; generated contracts and SDK surface are current; concurrency, transport, npx, bunx, dogfood, exact 100/100/100/100 coverage, full static assurance, zero-vulnerability audit, and current pm-changelog package verification all pass."
+resolution: "SDK-owned idempotent annotation append remains transport-complete, and MCP discovery now explicitly states that ifAbsent is add-only and incompatible with edit/delete for comments, notes, and learnings."
+expected_result: "SDK, CLI, MCP, schemas, completion, and discovery expose one unambiguous retry-safe annotation contract."
+actual_result: "All three MCP tool descriptions, generated contracts, and runtime tests declare add-only exclusivity; contracts/surface checks and the 324-test annotation regression bundle pass."
 affected_version: 2026.8.27
 component: SDK annotations and CLI/MCP annotation transports
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
@@ -28,7 +28,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-27T23:17:20.508Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-27T23:17:20.508Z","harness:codex","cli:create:dep",detected
   pm-zwpp,blocked_by,"2026-08-27T23:17:20.508Z","harness:codex","cli:create:dep",detected
-comments[23]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-08-27T23:17:20.508Z","harness:codex","Duplicate-check evidence: exact all-status GH-1132 search returned zero items; broader all-status searches found annotation grammar, output-bounding, dedupe-audit, and lock-retry owners but none owns idempotent annotation mutation. GitHub source: https://github.com/unbraind/pm-cli/issues/1132. This item extends the canonical SDK annotation kernel and multi-agent safety lineages rather than duplicating them."
   "2026-08-27T23:25:34.767Z","harness:codex","TDD red: focused comments suite now proves missing idempotent mutation semantics. The first --if-absent call has no changed receipt, the retry appends again instead of preserving history bytes, and non-append invocations incorrectly accept the option. Command: node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts; result 43 passed, 2 expected failures."
   "2026-08-27T23:54:24.815Z","harness:codex","Evidence: implemented SDK-owned lock-scoped comment idempotency with CLI --if-absent, MCP options.ifAbsent, canonical schemas, completions, stable refusal catalog, and documented changed receipts. Fresh CLI+SDK acceptance proved one history event across exact retries; a real PM_MCP_PROFILE=full stdio process returned changed true/1 then false/0. Focused SDK/CLI/MCP/completion tests passed 162/162, concurrency proved one writer and five no-ops, static complexity passed <=16, docstrings passed 567/567 source, 4507/4507 exports, 8187/8187 members, and full coverage passed 585 files / 8072 tests / exact 100/100/100/100 (59928 statements, 45132 branches, 12463 functions, 57710 lines)."
@@ -52,6 +52,10 @@ comments[23]{created_at,author,text}:
   "2026-08-28T10:56:24.521Z","harness:codex","TDD red evidence: action-schema-parity failed because comments, notes, and learnings do not yet publish ifAbsent/edit and ifAbsent/delete mutual-exclusion branches, and the correction version remains 4.10.0. Focused command recorded on pm-8pnj."
   "2026-08-28T10:56:29.827Z","harness:codex","TDD red evidence: action-schema-parity failed because comments, notes, and learnings do not yet publish ifAbsent/edit and ifAbsent/delete mutual-exclusion branches, and the correction version remains 4.10.0. Focused command recorded on pm-8pnj."
   "2026-08-28T11:53:55.241Z","harness:codex","Terminal evidence: SDK, CLI, MCP, and public strict schemas now share atomic append-only ifAbsent semantics for comments, text/JSON notes, and learnings while rejecting ifAbsent with edit or delete for every annotation family. Focused schema and transport tests passed; exact source coverage is 100/100/100/100; the full static, package-boundary, SDK parity, replication, grammar, token, tracker-quality, graph-composition, and record-integrity gates passed. npm audit reports zero vulnerabilities across 429 dependencies. pm-changelog was upgraded from 2026.8.17 to current 2026.8.22; deep package doctor reports four active extensions, zero warnings, zero blocking failures, and no update available."
+  "2026-08-28T12:18:32.545Z","harness:codex","Review correction scope: clarify across MCP comments, notes, and learnings descriptions that ifAbsent is append-only and mutually exclusive with edit/delete, matching strict schema behavior."
+  "2026-08-28T12:18:54.419Z","harness:codex","Lifecycle recovery note: the runtime correctly refused the deprecated bare reopen path; this now-active claimed interval owns the MCP description correction and its terminal verification before re-close."
+  "2026-08-28T12:21:09.436Z","harness:codex","TDD red evidence: runtime-capabilities failed because pm_comments, pm_notes, and pm_learnings descriptions do not yet state that options.ifAbsent applies only to options.add and cannot combine with edit/delete."
+  "2026-08-28T12:52:16.297Z","harness:codex","Final review-correction evidence: pm_comments, pm_notes, and pm_learnings discovery now says options.ifAbsent applies only to options.add and cannot combine with options.edit or options.delete. Generated contracts and SDK surface checks pass; the focused annotation bundle passes 324/324. Repository-wide 100/100/100/100 coverage is recorded on connected parent pm-8pnj at this exact source head."
 notes[2]{created_at,author,text}:
   "2026-08-27T23:54:25.697Z","harness:codex","Implementation boundary: equality is resolved-author plus normalized stored text under the item writer lock. Only explicit ifAbsent requests emit top-level changed; default append response shape and intentional duplicate behavior remain compatible. Duplicate no-ops skip item/history writes and derived search-cache refresh."
   "2026-08-28T00:46:32.227Z","harness:codex","Expanded implementation boundary: the single annotation kernel covers comments, text notes, canonicalized JSON notes, and learnings. Every transport exposes optional ifAbsent, every result exposes optional changed, exact no-ops return changed_count=0, and cache refresh is skipped without altering default duplicate-append compatibility."
@@ -123,7 +127,7 @@ tests[4]:
       source_kind: local_mutation
       source_ref: feat/agent-transcript-recovery-contracts
     note: "Exact-head annotation concurrency,shared CLI mutation classification,and nested MCP forwarding regression bundle"
-test_runs[15]:
+test_runs[17]:
   - run_id: test-local-mtc662mi-0l08h9
     kind: test
     status: failed
@@ -316,6 +320,28 @@ test_runs[15]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtcxssn8-2ehp09
+    kind: test
+    status: passed
+    started_at: "2026-08-28T12:37:24.353Z"
+    finished_at: "2026-08-28T12:37:42.788Z"
+    recorded_at: "2026-08-28T12:37:42.788Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm contracts:check && pnpm sdk:surface:check",schema,schema,source,local_source_ref
+  - run_id: test-local-mtcxt6sg-d3z1kz
+    kind: test
+    status: passed
+    started_at: "2026-08-28T12:37:43.312Z"
+    finished_at: "2026-08-28T12:38:01.120Z"
+    recorded_at: "2026-08-28T12:38:01.120Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/mcp/mcp-server-branch-residual.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,schema,schema,source,local_source_ref
 docs[6]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item changelog entry
   docs/COMMANDS.md,project,CLI retry-safe comment workflow
@@ -323,7 +349,7 @@ docs[6]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal reachability census
   docs/SDK_CONTEXT_INTEGRITY.md,project,Retry-safe universal annotation context contract
   docs/SDK.md,project,Public SDK idempotency semantics
-close_reason: "Delivered atomic opt-in ifAbsent annotation appends across SDK, CLI, and MCP; strict edit/delete refusal schemas; generated contracts; concurrency/transport coverage; and terminal package, security, coverage, and static proof."
+close_reason: Annotation idempotency discovery is explicit across all MCP tools and generated contracts with focused regression proof
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

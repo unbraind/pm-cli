@@ -60,6 +60,17 @@ describe("runtime MCP capabilities", () => {
     expect(core.tools.length).toBeLessThan(standard.tools.length);
     expect(standard.tools.length).toBeLessThan(full.tools.length);
     expect(full.tools).toHaveLength(TOOLS.length);
+    for (const toolName of ["pm_comments", "pm_notes", "pm_learnings"]) {
+      const description = TOOLS.find(
+        (tool) => tool.name === toolName,
+      )?.description;
+      expect(description, toolName).toContain(
+        "options.ifAbsent applies only to options.add",
+      );
+      expect(description, toolName).toContain(
+        "cannot combine with options.edit or options.delete",
+      );
+    }
     expect(core.tools.map((tool) => tool.name)).toContain("pm_context");
     expect(JSON.stringify(core.tools[0]?.inputSchema)).not.toContain(
       "Workspace directory to run the native pm operation in.",
@@ -84,11 +95,7 @@ describe("runtime MCP capabilities", () => {
     expect(resolvePmCommandCapabilityFamily("extension-owned")).toBe(
       "internal",
     );
-    expect(listPmCommandsForFamily("graph")).toEqual([
-      "graph",
-      "deps",
-      "plan",
-    ]);
+    expect(listPmCommandsForFamily("graph")).toEqual(["graph", "deps", "plan"]);
     expect(renderPmCommandVisibilityMarkdown()).toContain(
       "| `context` | core | context |",
     );

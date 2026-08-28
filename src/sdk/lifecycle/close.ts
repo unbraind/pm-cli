@@ -34,6 +34,7 @@ import {
   type TerminalTransitionPolicy,
 } from "../lifecycle-policy.js";
 import type { ItemMetadata } from "../../types/index.js";
+import { nowIso } from "../../core/shared/time.js";
 import { renderPmCommand } from "../command-line.js";
 
 /** Compatibility options for command-shaped close consumers. */
@@ -689,7 +690,7 @@ export async function closeItem(
     statusRegistry,
   );
 
-  const closedAt = new Date().toISOString();
+  const closedAt = nowIso();
   const completedAt =
     options.completedAt === undefined
       ? closedAt

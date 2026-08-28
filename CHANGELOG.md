@@ -4,8 +4,10 @@
 
 ### Fixed
 
-- GH-1132: opt-in idempotent annotation append (ifAbsent/--if-absent) prevents retry-driven context duplication; duplicate appends remain available by default ([pm-ea1yh2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ea1yh2.toon))
+- Close lifecycle bypasses reproducible process clock ([pm-hmpu4p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hmpu4p.toon))
 - Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
+- GH-1132: opt-in idempotent annotation append (ifAbsent/--if-absent) prevents retry-driven context duplication; duplicate appends remain available by default ([pm-ea1yh2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ea1yh2.toon))
+- Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))
 - Agent-task transcripts accept declared no-effect and partial-effect successful exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
 - Agent-task baselines accept missing task and composite token ceilings ([pm-aksavu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aksavu.toon))
 - Agent-task closeout claims lack linked full-verification commands ([pm-ervmsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ervmsc.toon))
@@ -15,7 +17,6 @@
 - Unknown-option refusal textual flags bypass structured global-option filtering ([pm-x4wbui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x4wbui.toon))
 - Completed-task transcripts require terminal success, exclusive refusal metadata, and complete recovery ([pm-wa39rl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wa39rl.toon))
 - Agent-task token replay trusts missing or incorrect accounting estimates ([pm-ok2kdn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok2kdn.toon))
-- Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))
 
 ### Security
 

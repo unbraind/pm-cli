@@ -528,7 +528,7 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_comments",
     description:
-      "List, add, edit, or delete comments on a pm item. Use options.add to append, options.ifAbsent=true for retry-safe author-and-text deduplication, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. " +
+      "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. " +
       "List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. " +
       "Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
@@ -552,7 +552,7 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_notes",
     description:
-      "List or add structured notes on a pm item. Use options.add to append a note, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing notes.",
+      "List, add, edit, or delete structured notes on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing notes.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),
@@ -560,7 +560,7 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_learnings",
     description:
-      "List or add learnings on a pm item. Use options.add to capture a learning/insight, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing learnings.",
+      "List, add, edit, or delete learnings on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing learnings.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),

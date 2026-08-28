@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1810,
+    "covered_symbols": 1811,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1811
+    "required_symbols": 1812
   },
   "breaking_acknowledgements": [
     {
@@ -1369,6 +1369,14 @@
       ],
       "package_version": "2026.8.27",
       "reason": "Finalize unreleased transcript v2 accounting-mode contract and strict annotation schema correction"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmAgentTaskTranscriptStep",
+        "signature ./sdk/contracts:PmAgentTaskTranscriptStep"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Add optional transcript terminal-value assertions while preserving version-two parser compatibility"
     }
   ],
   "entrypoints": {
@@ -10960,6 +10968,12 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmAgentTaskExpectedFieldValue",
+          "signature": "export type PmAgentTaskExpectedFieldValue = string | number | boolean | null;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmAgentTaskStepOutputKind",
           "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
         },
@@ -10979,7 +10993,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmAgentTaskTranscriptStep",
-          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_field_values?: Readonly<Record<string, PmAgentTaskExpectedFieldValue>>; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",
@@ -20944,6 +20958,12 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmAgentTaskExpectedFieldValue",
+          "signature": "export type PmAgentTaskExpectedFieldValue = string | number | boolean | null;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmAgentTaskStepOutputKind",
           "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
         },
@@ -20963,7 +20983,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmAgentTaskTranscriptStep",
-          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_field_values?: Readonly<Record<string, PmAgentTaskExpectedFieldValue>>; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",

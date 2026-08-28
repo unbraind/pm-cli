@@ -331,9 +331,41 @@ describe("agent-task transcript token gate", () => {
       ),
     ).toThrow();
     expect(() =>
+      validateAgentTaskTokenInvocation(
+        {
+          ...validBaseline,
+          stdout: render({ items: [{ id: "pm-different" }] }),
+        },
+        validAccounted,
+        step,
+      ),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        validBaseline,
+        {
+          ...validAccounted,
+          stdout: render({
+            ...accounted,
+            token_accounting: {
+              ...accounted.token_accounting,
+              padding: "x".repeat(1_024),
+            },
+          }),
+        },
+        step,
+      ),
+    ).toThrow();
+    expect(() =>
       validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
         ...step,
         required_fields: ["missing-field"],
+      }),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        expected_field_values: { "items.0.id": "pm-different" },
       }),
     ).toThrow();
     expect(() =>
