@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- CLI transport-floor RSS admission false-fails on single-sample page noise ([pm-pz49xc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pz49xc.toon))
+- GH-1132: idempotent annotation append prevents retry-driven context duplication ([pm-ea1yh2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ea1yh2.toon))
 - Completed-task transcripts accept terminal refusals and contradictory recovery metadata ([pm-wa39rl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wa39rl.toon))
 - Unknown-option refusals report the first valid provided flag as the failing surface ([pm-fo8g7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fo8g7j.toon))
 - Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))

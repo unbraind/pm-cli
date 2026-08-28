@@ -2206,6 +2206,10 @@
           "flag": "--full-history"
         },
         {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -3949,6 +3953,10 @@
           "flag": "--full-history"
         },
         {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -4334,6 +4342,10 @@
         },
         {
           "flag": "--full-history"
+        },
+        {
+          "flag": "--if-absent",
+          "value_type": "boolean"
         },
         {
           "flag": "--author"
@@ -15595,6 +15607,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "annotation_if_absent_without_append",
+      "class": "usage",
+      "code": "annotation_if_absent_without_append",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation if absent without append condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "annotation_message_without_text",
       "class": "usage",
       "code": "annotation_message_without_text",
@@ -25100,7 +25129,7 @@
       ]
     },
     {
-      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
+      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.ifAbsent=true for retry-safe author-and-text deduplication, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -25140,6 +25169,10 @@
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a comment only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -29223,6 +29256,10 @@
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
           },
+          "ifAbsent": {
+            "description": "Append a learning only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -30439,6 +30476,10 @@
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a note only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "includeMeta": {
             "description": "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
@@ -48598,6 +48639,10 @@
             ],
             "type": "string"
           },
+          "ifAbsent": {
+            "description": "Append a comment only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -48905,6 +48950,10 @@
             ],
             "type": "string"
           },
+          "ifAbsent": {
+            "description": "Append a note only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
+          },
           "includeMeta": {
             "description": "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
             "type": "boolean"
@@ -49158,6 +49207,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a learning only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "json": {
             "default": true,

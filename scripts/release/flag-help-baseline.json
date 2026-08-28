@@ -15,21 +15,21 @@
     },
     {
       "command": "extension",
-      "help_bytes": 5978,
-      "estimated_tokens": 1495,
-      "maximum_tokens": 1495
+      "help_bytes": 5639,
+      "estimated_tokens": 1410,
+      "maximum_tokens": 1410
     },
     {
       "command": "package",
-      "help_bytes": 6082,
-      "estimated_tokens": 1521,
-      "maximum_tokens": 1521
+      "help_bytes": 5838,
+      "estimated_tokens": 1460,
+      "maximum_tokens": 1460
     },
     {
       "command": "packages",
-      "help_bytes": 6082,
-      "estimated_tokens": 1521,
-      "maximum_tokens": 1521
+      "help_bytes": 5838,
+      "estimated_tokens": 1460,
+      "maximum_tokens": 1460
     },
     {
       "command": "install",
@@ -45,9 +45,9 @@
     },
     {
       "command": "create",
-      "help_bytes": 7563,
-      "estimated_tokens": 1891,
-      "maximum_tokens": 1891
+      "help_bytes": 7548,
+      "estimated_tokens": 1887,
+      "maximum_tokens": 1887
     },
     {
       "command": "copy",
@@ -189,9 +189,9 @@
     },
     {
       "command": "history-compact",
-      "help_bytes": 1188,
-      "estimated_tokens": 297,
-      "maximum_tokens": 297
+      "help_bytes": 1182,
+      "estimated_tokens": 296,
+      "maximum_tokens": 296
     },
     {
       "command": "history-author-acknowledge",
@@ -231,15 +231,15 @@
     },
     {
       "command": "update",
-      "help_bytes": 8313,
-      "estimated_tokens": 2079,
-      "maximum_tokens": 2079
+      "help_bytes": 8298,
+      "estimated_tokens": 2075,
+      "maximum_tokens": 2075
     },
     {
       "command": "update-many",
-      "help_bytes": 11208,
-      "estimated_tokens": 2802,
-      "maximum_tokens": 2802
+      "help_bytes": 11188,
+      "estimated_tokens": 2797,
+      "maximum_tokens": 2797
     },
     {
       "command": "close",
@@ -249,9 +249,9 @@
     },
     {
       "command": "close-many",
-      "help_bytes": 6702,
-      "estimated_tokens": 1676,
-      "maximum_tokens": 1676
+      "help_bytes": 6682,
+      "estimated_tokens": 1671,
+      "maximum_tokens": 1671
     },
     {
       "command": "delete",
@@ -267,21 +267,21 @@
     },
     {
       "command": "comments",
-      "help_bytes": 1196,
-      "estimated_tokens": 299,
-      "maximum_tokens": 299
+      "help_bytes": 1084,
+      "estimated_tokens": 271,
+      "maximum_tokens": 271
     },
     {
       "command": "notes",
-      "help_bytes": 1218,
-      "estimated_tokens": 305,
-      "maximum_tokens": 305
+      "help_bytes": 1213,
+      "estimated_tokens": 304,
+      "maximum_tokens": 304
     },
     {
       "command": "learnings",
-      "help_bytes": 1266,
-      "estimated_tokens": 317,
-      "maximum_tokens": 317
+      "help_bytes": 1033,
+      "estimated_tokens": 259,
+      "maximum_tokens": 259
     },
     {
       "command": "files",

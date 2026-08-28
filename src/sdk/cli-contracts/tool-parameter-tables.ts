@@ -504,6 +504,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   noCheckpoint: { type: "boolean" },
   force: { type: "boolean" },
   ifAvailable: { type: "boolean" },
+  ifAbsent: { type: "boolean" },
   next: { type: "boolean" },
   maxAttempts: {
     anyOf: [
@@ -1357,6 +1358,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   message: {
     description: "History message for mutation audit trail.",
+  },
+  ifAbsent: {
+    description:
+      "For annotations, append only when no existing entry has the same resolved author and exact stored text; retries return changed false without a history event.",
   },
   assignee: {
     description: "Assignee identity.",
@@ -2274,11 +2279,19 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
       description:
         "Return the complete post-mutation comment history instead of the bounded mutation receipt projection.",
     },
+    ifAbsent: {
+      description:
+        "Append a comment only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+    },
   },
   notes: {
     full: {
       description:
         "Return the complete post-mutation note history instead of the bounded mutation receipt projection.",
+    },
+    ifAbsent: {
+      description:
+        "Append a note only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
     },
     since: {
       description:
@@ -2290,6 +2303,10 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     full: {
       description:
         "Return the complete post-mutation learning history instead of the bounded mutation receipt projection.",
+    },
+    ifAbsent: {
+      description:
+        "Append a learning only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
     },
   },
   next: {

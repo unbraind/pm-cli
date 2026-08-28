@@ -20,6 +20,7 @@ function report() {
     p50_ms: 270,
     p95_ms: 300,
     max_ms: 300,
+    median_peak_rss_bytes: 1000,
     max_peak_rss_bytes: 1000,
     max_output_bytes: 100,
     max_estimated_tokens: 25,
@@ -125,7 +126,7 @@ describe("CLI transport-floor benchmark", () => {
     ).resolves.toMatchObject({ mode: "check", violations: [] });
   });
 
-  it("builds ratchets and reports latency, RSS, and missing budgets", () => {
+  it("builds ratchets and admits median RSS with bounded process noise", () => {
     const baseline = report();
     const budgets = buildCliTransportFloorBudgets(baseline, 1);
     expect(budgets.operations.get).toEqual({
@@ -133,16 +134,28 @@ describe("CLI transport-floor benchmark", () => {
       max_peak_rss_bytes: 1000,
     });
     expect(compareCliTransportFloorBudgets(baseline, budgets)).toEqual([]);
-    const regressed = structuredClone(baseline);
+    const isolatedOutlier = structuredClone(baseline);
+    isolatedOutlier.operations.get.max_peak_rss_bytes = 1200;
+    expect(compareCliTransportFloorBudgets(isolatedOutlier, budgets)).toEqual(
+      [],
+    );
+    const boundedNoise = structuredClone(isolatedOutlier);
+    boundedNoise.operations.get.median_peak_rss_bytes = 525_288;
+    expect(compareCliTransportFloorBudgets(boundedNoise, budgets)).toEqual([]);
+    const regressed = structuredClone(boundedNoise);
     regressed.operations.get.min_ms = 300;
-    regressed.operations.get.max_peak_rss_bytes = 1200;
+    regressed.operations.get.median_peak_rss_bytes = 525_289;
     delete budgets.operations.list;
     expect(compareCliTransportFloorBudgets(regressed, budgets)).toEqual(
       expect.arrayContaining([
         "get: best 300ms > 275ms",
-        "get: peak RSS 1200 > 1000",
+        "get: median peak RSS 525289 > 525288 (budget 1000 + noise margin 524288)",
         "list: missing budget",
       ]),
+    );
+    regressed.operations.get.median_peak_rss_bytes = null;
+    expect(compareCliTransportFloorBudgets(regressed, budgets)).toContain(
+      "get: median peak RSS unavailable for budget 1000",
     );
     regressed.operations.get.max_peak_rss_bytes = null;
     budgets.operations.get.max_peak_rss_bytes = null;
@@ -159,6 +172,7 @@ describe("CLI transport-floor benchmark", () => {
     const markdown = renderCliTransportFloorMarkdown(report());
     expect(markdown).toContain("| `get` | 250 ms | 270 ms | 300 ms |");
     expect(markdown).toContain("exactly one item");
+    expect(markdown).toContain("512 KiB noise margin");
     expect(markdown).toContain("CLI-minus-SDK delta");
   });
 });

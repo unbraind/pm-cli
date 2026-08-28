@@ -13,6 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   measureCliProcess,
+  nearestRank,
   summarizeSamples,
 } from "./run-scale-benchmarks.mjs";
 import { generateSyntheticWorkspace } from "./scale-workspace.mjs";
@@ -34,6 +35,7 @@ const documentationPath = path.join(
   "cli-transport-overhead.md",
 );
 const LATENCY_NOISE_MARGIN_MS = 25;
+const RSS_NOISE_MARGIN_BYTES = 512 * 1024;
 const OPERATION_NAMES = Object.freeze([
   "get",
   "list",
@@ -115,7 +117,14 @@ export async function buildCliTransportFloorReport(options = {}) {
         await measureColdStartOperation(operation, iteration, options),
       );
     }
-    operations[operation] = summarizeSamples(samples);
+    const rssSamples = samples
+      .map((sample) => sample.peak_rss_bytes)
+      .filter((value) => Number.isFinite(value));
+    operations[operation] = {
+      ...summarizeSamples(samples),
+      median_peak_rss_bytes:
+        rssSamples.length === 0 ? null : nearestRank(rssSamples, 50),
+    };
   }
   return {
     schema_version: 1,
@@ -140,9 +149,9 @@ export function buildCliTransportFloorBudgets(report, headroom = 1.25) {
         {
           max_latency_ms: Math.ceil(summary.min_ms * headroom),
           max_peak_rss_bytes:
-            summary.max_peak_rss_bytes === null
+            summary.median_peak_rss_bytes === null
               ? null
-              : Math.ceil(summary.max_peak_rss_bytes * headroom),
+              : Math.ceil(summary.median_peak_rss_bytes * headroom),
         },
       ]),
     ),
@@ -163,14 +172,19 @@ export function compareCliTransportFloorBudgets(report, budgets) {
         `${operation}: best ${summary.min_ms}ms > ${budget.max_latency_ms + LATENCY_NOISE_MARGIN_MS}ms`,
       );
     }
-    if (
-      budget.max_peak_rss_bytes !== null &&
-      summary.max_peak_rss_bytes !== null &&
-      summary.max_peak_rss_bytes > budget.max_peak_rss_bytes
-    ) {
-      violations.push(
-        `${operation}: peak RSS ${summary.max_peak_rss_bytes} > ${budget.max_peak_rss_bytes}`,
-      );
+    if (budget.max_peak_rss_bytes !== null) {
+      if (summary.median_peak_rss_bytes === null) {
+        violations.push(
+          `${operation}: median peak RSS unavailable for budget ${budget.max_peak_rss_bytes}`,
+        );
+      } else if (
+        summary.median_peak_rss_bytes >
+        budget.max_peak_rss_bytes + RSS_NOISE_MARGIN_BYTES
+      ) {
+        violations.push(
+          `${operation}: median peak RSS ${summary.median_peak_rss_bytes} > ${budget.max_peak_rss_bytes + RSS_NOISE_MARGIN_BYTES} (budget ${budget.max_peak_rss_bytes} + noise margin ${RSS_NOISE_MARGIN_BYTES})`,
+        );
+      }
     }
   }
   return violations;
@@ -186,13 +200,19 @@ export function renderCliTransportFloorMarkdown(report) {
     .join("\n");
   return `# CLI transport overhead
 
-Tracked by [pm-yse5dt](../../.agents/pm/tasks/pm-yse5dt.toon).
+Tracked by [pm-yse5dt](../../.agents/pm/tasks/pm-yse5dt.toon), with RSS
+admission reliability owned by
+[pm-pz49xc](../../.agents/pm/issues/pm-pz49xc.toon).
 
 Each result starts from a fresh isolated workspace containing exactly one item.
 The command runs in a fresh Node ${report.node_version} process on
 ${report.platform}/${report.architecture}; setup and fixture generation are
 outside the timed interval. Short local gates use the best observed latency,
-while the report retains p50 and p95 evidence.
+while the report retains p50 and p95 evidence. RSS admission uses the measured
+median so one page-level outlier cannot false-fail the gate; the maximum remains
+in the report as diagnostic evidence. Admission adds a fixed 512 KiB noise margin
+without changing the committed budget; a majority persistent increase beyond
+that bounded margin still fails.
 
 | Command | best | p50 | p95 |
 |---|---:|---:|---:|

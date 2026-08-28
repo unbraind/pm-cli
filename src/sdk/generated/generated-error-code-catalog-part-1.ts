@@ -138,6 +138,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "annotation_if_absent_without_append",
+    meaning: "Annotation if absent without append condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/annotations.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "annotation_if_absent_without_append",
+    aliases: [],
+  },
+  {
     code: "annotation_message_without_text",
     meaning: "Annotation message without text condition.",
     stability: "stable",

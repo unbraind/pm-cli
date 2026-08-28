@@ -148,6 +148,118 @@ describe("runComments", () => {
     });
   });
 
+  it("makes retried comment appends idempotent without suppressing intentional duplicates", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-if-absent");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+
+      const added = await runComments(
+        id,
+        { add: "  retry-safe evidence  ", author: " agent-a ", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(added).toMatchObject({
+        changed: true,
+        count: 1,
+        mutation_receipt: {
+          action: "add",
+          entry_index: 1,
+          changed_count: 1,
+        },
+      });
+      const historyAfterAdd = await readFile(historyPath, "utf8");
+
+      const retried = await runComments(
+        id,
+        { add: "text=retry-safe evidence", author: "agent-a", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(retried).toMatchObject({
+        changed: false,
+        count: 1,
+        total_count: 1,
+        mutation_receipt: {
+          action: "add",
+          entry_index: 1,
+          changed_count: 0,
+        },
+      });
+      expect(retried.comments).toEqual([added.comments[0]]);
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAdd);
+
+      const differentAuthor = await runComments(
+        id,
+        { add: "retry-safe evidence", author: "agent-b", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(differentAuthor).toMatchObject({ changed: true, total_count: 2 });
+
+      const intentionalDuplicate = await runComments(
+        id,
+        { add: "retry-safe evidence", author: "agent-b" },
+        { path: context.pmPath },
+      );
+      expect(intentionalDuplicate).toMatchObject({ total_count: 3 });
+      expect(intentionalDuplicate).not.toHaveProperty("changed");
+    });
+  });
+
+  it("serializes concurrent idempotent appends under the item writer lock", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-if-absent-concurrent");
+      const results = await Promise.all(
+        Array.from({ length: 6 }, () =>
+          runComments(
+            id,
+            {
+              add: "one concurrent evidence entry",
+              author: "parallel-agent",
+              ifAbsent: true,
+            },
+            { path: context.pmPath },
+          ),
+        ),
+      );
+
+      expect(results.filter((result) => result.changed === true)).toHaveLength(
+        1,
+      );
+      expect(results.filter((result) => result.changed === false)).toHaveLength(
+        5,
+      );
+      const listed = await runComments(
+        id,
+        { fullHistory: true },
+        { path: context.pmPath },
+      );
+      expect(listed.comments).toHaveLength(1);
+    });
+  });
+
+  it("rejects --if-absent without an append operation", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-if-absent-mode-guard");
+      await runComments(id, { add: "seed" }, { path: context.pmPath });
+
+      await expect(
+        runComments(id, { ifAbsent: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--if-absent requires a comment append",
+      });
+      await expect(
+        runComments(
+          id,
+          { edit: 1, add: "replacement", ifAbsent: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runComments(id, { delete: 1, ifAbsent: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
   it("rejects empty comment text", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "comments-empty");
@@ -1152,6 +1264,52 @@ describe("runComments edit/delete (GH-243)", () => {
 
       const badIndex = context.runCli(["comments", id, "--delete", "0"]);
       expect(badIndex.code).toBe(EXIT_CODE.USAGE);
+    });
+  });
+
+  it("exposes retry-safe comment appends through the CLI transport", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-cli-if-absent");
+      const args = [
+        "comments",
+        id,
+        "retry-safe CLI evidence",
+        "--author",
+        "cli-agent",
+        "--if-absent",
+        "--json",
+      ];
+
+      const added = context.runCli(args, { expectJson: true });
+      expect(added.code).toBe(0);
+      expect(added.json).toMatchObject({
+        changed: true,
+        total_count: 1,
+        mutation_receipt: { changed_count: 1 },
+      });
+
+      const retried = context.runCli(args, { expectJson: true });
+      expect(retried.code).toBe(0);
+      expect(retried.json).toMatchObject({
+        changed: false,
+        total_count: 1,
+        mutation_receipt: { changed_count: 0 },
+      });
+
+      const listed = context.runCli(
+        ["comments", id, "--full-history", "--json"],
+        { expectJson: true },
+      );
+      expect(listed.code).toBe(0);
+      expect(
+        (listed.json as { comments: Array<{ author: string; text: string }> })
+          .comments,
+      ).toEqual([
+        expect.objectContaining({
+          author: "cli-agent",
+          text: "retry-safe CLI evidence",
+        }),
+      ]);
     });
   });
 

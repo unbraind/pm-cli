@@ -1,12 +1,18 @@
 # CLI transport overhead
 
-Tracked by [pm-yse5dt](../../.agents/pm/tasks/pm-yse5dt.toon).
+Tracked by [pm-yse5dt](../../.agents/pm/tasks/pm-yse5dt.toon), with RSS
+admission reliability owned by
+[pm-pz49xc](../../.agents/pm/issues/pm-pz49xc.toon).
 
 Each result starts from a fresh isolated workspace containing exactly one item.
 The command runs in a fresh Node v26.5.0 process on
 linux/x64; setup and fixture generation are
 outside the timed interval. Short local gates use the best observed latency,
-while the report retains p50 and p95 evidence.
+while the report retains p50 and p95 evidence. RSS admission uses the measured
+median so one page-level outlier cannot false-fail the gate; the maximum remains
+in the report as diagnostic evidence. Admission adds a fixed 512 KiB noise margin
+without changing the committed budget; a majority persistent increase beyond
+that bounded margin still fails.
 
 | Command   |   best |    p50 |    p95 |
 | --------- | -----: | -----: | -----: |

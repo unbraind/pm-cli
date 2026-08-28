@@ -3,9 +3,7 @@
  *
  * Implements the pm learnings command surface and its agent-facing runtime behavior.
  */
-import {
-  type GlobalOptions,
-} from "./runtime-primitives.js";
+import { type GlobalOptions } from "./runtime-primitives.js";
 import type { LogNote } from "../types/index.js";
 import {
   type AnnotationMutationReceipt,
@@ -31,6 +29,8 @@ export interface LearningsCommandOptions {
   limit?: string;
   /** Return complete learning history after a mutation instead of a bounded receipt. */
   fullHistory?: boolean;
+  /** Append only when no learning has the same resolved author and text. */
+  ifAbsent?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -59,6 +59,8 @@ export interface LearningsResult {
   mutation_receipt?: AnnotationMutationReceipt;
   /** Declares whether older learnings were withheld from a mutation response. */
   omission_receipt?: AnnotationOmissionReceipt;
+  /** Whether a requested mutation changed persisted state. */
+  changed?: boolean;
 }
 
 /** Implements run learnings for the public runtime surface of this module. */
@@ -76,15 +78,20 @@ export async function runLearnings(
     parseText: (raw) => parseAnnotationTextInput(raw),
     createEntry: (entry) => entry,
     bypassOwnershipConflict: Boolean(
-      options.edit === undefined && options.delete === undefined &&
-        (options as LearningsCommandOptions & {
+      options.edit === undefined &&
+      options.delete === undefined &&
+      (
+        options as LearningsCommandOptions & {
           ownershipAppendBypass?: boolean;
-        }).ownershipAppendBypass,
+        }
+      ).ownershipAppendBypass,
     ),
     conflictGuidance: {
       required:
         "For an approved append-only handoff on another owner's item, use the package-provided ownership bypass before considering --force.",
-      examples: ['pm learnings pm-a1b2 --add "review learning" --author "reviewer" --force'],
+      examples: [
+        'pm learnings pm-a1b2 --add "review learning" --author "reviewer" --force',
+      ],
       nextSteps: [
         "Use an installed package's narrow append-only ownership bypass when available.",
         "Use --force only when an ownership override is explicitly approved.",

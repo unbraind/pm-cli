@@ -313,6 +313,24 @@ describe("SDK read contract integrity", () => {
       ] as const;
 
       for (const [collection, run] of runners) {
+        const idempotent = await run(
+          id,
+          { add: `${collection}-idempotent`, ifAbsent: true },
+          { path: context.pmPath },
+        );
+        const retry = await run(
+          id,
+          { add: `${collection}-idempotent`, ifAbsent: true },
+          { path: context.pmPath },
+        );
+        expect(idempotent).toMatchObject({
+          changed: true,
+          mutation_receipt: { changed_count: 1 },
+        });
+        expect(retry).toMatchObject({
+          changed: false,
+          mutation_receipt: { changed_count: 0 },
+        });
         for (let index = 0; index < 20; index += 1) {
           await run(
             id,
@@ -328,10 +346,10 @@ describe("SDK read contract integrity", () => {
         expect(receipt).toMatchObject({
           id,
           count: 1,
-          total_count: 21,
+          total_count: 22,
           mutation_receipt: {
             action: "add",
-            entry_index: 21,
+            entry_index: 22,
             changed_count: 1,
             full_history_included: false,
           },
@@ -362,9 +380,9 @@ describe("SDK read contract integrity", () => {
         );
         expect(
           (full as unknown as Record<string, unknown[]>)[collection],
-        ).toHaveLength(22);
+        ).toHaveLength(23);
         expect(full).toMatchObject({
-          total_count: 22,
+          total_count: 23,
           omission_receipt: { has_omissions: false },
         });
       }

@@ -959,6 +959,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "delete",
         "limit",
         "full",
+        "ifAbsent",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },
@@ -976,6 +977,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "eventType",
         "includeMeta",
         "full",
+        "ifAbsent",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       mutuallyExclusive: [
@@ -996,6 +998,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "delete",
         "limit",
         "full",
+        "ifAbsent",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },

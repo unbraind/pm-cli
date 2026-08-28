@@ -414,15 +414,15 @@ describe("mcp server branch residual coverage", () => {
     });
     await runAction({
       action: "comments",
-      options: { id: "pm-7", add: "new comment" },
+      options: { id: "pm-7", add: "new comment", ifAbsent: true },
     });
     await runAction({
       action: "notes",
-      options: { id: "pm-8", add: "new note" },
+      options: { id: "pm-8", add: "new note", ifAbsent: true },
     });
     await runAction({
       action: "learnings",
-      options: { id: "pm-9", add: "new learning" },
+      options: { id: "pm-9", add: "new learning", ifAbsent: true },
     });
     await runAction({
       action: "files",
@@ -746,6 +746,21 @@ describe("mcp server branch residual coverage", () => {
     );
     expect(commandMocks.runCopy).toHaveBeenCalledTimes(2);
     expect(commandMocks.runComments).toHaveBeenCalledTimes(2);
+    expect(commandMocks.runComments).toHaveBeenLastCalledWith(
+      "pm-7",
+      expect.objectContaining({ add: "new comment", ifAbsent: true }),
+      expect.any(Object),
+    );
+    expect(commandMocks.runNotes).toHaveBeenCalledWith(
+      "pm-8",
+      expect.objectContaining({ add: "new note", ifAbsent: true }),
+      expect.any(Object),
+    );
+    expect(commandMocks.runLearnings).toHaveBeenCalledWith(
+      "pm-9",
+      expect.objectContaining({ add: "new learning", ifAbsent: true }),
+      expect.any(Object),
+    );
     expect(commandMocks.runHistoryRepair).toHaveBeenCalledTimes(1);
     expect(commandMocks.runHistoryRepairAll).toHaveBeenCalledTimes(1);
     expect(commandMocks.assertHistoryRepairTarget).toHaveBeenCalledTimes(2);

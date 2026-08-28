@@ -285,6 +285,67 @@ describe.each(TARGETS)("run%s", (target) => {
     });
   });
 
+  it("makes exact append retries idempotent without suppressing intentional duplicates", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-if-absent`);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const added = await target.run(
+        id,
+        { add: " retry-safe context ", author: " agent-a ", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(added).toMatchObject({
+        changed: true,
+        total_count: 1,
+        mutation_receipt: { entry_index: 1, changed_count: 1 },
+      });
+      const historyAfterAdd = await readFile(historyPath, "utf8");
+
+      const retried = await target.run(
+        id,
+        { add: "text=retry-safe context", author: "agent-a", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(retried).toMatchObject({
+        changed: false,
+        total_count: 1,
+        mutation_receipt: { entry_index: 1, changed_count: 0 },
+      });
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAdd);
+
+      const intentionalDuplicate = await target.run(
+        id,
+        { add: "retry-safe context", author: "agent-a" },
+        { path: context.pmPath },
+      );
+      expect(intentionalDuplicate).toMatchObject({ total_count: 2 });
+      expect(intentionalDuplicate).not.toHaveProperty("changed");
+    });
+  });
+
+  it("exposes retry-safe appends through the CLI transport", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-cli-if-absent`);
+      const args = [
+        target.name,
+        id,
+        "retry-safe CLI context",
+        "--author",
+        "cli-agent",
+        "--if-absent",
+        "--json",
+      ];
+      expect(context.runCli(args, { expectJson: true }).json).toMatchObject({
+        changed: true,
+        mutation_receipt: { changed_count: 1 },
+      });
+      expect(context.runCli(args, { expectJson: true }).json).toMatchObject({
+        changed: false,
+        mutation_receipt: { changed_count: 0 },
+      });
+    });
+  });
+
   it("resolves author from explicit input, env fallback, settings fallback, and unknown fallback", async () => {
     await withTempPmPath(async (context) => {
       const explicitId = createTask(context, `${target.name}-explicit-author`);

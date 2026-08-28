@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon), [pm-mcxk8v](../.agents/pm/issues/pm-mcxk8v.toon), and [pm-2zkvxm](../.agents/pm/issues/pm-2zkvxm.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon), [pm-mcxk8v](../.agents/pm/issues/pm-mcxk8v.toon), [pm-2zkvxm](../.agents/pm/issues/pm-2zkvxm.toon), and [pm-ea1yh2](../.agents/pm/issues/pm-ea1yh2.toon).
 
 Current closure tranche: [pm-fs8q9x](../.agents/pm/tasks/pm-fs8q9x.toon), [pm-gy885b](../.agents/pm/issues/pm-gy885b.toon), and [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon).
 
@@ -81,6 +81,17 @@ The structured `option_scope` is `declared_on_path`, `declared_elsewhere`, or
 `declared_nowhere`; accepting command paths are included only for the second
 case, while the third names the nearest current-path spellings and explicitly
 terminates the otherwise-unbounded command search.
+
+## Retry-safe annotation mutations
+
+Comments, notes, and learnings expose one SDK-owned `ifAbsent` append contract.
+The item writer lock compares the resolved author and exact normalized stored
+text, so concurrent retries create one entry and one history event. The winning
+append reports `changed: true` and `mutation_receipt.changed_count: 1`; later
+exact retries return the existing entry with `changed: false` and
+`changed_count: 0`. Default appends remain duplicate-preserving. CLI
+`--if-absent` and MCP `ifAbsent` are thin transports, and `--full-history`
+remains the explicit escape hatch from bounded mutation receipts.
 
 ## Semantic flag and spelling contracts
 
