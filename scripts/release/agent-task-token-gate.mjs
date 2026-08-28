@@ -265,6 +265,11 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
       payload: accountedPayload,
     };
   }
+  if (accountingMode === "independent_transport") {
+    fail(
+      `Agent-task transcript step ${step.id} independent_transport accounting is supported only for refusal output`,
+    );
+  }
   const { receipt, independentlyProjectedPayload } =
     validateSelfReportedAccounting(accountedPayload, step);
   assertTransportPayloadParity(

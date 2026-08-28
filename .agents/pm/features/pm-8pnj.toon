@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:ci",measurement,simplification
 created_at: "2026-07-11T16:22:48.239Z"
-updated_at: "2026-08-28T13:26:59.672Z"
-closed_at: "2026-08-28T12:52:29.859Z"
-completed_at: "2026-08-28T12:52:29.859Z"
+updated_at: "2026-08-28T14:23:21.898Z"
+closed_at: "2026-08-28T14:23:21.175Z"
+completed_at: "2026-08-28T14:23:21.175Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Golden transcript corpus (canonical agent task sequences) versioned in-repo; replay runner reports bytes+approx-tokens per completed task against the current build; wired into the existing token-cost CI gate lineage with a documented regression threshold; boundary with pm-atfm quality harness documented; workflow for adding transcripts documented
 parent: pm-mpbb
 risk: medium
 confidence: medium
-resolution: "Golden transcript v2 now enforces accounting mode, exact terminal field values, independently measured receipt cost, and accounting-on/off application-payload parity across five complete agent tasks; close lifecycle timestamps are reproducible."
-expected_result: "The CI-visible transcript gate proves complete successful tasks, exact recovery, terminal semantics, token bounds, and transport transparency using public SDK contracts."
-actual_result: "Five tasks and 14 steps complete with two recovered refusals at 4,331 estimated tokens; adversarial drift controls fail closed; exact coverage is 59,993 statements, 45,180 branches, 12,476 functions, and 57,772 lines at 100%."
+resolution: "Golden transcript replay now rejects unsupported accounting combinations at both SDK and gate boundaries, preserves exact application-payload parity, enforces terminal values, and records all mandatory verification before terminal closure."
+expected_result: "The CI-visible transcript gate proves complete successful tasks, exact recovery, terminal semantics, token bounds, transport transparency, and controlled failure for every unsupported accounting mode."
+actual_result: "Five tasks and 14 steps complete with two recovered refusals at 4,331 estimated tokens; 8,088 tests pass at exact 100/100/100/100 coverage and the full static pipeline passes after all review corrections."
 dependencies[9]:
   - id: pm-atfm
     kind: related
@@ -49,7 +49,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-08-27T16:25:47.755Z","harness:codex","Start: build a versioned, SDK-owned multi-step agent transcript contract and upgrade the existing token gate to measure complete tasks, recovery retries, output-envelope conformance, and ratcheted bytes/tokens. This is one connected delivery with pm-f05lsg, pm-srns, pm-k23c4c, and pm-fo8g7j."
   "2026-08-27T17:34:22.018Z","harness:codex","Completion evidence: shipped a public SDK-owned versioned transcript parser plus a four-task, eleven-step corpus covering context bootstrap, closed-domain refusal recovery, unknown-option correction, and lifecycle mutation. The mandatory static gate replays independent accounting-off/accounting-on workspaces, verifies output envelopes, exact shell-free retries, mutation receipts, per-step and completed-task ceilings, corpus identity, and a seeded million-token negative control. Final local verification passed 585 files and 8,062 tests at exact 100/100/100/100; all three linked tests passed with sandboxed PM contexts; the gate reports 3,935 composite tokens. Packed npx, packed bunx, and the 88-command dogfood workflow passed."
   "2026-08-27T17:46:08.995Z","harness:codex","Pre-PR documentation verification: corrected tracker links in docs/OUTPUT_TOKEN_ACCOUNTING.md to the canonical feature and issue directories; all five referenced .toon targets now exist in the repository."
@@ -64,6 +64,7 @@ comments[14]{created_at,author,text}:
   "2026-08-28T12:21:08.977Z","harness:codex","TDD red evidence: the focused 36-test transcript/parser/MCP suite failed in four targeted places before implementation. It accepted payload-only accounting transport drift and an underreported padded receipt, dropped/ignored expected_field_values, and lacked append-only MCP ifAbsent guidance. Command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts tests/unit/mcp/runtime-capabilities.spec.ts."
   "2026-08-28T12:35:58.011Z","harness:codex","Implementation evidence before terminal gates: accounting-on and accounting-off application payloads now compare exactly after independently removing the receipt; receipt byte/token claims are remeasured; expected_field_values enforce terminal item.status and bulk outcome values; MCP annotation discovery declares ifAbsent add-only exclusivity. The strengthened gate exposed and now covers pm-hmpu4p, where closeItem bypassed the shared reproducible clock."
   "2026-08-28T12:51:45.992Z","harness:codex","Exact coverage evidence: the first complete run passed every test but correctly failed at 45,179/45,180 branches. Added the missing non-finite expected_field_values negative control and reran the entire linked coverage command; it now passes at exact 100% statements, branches, functions, and lines. The immutable failed receipt remains as TDD evidence beside the terminal passing receipt."
+  "2026-08-28T14:23:19.839Z","harness:codex","Terminal evidence after the final review corrections: the repository-wide run passed 585 files and 8,088 tests at exactly 60,000 statements, 45,190 branches, 12,477 functions, and 57,779 lines, all 100%. The terminal full static suite then passed every contract, replay, graph, performance, and record-integrity gate; its earlier graph finding produced semantic verification edges rather than a relaxed budget, and its isolated timing miss passed unchanged on rerun."
 learnings[1]{created_at,author,text}:
   "2026-08-27T17:34:22.496Z","harness:codex","Completed-task token budgets are trustworthy only when corpus identity, task and step identities, independent transport bytes, self-reported accounting, executable recovery, and a seeded regression are all checked together."
 files[7]{path,scope,note}:
@@ -148,62 +149,6 @@ tests[8]:
       source_ref: feat/agent-transcript-recovery-contracts
     note: Exact-head repository-wide static assurance against the live tracker
 test_runs[20]:
-  - run_id: test-local-mtbx0blf-xx7wzv
-    kind: test
-    status: passed
-    started_at: "2026-08-27T19:19:06.527Z"
-    finished_at: "2026-08-27T19:27:48.147Z"
-    recorded_at: "2026-08-27T19:27:48.147Z"
-    passed: 7
-    failed: 0
-    skipped: 0
-    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
-      "pnpm quality:agent-task-token",schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-      "pnpm smoke:npx",schema,schema,source,local_source_ref
-      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
-      "bash -lc 'set -euo pipefail; task_tmp=$(mktemp -d); trap \"rm -rf -- \\\"$task_tmp\\\"\" EXIT; npm pack --silent --pack-destination \"$task_tmp\" >/dev/null; task_tarball=$(find \"$task_tmp\" -maxdepth 1 -type f -name \"*.tgz\" -print -quit); test -n \"$task_tarball\"; bunx --silent --bun --package \"$task_tarball\" pm --json --no-extensions contracts --summary >/dev/null'",schema,schema,source,local_source_ref
-  - run_id: test-local-mtc0pqoe-erxqof
-    kind: test
-    status: passed
-    started_at: "2026-08-27T21:03:05.635Z"
-    finished_at: "2026-08-27T21:11:32.942Z"
-    recorded_at: "2026-08-27T21:11:32.942Z"
-    passed: 7
-    failed: 0
-    skipped: 0
-    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
-      "pnpm quality:agent-task-token",schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-      "pnpm smoke:npx",schema,schema,source,local_source_ref
-      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
-      "bash -lc 'set -euo pipefail; task_tmp=$(mktemp -d); trap \"rm -rf -- \\\"$task_tmp\\\"\" EXIT; npm pack --silent --pack-destination \"$task_tmp\" >/dev/null; task_tarball=$(find \"$task_tmp\" -maxdepth 1 -type f -name \"*.tgz\" -print -quit); test -n \"$task_tarball\"; bunx --silent --bun --package \"$task_tarball\" pm --json --no-extensions contracts --summary >/dev/null'",schema,schema,source,local_source_ref
-  - run_id: test-local-mtcvcp1f-anqrh7
-    kind: test
-    status: passed
-    started_at: "2026-08-28T11:28:29.940Z"
-    finished_at: "2026-08-28T11:29:12.387Z"
-    recorded_at: "2026-08-28T11:29:12.387Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mtcvd4pj-58oygw
-    kind: test
-    status: passed
-    started_at: "2026-08-28T11:29:12.942Z"
-    finished_at: "2026-08-28T11:29:32.695Z"
-    recorded_at: "2026-08-28T11:29:32.695Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      "pnpm quality:agent-task-token",schema,schema,source,local_source_ref
   - run_id: test-local-mtcw2jrd-x67atn
     kind: test
     status: passed
@@ -380,10 +325,54 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "bash -lc 'set -euo pipefail; task_tmp=$(mktemp -d); trap \"rm -rf -- \\\"$task_tmp\\\"\" EXIT; npm pack --silent --pack-destination \"$task_tmp\" >/dev/null; task_tarball=$(find \"$task_tmp\" -maxdepth 1 -type f -name \"*.tgz\" -print -quit); test -n \"$task_tarball\"; bunx --silent --bun --package \"$task_tarball\" pm --json --no-extensions contracts --summary >/dev/null'",schema,schema,source,local_source_ref
+  - run_id: test-local-mtd0st0f-xyx4y2
+    kind: test
+    status: passed
+    started_at: "2026-08-28T13:54:56.209Z"
+    finished_at: "2026-08-28T14:01:42.111Z"
+    recorded_at: "2026-08-28T14:01:42.111Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtd10us0-isxf05
+    kind: test
+    status: failed
+    started_at: "2026-08-28T14:01:46.971Z"
+    finished_at: "2026-08-28T14:07:57.648Z"
+    recorded_at: "2026-08-28T14:07:57.648Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtd1b21l-dnbzet
+    kind: test
+    status: failed
+    started_at: "2026-08-28T14:10:03.509Z"
+    finished_at: "2026-08-28T14:15:53.625Z"
+    recorded_at: "2026-08-28T14:15:53.625Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtd1jk7u-yfhb03
+    kind: test
+    status: passed
+    started_at: "2026-08-28T14:16:16.906Z"
+    finished_at: "2026-08-28T14:22:30.426Z"
+    recorded_at: "2026-08-28T14:22:30.426Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,"Generated release notes for the connected SDK transcript,refusal,and portability delivery"
   docs/agent-task-token-baseline.json,project,per-step and completed-task ceilings
   docs/agent-task-transcripts.json,project,versioned golden task corpus
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,operator and SDK contract documentation
-close_reason: "Golden agent transcript replay now proves exact transport parity, terminal semantics, independent accounting, deterministic lifecycle state, and 100% coverage"
+close_reason: Golden replay and all exact-head review corrections are complete; exact coverage and the terminal full static suite passed before this close receipt.
 body: "Promoted from the pm-mpbb DX ledger (candidate lever a) on 2026-07-11, when the pm-a22j baseline gate opened (full AC met: checked-in script scripts/measure-agent-token-surface.mjs + MCP tools/list = 32,979 B ~= 8.2k tok / 28 tools).\n\nThe a22j baseline measures the cost of the SURFACE (help/contracts/tools-list payload sizes). Nothing measures what an agent actually pays per completed task: tokens read + retries burned across a realistic command sequence. Without that, DX regressions (verbose new output, envelope bloat, extra confirmation rounds) stay invisible until a human notices.\n\nApproach (per the ledger fence: extend, never a new harness):\n- Record golden agent transcripts (ordered pm command sequences with expected envelopes) for a handful of canonical tasks: triage-and-claim, create-with-deps, close-with-resolution, context bootstrap.\n- Replay them against the current build and report total bytes/approx-tokens per completed task.\n- Wire the result into the existing token-cost CI gate lineage (pm-cu1i, shipped PR#487) with a documented regression threshold, exactly like the changelog and contracts drift gates.\n\nBoundary: pm-atfm (related) grades context/next assembly QUALITY with rank-aware metrics; this item measures token COST per task. Keep the corpora separate; the replay runner may share golden-workspace fixtures."

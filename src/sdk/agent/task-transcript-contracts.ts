@@ -229,6 +229,14 @@ function parseAgentTaskTranscriptStep(
     throw new TypeError(`${field}.expected_accounting_mode is unsupported`);
   }
   const expectedAccountingMode = rawAccountingMode as PmAgentTaskAccountingMode;
+  if (
+    expectedAccountingMode === "independent_transport" &&
+    expectedOutputKind !== "refusal"
+  ) {
+    throw new TypeError(
+      `${field} independent_transport accounting is supported only for refusal steps`,
+    );
+  }
   const requiredFields = readTranscriptStringArray(
     value.required_fields,
     `${field}.required_fields`,

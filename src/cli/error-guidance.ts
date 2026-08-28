@@ -1554,6 +1554,14 @@ function resolveUnknownOptionRetry(
   }
   const normalizedArgs = context.normalizedInvocationArgs;
   if (normalizedArgs === undefined) return {};
+  if (
+    normalizedArgs.filter(
+      (argument) =>
+        argument === optionName || argument.startsWith(`${optionName}=`),
+    ).length !== 1
+  ) {
+    return {};
+  }
   const optionIndex = normalizedArgs.findIndex(
     (argument) =>
       argument === optionName || argument.startsWith(`${optionName}=`),

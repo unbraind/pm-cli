@@ -404,6 +404,18 @@ describe("agent-task transcript token gate", () => {
         expected_output_kind: "entity",
       }),
     ).toThrow();
+    const independentTransportError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validBaseline, {
+        ...step,
+        expected_accounting_mode: "independent_transport",
+      }),
+    ).toThrow();
+    expect(independentTransportError).toHaveBeenLastCalledWith(
+      "Agent-task transcript step validation independent_transport accounting is supported only for refusal output",
+    );
     expect(() =>
       validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
         ...step,

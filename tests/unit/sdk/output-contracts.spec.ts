@@ -266,6 +266,13 @@ describe("SDK output envelope contracts", () => {
         ".expected_accounting_mode is unsupported",
       ],
       [
+        {
+          ...validStep,
+          expected_accounting_mode: "independent_transport",
+        },
+        "independent_transport accounting is supported only for refusal steps",
+      ],
+      [
         { ...validStep, required_fields: [] },
         ".required_fields must be a non-empty string array",
       ],
