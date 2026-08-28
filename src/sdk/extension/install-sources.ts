@@ -606,6 +606,12 @@ export function normalizeNpmLocalFileAliasSpec(
   return `${packageName}@${nativePath}`;
 }
 
+/**
+ * Parse npm pack output and bind the reported artifact to its isolated target.
+ *
+ * Supports current JSON metadata and the legacy filename-only form while
+ * refusing absolute or traversing results before the filesystem is consulted.
+ */
 function parsePackedNpmPackage(
   stdout: string,
   packDirectory: string,
@@ -672,6 +678,13 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
   return resolveNpmSourceDirectoryWithRunner(source, runNpmCommand);
 }
 
+/**
+ * Resolve an npm source with an injectable, argv-safe package-manager runner.
+ *
+ * Local package directories remain in place, while local and registry archives
+ * share the same bounded validation, dependency installation, and cleanup
+ * contract. Registry artifacts must also exist inside the requested pack root.
+ */
 async function resolveNpmSourceDirectoryWithRunner(
   source: NpmInstallSource,
   npmRunner: typeof runNpmCommand,
