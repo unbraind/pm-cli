@@ -6,10 +6,13 @@ status: open
 priority: 1
 tags[5]: agent-ux,evidence-integrity,github,linked-tests,tdd
 created_at: "2026-08-28T14:43:01.407Z"
-updated_at: "2026-08-28T14:43:01.407Z"
+updated_at: "2026-08-28T20:44:38.781Z"
 author: "harness:codex"
+estimated_minutes: 480
 acceptance_criteria: "Add an SDK-owned executed-test assertion primitive and declarative minimum-count field; recognize supported runner receipts without brittle prose-only heuristics; fail zero-test filtered commands closed; preserve explicit non-test smoke commands; add unit, integration, CLI, MCP/schema, history, Node runner, and temp-workspace acceptance coverage."
 parent: pm-33cw
+risk: high
+confidence: high
 reporter: GitHub issue #1138
 severity: high
 environment: "pm 2026.8.28, Node 26.5.0, Linux; node --test command with --test-name-pattern matching zero tests"

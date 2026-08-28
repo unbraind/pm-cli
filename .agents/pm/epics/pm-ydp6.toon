@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: "area:search","area:semantic",backlog,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:42:11.422Z"
-updated_at: "2026-08-22T07:28:12.804Z"
+updated_at: "2026-08-28T20:44:37.682Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: Keyword and semantic search verified against the eval harness golden set; provider and adapter values auto-normalize; inline field-query syntax documented.
@@ -39,4 +39,44 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:42:45.505Z","harness:codex","Semantic-search verification: project settings now explicitly configure provider ollama, model qwen3-embedding:0.6b, and vector adapter lancedb. A full rebuild embedded and upserted all 2,592 then-existing items with 2,504 batches; mutation refresh kept the expanded 2,593-item corpus current, and a final incremental reindex reported zero stale rows. Health reports provider and adapter source configured, vector dimension 1024, 2,593 ledger entries, and no stale items. Seeded-tracker linked search passed and ranked pm-gstv4k first for delegated authority without static API tokens at score 0.698. Targeted semantic retrieval also ranks the newly discovered batching defect pm-vjgqj5 first at score 0.831. The rebuild ratio exposed that the Ollama character ceiling defeats configured batching; that performance defect is separately tracked rather than weakening the functional search claim."
+files[1]{path,scope,note}:
+  .agents/pm/settings.json,project,Project-scoped Ollama qwen3 embedding provider and LanceDB adapter configuration
+tests[1]{command,scope,timeout_seconds,pm_context_mode,provenance{author,created_at,source_kind,source_ref},note}:
+  "pm search \"prove delegated agent authority without static API tokens\" --mode semantic --limit 10 --full --json",project,120,tracker,"harness:codex","2026-08-28T20:40:45.603Z",local_mutation,main,Semantic retrieval proof against the project Ollama qwen3 index in a seeded tracker sandbox
+test_runs[3]:
+  - run_id: test-local-mtdf1d5g-eysr22
+    kind: test
+    status: failed
+    started_at: "2026-08-28T20:40:15.968Z"
+    finished_at: "2026-08-28T20:40:16.084Z"
+    recorded_at: "2026-08-28T20:40:16.084Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pm search \"prove delegated agent authority without static API tokens\" --mode semantic --limit 10 --full --json",schema,schema,source,local_source_ref
+  - run_id: test-local-mtdf1rdz-u3m6jq
+    kind: test
+    status: passed
+    started_at: "2026-08-28T20:40:23.370Z"
+    finished_at: "2026-08-28T20:40:34.535Z"
+    recorded_at: "2026-08-28T20:40:34.535Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pm search \"prove delegated agent authority without static API tokens\" --mode semantic --limit 10 --full --json",auto,tracker,source,local_source_ref
+  - run_id: test-local-mtdf27vz-mmtksh
+    kind: test
+    status: passed
+    started_at: "2026-08-28T20:40:46.169Z"
+    finished_at: "2026-08-28T20:40:55.918Z"
+    recorded_at: "2026-08-28T20:40:55.918Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pm search \"prove delegated agent authority without static API tokens\" --mode semantic --limit 10 --full --json",tracker,tracker,source,local_source_ref
 body: "## Charter\nLiving capability epic for the PRD post-v0.1 search roadmap: keyword + semantic retrieval, relevance tuning, provider extensibility (ollama/BM25-offline/custom via extensions), vector-store adapters, and the pm eval harness.\n\n## Scope\n- In: search ranking (exact-ID rank, field:value inline syntax, --highlight), semantic refresh pipeline, embeddings storage/GC, provider/adapter config normalization, eval datasets.\n- Out: generic storage (pm-o2kc), search-related SDK capability plumbing (pm-ugqx).\n\n## Status\n20 closed children (BM25 offline provider + eval harness PR#314, inline field:value syntax PR#290, exact-ID ranking PR#282, background semantic refresh PR#87). Open as a living backlog — no open children at 2026-07-04. Related open work parked elsewhere by design: pm-28cf (search config normalization) sits under pm-8jdc because the defect is config-layer normalization, not retrieval."

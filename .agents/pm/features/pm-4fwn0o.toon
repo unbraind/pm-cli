@@ -1,0 +1,24 @@
+id: pm-4fwn0o
+title: "MCP server cards and well-known metadata: discover identity, endpoints, capabilities, trust, and deployment facts before connecting"
+description: Track the Server Card Working Group direction as a distinct interoperability capability. Publish bounded cacheable well-known metadata that lets hosts reason about a pm MCP server before transport negotiation while preventing information leakage and metadata drift.
+type: Feature
+status: open
+priority: 2
+tags[6]: "area:mcp",discovery,interoperability,metadata,server-card,well-known
+created_at: "2026-08-28T20:22:32.953Z"
+updated_at: "2026-08-28T20:58:33.016Z"
+deadline: "2027-06-30T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: A versioned server card declares identity endpoints supported protocol eras extensions authorization metadata and operational limits; fields are generated from the same SDK contracts as server discover and package manifests; signatures cache semantics rotation and stale metadata behavior are specified; unauthenticated metadata is minimized and cannot leak private workspace or capability state; HTTP and package-based discovery have conformance and downgrade tests; hosts can select or reject a server before opening a protocol request
+parent: pm-opw1l3
+risk: high
+confidence: low
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-vae5ec,discovered_from,"2026-08-28T20:22:32.953Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,verifies,"2026-08-28T20:22:32.953Z","harness:codex","cli:create:dep",detected
+  pm-z3ez,implements,"2026-08-28T20:22:32.953Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,discovered_from,"2026-08-28T20:58:25.351Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:22:32.953Z","harness:codex","Duplicate check evidence: all-status searches for MCP server card well-known metadata pre-connection discovery and deployment metadata returned no canonical owner; pm-vae5ec covers server discover only after a protocol request."
+body: ""

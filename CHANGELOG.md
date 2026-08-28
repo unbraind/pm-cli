@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Sentry release gate aborts valid API queries at a fixed 15-second deadline ([pm-b9g2cs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b9g2cs.toon))
+
 ## 2026.8.28 - 2026-08-28
 
 ### Fixed

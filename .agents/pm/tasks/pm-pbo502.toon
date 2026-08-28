@@ -1,0 +1,24 @@
+id: pm-pbo502
+title: "Continuous MCP upstream conformance ingestion: official specs, SEPs, extensions, schemas, SDK guidance, and roadmap changes become versioned executable work"
+description: "Turn upstream MCP evolution into a repeatable project-management and release process. Each normative or roadmap change is classified against the public SDK, CLI, servers, packages, docs, tests, deprecations, and released consumers with explicit unknown and proposal states."
+type: Task
+status: open
+priority: 2
+tags[7]: "area:ci","area:mcp",conformance,continuous-ingestion,roadmap,sdk,standards
+created_at: "2026-08-28T20:22:36.383Z"
+updated_at: "2026-08-28T20:58:33.569Z"
+deadline: "2027-12-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 600
+acceptance_criteria: Official sources and revisions are recorded with retrieval time and immutable content identity; normative requirements proposals and roadmap aspirations are never conflated; every changed requirement maps to one canonical owner or an explicit no-impact decision; generated matrices detect unowned SDK CLI MCP package test and documentation gaps; upstream SDK defaults and opt-ins are tested rather than inferred from package version; release gates run real transport and published-consumer scenarios with negative controls; deprecation clocks create actionable migration deadlines before removal; ingestion is incremental resumable and bounded for decades of revisions
+parent: pm-opw1l3
+risk: high
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-55yf1t,discovered_from,"2026-08-28T20:22:36.383Z","harness:codex","cli:create:dep",detected
+  pm-opw1l3,verifies,"2026-08-28T20:22:36.383Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-28T20:22:36.383Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,discovered_from,"2026-08-28T20:58:26.671Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:22:36.383Z","harness:codex","Duplicate check evidence: all-status searches for continuous MCP spec SEP extension schema roadmap and SDK conformance ingestion found the closed one-revision release gate pm-55yf1t but no durable owner for future upstream change intake."
+body: ""

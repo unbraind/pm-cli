@@ -4,12 +4,20 @@ description: "The CLI attaches token_accounting to successful commands and runti
 type: Issue
 status: open
 priority: 2
-tags: []
+tags[5]: agent-ux,"area:cli",contracts,error-contract,token-accounting
 created_at: "2026-08-27T16:44:18.236Z"
-updated_at: "2026-08-27T16:53:58.663Z"
+updated_at: "2026-08-28T20:44:40.653Z"
 author: "harness:codex"
+estimated_minutes: 180
 acceptance_criteria: Commander JSON usage errors attach the same bounded token_accounting receipt when requested; accounting-off bytes remain unchanged; CLI order and alias forms behave identically; focused process tests and the golden transcript switch from independent_transport to self_reported.
 parent: pm-srns
+risk: medium
+confidence: high
+severity: medium
+environment: CLI Commander parse-time usage failures across JSON and TOON transports
+repro_steps: Run pm --json --token-accounting search query --include-body and observe an unknown-option refusal without token_accounting.
+expected_result: Every structured refusal requested with token accounting includes the same bounded accounting receipt regardless of whether Commander or the SDK error transport produced it.
+actual_result: Commander usage failures exit with a structured envelope before token accounting is attached.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,discovered_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
   pm-t5dt4z,recurs_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected

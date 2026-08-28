@@ -1,0 +1,25 @@
+id: pm-ngofg9
+title: "Event-driven MCP agentic messaging: authenticated webhooks and channels compose with Tasks, subscriptions, progress, steering, and cancellation without polling"
+description: "Define the next event-driven layer above the 2026-07-28 Tasks and subscriptions baseline so long-running agents can receive server events, stream results, and steer work without hidden sessions or client polling. Delivery semantics, authorization, replay, backpressure, cancellation, and durable pm history are SDK-owned contracts."
+type: Feature
+status: open
+priority: 2
+tags[7]: agentic-messaging,"area:mcp","area:sdk",channels,events,long-running,webhooks
+created_at: "2026-08-28T20:22:14.270Z"
+updated_at: "2026-08-28T20:58:31.045Z"
+deadline: "2027-03-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 900
+acceptance_criteria: Webhook and channel capabilities are explicitly discovered and negotiated; delivery identity ordering retry replay deduplication retention and terminal semantics are specified; Tasks subscriptions progress steering cancellation and MRTR share one lifecycle model; authorization binds every endpoint channel and event to an audience and least privilege; the public SDK owns an event provider and durable cursor contracts; real transports plus disconnect flood replay and forgery negative controls pass; clients can complete the canonical long-running journey without polling
+parent: pm-opw1l3
+risk: high
+confidence: medium
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-klxax7,implements,"2026-08-28T20:22:14.270Z","harness:codex","cli:create:dep",detected
+  pm-rzs24j,discovered_from,"2026-08-28T20:22:14.270Z","harness:codex","cli:create:dep",detected
+  pm-v7e337,discovered_from,"2026-08-28T20:22:14.270Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,implements,"2026-08-28T20:22:14.270Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,discovered_from,"2026-08-28T20:58:20.208Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:22:14.270Z","harness:codex","Duplicate check evidence: all-status searches for MCP server initiated events webhooks channels subscriptions progress Tasks composition and steering found the completed 2026 subscription and Tasks owners but no item for the official forward event-driven composition scope."
+body: ""

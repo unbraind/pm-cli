@@ -1,0 +1,22 @@
+id: pm-opw1l3
+title: "MCP post-2026-07-28 evolution programme: agentic messaging, unified HTTP transport, agent identity, progressive primitives, and SDK experience"
+description: Continuously adopt the official MCP roadmap beyond the 2026-07-28 conformance baseline while keeping the public pm SDK as the policy owner and the CLI and MCP servers as thin adapters. The programme tracks emerging specification and extension work as explicit independently releasable capabilities instead of mixing future proposals into the completed 2026 conformance tranche.
+type: Epic
+status: open
+priority: 2
+tags[6]: "area:mcp","area:sdk",interoperability,long-horizon,roadmap,standards
+created_at: "2026-08-28T20:21:17.896Z"
+updated_at: "2026-08-28T20:21:17.896Z"
+deadline: "2027-12-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: Every official roadmap priority has one canonical owner and an upstream evidence link; proposal status never masquerades as normative conformance; public SDK contracts land before CLI or MCP adapters; real stdio and Streamable HTTP processes prove interoperability; security privacy token and resource bounds have negative controls; deprecation windows and migration receipts remain explicit; released npm npx bunx and MCP consumers prove each promoted capability
+parent: pm-5k4v
+risk: high
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rs9vry,discovered_from,"2026-08-28T20:21:17.896Z","harness:codex","cli:create:dep",detected
+  pm-t4d7nz,implements,"2026-08-28T20:21:17.896Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:21:17.896Z","harness:codex","Duplicate check evidence: searched every status for MCP future roadmap agentic messaging server events HTTP transport unification agent identity delegation progressive discovery result contracts server cards conformance ingestion and SDK experience; current pm-rs9vry owns only the normative 2026-07-28 conformance tranche and no item owns the official 2026-08-22 forward roadmap as one programme."
+body: ""

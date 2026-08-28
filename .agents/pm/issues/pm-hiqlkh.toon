@@ -6,10 +6,13 @@ status: open
 priority: 1
 tags[5]: agent-ux,context-integrity,docs,github,linked-resources
 created_at: "2026-08-28T14:42:57.920Z"
-updated_at: "2026-08-28T14:42:57.920Z"
+updated_at: "2026-08-28T20:44:39.545Z"
 author: "harness:codex"
+estimated_minutes: 420
 acceptance_criteria: "Promote path validation policy to the public SDK; return structured existing/missing/remote counts on files and docs writes; support warn and strict modes while preserving explicit forward references; include dangling linked resources in health; add CLI, SDK, MCP, history, config, and temp-workspace acceptance coverage."
 parent: pm-33cw
+risk: high
+confidence: high
 reporter: GitHub issue #1137
 severity: medium
 environment: "pm 2026.8.28, Linux; repository-backed tracker with a nonexistent project-relative docs path"

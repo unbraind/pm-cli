@@ -44,7 +44,7 @@
     "embedding_model": "",
     "embedding_batch_size": 32,
     "scanner_max_batch_retries": 3,
-    "provider": ""
+    "provider": "ollama"
   },
   "providers": {
     "openai": {
@@ -58,7 +58,7 @@
     }
   },
   "vector_store": {
-    "adapter": "",
+    "adapter": "lancedb",
     "qdrant": {
       "url": "",
       "api_key": ""

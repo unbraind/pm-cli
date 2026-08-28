@@ -1,0 +1,25 @@
+id: pm-gstv4k
+title: "MCP agent identity and delegated authority: DPoP, workload identity federation, ID-JAG, and token exchange for agents acting alone or for users"
+description: "Extend the issuer-bound 2026 authorization baseline into a standard identity and delegation model for autonomous workloads, user-on-behalf-of agents, and narrower sub-agent authority. Avoid pasted API keys and long-lived bearer credentials while preserving explainable consent and immutable provenance."
+type: Feature
+status: open
+priority: 1
+tags[7]: agent-identity,"area:mcp","area:security",delegation,dpop,token-exchange,workload-identity
+created_at: "2026-08-28T20:22:23.663Z"
+updated_at: "2026-08-28T20:58:32.013Z"
+deadline: "2027-09-30T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 1200
+acceptance_criteria: Agent and workload identities are cryptographically bound and discoverable without long-lived shared secrets; DPoP replay and nonce behavior follows current standards; workload federation ID-JAG and token exchange express user delegation and sub-agent attenuation; issuer audience scope actor and delegation chain are validated and recorded with privacy-safe provenance; revocation rotation expiry compromise and confused-deputy cases fail closed; SDK authorization policy is transport-neutral; threat models conformance fixtures real identity providers and adversarial tests gate release
+parent: pm-opw1l3
+risk: critical
+confidence: medium
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3zh9s4,discovered_from,"2026-08-28T20:22:23.663Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-08-28T20:22:23.663Z","harness:codex","cli:create:dep",detected
+  pm-klxax7,implements,"2026-08-28T20:22:23.663Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,discovered_from,"2026-08-28T20:58:22.659Z","harness:codex","cli:update:dep",detected
+  pm-ydp6,verifies,"2026-08-28T20:58:28.161Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:22:23.663Z","harness:codex","Duplicate check evidence: all-status searches for MCP agent identity DPoP workload identity federation ID-JAG token exchange and delegated authority found the closed issuer credential owner pm-3zh9s4 but no canonical post-2026 agent delegation capability."
+body: ""

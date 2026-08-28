@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:search",duplicates,governance,scalability,scale
 created_at: "2026-08-13T14:27:32.403Z"
-updated_at: "2026-08-14T05:29:18.969Z"
+updated_at: "2026-08-28T20:44:41.272Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Candidate generation is sub-quadratic: a blocking or locality-sensitive scheme bounds the compared population so the sweep completes at 100k and at 1M items within the published latency tier; The exhaustive path remains available and is declared as such, so a small workspace keeps exact behaviour and a large one keeps a stated recall bound instead of a refusal; The recall of the sub-quadratic scheme is measured against the exhaustive result on a corpus where both can run, and the number is published; pm duplicates with no filters returns an answer on this workspace; The duplicate-check step the create protocol mandates is executable rather than advisory, and the create-time evidence records which mechanism answered"
@@ -20,4 +20,6 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-fmy9ih,discovered_from,"2026-08-13T14:27:32.403Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-08-13T14:27:32.403Z","harness:claude-code","cli:create:dep",detected
   pm-p1g43q,verifies,"2026-08-13T14:27:32.403Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:43:45.137Z","harness:codex","Current recurrence on the complete 2,593-item corpus: the unfiltered all-lifecycle fuzzy sweep still refuses after exceeding its 1,000,000-pair safety limit, so this canonical scale issue remains accurate. An independent normalized exact-title census across all statuses found only the three already-canceled accidental probe items pm-11ag, pm-crpv, and pm-lql3. Bounded active plus canceled fuzzy review found those probes and distinct Semgrep finding records that intentionally retain separate finding identities; recent closed review found no new duplicate. This evidence does not substitute for the missing sub-quadratic full-corpus algorithm and therefore does not close the item."
 body: ""

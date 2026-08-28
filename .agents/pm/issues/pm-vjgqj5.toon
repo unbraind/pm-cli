@@ -1,0 +1,28 @@
+id: pm-vjgqj5
+title: Ollama semantic indexing collapses to one item per request because the batch character ceiling equals the per-item corpus ceiling
+description: "The explicit qwen3-embedding full rebuild for this 2,592-item project honored search.embedding_batch_size=32 syntactically but produced 2,504 provider batches. The Ollama request character ceiling is the same 3,200 characters allowed for one corpus item, so almost every full-size item forces its own network request. This makes the documented batch setting ineffective for ordinary rich PM items and cannot approach the 100k to 1M scale contract."
+type: Issue
+status: open
+priority: 1
+tags[8]: "area:search","area:semantic",batching,ollama,performance,qwen3,scale,vectorization
+created_at: "2026-08-28T20:35:34.770Z"
+updated_at: "2026-08-28T20:35:34.770Z"
+deadline: "2026-12-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: Separate per-input corpus truncation from provider request byte and token budgets; negotiate or configure safe multi-input request limits per provider and model; preserve deterministic input to vector ordering under parallelism adaptive split retry and resume; expose effective batch count size distribution throughput ETA provider model and limit sources in the receipt; add timeout payload-too-large partial-failure and restart negative controls; benchmark qwen3 Ollama at current 2.5k plus synthetic 100k and 1M tiers with declared throughput and memory ceilings; keep mutation refresh bounded and prevent a full rebuild from starving ordinary reads and writes; public SDK owns batching scheduling receipts and recovery while CLI only renders them
+parent: pm-ydp6
+risk: high
+confidence: high
+severity: high
+environment: "pm 2026.8.28 with Ollama 0.32.1, qwen3-embedding:0.6b, LanceDB, embedding_batch_size 32, and 2,592 rich tracker items"
+repro_steps: "Configure project semantic search for local Ollama qwen3-embedding:0.6b and LanceDB, then run pm reindex --mode semantic --full --progress --json. Observe 2,504 batches for 2,592 inputs and mostly batch size one."
+expected_result: "The provider uses efficient bounded multi-input requests up to an evidence-based byte or token budget, reports effective batching and throughput, and scales through resumable parallel or incremental work without sacrificing deterministic vector order."
+actual_result: "The 3,200-character per-request ceiling equals the 3,200-character per-item limit, reducing nearly every batch to one input despite configured batch size 32."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rxu,implements,"2026-08-28T20:35:34.770Z","harness:codex","cli:create:dep",detected
+  pm-a8zm,discovered_from,"2026-08-28T20:35:34.770Z","harness:codex","cli:create:dep",detected
+  pm-i25f,recurs_from,"2026-08-28T20:35:34.770Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:35:34.770Z","harness:codex","Duplicate check evidence: searched every status for Ollama embedding batch throughput one-item batches semantic reindex scale vectorization and million-item latency; pm-i25f only proves settings are consumed and no item owns the measured effective-throughput failure caused by equal per-item and per-request ceilings."
+body: ""

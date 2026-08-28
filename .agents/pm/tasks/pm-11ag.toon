@@ -6,14 +6,24 @@ status: canceled
 priority: 2
 tags: []
 created_at: "2026-05-31T10:42:37.121Z"
-updated_at: "2026-07-26T22:20:25.635Z"
+updated_at: "2026-08-28T20:58:29.128Z"
 author: agent-ux-contract-review-20260531
 release: v2026.6.1
 resolution: Closed as invalid accidental typo-normalization probe under pm-kd9n cleanup
 expected_result: No durable project work item should be created by read-only sub-agent typo probes
 actual_result: Placeholder item was created by permissive mutating flag typo normalization then closed immediately
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-kd9n,related,"2026-07-26T17:00:39.699Z",null,null
-  pm-w7f2,discovered_from,"2026-07-26T22:20:25.392Z",null,null
+dependencies[3]:
+  - id: pm-kd9n
+    kind: related
+    created_at: "2026-07-26T17:00:39.699Z"
+  - id: pm-w7f2
+    kind: discovered_from
+    created_at: "2026-07-26T22:20:25.392Z"
+  - id: pm-pshhry
+    kind: verifies
+    created_at: "2026-08-28T20:58:28.866Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: Invalid accidental sub-agent probe; canonical audit remains pm-kd9n.
 body: ""

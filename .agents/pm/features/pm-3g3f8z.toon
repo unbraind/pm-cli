@@ -1,0 +1,26 @@
+id: pm-3g3f8z
+title: "Progressive MCP discovery and canonical tool results: reveal the minimum relevant catalog and deliver one unambiguous model-facing output contract"
+description: Reduce tool-selection cost and ambiguity at large MCP surface sizes by offering a bounded entry catalog that expands with intent and by standardizing which tool result representation reaches the model. Reuse pm relevance scoring and token-budget primitives through public SDK contracts.
+type: Feature
+status: open
+priority: 1
+tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
+created_at: "2026-08-28T20:22:27.057Z"
+updated_at: "2026-08-28T20:58:32.488Z"
+deadline: "2027-03-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 840
+acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
+parent: pm-opw1l3
+risk: high
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
+  pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
+  pm-hv1x1x,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
+  pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
+  pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T20:22:27.057Z","harness:codex","Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
+body: ""
