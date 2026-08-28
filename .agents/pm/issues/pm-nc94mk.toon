@@ -1,0 +1,43 @@
+id: pm-nc94mk
+title: "GH-1140: reject ambiguous bare comma tuples for linked file and test mutations"
+description: "GitHub issue #1140 proves that update/create --file and linked-test add paths accept a comma-bearing bare value with no structured key before the first comma, persist the entire tuple as path or command, and return success. The result is a linked file that cannot resolve or a linked test that cannot execute, while TOON rendering can make the corruption look like a valid row."
+type: Issue
+status: open
+priority: 2
+tags[6]: agent-ux,"area:cli","area:sdk",data-integrity,linked-artifacts,parser
+created_at: "2026-08-28T19:16:55.859Z"
+updated_at: "2026-08-28T19:17:16.596Z"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: "A shared public SDK parser rejects ambiguous comma-bearing bare file and test entries before mutation with a stable typed refusal and token-efficient keyed/JSON recovery; explicit path= and command= forms preserve literal commas losslessly; create, update, files, test, CLI, SDK, MCP, contracts, completions, and help expose one consistent grammar; health and validation identify legacy corrupted rows without rewriting history; focused unit/integration/packed npm+npx+bun+bunx/temp-workspace acceptance plus literal 100/100/100/100 coverage, docstrings, static, and security gates pass"
+definition_of_ready: "All-status duplicate search remains distinct from the closed structured-key, unknown-key, docs-pair, and delimiter-safe removal fixes; the exact accepted grammar is specified before implementation."
+goal: project management = context management
+objective: "Make every linked file and test mutation lossless, executable, and self-describing across SDK and CLI entry points."
+value: Agents can trust a successful linked-artifact write without reopening JSON to detect silent tuple corruption.
+impact: Prevents durable false context and permanently unrunnable verification evidence.
+why_now: "Issue #1140 reports 38 corrupted items across 16 repositories on versions through 2026.8.28, demonstrating a recurring fleet-wide agent UX failure."
+parent: pm-mpbb
+risk: medium
+confidence: high
+reporter: GitHub #1140
+severity: medium
+environment: pm 2026.8.21 through 2026.8.28; Node 26.5.0; Linux
+repro_steps: "Run pm update <id> --file \".github/workflows/release.yml,project,the publish step\" or pm test <id> --add \"node scripts/verify.ts,project,120\"; read the item as JSON and observe the entire tuple stored in path or command."
+expected_result: Ambiguous comma tuples refuse before mutation with a stable code and keyed/JSON recovery; explicit keyed inputs preserve legitimate commas.
+actual_result: "The mutation exits successfully and stores the complete comma-joined tuple in the first field, creating an unresolved path or unrunnable command."
+affected_version: 2026.8.21-2026.8.28
+component: SDK linked-artifact input grammar and CLI adapters
+regression: false
+customer_impact: Agents receive successful writes for unusable context and verification evidence; observed across 38 items in 16 repositories.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0v9k,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
+  pm-fpdk37,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
+  pm-m0b7h8,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
+  pm-swie,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T19:17:15.695Z","harness:codex","Duplicate-check evidence: complete all-status strict read covered 2,584 items with no unreadable entries or omissions. Exact/conjunctive searches found no item owning bare comma tuples that silently become the first linked-file/test field. Closed pm-swie owns structured linked-test keys, pm-0v9k owns unknown-key rejection, pm-fpdk37 owns docs URL/pair preservation, and pm-m0b7h8 owns delimiter-safe removal; their full live status, resolution, close reason, comments, notes, learnings, relationships, and histories were read before this distinct item was created. The item remains open and unclaimed because this intake records future work rather than active implementation."
+notes[1]{created_at,author,text}:
+  "2026-08-28T19:17:16.138Z","harness:codex","Design boundary: do not reject all commas. The ambiguity predicate is a comma-bearing plaintext candidate without an explicit recognized key before the first delimiter. Keyed path=/command= and JSON inputs must preserve literal commas byte-for-byte. The shared public SDK owns parsing/refusal; CLI and MCP remain adapters."
+learnings[1]{created_at,author,text}:
+  "2026-08-28T19:17:16.596Z","harness:codex",A permissive plaintext fallback becomes silent data corruption when the same option advertises structured comma syntax. Input grammar must make ambiguous encodings unrepresentable or refuse them before durable context is written.
+body: "## Source\\n\\nGitHub #1140: https://github.com/unbraind/pm-cli/issues/1140\\n\\n## Scope\\n\\nOwn one SDK-level grammar and mutation contract for file and test entries across create, update, dedicated CLI commands, MCP, and public SDK adapters. A comma-bearing value without an explicit leading key must never silently become an unusable path or command. Literal commas remain expressible through explicit keyed or JSON input.\\n\\n## Context integrity\\n\\nProject management equals context management: linked artifacts are executable context, so a successful mutation receipt must not certify a path that cannot resolve or a test command that cannot run solely because an advertised tuple form was parsed as plaintext."
