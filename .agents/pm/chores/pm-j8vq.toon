@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-08-28T02:32:13.616Z"
+updated_at: "2026-08-28T06:38:55.590Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
@@ -63,7 +63,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[22]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-07-15T09:27:04.865Z",codex-root,"GitHub report coverage 2026-07-15: GH-569 reports a Complex Method in src/cli/bootstrap-args.ts. All-status exact search found no dedicated duplicate; this canonical complexity-baseline chore owns the report alongside the existing <=16 ratchet. The report is documented but remains open/unclaimed because PR #568 is actively limited to governance SDK review convergence."
   "2026-07-15T18:51:51.689Z",maintainer-agent,"GH-569 (CodeFactor Complex Method, src/cli/bootstrap-args.ts:94-169 parseBootstrapGlobalOptions) mapped here 2026-07-15 — file holds 2 grandfathered sonarjs/cognitive-complexity suppressions in eslint-suppressions.json. Close GH-569 when the bootstrap-args entries are burned down. No standalone item per baseline policy (GH-518/pm-2gvp precedent)."
   "2026-07-21T07:33:05.774Z",codex-root-20260721,"Progress evidence: decomposed both suppressed cli-bootstrap functions below cognitive complexity 16, pruned two suppressions, and ratcheted the repository maximum from 154 to 152. This advances but does not complete the broader 76-suppression burn-down item."
@@ -86,6 +86,7 @@ comments[22]{created_at,author,text}:
   "2026-08-28T02:14:39.226Z","harness:codex","Linked-test context correction: the legacy pnpm lint:codefactor entry defaulted to schema-only PM context, so repository-static-quality saw an empty tracker and correctly failed its defect-evidence assertion even though a direct source-tracker run passed. Replaced that entry with identical command semantics plus pm_context_mode=tracker; no gate, evidence rule, or threshold was weakened."
   "2026-08-28T02:19:51.886Z","harness:codex","Linked-test timeout calibration: tracker-context execution proved every repository assurance assertion, including defect evidence, then reached the legacy 300-second ceiling during downstream static gates. Raised only this linked command's execution allowance to 600 seconds; the command and every quality threshold remain unchanged."
   "2026-08-28T02:32:12.585Z","harness:codex","Verification evidence: renderAnnotationResult is decomposed without suppressions or ceiling changes. pnpm exec eslint src/sdk/annotations.ts --max-warnings=0 --no-cache passed; focused annotation suite passed 3 files / 91 tests; repo-wide ESLint passed; tracker-context pnpm lint:codefactor passed all assurance and downstream static gates in 327454 ms; full coverage passed 585 files / 8076 tests at statements 59938/59938, branches 45128/45128, functions 12466/12466, lines 57719/57719. The earlier schema-context assertion failure and 300-second timeout remain immutable diagnostic receipts and are superseded by the corrected linked-test metadata and passing run."
+  "2026-08-28T06:38:32.272Z","harness:codex","Exact-head review evidence: structured passing receipts now exist for no-cache annotation ESLint, the focused 3-file/91-test annotation suite, repository-wide ESLint, and full coverage. The terminal coverage receipt passed 8,083 tests across 585 files at statements 59,952/59,952, branches 45,139/45,139, functions 12,469/12,469, and lines 57,732/57,732. The broader suppression burn-down remains open."
 notes[1]{created_at,author,text}:
   "2026-07-25T07:13:56.788Z","harness:claude-code","Complexity-suppression composition measured 2026-07-25 for the burn-down ledger. eslint-suppressions.json totals exactly 146 suppressions, at the hard MAX_ESLINT_SUPPRESSIONS = 146 budget in scripts/release/static-quality-gate.mts — zero headroom, so any new suppression fails the gate. Breakdown by rule: sonarjs/cognitive-complexity 52, complexity 38 (90 of 146, 62%, are the twin complexity gates this item owns), @typescript-eslint/no-unused-vars 22, no-useless-assignment 18, preserve-caught-error 16. Zero inline eslint-disable comments and zero broad disables (both budgets are 0 and both hold), and zero TODO/FIXME/HACK markers exist anywhere in src — the suppression file is the only debt ledger, which is the right shape; the ledger is simply full."
 learnings[1]{created_at,author,text}:
@@ -101,7 +102,7 @@ files[10]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,Exact static quality script ratchet contract
   tests/integration/release-readiness-runtime.spec.ts,project,Published package and quality gate ratchet contract
   tests/unit/cli/bootstrap-args.spec.ts,project,Bootstrap behavior regression coverage
-tests[4]:
+tests[6]:
   - command: node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/integration/release-automation-contract.spec.ts
     scope: project
     timeout_seconds: 600
@@ -129,7 +130,25 @@ tests[4]:
       source_kind: local_mutation
       source_ref: feat/agent-transcript-recovery-contracts
     note: Repository CodeFactor-parity gate against the governed tracker context
-test_runs[8]:
+  - command: pnpm exec eslint src/sdk/annotations.ts --max-warnings=0 --no-cache
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T06:17:53.568Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Exact no-cache annotation complexity receipt
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T06:17:54.210Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Exact full coverage receipt after annotation decomposition
+test_runs[12]:
   - run_id: test-local-mruc9d3i-w7hiva
     kind: test
     status: failed
@@ -211,4 +230,48 @@ test_runs[8]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm lint:codefactor",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtck8pod-2trb6i
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:18:05.714Z"
+    finished_at: "2026-08-28T06:18:10.813Z"
+    recorded_at: "2026-08-28T06:18:10.813Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm exec eslint src/sdk/annotations.ts --max-warnings=0 --no-cache,schema,schema,source,local_source_ref
+  - run_id: test-local-mtck94uv-5rktmc
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:18:16.489Z"
+    finished_at: "2026-08-28T06:18:30.486Z"
+    recorded_at: "2026-08-28T06:18:30.486Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtck9zff-twdb76
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:18:34.415Z"
+    finished_at: "2026-08-28T06:19:10.107Z"
+    recorded_at: "2026-08-28T06:19:10.107Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm exec eslint . --max-warnings=0,schema,schema,source,legacy
+  - run_id: test-local-mtckhoih-p3hi7j
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:19:13.885Z"
+    finished_at: "2026-08-28T06:25:09.209Z"
+    recorded_at: "2026-08-28T06:25:09.209Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
 body: "The GH-518/pm-2gvp gate fix added sonarjs/cognitive-complexity <=16 and lowered the cyclomatic ceiling 17->16 (policy: no function over 16 on either metric). 76 pre-existing violations were grandfathered into eslint-suppressions.json (104 -> 180): 62 functions with cognitive complexity >16 and 14 at cyclomatic exactly 17. The ratchet already prevents ANY new violation and any worsening of a suppressed file; this chore owns shrinking the baseline itself.\n\nMethod per slice: pick a file from eslint-suppressions.json, decompose the offending function(s) below both ceilings, run pnpm lint (stale suppressions fail the run) + pnpm lint:eslint:prune, commit the smaller baseline. Never edit suppression counts by hand; never raise MAX_ESLINT_SUPPRESSIONS.\n\nTop offenders by cognitive score (2026-07-12 scan): src/cli/extension-command-options.ts:371 (34) + :206 (23), src/core/lock/lock-gc.ts:246 (29), src/core/checkpoint/checkpoint-gc.ts:135 (28), src/core/lock/lock.ts:520 (27), src/core/fs/fs-utils.ts:42 (27), src/core/store/item-format-migration.ts:60 (26), src/core/extensions/item-fields.ts:289 (24), src/cli/commands/shared-unset-fields.ts:311 (24), src/cli/commands/health.ts:388 (24)."

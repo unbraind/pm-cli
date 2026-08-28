@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,recovery,review-feedback
 created_at: "2026-08-27T19:11:44.445Z"
-updated_at: "2026-08-27T19:31:08.379Z"
-closed_at: "2026-08-27T19:31:07.757Z"
-completed_at: "2026-08-27T19:31:07.757Z"
+updated_at: "2026-08-28T06:38:49.813Z"
+closed_at: "2026-08-28T06:38:49.225Z"
+completed_at: "2026-08-28T06:38:49.225Z"
 author: "harness:codex"
 acceptance_criteria: Textual and structured refusal candidates share one admissibility predicate; valid global flags cannot override an invalid command option; a regression proves surface --depth and rejected_value verbose when --json is mentioned first; exact coverage and static gates pass
 parent: pm-f05lsg
@@ -17,14 +17,31 @@ expected_result: Structured refusal identity always names the actual rejected no
 actual_result: "Textual and structured refusal candidates now share the same global-output-flag filter, preserving --depth and verbose attribution."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fo8g7j,recurs_from,"2026-08-27T19:15:46.929Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-27T19:29:05.430Z","harness:codex","Evidence: error-guidance regression passes when refusal prose mentions --json before --depth; refusal.surface remains --depth and rejected_value remains verbose."
+  "2026-08-28T06:38:32.825Z","harness:codex","Exact-head review evidence: linked node scripts/run-tests.mjs coverage and recorded passing run test-local-mtckpgzr-l0guye. Coverage is exact 100/100/100/100 across 8,083 tests and 585 files; the earlier focused refusal regression receipt remains passing."
 files[2]{path,scope,note}:
   src/cli/error-guidance.ts,project,Use one global-option admissibility predicate across structured and textual refusal candidates
   tests/unit/cli/error-guidance.spec.ts,project,Prove a textual global flag cannot displace the actionable structured flag
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,project,240,"harness:codex","2026-08-27T19:15:46.929Z",local_mutation,feat/agent-transcript-recovery-contracts
-test_runs[1]:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T19:15:46.929Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T06:17:52.251Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Exact full coverage receipt for refusal-admissibility correction
+test_runs[2]:
   - run_id: test-local-mtbx2t04-cyo4gr
     kind: test
     status: passed
@@ -36,7 +53,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
-close_reason: Refusal attribution now applies one admissibility predicate to textual and structured candidates; the --json-before---depth regression and exact full coverage passed.
+  - run_id: test-local-mtckpgzr-l0guye
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:25:18.642Z"
+    finished_at: "2026-08-28T06:31:12.710Z"
+    recorded_at: "2026-08-28T06:31:12.710Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+close_reason: Structured full-coverage receipt test-local-mtckpgzr-l0guye now substantiates the canonical refusal correction alongside its focused passing regression.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened
