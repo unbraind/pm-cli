@@ -15554,7 +15554,8 @@
       "accepted_spellings": [
         "--add",
         "--body",
-        "--comment"
+        "--comment",
+        "--text"
       ]
     },
     {
@@ -15597,6 +15598,13 @@
       "canonical_flag": "--full-history",
       "accepted_spellings": [
         "--full-history"
+      ]
+    },
+    {
+      "command": "comments",
+      "canonical_flag": "--if-absent",
+      "accepted_spellings": [
+        "--if-absent"
       ]
     },
     {
@@ -15766,7 +15774,8 @@
       "canonical_flag": "--add",
       "accepted_spellings": [
         "--add",
-        "--note"
+        "--note",
+        "--text"
       ]
     },
     {
@@ -15841,6 +15850,13 @@
     },
     {
       "command": "notes",
+      "canonical_flag": "--if-absent",
+      "accepted_spellings": [
+        "--if-absent"
+      ]
+    },
+    {
+      "command": "notes",
       "canonical_flag": "--message",
       "accepted_spellings": [
         "--message"
@@ -16006,7 +16022,8 @@
       "canonical_flag": "--add",
       "accepted_spellings": [
         "--add",
-        "--learning"
+        "--learning",
+        "--text"
       ]
     },
     {
@@ -16021,6 +16038,13 @@
       "canonical_flag": "--full-history",
       "accepted_spellings": [
         "--full-history"
+      ]
+    },
+    {
+      "command": "learnings",
+      "canonical_flag": "--if-absent",
+      "accepted_spellings": [
+        "--if-absent"
       ]
     },
     {

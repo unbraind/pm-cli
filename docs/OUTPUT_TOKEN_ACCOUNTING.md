@@ -1,6 +1,6 @@
 # Output Token Accounting
 
-Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon) and [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon).
+Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon), [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon), [pm-8pnj](../.agents/pm/features/pm-8pnj.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
 
 ## Agent Quick Context
 
@@ -39,19 +39,32 @@ The command still exits with its normal non-zero status; the receipt is additive
 
 ## Release-Level Task Entitlement
 
-[`agent-task-token-baseline.json`](agent-task-token-baseline.json) is the externally shipped release baseline. The gate executes the built CLI in an isolated workspace and covers:
+[`agent-task-transcripts.json`](agent-task-transcripts.json) is the SDK-validated, versioned golden corpus. [`agent-task-token-baseline.json`](agent-task-token-baseline.json) is its externally shipped release ratchet. The gate executes the built CLI against independent, identically seeded accounting-on and accounting-off workspaces. Its five complete workflows cover:
 
-- a small-workspace read;
-- a scaled-workspace context read;
-- a returning-agent item read with a required-field completeness assertion;
-- a failing command with bounded recovery output.
+- bounded triage, scaled-workspace orientation, and returning-agent inspection;
+- a closed-domain refusal followed by the exact advertised shell-free retry;
+- an unknown option after valid flags followed by a corrected command;
+- create, inspect, close, and final-state confirmation through mutation receipts;
+- successful bulk partial-effect and no-effect exits without collapsing them into exit zero.
 
-Each invocation is independently byte-counted, its section sum is checked, and its consumed field is retained. A seeded million-token regression proves the ratchet fails. Run it with:
+Every step verifies its public SDK output family, canonical successful or refusal exit status, required own-property paths, declared `expected_field_values`, and refusal identity where applicable. Recovery steps must declare a successful output family instead of chaining one refusal to another, every refusal in a completed task must have a later successful `recovery_for` step, and every completed task must terminate with successful output. Successful steps cannot carry refusal-only metadata. Dot-separated `required_fields` and `expected_field_values` paths are traversed structurally from the output root, so incidental prose or nested key names cannot satisfy completeness or terminal-state assertions. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Accounting-on application payloads must be byte-equivalent to their independently captured accounting-off payloads after removing only the receipt. Receipt byte and token fields are independently measured rather than trusted. Runtime refusals verify that their self-reported `total_bytes` matches the independent transport and that `total_estimated_tokens` equals `ceil(total_bytes / 4)`; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
+
+The baseline fails closed on corpus digest, task identity, step identity, missing or non-finite per-step and per-task ceilings, and missing or non-finite composite cost ceilings. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
 
 ```bash
 pnpm quality:agent-task-token
 node scripts/release/agent-task-token-gate.mjs --negative-control
 ```
+
+Package authors can validate their own corpus with the same public contract before replay:
+
+```ts
+import { parsePmAgentTaskTranscriptCorpus } from "@unbrained/pm-cli/sdk/contracts";
+
+const corpus = parsePmAgentTaskTranscriptCorpus(JSON.parse(source));
+```
+
+The parser rejects unknown versions, empty tasks or steps, duplicate identities, output families that disagree with the command contract, refusal-only metadata on successful steps, terminal or otherwise unrecovered refusals, and recovery edges that do not point from a successful step to an earlier refusal.
 
 Refresh the committed ceiling only after an intentional reviewed output change:
 

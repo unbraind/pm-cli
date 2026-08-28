@@ -1512,6 +1512,18 @@ edit/delete semantics, ownership guidance, history mutation metadata, and stable
 list pagination. MCP tool actions intentionally omit file input to prevent host
 filesystem access. Package authors can build custom annotation presentation
 layers without importing CLI modules.
+`CommentsCommandOptions.ifAbsent`, `NotesCommandOptions.ifAbsent`, and
+`LearningsCommandOptions.ifAbsent` give retrying agents one explicit idempotent
+annotation append contract. Equality is evaluated under the item writer lock
+after author resolution and text normalization, using the resolved author plus
+exact stored text. The first append returns `changed: true` and
+`mutation_receipt.changed_count: 1`; an exact retry returns the existing entry,
+`changed: false`, and `changed_count: 0` without changing the item, history, or
+derived search state. Different authors remain distinct, and the default
+without `ifAbsent` continues to append intentional duplicates. The option is
+valid only for append input and fails closed for list, edit, or delete modes.
+CLI `comments|notes|learnings --if-absent` and the corresponding MCP actions
+with `options.ifAbsent: true` are thin transports over this SDK behavior.
 `PmClient.notes` also accepts `addJson` for a validated structured context event. The persisted entry remains backward-readable through canonical `text` while exposing typed `format: "json"`, `data`, and `event_type` fields. `since`, `eventType`, `limit`, and `includeMeta` form the bounded query contract; the collection continues to use field-aware union merge semantics for concurrent branches.
 
 Customization convenience methods are the SDK baseline for project-specific pm

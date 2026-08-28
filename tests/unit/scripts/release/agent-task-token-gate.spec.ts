@@ -1,8 +1,10 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  assertAdvertisedAgentTaskRecovery,
+  assertMatchingAgentTaskFixtureAnchors,
   compareAgentTaskTokenBaseline,
   evaluateAgentTaskTokenReport,
   finalizeAgentTaskTokenReport,
@@ -20,18 +22,37 @@ afterEach(async () => {
     await rm(root, { recursive: true, force: true });
 });
 
-describe("agent-task token gate", () => {
+describe("agent-task transcript token gate", () => {
+  const steps = [
+    { id: "orient", estimated_tokens: 10, accounting_mode: "self_reported" },
+    { id: "inspect", estimated_tokens: 20, accounting_mode: "self_reported" },
+  ];
   const report = {
-    scenarios: [
-      { id: "small", estimated_tokens: 10 },
-      { id: "large", estimated_tokens: 20 },
-    ],
+    transcript_digest: "sha256:test",
+    composite_estimated_tokens: 30,
+    tasks: [{ id: "context", estimated_tokens: 30, steps }],
   };
   const baseline = {
-    version: 1,
-    scenarios: [
-      { id: "small", max_estimated_tokens: 10 },
-      { id: "large", max_estimated_tokens: 20 },
+    version: 3,
+    transcript_digest: "sha256:test",
+    composite_max_estimated_tokens: 30,
+    tasks: [
+      {
+        id: "context",
+        max_estimated_tokens: 30,
+        steps: [
+          {
+            id: "orient",
+            max_estimated_tokens: 10,
+            accounting_mode: "self_reported",
+          },
+          {
+            id: "inspect",
+            max_estimated_tokens: 20,
+            accounting_mode: "self_reported",
+          },
+        ],
+      },
     ],
   };
 
@@ -40,35 +61,89 @@ describe("agent-task token gate", () => {
     expect(
       compareAgentTaskTokenBaseline(
         {
-          scenarios: [
-            { id: "small", estimated_tokens: 11 },
-            report.scenarios[1],
+          ...report,
+          composite_estimated_tokens: 31,
+          tasks: [
+            {
+              ...report.tasks[0],
+              estimated_tokens: 31,
+              steps: [
+                {
+                  id: "orient",
+                  estimated_tokens: 11,
+                  accounting_mode: "self_reported",
+                },
+                steps[1],
+              ],
+            },
           ],
         },
         baseline,
       ),
-    ).toContain("scenario:small:11>baseline:10");
+    ).toEqual([
+      "task:context:31>baseline:30",
+      "task:context:step:orient:11>baseline:10",
+      "composite:31>baseline:30",
+    ]);
   });
 
-  it("fails closed on baseline version, scenario, and count drift", () => {
+  it("fails closed on baseline version, digest, identity, and count drift", () => {
     expect(
       compareAgentTaskTokenBaseline(
-        { scenarios: [{ id: "new", estimated_tokens: 1 }] },
-        { version: 2, scenarios: baseline.scenarios },
+        {
+          ...report,
+          transcript_digest: "sha256:new",
+          tasks: [{ id: "new", estimated_tokens: 1, steps: [] }],
+        },
+        { ...baseline, version: 1 },
       ),
     ).toEqual([
-      "baseline_version:2",
-      "scenario:new:missing_baseline",
-      "scenario_count:1!=2",
+      "baseline_version:1",
+      "transcript_digest:mismatch",
+      "task:new:missing_baseline",
+    ]);
+    expect(
+      compareAgentTaskTokenBaseline(report, {
+        ...baseline,
+        tasks: [
+          {
+            id: "context",
+            max_estimated_tokens: 30,
+            steps: [
+              {
+                id: "orient",
+                max_estimated_tokens: 10,
+                accounting_mode: "self_reported",
+              },
+            ],
+          },
+          { id: "removed", max_estimated_tokens: 1, steps: [] },
+        ],
+      }),
+    ).toEqual([
+      "task:context:step:inspect:missing_baseline",
+      "task:context:step_count:2!=1",
+      "task_count:1!=2",
+    ]);
+    expect(
+      compareAgentTaskTokenBaseline(report, {
+        ...baseline,
+        tasks: undefined,
+      }),
+    ).toEqual(["task:context:missing_baseline", "task_count:1!=0"]);
+    expect(
+      compareAgentTaskTokenBaseline(report, {
+        ...baseline,
+        tasks: [{ id: "context", max_estimated_tokens: 30 }],
+      }),
+    ).toEqual([
+      "task:context:step:orient:missing_baseline",
+      "task:context:step:inspect:missing_baseline",
+      "task:context:step_count:2!=0",
     ]);
     expect(() =>
-      evaluateAgentTaskTokenReport(report, { ...baseline, version: 2 }),
+      evaluateAgentTaskTokenReport(report, { ...baseline, version: 1 }),
     ).toThrow();
-    expect(compareAgentTaskTokenBaseline(report, { version: 1 })).toEqual([
-      "scenario:small:missing_baseline",
-      "scenario:large:missing_baseline",
-      "scenario_count:2!=0",
-    ]);
     expect(resolveAgentTaskTokenBaselinePath(undefined)).toBe(
       resolveAgentTaskTokenBaselinePath(true),
     );
@@ -79,9 +154,10 @@ describe("agent-task token gate", () => {
       evaluateAgentTaskTokenReport(
         report,
         {
-          version: 1,
-          scenarios: baseline.scenarios.map((scenario) => ({
-            ...scenario,
+          ...baseline,
+          composite_max_estimated_tokens: 2_000_000,
+          tasks: baseline.tasks.map((task) => ({
+            ...task,
             max_estimated_tokens: 2_000_000,
           })),
         },
@@ -90,12 +166,71 @@ describe("agent-task token gate", () => {
     ).toThrow();
   });
 
-  it("rejects invalid transport accounting and incomplete task output", () => {
-    const scenario = {
+  it("fails closed when a step changes or omits its accounting mode", () => {
+    expect(
+      compareAgentTaskTokenBaseline(
+        {
+          ...report,
+          tasks: [
+            {
+              ...report.tasks[0],
+              steps: [
+                { ...steps[0], accounting_mode: "independent_transport" },
+                steps[1],
+              ],
+            },
+          ],
+        },
+        baseline,
+      ),
+    ).toEqual([
+      "task:context:step:orient:accounting_mode:independent_transport!=self_reported",
+    ]);
+    expect(
+      compareAgentTaskTokenBaseline(report, {
+        ...baseline,
+        tasks: [
+          {
+            ...baseline.tasks[0],
+            steps: [
+              { id: "orient", max_estimated_tokens: 10 },
+              baseline.tasks[0].steps[1],
+            ],
+          },
+        ],
+      }),
+    ).toEqual([
+      "task:context:step:orient:accounting_mode:self_reported!=undefined",
+    ]);
+  });
+
+  it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY])(
+    "fails closed on absent or non-finite task and composite ceilings (%s)",
+    (invalidLimit) => {
+      expect(
+        compareAgentTaskTokenBaseline(report, {
+          ...baseline,
+          composite_max_estimated_tokens: invalidLimit,
+          tasks: baseline.tasks.map((task) => ({
+            ...task,
+            max_estimated_tokens: invalidLimit,
+          })),
+        }),
+      ).toEqual([
+        "task:context:missing_baseline_limit",
+        "composite:missing_baseline_limit",
+      ]);
+    },
+  );
+
+  it("rejects invalid accounting, incomplete output, and envelope drift", () => {
+    const step = {
       id: "validation",
-      args: ["list"],
-      expectedStatus: 0,
-      requiredFields: ["items"],
+      args: ["--json", "list"],
+      expected_exit_code: 0,
+      expected_output_kind: "collection",
+      expected_accounting_mode: "self_reported",
+      required_fields: ["items.0.id"],
     };
     const payload = { items: [{ id: "pm-one" }] };
     const render = (value: unknown): string =>
@@ -105,15 +240,17 @@ describe("agent-task token gate", () => {
     const validAccounted = { status: 0, stdout: render(accounted), stderr: "" };
 
     expect(
-      validateAgentTaskTokenInvocation(validBaseline, validAccounted, scenario),
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, step),
     ).toMatchObject({
       completeness: "required_fields_present",
+      output_kind: "collection",
+      payload,
     });
     expect(() =>
       validateAgentTaskTokenInvocation(
         { ...validBaseline, status: 1 },
         validAccounted,
-        scenario,
+        step,
       ),
     ).toThrow();
     for (const sections of [undefined, { invalid: null }]) {
@@ -127,51 +264,80 @@ describe("agent-task token gate", () => {
               token_accounting: { ...accounted.token_accounting, sections },
             }),
           },
-          scenario,
+          step,
+        ),
+      ).toThrow();
+    }
+    for (const invalidAccounted of [
+      payload,
+      {
+        ...accounted,
+        token_accounting: { ...accounted.token_accounting, total_bytes: 1 },
+      },
+      {
+        ...accounted,
+        token_accounting: {
+          ...accounted.token_accounting,
+          sections: { result_rows: { bytes: 0 } },
+        },
+      },
+      {
+        ...accounted,
+        token_accounting: {
+          ...accounted.token_accounting,
+          accounting_receipt_bytes: 1_024,
+        },
+      },
+    ]) {
+      expect(() =>
+        validateAgentTaskTokenInvocation(
+          validBaseline,
+          { ...validAccounted, stdout: render(invalidAccounted) },
+          step,
+        ),
+      ).toThrow();
+    }
+    const validEstimate = accounted.token_accounting.total_estimated_tokens;
+    for (const invalidEstimate of [
+      undefined,
+      validEstimate - 1,
+      validEstimate + 1,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      String(validEstimate),
+    ]) {
+      expect(() =>
+        validateAgentTaskTokenInvocation(
+          validBaseline,
+          {
+            ...validAccounted,
+            stdout: render({
+              ...accounted,
+              token_accounting: {
+                ...accounted.token_accounting,
+                total_estimated_tokens: invalidEstimate,
+              },
+            }),
+          },
+          step,
         ),
       ).toThrow();
     }
     expect(() =>
       validateAgentTaskTokenInvocation(
-        validBaseline,
-        { ...validAccounted, stdout: render(payload) },
-        scenario,
-      ),
-    ).toThrow();
-    expect(() =>
-      validateAgentTaskTokenInvocation(
         { ...validBaseline, stdout: render(accounted) },
         validAccounted,
-        scenario,
+        step,
       ),
     ).toThrow();
     expect(() =>
       validateAgentTaskTokenInvocation(
-        validBaseline,
         {
-          ...validAccounted,
-          stdout: render({
-            ...accounted,
-            token_accounting: { ...accounted.token_accounting, total_bytes: 1 },
-          }),
+          ...validBaseline,
+          stdout: render({ items: [{ id: "pm-different" }] }),
         },
-        scenario,
-      ),
-    ).toThrow();
-    expect(() =>
-      validateAgentTaskTokenInvocation(
-        validBaseline,
-        {
-          ...validAccounted,
-          stdout: render({
-            ...accounted,
-            token_accounting: {
-              ...accounted.token_accounting,
-              sections: { result_rows: { bytes: 0 } },
-            },
-          }),
-        },
-        scenario,
+        validAccounted,
+        step,
       ),
     ).toThrow();
     expect(() =>
@@ -183,29 +349,216 @@ describe("agent-task token gate", () => {
             ...accounted,
             token_accounting: {
               ...accounted.token_accounting,
-              accounting_receipt_bytes: 1_024,
+              padding: "x".repeat(1_024),
             },
           }),
         },
-        scenario,
+        step,
       ),
     ).toThrow();
     expect(() =>
       validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
-        ...scenario,
-        requiredFields: ["missing-field"],
+        ...step,
+        required_fields: ["missing-field"],
       }),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        expected_field_values: { "items.0.id": "pm-different" },
+      }),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        required_fields: ["token_accounting.total_bytes"],
+      }),
+    ).toThrow();
+    const misleadingPayload = {
+      items: [{ id: "pm-one" }],
+      message: "The missing-field name appears only in prose",
+    };
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 0, stdout: render(misleadingPayload), stderr: "" },
+        {
+          status: 0,
+          stdout: render(
+            attachOutputTokenAccounting(misleadingPayload, render),
+          ),
+          stderr: "",
+        },
+        { ...step, required_fields: ["missing-field"] },
+      ),
     ).toThrow();
     expect(() =>
       validateAgentTaskTokenInvocation(
         { ...validBaseline, stdout: "not-json" },
         validAccounted,
-        scenario,
+        step,
+      ),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        expected_output_kind: "entity",
+      }),
+    ).toThrow();
+    const independentTransportError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validBaseline, {
+        ...step,
+        expected_accounting_mode: "independent_transport",
+      }),
+    ).toThrow();
+    expect(independentTransportError).toHaveBeenLastCalledWith(
+      "Agent-task transcript step validation independent_transport accounting is supported only for refusal output",
+    );
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        args: ["--json"],
+      }),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 0, stdout: render({ marker: true }), stderr: "" },
+        {
+          status: 0,
+          stdout: render(attachOutputTokenAccounting({ marker: true }, render)),
+          stderr: "",
+        },
+        { ...step, required_fields: ["marker"] },
       ),
     ).toThrow();
   });
 
-  it("executes one real transport pass and evaluates normal and negative reports", async () => {
+  it("validates refusal identity and mutation receipt families", () => {
+    const render = (value: unknown): string =>
+      `${JSON.stringify(value, null, 2)}\n`;
+    const refusal = {
+      code: "unknown_option",
+      refusal: { surface: "--bad", exit_code: 2 },
+      recovery: { suggested_flags: ["--tag"] },
+    };
+    const refusalStep = {
+      id: "refusal",
+      args: ["list", "--bad"],
+      expected_exit_code: 2,
+      expected_output_kind: "refusal",
+      expected_accounting_mode: "independent_transport",
+      required_fields: ["recovery"],
+      expected_error_code: "unknown_option",
+      expected_refusal_surface: "--bad",
+    };
+    expect(
+      validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(refusal) },
+        {
+          status: 2,
+          stdout: "",
+          stderr: render(attachOutputTokenAccounting(refusal, render)),
+        },
+        { ...refusalStep, expected_accounting_mode: "self_reported" },
+      ),
+    ).toMatchObject({ output_kind: "refusal" });
+    expect(
+      validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(refusal) },
+        { status: 2, stdout: "", stderr: render(refusal) },
+        refusalStep,
+      ),
+    ).toMatchObject({
+      output_kind: "refusal",
+      accounting_mode: "independent_transport",
+      accounting_receipt_bytes: 0,
+    });
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(refusal) },
+        { status: 2, stdout: "", stderr: render(refusal) },
+        { ...refusalStep, expected_accounting_mode: "self_reported" },
+      ),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(refusal) },
+        {
+          status: 2,
+          stdout: "",
+          stderr: render(attachOutputTokenAccounting(refusal, render)),
+        },
+        refusalStep,
+      ),
+    ).toThrow();
+    for (const override of [
+      { expected_error_code: "wrong" },
+      { expected_refusal_surface: "--wrong" },
+    ]) {
+      expect(() =>
+        validateAgentTaskTokenInvocation(
+          { status: 2, stdout: "", stderr: render(refusal) },
+          {
+            status: 2,
+            stdout: "",
+            stderr: render(attachOutputTokenAccounting(refusal, render)),
+          },
+          {
+            ...refusalStep,
+            expected_accounting_mode: "self_reported",
+            ...override,
+          },
+        ),
+      ).toThrow();
+    }
+
+    const invalidReceipt = { id: "pm-one", status: "open" };
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 0, stdout: render(invalidReceipt), stderr: "" },
+        {
+          status: 0,
+          stdout: render(attachOutputTokenAccounting(invalidReceipt, render)),
+          stderr: "",
+        },
+        {
+          id: "mutation",
+          args: ["create"],
+          expected_exit_code: 0,
+          expected_output_kind: "mutation_receipt",
+          expected_accounting_mode: "self_reported",
+          required_fields: ["id"],
+        },
+      ),
+    ).toThrow();
+  });
+
+  it("rejects mismatched advertised recovery and fixture identities", () => {
+    const recoveryStep = {
+      id: "retry",
+      args: ["get", "pm-one"],
+      recovery_for: "refusal",
+    };
+    expect(() =>
+      assertAdvertisedAgentTaskRecovery(undefined, recoveryStep),
+    ).toThrow();
+    expect(() =>
+      assertAdvertisedAgentTaskRecovery(
+        { recovery: { suggested_retry_args: ["get", "pm-two"] } },
+        recoveryStep,
+      ),
+    ).toThrow();
+    expect(() =>
+      assertMatchingAgentTaskFixtureAnchors(
+        { anchorId: "pm-one" },
+        { anchorId: "pm-two" },
+      ),
+    ).toThrow();
+  });
+
+  it("replays every versioned task and evaluates normal and negative reports", async () => {
     const root = await mkdtemp(
       path.join(os.tmpdir(), "pm-agent-task-token-spec-"),
     );
@@ -214,16 +567,15 @@ describe("agent-task token gate", () => {
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     const updated = await main(["--update", "--baseline", baselinePath]);
-    expect(updated.scenario_count).toBe(4);
-    const updatedBaseline = {
-      version: 1,
-      scenarios: updated.scenarios.map(
-        (scenario: { id: string; estimated_tokens: number }) => ({
-          id: scenario.id,
-          max_estimated_tokens: scenario.estimated_tokens,
-        }),
-      ),
-    };
+    expect(updated).toMatchObject({
+      task_count: 5,
+      completed_task_count: 5,
+      step_count: 14,
+      retry_count: 2,
+    });
+    const updatedBaseline = JSON.parse(
+      await readFile(baselinePath, "utf8"),
+    ) as Parameters<typeof evaluateAgentTaskTokenReport>[1];
     expect(evaluateAgentTaskTokenReport(updated, updatedBaseline)).toBe(
       updated,
     );
@@ -231,7 +583,7 @@ describe("agent-task token gate", () => {
       evaluateAgentTaskTokenReport(updated, updatedBaseline, true),
     ).toMatchObject({
       ok: true,
-      negative_control: "seeded_per_task_token_regression",
+      negative_control: "seeded_completed_task_token_regression",
     });
     expect(finalizeAgentTaskTokenReport(updated, new Map(), baselinePath)).toBe(
       updated,
@@ -242,9 +594,6 @@ describe("agent-task token gate", () => {
         new Map([["negative-control", true]]),
         baselinePath,
       ),
-    ).toMatchObject({
-      ok: true,
-      negative_control: "seeded_per_task_token_regression",
-    });
+    ).toMatchObject({ ok: true });
   }, 180_000);
 });

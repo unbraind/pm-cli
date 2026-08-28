@@ -284,6 +284,9 @@ const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
     update: ["parent", "allowMissingParent", "completedAt"],
     copy: ["allowDuplicate"],
     close: ["duplicateOf", "completedAt"],
+    comments: ["ifAbsent"],
+    notes: ["ifAbsent"],
+    learnings: ["ifAbsent"],
     upgrade: [
       "scope",
       "dryRun",

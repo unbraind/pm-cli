@@ -1,0 +1,125 @@
+id: pm-ervmsc
+title: Agent-task closeout claims lack linked full-verification commands
+description: "CodeRabbit review on PR #1133 found that pm-8pnj completion comments name exact full coverage, packed npx, packed bunx, and 88-command dogfood evidence while its linked tests record only focused transcript and release commands. Add runnable PM-linked commands and test-run receipts for reproducible claims; document the evidence-before-close ordering lesson without rewriting append-only history."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:governance",evidence,review-feedback,testing
+created_at: "2026-08-27T19:11:55.197Z"
+updated_at: "2026-08-28T10:28:47.287Z"
+closed_at: "2026-08-28T10:28:46.687Z"
+completed_at: "2026-08-28T10:28:46.687Z"
+author: "harness:codex"
+acceptance_criteria: "Coverage, npx package smoke, bunx packed acceptance, and dogfood claims have runnable linked PM tests or are corrected; executed test-run receipts are recorded; append-only history is not rewritten; future evidence is recorded before close and release"
+parent: pm-8pnj
+resolution: Completed closeout evidence integrity by linking and receipting the recursive acceptance and defect-evidence commands cited by the item.
+expected_result: Every terminal assurance claim is represented by a runnable linked test and an immutable passing receipt.
+actual_result: The recursive pm-8pnj acceptance run is receipted by test-local-mtct46ib-bv7nq1 and defect-evidence enforcement by test-local-mtct4htf-ydtivf; both passed.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8pnj,verifies,"2026-08-27T19:15:48.581Z","harness:codex","cli:update:dep",detected
+  pm-kpftft,discovered_from,"2026-08-27T19:15:48.581Z","harness:codex","cli:update:dep",detected
+  pm-fo8g7j,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+  pm-k23c4c,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+  pm-ok2kdn,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+  pm-wa39rl,verifies,"2026-08-27T22:10:49.160Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-08-27T19:29:06.473Z","harness:codex","Evidence: pm test pm-8pnj --run --progress executed all seven linked commands successfully. Exact coverage is 59,885/59,885 statements, 45,077/45,077 branches, 12,452/12,452 functions, and 57,669/57,669 lines; packed npx, 88-command package-first dogfood, and packed bunx acceptance all exited 0."
+  "2026-08-27T19:30:08.193Z","harness:codex","Investigation note: the initial linked history-drift command refused under schema context because the source tracker has 2,572 items and the sandbox schema context has zero. The link now explicitly declares pm_context_mode=tracker; no trust override or real tracker mutation was used by the test runner."
+  "2026-08-27T20:37:19.855Z","harness:codex","Corrective lifecycle started after exact-head review: preserve all earlier hash-chain entries, append current verification and hosted receipts before the new close events, then release the reopened canonical items. No prior close/release evidence will be rewritten."
+  "2026-08-27T21:13:32.776Z","harness:codex","Corrective lifecycle evidence 2026-08-27: the canonical items were reopened, claimed, and kept in progress while implementation and all available local verification were appended. pm test pm-8pnj then recorded seven passing linked commands before any renewed close or release, including exact coverage plus real packed npx, bunx, and package-first temporary-directory acceptance. No historical event was rewritten."
+  "2026-08-27T21:32:00.011Z","harness:codex","Final lifecycle proof 2026-08-27: pm-wa39rl, pm-ok2kdn, pm-fo8g7j, and pm-k23c4c were each closed and released only after their focused, exact-coverage, package, and where applicable full hosted-matrix evidence had been appended. This corrective sequence preserves every prior hash-chained event."
+  "2026-08-27T22:10:52.786Z","harness:codex","Graph evidence: base head had 1,342 prose-edge gaps; the lifecycle-proof comment added exactly four untyped pairs from pm-ervmsc to pm-wa39rl, pm-ok2kdn, pm-fo8g7j, and pm-k23c4c. Added directed verifies edges for those four evidence-backed relationships; no generic or inverse duplicate edges were added."
+  "2026-08-28T10:28:42.066Z","harness:codex","Receipt integrity correction: linked the previously cited recursive pm-8pnj closeout run and the defect-evidence gate as first-class tests. Run test-local-mtct46ib-bv7nq1 passed the nested pm-8pnj suite, whose 7/7 executions cover focused transcript/output tests, token ratchet, release automation, exact coverage, packed npx, 88-command package dogfood, and packed bunx. Run test-local-mtct4htf-ydtivf passed the defect boundary, defect evidence, and recurrence policy gates with zero findings."
+learnings[2]{created_at,author,text}:
+  "2026-08-27T19:29:07.001Z","harness:codex","Lifecycle evidence is append-only: gate evidence and reproducible test links should be recorded before close and release. When a review detects an older ordering defect, append follow-up receipts and govern the recurrence; never rewrite the original history."
+  "2026-08-27T21:13:33.341Z","harness:codex","Closeout evidence is a lifecycle invariant, not just prose quality: every reproducible command and result available at delivery time must be linked and appended before close/release so history order itself proves the claim."
+files[1]{path,scope,note}:
+  .agents/pm/features/pm-8pnj.toon,project,Append linked full-verification commands and execution receipts supporting closeout claims
+tests[3]:
+  - command: pm validate --check-history-drift
+    scope: project
+    timeout_seconds: 240
+    pm_context_mode: tracker
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T19:30:07.591Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Validate append-only tracker history against the seeded real tracker context
+  - command: pm test pm-8pnj --run --progress
+    scope: project
+    timeout_seconds: 1200
+    pm_context_mode: tracker
+    workspace_context_mode: source
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T09:49:06.589Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Persist a terminal outer receipt for the claimed seven-command feature verification
+  - command: node scripts/release/defect-evidence-gate.mjs --json
+    scope: project
+    timeout_seconds: 240
+    pm_context_mode: tracker
+    workspace_context_mode: source
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T09:49:07.199Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Persist the claimed defect evidence ordering gate
+test_runs[4]:
+  - run_id: test-local-mtbx32gm-5vo7xn
+    kind: test
+    status: failed
+    started_at: "2026-08-27T19:29:56.198Z"
+    finished_at: "2026-08-27T19:29:56.278Z"
+    recorded_at: "2026-08-27T19:29:56.278Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pm validate --check-history-drift,schema,schema,source,local_source_ref
+  - run_id: test-local-mtbx4be3-qblprl
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:30:08.820Z"
+    finished_at: "2026-08-27T19:30:54.507Z"
+    recorded_at: "2026-08-27T19:30:54.507Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pm validate --check-history-drift,tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtct46ib-bv7nq1
+    kind: test
+    status: passed
+    started_at: "2026-08-28T10:17:04.101Z"
+    finished_at: "2026-08-28T10:26:35.891Z"
+    recorded_at: "2026-08-28T10:26:35.891Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pm test pm-8pnj --run --progress,tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtct4htf-ydtivf
+    kind: test
+    status: passed
+    started_at: "2026-08-28T10:26:41.974Z"
+    finished_at: "2026-08-28T10:26:50.546Z"
+    recorded_at: "2026-08-28T10:26:50.546Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/defect-evidence-gate.mjs --json,tracker,tracker,source,local_source_ref
+close_reason: Closed after implementing and receipting the stable-head review corrections; all linked assurance commands passed.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ervmsc
+  gate_id: pm-closeout-runnable-evidence-ordering
+  negative_control: "Claim full coverage, packed npx, packed bunx, or dogfood without a linked runnable command and PM execution receipt; review must refuse the closeout claim."
+  local_checks[3]: pm test pm-8pnj --run --progress,pm validate --check-history-drift,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

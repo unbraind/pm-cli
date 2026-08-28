@@ -822,7 +822,7 @@ export class PmClient {
     return this.runTyped("duplicates", { options });
   }
 
-  /** List, add, edit, or delete item comments. */
+  /** List or mutate comments, including lock-scoped idempotent appends. */
   comments<
     Options extends ReadOptions<CommentsCommandOptions> =
       CommentsCommandOptions,
@@ -833,7 +833,7 @@ export class PmClient {
     return this.runTyped("comments", { id, options });
   }
 
-  /** List or append private item notes. */
+  /** List or mutate private notes, including lock-scoped idempotent appends. */
   notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(
     id: string,
     options: Options = {} as Options,
@@ -841,7 +841,7 @@ export class PmClient {
     return this.runTyped("notes", { id, options });
   }
 
-  /** List or append durable item learnings. */
+  /** List or mutate durable learnings, including lock-scoped idempotent appends. */
   learnings(
     id: string,
     options: LearningsCommandOptions = {},
@@ -1751,7 +1751,7 @@ export function duplicates<Options extends ReadOptions<DuplicatesCommandOptions>
   return new PmClient(clientOptions).duplicates(options);
 }
 
-/** List, add, edit, or delete item comments without constructing a reusable client. */
+/** List or mutate comments with optional idempotency without constructing a client. */
 export function comments<
   Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions,
 >(
@@ -1762,7 +1762,7 @@ export function comments<
   return new PmClient(clientOptions).comments(id, options);
 }
 
-/** List or append private item notes without constructing a reusable client. */
+/** List or mutate private notes with optional idempotency without constructing a client. */
 export function notes<
   Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions,
 >(
@@ -1773,7 +1773,7 @@ export function notes<
   return new PmClient(clientOptions).notes(id, options);
 }
 
-/** List or append durable item learnings without constructing a reusable client. */
+/** List or mutate durable learnings with optional idempotency without constructing a client. */
 export function learnings(
   id: string,
   options: LearningsCommandOptions = {},

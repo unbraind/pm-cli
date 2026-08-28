@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Measures real CLI bytes per completed representative agent task and verifies
- * the self-reported accounting receipt against an independent transport count.
+ * Replays versioned multi-step agent tasks against real CLI transports and
+ * ratchets output cost, envelope conformance, and executable recovery.
  */
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -9,7 +9,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { PmClient } from "../../dist/cli-bundle/sdk.js";
+import {
+  PmClient,
+  createReproducibleProcessRunner,
+  isPmMutationReceipt,
+  parseBootstrapCommandName,
+  parsePmAgentTaskTranscriptCorpus,
+  resolvePmCommandOutputEnvelope,
+} from "../../dist/cli-bundle/sdk.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
 const BASELINE_PATH = path.join(
@@ -17,21 +24,27 @@ const BASELINE_PATH = path.join(
   "docs",
   "agent-task-token-baseline.json",
 );
+const TRANSCRIPT_PATH = path.join(
+  repoRoot,
+  "docs",
+  "agent-task-transcripts.json",
+);
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
-const BASELINE_VERSION = 1;
+const BASELINE_VERSION = 3;
+const REPLAY_CLOCK = "2026-08-28T00:00:00.000Z";
+const REPLAY_SEED = "agent-task-token-gate";
 
 function fixtureId(key) {
   return `pm-${createHash("sha256").update(key).digest("hex").slice(0, 12)}`;
 }
 
-function parseJsonOutput(result, scenarioId) {
-  const source = result.status === 0 ? result.stdout : result.stderr;
+function parseJsonOutput(result, step, label = step.id) {
+  const source =
+    step.expected_output_kind === "refusal" ? result.stderr : result.stdout;
   try {
     return JSON.parse(source);
   } catch {
-    fail(
-      `Agent-task token scenario ${scenarioId} did not emit one JSON document`,
-    );
+    fail(`Agent-task transcript step ${label} did not emit one JSON document`);
   }
 }
 
@@ -43,59 +56,105 @@ function runCli(pmRoot, args) {
       ...process.env,
       PM_PATH: pmRoot,
       PM_GLOBAL_PATH: path.join(path.dirname(pmRoot), ".pm-global"),
+      PM_CLOCK: REPLAY_CLOCK,
+      PM_CLOCK_TICK_MS: "1",
+      PM_SEED: REPLAY_SEED,
       PM_TELEMETRY: "0",
     },
   });
 }
 
-function readReceipt(payload, scenarioId) {
-  const receipt = payload?.token_accounting;
-  if (
-    typeof receipt !== "object" ||
-    receipt === null ||
-    Array.isArray(receipt)
-  ) {
-    fail(`Agent-task token scenario ${scenarioId} omitted token_accounting`);
-  }
-  return receipt;
+function readOutputPath(payload, fieldPath) {
+  let cursor = payload;
+  const present = fieldPath.split(".").every((segment) => {
+    if (
+      typeof cursor !== "object" ||
+      cursor === null ||
+      !Object.hasOwn(cursor, segment)
+    ) {
+      return false;
+    }
+    cursor = cursor[segment];
+    return true;
+  });
+  return { present, value: cursor };
 }
 
-function assertComplete(payload, requiredFields, scenarioId) {
-  const serialized = JSON.stringify(payload);
-  for (const requiredField of requiredFields) {
-    if (!serialized.includes(requiredField)) {
+function assertComplete(payload, step) {
+  for (const requiredField of step.required_fields) {
+    if (!readOutputPath(payload, requiredField).present) {
       fail(
-        `Agent-task token scenario ${scenarioId} omitted required consumed field ${requiredField}`,
+        `Agent-task transcript step ${step.id} omitted required consumed field path ${requiredField}`,
+      );
+    }
+  }
+  for (const [fieldPath, expectedValue] of Object.entries(
+    step.expected_field_values ?? {},
+  )) {
+    const observed = readOutputPath(payload, fieldPath);
+    if (!observed.present || !Object.is(observed.value, expectedValue)) {
+      fail(
+        `Agent-task transcript step ${step.id} field ${fieldPath} value drift: ${JSON.stringify(observed.value)} != ${JSON.stringify(expectedValue)}`,
       );
     }
   }
 }
 
-/** Validate and summarize one pair of independently captured CLI transports. */
-export function validateAgentTaskTokenInvocation(
-  baseline,
-  accounted,
-  scenario,
-) {
+function validateRefusalOutput(payload, step) {
+  if (payload?.code !== step.expected_error_code) {
+    fail(
+      `Agent-task transcript step ${step.id} error code mismatch: ${String(payload?.code)} != ${step.expected_error_code}`,
+    );
+  }
+  if (payload?.refusal?.surface !== step.expected_refusal_surface) {
+    fail(
+      `Agent-task transcript step ${step.id} refusal surface mismatch: ${String(payload?.refusal?.surface)} != ${step.expected_refusal_surface}`,
+    );
+  }
+}
+
+function validateSuccessfulOutput(payload, step) {
+  const command = parseBootstrapCommandName([...step.args]);
+  if (command === undefined) {
+    fail(
+      `Agent-task transcript step ${step.id} did not identify a command after global flags`,
+    );
+  }
+  const contract = resolvePmCommandOutputEnvelope(command);
+  if (contract.kind !== step.expected_output_kind) {
+    fail(
+      `Agent-task transcript step ${step.id} output contract drift: ${contract.kind} != ${step.expected_output_kind}`,
+    );
+  }
+  if (contract.kind === "mutation_receipt" && !isPmMutationReceipt(payload)) {
+    fail(
+      `Agent-task transcript step ${step.id} did not emit a mutation receipt`,
+    );
+  }
   if (
-    baseline.status !== scenario.expectedStatus ||
-    accounted.status !== scenario.expectedStatus
+    contract.wrapper_key !== null &&
+    (typeof payload !== "object" ||
+      payload === null ||
+      !(contract.wrapper_key in payload))
   ) {
     fail(
-      `Agent-task token scenario ${scenario.id} exit mismatch: baseline=${baseline.status}, accounted=${accounted.status}, expected=${scenario.expectedStatus}`,
+      `Agent-task transcript step ${step.id} omitted ${contract.wrapper_key} envelope`,
     );
   }
-  const baselinePayload = parseJsonOutput(
-    baseline,
-    `${scenario.id}:accounting-off`,
-  );
-  if (baselinePayload.token_accounting !== undefined) {
-    fail(
-      `Agent-task token scenario ${scenario.id} paid accounting cost while accounting was disabled`,
-    );
+}
+
+function validateExpectedOutput(payload, step) {
+  assertComplete(payload, step);
+  if (step.expected_output_kind === "refusal") {
+    validateRefusalOutput(payload, step);
+  } else {
+    validateSuccessfulOutput(payload, step);
   }
-  const accountedPayload = parseJsonOutput(accounted, scenario.id);
-  const receipt = readReceipt(accountedPayload, scenario.id);
+}
+
+/** Independently validate a self-reported accounting receipt and return its payload projection. */
+function validateSelfReportedAccounting(accountedPayload, step) {
+  const receipt = accountedPayload.token_accounting;
   const {
     token_accounting: _excludedReceipt,
     ...independentlyProjectedPayload
@@ -104,9 +163,20 @@ export function validateAgentTaskTokenInvocation(
     `${JSON.stringify(independentlyProjectedPayload, null, 2)}\n`,
     "utf8",
   );
+  const accountedBytes = Buffer.byteLength(
+    `${JSON.stringify(accountedPayload, null, 2)}\n`,
+    "utf8",
+  );
+  const measuredReceiptBytes = accountedBytes - baselineBytes;
   if (receipt.total_bytes !== baselineBytes) {
     fail(
-      `Agent-task token scenario ${scenario.id} accounting drift: reported=${receipt.total_bytes}, independent=${baselineBytes}`,
+      `Agent-task transcript step ${step.id} accounting drift: reported=${receipt.total_bytes}, independent=${baselineBytes}`,
+    );
+  }
+  const expectedEstimatedTokens = Math.ceil(baselineBytes / 4);
+  if (receipt.total_estimated_tokens !== expectedEstimatedTokens) {
+    fail(
+      `Agent-task transcript step ${step.id} token estimate drift: reported=${String(receipt.total_estimated_tokens)}, expected=${expectedEstimatedTokens}`,
     );
   }
   const sectionBytes = Object.values(receipt.sections ?? {}).reduce(
@@ -116,37 +186,163 @@ export function validateAgentTaskTokenInvocation(
   );
   if (sectionBytes !== baselineBytes) {
     fail(
-      `Agent-task token scenario ${scenario.id} section attribution does not sum to emitted bytes`,
+      `Agent-task transcript step ${step.id} section attribution does not sum to emitted bytes`,
     );
   }
   if (
     !Number.isFinite(receipt.accounting_receipt_bytes) ||
+    receipt.accounting_receipt_bytes !== measuredReceiptBytes ||
+    receipt.accounting_receipt_estimated_tokens !==
+      Math.ceil(measuredReceiptBytes / 4) ||
     receipt.accounting_receipt_bytes >= 1_024
   ) {
     fail(
-      `Agent-task token scenario ${scenario.id} accounting receipt exceeded its 1024-byte bound`,
+      `Agent-task transcript step ${step.id} accounting receipt size drift: reported=${String(receipt.accounting_receipt_bytes)}, independent=${measuredReceiptBytes}`,
     );
   }
-  assertComplete(accountedPayload, scenario.requiredFields, scenario.id);
+  return { receipt, independentlyProjectedPayload };
+}
+
+function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
+  validateExpectedOutput(baselinePayload, step);
+  validateExpectedOutput(measuredPayload, step);
+  if (JSON.stringify(baselinePayload) !== JSON.stringify(measuredPayload)) {
+    fail(
+      `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled`,
+    );
+  }
+}
+
+/** Validate and summarize one pair of independently captured CLI transports. */
+export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
+  if (
+    baseline.status !== step.expected_exit_code ||
+    accounted.status !== step.expected_exit_code
+  ) {
+    fail(
+      `Agent-task transcript step ${step.id} exit mismatch: baseline=${baseline.status}, accounted=${accounted.status}, expected=${step.expected_exit_code}`,
+    );
+  }
+  const baselinePayload = parseJsonOutput(
+    baseline,
+    step,
+    `${step.id}:accounting-off`,
+  );
+  if (baselinePayload.token_accounting !== undefined) {
+    fail(
+      `Agent-task transcript step ${step.id} paid accounting cost while accounting was disabled`,
+    );
+  }
+  const accountedPayload = parseJsonOutput(accounted, step);
+  const accountingMode =
+    typeof accountedPayload?.token_accounting === "object" &&
+    accountedPayload.token_accounting !== null &&
+    !Array.isArray(accountedPayload.token_accounting)
+      ? "self_reported"
+      : "independent_transport";
+  if (step.expected_accounting_mode !== accountingMode) {
+    fail(
+      `Agent-task transcript step ${step.id} accounting mode mismatch: ${accountingMode} != ${String(step.expected_accounting_mode)}`,
+    );
+  }
+  if (
+    step.expected_output_kind === "refusal" &&
+    accountingMode === "independent_transport"
+  ) {
+    const emittedBytes = Buffer.byteLength(accounted.stderr, "utf8");
+    assertTransportPayloadParity(baselinePayload, accountedPayload, step);
+    return {
+      id: step.id,
+      command: step.args.join(" "),
+      exit_code: accounted.status,
+      output_kind: step.expected_output_kind,
+      emitted_bytes: emittedBytes,
+      estimated_tokens: Math.ceil(emittedBytes / 4),
+      accounting_receipt_bytes: 0,
+      sections: { diagnostics: { bytes: emittedBytes } },
+      accounting_mode: accountingMode,
+      completeness: "required_fields_present",
+      payload: accountedPayload,
+    };
+  }
+  if (accountingMode === "independent_transport") {
+    fail(
+      `Agent-task transcript step ${step.id} independent_transport accounting is supported only for refusal output`,
+    );
+  }
+  const { receipt, independentlyProjectedPayload } =
+    validateSelfReportedAccounting(accountedPayload, step);
+  assertTransportPayloadParity(
+    baselinePayload,
+    independentlyProjectedPayload,
+    step,
+  );
   return {
-    id: scenario.id,
-    command: scenario.args.join(" "),
+    id: step.id,
+    command: step.args.join(" "),
     exit_code: accounted.status,
+    output_kind: step.expected_output_kind,
     emitted_bytes: receipt.total_bytes,
     estimated_tokens: receipt.total_estimated_tokens,
     accounting_receipt_bytes: receipt.accounting_receipt_bytes,
     sections: receipt.sections,
+    accounting_mode: accountingMode,
     completeness: "required_fields_present",
+    payload: independentlyProjectedPayload,
   };
 }
 
-function measureInvocation(pmRoot, scenario) {
-  const baseArgs = [...scenario.args, "--json"];
-  return validateAgentTaskTokenInvocation(
-    runCli(pmRoot, baseArgs),
-    runCli(pmRoot, [...baseArgs, "--token-accounting"]),
-    scenario,
-  );
+/** Require a recovery step to replay the exact shell-free refusal arguments. */
+export function assertAdvertisedAgentTaskRecovery(refusal, step) {
+  const advertisedArgs = refusal?.recovery?.suggested_retry_args;
+  if (
+    !Array.isArray(advertisedArgs) ||
+    JSON.stringify(advertisedArgs) !== JSON.stringify(step.args)
+  ) {
+    fail(
+      `Agent-task transcript step ${step.id} did not execute the shell-free recovery advertised by ${step.recovery_for}`,
+    );
+  }
+}
+
+function measureTask(baselineRoot, accountedRoot, task) {
+  const measuredSteps = [];
+  const payloads = new Map();
+  for (const step of task.steps) {
+    const measured = validateAgentTaskTokenInvocation(
+      runCli(baselineRoot, ["--json", ...step.args]),
+      runCli(
+        accountedRoot,
+        step.expected_accounting_mode === "self_reported"
+          ? ["--json", "--token-accounting", ...step.args]
+          : ["--json", ...step.args],
+      ),
+      step,
+    );
+    if (step.recovery_for !== undefined) {
+      assertAdvertisedAgentTaskRecovery(payloads.get(step.recovery_for), step);
+    }
+    payloads.set(step.id, measured.payload);
+    const { payload: _payload, ...stepReport } = measured;
+    measuredSteps.push(stepReport);
+  }
+  return {
+    id: task.id,
+    description: task.description,
+    completed: true,
+    step_count: measuredSteps.length,
+    retry_count: task.steps.filter((step) => step.recovery_for !== undefined)
+      .length,
+    emitted_bytes: measuredSteps.reduce(
+      (total, step) => total + step.emitted_bytes,
+      0,
+    ),
+    estimated_tokens: measuredSteps.reduce(
+      (total, step) => total + step.estimated_tokens,
+      0,
+    ),
+    steps: measuredSteps,
+  };
 }
 
 async function seedWorkspace(workspaceRoot) {
@@ -157,54 +353,101 @@ async function seedWorkspace(workspaceRoot) {
     author: "agent-task-token-gate",
     noExtensions: true,
   });
-  await client.init(undefined, { defaults: true });
   const anchorId = fixtureId("agent-task-token-anchor");
-  await client.create({
-    id: anchorId,
-    title: "Token accounting anchor",
-    description:
-      "Required context for the returning-agent completeness assertion.",
-    type: "Task",
-    status: "open",
-    priority: 1,
-  });
-  for (let index = 0; index < 100; index += 1) {
-    const suffix = String(index).padStart(3, "0");
+  await createReproducibleProcessRunner({
+    PM_CLOCK: REPLAY_CLOCK,
+    PM_CLOCK_TICK_MS: "1",
+    PM_SEED: REPLAY_SEED,
+  })(async () => {
+    await client.init(undefined, { defaults: true });
     await client.create({
-      id: fixtureId(`agent-task-token-scale-${suffix}`),
-      title: `Scaled context row ${suffix}`,
-      description: "Deterministic scaled-workspace context fixture.",
+      id: anchorId,
+      title: "Token accounting anchor",
+      description:
+        "Required context for the returning-agent completeness assertion.",
       type: "Task",
       status: "open",
-      priority: (index % 4) + 1,
+      priority: 1,
     });
-  }
+    for (let index = 0; index < 100; index += 1) {
+      const suffix = String(index).padStart(3, "0");
+      await client.create({
+        id: fixtureId(`agent-task-token-scale-${suffix}`),
+        title: `Scaled context row ${suffix}`,
+        description: "Deterministic scaled-workspace context fixture.",
+        type: "Task",
+        status: "open",
+        priority: (index % 4) + 1,
+      });
+    }
+  });
   return { pmRoot, anchorId };
 }
 
-/** Return token regressions against the externally published release baseline. */
+function listTaskTokenBaselineFailures(task, taskLimit) {
+  const failures = [];
+  if (!Number.isFinite(taskLimit.max_estimated_tokens)) {
+    failures.push(`task:${task.id}:missing_baseline_limit`);
+  } else if (task.estimated_tokens > taskLimit.max_estimated_tokens) {
+    failures.push(
+      `task:${task.id}:${task.estimated_tokens}>baseline:${taskLimit.max_estimated_tokens}`,
+    );
+  }
+  const stepLimits = new Map(
+    (taskLimit.steps ?? []).map((step) => [step.id, step]),
+  );
+  for (const step of task.steps) {
+    const stepLimit = stepLimits.get(step.id);
+    if (!Number.isFinite(stepLimit?.max_estimated_tokens))
+      failures.push(`task:${task.id}:step:${step.id}:missing_baseline`);
+    else if (step.estimated_tokens > stepLimit.max_estimated_tokens) {
+      failures.push(
+        `task:${task.id}:step:${step.id}:${step.estimated_tokens}>baseline:${stepLimit.max_estimated_tokens}`,
+      );
+    }
+    if (stepLimit && step.accounting_mode !== stepLimit.accounting_mode) {
+      failures.push(
+        `task:${task.id}:step:${step.id}:accounting_mode:${String(step.accounting_mode)}!=${String(stepLimit.accounting_mode)}`,
+      );
+    }
+  }
+  if (stepLimits.size !== task.steps.length) {
+    failures.push(
+      `task:${task.id}:step_count:${task.steps.length}!=${stepLimits.size}`,
+    );
+  }
+  return failures;
+}
+
+/** Return task and step regressions against the published transcript baseline. */
 export function compareAgentTaskTokenBaseline(report, baseline) {
   const failures = [];
   if (baseline.version !== BASELINE_VERSION)
     failures.push(`baseline_version:${baseline.version}`);
-  const limits = new Map(
-    (baseline.scenarios ?? []).map((scenario) => [
-      scenario.id,
-      scenario.max_estimated_tokens,
-    ]),
+  if (baseline.transcript_digest !== report.transcript_digest)
+    failures.push("transcript_digest:mismatch");
+  const taskLimits = new Map(
+    (baseline.tasks ?? []).map((task) => [task.id, task]),
   );
-  for (const scenario of report.scenarios) {
-    const limit = limits.get(scenario.id);
-    if (!Number.isFinite(limit))
-      failures.push(`scenario:${scenario.id}:missing_baseline`);
-    else if (scenario.estimated_tokens > limit) {
-      failures.push(
-        `scenario:${scenario.id}:${scenario.estimated_tokens}>baseline:${limit}`,
-      );
+  for (const task of report.tasks) {
+    const taskLimit = taskLimits.get(task.id);
+    if (!taskLimit) {
+      failures.push(`task:${task.id}:missing_baseline`);
+      continue;
     }
+    failures.push(...listTaskTokenBaselineFailures(task, taskLimit));
   }
-  if (limits.size !== report.scenarios.length)
-    failures.push(`scenario_count:${report.scenarios.length}!=${limits.size}`);
+  if (taskLimits.size !== report.tasks.length)
+    failures.push(`task_count:${report.tasks.length}!=${taskLimits.size}`);
+  if (!Number.isFinite(baseline.composite_max_estimated_tokens)) {
+    failures.push("composite:missing_baseline_limit");
+  } else if (
+    report.composite_estimated_tokens > baseline.composite_max_estimated_tokens
+  ) {
+    failures.push(
+      `composite:${report.composite_estimated_tokens}>baseline:${baseline.composite_max_estimated_tokens}`,
+    );
+  }
   return failures;
 }
 
@@ -218,12 +461,19 @@ export function resolveAgentTaskTokenBaselinePath(baselineFlag) {
 function buildBaseline(report) {
   return {
     version: BASELINE_VERSION,
+    transcript_version: report.transcript_version,
+    transcript_digest: report.transcript_digest,
     estimator: "ceil(utf8_bytes / 4)",
     measurement_scope: "output_before_token_accounting",
     published_with_release: true,
-    scenarios: report.scenarios.map((scenario) => ({
-      id: scenario.id,
-      max_estimated_tokens: scenario.estimated_tokens,
+    tasks: report.tasks.map((task) => ({
+      id: task.id,
+      max_estimated_tokens: task.estimated_tokens,
+      steps: task.steps.map((step) => ({
+        id: step.id,
+        max_estimated_tokens: step.estimated_tokens,
+        accounting_mode: step.accounting_mode,
+      })),
     })),
     composite_max_estimated_tokens: report.composite_estimated_tokens,
   };
@@ -238,13 +488,10 @@ export function evaluateAgentTaskTokenReport(
   const evaluatedReport = negativeControl
     ? {
         ...report,
-        scenarios: report.scenarios.map((scenario, index) =>
+        tasks: report.tasks.map((task, index) =>
           index === 0
-            ? {
-                ...scenario,
-                estimated_tokens: scenario.estimated_tokens + 1_000_000,
-              }
-            : scenario,
+            ? { ...task, estimated_tokens: task.estimated_tokens + 1_000_000 }
+            : task,
         ),
       }
     : report;
@@ -254,7 +501,7 @@ export function evaluateAgentTaskTokenReport(
       fail("Agent-task token negative control escaped detection");
     return {
       ok: true,
-      negative_control: "seeded_per_task_token_regression",
+      negative_control: "seeded_completed_task_token_regression",
       failures,
     };
   }
@@ -263,7 +510,7 @@ export function evaluateAgentTaskTokenReport(
   return report;
 }
 
-/** Persist or evaluate a measured report according to parsed release-gate flags. */
+/** Persist or evaluate a measured report according to release-gate flags. */
 export function finalizeAgentTaskTokenReport(report, flags, baselinePath) {
   if (flags.has("update")) {
     writeFileSync(
@@ -283,57 +530,75 @@ export function finalizeAgentTaskTokenReport(report, flags, baselinePath) {
   return report;
 }
 
-/** Run, refresh, or negatively control the real-transport agent-task token gate. */
+/** Require independently seeded transcript workspaces to share fixture ids. */
+export function assertMatchingAgentTaskFixtureAnchors(
+  baselineFixture,
+  accountedFixture,
+) {
+  if (baselineFixture.anchorId !== accountedFixture.anchorId) {
+    fail("Agent-task transcript fixtures produced different anchor ids");
+  }
+}
+
+/** Run, refresh, or negatively control the real-transport transcript gate. */
 export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
   const baselinePath = resolveAgentTaskTokenBaselinePath(flags.get("baseline"));
-  const workspaceRoot = mkdtempSync(
-    path.join(tmpdir(), "pm-agent-task-token-"),
+  const transcriptSource = readFileSync(TRANSCRIPT_PATH, "utf8");
+  const corpus = parsePmAgentTaskTranscriptCorpus(JSON.parse(transcriptSource));
+  const baselineWorkspace = mkdtempSync(
+    path.join(tmpdir(), "pm-agent-task-baseline-"),
+  );
+  const accountedWorkspace = mkdtempSync(
+    path.join(tmpdir(), "pm-agent-task-accounted-"),
   );
   try {
-    const { pmRoot, anchorId } = await seedWorkspace(workspaceRoot);
-    const scenarios = [
-      {
-        id: "small-workspace",
-        args: ["list", "--for", "triage", "--limit", "2"],
-        expectedStatus: 0,
-        requiredFields: ["items"],
-      },
-      {
-        id: "large-workspace",
-        args: ["context", "--for", "orient", "--limit", "5"],
-        expectedStatus: 0,
-        requiredFields: ["items"],
-      },
-      {
-        id: "returning-agent",
-        args: ["get", anchorId, "--for", "inspect"],
-        expectedStatus: 0,
-        requiredFields: [anchorId],
-      },
-      {
-        id: "failing-command",
-        args: ["get", "pm-does-not-exist"],
-        expectedStatus: 3,
-        requiredFields: ["code", "recovery"],
-      },
-    ];
-    const measured = scenarios.map((scenario) =>
-      measureInvocation(pmRoot, scenario),
+    const baselineFixture = await seedWorkspace(baselineWorkspace);
+    const accountedFixture = await seedWorkspace(accountedWorkspace);
+    assertMatchingAgentTaskFixtureAnchors(baselineFixture, accountedFixture);
+    const replacements = new Map([
+      ["$ANCHOR_ID", baselineFixture.anchorId],
+      ["$LIFECYCLE_ID", fixtureId("agent-task-transcript-lifecycle")],
+      ["$BULK_ID", fixtureId("agent-task-transcript-bulk-effects")],
+    ]);
+    const tasks = corpus.tasks.map((task) => ({
+      ...task,
+      steps: task.steps.map((step) => ({
+        ...step,
+        args: step.args.map((argument) =>
+          [...replacements].reduce(
+            (expanded, [token, replacement]) =>
+              expanded.replaceAll(token, replacement),
+            argument,
+          ),
+        ),
+      })),
+    }));
+    const measured = tasks.map((task) =>
+      measureTask(baselineFixture.pmRoot, accountedFixture.pmRoot, task),
     );
     const report = {
       version: BASELINE_VERSION,
+      transcript_version: corpus.version,
+      transcript_digest: `sha256:${createHash("sha256").update(transcriptSource).digest("hex")}`,
       estimator: "ceil(utf8_bytes / 4)",
-      scenario_count: measured.length,
-      composite_estimated_tokens: measured.reduce(
-        (total, scenario) => total + scenario.estimated_tokens,
+      task_count: measured.length,
+      completed_task_count: measured.filter((task) => task.completed).length,
+      step_count: measured.reduce((total, task) => total + task.step_count, 0),
+      retry_count: measured.reduce(
+        (total, task) => total + task.retry_count,
         0,
       ),
-      scenarios: measured,
+      composite_estimated_tokens: measured.reduce(
+        (total, task) => total + task.estimated_tokens,
+        0,
+      ),
+      tasks: measured,
     };
     return finalizeAgentTaskTokenReport(report, flags, baselinePath);
   } finally {
-    rmSync(workspaceRoot, { recursive: true, force: true });
+    rmSync(baselineWorkspace, { recursive: true, force: true });
+    rmSync(accountedWorkspace, { recursive: true, force: true });
   }
 }
 

@@ -735,15 +735,16 @@ explicitly overriding terminal-state or lock conflicts.
 
 ```bash
 pm comments <id> "Implemented command parsing fix."
+pm comments <id> "Implemented command parsing fix." --author agent-a --if-absent
 printf '%s\n' '## Verification summary' '- Linux pass' '- macOS pass' | pm comments <id> --stdin
 pm comments <id> --file docs/release-evidence.md
 pm comments <id> --edit 2 "Corrected: the regression was in the parser, not the renderer."
 pm comments <id> --delete 3
-pm notes <id> --add "Keep renderer changes isolated to TOON output."
-pm learnings <id> --add "Use runtime contracts instead of duplicating flag lists."
+pm notes <id> --add "Keep renderer changes isolated to TOON output." --if-absent
+pm learnings <id> --add "Use runtime contracts instead of duplicating flag lists." --if-absent
 ```
 
-Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. All three accept `--text` as a hidden compatibility alias for canonical `--add`; comments also retain `--body`/`--comment`, and notes retain `--note`. Choose exactly one input source (`[text]`, an add alias, `--stdin`, or `--file`) per invocation. Conflicting alias values fail before mutation. To clean up obsolete orchestration notes, `--edit <index>` rewrites the comment at a 1-based index and `--delete <index>` removes it; both record history and honor ownership rules.
+Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. All three accept `--text` as a hidden compatibility alias for canonical `--add`; comments also retain `--body`/`--comment`, and notes retain `--note`. Choose exactly one input source (`[text]`, an add alias, `--stdin`, or `--file`) per invocation. Conflicting alias values fail before mutation. For retrying agents, `--if-absent` makes any annotation append idempotent by the resolved author plus exact normalized stored text: the first call returns `changed: true` and `mutation_receipt.changed_count: 1`; an exact retry returns `changed: false`, the existing entry position, and `changed_count: 0` without writing item or history state. Different authors remain distinct, and omitting `--if-absent` deliberately preserves duplicate-appending compatibility. The flag is append-only and is rejected for list, edit, and delete operations. To clean up obsolete orchestration notes, `--edit <index>` rewrites the comment at a 1-based index and `--delete <index>` removes it; both record history and honor ownership rules.
 
 ## Linked Artifacts
 

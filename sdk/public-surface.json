@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1802,
+    "covered_symbols": 1811,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1803
+    "required_symbols": 1812
   },
   "breaking_acknowledgements": [
     {
@@ -1316,6 +1316,67 @@
       ],
       "package_version": "2026.8.26",
       "reason": "Add a domain-specific package upgrade mode-conflict refusal code so SDK consumers can distinguish lifecycle validation from query projection validation."
+    },
+    {
+      "changes": [
+        "signature ./sdk:AnnotationCommandOptions",
+        "signature ./sdk:AnnotationCommandResult",
+        "signature ./sdk:AnnotationMutationReceipt",
+        "signature ./sdk:CommentsCommandOptions",
+        "signature ./sdk:CommentsResult",
+        "signature ./sdk/core:CommentsCommandOptions",
+        "signature ./sdk/core:CommentsResult",
+        "signature ./sdk/runtime:CommentsCommandOptions",
+        "signature ./sdk/runtime:CommentsResult"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Add the opt-in comment ifAbsent mutation and changed receipt contract for retry-safe agents; default append behavior remains compatible and the next date-based release documents the new surface."
+    },
+    {
+      "changes": [
+        "signature ./sdk:LearningsCommandOptions",
+        "signature ./sdk:LearningsResult",
+        "signature ./sdk:NotesCommandOptions",
+        "signature ./sdk:NotesResult",
+        "signature ./sdk/core:LearningsCommandOptions",
+        "signature ./sdk/core:LearningsResult",
+        "signature ./sdk/core:NotesCommandOptions",
+        "signature ./sdk/core:NotesResult",
+        "signature ./sdk/runtime:LearningsCommandOptions",
+        "signature ./sdk/runtime:LearningsResult",
+        "signature ./sdk/runtime:NotesCommandOptions",
+        "signature ./sdk/runtime:NotesResult"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Additive optional ifAbsent and changed fields extend every public annotation mutation contract; policy classifies exported signature growth as breaking and the next date release carries it."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Advance the strict tool-parameter schema version for the additive annotation ifAbsent contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_AGENT_TASK_TRANSCRIPT_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PmAgentTaskTranscriptStep",
+        "signature ./sdk/contracts:PM_AGENT_TASK_TRANSCRIPT_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PmAgentTaskTranscriptStep"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Finalize unreleased transcript v2 accounting-mode contract and strict annotation schema correction"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmAgentTaskTranscriptStep",
+        "signature ./sdk/contracts:PmAgentTaskTranscriptStep"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Add optional transcript terminal-value assertions while preserving version-two parser compatibility"
     }
   ],
   "entrypoints": {
@@ -1836,13 +1897,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AnnotationCommandOptions",
-          "signature": "export interface AnnotationCommandOptions { limit?: string; author?: string; message?: string; force?: boolean; includeMeta?: boolean; fullHistory?: boolean; }"
+          "signature": "export interface AnnotationCommandOptions { limit?: string; author?: string; message?: string; force?: boolean; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; }"
         },
         {
           "classification": "advanced_export",
           "kind": "type",
           "name": "AnnotationCommandResult",
-          "signature": "export type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry> = { id: string; count: number; } & Record<TKey, TEntry[]> & { total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; };"
+          "signature": "export type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry> = { id: string; count: number; } & Record<TKey, TEntry[]> & { total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; };"
         },
         {
           "classification": "advanced_export",
@@ -1866,7 +1927,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AnnotationMutationReceipt",
-          "signature": "export interface AnnotationMutationReceipt { action: \"add\" | \"edit\" | \"delete\"; entry_index: number; changed_count: 1; full_history_included: boolean; }"
+          "signature": "export interface AnnotationMutationReceipt { action: \"add\" | \"edit\" | \"delete\"; entry_index: number; changed_count: 0 | 1; full_history_included: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -3738,13 +3799,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsCommandOptions",
-          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsResult",
-          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -8328,13 +8389,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsCommandOptions",
-          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsResult",
-          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -9432,13 +9493,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9963,6 +10024,12 @@
           "signature": "(raw: string, optionName: string) => number | calls: (raw: string, optionName: string) => number"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "parsePmAgentTaskTranscriptCorpus",
+          "signature": "(value: unknown) => PmAgentTaskTranscriptCorpus | calls: (value: unknown) => PmAgentTaskTranscriptCorpus"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "parsePriority",
@@ -10255,6 +10322,18 @@
           "kind": "function",
           "name": "planWorkspaceSnapshotRestore",
           "signature": "(pmRoot: string, target: string) => Promise<WorkspaceSnapshotRestorePlan> | calls: (pmRoot: string, target: string) => Promise<WorkspaceSnapshotRestorePlan>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_AGENT_TASK_ACCOUNTING_MODES",
+          "signature": "readonly [\"self_reported\", \"independent_transport\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_AGENT_TASK_TRANSCRIPT_VERSION",
+          "signature": "2"
         },
         {
           "classification": "supported",
@@ -10836,7 +10915,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.9.0\""
+          "signature": "\"4.10.1\""
         },
         {
           "classification": "contract_data",
@@ -10879,6 +10958,42 @@
           "kind": "interface",
           "name": "PmActionToolInputSchemaOptions",
           "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskAccountingMode",
+          "signature": "export type PmAgentTaskAccountingMode = (typeof PM_AGENT_TASK_ACCOUNTING_MODES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskExpectedFieldValue",
+          "signature": "export type PmAgentTaskExpectedFieldValue = string | number | boolean | null;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskStepOutputKind",
+          "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscript",
+          "signature": "export interface PmAgentTaskTranscript { id: string; description: string; steps: readonly PmAgentTaskTranscriptStep[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptCorpus",
+          "signature": "export interface PmAgentTaskTranscriptCorpus { version: typeof PM_AGENT_TASK_TRANSCRIPT_VERSION; tasks: readonly PmAgentTaskTranscript[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptStep",
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_field_values?: Readonly<Record<string, PmAgentTaskExpectedFieldValue>>; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",
@@ -20500,6 +20615,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "parsePmAgentTaskTranscriptCorpus",
+          "signature": "(value: unknown) => PmAgentTaskTranscriptCorpus | calls: (value: unknown) => PmAgentTaskTranscriptCorpus"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "PAUSE_TASK_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -20515,6 +20636,18 @@
           "kind": "value",
           "name": "PLAN_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_AGENT_TASK_ACCOUNTING_MODES",
+          "signature": "readonly [\"self_reported\", \"independent_transport\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_AGENT_TASK_TRANSCRIPT_VERSION",
+          "signature": "2"
         },
         {
           "classification": "contract_data",
@@ -20796,7 +20929,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.9.0\""
+          "signature": "\"4.10.1\""
         },
         {
           "classification": "contract_data",
@@ -20815,6 +20948,42 @@
           "kind": "interface",
           "name": "PmActionToolInputSchemaOptions",
           "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskAccountingMode",
+          "signature": "export type PmAgentTaskAccountingMode = (typeof PM_AGENT_TASK_ACCOUNTING_MODES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskExpectedFieldValue",
+          "signature": "export type PmAgentTaskExpectedFieldValue = string | number | boolean | null;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskStepOutputKind",
+          "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscript",
+          "signature": "export interface PmAgentTaskTranscript { id: string; description: string; steps: readonly PmAgentTaskTranscriptStep[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptCorpus",
+          "signature": "export interface PmAgentTaskTranscriptCorpus { version: typeof PM_AGENT_TASK_TRANSCRIPT_VERSION; tasks: readonly PmAgentTaskTranscript[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmAgentTaskTranscriptStep",
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_field_values?: Readonly<Record<string, PmAgentTaskExpectedFieldValue>>; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",
@@ -22254,13 +22423,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsCommandOptions",
-          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsResult",
-          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "supported",
@@ -22626,13 +22795,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsCommandOptions",
-          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsResult",
-          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "supported",
@@ -22722,13 +22891,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "supported",
@@ -28188,13 +28357,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsCommandOptions",
-          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsResult",
-          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -28944,13 +29113,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsCommandOptions",
-          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsResult",
-          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -29184,13 +29353,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; ifAbsent?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; changed?: boolean; }"
         },
         {
           "classification": "supported",
@@ -31379,6 +31548,7 @@
     "ambiguous_option_combination",
     "annotation_alias_conflict",
     "annotation_flag_like_value",
+    "annotation_if_absent_without_append",
     "annotation_message_without_text",
     "annotation_transposed_subcommand",
     "append_empty_body",

@@ -708,6 +708,7 @@ export * from "./query/item-filter-options.js";
 export * from "./query/parsers.js";
 export * from "./output.js";
 export * from "./output-contracts.js";
+export * from "./agent/task-transcript-contracts.js";
 export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
 export * from "./relationship-history.js";

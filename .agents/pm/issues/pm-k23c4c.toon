@@ -1,0 +1,56 @@
+id: pm-k23c4c
+title: "GH-1131: macOS Node 24 nightly cannot create the Skills-over-MCP special-file socket fixture"
+description: Nightly Validation run 33085691675 failed only on macos-latest / Node 24 because tests/unit/sdk/mcp/skills.spec.ts binds resource.sock beneath a long temporary skill path. macOS rejects that AF_UNIX path with EINVAL before PmMcpSkillRegistry can exercise the intended special-file rejection contract. Preserve the real non-regular-file security negative control using a platform-safe socket path and prove cleanup plus cross-platform nightly behavior.
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:ci","area:mcp",macos,nightly,portability,security,test-reliability
+created_at: "2026-08-27T16:23:46.474Z"
+updated_at: "2026-08-27T21:31:59.488Z"
+closed_at: "2026-08-27T21:31:58.866Z"
+completed_at: "2026-08-27T21:31:58.866Z"
+author: "harness:codex"
+acceptance_criteria: "The special-file negative control executes on macOS, Linux, and Windows without exceeding platform socket-path limits; The test still proves Skills-over-MCP rejects a non-regular resource rather than weakening or skipping the security assertion; Socket and temporary resources are cleaned deterministically on success and failure; Focused tests and the Nightly Validation matrix pass"
+parent: pm-rs9vry
+resolution: completed
+expected_result: The real Skills socket-path security test passes on macOS Node 24 without weakening non-regular-file rejection.
+actual_result: "The fixture uses a short native temporary root while preserving real socket creation, lstat classification, and cleanup. Explicit Nightly Validation run 33117244185 passed Ubuntu Node 22/24/25, macOS Node 24, and Windows Node 24."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8nzivt,incident_from,"2026-08-27T16:23:46.474Z","harness:codex","cli:create:dep",detected
+  pm-x705zo,verifies,"2026-08-27T16:23:46.474Z","harness:codex","cli:create:dep",detected
+  pm-8pnj,discovered_from,"2026-08-27T16:59:04.470Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-27T16:23:46.474Z","harness:codex","Duplicate check evidence: complete 2,563-item all-status census plus exact GH-1131 and AND-mode macOS Node 24 MCP skills socket EINVAL searches returned no existing item. GitHub issue: https://github.com/unbraind/pm-cli/issues/1131; failing run: https://github.com/unbraind/pm-cli/actions/runs/33085691675."
+  "2026-08-27T16:25:47.834Z","harness:codex","Start: reproduce and fix GH-1131 by retaining the real non-regular-file Skills-over-MCP security check while moving its Unix socket fixture beneath a macOS-safe short path; verify focused and full nightly-equivalent coverage."
+  "2026-08-27T16:53:57.711Z","harness:codex","Relationship rationale: pm-k23c4c is incident_from pm-8nzivt because GH-1131 is a concrete nightly escape from that CI lineage; it verifies pm-x705zo by retaining the Skills-over-MCP non-regular-file security assertion, and it remains under parent pm-rs9vry as the canonical MCP programme."
+  "2026-08-27T17:34:25.151Z","harness:codex","Completion evidence: the real Unix-domain socket rejection test now uses a deliberately short /tmp fixture root, preserving the non-regular-file security assertion while remaining below macOS Node 24 socket-path limits. The focused linked test passed, the full 585-file suite passed, and exact repository coverage remains 100/100/100/100. Hosted macOS validation remains part of the PR matrix."
+  "2026-08-27T21:30:45.590Z","harness:codex","Hosted acceptance evidence 2026-08-27: explicit workflow_dispatch run https://github.com/unbraind/pm-cli/actions/runs/33117244185 completed successfully on head 9bcb5817bee7120896bb0a720f1a44e117e1e8f5. Passing jobs: Ubuntu Node 22 (98674934349), Ubuntu Node 24 (98674934126), Ubuntu Node 25 (98674934212), macOS Node 24 (98674934248), and Windows Node 24 (98674934229). This satisfies the full Nightly Validation matrix before renewed close/release."
+learnings[2]{created_at,author,text}:
+  "2026-08-27T17:34:25.641Z","harness:codex",Cross-platform Unix socket tests should minimize the pathname at fixture construction; truncating semantics or mocking socket identity would hide the security behavior being tested.
+  "2026-08-27T21:30:46.094Z","harness:codex",Portable special-file security tests need both semantic negative-control proof and explicit hosted platform evidence; a passing local Linux run or one macOS job does not satisfy a declared Linux/macOS/Windows matrix.
+files[1]{path,scope,note}:
+  tests/unit/sdk/mcp/skills.spec.ts,project,short Unix socket fixture retaining special-file rejection
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/skills.spec.ts,project,240,"harness:codex","2026-08-27T16:44:54.378Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[1]:
+  - run_id: test-local-mtbsxom2-b6tgsy
+    kind: test
+    status: passed
+    started_at: "2026-08-27T17:33:34.987Z"
+    finished_at: "2026-08-27T17:33:46.586Z"
+    recorded_at: "2026-08-27T17:33:46.586Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/skills.spec.ts,schema,schema,source,local_source_ref
+close_reason: "Completed corrective closeout: the real non-regular-file security assertion uses a portable socket root and explicit Nightly Validation run 33117244185 passed Ubuntu Node 22/24/25, macOS Node 24, and Windows Node 24 before closure."
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-k23c4c
+  gate_id: skills-special-file-portability-contract
+  negative_control: Restore the AF_UNIX socket beneath the deeply nested skill directory; the macOS Node 24 Nightly Validation job must expose pathname overflow before the intended non-regular-file rejection assertion.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/skills.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[5]: Nightly Validation 33117244185 / ubuntu-latest Node 22,Nightly Validation 33117244185 / ubuntu-latest Node 24,Nightly Validation 33117244185 / ubuntu-latest Node 25,Nightly Validation 33117244185 / macos-latest Node 24,Nightly Validation 33117244185 / windows-latest Node 24
+body: ""

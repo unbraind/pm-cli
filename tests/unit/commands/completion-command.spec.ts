@@ -323,7 +323,10 @@ describe("generateBashScript", () => {
 
     for (const command of ["comments", "notes", "learnings"]) {
       const zshStart = zsh.indexOf(`        ${command})`);
-      const zshBlock = zsh.slice(zshStart, zsh.indexOf("          ;;", zshStart));
+      const zshBlock = zsh.slice(
+        zshStart,
+        zsh.indexOf("          ;;", zshStart),
+      );
       expect(zshStart).toBeGreaterThan(-1);
       expect(zshBlock).toContain("--text[");
     }
@@ -367,6 +370,16 @@ describe("generateBashScript", () => {
     for (const flag of flags) {
       expect(fish).toContain(`-l ${flag}`);
     }
+  });
+
+  it("includes retry-safe annotation append completion across shells", () => {
+    expect(generateBashScript()).toContain("--if-absent");
+    expect(generateZshScript()).toContain(
+      "--if-absent[Append only when the resolved author and text are absent]",
+    );
+    expect(generateFishScript()).toContain(
+      "comments notes learnings' -l if-absent -d 'Append only when the resolved author and text are absent'",
+    );
   });
 
   it("includes validate scan-mode flag in bash completion", () => {
@@ -686,9 +699,7 @@ describe("generateBashScript", () => {
         script.indexOf('if [[ ( "$prev" == "--tag"'),
         script.indexOf('local cmd="${COMP_WORDS[1]}"'),
       );
-      expect(trackerTagBranch).toContain(
-        '"${COMP_WORDS[2]}" == "upgrade"',
-      );
+      expect(trackerTagBranch).toContain('"${COMP_WORDS[2]}" == "upgrade"');
       expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "package"');
       expect(trackerTagBranch).toContain('"${COMP_WORDS[1]}" == "packages"');
       expect(trackerTagBranch).toContain(

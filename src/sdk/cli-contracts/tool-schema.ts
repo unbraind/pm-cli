@@ -959,7 +959,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "delete",
         "limit",
         "full",
+        "ifAbsent",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+      ],
+      mutuallyExclusive: [
+        ["edit", "ifAbsent"],
+        ["delete", "ifAbsent"],
       ],
     },
     notes: {
@@ -976,6 +981,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "eventType",
         "includeMeta",
         "full",
+        "ifAbsent",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       mutuallyExclusive: [
@@ -984,6 +990,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         ["addJson", "file"],
         ["addJson", "edit"],
         ["addJson", "delete"],
+        ["edit", "ifAbsent"],
+        ["delete", "ifAbsent"],
       ],
     },
     learnings: {
@@ -996,7 +1004,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "delete",
         "limit",
         "full",
+        "ifAbsent",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+      ],
+      mutuallyExclusive: [
+        ["edit", "ifAbsent"],
+        ["delete", "ifAbsent"],
       ],
     },
     files: {
@@ -1735,7 +1748,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.9.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.10.1" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

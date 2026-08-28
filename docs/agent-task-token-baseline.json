@@ -1,25 +1,111 @@
 {
-  "version": 1,
+  "version": 3,
+  "transcript_version": 2,
+  "transcript_digest": "sha256:2bf91406426d2a9e5de1da10ba67f7b8e9d4a4baa09eb488fe89ae3925c78f3f",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
-  "scenarios": [
+  "tasks": [
     {
-      "id": "small-workspace",
-      "max_estimated_tokens": 552
+      "id": "context-bootstrap",
+      "max_estimated_tokens": 1978,
+      "steps": [
+        {
+          "id": "triage",
+          "max_estimated_tokens": 552,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "orient",
+          "max_estimated_tokens": 1055,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "inspect",
+          "max_estimated_tokens": 371,
+          "accounting_mode": "self_reported"
+        }
+      ]
     },
     {
-      "id": "large-workspace",
-      "max_estimated_tokens": 1055
+      "id": "closed-domain-recovery",
+      "max_estimated_tokens": 630,
+      "steps": [
+        {
+          "id": "refuse-intent",
+          "max_estimated_tokens": 259,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "retry-intent",
+          "max_estimated_tokens": 371,
+          "accounting_mode": "self_reported"
+        }
+      ]
     },
     {
-      "id": "returning-agent",
-      "max_estimated_tokens": 371
+      "id": "unknown-option-recovery",
+      "max_estimated_tokens": 585,
+      "steps": [
+        {
+          "id": "refuse-option",
+          "max_estimated_tokens": 422,
+          "accounting_mode": "independent_transport"
+        },
+        {
+          "id": "retry-option",
+          "max_estimated_tokens": 163,
+          "accounting_mode": "self_reported"
+        }
+      ]
     },
     {
-      "id": "failing-command",
-      "max_estimated_tokens": 219
+      "id": "lifecycle-mutation",
+      "max_estimated_tokens": 812,
+      "steps": [
+        {
+          "id": "create",
+          "max_estimated_tokens": 20,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "inspect-open",
+          "max_estimated_tokens": 363,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "close",
+          "max_estimated_tokens": 31,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "inspect-closed",
+          "max_estimated_tokens": 398,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
+    {
+      "id": "bulk-effect-outcomes",
+      "max_estimated_tokens": 326,
+      "steps": [
+        {
+          "id": "create-bulk-target",
+          "max_estimated_tokens": 20,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "partial-effect",
+          "max_estimated_tokens": 174,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "no-effect",
+          "max_estimated_tokens": 132,
+          "accounting_mode": "self_reported"
+        }
+      ]
     }
   ],
-  "composite_max_estimated_tokens": 2197
+  "composite_max_estimated_tokens": 4331
 }

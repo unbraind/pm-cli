@@ -2206,6 +2206,10 @@
           "flag": "--full-history"
         },
         {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -3949,6 +3953,10 @@
           "flag": "--full-history"
         },
         {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -4334,6 +4342,10 @@
         },
         {
           "flag": "--full-history"
+        },
+        {
+          "flag": "--if-absent",
+          "value_type": "boolean"
         },
         {
           "flag": "--author"
@@ -15595,6 +15607,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "annotation_if_absent_without_append",
+      "class": "usage",
+      "code": "annotation_if_absent_without_append",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation if absent without append condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "annotation_message_without_text",
       "class": "usage",
       "code": "annotation_message_without_text",
@@ -25100,9 +25129,27 @@
       ]
     },
     {
-      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
+      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "add": {
             "description": "Add.",
@@ -25140,6 +25187,10 @@
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a comment only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -29182,9 +29233,27 @@
       "required": []
     },
     {
-      "description": "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
+      "description": "List, add, edit, or delete learnings on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing learnings.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "add": {
             "description": "Add.",
@@ -29222,6 +29291,10 @@
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a learning only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -30334,7 +30407,7 @@
       "required": []
     },
     {
-      "description": "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
+      "description": "List, add, edit, or delete structured notes on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing notes.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [
@@ -30375,6 +30448,22 @@
               "required": [
                 "addJson",
                 "delete"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
               ]
             }
           }
@@ -30439,6 +30528,10 @@
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a note only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "includeMeta": {
             "description": "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
@@ -48557,6 +48650,24 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "comments",
@@ -48597,6 +48708,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a comment only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -48839,6 +48954,22 @@
                 "delete"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
           }
         ],
         "properties": {
@@ -48904,6 +49035,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a note only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "includeMeta": {
             "description": "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
@@ -49118,6 +49253,24 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "learnings",
@@ -49158,6 +49311,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "ifAbsent": {
+            "description": "Append a learning only when the resolved author and exact stored text are absent; a duplicate retry returns changed false without writing history.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -55158,10 +55315,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.9.0"
+    "x-schema-version": "4.10.1"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.9.0",
+  "schema_version": "4.10.1",
   "selected": {
     "action": null,
     "availability_only": false,

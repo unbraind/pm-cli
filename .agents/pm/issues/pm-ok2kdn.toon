@@ -1,0 +1,59 @@
+id: pm-ok2kdn
+title: Agent-task token replay trusts missing or incorrect accounting estimates
+description: CodeRabbit exact-head review on PR #1133 found that the replay gate validates receipt total_bytes but copies total_estimated_tokens without requiring it or proving ceil(total_bytes/4). Missing or incorrect estimates can understate per-task and composite usage despite finite baseline ceilings.
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:quality","area:release",review-feedback,testing,token-efficiency
+created_at: "2026-08-27T20:29:34.879Z"
+updated_at: "2026-08-28T03:21:41.746Z"
+closed_at: "2026-08-28T03:21:41.122Z"
+completed_at: "2026-08-28T03:21:41.122Z"
+author: "harness:codex"
+acceptance_criteria: "Accounting receipts require finite integer total_estimated_tokens equal to ceil(baseline bytes/4); missing, low, high, nonfinite, and malformed estimates fail closed; replay and negative controls pass"
+parent: pm-8pnj
+risk: high
+confidence: high
+severity: high
+resolution: Required and independently recomputed exact receipt token estimates before task and composite replay aggregation.
+expected_result: Task and composite token totals are derived only from contract-valid accounting receipts.
+actual_result: The replay gate now requires a finite integer total_estimated_tokens receipt and independently proves exact equality with ceil(total_bytes/4) before task or composite aggregation.
+component: release-token-gate
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,verifies,"2026-08-27T20:29:34.879Z","harness:codex","cli:create:dep",detected
+  pm-aksavu,recurs_from,"2026-08-27T20:29:34.879Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-27T20:29:34.879Z","harness:codex","Duplicate check evidence: the all-status estimated-token receipt search found the canonical token-budget and pm-8pnj lineages plus prior finite-ceiling child pm-aksavu, but no item for receipt estimate integrity. Review source: CodeRabbit on PR #1133 head baae93c."
+  "2026-08-27T21:13:29.288Z","harness:codex","Evidence 2026-08-27: missing, low, high, NaN, Infinity, and string total_estimated_tokens negative controls all fail closed; the focused gate and canonical replay pass. Repository exact coverage passed 8,067/8,067 tests at 100/100/100/100, and the replay reports five tasks, 14 steps, two retries, and 4,349 estimated tokens from independently validated receipts."
+  "2026-08-28T03:21:40.536Z","harness:codex","Review lifecycle reconciliation: substantive metadata was appended after the previous release event without a fresh ownership interval. This corrective append-only interval reacquires ownership, preserves the original transcript-contract implementation and verification evidence, and restores an unambiguous terminal lifecycle."
+learnings[1]{created_at,author,text}:
+  "2026-08-27T21:13:29.905Z","harness:codex",Validating transport bytes but trusting the adjacent token estimate leaves the budget gate forgeable. Every derived accounting field used for aggregation must be independently recomputed and equality-checked before consumption.
+files[1]{path,scope,note}:
+  scripts/release/agent-task-token-gate.mjs,project,independent receipt token-estimate validation
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-27T20:37:18.043Z",local_mutation,feat/agent-transcript-recovery-contracts,Missing malformed and incorrect estimate negative controls
+test_runs[1]:
+  - run_id: test-local-mtbzizif-a62bm2
+    kind: test
+    status: passed
+    started_at: "2026-08-27T20:37:52.418Z"
+    finished_at: "2026-08-27T20:38:18.183Z"
+    recorded_at: "2026-08-27T20:38:18.183Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,refreshed digest and measured recovery ceiling
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,receipt estimator equality contract
+close_reason: Original transcript-contract implementation remains complete; append-only review reconciliation restored ownership provenance for the later metadata mutation.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ok2kdn
+  gate_id: agent-task-accounting-estimate-integrity
+  negative_control: "Delete, forge, stringify, or make non-finite total_estimated_tokens while total_bytes remains valid; the replay gate must refuse the receipt before aggregation."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,"pnpm quality:agent-task-token",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CodeRabbit,CI / Gates (static),CI / Gates (coverage)
+body: ""

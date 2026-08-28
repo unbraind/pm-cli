@@ -1,0 +1,99 @@
+id: pm-aksavu
+title: Agent-task baselines accept missing task and composite token ceilings
+description: "CodeRabbit review on PR #1133 found that undefined or non-finite task and composite max_estimated_tokens values make JavaScript comparisons false, silently disabling mandatory token ratchets. Validate every baseline ceiling before comparison and add negative controls for absent and non-finite values."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:ci",contracts,review-feedback,token-efficiency
+created_at: "2026-08-27T19:11:43.456Z"
+updated_at: "2026-08-28T10:28:48.407Z"
+closed_at: "2026-08-28T10:28:47.910Z"
+completed_at: "2026-08-28T10:28:47.910Z"
+author: "harness:codex"
+acceptance_criteria: Missing or non-finite task ceilings fail closed; missing or non-finite composite ceilings fail closed; focused negative controls and the real transcript gate pass; exact coverage and static gates pass
+parent: pm-8pnj
+resolution: Completed token-budget evidence integrity by linking and receipting the repository agent-task token gate.
+expected_result: The corrected token ceiling remains executable as a linked PM test and produces a durable terminal receipt.
+actual_result: "Linked run test-local-mtcs943v-30rpwp passed the token ratchet across 5 tasks and 14 steps at 4,349 estimated tokens."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o7u08u,recurs_from,"2026-08-27T19:15:46.166Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-27T19:29:04.961Z","harness:codex","Evidence: focused baseline tests pass for absent, NaN, and infinite task/composite ceilings; the real five-task 14-step token ratchet remains green at 4,261 composite estimated tokens."
+  "2026-08-28T06:38:33.386Z","harness:codex","Exact-head review evidence: linked node scripts/run-tests.mjs coverage and recorded passing run test-local-mtckx5w2-ww0h54. Coverage is exact 100/100/100/100 across 8,083 tests and 585 files; the earlier focused finite-ceiling negative-control receipt remains passing."
+  "2026-08-28T10:28:43.154Z","harness:codex","Receipt integrity correction: linked pnpm quality:agent-task-token and executed it through pm. Run test-local-mtcs943v-30rpwp passed with 5 governed tasks, 14 steps, and 4,349 estimated tokens inside the enforced ceiling."
+files[2]{path,scope,note}:
+  scripts/release/agent-task-token-gate.mjs,project,Fail closed when task or composite ceilings are missing or non-finite
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Negative controls for absent and non-finite ceilings
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T19:15:46.166Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T06:17:52.884Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Exact full coverage receipt for fail-closed token-baseline correction
+  - command: "pnpm quality:agent-task-token"
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T09:49:07.783Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Persist the claimed real five-task token ratchet
+test_runs[3]:
+  - run_id: test-local-mtbx2n9r-83pgdu
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:29:13.164Z"
+    finished_at: "2026-08-27T19:29:36.591Z"
+    recorded_at: "2026-08-27T19:29:36.591Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtckx5w2-ww0h54
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:31:16.513Z"
+    finished_at: "2026-08-28T06:37:11.570Z"
+    recorded_at: "2026-08-28T06:37:11.570Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcs943v-30rpwp
+    kind: test
+    status: passed
+    started_at: "2026-08-28T10:02:02.277Z"
+    finished_at: "2026-08-28T10:02:26.443Z"
+    recorded_at: "2026-08-28T10:02:26.443Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:agent-task-token",schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Document fail-closed baseline ceiling validation
+close_reason: Closed after implementing and receipting the stable-head review corrections; all linked assurance commands passed.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-aksavu
+  gate_id: agent-task-finite-baseline-ceilings
+  negative_control: "Remove a task or composite ceiling, or set it to NaN or Infinity; baseline comparison must emit a missing_baseline_limit failure."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,"pnpm quality:agent-task-token",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

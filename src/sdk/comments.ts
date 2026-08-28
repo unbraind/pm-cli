@@ -40,6 +40,8 @@ export interface CommentsCommandOptions {
   includeMeta?: boolean;
   /** Return complete comment history after a mutation instead of a bounded receipt. */
   fullHistory?: boolean;
+  /** Append only when no comment has the same resolved author and text. */
+  ifAbsent?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -68,6 +70,8 @@ export interface CommentsResult {
   mutation_receipt?: AnnotationMutationReceipt;
   /** Declares whether older comments were withheld from a mutation response. */
   omission_receipt?: AnnotationOmissionReceipt;
+  /** Whether a requested mutation changed persisted state. */
+  changed?: boolean;
 }
 
 interface ResolvedCommentInput {

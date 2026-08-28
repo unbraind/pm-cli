@@ -16,7 +16,10 @@ import {
 } from "../../../src/sdk/cli-contracts.js";
 import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
 import { PM_POSITIONAL_ACTION_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
-import { pmToolActionNestedOptionKeys } from "../../../src/sdk/cli-contracts/tool-schema.js";
+import {
+  PM_TOOL_PARAMETERS_SCHEMA_VERSION,
+  pmToolActionNestedOptionKeys,
+} from "../../../src/sdk/cli-contracts/tool-schema.js";
 import { analyzeSdkActionCoverage } from "../../../src/sdk/runtime.js";
 
 type SchemaWithProperties = {
@@ -29,6 +32,28 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("versions the additive annotation if-absent contract", () => {
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.10.1");
+  });
+
+  it("rejects annotation if-absent edit and delete combinations", () => {
+    for (const action of ["comments", "notes", "learnings"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
+        action,
+      ) as { allOf?: Array<{ not?: { required?: string[] } }> };
+      const excludedPairs = schema.allOf?.flatMap((entry) =>
+        entry.not?.required === undefined ? [] : [entry.not.required],
+      );
+
+      expect(excludedPairs, action).toEqual(
+        expect.arrayContaining([
+          ["edit", "ifAbsent"],
+          ["delete", "ifAbsent"],
+        ]),
+      );
+    }
+  });
+
   it("discovers the canonical package upgrade action without its deprecated alias", () => {
     expect(PM_DISCOVERABLE_TOOL_ACTIONS).toContain("package-upgrade");
     expect(PM_DISCOVERABLE_TOOL_ACTIONS).not.toContain("upgrade");

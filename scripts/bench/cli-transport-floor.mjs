@@ -13,6 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   measureCliProcess,
+  nearestRank,
   summarizeSamples,
 } from "./run-scale-benchmarks.mjs";
 import { generateSyntheticWorkspace } from "./scale-workspace.mjs";
@@ -34,6 +35,7 @@ const documentationPath = path.join(
   "cli-transport-overhead.md",
 );
 const LATENCY_NOISE_MARGIN_MS = 25;
+const RSS_NOISE_MARGIN_BYTES = 512 * 1024;
 const OPERATION_NAMES = Object.freeze([
   "get",
   "list",
@@ -42,6 +44,15 @@ const OPERATION_NAMES = Object.freeze([
   "create",
   "claim",
 ]);
+
+function assertNullableFiniteRss(value, field) {
+  if (
+    value !== null &&
+    (typeof value !== "number" || !Number.isFinite(value))
+  ) {
+    throw new TypeError(`${field} must be null or a finite number`);
+  }
+}
 
 function argsForOperation(operation, manifest, iteration) {
   if (operation === "get") return ["get", manifest.sample_ids.get, "--json"];
@@ -115,7 +126,16 @@ export async function buildCliTransportFloorReport(options = {}) {
         await measureColdStartOperation(operation, iteration, options),
       );
     }
-    operations[operation] = summarizeSamples(samples);
+    const rssSamples = samples.map((sample) => sample.peak_rss_bytes);
+    const hasCompleteRssSamples = rssSamples.every(
+      (value) => typeof value === "number" && Number.isFinite(value),
+    );
+    operations[operation] = {
+      ...summarizeSamples(samples),
+      median_peak_rss_bytes: hasCompleteRssSamples
+        ? nearestRank(rssSamples, 50)
+        : null,
+    };
   }
   return {
     schema_version: 1,
@@ -135,16 +155,26 @@ export function buildCliTransportFloorBudgets(report, headroom = 1.25) {
     policy:
       "Cold-start upper bounds may only decrease unless a reviewed platform correction is documented.",
     operations: Object.fromEntries(
-      Object.entries(report.operations).map(([operation, summary]) => [
-        operation,
-        {
-          max_latency_ms: Math.ceil(summary.min_ms * headroom),
-          max_peak_rss_bytes:
-            summary.max_peak_rss_bytes === null
-              ? null
-              : Math.ceil(summary.max_peak_rss_bytes * headroom),
-        },
-      ]),
+      Object.entries(report.operations).map(([operation, summary]) => {
+        assertNullableFiniteRss(
+          summary.median_peak_rss_bytes,
+          `operations.${operation}.median_peak_rss_bytes`,
+        );
+        assertNullableFiniteRss(
+          summary.max_peak_rss_bytes,
+          `operations.${operation}.max_peak_rss_bytes`,
+        );
+        return [
+          operation,
+          {
+            max_latency_ms: Math.ceil(summary.min_ms * headroom),
+            max_peak_rss_bytes:
+              summary.median_peak_rss_bytes === null
+                ? null
+                : Math.ceil(summary.median_peak_rss_bytes * headroom),
+          },
+        ];
+      }),
     ),
   };
 }
@@ -153,24 +183,41 @@ export function buildCliTransportFloorBudgets(report, headroom = 1.25) {
 export function compareCliTransportFloorBudgets(report, budgets) {
   const violations = [];
   for (const [operation, summary] of Object.entries(report.operations)) {
+    assertNullableFiniteRss(
+      summary.median_peak_rss_bytes,
+      `operations.${operation}.median_peak_rss_bytes`,
+    );
+    assertNullableFiniteRss(
+      summary.max_peak_rss_bytes,
+      `operations.${operation}.max_peak_rss_bytes`,
+    );
     const budget = budgets.operations?.[operation];
     if (!budget) {
       violations.push(`${operation}: missing budget`);
       continue;
     }
+    assertNullableFiniteRss(
+      budget.max_peak_rss_bytes,
+      `budgets.operations.${operation}.max_peak_rss_bytes`,
+    );
     if (summary.min_ms > budget.max_latency_ms + LATENCY_NOISE_MARGIN_MS) {
       violations.push(
         `${operation}: best ${summary.min_ms}ms > ${budget.max_latency_ms + LATENCY_NOISE_MARGIN_MS}ms`,
       );
     }
-    if (
-      budget.max_peak_rss_bytes !== null &&
-      summary.max_peak_rss_bytes !== null &&
-      summary.max_peak_rss_bytes > budget.max_peak_rss_bytes
-    ) {
-      violations.push(
-        `${operation}: peak RSS ${summary.max_peak_rss_bytes} > ${budget.max_peak_rss_bytes}`,
-      );
+    if (budget.max_peak_rss_bytes !== null) {
+      if (summary.median_peak_rss_bytes === null) {
+        violations.push(
+          `${operation}: median peak RSS unavailable for budget ${budget.max_peak_rss_bytes}`,
+        );
+      } else if (
+        summary.median_peak_rss_bytes >
+        budget.max_peak_rss_bytes + RSS_NOISE_MARGIN_BYTES
+      ) {
+        violations.push(
+          `${operation}: median peak RSS ${summary.median_peak_rss_bytes} > ${budget.max_peak_rss_bytes + RSS_NOISE_MARGIN_BYTES} (budget ${budget.max_peak_rss_bytes} + noise margin ${RSS_NOISE_MARGIN_BYTES})`,
+        );
+      }
     }
   }
   return violations;
@@ -186,13 +233,21 @@ export function renderCliTransportFloorMarkdown(report) {
     .join("\n");
   return `# CLI transport overhead
 
-Tracked by [pm-yse5dt](../../.agents/pm/tasks/pm-yse5dt.toon).
+Tracked by [pm-yse5dt](../../.agents/pm/tasks/pm-yse5dt.toon), with RSS
+admission reliability owned by
+[pm-pz49xc](../../.agents/pm/issues/pm-pz49xc.toon).
 
 Each result starts from a fresh isolated workspace containing exactly one item.
 The command runs in a fresh Node ${report.node_version} process on
 ${report.platform}/${report.architecture}; setup and fixture generation are
 outside the timed interval. Short local gates use the best observed latency,
-while the report retains p50 and p95 evidence.
+while the report retains p50 and p95 evidence. RSS admission uses the measured
+median so one page-level outlier cannot false-fail the gate; the maximum remains
+in the report as diagnostic evidence. Every post-warmup RSS sample must be a
+finite measurement; an unavailable sample makes the admission median unavailable
+and fails closed when a budget exists. Admission adds a fixed 512 KiB noise margin
+without changing the committed budget; a majority persistent increase beyond
+that bounded margin still fails.
 
 | Command | best | p50 | p95 |
 |---|---:|---:|---:|

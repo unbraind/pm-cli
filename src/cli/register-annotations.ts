@@ -154,11 +154,20 @@ function resolveCommentSources(
   };
 }
 
-function resolveSingleTextSource(
-  label: string,
+/** Resolves every mutation-bearing source for notes and learnings once. */
+function resolveSingleAnnotationSources(
+  label: "note" | "learning",
   positional: string | undefined,
   options: Record<string, unknown>,
-): string | undefined {
+): {
+  add: string | undefined;
+  addJson: string | undefined;
+  readFromStdin: boolean;
+  readFromFile: string | undefined;
+  editIndex: number | undefined;
+  deleteIndex: number | undefined;
+  isMutation: boolean;
+} {
   const addFromOption = resolveAnnotationTextAliases(
     label,
     options,
@@ -172,7 +181,29 @@ function resolveSingleTextSource(
       EXIT_CODE.USAGE,
     );
   }
-  return addFromOption ?? addFromPositional;
+  const add = addFromOption ?? addFromPositional;
+  const addJson =
+    label === "note" ? readOptionString(options, "addJson") : undefined;
+  const readFromStdin = options.stdin === true;
+  const readFromFile = readOptionString(options, "file");
+  const editIndex = typeof options.edit === "number" ? options.edit : undefined;
+  const deleteIndex =
+    typeof options.delete === "number" ? options.delete : undefined;
+  return {
+    add,
+    addJson,
+    readFromStdin,
+    readFromFile,
+    editIndex,
+    deleteIndex,
+    isMutation:
+      typeof add === "string" ||
+      addJson !== undefined ||
+      readFromStdin ||
+      readFromFile !== undefined ||
+      editIndex !== undefined ||
+      deleteIndex !== undefined,
+  };
 }
 
 async function runCommentsAction(
@@ -195,6 +226,7 @@ async function runCommentsAction(
       delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
       fullHistory: options.fullHistory === true,
+      ifAbsent: options.ifAbsent === true,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
@@ -202,7 +234,7 @@ async function runCommentsAction(
     } as Parameters<typeof runComments>[1],
     globalOptions,
   );
-  if (sources.isMutation) {
+  if (sources.isMutation && result.changed !== false) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printAnnotationResult("comments", result, globalOptions, startedAt);
@@ -217,21 +249,22 @@ async function runNotesAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("notes", id, text, options);
-  const add = resolveSingleTextSource("note", text, options);
+  const sources = resolveSingleAnnotationSources("note", text, options);
   const result = await runNotes(
     id,
     {
-      add,
-      addJson: readOptionString(options, "addJson"),
-      stdin: options.stdin === true,
-      file: readOptionString(options, "file"),
-      edit: typeof options.edit === "number" ? options.edit : undefined,
-      delete: typeof options.delete === "number" ? options.delete : undefined,
+      add: sources.add,
+      addJson: sources.addJson,
+      stdin: sources.readFromStdin,
+      file: sources.readFromFile,
+      edit: sources.editIndex,
+      delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
       since: readOptionString(options, "since"),
       eventType: readOptionString(options, "eventType"),
       includeMeta: options.includeMeta === true,
       fullHistory: options.fullHistory === true,
+      ifAbsent: options.ifAbsent === true,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
@@ -239,14 +272,7 @@ async function runNotesAction(
     } as Parameters<typeof runNotes>[1],
     globalOptions,
   );
-  if (
-    typeof add === "string" ||
-    typeof options.addJson === "string" ||
-    options.stdin === true ||
-    typeof options.file === "string" ||
-    typeof options.edit === "number" ||
-    typeof options.delete === "number"
-  ) {
+  if (sources.isMutation && result.changed !== false) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printAnnotationResult("notes", result, globalOptions, startedAt);
@@ -261,17 +287,18 @@ async function runLearningsAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("learnings", id, text, options);
-  const add = resolveSingleTextSource("learning", text, options);
+  const sources = resolveSingleAnnotationSources("learning", text, options);
   const result = await runLearnings(
     id,
     {
-      add,
-      stdin: options.stdin === true,
-      file: readOptionString(options, "file"),
-      edit: typeof options.edit === "number" ? options.edit : undefined,
-      delete: typeof options.delete === "number" ? options.delete : undefined,
+      add: sources.add,
+      stdin: sources.readFromStdin,
+      file: sources.readFromFile,
+      edit: sources.editIndex,
+      delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
       fullHistory: options.fullHistory === true,
+      ifAbsent: options.ifAbsent === true,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
@@ -279,13 +306,7 @@ async function runLearningsAction(
     } as Parameters<typeof runLearnings>[1],
     globalOptions,
   );
-  if (
-    typeof add === "string" ||
-    options.stdin === true ||
-    typeof options.file === "string" ||
-    typeof options.edit === "number" ||
-    typeof options.delete === "number"
-  ) {
+  if (sources.isMutation && result.changed !== false) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printAnnotationResult("learnings", result, globalOptions, startedAt);
@@ -314,7 +335,7 @@ export function registerAnnotationCommands(
     .argument("[text]", "Optional comment text shorthand (equivalent to --add)")
     .option(
       "--add <text>",
-      "Add one comment entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
+      "Append comment text; use text=<value> for structured input or - for stdin",
     )
     .option(
       "--stdin",
@@ -323,7 +344,7 @@ export function registerAnnotationCommands(
     .option("--file <path>", "Read comment text from a file or stdin (-)")
     .option(
       "--edit <index>",
-      "Replace the comment at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
+      "Replace one comment using positional text, --add, --stdin, or --file",
       parsePositiveInteger("--edit"),
     )
     .option(
@@ -334,11 +355,15 @@ export function registerAnnotationCommands(
     .option("--limit <n>", "Return only latest n comments")
     .option(
       "--full-history",
-      "Return the complete post-mutation comment history instead of a bounded receipt",
+      "Return complete comment history instead of a bounded mutation receipt",
+    )
+    .option(
+      "--if-absent",
+      "Append only when resolved author and text are absent",
     )
     .option(
       "--author [value]",
-      "Comment author (optional; falls back to PM_AUTHOR/settings)",
+      "Comment author; defaults to PM_AUTHOR or settings",
     )
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
@@ -356,13 +381,10 @@ export function registerAnnotationCommands(
   const notesCommand = program
     .command("notes")
     .argument("<id>", "Item id")
-    .argument(
-      "[text]",
-      "Optional note text shorthand (equivalent to --add; use - for stdin)",
-    )
+    .argument("[text]", "Optional note text shorthand for --add")
     .option("--add <text>", "Add a text note (- reads stdin)")
     .option("--note <text>", "Alias for --add")
-    .option("--add-json <json>", "Append a merge-safe JSON event")
+    .option("--add-json <json>", "Append a JSON event")
     .option("--stdin", "Read note text from stdin")
     .option("--file <path>", "Read note from file or stdin (-)")
     .option(
@@ -381,7 +403,11 @@ export function registerAnnotationCommands(
     .option("--include-meta", "Include count and truncation metadata")
     .option(
       "--full-history",
-      "Return the complete post-mutation note history instead of a bounded receipt",
+      "Return complete note history instead of a bounded receipt",
+    )
+    .option(
+      "--if-absent",
+      "Append only when resolved author and text are absent",
     )
     .option("--author [value]", "Author; defaults to PM_AUTHOR/settings")
     .option("--message <value>", "History message")
@@ -393,22 +419,16 @@ export function registerAnnotationCommands(
   const learningsCommand = program
     .command("learnings")
     .argument("<id>", "Item id")
-    .argument(
-      "[text]",
-      "Optional learning text shorthand (equivalent to --add; use - for stdin)",
-    )
+    .argument("[text]", "Optional learning text shorthand for --add")
     .option(
       "--add <text>",
-      "Add one learning entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
+      "Append learning text; use text=<value> or - for stdin",
     )
-    .option(
-      "--stdin",
-      "Read learning text from stdin (supports multiline markdown)",
-    )
+    .option("--stdin", "Read learning text from stdin")
     .option("--file <path>", "Read learning text from a file or stdin (-)")
     .option(
       "--edit <index>",
-      "Replace the learning at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
+      "Replace one learning using positional text, --add, --stdin, or --file",
       parsePositiveInteger("--edit"),
     )
     .option(
@@ -419,7 +439,11 @@ export function registerAnnotationCommands(
     .option("--limit <n>", "Return only latest n learnings")
     .option(
       "--full-history",
-      "Return the complete post-mutation learning history instead of a bounded receipt",
+      "Return complete learning history instead of a bounded receipt",
+    )
+    .option(
+      "--if-absent",
+      "Append only when resolved author and text are absent",
     )
     .option(
       "--author [value]",

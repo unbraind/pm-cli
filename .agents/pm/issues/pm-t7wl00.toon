@@ -1,0 +1,28 @@
+id: pm-t7wl00
+title: "GH-1134: required collection recovery omits truthful --clear-* intent"
+description: "GitHub #1134 shows that strict required-field refusals suggest only value-bearing collection flags or progressive mode even though --clear-deps and the other --clear-* flags are the truthful considered-empty answer, steering agents toward fabricated context edges."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",context-management,github-1134,recovery
+created_at: "2026-08-28T08:13:27.374Z"
+updated_at: "2026-08-28T08:13:52.429Z"
+author: "harness:codex"
+acceptance_criteria: Required collection failures map each supported collection to its exact --clear-* considered-empty flag; suggested_flags rank the truthful clear intent before value-bearing or policy-bypass alternatives; examples explain both empty and populated forms without invented identifiers; structured recovery and human diagnostics remain contract-parity; SDK CLI MCP completions and docs expose the same semantics; executable negative controls prove every advertised recovery succeeds without dangling or fabricated data; focused acceptance transcript and exact repository coverage gates pass
+parent: pm-f05lsg
+risk: high
+confidence: high
+severity: high
+environment: pm 2026.8.23 with governance.preset=strict in an empty initialized workspace
+repro_steps: "Configure strict governance, invoke create with every required field except --dep, inspect suggested_flags and examples, then compare the advertised routes with the successful unadvertised --clear-deps command."
+expected_result: A missing required collection refusal advertises the exact truthful considered-empty flag first and every suggested recovery is executable.
+actual_result: "The refusal advertises --dep and progressive mode but omits --clear-deps, so its easiest successful path either invents a relationship or abandons configured policy."
+component: required-field recovery bundles and create option policy
+customer_impact: Agents following first-party recovery guidance can permanently pollute the context graph with false edges that appear fully provenance-backed.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-h8tpeh,verifies,"2026-08-28T08:13:27.374Z","harness:codex","cli:create:dep",detected
+  pm-st7wgu,recurs_from,"2026-08-28T08:13:27.374Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-28T08:13:27.374Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1134, GH-951, required collection recovery, clear-deps, suggested flags, and executable refusal closure; fully read closed pm-st7wgu and its comments plus the broader pm-f05lsg/pm-h8tpeh recovery lineage. pm-st7wgu owns the implemented considered-empty primitive; #1134 is the distinct discoverability escape where the refusal never advertises it. This open unclaimed child is canonical for GitHub #1134."
+  "2026-08-28T08:13:52.429Z","harness:codex","GitHub linkage evidence: #1134 comment https://github.com/unbraind/pm-cli/issues/1134#issuecomment-5450113774 points to this canonical PM item and its merge-stable main-branch .toon path."
+body: "Source: https://github.com/unbraind/pm-cli/issues/1134"

@@ -1,0 +1,70 @@
+id: pm-o360q6
+title: Agent-task transcript recovery accepts a refusal as a successful retry
+description: "CodeRabbit review on PR #1133 found that a step with recovery_for may itself declare expected_output_kind=refusal. The parser verifies only that the referenced prior step is a refusal, allowing a failed retry to satisfy the recovery topology. Require recovery steps to be non-refusal successful outcomes and add adversarial parser coverage."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:sdk",contracts,recovery,review-feedback
+created_at: "2026-08-27T19:11:48.651Z"
+updated_at: "2026-08-28T14:23:14.416Z"
+closed_at: "2026-08-28T14:23:13.719Z"
+completed_at: "2026-08-28T14:23:13.719Z"
+author: "harness:codex"
+acceptance_criteria: recovery_for still references an earlier refusal; the recovery step cannot declare refusal output; adversarial parser coverage proves failed retries are rejected; exact coverage and static gates pass
+parent: pm-8pnj
+resolution: Transcript accounting modes now fail closed at both the SDK corpus boundary and the executable transport validator; independent transport is restricted to refusal output.
+expected_result: Unsupported transcript accounting combinations are rejected deterministically before receipt access.
+actual_result: Successful non-refusal steps cannot declare or reach independent_transport; direct validator callers receive a controlled diagnostic rather than an unhandled missing-receipt error.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,discovered_from,"2026-08-27T19:15:47.793Z","harness:codex","cli:update:dep",detected
+comments[9]{created_at,author,text}:
+  "2026-08-27T19:29:05.921Z","harness:codex","Evidence: public SDK parser tests reject a refusal step that declares recovery_for while preserving valid refusal-to-success recovery and effect-aware exit 6/7 workflows."
+  "2026-08-27T22:35:01.159Z","harness:codex","Lifecycle reconciliation: the historical resolution update is immutable and remains visible after its original close/release. Ownership is now explicitly reacquired before this corrective evidence entry; future resolution metadata must precede close and release."
+  "2026-08-28T12:18:33.028Z","harness:codex","Attribution correction: the defining parser module is now linked through pm files; src/sdk/output-contracts.ts remains because this lineage independently changed exported output contracts."
+  "2026-08-28T12:18:54.970Z","harness:codex","Lifecycle recovery note: the runtime correctly refused the deprecated bare reopen path; this now-active claimed interval confirms the supported pm files attribution mutation before re-close."
+  "2026-08-28T12:21:09.920Z","harness:codex","Verification scope: the existing parser-focused linked test will be rerun after the defining-module attribution and transcript value-contract correction."
+  "2026-08-28T12:52:16.853Z","harness:codex","Final review-correction evidence: src/sdk/agent/task-transcript-contracts.ts is linked as the defining parser source. The parser-focused linked test passes 20/20 including successful-recovery topology, terminal field values, malformed paths, non-primitives, and non-finite numeric controls."
+  "2026-08-28T13:52:14.793Z","harness:codex","TDD red evidence from PR #1133 exact-head review: focused transcript/parser/gate regression run failed in the two intended cases. The parser accepted independent_transport for successful collection output, and the exported gate dereferenced a missing receipt instead of emitting the required controlled refusal. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/error-guidance.spec.ts."
+  "2026-08-28T13:54:41.210Z","harness:codex","Implementation evidence: the SDK parser rejects independent_transport for every non-refusal output before corpus replay, and the exported real-transport validator independently fails closed with an actionable diagnostic instead of dereferencing an absent token_accounting receipt. Focused parser/gate/CLI suite passes 77/77."
+  "2026-08-28T14:23:08.905Z","harness:codex","Terminal evidence: focused parser, real-transport gate, and CLI guidance suite passes 77/77; repository coverage passes exact 100/100/100/100; the complete static assurance pipeline passes after the implementation."
+files[3]{path,scope,note}:
+  src/sdk/agent/task-transcript-contracts.ts,project,Defines parsePmAgentTaskTranscriptCorpus and recovery transcript validation
+  src/sdk/output-contracts.ts,project,Require recovery steps to declare a successful output family
+  tests/unit/sdk/output-contracts.spec.ts,project,Reject refusal-as-recovery transcript topology
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,project,240,"harness:codex","2026-08-27T19:15:47.793Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[2]:
+  - run_id: test-local-mtbx321r-3eg1tw
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:29:44.470Z"
+    finished_at: "2026-08-27T19:29:55.743Z"
+    recorded_at: "2026-08-27T19:29:55.743Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcxrg8a-a86v26
+    kind: test
+    status: passed
+    started_at: "2026-08-28T12:36:28.994Z"
+    finished_at: "2026-08-28T12:36:40.042Z"
+    recorded_at: "2026-08-28T12:36:40.042Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Clarify successful recovery and structural field contracts
+close_reason: "Closed after parser and executable-gate negative controls, exact coverage, and full static assurance passed."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-o360q6
+  gate_id: agent-task-successful-recovery-topology
+  negative_control: Attach recovery_for to a second refusal step; the public transcript parser must reject the corpus before replay.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,"pnpm quality:agent-task-token",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

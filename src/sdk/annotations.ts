@@ -27,6 +27,7 @@ import {
 } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import type { ItemDocument } from "../types.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
 export interface AnnotationEntry {
@@ -54,6 +55,8 @@ export interface AnnotationCommandOptions {
   includeMeta?: boolean;
   /** Return the complete collection after a mutation instead of the bounded mutation receipt. */
   fullHistory?: boolean;
+  /** Append only when no entry has the same resolved author and text. */
+  ifAbsent?: boolean;
 }
 
 /** Identifies the single annotation mutation represented by a bounded response. */
@@ -62,8 +65,8 @@ export interface AnnotationMutationReceipt {
   action: "add" | "edit" | "delete";
   /** Stable one-based collection position targeted by the mutation. */
   entry_index: number;
-  /** Number of stored entries changed by the mutation. */
-  changed_count: 1;
+  /** Number of stored entries changed by the mutation attempt. */
+  changed_count: 0 | 1;
   /** Whether the response includes the complete post-mutation collection. */
   full_history_included: boolean;
 }
@@ -205,6 +208,7 @@ export type AnnotationCommandResult<
     limit?: number;
     mutation_receipt?: AnnotationMutationReceipt;
     omission_receipt?: AnnotationOmissionReceipt;
+    changed?: boolean;
   };
 
 /** Implements limit annotation entries for the public runtime surface of this module. */
@@ -466,6 +470,20 @@ function assertAnnotationMessageHasTextSource(
   config: AnnotationCommandConfig<string, AnnotationEntry>,
   options: AnnotationCommandOptions,
 ): void {
+  if (
+    options.ifAbsent === true &&
+    !["add", "stdin", "file"].includes(config.input.mode)
+  ) {
+    throw new PmCliError(
+      `--if-absent requires a ${config.collectionKey.replace(/s$/, "")} append`,
+      EXIT_CODE.USAGE,
+      {
+        code: "annotation_if_absent_without_append",
+        required:
+          "Combine --if-absent with one append text source; omit it for list, edit, and delete operations.",
+      },
+    );
+  }
   if (config.input.mode !== "list" || options.message === undefined) {
     return;
   }
@@ -482,6 +500,35 @@ function assertAnnotationMessageHasTextSource(
       ],
     },
   );
+}
+
+/** Append one annotation entry or return the matching entry for an idempotent retry. */
+function appendAnnotationEntry<
+  TKey extends string,
+  TEntry extends AnnotationEntry,
+>(
+  document: ItemDocument,
+  collectionKey: TKey,
+  author: string,
+  text: string,
+  ifAbsent: boolean,
+  createEntry: AnnotationCommandConfig<TKey, TEntry>["createEntry"],
+): { changedFields: string[]; entryIndex: number } {
+  const entries = readAnnotationEntries<TEntry>(
+    document.metadata,
+    collectionKey,
+  );
+  const existingIndex = ifAbsent
+    ? entries.findIndex(
+        (entry) => entry.author === author && entry.text === text,
+      )
+    : -1;
+  if (existingIndex >= 0) {
+    return { changedFields: [], entryIndex: existingIndex + 1 };
+  }
+  entries.push(createEntry({ created_at: nowIso(), author, text }));
+  document.metadata[collectionKey] = entries as never;
+  return { changedFields: [collectionKey], entryIndex: entries.length };
 }
 
 /** Implements run annotation command for the public runtime surface of this module. */
@@ -648,6 +695,7 @@ export async function runAnnotationCommand<
   }
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
+  let entryIndex = 0;
   try {
     result = await mutateItem({
       pmRoot,
@@ -658,15 +706,18 @@ export async function runAnnotationCommand<
       message: options.message,
       force: options.force,
       bypassAssigneeConflict: config.bypassOwnershipConflict,
+      skipNoop: options.ifAbsent === true,
       mutate(document) {
-        const entries = readAnnotationEntries<TEntry>(
-          document.metadata,
+        const appended = appendAnnotationEntry(
+          document,
           config.collectionKey,
+          author,
+          text,
+          options.ifAbsent === true,
+          config.createEntry,
         );
-        const entryInput = { created_at: nowIso(), author, text };
-        entries.push(config.createEntry(entryInput));
-        document.metadata[config.collectionKey] = entries as never;
-        return { changedFields: [config.collectionKey] };
+        entryIndex = appended.entryIndex;
+        return { changedFields: appended.changedFields };
       },
     });
   } catch (error: unknown) {
@@ -685,8 +736,12 @@ export async function runAnnotationCommand<
     options.includeMeta === true,
     {
       action: "add",
-      entryIndex: allEntries.length,
-      entry: allEntries.at(-1),
+      entryIndex,
+      entry: allEntries[entryIndex - 1],
+      changedCount:
+        options.ifAbsent === true
+          ? (Math.min(result.changedFields.length, 1) as 0 | 1)
+          : undefined,
     },
     options.fullHistory === true,
   );
@@ -715,6 +770,50 @@ export function resolveAnnotationIndex(
   return oneBasedIndex - 1;
 }
 
+interface AnnotationResultMutation<TEntry extends AnnotationEntry> {
+  action: "add" | "edit" | "delete";
+  entryIndex: number;
+  entry?: TEntry;
+  changedCount?: 0 | 1;
+}
+
+/** Build the mutation and omission receipts attached to bounded annotation results. */
+function renderAnnotationMutationReceipts<TEntry extends AnnotationEntry>(
+  collectionKey: string,
+  mutation: AnnotationResultMutation<TEntry> | undefined,
+  historyOmitted: boolean,
+): {
+  mutation_receipt?: AnnotationMutationReceipt;
+  omission_receipt?: AnnotationOmissionReceipt;
+} {
+  if (mutation === undefined) return {};
+  return {
+    mutation_receipt: {
+      action: mutation.action,
+      entry_index: mutation.entryIndex,
+      changed_count: mutation.changedCount ?? 1,
+      full_history_included: !historyOmitted,
+    },
+    omission_receipt: {
+      has_omissions: historyOmitted,
+      omitted_field_group_count: historyOmitted ? 1 : 0,
+      omitted_field_groups: historyOmitted
+        ? [
+            {
+              name: `${collectionKey}_history`,
+              restore_with: {
+                selector: "full_history",
+                cli_flag: "--full-history",
+                sdk_option: "fullHistory",
+                mcp_option: "full",
+              },
+            },
+          ]
+        : [],
+    },
+  };
+}
+
 function renderAnnotationResult<
   TKey extends string,
   TEntry extends AnnotationEntry,
@@ -724,11 +823,7 @@ function renderAnnotationResult<
   allEntries: TEntry[],
   limit: number | undefined,
   includeMeta: boolean,
-  mutation?: {
-    action: "add" | "edit" | "delete";
-    entryIndex: number;
-    entry?: TEntry;
-  },
+  mutation?: AnnotationResultMutation<TEntry>,
   fullHistory = false,
 ): AnnotationCommandResult<TKey, TEntry> {
   const entries =
@@ -746,6 +841,9 @@ function renderAnnotationResult<
     id,
     [collectionKey]: entries,
     count: entries.length,
+    ...(mutation?.changedCount === undefined
+      ? {}
+      : { changed: mutation.changedCount === 1 }),
     ...([includeMeta, mutation !== undefined].includes(true)
       ? {
           total_count: allEntries.length,
@@ -754,32 +852,10 @@ function renderAnnotationResult<
           ...(limit !== undefined ? { limit } : {}),
         }
       : {}),
-    ...(mutation === undefined
-      ? {}
-      : {
-          mutation_receipt: {
-            action: mutation.action,
-            entry_index: mutation.entryIndex,
-            changed_count: 1,
-            full_history_included: !historyOmitted,
-          },
-          omission_receipt: {
-            has_omissions: historyOmitted,
-            omitted_field_group_count: historyOmitted ? 1 : 0,
-            omitted_field_groups: historyOmitted
-              ? [
-                  {
-                    name: `${collectionKey}_history`,
-                    restore_with: {
-                      selector: "full_history",
-                      cli_flag: "--full-history",
-                      sdk_option: "fullHistory",
-                      mcp_option: "full",
-                    },
-                  },
-                ]
-              : [],
-          },
-        }),
+    ...renderAnnotationMutationReceipts(
+      collectionKey,
+      mutation,
+      historyOmitted,
+    ),
   } as AnnotationCommandResult<TKey, TEntry>;
 }

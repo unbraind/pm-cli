@@ -285,6 +285,119 @@ describe.each(TARGETS)("run%s", (target) => {
     });
   });
 
+  it("makes exact append retries idempotent without suppressing intentional duplicates", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-if-absent`);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const added = await target.run(
+        id,
+        { add: " retry-safe context ", author: " agent-a ", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(added).toMatchObject({
+        changed: true,
+        total_count: 1,
+        mutation_receipt: { entry_index: 1, changed_count: 1 },
+      });
+      const historyAfterAdd = await readFile(historyPath, "utf8");
+
+      const retried = await target.run(
+        id,
+        { add: "text=retry-safe context", author: "agent-a", ifAbsent: true },
+        { path: context.pmPath },
+      );
+      expect(retried).toMatchObject({
+        changed: false,
+        total_count: 1,
+        mutation_receipt: { entry_index: 1, changed_count: 0 },
+      });
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAdd);
+
+      const intentionalDuplicate = await target.run(
+        id,
+        { add: "retry-safe context", author: "agent-a" },
+        { path: context.pmPath },
+      );
+      expect(intentionalDuplicate).toMatchObject({ total_count: 2 });
+      expect(intentionalDuplicate).not.toHaveProperty("changed");
+    });
+  });
+
+  it("serializes concurrent exact append retries under the item writer lock", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-if-absent-concurrent`);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      let releaseBarrier: (() => void) | undefined;
+      const barrier = new Promise<void>((resolve) => {
+        releaseBarrier = resolve;
+      });
+      const attempts = Array.from({ length: 2 }, async () => {
+        await barrier;
+        return target.run(
+          id,
+          {
+            add: " one concurrent retry-safe entry ",
+            author: " parallel-agent ",
+            ifAbsent: true,
+          },
+          { path: context.pmPath },
+        );
+      });
+
+      expect(releaseBarrier).toBeTypeOf("function");
+      releaseBarrier?.();
+      const results = await Promise.all(attempts);
+
+      expect(results.filter((result) => result.changed === true)).toHaveLength(
+        1,
+      );
+      expect(
+        results.filter((result) => result.changed === false),
+      ).toHaveLength(1);
+      expect(
+        extractEntries(
+          target,
+          await target.run(id, { fullHistory: true }, { path: context.pmPath }),
+        ),
+      ).toHaveLength(1);
+      const historyEvents = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map(
+          (line) => JSON.parse(line) as unknown as { op?: unknown },
+        );
+      expect(
+        historyEvents.filter(
+          ({ op }) =>
+            op === (target.name === "notes" ? "note_add" : "learning_add"),
+        ),
+      ).toHaveLength(1);
+    });
+  });
+
+  it("exposes retry-safe appends through the CLI transport", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-cli-if-absent`);
+      const args = [
+        target.name,
+        id,
+        "retry-safe CLI context",
+        "--author",
+        "cli-agent",
+        "--if-absent",
+        "--json",
+      ];
+      expect(context.runCli(args, { expectJson: true }).json).toMatchObject({
+        changed: true,
+        mutation_receipt: { changed_count: 1 },
+      });
+      expect(context.runCli(args, { expectJson: true }).json).toMatchObject({
+        changed: false,
+        mutation_receipt: { changed_count: 0 },
+      });
+    });
+  });
+
   it("resolves author from explicit input, env fallback, settings fallback, and unknown fallback", async () => {
     await withTempPmPath(async (context) => {
       const explicitId = createTask(context, `${target.name}-explicit-author`);

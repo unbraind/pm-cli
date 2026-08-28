@@ -1,0 +1,81 @@
+id: pm-x4wbui
+title: Unknown-option refusal textual flags bypass structured global-option filtering
+description: CodeRabbit review on PR #1133 found that resolveRefusalCandidateFlag may select the first flag mentioned in guidance prose before its structured provided_fields scan excludes global flags. A message naming --json before invalid --depth can therefore report the global flag and its following argument instead of the rejected option. Apply one admissibility predicate to both paths and prove exact surface/value attribution.
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",contracts,recovery,review-feedback
+created_at: "2026-08-27T19:11:44.445Z"
+updated_at: "2026-08-28T14:23:16.918Z"
+closed_at: "2026-08-28T14:23:16.287Z"
+completed_at: "2026-08-28T14:23:16.287Z"
+author: "harness:codex"
+acceptance_criteria: Textual and structured refusal candidates share one admissibility predicate; valid global flags cannot override an invalid command option; a regression proves surface --depth and rejected_value verbose when --json is mentioned first; exact coverage and static gates pass
+parent: pm-f05lsg
+resolution: Unknown-option recovery now removes a rejected spelling only when it appears exactly once; repeated occurrences publish no automatic retry.
+expected_result: Every advertised shell-free retry removes the complete rejected option condition or refuses to speculate.
+actual_result: "A repeated invalid option no longer yields a retry containing the same invalid option, while explicit corrections and unambiguous single occurrences remain supported."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fo8g7j,recurs_from,"2026-08-27T19:15:46.929Z","harness:codex","cli:update:dep",detected
+  pm-o360q6,verifies,"2026-08-28T14:09:43.794Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-27T19:29:05.430Z","harness:codex","Evidence: error-guidance regression passes when refusal prose mentions --json before --depth; refusal.surface remains --depth and rejected_value remains verbose."
+  "2026-08-28T06:38:32.825Z","harness:codex","Exact-head review evidence: linked node scripts/run-tests.mjs coverage and recorded passing run test-local-mtckpgzr-l0guye. Coverage is exact 100/100/100/100 across 8,083 tests and 585 files; the earlier focused refusal regression receipt remains passing."
+  "2026-08-28T13:50:13.136Z","harness:codex","Duplicate check evidence restored append-only after PR #1133 review: all-status refusal searches found pm-fo8g7j and historical global-option guidance work, but no item for the new textual-before-structured precedence path; pm-x4wbui remains the canonical recurrence of pm-fo8g7j for this behavior."
+  "2026-08-28T13:52:15.285Z","harness:codex","TDD red evidence from PR #1133 exact-head review: the repeated unknown-option regression reproduced exactly. Input search agent --bogus --bogus published pm search agent --bogus, preserving one invalid option. The focused 77-test run failed only the three newly added negative controls across this item and pm-o360q6."
+  "2026-08-28T13:54:41.748Z","harness:codex","Implementation evidence: shell-free unknown-option recovery is now emitted only when the rejected spelling occurs exactly once in normalized argv. Repeated --bogus occurrences refuse automatic recovery, while explicit producer corrections and existing unambiguous single-token removals remain unchanged. Focused parser/gate/CLI suite passes 77/77."
+  "2026-08-28T14:23:14.940Z","harness:codex","Terminal evidence: repeated unknown-option recovery regression passes in the focused 77-test suite; repository coverage passes exact 100/100/100/100; full static assurance and graph composition pass with the cross-contract verification edge recorded."
+files[2]{path,scope,note}:
+  src/cli/error-guidance.ts,project,Use one global-option admissibility predicate across structured and textual refusal candidates
+  tests/unit/cli/error-guidance.spec.ts,project,Prove a textual global flag cannot displace the actionable structured flag
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T19:15:46.929Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T06:17:52.251Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Exact full coverage receipt for refusal-admissibility correction
+test_runs[2]:
+  - run_id: test-local-mtbx2t04-cyo4gr
+    kind: test
+    status: passed
+    started_at: "2026-08-27T19:29:37.079Z"
+    finished_at: "2026-08-27T19:29:44.020Z"
+    recorded_at: "2026-08-27T19:29:44.020Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtckpgzr-l0guye
+    kind: test
+    status: passed
+    started_at: "2026-08-28T06:25:18.642Z"
+    finished_at: "2026-08-28T06:31:12.710Z"
+    recorded_at: "2026-08-28T06:31:12.710Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+close_reason: "Closed after append-only provenance restoration, the repeated-option regression, exact coverage, and full static assurance passed."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-x4wbui
+  gate_id: refusal-global-flag-admissibility
+  negative_control: Mention --json before the actionable --depth flag in refusal prose; structured refusal identity must remain --depth with rejected value verbose.
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
+body: ""

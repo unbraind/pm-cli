@@ -1,14 +1,28 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   PM_COMMAND_OUTPUT_ENVELOPE_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   definePmCommandOutputEnvelope,
   isPmMutationReceipt,
+  parsePmAgentTaskTranscriptCorpus,
   parseMutationReceipt,
   resolvePmCommandOutputEnvelope,
 } from "../../../src/sdk/index.js";
 
 describe("SDK output envelope contracts", () => {
+  it("keeps transcript command scanning on the contract-only dependency graph", async () => {
+    const source = await readFile(
+      new URL(
+        "../../../src/sdk/agent/task-transcript-contracts.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(source).not.toContain("../cli-bootstrap.js");
+    expect(source).toContain("../cli-contracts/bootstrap-command-scanner.js");
+  });
+
   it("declares every built-in command and generates conservative package fallbacks", () => {
     expect(PM_COMMAND_OUTPUT_ENVELOPE_CONTRACTS).toHaveLength(
       PM_CORE_COMMAND_NAMES.length,
@@ -129,5 +143,384 @@ describe("SDK output envelope contracts", () => {
     expect(() => parseMutationReceipt("{")).toThrow(
       "Mutation receipt must be valid JSON",
     );
+  });
+
+  it("parses versioned multi-step tasks with explicit refusal recovery", () => {
+    const corpus = parsePmAgentTaskTranscriptCorpus({
+      version: 2,
+      tasks: [
+        {
+          id: " recover-context ",
+          description: " Refuse an invalid intent and execute its recovery. ",
+          steps: [
+            {
+              id: "refuse",
+              args: ["list", "--for", "invalid"],
+              expected_exit_code: 2,
+              expected_output_kind: "refusal",
+              expected_accounting_mode: "independent_transport",
+              required_fields: ["code", "recovery"],
+              expected_error_code: "unknown_context_intent",
+              expected_refusal_surface: "--for",
+            },
+            {
+              id: "retry",
+              args: ["list", "--for", "  triage  "],
+              expected_exit_code: 0,
+              expected_output_kind: "collection",
+              expected_accounting_mode: "self_reported",
+              required_fields: ["items"],
+              expected_field_values: { "items.0.status": "open" },
+              recovery_for: "refuse",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(corpus).toMatchObject({
+      version: 2,
+      tasks: [
+        {
+          id: "recover-context",
+          description: "Refuse an invalid intent and execute its recovery.",
+          steps: [
+            { id: "refuse", expected_output_kind: "refusal" },
+            {
+              id: "retry",
+              recovery_for: "refuse",
+              expected_field_values: { "items.0.status": "open" },
+            },
+          ],
+        },
+      ],
+    });
+    expect(corpus.tasks[0]?.steps[1]?.args).toEqual([
+      "list",
+      "--for",
+      "  triage  ",
+    ]);
+  });
+
+  it.each([
+    [null, "corpus must be an object"],
+    [{ version: 1, tasks: [{}] }, "corpus version must be 2"],
+    [{ version: 2, tasks: [] }, "corpus tasks must be non-empty"],
+    [{ version: 2, tasks: [null] }, "tasks[0] must be an object"],
+    [
+      { version: 2, tasks: [{ id: " ", description: "x", steps: [{}] }] },
+      "tasks[0].id must be a non-empty string",
+    ],
+    [
+      { version: 2, tasks: [{ id: "task", description: " ", steps: [{}] }] },
+      "tasks.task.description must be a non-empty string",
+    ],
+    [
+      { version: 2, tasks: [{ id: "task", description: "x", steps: [] }] },
+      "tasks.task.steps must be a non-empty array",
+    ],
+    [
+      {
+        version: 2,
+        tasks: [{ id: "task", description: "x", steps: [null] }],
+      },
+      "steps[0] must be an object",
+    ],
+  ])("rejects malformed transcript containers %#", (value, message) => {
+    expect(() => parsePmAgentTaskTranscriptCorpus(value)).toThrow(message);
+  });
+
+  it("fails closed on malformed or contradictory step contracts", () => {
+    const validStep = {
+      id: "step",
+      args: ["list"],
+      expected_exit_code: 0,
+      expected_output_kind: "collection",
+      expected_accounting_mode: "self_reported",
+      required_fields: ["items"],
+    };
+    const parseStep = (step: unknown): void => {
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [{ id: "task", description: "x", steps: [step] }],
+      });
+    };
+    for (const [step, message] of [
+      [{ ...validStep, id: " " }, ".id must be a non-empty string"],
+      [{ ...validStep, args: [] }, ".args must be a non-empty string array"],
+      [{ ...validStep, args: [7] }, ".args[0] must be a non-empty string"],
+      [
+        { ...validStep, args: ["--json"] },
+        ".args must identify a command after global flags",
+      ],
+      [
+        { ...validStep, expected_exit_code: 1.5 },
+        ".expected_exit_code must be a safe integer",
+      ],
+      [
+        { ...validStep, expected_output_kind: "unknown" },
+        ".expected_output_kind is unsupported",
+      ],
+      [
+        { ...validStep, expected_accounting_mode: "unknown" },
+        ".expected_accounting_mode is unsupported",
+      ],
+      [
+        {
+          ...validStep,
+          expected_accounting_mode: "independent_transport",
+        },
+        "independent_transport accounting is supported only for refusal steps",
+      ],
+      [
+        { ...validStep, required_fields: [] },
+        ".required_fields must be a non-empty string array",
+      ],
+      [
+        { ...validStep, required_fields: ["items..id"] },
+        ".required_fields must contain dot-separated own-property paths",
+      ],
+      [
+        { ...validStep, expected_field_values: [] },
+        ".expected_field_values must be a non-empty object",
+      ],
+      [
+        { ...validStep, expected_field_values: { "items..id": "pm-one" } },
+        ".expected_field_values must use dot-separated own-property paths",
+      ],
+      [
+        { ...validStep, expected_field_values: { "items.0.id": {} } },
+        ".expected_field_values values must be JSON primitives",
+      ],
+      [
+        {
+          ...validStep,
+          expected_field_values: { "items.0.score": Number.POSITIVE_INFINITY },
+        },
+        ".expected_field_values values must be JSON primitives",
+      ],
+      [
+        { ...validStep, expected_error_code: " " },
+        ".expected_error_code must be a non-empty string",
+      ],
+      [
+        { ...validStep, expected_refusal_surface: " " },
+        ".expected_refusal_surface must be a non-empty string",
+      ],
+      [
+        { ...validStep, expected_error_code: "unexpected" },
+        "only refusal steps may declare expected_error_code",
+      ],
+      [
+        { ...validStep, expected_refusal_surface: "--for" },
+        "only refusal steps may declare expected_error_code or expected_refusal_surface",
+      ],
+      [
+        { ...validStep, recovery_for: " " },
+        ".recovery_for must be a non-empty string",
+      ],
+      [
+        { ...validStep, expected_exit_code: 2 },
+        "successful output must use exit code 0 or a command-declared successful effect exit",
+      ],
+      [
+        { ...validStep, expected_exit_code: 6 },
+        "successful output must use exit code 0 or a command-declared successful effect exit",
+      ],
+      [
+        { ...validStep, expected_output_kind: "entity" },
+        "list declares collection",
+      ],
+    ] as const) {
+      expect(() => parseStep(step), message).toThrow(message);
+    }
+
+    for (const refusal of [
+      {
+        ...validStep,
+        expected_output_kind: "refusal",
+        expected_error_code: "bad",
+        expected_refusal_surface: "--for",
+      },
+      {
+        ...validStep,
+        expected_exit_code: 2,
+        expected_output_kind: "refusal",
+        expected_refusal_surface: "--for",
+      },
+      {
+        ...validStep,
+        expected_exit_code: 2,
+        expected_output_kind: "refusal",
+        expected_error_code: "bad",
+      },
+      {
+        ...validStep,
+        expected_exit_code: 6,
+        expected_output_kind: "refusal",
+        expected_error_code: "bad",
+        expected_refusal_surface: "--for",
+      },
+    ]) {
+      expect(() => parseStep(refusal)).toThrow(
+        "refusal steps require a non-success exit, error code, and refusal surface",
+      );
+    }
+  });
+
+  it("accepts command-declared no-effect and partial-effect success exits", () => {
+    const corpus = parsePmAgentTaskTranscriptCorpus({
+      version: 2,
+      tasks: [
+        {
+          id: "bulk-effects",
+          description:
+            "Represent successful bulk commands without collapsing effect semantics.",
+          steps: [
+            {
+              id: "no-effect",
+              args: ["--json", "close-many", "pm-missing"],
+              expected_exit_code: 6,
+              expected_output_kind: "collection",
+              expected_accounting_mode: "self_reported",
+              required_fields: ["rows"],
+            },
+            {
+              id: "partial-effect",
+              args: [
+                "--pm-path",
+                "/tmp/project/.agents/pm",
+                "update-many",
+                "pm-one,pm-missing",
+              ],
+              expected_exit_code: 7,
+              expected_output_kind: "collection",
+              expected_accounting_mode: "self_reported",
+              required_fields: ["rows"],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      corpus.tasks[0]?.steps.map((step) => step.expected_exit_code),
+    ).toEqual([6, 7]);
+  });
+
+  it("rejects duplicate identities and recovery that does not follow a refusal", () => {
+    const success = {
+      id: "same",
+      args: ["list"],
+      expected_exit_code: 0,
+      expected_output_kind: "collection",
+      expected_accounting_mode: "self_reported",
+      required_fields: ["items"],
+    };
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [{ id: "task", description: "x", steps: [success, success] }],
+      }),
+    ).toThrow("duplicate step id same");
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [{ ...success, recovery_for: "missing" }],
+          },
+        ],
+      }),
+    ).toThrow(
+      "recovery_for must reference an earlier refusal and declare successful output",
+    );
+    const refusal = {
+      id: "refuse",
+      args: ["list", "--for", "invalid"],
+      expected_exit_code: 2,
+      expected_output_kind: "refusal",
+      expected_accounting_mode: "independent_transport",
+      required_fields: ["code"],
+      expected_error_code: "unknown_context_intent",
+      expected_refusal_surface: "--for",
+    };
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [
+              refusal,
+              { ...success, id: "retry", recovery_for: "refuse" },
+              { ...refusal, id: "terminal-refusal" },
+            ],
+          },
+        ],
+      }),
+    ).toThrow("completed task must terminate with successful output");
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [
+              {
+                id: "refuse",
+                args: ["list", "--for", "invalid"],
+                expected_exit_code: 2,
+                expected_output_kind: "refusal",
+                expected_accounting_mode: "independent_transport",
+                required_fields: ["code"],
+                expected_error_code: "unknown_context_intent",
+                expected_refusal_surface: "--for",
+              },
+              {
+                id: "refuse-again",
+                args: ["list", "--for", "still-invalid"],
+                expected_exit_code: 2,
+                expected_output_kind: "refusal",
+                expected_accounting_mode: "independent_transport",
+                required_fields: ["code"],
+                expected_error_code: "unknown_context_intent",
+                expected_refusal_surface: "--for",
+                recovery_for: "refuse",
+              },
+            ],
+          },
+        ],
+      }),
+    ).toThrow(
+      "recovery_for must reference an earlier refusal and declare successful output",
+    );
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [
+          {
+            id: "task",
+            description: "x",
+            steps: [refusal, { ...success, id: "unrelated-success" }],
+          },
+        ],
+      }),
+    ).toThrow(
+      "tasks.task.refuse refusal must have a later successful recovery_for step",
+    );
+    expect(() =>
+      parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [
+          { id: "task", description: "x", steps: [success] },
+          { id: "task", description: "y", steps: [success] },
+        ],
+      }),
+    ).toThrow("duplicate agent-task transcript id task");
   });
 });

@@ -1,0 +1,28 @@
+id: pm-ntnv4k
+title: "GH-1138: linked test name filters can pass after executing zero tests"
+description: "Track GitHub issue #1138: linked test commands using runner name filters can exit zero after matching no tests. `pm test <id> --run` records a green receipt even though the evidence command performed no assertions, silently invalidating the durable verification claim after a test rename or typo."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,evidence-integrity,github,linked-tests,tdd
+created_at: "2026-08-28T14:43:01.407Z"
+updated_at: "2026-08-28T14:43:01.407Z"
+author: "harness:codex"
+acceptance_criteria: "Add an SDK-owned executed-test assertion primitive and declarative minimum-count field; recognize supported runner receipts without brittle prose-only heuristics; fail zero-test filtered commands closed; preserve explicit non-test smoke commands; add unit, integration, CLI, MCP/schema, history, Node runner, and temp-workspace acceptance coverage."
+parent: pm-33cw
+reporter: GitHub issue #1138
+severity: high
+environment: "pm 2026.8.28, Node 26.5.0, Linux; node --test command with --test-name-pattern matching zero tests"
+repro_steps: "Link a `node --test --test-name-pattern` command whose pattern matches no test, run it through `pm test <id> --run`, and observe ok true with the runner reporting pass 0."
+expected_result: A linked test declares and enforces a minimum executed-test count through a public SDK-owned runner receipt contract; zero-test filtered runs fail closed with actionable evidence.
+actual_result: "The child process exits zero, pm reports the linked test passed, and no structured field distinguishes zero executed tests from a real passing assertion."
+affected_version: 2026.8.21-2026.8.28
+component: linked-tests
+regression: true
+customer_impact: "Renamed or mistyped test filters silently turn immutable PM verification evidence into a tautology, misleading later agents and release gates."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4i73,discovered_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
+  pm-m0b7h8,recurs_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T14:43:01.407Z","harness:codex","Duplicate check: complete all-status searches for test-name-pattern,zero tests,linked-test no-op success,GH-982,and test meaningfulness found pm-m0b7h8 for no-op linked-test mutation and pm-4i73 for meaningfulness,but no item owning zero-execution runner receipts. GitHub issue #1138 is a later recurrence with a distinct execution boundary."
+body: ""

@@ -1,0 +1,70 @@
+id: pm-hmpu4p
+title: Close lifecycle bypasses reproducible process clock
+description: "The exact transport-parity gate for agent transcripts exposed that SDK closeItem stamps closed_at and default completed_at from the wall clock instead of the PM_CLOCK reproducible process contract, so independent equivalent workspaces diverge byte-for-byte."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:sdk",determinism,lifecycle,recursive-self-improvement,review-feedback
+created_at: "2026-08-28T12:28:49.337Z"
+updated_at: "2026-08-28T13:11:51.522Z"
+closed_at: "2026-08-28T13:11:50.959Z"
+completed_at: "2026-08-28T13:11:50.959Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: SDK close lifecycle timestamps use the shared reproducible clock; independent process runs close equivalent items with byte-identical authoritative state; explicit completed-at resolution remains relative to the deterministic close instant; focused negative control and transcript payload-parity gate pass; exact coverage and static gates pass
+goal: project management = context management
+objective: Make lifecycle mutations reproducible through the public SDK and every CLI transport
+value: "Deterministic close receipts let agents replay, compare, and self-improve workflows without wall-clock noise"
+impact: "Restores byte-level transcript parity and protects future evaluation, benchmark, and recovery gates"
+outcome: "Equivalent seeded close operations produce identical status, closed_at, completed_at, output payloads, and history"
+why_now: The new independent transport parity gate fails on close timestamps at the current PR head
+parent: pm-8pnj
+risk: medium
+confidence: high
+severity: medium
+environment: PM_CLOCK and PM_CLOCK_TICK_MS enabled in independent temporary CLI workspaces
+repro_steps: "Create equivalent items in two seeded PM_CLOCK workspaces, close each through the CLI, and compare JSON payloads or authoritative snapshots; closed_at differs because closeItem calls new Date directly"
+resolution: "SDK closeItem now consumes the shared reproducible clock for closed_at and default completed_at, with independent-process byte-parity coverage and complete graph provenance."
+expected_result: Seeded equivalent close operations use the PM_CLOCK sequence and produce byte-identical lifecycle state.
+actual_result: Independent CLI workspaces now close equivalent items with deterministic equal timestamps and byte-identical snapshots; transcript parity and exact 100% coverage pass; the historical closed_at defect is linked by typed recurrence.
+affected_version: 2026.8.27
+component: SDK lifecycle close
+regression: true
+customer_impact: Reproducible process users receive nondeterministic close outputs and cannot prove exact replay parity
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8pnj,discovered_from,"2026-08-28T12:28:49.337Z","harness:codex","cli:create:dep",detected
+  pm-m4iu,verifies,"2026-08-28T12:28:49.337Z","harness:codex","cli:create:dep",detected
+  pm-wrbe,recurs_from,"2026-08-28T13:11:46.745Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-28T12:28:49.337Z","harness:codex","Duplicate check evidence: all-status exact-phrase searches for reproducible clock and reproducible process returned zero canonical items; closed_at search found pm-m4iu for stamping presence and pm-wrbe for historical backfill, neither owns deterministic runtime clock consumption. The transcript parity gate on pm-8pnj discovered this distinct recurrence."
+  "2026-08-28T12:30:46.740Z","harness:codex","TDD red evidence: the process-level reproducibility suite failed on closed_at and completed_at. Expected the seeded PM_CLOCK instant 2026-08-22T12:00:00.000Z; SDK closeItem emitted the live wall clock while created_at and updated_at remained deterministic. Command: node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts."
+  "2026-08-28T12:35:58.471Z","harness:codex","Implementation evidence: SDK closeItem now calls the shared nowIso contract. Independent seeded CLI processes close equivalent items with identical authoritative snapshots; closed_at and default completed_at remain equal and within the declared PM_CLOCK sequence. The focused process suite passes 3/3, and the real five-task transcript replay now passes exact payload parity at 4,331 estimated tokens."
+  "2026-08-28T12:52:17.317Z","harness:codex","Final assurance: focused independent-process regression passes 3/3; connected real transcript replay passes five tasks at 4,331 tokens; repository-wide coverage on parent pm-8pnj passes exact 100/100/100/100 including this lifecycle source and negative control."
+  "2026-08-28T13:08:21.400Z","harness:codex","Graph correction evidence: repository graph-composition measured one new prose-edge gap because the duplicate-check comment cites historical backfill owner pm-wrbe. Added the missing relationship while retaining typed discovered_from and verifies edges to the implementation lineage."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/close.ts,project,Consume shared reproducible clock for close lifecycle timestamps
+  tests/integration/reproducible-process.integration.spec.ts,project,Independent CLI close process byte-parity and timestamp regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts,project,240,"harness:codex","2026-08-28T12:30:46.258Z",local_mutation,feat/agent-transcript-recovery-contracts,Focused process-level reproducible close regression
+test_runs[1]:
+  - run_id: test-local-mtcxr7dg-qoxq88
+    kind: test
+    status: passed
+    started_at: "2026-08-28T12:36:12.438Z"
+    finished_at: "2026-08-28T12:36:28.563Z"
+    recorded_at: "2026-08-28T12:36:28.563Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts,schema,schema,source,local_source_ref
+close_reason: "Reproducible close lifecycle is fixed, verified, fully evidenced, and linked through typed recurrence"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-hmpu4p
+  gate_id: reproducible-close-lifecycle-clock
+  negative_control: Restore new Date().toISOString() in closeItem; the independent CLI process snapshot and transcript transport parity gates must fail on closed_at and completed_at drift.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts,"pnpm quality:agent-task-token",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+body: ""

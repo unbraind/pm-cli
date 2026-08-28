@@ -807,13 +807,13 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(`${PACKAGE_LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS} ${UPGRADE_FLAGS}`)})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --full-history --if-absent --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --add-json --stdin --file --edit --delete --limit --since --event-type --include-meta --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-json --stdin --file --edit --delete --limit --since --event-type --include-meta --full-history --if-absent --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --full-history --if-absent --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
     `      COMPREPLY=(${compgen("discover lookup --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --scope --limit --offset --no-truncate --strict-read --explain --lines --decision-depth --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1594,6 +1594,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--delete[Delete the comment at 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
             '--full-history[Return complete post-mutation history]' \\
+            '--if-absent[Append only when the resolved author and text are absent]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1614,6 +1615,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--event-type[Return structured events with this top-level type]:event_type' \\
             '--include-meta[Include result counts and truncation metadata]' \\
             '--full-history[Return complete post-mutation history]' \\
+            '--if-absent[Append only when the resolved author and text are absent]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1630,6 +1632,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--delete[Delete the entry at a 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
             '--full-history[Return complete post-mutation history]' \\
+            '--if-absent[Append only when the resolved author and text are absent]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -2705,6 +2708,7 @@ complete -c pm -n '__fish_seen_subcommand_from comments' -l stdin -d 'Read comme
 complete -c pm -n '__fish_seen_subcommand_from comments' -l file -d 'Read comment text from file (supports multiline markdown)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments' -l edit -d 'Replace the comment at 1-based index (text from positional/--add/--stdin/--file)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments' -l delete -d 'Delete the comment at 1-based index' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l if-absent -d 'Append only when the resolved author and text are absent'
 complete -c pm -n '__fish_seen_subcommand_from notes' -l stdin -d 'Read entry text from stdin'
 complete -c pm -n '__fish_seen_subcommand_from notes' -l file -d 'Read entry text from file' -r
 complete -c pm -n '__fish_seen_subcommand_from notes' -l edit -d 'Replace the entry at a 1-based index' -r

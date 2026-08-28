@@ -87,7 +87,7 @@ function createCliFixture(
   pmRoot: string,
   title: string,
   env = processEnvironment(),
-): void {
+): string {
   const result = runCli(
     pmRoot,
     [
@@ -105,6 +105,9 @@ function createCliFixture(
     env,
   );
   expect(result.status, processDiagnostics(result)).toBe(0);
+  const payload = JSON.parse(result.stdout) as { id?: string };
+  expect(payload.id).toMatch(/^pm-/);
+  return payload.id ?? "";
 }
 
 function runMcpFixture(pmRoot: string, env = processEnvironment()) {
@@ -160,7 +163,7 @@ describe("reproducible process transport contract", () => {
     const secondRoot = await createTrackerRoot();
     for (const pmRoot of [firstRoot, secondRoot]) {
       initializeTracker(pmRoot);
-      createCliFixture(
+      const closeTarget = createCliFixture(
         pmRoot,
         "CLI deterministic fixture one",
         processEnvironment("cli-step-one"),
@@ -169,6 +172,37 @@ describe("reproducible process transport contract", () => {
         pmRoot,
         "CLI deterministic fixture two",
         processEnvironment("cli-step-two"),
+      );
+      const closeResult = runCli(
+        pmRoot,
+        [
+          "close",
+          closeTarget,
+          "Reproducible process close",
+          "--author",
+          "reproducibility-gate",
+          "--message",
+          "Close deterministic fixture",
+          "--json",
+        ],
+        processEnvironment("cli-close"),
+      );
+      expect(closeResult.status, processDiagnostics(closeResult)).toBe(0);
+      const closedResult = runCli(pmRoot, [
+        "get",
+        closeTarget,
+        "--json",
+        "--full",
+      ]);
+      expect(closedResult.status, processDiagnostics(closedResult)).toBe(0);
+      const closedPayload = JSON.parse(closedResult.stdout) as {
+        item?: { closed_at?: string; completed_at?: string };
+      };
+      expect(closedPayload.item?.closed_at).toMatch(
+        /^2026-08-22T12:00:00\.\d{3}Z$/,
+      );
+      expect(closedPayload.item?.completed_at).toBe(
+        closedPayload.item?.closed_at,
       );
     }
 

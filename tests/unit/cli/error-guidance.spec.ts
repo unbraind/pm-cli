@@ -263,6 +263,116 @@ describe("pm cli error guidance context plumbing", () => {
     expect(afterCommand.examples?.join(" ")).not.toContain("/private/");
   });
 
+  it("does not identify a preceding global flag as an invalid value surface", () => {
+    const envelope = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "/private/project/.agents/pm",
+            "get",
+            "pm-demo",
+            "--depth",
+            "verbose",
+          ],
+          provided_fields: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "--depth",
+          ],
+        },
+      },
+    );
+
+    expect(envelope.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+
+    const textualGlobal = formatPmCliErrorForJson(
+      "Global --json output was enabled; Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "/private/project/.agents/pm",
+            "get",
+            "pm-demo",
+            "--depth",
+            "verbose",
+          ],
+          provided_fields: [
+            "--json",
+            "--token-accounting",
+            "--pm-path",
+            "--depth",
+          ],
+        },
+      },
+    );
+    expect(textualGlobal.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+
+    const inlineValue = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: ["get", "pm-demo", "--depth=verbose"],
+          provided_fields: ["--depth"],
+        },
+      },
+    );
+    expect(inlineValue.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+
+    const missingCandidateArgument = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        flag: "--depth",
+        recovery: {
+          normalized_args: ["get", "pm-demo"],
+          provided_fields: ["--depth"],
+        },
+      },
+    );
+    expect(missingCandidateArgument.refusal.surface).toBe("--depth");
+    expect(missingCandidateArgument.refusal).not.toHaveProperty(
+      "rejected_value",
+    );
+  });
+
+  it("canonicalizes inline provided-field fallbacks before resolving refusal values", () => {
+    const envelope = formatPmCliErrorForJson(
+      "Value must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: ["get", "pm-demo", "--depth=verbose"],
+          provided_fields: ["--depth=verbose"],
+        },
+      },
+    );
+
+    expect(envelope.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+  });
+
   it("preserves structured fallback recovery candidates in JSON and text output", () => {
     const recovery = {
       attempted_command: "pm install --project npm:pm-brief",
@@ -362,6 +472,134 @@ describe("pm cli error guidance context plumbing", () => {
       suggested_flags: ["--deadline-after"],
       option_scope: "declared_nowhere",
     });
+  });
+
+  it("identifies the unknown option after valid flags as the refusal surface", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--include-body'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: [
+          "search",
+          "agent task",
+          "--status",
+          "open",
+          "--limit",
+          "5",
+          "--json",
+          "--include-body",
+        ],
+        providedOptionFlags: [
+          "--status",
+          "--limit",
+          "--json",
+          "--include-body",
+        ],
+        unknownOptionScope: "declared_nowhere",
+      },
+    );
+
+    expect(envelope).toMatchObject({
+      code: "unknown_option",
+      flag: "--include-body",
+      value: "--include-body",
+      refusal: {
+        surface: "--include-body",
+        rejected_value: "--include-body",
+        exit_code: 2,
+      },
+      recovery: {
+        suggested_retry: 'pm search "agent task" --status open --limit 5',
+        suggested_retry_args: [
+          "search",
+          "agent task",
+          "--status",
+          "open",
+          "--limit",
+          "5",
+        ],
+      },
+    });
+  });
+
+  it("keeps explicit unknown-option corrections authoritative over removal retries", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--statu'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["search", "agent", "--statu"],
+        providedOptionFlags: ["--statu"],
+        unknownOptionSuggestions: ["--status"],
+        suggestedRetryCommand: "pm search agent --status open",
+      },
+    );
+
+    expect(envelope.recovery?.suggested_retry).toBe(
+      "pm search agent --status open",
+    );
+    expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+
+    const inline = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["--json", "search", "agent", "--bogus=1"],
+      },
+    );
+    expect(inline.recovery?.suggested_retry_args).toEqual([
+      "search",
+      "agent",
+    ]);
+
+    const ambiguous = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["search", "--bogus", "agent"],
+      },
+    );
+    expect(ambiguous.recovery?.suggested_retry).toBeUndefined();
+
+    const explicitArgumentBoundary = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: [
+          "search",
+          "--bogus",
+          "--",
+          "literal-filter",
+        ],
+      },
+    );
+    expect(explicitArgumentBoundary.recovery?.suggested_retry).toBeUndefined();
+    expect(
+      explicitArgumentBoundary.recovery?.suggested_retry_args,
+    ).toBeUndefined();
+
+    const repeatedUnknownOption = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      "search",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["search", "agent", "--bogus", "--bogus"],
+      },
+    );
+    expect(repeatedUnknownOption.recovery?.suggested_retry).toBeUndefined();
+    expect(
+      repeatedUnknownOption.recovery?.suggested_retry_args,
+    ).toBeUndefined();
   });
 
   it("applies runtime unknown-command guidance examples for commander errors", () => {

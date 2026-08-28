@@ -1,0 +1,86 @@
+id: pm-fo8g7j
+title: Unknown-option refusals identify the actual rejected flag and fail closed at delimiters
+description: "A real invocation of pm search with the unsupported --include-body option emits code=unknown_option and correctly names --include-body in its title/detail, but refusal.surface is --status because the shared envelope builder selects the first provided field. That machine-readable contradiction sends SDK, MCP, and CLI agents toward a valid option instead of the rejected one and undermines recovery-closure scoring. Derive the refused surface and rejected value from the actual unknown-option diagnostic while preserving redaction and fallback behavior."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",contracts,recovery,structured-errors
+created_at: "2026-08-27T16:23:50.108Z"
+updated_at: "2026-08-28T09:01:36.449Z"
+closed_at: "2026-08-28T09:01:35.892Z"
+completed_at: "2026-08-28T09:01:35.892Z"
+author: "harness:codex"
+acceptance_criteria: "unknown_option refusal.surface equals the actual rejected option regardless of valid options that precede it; refusal.rejected_value and recovery metadata remain internally consistent and redaction-safe; CLI JSON, SDK normalization, and executable recovery-corpus tests cover mixed valid-plus-unknown option orderings; The regression is represented in task-transcript and refusal-closure assurance"
+parent: pm-f05lsg
+resolution: Canonicalize inline provided-field fallbacks before refusal attribution so the shared resolver publishes the flag identity and rejected scalar consistently.
+expected_result: Every invalid-domain refusal exposes a canonical flag surface and the rejected inline value even when prose does not name the flag.
+actual_result: "Inline --depth=verbose fallback now emits surface --depth, rejected_value verbose, the complete legal domain, and exit code 2 across unit and black-box CLI paths."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-h8tpeh,recurs_from,"2026-08-27T16:23:50.108Z","harness:codex","cli:create:dep",detected
+  pm-srns,discovered_from,"2026-08-27T16:23:50.108Z","harness:codex","cli:create:dep",detected
+  pm-8pnj,implements,"2026-08-27T16:59:03.340Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
+  "2026-08-27T16:23:50.108Z","harness:codex","Duplicate check evidence: complete 2,563-item all-status census plus AND-mode unknown option refusal surface provided fields and exact refusal surface searches found no matching issue. Reproduction: pm search with valid --status/--limit/--json plus unsupported --include-body reports refusal.surface=--status while title/detail identify --include-body."
+  "2026-08-27T16:25:47.895Z","harness:codex","Start: correct structured unknown-option refusals so surface and rejected_value identify the actual unsupported option even when valid flags precede it; cover the real CLI JSON path and include the regression in transcript/recovery assurance."
+  "2026-08-27T16:53:58.179Z","harness:codex","Relationship rationale: pm-fo8g7j recurs_from pm-h8tpeh because both concern contradictory machine refusal identities; it was discovered_from pm-srns while replaying the uniform output contract, and parent pm-f05lsg owns the recovery-closure outcome."
+  "2026-08-27T17:34:23.570Z","harness:codex","Completion evidence: unknown-option refusals now preserve the actual unsupported flag even when valid command and global flags precede it, and invalid-domain refusals select the explicit offending option instead of token-accounting or path flags. Unit, transcript, manual temporary-workspace, full-suite, and exact coverage checks passed; the manual receipt reported surface and rejected_value as --include-body and surface --depth with rejected_value verbose."
+  "2026-08-27T20:37:19.245Z","harness:codex","Recurrence correction: refusal attribution now scans every mentioned option and filters the complete root-global option set before falling back to provided fields. Unknown options at an unambiguous position also publish transport-global-free suggested_retry_args for executable recovery."
+  "2026-08-27T21:13:31.637Z","harness:codex","Corrective pre-close evidence 2026-08-27: error guidance now scans every mentioned option, excludes the full root-global option set, accepts inline --flag=value forms, preserves explicit producer corrections, and only advertises shell-free unknown-option removal when unambiguous. The focused 46-test error-guidance suite, 74-test transcript suite, canonical replay, and repository exact coverage all pass."
+  "2026-08-27T22:46:11.813Z","harness:codex","Review remediation evidence (CodeRabbit PR #1133 thread PRRT_kwDORSgRDc6c_DrC): automatic unknown-option recovery now fails closed whenever normalized argv contains the explicit -- boundary, so removing an option can never reinterpret or discard a literal argument tail. The adversarial search --bogus -- literal-filter case proves both suggested_retry and suggested_retry_args stay absent. Linked test passed 55/55; combined focused suite passed 74/74; full repository coverage passed 585 files and 8067 tests at exact 100/100/100/100 (59919 statements, 45114 branches, 12461 functions, 57701 lines). Agent-task token gate remains 5/5 tasks, 14 steps, 2 retries, 4349 estimated tokens."
+  "2026-08-27T22:53:16.689Z","harness:codex","Final black-box acceptance proof before closure: in a fresh mktemp workspace, the built CLI initialized a tracker and rejected pm --json search agent --bogus -- literal-filter with exit 2/code unknown_option while omitting both recovery.suggested_retry and recovery.suggested_retry_args. The temporary workspace was then removed."
+  "2026-08-28T03:22:37.706Z","harness:codex","Review wording correction: the changelog is generated from PM titles. Updated this canonical title to state the implemented behavior: refusal.surface identifies the actual unsupported flag after preceding valid options, while automatic recovery is omitted at an explicit delimiter. No implementation or historical evidence changed."
+  "2026-08-28T08:35:07.001Z","harness:codex","TDD red evidence: the focused error-guidance suite failed exactly one new regression (46 passed, 1 failed). A prose-only invalid-domain refusal with normalized_args and provided_fields containing --depth=verbose incorrectly emitted refusal.surface=--depth=verbose and omitted rejected_value instead of canonical surface --depth with value verbose."
+  "2026-08-28T09:00:52.992Z","harness:codex","Review correction evidence: provided_fields fallback values are canonicalized from --flag=value to --flag before refusal attribution, allowing the shared rejected-value resolver to recover the inline scalar. The new negative control failed before implementation and the linked error-guidance plus agent-task gate passed 56/56. Two independent exact repository runs passed 585 files at 100% statements 59953/59953, branches 45139/45139, functions 12470/12470, and lines 57733/57733; CI static passed twice. Fresh-directory black-box acceptance returned exit 2, code invalid_argument_value, surface --depth, rejected_value verbose, and the complete legal domain."
+learnings[2]{created_at,author,text}:
+  "2026-08-27T17:34:24.098Z","harness:codex",Refusal attribution must prefer an explicit option named by the producer and present in normalized arguments; selecting the first dashed token confuses valid global flags with the failing surface.
+  "2026-08-27T21:13:32.251Z","harness:codex","Recovery identity and recovery execution are one contract: the CLI must identify the true refused option after global flags and only publish suggested_retry_args when removing that option cannot consume an ambiguous positional value."
+files[1]{path,scope,note}:
+  src/cli/error-guidance.ts,project,explicit refusal surface selection for unknown and invalid options
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-27T16:44:56.596Z",local_mutation,feat/agent-transcript-recovery-contracts
+test_runs[3]:
+  - run_id: test-local-mtbsxf9d-hvsa60
+    kind: test
+    status: passed
+    started_at: "2026-08-27T17:33:12.864Z"
+    finished_at: "2026-08-27T17:33:34.465Z"
+    recorded_at: "2026-08-27T17:33:34.465Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtc3u0rv-gwcm3a
+    kind: test
+    status: passed
+    started_at: "2026-08-27T22:38:28.920Z"
+    finished_at: "2026-08-27T22:38:51.499Z"
+    recorded_at: "2026-08-27T22:38:51.499Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcp5e11-xgndsm
+    kind: test
+    status: passed
+    started_at: "2026-08-28T08:35:10.536Z"
+    finished_at: "2026-08-28T08:35:33.829Z"
+    recorded_at: "2026-08-28T08:35:33.829Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/agent-task-transcripts.json,project,real unknown-option regression workflow
+close_reason: "Inline recovery fields now yield canonical refusal surfaces and recover rejected values; TDD, linked gates, exact coverage, static quality, and fresh-directory CLI acceptance pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-fo8g7j
+  gate_id: agent-task-refusal-recovery-contract
+  negative_control: Select the first valid provided flag instead of the explicit unknown or invalid option; error-guidance and agent-task transcript gate tests must fail on refusal.surface and rejected_value.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

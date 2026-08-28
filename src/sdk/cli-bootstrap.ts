@@ -27,18 +27,14 @@ import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { normalizeItemAddressInvocation } from "./agent/item-addressing.js";
-
-const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
-  "--pm-path",
-  "--path",
-  "--author",
-  "--output-include",
-  "--output-limit",
-  "--output-budget",
-  "--output-format",
-  "--output-session",
-  "--output-cursor",
-]);
+import {
+  BOOTSTRAP_BOOLEAN_FLAGS,
+  GLOBAL_VALUE_CONSUMING_FLAGS,
+  consumesBootstrapValue,
+  findBootstrapCommandTokenIndex as findContractBootstrapCommandTokenIndex,
+  isInlineGlobalValueToken,
+  parseBootstrapCommandName as parseContractBootstrapCommandName,
+} from "./cli-contracts/bootstrap-command-scanner.js";
 
 const OUTPUT_VALUE_FLAGS = new Set<string>([
   "--output-include",
@@ -48,24 +44,6 @@ const OUTPUT_VALUE_FLAGS = new Set<string>([
   "--output-session",
   "--output-cursor",
 ]);
-
-/** Whether a global value-consuming flag uses its inline `--flag=value` form. */
-const isInlineGlobalValueToken = (token: string): boolean => {
-  const equalsIndex = token.indexOf("=");
-  return (
-    equalsIndex > 0 &&
-    GLOBAL_VALUE_CONSUMING_FLAGS.has(token.slice(0, equalsIndex))
-  );
-};
-
-/** Whether a bootstrap value flag consumes its following token. */
-const consumesBootstrapValue = (
-  flag: string,
-  next: string | undefined,
-): boolean => {
-  if (typeof next !== "string") return false;
-  return flag === "--path" || flag === "--pm-path" || !next.startsWith("-");
-};
 
 /** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapGlobalOptions {
@@ -102,17 +80,6 @@ export interface BootstrapGlobalOptions {
   /** Whether `--author` was present without its required value. */
   authorMissingValue?: true;
 }
-
-const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
-  "--no-extensions",
-  "--no-pager",
-  "--json",
-  "--quiet",
-  "--lean",
-  "--token-accounting",
-  "--output-row-contract",
-  "--all",
-]);
 
 interface BootstrapGlobalParseState {
   /** Non-empty tracker-root values keyed by their preferred or legacy flag. */
@@ -298,46 +265,16 @@ export function parseBootstrapHelpRequest(
   };
 }
 
-/**
- * Index of the command token in argv — the first non-flag token, skipping the
- * value-consuming/global bootstrap flags. Returns undefined when there is none
- * (bare invocation, only global flags, or a leading `--`). Single source of truth
- * for command-position scanning shared by {@link parseBootstrapCommandName} and the
- * command-alias rewrite so their precedence rules can never drift apart.
- */
+/** Locate the command token after global bootstrap flags and their values. */
 export function findBootstrapCommandTokenIndex(
   argv: string[],
 ): number | undefined {
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (token === "--") {
-      return undefined;
-    }
-    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
-      index += consumesBootstrapValue(token, argv[index + 1]) ? 1 : 0;
-      continue;
-    }
-    if (
-      isInlineGlobalValueToken(token) ||
-      BOOTSTRAP_BOOLEAN_FLAGS.has(token) ||
-      token === "--profile" ||
-      token === "--id-only" ||
-      token === "--explain"
-    ) {
-      continue;
-    }
-    if (token.startsWith("-")) {
-      continue;
-    }
-    return index;
-  }
-  return undefined;
+  return findContractBootstrapCommandTokenIndex(argv);
 }
 
-/** Implements parse bootstrap command name for the public runtime surface of this module. */
+/** Resolve the normalized command name from bootstrap invocation arguments. */
 export function parseBootstrapCommandName(argv: string[]): string | undefined {
-  const index = findBootstrapCommandTokenIndex(argv);
-  return index === undefined ? undefined : argv[index].trim().toLowerCase();
+  return parseContractBootstrapCommandName(argv);
 }
 
 function shouldDisablePagerForInvocation(
