@@ -355,6 +355,24 @@ describe("pm cli error guidance context plumbing", () => {
     );
   });
 
+  it("canonicalizes inline provided-field fallbacks before resolving refusal values", () => {
+    const envelope = formatPmCliErrorForJson(
+      "Value must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: ["get", "pm-demo", "--depth=verbose"],
+          provided_fields: ["--depth=verbose"],
+        },
+      },
+    );
+
+    expect(envelope.refusal).toMatchObject({
+      surface: "--depth",
+      rejected_value: "verbose",
+    });
+  });
+
   it("preserves structured fallback recovery candidates in JSON and text output", () => {
     const recovery = {
       attempted_command: "pm install --project npm:pm-brief",

@@ -654,9 +654,9 @@ function resolveRefusalCandidateFlag(
     .map((match) => match[0])
     .find((flag) => isAdmissibleCandidate(flag));
   if (mentionedFlag) return mentionedFlag;
-  return message.recovery?.provided_fields?.find(
-    (field) => isAdmissibleCandidate(field),
-  );
+  return message.recovery?.provided_fields
+    ?.map((field) => field.split("=", 1)[0])
+    .find((field) => isAdmissibleCandidate(field));
 }
 
 function resolveRefusalRejectedValue(

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-27T23:17:20.508Z"
-updated_at: "2026-08-28T06:38:54.303Z"
-closed_at: "2026-08-28T06:38:53.494Z"
-completed_at: "2026-08-28T06:38:53.494Z"
+updated_at: "2026-08-28T09:01:41.461Z"
+closed_at: "2026-08-28T09:01:40.883Z"
+completed_at: "2026-08-28T09:01:40.883Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Public SDK options and result types expose idempotent if-absent semantics for comments, text/JSON notes, and learnings; CLI --if-absent and MCP ifAbsent share the SDK implementation; resolved author plus normalized stored text define equality; first adds report changed true and exact retries changed false without history or cache mutation; default adds still permit intentional duplicates; concurrency, help, contracts, completions, SDK surface, docs, unit/integration/MCP/manual tests, exact coverage, static quality, security, and packed-consumer gates pass."
@@ -17,9 +17,9 @@ risk: medium
 confidence: high
 severity: medium
 repro_steps: "Run pm comments, pm notes, or pm learnings twice with the same add payload and author, then inspect annotation collections and history; before this fix each retry stored another identical entry and add event."
-resolution: "Implemented and verified one opt-in public retry-safe annotation mutation contract across comments, text/JSON notes, and learnings in the SDK, CLI, MCP, contracts, completions, docs, refusal reachability, concurrency, fresh-workspace process acceptance, static quality, and exact repository coverage; default duplicate appends remain compatible."
-expected_result: "Callers can opt into idempotent annotation appends: the first call records one event and reports changed true; retries with the same resolved author and normalized stored text report changed false without another history event; default append behavior continues to permit intentional duplicates."
-actual_result: "The SDK/MCP runtime input normalizer hoists flat ifAbsent for comments, notes, and learnings into canonical options while preserving explicit nested-option precedence. Branch and fresh-directory acceptance prove first-write success and duplicate no-effect behavior when opted in, while default duplicate appends remain available."
+resolution: "Deliver opt-in writer-lock idempotent annotation appends across SDK, CLI, and MCP with flat and nested input parity while preserving intentional duplicate defaults."
+expected_result: "Explicit ifAbsent retries add once and then return changed false across comments, notes, and learnings; default appends remain compatible and duplicable."
+actual_result: "Contracts, SDK surface, 100/100/100/100 coverage, tracker-context static quality, and the 231-test SDK/CLI/MCP regression bundle passed in one fresh 4/4 linked run."
 affected_version: 2026.8.27
 component: SDK annotations and CLI/MCP annotation transports
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
@@ -28,7 +28,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-27T23:17:20.508Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-27T23:17:20.508Z","harness:codex","cli:create:dep",detected
   pm-zwpp,blocked_by,"2026-08-27T23:17:20.508Z","harness:codex","cli:create:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-08-27T23:17:20.508Z","harness:codex","Duplicate-check evidence: exact all-status GH-1132 search returned zero items; broader all-status searches found annotation grammar, output-bounding, dedupe-audit, and lock-retry owners but none owns idempotent annotation mutation. GitHub source: https://github.com/unbraind/pm-cli/issues/1132. This item extends the canonical SDK annotation kernel and multi-agent safety lineages rather than duplicating them."
   "2026-08-27T23:25:34.767Z","harness:codex","TDD red: focused comments suite now proves missing idempotent mutation semantics. The first --if-absent call has no changed receipt, the retry appends again instead of preserving history bytes, and non-append invocations incorrectly accept the option. Command: node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts; result 43 passed, 2 expected failures."
   "2026-08-27T23:54:24.815Z","harness:codex","Evidence: implemented SDK-owned lock-scoped comment idempotency with CLI --if-absent, MCP options.ifAbsent, canonical schemas, completions, stable refusal catalog, and documented changed receipts. Fresh CLI+SDK acceptance proved one history event across exact retries; a real PM_MCP_PROFILE=full stdio process returned changed true/1 then false/0. Focused SDK/CLI/MCP/completion tests passed 162/162, concurrency proved one writer and five no-ops, static complexity passed <=16, docstrings passed 567/567 source, 4507/4507 exports, 8187/8187 members, and full coverage passed 585 files / 8072 tests / exact 100/100/100/100 (59928 statements, 45132 branches, 12463 functions, 57710 lines)."
@@ -44,6 +44,7 @@ comments[15]{created_at,author,text}:
   "2026-08-28T05:10:40.538Z","harness:codex","TDD red: flat ifAbsent beside nested options.add was absent from the final runComments options; the combined comments/notes/learnings transport regression failed exactly on the first flat annotation assertion."
   "2026-08-28T05:36:49.766Z","harness:codex","Correction evidence: focused MCP residual coverage proves nested and flat ifAbsent normalization for comments, notes, and learnings; the combined focused suite passes 294 tests; full coverage passes 8,083 tests at exact 100/100/100/100; fresh-directory public SDK acceptance proved one persisted annotation and a no-effect duplicate for every family."
   "2026-08-28T06:38:34.567Z","harness:codex","Exact-head release-note reconciliation: the canonical title now says ifAbsent/--if-absent deduplication is opt-in and that default duplicate appends remain available. CHANGELOG regeneration will therefore describe the compatibility boundary rather than implying unconditional deduplication."
+  "2026-08-28T09:00:53.893Z","harness:codex","Terminal receipt refresh: pm test pm-ea1yh2 --run --progress passed all 4/4 commands after every later review correction: contract snapshot plus SDK surface, exact repository coverage at 100/100/100/100, CI=1 tracker-context static quality, and the focused SDK/CLI/MCP annotation bundle at 231/231. The recorded run has zero failure categories."
 notes[2]{created_at,author,text}:
   "2026-08-27T23:54:25.697Z","harness:codex","Implementation boundary: equality is resolved-author plus normalized stored text under the item writer lock. Only explicit ifAbsent requests emit top-level changed; default append response shape and intentional duplicate behavior remain compatible. Duplicate no-ops skip item/history writes and derived search-cache refresh."
   "2026-08-28T00:46:32.227Z","harness:codex","Expanded implementation boundary: the single annotation kernel covers comments, text notes, canonicalized JSON notes, and learnings. Every transport exposes optional ifAbsent, every result exposes optional changed, exact no-ops return changed_count=0, and cache refresh is skipped without altering default duplicate-append compatibility."
@@ -114,7 +115,7 @@ tests[4]:
       created_at: "2026-08-28T00:46:20.159Z"
       source_kind: local_mutation
       source_ref: feat/agent-transcript-recovery-contracts
-test_runs[9]:
+test_runs[10]:
   - run_id: test-local-mtc662mi-0l08h9
     kind: test
     status: failed
@@ -232,6 +233,20 @@ test_runs[9]:
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
       "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/mcp/mcp-server-branch-residual.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcq0qv2-dalst8
+    kind: test
+    status: passed
+    started_at: "2026-08-28T08:48:00.738Z"
+    finished_at: "2026-08-28T08:59:56.798Z"
+    recorded_at: "2026-08-28T08:59:56.798Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm contracts:check && pnpm sdk:surface:check",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/mcp/mcp-server-branch-residual.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,schema,schema,source,local_source_ref
 docs[6]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item changelog entry
   docs/COMMANDS.md,project,CLI retry-safe comment workflow
@@ -239,7 +254,7 @@ docs[6]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal reachability census
   docs/SDK_CONTEXT_INTEGRITY.md,project,Retry-safe universal annotation context contract
   docs/SDK.md,project,Public SDK idempotency semantics
-close_reason: Canonical metadata and generated-release wording now state that ifAbsent/--if-absent deduplication is opt-in while intentional duplicate appends remain the compatible default.
+close_reason: "Fresh terminal exact-head receipts now cover contracts, SDK surface, exact coverage, static quality, and the focused SDK/CLI/MCP bundle after all review corrections."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
