@@ -167,7 +167,7 @@ describe("agent-task transcript token gate", () => {
   it("rejects invalid accounting, incomplete output, and envelope drift", () => {
     const step = {
       id: "validation",
-      args: ["list"],
+      args: ["--json", "list"],
       expected_exit_code: 0,
       expected_output_kind: "collection",
       required_fields: ["items.0.id"],
@@ -304,6 +304,12 @@ describe("agent-task transcript token gate", () => {
       validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
         ...step,
         expected_output_kind: "entity",
+      }),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(validBaseline, validAccounted, {
+        ...step,
+        args: ["--json"],
       }),
     ).toThrow();
     expect(() =>

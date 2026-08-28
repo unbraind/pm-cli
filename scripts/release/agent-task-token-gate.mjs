@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import {
   PmClient,
   isPmMutationReceipt,
+  parseBootstrapCommandName,
   parsePmAgentTaskTranscriptCorpus,
   resolvePmCommandOutputEnvelope,
 } from "../../dist/cli-bundle/sdk.js";
@@ -105,7 +106,13 @@ function validateRefusalOutput(payload, step) {
 }
 
 function validateSuccessfulOutput(payload, step) {
-  const contract = resolvePmCommandOutputEnvelope(step.args[0]);
+  const command = parseBootstrapCommandName([...step.args]);
+  if (command === undefined) {
+    fail(
+      `Agent-task transcript step ${step.id} did not identify a command after global flags`,
+    );
+  }
+  const contract = resolvePmCommandOutputEnvelope(command);
   if (contract.kind !== step.expected_output_kind) {
     fail(
       `Agent-task transcript step ${step.id} output contract drift: ${contract.kind} != ${step.expected_output_kind}`,
