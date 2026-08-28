@@ -1,0 +1,28 @@
+id: pm-hiqlkh
+title: "GH-1137: linked docs writes silently persist nonexistent workspace paths"
+description: "Track GitHub issue #1137: `pm docs <id> --add` accepts and persists a local project path that does not exist, reports success, and leaves validation to a separate opt-in read. The durable dangling link then contaminates future agent context and is absent from the default health signal."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,context-integrity,docs,github,linked-resources
+created_at: "2026-08-28T14:42:57.920Z"
+updated_at: "2026-08-28T14:42:57.920Z"
+author: "harness:codex"
+acceptance_criteria: "Promote path validation policy to the public SDK; return structured existing/missing/remote counts on files and docs writes; support warn and strict modes while preserving explicit forward references; include dangling linked resources in health; add CLI, SDK, MCP, history, config, and temp-workspace acceptance coverage."
+parent: pm-33cw
+reporter: GitHub issue #1137
+severity: medium
+environment: "pm 2026.8.28, Linux; repository-backed tracker with a nonexistent project-relative docs path"
+repro_steps: "Run `pm docs <id> --add path=test/nonexistent-linked-doc.ts,note=planned coverage`; observe changed true, then run `pm docs <id> --validate-paths` to reveal the dangling path."
+expected_result: Linked-resource writes make path existence visible at mutation time and expose repository-configurable strict refusal plus fleet-wide health detection without prohibiting explicit forward references.
+actual_result: "The write succeeds silently, the nonexistent path persists in the item and history, and only a separate opt-in validation call reveals it."
+affected_version: 2026.8.21-2026.8.28
+component: linked-resources
+regression: false
+customer_impact: Agents persist false documentation provenance that is repeatedly returned as context and cannot be distinguished from a real linked resource by later readers.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-chyh,discovered_from,"2026-08-28T14:42:57.920Z","harness:codex","cli:create:dep",detected
+  pm-k2n4,discovered_from,"2026-08-28T14:42:57.920Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-28T14:42:57.920Z","harness:codex","Duplicate check: complete all-status searches for validate-paths,dangling docs,missing linked paths,and the GH-544 lineage found pm-chyh for anchoring and pm-k2n4 for remote-reference pruning,but no owner for mutation-time nonexistent-path visibility and health coverage. GitHub issue #1137 is net-new canonical work."
+body: ""
