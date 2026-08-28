@@ -1144,12 +1144,12 @@ describe("scripts/release/hosted-analysis-gate", () => {
         return { status: 0, stdout: JSON.stringify(pullRequest), stderr: "" };
       }
       if (
-        target === `repos/unbraind/pm-cli/commits/${SHA}` ||
-        target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`
+        target === `repos/unbraind/pm-cli/git/commits/${SHA}` ||
+        target === `repos/unbraind/pm-cli/git/commits/${PARENT_SHA}`
       ) {
         return {
           status: 0,
-          stdout: JSON.stringify({ commit: { tree: { sha: treeSha } } }),
+          stdout: JSON.stringify({ tree: { sha: treeSha } }),
           stderr: "",
         };
       }
@@ -1231,7 +1231,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("reuses reviewed analyzer evidence from the merged PR head of an identical-tree squash commit", async () => {
+  it("uses bounded Git commit metadata for an identical-tree squash commit", async () => {
     const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
     const spawnSync = vi.fn((_command: string, args: string[]) => {
       const target = String(args[1] ?? "");
@@ -1257,14 +1257,20 @@ describe("scripts/release/hosted-analysis-gate", () => {
         return reviewedPullRequestResponse();
       }
       if (
-        target === `repos/unbraind/pm-cli/commits/${SHA}` ||
-        target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`
+        target === `repos/unbraind/pm-cli/git/commits/${SHA}` ||
+        target === `repos/unbraind/pm-cli/git/commits/${PARENT_SHA}`
       ) {
         return {
           status: 0,
-          stdout: JSON.stringify({ commit: { tree: { sha: treeSha } } }),
+          stdout: JSON.stringify({ tree: { sha: treeSha } }),
           stderr: "",
         };
+      }
+      if (
+        target === `repos/unbraind/pm-cli/commits/${SHA}` ||
+        target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`
+      ) {
+        return { status: null, stdout: "x".repeat(1_048_577), stderr: "" };
       }
       return analyzerEvidenceOrEmpty(args);
     });
@@ -1277,6 +1283,11 @@ describe("scripts/release/hosted-analysis-gate", () => {
       analyzed_sha: PARENT_SHA,
       analysis_source: "identical_tree_squash_pr_head",
     });
+    expect(
+      spawnSync.mock.calls.filter(([, args]) =>
+        String(args[1]).includes("/git/commits/"),
+      ),
+    ).toHaveLength(2);
     expect(process.exitCode).toBe(0);
   });
 
@@ -1375,9 +1386,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
       const exactCommitOutput =
         typeof exactCommit === "string"
           ? exactCommit
-          : JSON.stringify(
-              exactCommit ?? { commit: { tree: { sha: treeSha } } },
-            );
+          : JSON.stringify(exactCommit ?? { tree: { sha: treeSha } });
       const spawnSync = vi.fn((_command: string, args: string[]) => {
         const base = squashBaseResponse(args, {
           message: mergeMessage,
@@ -1400,17 +1409,17 @@ describe("scripts/release/hosted-analysis-gate", () => {
             stderr: "",
           };
         }
-        if (target === `repos/unbraind/pm-cli/commits/${SHA}`) {
+        if (target === `repos/unbraind/pm-cli/git/commits/${SHA}`) {
           return {
             status: exactCommitStatus,
             stdout: exactCommitOutput,
             stderr: "",
           };
         }
-        if (target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`) {
+        if (target === `repos/unbraind/pm-cli/git/commits/${PARENT_SHA}`) {
           return {
             status: headCommitStatus,
-            stdout: JSON.stringify({ commit: { tree: { sha: headTree } } }),
+            stdout: JSON.stringify({ tree: { sha: headTree } }),
             stderr: "",
           };
         }
