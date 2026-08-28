@@ -7,7 +7,7 @@
  */
 import { renderPmCommand } from "../command-line.js";
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts.js";
-import { parseBootstrapCommandName } from "../cli-bootstrap.js";
+import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
 
 function normalizeMissingFlag(label: string): string | undefined {
   const match = label.trim().match(/--[a-z0-9][a-z0-9_-]*/i);

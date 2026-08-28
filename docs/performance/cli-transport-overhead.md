@@ -10,7 +10,9 @@ linux/x64; setup and fixture generation are
 outside the timed interval. Short local gates use the best observed latency,
 while the report retains p50 and p95 evidence. RSS admission uses the measured
 median so one page-level outlier cannot false-fail the gate; the maximum remains
-in the report as diagnostic evidence. Admission adds a fixed 512 KiB noise margin
+in the report as diagnostic evidence. Every post-warmup RSS sample must be a
+finite measurement; an unavailable sample makes the admission median unavailable
+and fails closed when a budget exists. Admission adds a fixed 512 KiB noise margin
 without changing the committed budget; a majority persistent increase beyond
 that bounded margin still fails.
 

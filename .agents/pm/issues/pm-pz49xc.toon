@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-28T01:06:15.788Z"
-updated_at: "2026-08-28T04:15:17.509Z"
-closed_at: "2026-08-28T04:15:16.894Z"
-completed_at: "2026-08-28T04:15:16.894Z"
+updated_at: "2026-08-28T05:37:03.673Z"
+closed_at: "2026-08-28T05:37:03.198Z"
+completed_at: "2026-08-28T05:37:03.198Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "CLI transport report retains maximum RSS as diagnostic evidence and adds an explicit median RSS admission value over the measured processes; committed RSS budgets are unchanged; comparison uses the median plus a fixed 512 KiB measurement-noise margin; one high outlier and page-level linked-harness variance pass; a persistent median above the budget plus margin fails; missing RSS remains fail-closed when a budget requires it; docs explain the policy; focused tests, live gate, linked receipts, and exact repository coverage pass at 100/100/100/100."
@@ -19,14 +19,14 @@ severity: low
 repro_steps: "Run CI=1 pnpm quality:static through a tracker-context linked test on unchanged source; observe different operations exceed max_peak_rss_bytes by less than 0.3 percent while an earlier standalone run passes."
 resolution: "CLI transport-floor RSS admission now uses the three-process median plus a fixed 512 KiB measurement-noise allowance against unchanged committed budgets, retains maximum RSS diagnostics, and fails closed on missing measurements or persistent regressions beyond the bound."
 expected_result: One isolated RSS sample cannot fail the transport floor; a persistent majority RSS increase still fails against the unchanged budget.
-actual_result: CLI transport floor construction and comparison fail closed on malformed median/max RSS measurements and budgets while preserving valid null and finite-number behavior.
+actual_result: "CLI transport RSS reporting now computes a median only from a complete finite post-warmup sample set. Any missing or malformed sample makes the statistic unavailable and the gate fails closed, while maximum-sample diagnostics remain available. Documentation and regression coverage describe and enforce the contract."
 fixed_version: 2026.8.28
 component: CLI transport performance gate
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-cg1sjb,discovered_from,"2026-08-28T01:06:15.788Z","harness:codex","cli:create:dep",detected
   pm-ea1yh2,discovered_from,"2026-08-28T01:06:15.788Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,implements,"2026-08-28T01:06:15.788Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-28T01:06:15.788Z","harness:codex","Duplicate-check evidence: all-status searches for transport floor RSS noise, CLI transport flake, and peak RSS gate found canonical owner pm-yse5dt and timing-noise issue pm-cg1sjb. pm-cg1sjb explicitly retained strict maximum RSS and only repaired SDK timing admission; pm-yse5dt records load-sensitive latency misses but no RSS distribution policy. No open or closed item owns CLI-floor RSS sample admission. Reproduction is recorded on pm-ea1yh2 linked runs."
   "2026-08-28T01:07:18.918Z","harness:codex","TDD red: focused CLI transport-floor suite failed exactly on the missing admission policy. A report with median RSS 1000 and one max outlier 1200 still produced 'get: peak RSS 1200 > 1000'; 6 tests passed and the new negative control failed. Command: node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts."
   "2026-08-28T01:20:15.587Z","harness:codex","Implementation evidence: scripts/bench/cli-transport-floor.mjs now reports median_peak_rss_bytes over three measured post-warmup processes, retains max_peak_rss_bytes as a diagnostic, admits RSS against the unchanged committed budget by median, and fails closed when a required median is unavailable. The renderer and performance guide explain that one outlier is tolerated while a majority persistent increase fails."
@@ -35,12 +35,16 @@ comments[8]{created_at,author,text}:
   "2026-08-28T03:21:30.660Z","harness:codex","Review lifecycle reconciliation: closeout metadata was appended after the previous release event without a fresh ownership interval. This corrective append-only interval reacquires ownership, preserves the transport-floor repair and its exact passing evidence, and restores an unambiguous terminal lifecycle."
   "2026-08-28T04:01:21.127Z","harness:codex","TDD red for the exact-head CodeRabbit finding: four malformed RSS cases (omitted, NaN, Infinity, and a numeric string) were accepted by buildCliTransportFloorBudgets, so NaN/null coercion or false comparisons could suppress an admission violation. Focused command: node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/sdk/action-schema-parity.spec.ts; the four RSS instances failed as expected."
   "2026-08-28T04:15:13.360Z","harness:codex","TDD and review evidence: added parameterized negative controls for undefined, NaN, Infinity, and string RSS samples; all four failed before implementation. The benchmark builder and comparator now reject every non-null, non-finite-number median/max RSS field before arithmetic or budget comparison. Focused acceptance passed 29 tests, live six-operation transport-floor check passed, and the exact repository run passed 8,081 tests across 585 files at 100% statements (59,948/59,948), branches (45,135/45,135), functions (12,467/12,467), and lines (57,729/57,729). CI-mode static quality passed."
+  "2026-08-28T05:09:44.051Z","harness:codex","Review recurrence: CodeRabbit found report construction drops individual unavailable RSS samples before computing the median, so two finite samples plus one missing sample can still pass. The correction will require complete finite post-warmup measurements and a regression that proves the report fails closed."
+  "2026-08-28T05:10:40.040Z","harness:codex","TDD red: a report with two finite post-warmup RSS samples and one unavailable sample still produced median_peak_rss_bytes=1000 instead of null, proving the filter could admit incomplete evidence."
+  "2026-08-28T05:36:48.233Z","harness:codex","Correction evidence: the focused transport-floor regression suite passes 12/12; full coverage passes 585 files and 8,083 tests at exact 100/100/100/100; CI=1 pnpm quality:static passes the repository, package boundary/parity, SDK surface, grammar, refusal, replay, graph, integrity, and transport gates. The fresh-directory CLI + SDK acceptance also passed."
 notes[2]{created_at,author,text}:
   "2026-08-28T01:20:16.054Z","harness:codex","Verification snapshot 2026-08-28: focused tests 7/7 passed; live six-operation CLI transport-floor check passed; CI=1 pnpm quality:static passed including repository assurance, public SDK surface, graph gates, and the transport floor; full coverage passed 585 files and 8076 tests at exact 100% statements 59934/59934, branches 45128/45128, functions 12465/12465, lines 57716/57716."
   "2026-08-28T01:46:03.517Z","harness:codex","Final admission contract: discard one warm-up; measure three fresh isolated processes; admit median peak RSS against the immutable command budget plus 524288 bytes; retain maximum peak RSS for diagnostics; refuse unavailable median when an RSS budget exists. This margin is deliberately explicit and bounded rather than hidden in regenerated budgets."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-08-28T01:20:16.565Z","harness:codex","For low-level process RSS gates, preserve the maximum sample for observability but admit a stable statistic across repeated fresh processes. With three post-warmup samples, median admission rejects a persistent majority regression without converting page-level single-process noise into a false CI failure; missing required measurements must still fail closed."
   "2026-08-28T04:15:13.909Z","harness:codex",Benchmark measurements must validate nullable finite-number inputs at their ingestion boundary; JavaScript arithmetic with undefined or NaN can silently turn a regression gate into a false pass.
+  "2026-08-28T05:36:47.756Z","harness:codex","Stable benchmark summaries require a complete sample set: filtering invalid observations can turn missing evidence into an apparently healthy median. Treat any unavailable post-warmup RSS observation as an unavailable statistic and fail closed."
 files[2]{path,scope,note}:
   scripts/bench/cli-transport-floor.mjs,project,Median RSS admission with maximum retained for diagnostics
   tests/unit/scripts/cli-transport-floor.spec.ts,project,Single-outlier persistent-regression and missing-measurement controls
@@ -110,7 +114,7 @@ test_runs[2]:
       "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/performance/cli-transport-overhead.md,project,Measured RSS admission policy
-close_reason: "Review hardening complete: malformed RSS samples and budgets now fail closed; focused, live benchmark, exact 100% coverage, and CI static gates pass."
+close_reason: "Transport RSS statistics now fail closed unless all post-warmup samples are finite; regression, documentation, exact coverage, static quality, and fresh-directory acceptance evidence are recorded."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

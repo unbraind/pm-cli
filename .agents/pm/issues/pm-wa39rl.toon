@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:contracts","area:sdk",recovery,review-feedback,testing
 created_at: "2026-08-27T20:29:24.256Z"
-updated_at: "2026-08-28T03:22:27.425Z"
-closed_at: "2026-08-28T03:22:26.967Z"
-completed_at: "2026-08-28T03:22:26.967Z"
+updated_at: "2026-08-28T05:37:07.251Z"
+closed_at: "2026-08-28T05:37:06.555Z"
+completed_at: "2026-08-28T05:37:06.555Z"
 author: "harness:codex"
 acceptance_criteria: Every completed task terminates in a non-refusal output; successful outputs reject refusal-only metadata; every corrected retry binds to the refusal it recovers; adversarial parser and replay regressions pass
 parent: pm-f05lsg
@@ -17,12 +17,12 @@ confidence: high
 severity: high
 resolution: "Enforced complete refusal-recovery topology, terminal-success semantics, and refusal metadata exclusivity in the public transcript parser and replay contract."
 expected_result: The public SDK transcript contract cannot represent an unsuccessfully terminated completed task or contradictory refusal metadata.
-actual_result: The public transcript parser now rejects completed tasks whose terminal step is a refusal and rejects refusal-only metadata on successful steps; the canonical unknown-option retry is bound to refuse-option and replays through shell-free suggested_retry_args.
+actual_result: "The reopened correction interval was recorded in append-only order (open, claim/in_progress, evidence, close/release) so live lifecycle state remains reconcilable without rewriting prior history. The full code, coverage, static-quality, and fresh-directory acceptance evidence is attached before closure."
 component: sdk-output-contracts
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,verifies,"2026-08-27T20:29:24.256Z","harness:codex","cli:create:dep",detected
   pm-o360q6,recurs_from,"2026-08-27T20:29:24.256Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-27T20:29:24.256Z","harness:codex","Duplicate check evidence: all-status searches for terminal refusal completion, refusal metadata on successful transcripts, and retry recovery binding found the canonical pm-f05lsg/pm-8pnj lineage plus closed precursor pm-o360q6, but no item covering this combined terminal-topology recurrence. Review sources: Greptile and CodeRabbit on PR #1133 head baae93c."
   "2026-08-27T21:13:27.651Z","harness:codex","Evidence 2026-08-27: focused parser/error-guidance/replay suite passed 74/74 tests. Repository exact coverage passed 8,067/8,067 tests with statements 59,914/59,914, branches 45,102/45,102, functions 12,459/12,459, and lines 57,696/57,696. The versioned replay passes five completed tasks, 14 steps, two executable retries, and a 4,349-token composite ceiling at digest sha256:0eeb3296a4bcd5edeb13f6488ae0ebc806adc96b6caa89d87a0f528d37af5c4e."
   "2026-08-27T21:22:06.939Z","harness:codex","Exact-head recurrence 2026-08-27 (Greptile review thread PRRT_kwDORSgRDc6c-7LC): verified valid. Terminal-success alone does not prove recovery closure because an earlier refusal can be followed by an unrelated success without recovery_for. Extend the existing terminal-recovery issue, rather than creating a duplicate, so every refusal in a completed task must have a later successful recovery edge; add the missing adversarial parser case and rerun replay plus exact coverage."
@@ -32,8 +32,11 @@ comments[9]{created_at,author,text}:
   "2026-08-27T22:46:12.254Z","harness:codex","Review remediation evidence (CodeRabbit PR #1133 thread PRRT_kwDORSgRDc6c_DrI): transcript args now preserve every validated non-empty token exactly, including leading and trailing whitespace, while ids, descriptions, recovery links, and required-field paths retain normalized semantics. The public contract documents exact preservation and the parser test asserts the literal token \"  triage  \". Linked test passed 74/74; full repository coverage passed 585 files and 8067 tests at exact 100/100/100/100 (59919 statements, 45114 branches, 12461 functions, 57701 lines). SDK entrypoint budgets passed all 10 entrypoints and CLI transport floors passed all 6 operations."
   "2026-08-27T22:53:19.830Z","harness:codex","Final public SDK acceptance proof before closure: the built dist/sdk/index.js parser consumed a real transcript in the temporary-workspace acceptance run and returned the argument token \"  literal-filter  \" byte-for-byte, while the CLI black-box refusal remained safe across an explicit -- boundary. The temporary workspace was then removed."
   "2026-08-28T03:22:26.322Z","harness:codex","Review wording correction: the changelog is generated from PM titles. Updated this canonical title to state the implemented behavior: completed transcripts require terminal success, mutually exclusive refusal metadata, and an explicit later successful recovery for every refusal. No implementation or historical evidence changed."
-learnings[1]{created_at,author,text}:
+  "2026-08-28T05:09:45.737Z","harness:codex","Append-only lifecycle reconciliation: CodeRabbit correctly identified the historical sequence at indices 16-20 where resolution was written after release and the item was reopened before a fresh claim. This ownership interval records the immutable mismatch explicitly and will end with evidence, close, and release in the correct order; tracker history is not edited directly."
+  "2026-08-28T05:36:52.782Z","harness:codex","Lifecycle reconciliation evidence: only pm-pz49xc, pm-ea1yh2, pm-wanwyc, and pm-wa39rl were in progress during this correction round. All implementation and verification evidence is now recorded before the forthcoming close/release mutations, preserving canonical append-only ordering."
+learnings[2]{created_at,author,text}:
   "2026-08-27T21:13:28.188Z","harness:codex","A task-level completed boolean is insufficient evidence of successful completion: transcript validity must require a successful terminal step, mutually exclusive refusal metadata, and an explicit recovery_for edge for every retry."
+  "2026-08-28T05:36:52.276Z","harness:codex",Append-only lifecycle recovery should create an explicit later work interval and close it in canonical order; never rewrite historical state to hide a prior mismatch.
 files[4]{path,scope,note}:
   src/cli/error-guidance.ts,project,shell-free unknown-option recovery and global-flag attribution
   src/sdk/agent/task-transcript-contracts.ts,project,isolated public transcript parser and refusal-recovery invariants
@@ -89,7 +92,7 @@ test_runs[4]:
 docs[2]{path,scope,note}:
   docs/agent-task-transcripts.json,project,bound executable unknown-option recovery
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,terminal task and receipt integrity contract
-close_reason: Transcript contract remains fully implemented and verified; canonical title now accurately describes terminal-success and recovery-closure behavior for generated changelogs.
+close_reason: "The correction interval is complete and its claim, evidence, close, and release sequence is recorded append-only after all validation passed."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

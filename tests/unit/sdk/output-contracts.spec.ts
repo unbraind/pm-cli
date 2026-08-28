@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   PM_COMMAND_OUTPUT_ENVELOPE_CONTRACTS,
@@ -10,6 +11,18 @@ import {
 } from "../../../src/sdk/index.js";
 
 describe("SDK output envelope contracts", () => {
+  it("keeps transcript command scanning on the contract-only dependency graph", async () => {
+    const source = await readFile(
+      new URL(
+        "../../../src/sdk/agent/task-transcript-contracts.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(source).not.toContain("../cli-bootstrap.js");
+    expect(source).toContain("../cli-contracts/bootstrap-command-scanner.js");
+  });
+
   it("declares every built-in command and generates conservative package fallbacks", () => {
     expect(PM_COMMAND_OUTPUT_ENVELOPE_CONTRACTS).toHaveLength(
       PM_CORE_COMMAND_NAMES.length,

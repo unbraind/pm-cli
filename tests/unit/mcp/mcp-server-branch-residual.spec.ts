@@ -417,12 +417,27 @@ describe("mcp server branch residual coverage", () => {
       options: { id: "pm-7", add: "new comment", ifAbsent: true },
     });
     await runAction({
+      action: "comments",
+      ifAbsent: true,
+      options: { id: "pm-7-flat", add: "flat comment" },
+    });
+    await runAction({
       action: "notes",
       options: { id: "pm-8", add: "new note", ifAbsent: true },
     });
     await runAction({
+      action: "notes",
+      ifAbsent: true,
+      options: { id: "pm-8-flat", add: "flat note" },
+    });
+    await runAction({
       action: "learnings",
       options: { id: "pm-9", add: "new learning", ifAbsent: true },
+    });
+    await runAction({
+      action: "learnings",
+      ifAbsent: true,
+      options: { id: "pm-9-flat", add: "flat learning" },
     });
     await runAction({
       action: "files",
@@ -745,20 +760,20 @@ describe("mcp server branch residual coverage", () => {
       expect.objectContaining({ force: true }),
     );
     expect(commandMocks.runCopy).toHaveBeenCalledTimes(2);
-    expect(commandMocks.runComments).toHaveBeenCalledTimes(2);
+    expect(commandMocks.runComments).toHaveBeenCalledTimes(3);
     expect(commandMocks.runComments).toHaveBeenLastCalledWith(
-      "pm-7",
-      expect.objectContaining({ add: "new comment", ifAbsent: true }),
+      "pm-7-flat",
+      expect.objectContaining({ add: "flat comment", ifAbsent: true }),
       expect.any(Object),
     );
-    expect(commandMocks.runNotes).toHaveBeenCalledWith(
-      "pm-8",
-      expect.objectContaining({ add: "new note", ifAbsent: true }),
+    expect(commandMocks.runNotes).toHaveBeenLastCalledWith(
+      "pm-8-flat",
+      expect.objectContaining({ add: "flat note", ifAbsent: true }),
       expect.any(Object),
     );
-    expect(commandMocks.runLearnings).toHaveBeenCalledWith(
-      "pm-9",
-      expect.objectContaining({ add: "new learning", ifAbsent: true }),
+    expect(commandMocks.runLearnings).toHaveBeenLastCalledWith(
+      "pm-9-flat",
+      expect.objectContaining({ add: "flat learning", ifAbsent: true }),
       expect.any(Object),
     );
     expect(commandMocks.runHistoryRepair).toHaveBeenCalledTimes(1);

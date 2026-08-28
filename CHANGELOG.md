@@ -4,11 +4,11 @@
 
 ### Fixed
 
+- Completed-task transcripts require terminal success, exclusive refusal metadata, and complete recovery ([pm-wa39rl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wa39rl.toon))
 - Agent-task transcripts accept declared no-effect and partial-effect successful exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
 - GH-1132: idempotent annotation append prevents retry-driven context duplication ([pm-ea1yh2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ea1yh2.toon))
 - CLI transport-floor RSS admission false-fails on single-sample page noise ([pm-pz49xc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pz49xc.toon))
 - Unknown-option refusals identify the actual rejected flag and fail closed at delimiters ([pm-fo8g7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fo8g7j.toon))
-- Completed-task transcripts require terminal success, exclusive refusal metadata, and complete recovery ([pm-wa39rl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wa39rl.toon))
 - Agent-task token replay trusts missing or incorrect accounting estimates ([pm-ok2kdn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok2kdn.toon))
 - Agent-task gate accepts incidental substrings as required-field completeness ([pm-o7u08u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o7u08u.toon))
 - Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))

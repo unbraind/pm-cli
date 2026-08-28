@@ -8,7 +8,7 @@ import {
   isPmSuccessfulExitCode,
   resolvePmCommandExitContract,
 } from "../cli-contracts/command-exit-contracts.js";
-import { parseBootstrapCommandName } from "../cli-bootstrap.js";
+import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
 import {
   PM_OUTPUT_ENVELOPE_KINDS,
   resolvePmCommandOutputEnvelope,
@@ -119,7 +119,7 @@ function assertTranscriptStepOutputContract(
       `${field} only refusal steps may declare expected_error_code or expected_refusal_surface`,
     );
   }
-  const command = parseBootstrapCommandName([...args]);
+  const command = parseBootstrapCommandName(args);
   if (command === undefined) {
     throw new TypeError(
       `${field}.args must identify a command after global flags`,

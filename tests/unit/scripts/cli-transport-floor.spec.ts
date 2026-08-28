@@ -126,6 +126,34 @@ describe("CLI transport-floor benchmark", () => {
     ).resolves.toMatchObject({ mode: "check", violations: [] });
   });
 
+  it("fails closed when any measured RSS sample is unavailable", async () => {
+    let measurement = 0;
+    const result = await buildCliTransportFloorReport({
+      iterations: 3,
+      measure: async () => {
+        const sampleIndex = measurement % 4;
+        measurement += 1;
+        return {
+          duration_ms: 100,
+          peak_rss_bytes: sampleIndex === 3 ? undefined : 1000,
+          output_bytes: 40,
+          estimated_tokens: 10,
+        };
+      },
+    });
+    expect(result.operations.get.median_peak_rss_bytes).toBeNull();
+    expect(
+      compareCliTransportFloorBudgets(result, {
+        operations: Object.fromEntries(
+          Object.keys(result.operations).map((operation) => [
+            operation,
+            { max_latency_ms: 100, max_peak_rss_bytes: 1000 },
+          ]),
+        ),
+      }),
+    ).toContain("get: median peak RSS unavailable for budget 1000");
+  });
+
   it("builds ratchets and admits median RSS with bounded process noise", () => {
     const baseline = report();
     const budgets = buildCliTransportFloorBudgets(baseline, 1);
