@@ -49,6 +49,7 @@ describe("run-tests", () => {
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.env.PM_SENTRY_DISABLED = "0";
     process.env.PM_SOURCE_PM_PATH = "/outer/tracker/.agents/pm";
     process.env.PM_SOURCE_WORKSPACE_ROOT = "/outer/workspace";
     process.argv = [
@@ -82,6 +83,7 @@ describe("run-tests", () => {
     const childEnvironment = spawn.mock.calls.at(0)?.[2]?.env;
     expect(childEnvironment).not.toHaveProperty("PM_SOURCE_PM_PATH");
     expect(childEnvironment).not.toHaveProperty("PM_SOURCE_WORKSPACE_ROOT");
+    expect(childEnvironment).toHaveProperty("PM_SENTRY_DISABLED", "1");
     expect(process.exitCode).toBe(0);
   });
 

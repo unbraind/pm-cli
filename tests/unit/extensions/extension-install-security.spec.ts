@@ -1,4 +1,5 @@
 import {
+  copyFile,
   lstat,
   mkdir,
   mkdtemp,
@@ -284,6 +285,67 @@ describe("local npm package archives", () => {
       /package\/extensions\/archive-demo$/,
     );
     await npmResolved.cleanup();
+  });
+
+  it("validates registry tarballs and types a missing npm pack artifact", async () => {
+    const safe = await createPackageArchive();
+    const safeSource = {
+      kind: "npm" as const,
+      input: "npm:@example/pm-archive-demo",
+      spec: "@example/pm-archive-demo",
+    };
+    const safeResolved =
+      await _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        safeSource,
+        async (args) => {
+          const packDirectory = args.at(-1);
+          if (!packDirectory) throw new Error("missing pack destination");
+          await copyFile(safe.archive, path.join(packDirectory, "registry.tgz"));
+          return JSON.stringify([{ filename: "registry.tgz" }]);
+        },
+      );
+    expect(safeResolved).toMatchObject({
+      package: "@example/pm-archive-demo",
+      version: "1.2.3",
+    });
+    await safeResolved.cleanup();
+
+    const linked = await createPackageArchive(async (packageRoot) => {
+      await symlink("../../outside", path.join(packageRoot, "escape"));
+    });
+    await expect(
+      _testOnlyInstallSources
+        .resolveNpmSourceDirectoryWithRunner(safeSource, async (args) => {
+          const packDirectory = args.at(-1);
+          if (!packDirectory) throw new Error("missing pack destination");
+          await copyFile(linked.archive, path.join(packDirectory, "registry.tgz"));
+          return JSON.stringify([{ filename: "registry.tgz" }]);
+        })
+        .then(async (resolved) => {
+          await resolved.cleanup();
+          throw new Error("unsafe registry archive resolved");
+        }),
+    ).rejects.toMatchObject({
+      context: { code: "local_package_archive_unsafe" },
+    });
+
+    await expect(
+      _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        safeSource,
+        async () => JSON.stringify([{ filename: "missing.tgz" }]),
+      ),
+    ).rejects.toMatchObject({
+      context: { code: "npm_package_archive_missing" },
+    });
+
+    await expect(
+      _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        safeSource,
+        async () => JSON.stringify([{ filename: safe.archive }]),
+      ),
+    ).rejects.toMatchObject({
+      context: { code: "npm_package_archive_unsafe" },
+    });
   });
 
   it("rejects escaping links and archives without the npm package root", async () => {

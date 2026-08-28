@@ -64,6 +64,7 @@ async function run() {
       ...process.env,
       PM_PATH: pmPath,
       PM_GLOBAL_PATH: pmGlobalPath,
+      PM_SENTRY_DISABLED: "1",
     };
     delete baseEnv.PM_CLI_PACKAGE_ROOT;
     delete baseEnv.PM_SOURCE_PM_PATH;

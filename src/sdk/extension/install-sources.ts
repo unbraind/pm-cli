@@ -610,40 +610,56 @@ function parsePackedNpmPackage(
   stdout: string,
   packDirectory: string,
 ): { tarball: string; package?: string; version?: string } {
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(stdout) as Array<{
-      filename?: unknown;
-      name?: unknown;
-      version?: unknown;
-    }>;
-    const first = Array.isArray(parsed) ? parsed[0] : undefined;
-    if (
-      first &&
-      typeof first.filename === "string" &&
-      first.filename.trim().length > 0
-    ) {
-      return {
-        tarball: path.resolve(packDirectory, first.filename),
-        package: typeof first.name === "string" ? first.name : undefined,
-        version: typeof first.version === "string" ? first.version : undefined,
-      };
-    }
+    parsed = JSON.parse(stdout) as unknown;
   } catch {
     // Fall back to the last stdout line for older npm output.
   }
-  const lastLine = stdout
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .at(-1);
-  if (!lastLine) {
+  const first = Array.isArray(parsed)
+    ? (parsed[0] as
+        | { filename?: unknown; name?: unknown; version?: unknown }
+        | undefined)
+    : undefined;
+  const filename =
+    first &&
+    typeof first.filename === "string" &&
+    first.filename.trim().length > 0
+      ? first.filename
+      : stdout
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .at(-1);
+  if (!filename) {
     throw new PmCliError(
       "npm pack did not report a tarball filename.",
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
+  const tarball = path.resolve(packDirectory, filename);
+  const relativeTarball = path.relative(packDirectory, tarball);
+  if (
+    relativeTarball.length === 0 ||
+    relativeTarball === ".." ||
+    relativeTarball.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativeTarball)
+  ) {
+    throw new PmCliError(
+      "npm pack reported a package archive outside its isolated destination.",
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "npm_package_archive_unsafe",
+        required:
+          "Retry with a trusted npm client that writes its archive inside the requested pack destination.",
+        why: "pm will not read a package-manager artifact outside the isolated directory created for this install.",
+      },
+    );
+  }
   return {
-    tarball: path.resolve(packDirectory, lastLine),
+    tarball,
+    package: typeof first?.name === "string" ? first.name : undefined,
+    version: typeof first?.version === "string" ? first.version : undefined,
   };
 }
 
@@ -697,9 +713,7 @@ async function resolveNpmSourceDirectoryWithRunner(
     path.join(os.tmpdir(), "pm-npm-package-source-"),
   );
   const packDirectory = path.join(tempRoot, "pack");
-  const extractDirectory = path.join(tempRoot, "extract");
   await fs.mkdir(packDirectory, { recursive: true });
-  await fs.mkdir(extractDirectory, { recursive: true });
 
   try {
     const packSpec = await resolveNpmPackSpec(source.spec);
@@ -711,23 +725,29 @@ async function resolveNpmSourceDirectoryWithRunner(
       packDirectory,
     ]);
     const packed = parsePackedNpmPackage(packStdout, packDirectory);
-    await execFileAsync(
-      "tar",
-      ["-xzf", packed.tarball, "-C", extractDirectory],
-      { encoding: "utf8" },
-    );
-    const packageRoot = path.join(extractDirectory, "package");
-    await installNpmPackageRuntimeDependencies(packageRoot);
-    const directory = await resolvePackageExtensionDirectory(
-      packageRoot,
-      source.input,
-    );
+    if (!(await pathExists(packed.tarball))) {
+      throw new PmCliError(
+        "npm pack did not create its reported package archive.",
+        EXIT_CODE.GENERIC_FAILURE,
+        {
+          code: "npm_package_archive_missing",
+          required:
+            "Retry the npm package install with a healthy registry and writable temporary directory.",
+          why: "The package manager reported a tarball filename that was absent before validation, so pm cannot safely extract or install it.",
+        },
+      );
+    }
+    const extracted = await extractLocalPackageArchive(packed.tarball);
     return {
-      directory,
-      package: packed.package,
-      version: packed.version,
+      directory: extracted.directory,
+      package: packed.package ?? extracted.package,
+      version: packed.version ?? extracted.version,
       cleanup: async () => {
-        await fs.rm(tempRoot, { recursive: true, force: true });
+        try {
+          await extracted.cleanup();
+        } finally {
+          await fs.rm(tempRoot, { recursive: true, force: true });
+        }
       },
     };
   } catch (error: unknown) {

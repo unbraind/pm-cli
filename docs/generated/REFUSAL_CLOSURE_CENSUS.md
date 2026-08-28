@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 345
+- Catalog error codes: 347
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 326
-- Coverage fraction: 0.055072
+- Uncovered error codes: 328
+- Coverage fraction: 0.054755
 - Closed-domain probes: 19
 - Grammar probes: 94
 
@@ -214,6 +214,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `no_update_fields` | `no_update_fields` | uncovered | none | 0 |
 | `no_version_bounds_declared` | `no_version_bounds_declared` | executable | owned_state | 1 |
 | `non_refusal_exit` | `non_refusal_exit` | uncovered | none | 0 |
+| `npm_package_archive_missing` | `npm_package_archive_missing` | uncovered | none | 0 |
+| `npm_package_archive_unsafe` | `npm_package_archive_unsafe` | uncovered | none | 0 |
 | `npm_package_not_found` | `npm_package_not_found` | uncovered | none | 0 |
 | `ownership_conflict` | `ownership_conflict` | uncovered | none | 0 |
 | `ownership_dependency_bypass_restricted_options` | `ownership_dependency_bypass_restricted_options` | uncovered | none | 0 |

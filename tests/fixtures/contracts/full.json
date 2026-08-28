@@ -18913,6 +18913,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "npm_package_archive_missing",
+      "class": "generic_failure",
+      "code": "npm_package_archive_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Npm package archive missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "npm_package_archive_unsafe",
+      "class": "generic_failure",
+      "code": "npm_package_archive_unsafe",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Npm package archive unsafe condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "npm_package_not_found",
       "class": "not_found",
       "code": "npm_package_not_found",
