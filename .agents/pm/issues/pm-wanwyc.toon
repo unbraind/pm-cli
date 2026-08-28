@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:sdk",contracts,exit-codes,review-feedback
 created_at: "2026-08-27T17:57:51.200Z"
-updated_at: "2026-08-28T06:38:52.532Z"
-closed_at: "2026-08-28T06:38:51.834Z"
-completed_at: "2026-08-28T06:38:51.834Z"
+updated_at: "2026-08-28T10:28:49.641Z"
+closed_at: "2026-08-28T10:28:49.076Z"
+completed_at: "2026-08-28T10:28:49.076Z"
 author: "harness:codex"
 acceptance_criteria: "Transcript steps accept exits 0, 6, and 7 only when the canonical command contract declares that successful exit; Refusal steps reject every successful exit; Non-bulk commands cannot claim successful effect-aware exits; Exact unit and full coverage gates pass"
 parent: pm-8pnj
-resolution: Completed effect-aware transcript exits and shared contract-only command resolution.
-expected_result: Transcripts accept every successful exit that the invoked command declares and reject undeclared or refusal-success contradictions.
-actual_result: "Transcript validation accepts command-declared successful exits 0, 6, and 7 while rejecting undeclared or refusal-success contradictions; the shared contract-only bootstrap scanner resolves commands after global prefixes across validation, recovery, and executable replay."
+resolution: Completed effect-aware transcript exit delivery with direct linked receipts for exact coverage and repository-wide static quality.
+expected_result: Effect-aware transcript exit behavior remains fully covered and every cited repository-wide assurance command has a durable PM receipt.
+actual_result: "Exact coverage passed in test-local-mtcsj6vt-8g3ihg and CI static quality passed in test-local-mtcsrs53-kr84id, alongside the existing focused output-contract receipt."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-hqa8g1,recurs_from,"2026-08-27T17:57:51.200Z","harness:codex","cli:create:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-08-27T17:57:51.200Z","harness:codex","Duplicate check: all-status search for transcript successful exit, no_effect, and partial_effect found canonical exit-contract owner pm-hqa8g1 and the active transcript owner pm-8pnj, but no item for this PR #1133 parser contradiction; creating one review-caught child issue rather than duplicating either owner."
   "2026-08-27T18:17:28.812Z","harness:codex","Review resolution evidence for PR #1133: reused isPmSuccessfulExitCode plus the command-specific exit declaration; non-refusal transcripts accept exit 6/7 only for commands that declare them, refusals reject all successful exits, and the real corpus now executes close-many partial_effect=7 and no_effect=6 from stdout. Focused linked tests passed; full coverage passed 8,063 tests at exact 100/100/100/100; pnpm quality:static passed."
   "2026-08-27T22:34:58.312Z","harness:codex","Lifecycle reconciliation: the historical docs_add event is immutable and remains visible after its original close/release. Ownership is now explicitly reacquired before this corrective evidence entry; future closeout metadata must precede close and release."
@@ -31,6 +31,7 @@ comments[13]{created_at,author,text}:
   "2026-08-28T05:10:41.068Z","harness:codex","TDD red: the contract-boundary regression found src/sdk/agent/task-transcript-contracts.ts still importing ../cli-bootstrap.js and could not find the intended contract-only scanner dependency."
   "2026-08-28T05:36:51.224Z","harness:codex","Correction evidence: source-boundary regression coverage rejects any task-transcript import of cli-bootstrap and requires the contract-only scanner; focused SDK/bootstrap/recovery suites pass; SDK surface reports zero classified changes; entrypoint-cost, build, full coverage, and all static quality gates pass. Fresh-directory transcript acceptance resolved a command after a leading global flag."
   "2026-08-28T06:38:33.997Z","harness:codex","Exact-head review reconciliation: actual_result now states both primary acceptance outcomes—command-declared effect-aware successful exits 0, 6, and 7 are accepted, and command identity is resolved after global prefixes by the shared contract-only scanner."
+  "2026-08-28T10:28:44.291Z","harness:codex","Receipt integrity correction: linked exact repository coverage and CI static quality as first-class tests instead of relying on prose-only claims. Run test-local-mtcsj6vt-8g3ihg passed exact coverage, and run test-local-mtcsrs53-kr84id passed the complete CI static-quality pipeline and downstream quality gates."
 learnings[4]{created_at,author,text}:
   "2026-08-27T18:17:29.321Z","harness:codex","A transport status is not synonymous with failure: parsing, stream selection, and transcript validation must share the canonical effect-aware exit contract so exits 6 and 7 remain successful without becoming globally legal for every command."
   "2026-08-28T03:57:22.139Z","harness:codex","Transcript contracts must derive command identity with the same bootstrap grammar as runtime dispatch; positional args[0] assumptions drift as soon as global flags are legal before a command."
@@ -44,9 +45,36 @@ files[7]{path,scope,note}:
   src/sdk/cli-contracts/bootstrap-command-scanner.ts,project,Contract-only canonical command scanner
   src/sdk/output-contracts.ts,project,canonical successful exit validation
   tests/unit/sdk/output-contracts.spec.ts,project,TDD coverage for boolean and value-consuming global prefixes
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-27T18:04:00.400Z",local_mutation,feat/agent-transcript-recovery-contracts
-test_runs[2]:
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-27T18:04:00.400Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T09:49:08.325Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Persist exact full coverage for declared effect-aware transcript exits
+  - command: "CI=1 pnpm quality:static"
+    scope: project
+    timeout_seconds: 1200
+    pm_context_mode: tracker
+    workspace_context_mode: source
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T09:49:08.835Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-transcript-recovery-contracts
+    note: Persist tracker-context repository static quality for shared command resolution
+test_runs[4]:
   - run_id: test-local-mtbugto3-wyrk8m
     kind: test
     status: passed
@@ -69,11 +97,33 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcsj6vt-8g3ihg
+    kind: test
+    status: passed
+    started_at: "2026-08-28T10:02:30.519Z"
+    finished_at: "2026-08-28T10:10:16.601Z"
+    recorded_at: "2026-08-28T10:10:16.601Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcsrs53-kr84id
+    kind: test
+    status: passed
+    started_at: "2026-08-28T10:10:23.234Z"
+    finished_at: "2026-08-28T10:16:57.399Z"
+    recorded_at: "2026-08-28T10:16:57.399Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed closeout entry
   docs/agent-task-transcripts.json,project,partial-effect and no-effect golden workflow
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,canonical effect-aware exit semantics
-close_reason: "The canonical actual_result now preserves both effect-aware declared-success acceptance and global-prefix command resolution; existing focused, full-coverage, static, and manual proof remains valid."
+close_reason: Closed after implementing and receipting the stable-head review corrections; all linked assurance commands passed.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

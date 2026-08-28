@@ -323,6 +323,58 @@ describe.each(TARGETS)("run%s", (target) => {
     });
   });
 
+  it("serializes concurrent exact append retries under the item writer lock", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-if-absent-concurrent`);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      let releaseBarrier: (() => void) | undefined;
+      const barrier = new Promise<void>((resolve) => {
+        releaseBarrier = resolve;
+      });
+      const attempts = Array.from({ length: 2 }, async () => {
+        await barrier;
+        return target.run(
+          id,
+          {
+            add: " one concurrent retry-safe entry ",
+            author: " parallel-agent ",
+            ifAbsent: true,
+          },
+          { path: context.pmPath },
+        );
+      });
+
+      expect(releaseBarrier).toBeTypeOf("function");
+      releaseBarrier?.();
+      const results = await Promise.all(attempts);
+
+      expect(results.filter((result) => result.changed === true)).toHaveLength(
+        1,
+      );
+      expect(
+        results.filter((result) => result.changed === false),
+      ).toHaveLength(1);
+      expect(
+        extractEntries(
+          target,
+          await target.run(id, { fullHistory: true }, { path: context.pmPath }),
+        ),
+      ).toHaveLength(1);
+      const historyEvents = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map(
+          (line) => JSON.parse(line) as unknown as { op?: unknown },
+        );
+      expect(
+        historyEvents.filter(
+          ({ op }) =>
+            op === (target.name === "notes" ? "note_add" : "learning_add"),
+        ),
+      ).toHaveLength(1);
+    });
+  });
+
   it("exposes retry-safe appends through the CLI transport", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, `${target.name}-cli-if-absent`);

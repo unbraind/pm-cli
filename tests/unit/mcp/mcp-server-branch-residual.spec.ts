@@ -761,14 +761,32 @@ describe("mcp server branch residual coverage", () => {
     );
     expect(commandMocks.runCopy).toHaveBeenCalledTimes(2);
     expect(commandMocks.runComments).toHaveBeenCalledTimes(3);
+    expect(commandMocks.runComments).toHaveBeenNthCalledWith(
+      2,
+      "pm-7",
+      expect.objectContaining({ add: "new comment", ifAbsent: true }),
+      expect.any(Object),
+    );
     expect(commandMocks.runComments).toHaveBeenLastCalledWith(
       "pm-7-flat",
       expect.objectContaining({ add: "flat comment", ifAbsent: true }),
       expect.any(Object),
     );
+    expect(commandMocks.runNotes).toHaveBeenNthCalledWith(
+      1,
+      "pm-8",
+      expect.objectContaining({ add: "new note", ifAbsent: true }),
+      expect.any(Object),
+    );
     expect(commandMocks.runNotes).toHaveBeenLastCalledWith(
       "pm-8-flat",
       expect.objectContaining({ add: "flat note", ifAbsent: true }),
+      expect.any(Object),
+    );
+    expect(commandMocks.runLearnings).toHaveBeenNthCalledWith(
+      1,
+      "pm-9",
+      expect.objectContaining({ add: "new learning", ifAbsent: true }),
       expect.any(Object),
     );
     expect(commandMocks.runLearnings).toHaveBeenLastCalledWith(

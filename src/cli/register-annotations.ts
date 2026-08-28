@@ -154,11 +154,20 @@ function resolveCommentSources(
   };
 }
 
-function resolveSingleTextSource(
-  label: string,
+/** Resolves every mutation-bearing source for notes and learnings once. */
+function resolveSingleAnnotationSources(
+  label: "note" | "learning",
   positional: string | undefined,
   options: Record<string, unknown>,
-): string | undefined {
+): {
+  add: string | undefined;
+  addJson: string | undefined;
+  readFromStdin: boolean;
+  readFromFile: string | undefined;
+  editIndex: number | undefined;
+  deleteIndex: number | undefined;
+  isMutation: boolean;
+} {
   const addFromOption = resolveAnnotationTextAliases(
     label,
     options,
@@ -172,7 +181,29 @@ function resolveSingleTextSource(
       EXIT_CODE.USAGE,
     );
   }
-  return addFromOption ?? addFromPositional;
+  const add = addFromOption ?? addFromPositional;
+  const addJson =
+    label === "note" ? readOptionString(options, "addJson") : undefined;
+  const readFromStdin = options.stdin === true;
+  const readFromFile = readOptionString(options, "file");
+  const editIndex = typeof options.edit === "number" ? options.edit : undefined;
+  const deleteIndex =
+    typeof options.delete === "number" ? options.delete : undefined;
+  return {
+    add,
+    addJson,
+    readFromStdin,
+    readFromFile,
+    editIndex,
+    deleteIndex,
+    isMutation:
+      typeof add === "string" ||
+      addJson !== undefined ||
+      readFromStdin ||
+      readFromFile !== undefined ||
+      editIndex !== undefined ||
+      deleteIndex !== undefined,
+  };
 }
 
 async function runCommentsAction(
@@ -218,16 +249,16 @@ async function runNotesAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("notes", id, text, options);
-  const add = resolveSingleTextSource("note", text, options);
+  const sources = resolveSingleAnnotationSources("note", text, options);
   const result = await runNotes(
     id,
     {
-      add,
-      addJson: readOptionString(options, "addJson"),
-      stdin: options.stdin === true,
-      file: readOptionString(options, "file"),
-      edit: typeof options.edit === "number" ? options.edit : undefined,
-      delete: typeof options.delete === "number" ? options.delete : undefined,
+      add: sources.add,
+      addJson: sources.addJson,
+      stdin: sources.readFromStdin,
+      file: sources.readFromFile,
+      edit: sources.editIndex,
+      delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
       since: readOptionString(options, "since"),
       eventType: readOptionString(options, "eventType"),
@@ -241,17 +272,7 @@ async function runNotesAction(
     } as Parameters<typeof runNotes>[1],
     globalOptions,
   );
-  if (
-    result.changed !== false &&
-    [
-      typeof add === "string",
-      typeof options.addJson === "string",
-      options.stdin === true,
-      typeof options.file === "string",
-      typeof options.edit === "number",
-      typeof options.delete === "number",
-    ].includes(true)
-  ) {
+  if (sources.isMutation && result.changed !== false) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printAnnotationResult("notes", result, globalOptions, startedAt);
@@ -266,15 +287,15 @@ async function runLearningsAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("learnings", id, text, options);
-  const add = resolveSingleTextSource("learning", text, options);
+  const sources = resolveSingleAnnotationSources("learning", text, options);
   const result = await runLearnings(
     id,
     {
-      add,
-      stdin: options.stdin === true,
-      file: readOptionString(options, "file"),
-      edit: typeof options.edit === "number" ? options.edit : undefined,
-      delete: typeof options.delete === "number" ? options.delete : undefined,
+      add: sources.add,
+      stdin: sources.readFromStdin,
+      file: sources.readFromFile,
+      edit: sources.editIndex,
+      delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
       fullHistory: options.fullHistory === true,
       ifAbsent: options.ifAbsent === true,
@@ -285,16 +306,7 @@ async function runLearningsAction(
     } as Parameters<typeof runLearnings>[1],
     globalOptions,
   );
-  if (
-    result.changed !== false &&
-    [
-      typeof add === "string",
-      options.stdin === true,
-      typeof options.file === "string",
-      typeof options.edit === "number",
-      typeof options.delete === "number",
-    ].includes(true)
-  ) {
+  if (sources.isMutation && result.changed !== false) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printAnnotationResult("learnings", result, globalOptions, startedAt);
