@@ -16,7 +16,17 @@ import {
 } from "../output-contracts.js";
 
 /** Stable schema version for replayable agent-task transcript corpora. */
-export const PM_AGENT_TASK_TRANSCRIPT_VERSION = 1 as const;
+export const PM_AGENT_TASK_TRANSCRIPT_VERSION = 2 as const;
+
+/** Supported strategies for measuring one transcript step's output cost. */
+export const PM_AGENT_TASK_ACCOUNTING_MODES = [
+  "self_reported",
+  "independent_transport",
+] as const;
+
+/** Token-accounting strategy a replayed transcript step must preserve. */
+export type PmAgentTaskAccountingMode =
+  (typeof PM_AGENT_TASK_ACCOUNTING_MODES)[number];
 
 /** Output family expected from one replayed agent-task step. */
 export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | "refusal";
@@ -31,6 +41,8 @@ export interface PmAgentTaskTranscriptStep {
   expected_exit_code: number;
   /** Semantic output family required from the transport. */
   expected_output_kind: PmAgentTaskStepOutputKind;
+  /** Accounting strategy required from the measured transport. */
+  expected_accounting_mode: PmAgentTaskAccountingMode;
   /** Dot-separated own-property paths proving required context was consumed. */
   required_fields: readonly string[];
   /** Stable diagnostic code required from a refusal step. */
@@ -173,6 +185,15 @@ function parseAgentTaskTranscriptStep(
     throw new TypeError(`${field}.expected_output_kind is unsupported`);
   }
   const expectedOutputKind = rawOutputKind as PmAgentTaskStepOutputKind;
+  const rawAccountingMode = value.expected_accounting_mode;
+  if (
+    !PM_AGENT_TASK_ACCOUNTING_MODES.includes(
+      rawAccountingMode as PmAgentTaskAccountingMode,
+    )
+  ) {
+    throw new TypeError(`${field}.expected_accounting_mode is unsupported`);
+  }
+  const expectedAccountingMode = rawAccountingMode as PmAgentTaskAccountingMode;
   const requiredFields = readTranscriptStringArray(
     value.required_fields,
     `${field}.required_fields`,
@@ -211,6 +232,7 @@ function parseAgentTaskTranscriptStep(
     args,
     expected_exit_code: expectedExitCode,
     expected_output_kind: expectedOutputKind,
+    expected_accounting_mode: expectedAccountingMode,
     required_fields: requiredFields,
     ...(expectedErrorCode ? { expected_error_code: expectedErrorCode } : {}),
     ...(expectedRefusalSurface

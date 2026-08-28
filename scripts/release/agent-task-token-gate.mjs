@@ -29,7 +29,7 @@ const TRANSCRIPT_PATH = path.join(
   "agent-task-transcripts.json",
 );
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
-const BASELINE_VERSION = 2;
+const BASELINE_VERSION = 3;
 
 function fixtureId(key) {
   return `pm-${createHash("sha256").update(key).digest("hex").slice(0, 12)}`;
@@ -56,18 +56,6 @@ function runCli(pmRoot, args) {
       PM_TELEMETRY: "0",
     },
   });
-}
-
-function readReceipt(payload, stepId) {
-  const receipt = payload?.token_accounting;
-  if (
-    typeof receipt !== "object" ||
-    receipt === null ||
-    Array.isArray(receipt)
-  ) {
-    fail(`Agent-task transcript step ${stepId} omitted token_accounting`);
-  }
-  return receipt;
 }
 
 function assertComplete(payload, requiredFields, stepId) {
@@ -143,51 +131,9 @@ function validateExpectedOutput(payload, step) {
   }
 }
 
-/** Validate and summarize one pair of independently captured CLI transports. */
-export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
-  if (
-    baseline.status !== step.expected_exit_code ||
-    accounted.status !== step.expected_exit_code
-  ) {
-    fail(
-      `Agent-task transcript step ${step.id} exit mismatch: baseline=${baseline.status}, accounted=${accounted.status}, expected=${step.expected_exit_code}`,
-    );
-  }
-  const baselinePayload = parseJsonOutput(
-    baseline,
-    step,
-    `${step.id}:accounting-off`,
-  );
-  if (baselinePayload.token_accounting !== undefined) {
-    fail(
-      `Agent-task transcript step ${step.id} paid accounting cost while accounting was disabled`,
-    );
-  }
-  const accountedPayload = parseJsonOutput(accounted, step);
-  if (
-    step.expected_output_kind === "refusal" &&
-    (typeof accountedPayload?.token_accounting !== "object" ||
-      accountedPayload.token_accounting === null ||
-      Array.isArray(accountedPayload.token_accounting))
-  ) {
-    const emittedBytes = Buffer.byteLength(accounted.stderr, "utf8");
-    assertComplete(accountedPayload, step.required_fields, step.id);
-    validateExpectedOutput(accountedPayload, step);
-    return {
-      id: step.id,
-      command: step.args.join(" "),
-      exit_code: accounted.status,
-      output_kind: step.expected_output_kind,
-      emitted_bytes: emittedBytes,
-      estimated_tokens: Math.ceil(emittedBytes / 4),
-      accounting_receipt_bytes: 0,
-      sections: { diagnostics: { bytes: emittedBytes } },
-      accounting_mode: "independent_transport",
-      completeness: "required_fields_present",
-      payload: accountedPayload,
-    };
-  }
-  const receipt = readReceipt(accountedPayload, step.id);
+/** Independently validate a self-reported accounting receipt and return its payload projection. */
+function validateSelfReportedAccounting(accountedPayload, step) {
+  const receipt = accountedPayload.token_accounting;
   const {
     token_accounting: _excludedReceipt,
     ...independentlyProjectedPayload
@@ -225,6 +171,64 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
       `Agent-task transcript step ${step.id} accounting receipt exceeded its 1024-byte bound`,
     );
   }
+  return { receipt, independentlyProjectedPayload };
+}
+
+/** Validate and summarize one pair of independently captured CLI transports. */
+export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
+  if (
+    baseline.status !== step.expected_exit_code ||
+    accounted.status !== step.expected_exit_code
+  ) {
+    fail(
+      `Agent-task transcript step ${step.id} exit mismatch: baseline=${baseline.status}, accounted=${accounted.status}, expected=${step.expected_exit_code}`,
+    );
+  }
+  const baselinePayload = parseJsonOutput(
+    baseline,
+    step,
+    `${step.id}:accounting-off`,
+  );
+  if (baselinePayload.token_accounting !== undefined) {
+    fail(
+      `Agent-task transcript step ${step.id} paid accounting cost while accounting was disabled`,
+    );
+  }
+  const accountedPayload = parseJsonOutput(accounted, step);
+  const accountingMode =
+    typeof accountedPayload?.token_accounting === "object" &&
+    accountedPayload.token_accounting !== null &&
+    !Array.isArray(accountedPayload.token_accounting)
+      ? "self_reported"
+      : "independent_transport";
+  if (step.expected_accounting_mode !== accountingMode) {
+    fail(
+      `Agent-task transcript step ${step.id} accounting mode mismatch: ${accountingMode} != ${String(step.expected_accounting_mode)}`,
+    );
+  }
+  if (
+    step.expected_output_kind === "refusal" &&
+    accountingMode === "independent_transport"
+  ) {
+    const emittedBytes = Buffer.byteLength(accounted.stderr, "utf8");
+    assertComplete(accountedPayload, step.required_fields, step.id);
+    validateExpectedOutput(accountedPayload, step);
+    return {
+      id: step.id,
+      command: step.args.join(" "),
+      exit_code: accounted.status,
+      output_kind: step.expected_output_kind,
+      emitted_bytes: emittedBytes,
+      estimated_tokens: Math.ceil(emittedBytes / 4),
+      accounting_receipt_bytes: 0,
+      sections: { diagnostics: { bytes: emittedBytes } },
+      accounting_mode: accountingMode,
+      completeness: "required_fields_present",
+      payload: accountedPayload,
+    };
+  }
+  const { receipt, independentlyProjectedPayload } =
+    validateSelfReportedAccounting(accountedPayload, step);
   assertComplete(independentlyProjectedPayload, step.required_fields, step.id);
   validateExpectedOutput(independentlyProjectedPayload, step);
   return {
@@ -236,7 +240,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
     estimated_tokens: receipt.total_estimated_tokens,
     accounting_receipt_bytes: receipt.accounting_receipt_bytes,
     sections: receipt.sections,
-    accounting_mode: "self_reported",
+    accounting_mode: accountingMode,
     completeness: "required_fields_present",
     payload: independentlyProjectedPayload,
   };
@@ -333,15 +337,20 @@ function listTaskTokenBaselineFailures(task, taskLimit) {
     );
   }
   const stepLimits = new Map(
-    (taskLimit.steps ?? []).map((step) => [step.id, step.max_estimated_tokens]),
+    (taskLimit.steps ?? []).map((step) => [step.id, step]),
   );
   for (const step of task.steps) {
-    const limit = stepLimits.get(step.id);
-    if (!Number.isFinite(limit))
+    const stepLimit = stepLimits.get(step.id);
+    if (!Number.isFinite(stepLimit?.max_estimated_tokens))
       failures.push(`task:${task.id}:step:${step.id}:missing_baseline`);
-    else if (step.estimated_tokens > limit) {
+    else if (step.estimated_tokens > stepLimit.max_estimated_tokens) {
       failures.push(
-        `task:${task.id}:step:${step.id}:${step.estimated_tokens}>baseline:${limit}`,
+        `task:${task.id}:step:${step.id}:${step.estimated_tokens}>baseline:${stepLimit.max_estimated_tokens}`,
+      );
+    }
+    if (stepLimit && step.accounting_mode !== stepLimit.accounting_mode) {
+      failures.push(
+        `task:${task.id}:step:${step.id}:accounting_mode:${String(step.accounting_mode)}!=${String(stepLimit.accounting_mode)}`,
       );
     }
   }
@@ -406,6 +415,7 @@ function buildBaseline(report) {
       steps: task.steps.map((step) => ({
         id: step.id,
         max_estimated_tokens: step.estimated_tokens,
+        accounting_mode: step.accounting_mode,
       })),
     })),
     composite_max_estimated_tokens: report.composite_estimated_tokens,

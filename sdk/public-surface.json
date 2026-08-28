@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1808,
+    "covered_symbols": 1810,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1809
+    "required_symbols": 1811
   },
   "breaking_acknowledgements": [
     {
@@ -1357,6 +1357,18 @@
       ],
       "package_version": "2026.8.27",
       "reason": "Advance the strict tool-parameter schema version for the additive annotation ifAbsent contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_AGENT_TASK_TRANSCRIPT_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PmAgentTaskTranscriptStep",
+        "signature ./sdk/contracts:PM_AGENT_TASK_TRANSCRIPT_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PmAgentTaskTranscriptStep"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Finalize unreleased transcript v2 accounting-mode contract and strict annotation schema correction"
     }
   ],
   "entrypoints": {
@@ -10306,8 +10318,14 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_AGENT_TASK_ACCOUNTING_MODES",
+          "signature": "readonly [\"self_reported\", \"independent_transport\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_AGENT_TASK_TRANSCRIPT_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "supported",
@@ -10889,7 +10907,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.10.0\""
+          "signature": "\"4.10.1\""
         },
         {
           "classification": "contract_data",
@@ -10936,6 +10954,12 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmAgentTaskAccountingMode",
+          "signature": "export type PmAgentTaskAccountingMode = (typeof PM_AGENT_TASK_ACCOUNTING_MODES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmAgentTaskStepOutputKind",
           "signature": "export type PmAgentTaskStepOutputKind = PmOutputEnvelopeKind | \"refusal\";"
         },
@@ -10955,7 +10979,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmAgentTaskTranscriptStep",
-          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",
@@ -20602,8 +20626,14 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_AGENT_TASK_ACCOUNTING_MODES",
+          "signature": "readonly [\"self_reported\", \"independent_transport\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_AGENT_TASK_TRANSCRIPT_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "contract_data",
@@ -20885,7 +20915,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.10.0\""
+          "signature": "\"4.10.1\""
         },
         {
           "classification": "contract_data",
@@ -20904,6 +20934,12 @@
           "kind": "interface",
           "name": "PmActionToolInputSchemaOptions",
           "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmAgentTaskAccountingMode",
+          "signature": "export type PmAgentTaskAccountingMode = (typeof PM_AGENT_TASK_ACCOUNTING_MODES)[number];"
         },
         {
           "classification": "contract_data",
@@ -20927,7 +20963,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmAgentTaskTranscriptStep",
-          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
+          "signature": "export interface PmAgentTaskTranscriptStep { id: string; args: readonly string[]; expected_exit_code: number; expected_output_kind: PmAgentTaskStepOutputKind; expected_accounting_mode: PmAgentTaskAccountingMode; required_fields: readonly string[]; expected_error_code?: string; expected_refusal_surface?: string; recovery_for?: string; }"
         },
         {
           "classification": "contract_data",

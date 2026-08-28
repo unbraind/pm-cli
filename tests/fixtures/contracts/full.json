@@ -25132,6 +25132,24 @@
       "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.ifAbsent=true for retry-safe author-and-text deduplication, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "add": {
             "description": "Add.",
@@ -29218,6 +29236,24 @@
       "description": "List or add learnings on a pm item. Use options.add to capture a learning/insight, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing learnings.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "add": {
             "description": "Add.",
@@ -30412,6 +30448,22 @@
               "required": [
                 "addJson",
                 "delete"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
               ]
             }
           }
@@ -48598,6 +48650,24 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "comments",
@@ -48884,6 +48954,22 @@
                 "delete"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
           }
         ],
         "properties": {
@@ -49167,6 +49253,24 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "edit",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "delete",
+                "ifAbsent"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "learnings",
@@ -55211,10 +55315,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.10.0"
+    "x-schema-version": "4.10.1"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.10.0",
+  "schema_version": "4.10.1",
   "selected": {
     "action": null,
     "availability_only": false,

@@ -1,7 +1,7 @@
 {
-  "version": 2,
-  "transcript_version": 1,
-  "transcript_digest": "sha256:0eeb3296a4bcd5edeb13f6488ae0ebc806adc96b6caa89d87a0f528d37af5c4e",
+  "version": 3,
+  "transcript_version": 2,
+  "transcript_digest": "sha256:0bd7f1a9dbacb71847025613f8d6db37b112e144dfbbc4c8dc677aaa08466cc6",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
@@ -12,15 +12,18 @@
       "steps": [
         {
           "id": "triage",
-          "max_estimated_tokens": 552
+          "max_estimated_tokens": 552,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "orient",
-          "max_estimated_tokens": 1055
+          "max_estimated_tokens": 1055,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "inspect",
-          "max_estimated_tokens": 371
+          "max_estimated_tokens": 371,
+          "accounting_mode": "self_reported"
         }
       ]
     },
@@ -30,11 +33,13 @@
       "steps": [
         {
           "id": "refuse-intent",
-          "max_estimated_tokens": 259
+          "max_estimated_tokens": 259,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "retry-intent",
-          "max_estimated_tokens": 371
+          "max_estimated_tokens": 371,
+          "accounting_mode": "self_reported"
         }
       ]
     },
@@ -44,11 +49,13 @@
       "steps": [
         {
           "id": "refuse-option",
-          "max_estimated_tokens": 440
+          "max_estimated_tokens": 440,
+          "accounting_mode": "independent_transport"
         },
         {
           "id": "retry-option",
-          "max_estimated_tokens": 163
+          "max_estimated_tokens": 163,
+          "accounting_mode": "self_reported"
         }
       ]
     },
@@ -58,19 +65,23 @@
       "steps": [
         {
           "id": "create",
-          "max_estimated_tokens": 20
+          "max_estimated_tokens": 20,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "inspect-open",
-          "max_estimated_tokens": 363
+          "max_estimated_tokens": 363,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "close",
-          "max_estimated_tokens": 31
+          "max_estimated_tokens": 31,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "inspect-closed",
-          "max_estimated_tokens": 398
+          "max_estimated_tokens": 398,
+          "accounting_mode": "self_reported"
         }
       ]
     },
@@ -80,15 +91,18 @@
       "steps": [
         {
           "id": "create-bulk-target",
-          "max_estimated_tokens": 20
+          "max_estimated_tokens": 20,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "partial-effect",
-          "max_estimated_tokens": 174
+          "max_estimated_tokens": 174,
+          "accounting_mode": "self_reported"
         },
         {
           "id": "no-effect",
-          "max_estimated_tokens": 132
+          "max_estimated_tokens": 132,
+          "accounting_mode": "self_reported"
         }
       ]
     }

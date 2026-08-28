@@ -5,6 +5,7 @@
 ### Fixed
 
 - GH-1132: opt-in idempotent annotation append (ifAbsent/--if-absent) prevents retry-driven context duplication; duplicate appends remain available by default ([pm-ea1yh2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ea1yh2.toon))
+- Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
 - Agent-task transcripts accept declared no-effect and partial-effect successful exits ([pm-wanwyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wanwyc.toon))
 - Agent-task baselines accept missing task and composite token ceilings ([pm-aksavu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aksavu.toon))
 - Agent-task closeout claims lack linked full-verification commands ([pm-ervmsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ervmsc.toon))
@@ -15,7 +16,6 @@
 - Completed-task transcripts require terminal success, exclusive refusal metadata, and complete recovery ([pm-wa39rl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wa39rl.toon))
 - Agent-task token replay trusts missing or incorrect accounting estimates ([pm-ok2kdn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok2kdn.toon))
 - Agent-task transcript recovery accepts a refusal as a successful retry ([pm-o360q6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o360q6.toon))
-- Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
 
 ### Security
 
@@ -908,10 +908,10 @@
 
 ### Other
 
+- CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers ([pm-yse5dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yse5dt.toon))
 - CI/CD + test-suite performance: in-process CLI runner and dedupe redundant matrix legs ([pm-7rlp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7rlp.toon))
 - ADR: agent identity model — stable author namespace plus structured harness, model, and session provenance ([pm-qwuber](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-qwuber.toon))
 - Public SDK surface shape: 881 exports behind one flat entrypoint with no capability tiering and a 250ms eager import cost ([pm-38bskj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-38bskj.toon))
-- CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers ([pm-yse5dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yse5dt.toon))
 
 ## 2026.7.25 - 2026-07-25
 

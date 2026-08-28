@@ -33,7 +33,25 @@ interface CompletenessBaseline {
 
 describe("action-scoped MCP schema parity", () => {
   it("versions the additive annotation if-absent contract", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.10.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.10.1");
+  });
+
+  it("rejects annotation if-absent edit and delete combinations", () => {
+    for (const action of ["comments", "notes", "learnings"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
+        action,
+      ) as { allOf?: Array<{ not?: { required?: string[] } }> };
+      const excludedPairs = schema.allOf?.flatMap((entry) =>
+        entry.not?.required === undefined ? [] : [entry.not.required],
+      );
+
+      expect(excludedPairs, action).toEqual(
+        expect.arrayContaining([
+          ["edit", "ifAbsent"],
+          ["delete", "ifAbsent"],
+        ]),
+      );
+    }
   });
 
   it("discovers the canonical package upgrade action without its deprecated alias", () => {

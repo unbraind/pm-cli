@@ -147,7 +147,7 @@ describe("SDK output envelope contracts", () => {
 
   it("parses versioned multi-step tasks with explicit refusal recovery", () => {
     const corpus = parsePmAgentTaskTranscriptCorpus({
-      version: 1,
+      version: 2,
       tasks: [
         {
           id: " recover-context ",
@@ -158,6 +158,7 @@ describe("SDK output envelope contracts", () => {
               args: ["list", "--for", "invalid"],
               expected_exit_code: 2,
               expected_output_kind: "refusal",
+              expected_accounting_mode: "independent_transport",
               required_fields: ["code", "recovery"],
               expected_error_code: "unknown_context_intent",
               expected_refusal_surface: "--for",
@@ -167,6 +168,7 @@ describe("SDK output envelope contracts", () => {
               args: ["list", "--for", "  triage  "],
               expected_exit_code: 0,
               expected_output_kind: "collection",
+              expected_accounting_mode: "self_reported",
               required_fields: ["items"],
               recovery_for: "refuse",
             },
@@ -176,7 +178,7 @@ describe("SDK output envelope contracts", () => {
     });
 
     expect(corpus).toMatchObject({
-      version: 1,
+      version: 2,
       tasks: [
         {
           id: "recover-context",
@@ -197,24 +199,24 @@ describe("SDK output envelope contracts", () => {
 
   it.each([
     [null, "corpus must be an object"],
-    [{ version: 2, tasks: [{}] }, "corpus version must be 1"],
-    [{ version: 1, tasks: [] }, "corpus tasks must be non-empty"],
-    [{ version: 1, tasks: [null] }, "tasks[0] must be an object"],
+    [{ version: 1, tasks: [{}] }, "corpus version must be 2"],
+    [{ version: 2, tasks: [] }, "corpus tasks must be non-empty"],
+    [{ version: 2, tasks: [null] }, "tasks[0] must be an object"],
     [
-      { version: 1, tasks: [{ id: " ", description: "x", steps: [{}] }] },
+      { version: 2, tasks: [{ id: " ", description: "x", steps: [{}] }] },
       "tasks[0].id must be a non-empty string",
     ],
     [
-      { version: 1, tasks: [{ id: "task", description: " ", steps: [{}] }] },
+      { version: 2, tasks: [{ id: "task", description: " ", steps: [{}] }] },
       "tasks.task.description must be a non-empty string",
     ],
     [
-      { version: 1, tasks: [{ id: "task", description: "x", steps: [] }] },
+      { version: 2, tasks: [{ id: "task", description: "x", steps: [] }] },
       "tasks.task.steps must be a non-empty array",
     ],
     [
       {
-        version: 1,
+        version: 2,
         tasks: [{ id: "task", description: "x", steps: [null] }],
       },
       "steps[0] must be an object",
@@ -229,11 +231,12 @@ describe("SDK output envelope contracts", () => {
       args: ["list"],
       expected_exit_code: 0,
       expected_output_kind: "collection",
+      expected_accounting_mode: "self_reported",
       required_fields: ["items"],
     };
     const parseStep = (step: unknown): void => {
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [{ id: "task", description: "x", steps: [step] }],
       });
     };
@@ -252,6 +255,10 @@ describe("SDK output envelope contracts", () => {
       [
         { ...validStep, expected_output_kind: "unknown" },
         ".expected_output_kind is unsupported",
+      ],
+      [
+        { ...validStep, expected_accounting_mode: "unknown" },
+        ".expected_accounting_mode is unsupported",
       ],
       [
         { ...validStep, required_fields: [] },
@@ -332,7 +339,7 @@ describe("SDK output envelope contracts", () => {
 
   it("accepts command-declared no-effect and partial-effect success exits", () => {
     const corpus = parsePmAgentTaskTranscriptCorpus({
-      version: 1,
+      version: 2,
       tasks: [
         {
           id: "bulk-effects",
@@ -344,6 +351,7 @@ describe("SDK output envelope contracts", () => {
               args: ["--json", "close-many", "pm-missing"],
               expected_exit_code: 6,
               expected_output_kind: "collection",
+              expected_accounting_mode: "self_reported",
               required_fields: ["rows"],
             },
             {
@@ -356,6 +364,7 @@ describe("SDK output envelope contracts", () => {
               ],
               expected_exit_code: 7,
               expected_output_kind: "collection",
+              expected_accounting_mode: "self_reported",
               required_fields: ["rows"],
             },
           ],
@@ -374,17 +383,18 @@ describe("SDK output envelope contracts", () => {
       args: ["list"],
       expected_exit_code: 0,
       expected_output_kind: "collection",
+      expected_accounting_mode: "self_reported",
       required_fields: ["items"],
     };
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [{ id: "task", description: "x", steps: [success, success] }],
       }),
     ).toThrow("duplicate step id same");
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [
           {
             id: "task",
@@ -401,13 +411,14 @@ describe("SDK output envelope contracts", () => {
       args: ["list", "--for", "invalid"],
       expected_exit_code: 2,
       expected_output_kind: "refusal",
+      expected_accounting_mode: "independent_transport",
       required_fields: ["code"],
       expected_error_code: "unknown_context_intent",
       expected_refusal_surface: "--for",
     };
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [
           {
             id: "task",
@@ -423,7 +434,7 @@ describe("SDK output envelope contracts", () => {
     ).toThrow("completed task must terminate with successful output");
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [
           {
             id: "task",
@@ -434,6 +445,7 @@ describe("SDK output envelope contracts", () => {
                 args: ["list", "--for", "invalid"],
                 expected_exit_code: 2,
                 expected_output_kind: "refusal",
+                expected_accounting_mode: "independent_transport",
                 required_fields: ["code"],
                 expected_error_code: "unknown_context_intent",
                 expected_refusal_surface: "--for",
@@ -443,6 +455,7 @@ describe("SDK output envelope contracts", () => {
                 args: ["list", "--for", "still-invalid"],
                 expected_exit_code: 2,
                 expected_output_kind: "refusal",
+                expected_accounting_mode: "independent_transport",
                 required_fields: ["code"],
                 expected_error_code: "unknown_context_intent",
                 expected_refusal_surface: "--for",
@@ -457,7 +470,7 @@ describe("SDK output envelope contracts", () => {
     );
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [
           {
             id: "task",
@@ -471,7 +484,7 @@ describe("SDK output envelope contracts", () => {
     );
     expect(() =>
       parsePmAgentTaskTranscriptCorpus({
-        version: 1,
+        version: 2,
         tasks: [
           { id: "task", description: "x", steps: [success] },
           { id: "task", description: "y", steps: [success] },

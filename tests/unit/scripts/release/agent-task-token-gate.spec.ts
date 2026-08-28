@@ -24,8 +24,8 @@ afterEach(async () => {
 
 describe("agent-task transcript token gate", () => {
   const steps = [
-    { id: "orient", estimated_tokens: 10 },
-    { id: "inspect", estimated_tokens: 20 },
+    { id: "orient", estimated_tokens: 10, accounting_mode: "self_reported" },
+    { id: "inspect", estimated_tokens: 20, accounting_mode: "self_reported" },
   ];
   const report = {
     transcript_digest: "sha256:test",
@@ -33,7 +33,7 @@ describe("agent-task transcript token gate", () => {
     tasks: [{ id: "context", estimated_tokens: 30, steps }],
   };
   const baseline = {
-    version: 2,
+    version: 3,
     transcript_digest: "sha256:test",
     composite_max_estimated_tokens: 30,
     tasks: [
@@ -41,8 +41,16 @@ describe("agent-task transcript token gate", () => {
         id: "context",
         max_estimated_tokens: 30,
         steps: [
-          { id: "orient", max_estimated_tokens: 10 },
-          { id: "inspect", max_estimated_tokens: 20 },
+          {
+            id: "orient",
+            max_estimated_tokens: 10,
+            accounting_mode: "self_reported",
+          },
+          {
+            id: "inspect",
+            max_estimated_tokens: 20,
+            accounting_mode: "self_reported",
+          },
         ],
       },
     ],
@@ -59,7 +67,14 @@ describe("agent-task transcript token gate", () => {
             {
               ...report.tasks[0],
               estimated_tokens: 31,
-              steps: [{ id: "orient", estimated_tokens: 11 }, steps[1]],
+              steps: [
+                {
+                  id: "orient",
+                  estimated_tokens: 11,
+                  accounting_mode: "self_reported",
+                },
+                steps[1],
+              ],
             },
           ],
         },
@@ -94,7 +109,13 @@ describe("agent-task transcript token gate", () => {
           {
             id: "context",
             max_estimated_tokens: 30,
-            steps: [{ id: "orient", max_estimated_tokens: 10 }],
+            steps: [
+              {
+                id: "orient",
+                max_estimated_tokens: 10,
+                accounting_mode: "self_reported",
+              },
+            ],
           },
           { id: "removed", max_estimated_tokens: 1, steps: [] },
         ],
@@ -145,6 +166,44 @@ describe("agent-task transcript token gate", () => {
     ).toThrow();
   });
 
+  it("fails closed when a step changes or omits its accounting mode", () => {
+    expect(
+      compareAgentTaskTokenBaseline(
+        {
+          ...report,
+          tasks: [
+            {
+              ...report.tasks[0],
+              steps: [
+                { ...steps[0], accounting_mode: "independent_transport" },
+                steps[1],
+              ],
+            },
+          ],
+        },
+        baseline,
+      ),
+    ).toEqual([
+      "task:context:step:orient:accounting_mode:independent_transport!=self_reported",
+    ]);
+    expect(
+      compareAgentTaskTokenBaseline(report, {
+        ...baseline,
+        tasks: [
+          {
+            ...baseline.tasks[0],
+            steps: [
+              { id: "orient", max_estimated_tokens: 10 },
+              baseline.tasks[0].steps[1],
+            ],
+          },
+        ],
+      }),
+    ).toEqual([
+      "task:context:step:orient:accounting_mode:self_reported!=undefined",
+    ]);
+  });
+
   it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY])(
     "fails closed on absent or non-finite task and composite ceilings (%s)",
     (invalidLimit) => {
@@ -170,6 +229,7 @@ describe("agent-task transcript token gate", () => {
       args: ["--json", "list"],
       expected_exit_code: 0,
       expected_output_kind: "collection",
+      expected_accounting_mode: "self_reported",
       required_fields: ["items.0.id"],
     };
     const payload = { items: [{ id: "pm-one" }] };
@@ -344,6 +404,7 @@ describe("agent-task transcript token gate", () => {
       args: ["list", "--bad"],
       expected_exit_code: 2,
       expected_output_kind: "refusal",
+      expected_accounting_mode: "independent_transport",
       required_fields: ["recovery"],
       expected_error_code: "unknown_option",
       expected_refusal_surface: "--bad",
@@ -356,7 +417,7 @@ describe("agent-task transcript token gate", () => {
           stdout: "",
           stderr: render(attachOutputTokenAccounting(refusal, render)),
         },
-        refusalStep,
+        { ...refusalStep, expected_accounting_mode: "self_reported" },
       ),
     ).toMatchObject({ output_kind: "refusal" });
     expect(
@@ -370,6 +431,24 @@ describe("agent-task transcript token gate", () => {
       accounting_mode: "independent_transport",
       accounting_receipt_bytes: 0,
     });
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(refusal) },
+        { status: 2, stdout: "", stderr: render(refusal) },
+        { ...refusalStep, expected_accounting_mode: "self_reported" },
+      ),
+    ).toThrow();
+    expect(() =>
+      validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(refusal) },
+        {
+          status: 2,
+          stdout: "",
+          stderr: render(attachOutputTokenAccounting(refusal, render)),
+        },
+        refusalStep,
+      ),
+    ).toThrow();
     for (const override of [
       { expected_error_code: "wrong" },
       { expected_refusal_surface: "--wrong" },
@@ -382,7 +461,11 @@ describe("agent-task transcript token gate", () => {
             stdout: "",
             stderr: render(attachOutputTokenAccounting(refusal, render)),
           },
-          { ...refusalStep, ...override },
+          {
+            ...refusalStep,
+            expected_accounting_mode: "self_reported",
+            ...override,
+          },
         ),
       ).toThrow();
     }
@@ -401,6 +484,7 @@ describe("agent-task transcript token gate", () => {
           args: ["create"],
           expected_exit_code: 0,
           expected_output_kind: "mutation_receipt",
+          expected_accounting_mode: "self_reported",
           required_fields: ["id"],
         },
       ),
