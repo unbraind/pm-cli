@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags: []
 created_at: "2026-08-28T16:48:05.770Z"
-updated_at: "2026-08-28T17:59:53.375Z"
+updated_at: "2026-08-28T18:13:11.385Z"
 closed_at: "2026-08-28T17:59:39.332Z"
 completed_at: "2026-08-28T17:59:39.332Z"
 author: "harness:codex"
@@ -37,13 +37,14 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gactwj,discovered_from,"2026-08-28T16:48:05.770Z","harness:codex","cli:create:dep",detected
   pm-3lhth4,implements,"2026-08-28T17:36:23.330Z","harness:codex","cli:update:dep",detected
   pm-7zs0,discovered_from,"2026-08-28T17:36:23.330Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-28T16:48:05.770Z","harness:codex","Duplicate check 2026-08-28: all-status searches for test Sentry isolation, production Sentry test events, tar extraction npm package Sentry, and run-tests environment isolation found the closed linked-child owner pm-9aaji6 and the broader open host-fault taxonomy pm-3lhth4, but no item owns the repository test wrapper. Live privacy-safe evidence: PM-CLI-2G has two new events and PM-CLI-39 has six events from 12:12:07Z through 12:12:27Z, all handled, environment=production, release=2026.8.27, Node 26.5.0 on the local Ubuntu kernel, with the expected missing tar archive negative-fixture error. No event ids, paths, host identities, or credentials are retained in PM."
   "2026-08-28T16:48:42.262Z","harness:codex","TDD red evidence: set PM_SENTRY_DISABLED=0 in the parent and required the canonical wrapper to force 1 in its child environment. The focused run failed exactly at that boundary: child inherited 0 instead of 1; 16 sibling tests passed. No production code changed before this negative control."
   "2026-08-28T17:15:13.610Z","harness:codex","Implementation evidence: scripts/run-tests.mjs now forces PM_SENTRY_DISABLED=1 after spreading the parent environment, so build, Vitest, and nested CLI children cannot deliver test failures externally even when the launching host sets PM_SENTRY_DISABLED=0. The real focused child regression passes 17/17, while Sentry instrumentation suites still pass through their mocked boundary. Two complete coverage runs created no new PM-CLI-2G or PM-CLI-39 events; their lastSeen values remain 12:12:27Z and 12:12:21Z with counts 5 and 6."
   "2026-08-28T17:36:24.026Z","harness:codex","Final local gate evidence before review: an additional TDD negative control proved npm's reported archive filename could escape the isolated pack destination; the test failed by resolving an absolute outside archive, then passed after adding the path-redacted npm_package_archive_unsafe refusal. Generated error catalogs, contracts, SDK surface, and refusal census are current. Full coverage passed 585 files / 8,089 tests at literal 100/100/100/100 (60,001 statements, 45,202 branches, 12,477 functions, 57,780 lines). The complete quality:static chain passed on final source, including build, contracts, type/doc coverage, ESLint, zero-duplicate jscpd, repository assurance, SDK/package/grammar/refusal/token/performance, graph-composition, and record-integrity gates. Security scan found no tracked credentials; pnpm audit found zero vulnerabilities; npm dry pack and deep package doctor passed. Temporary-project npm:pm-changelog 2026.8.22 install/activation and deep doctor passed with zero warnings/errors."
   "2026-08-28T17:48:58.174Z","harness:codex","Review-loop evidence for PR #1141: CodeRabbit reported no actionable code finding but warned that its diff-scoped docstring heuristic saw 0% on three changed private helpers. Added substantive behavior and invariant contracts to the canonical test runner, npm pack parser, and injectable registry resolver. Focused 28/28 regressions, targeted ESLint, and the six-assertion repository static-quality assurance gate pass after the change."
   "2026-08-28T17:59:38.816Z","harness:codex","Exact-head review evidence for PR #1141: commit 14b00fcb007ad1ed471f6e399b4628e4c4ff4215 is merge-clean and every hosted check is terminal green or intentionally skipped, including Linux/macOS/Windows runtime, four coverage shards plus aggregate exact coverage, static/type/compat/smoke gates, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, ShellCheck, PSScriptAnalyzer, Codecov, and CodSpeed. Greptile re-reviewed the exact head at 5/5 with no blocking failure. CodeRabbit fully reviewed the implementation head, its only docstring warning was remediated, and the exact-head retry was rate-limited; this limitation is not counted as approval. Sourcery's budget-limited review is likewise not approval, while its guide contained no finding. All eight bot comments plus the one bot review were re-read, individually reacted to, and acknowledged; no inline thread exists."
+  "2026-08-28T18:13:11.385Z","harness:codex","Hosted closeout recurrence: PR #1141 static gate failed because the newly terminal production defect lacked the structured gate_evidence contract, even though prose evidence was present. Added disposition=gate_strengthened with owner, stable gate id, executable negative control, and explicit local/hosted checks. defect-evidence-gate now passes with 76 governed terminal defects and zero findings; the complete local quality:static chain also passes."
 files[2]{path,scope,note}:
   scripts/run-tests.mjs,project,Disable external Sentry delivery for all canonical repository test children
   tests/unit/scripts/run-tests.spec.ts,project,TDD regression for inherited production Sentry environment
@@ -65,4 +66,11 @@ docs[1]{path,scope,note}:
   docs/TESTING.md,project,Document canonical test runner observability isolation
 close_reason: "Implemented canonical test-runner Sentry isolation and a shared bounded SDK archive path for local and npm registry packages. TDD reproduced both inherited production telemetry and out-of-destination artifact acceptance. The final implementation returns typed path-redacted missing/unsafe refusals, validates links/paths/types/sizes/decompression before extraction, composes cleanup, preserves package metadata, and documents helper invariants. Full 8,089-test coverage is literal 100/100/100/100; static, security, package, temporary-consumer, hosted cross-platform, analyzer, and exact-head bot review gates pass on PR #1141."
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-5ug5xq
+  gate_id: repository-test-observability-and-archive-safety
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/extensions/extension-install-security.spec.ts
+  local_checks[4]: focused TDD regressions 28/28,canonical coverage 585 files and 8089 tests at exact 100/100/100/100,"complete quality:static and repository-static-quality assurance","temporary npm:pm-changelog consumer install and deep doctor"
+  hosted_checks[3]: PR #1141 Linux macOS Windows CI and exact coverage,PR #1141 security and static analyzer matrix,Greptile exact-head confidence 5/5
 body: ""
