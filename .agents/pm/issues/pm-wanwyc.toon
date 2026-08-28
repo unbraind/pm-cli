@@ -6,30 +6,35 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:sdk",contracts,exit-codes,review-feedback
 created_at: "2026-08-27T17:57:51.200Z"
-updated_at: "2026-08-28T03:22:48.930Z"
-closed_at: "2026-08-28T03:22:48.401Z"
-completed_at: "2026-08-28T03:22:48.401Z"
+updated_at: "2026-08-28T03:57:23.330Z"
+closed_at: "2026-08-28T03:57:22.767Z"
+completed_at: "2026-08-28T03:57:22.767Z"
 author: "harness:codex"
 acceptance_criteria: "Transcript steps accept exits 0, 6, and 7 only when the canonical command contract declares that successful exit; Refusal steps reject every successful exit; Non-bulk commands cannot claim successful effect-aware exits; Exact unit and full coverage gates pass"
 parent: pm-8pnj
 resolution: completed
 expected_result: Transcripts accept every successful exit that the invoked command declares and reject undeclared or refusal-success contradictions.
-actual_result: "The parser now composes canonical success and per-command exit contracts, and a real bulk workflow proves exits 7 and 6 end to end."
+actual_result: "Transcript validation now resolves the canonical command through the shared bootstrap scanner before consulting output and exit contracts, so boolean and value-consuming global prefixes preserve declared exits 6 and 7 while flag-only invocations fail closed."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-hqa8g1,recurs_from,"2026-08-27T17:57:51.200Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-27T17:57:51.200Z","harness:codex","Duplicate check: all-status search for transcript successful exit, no_effect, and partial_effect found canonical exit-contract owner pm-hqa8g1 and the active transcript owner pm-8pnj, but no item for this PR #1133 parser contradiction; creating one review-caught child issue rather than duplicating either owner."
   "2026-08-27T18:17:28.812Z","harness:codex","Review resolution evidence for PR #1133: reused isPmSuccessfulExitCode plus the command-specific exit declaration; non-refusal transcripts accept exit 6/7 only for commands that declare them, refusals reject all successful exits, and the real corpus now executes close-many partial_effect=7 and no_effect=6 from stdout. Focused linked tests passed; full coverage passed 8,063 tests at exact 100/100/100/100; pnpm quality:static passed."
   "2026-08-27T22:34:58.312Z","harness:codex","Lifecycle reconciliation: the historical docs_add event is immutable and remains visible after its original close/release. Ownership is now explicitly reacquired before this corrective evidence entry; future closeout metadata must precede close and release."
   "2026-08-28T03:22:47.799Z","harness:codex","Review wording correction: the changelog is generated from PM titles. Updated this canonical title to state the implemented behavior: non-refusal transcript steps accept no_effect and partial_effect only when the invoked command declares those successful exits. Refusal steps and undeclared effect exits remain rejected."
-learnings[1]{created_at,author,text}:
+  "2026-08-28T03:44:19.934Z","harness:codex","TDD red evidence: node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts failed exactly at the bulk-effects transcript after adding --json before close-many and value-consuming --pm-path before update-many. The parser resolved args[0] as the command and rejected declared exit 6 before reaching the second case."
+  "2026-08-28T03:57:21.590Z","harness:codex","Exact-head Greptile resolution evidence: the parser now reuses parseBootstrapCommandName instead of args[0], covers --json before close-many and --pm-path <value> before update-many, and rejects a flag-only invocation with no command. Focused output/transcript tests passed 28/28, bootstrap tests passed 99/99, the linked PM test passed, full coverage passed 585 files and 8,076 tests at statements 59,941/59,941, branches 45,130/45,130, functions 12,466/12,466, lines 57,722/57,722, and CI=1 pnpm quality:static passed."
+learnings[2]{created_at,author,text}:
   "2026-08-27T18:17:29.321Z","harness:codex","A transport status is not synonymous with failure: parsing, stream selection, and transcript validation must share the canonical effect-aware exit contract so exits 6 and 7 remain successful without becoming globally legal for every command."
-files[2]{path,scope,note}:
+  "2026-08-28T03:57:22.139Z","harness:codex","Transcript contracts must derive command identity with the same bootstrap grammar as runtime dispatch; positional args[0] assumptions drift as soon as global flags are legal before a command."
+files[4]{path,scope,note}:
   scripts/release/agent-task-token-gate.mjs,project,stdout capture and real bulk effect replay
+  src/sdk/agent/task-transcript-contracts.ts,project,global-prefix command resolution for transcript validation
   src/sdk/output-contracts.ts,project,canonical successful exit validation
+  tests/unit/sdk/output-contracts.spec.ts,project,TDD coverage for boolean and value-consuming global prefixes
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-27T18:04:00.400Z",local_mutation,feat/agent-transcript-recovery-contracts
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtbugto3-wyrk8m
     kind: test
     status: passed
@@ -41,11 +46,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtcespxt-kj48e4
+    kind: test
+    status: passed
+    started_at: "2026-08-28T03:45:24.071Z"
+    finished_at: "2026-08-28T03:45:46.577Z"
+    recorded_at: "2026-08-28T03:45:46.577Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed closeout entry
   docs/agent-task-transcripts.json,project,partial-effect and no-effect golden workflow
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,canonical effect-aware exit semantics
-close_reason: Canonical effect-aware transcript exits remain implemented and verified; the canonical generated-changelog title now accurately describes successful declared no-effect and partial-effect exits.
+close_reason: "Fixed the exact-head leading-global parser recurrence with canonical bootstrap command resolution, adversarial TDD coverage, exact full coverage, and the repository static-quality gate."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

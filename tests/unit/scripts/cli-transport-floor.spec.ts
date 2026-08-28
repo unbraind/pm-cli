@@ -168,6 +168,45 @@ describe("CLI transport-floor benchmark", () => {
     ).toBeNull();
   });
 
+  it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY, "1000"])(
+    "rejects malformed RSS contract value %#",
+    (value) => {
+      const malformedMedian = report();
+      Object.assign(malformedMedian.operations.get, {
+        median_peak_rss_bytes: value,
+      });
+      expect(() => buildCliTransportFloorBudgets(malformedMedian)).toThrow(
+        "operations.get.median_peak_rss_bytes must be null or a finite number",
+      );
+      expect(() =>
+        compareCliTransportFloorBudgets(
+          malformedMedian,
+          buildCliTransportFloorBudgets(report()),
+        ),
+      ).toThrow(
+        "operations.get.median_peak_rss_bytes must be null or a finite number",
+      );
+
+      const malformedMaximum = report();
+      Object.assign(malformedMaximum.operations.get, {
+        max_peak_rss_bytes: value,
+      });
+      expect(() => buildCliTransportFloorBudgets(malformedMaximum)).toThrow(
+        "operations.get.max_peak_rss_bytes must be null or a finite number",
+      );
+
+      const malformedBudget = buildCliTransportFloorBudgets(report());
+      Object.assign(malformedBudget.operations.get, {
+        max_peak_rss_bytes: value,
+      });
+      expect(() =>
+        compareCliTransportFloorBudgets(report(), malformedBudget),
+      ).toThrow(
+        "budgets.operations.get.max_peak_rss_bytes must be null or a finite number",
+      );
+    },
+  );
+
   it("renders the measured floor and architecture attribution", () => {
     const markdown = renderCliTransportFloorMarkdown(report());
     expect(markdown).toContain("| `get` | 250 ms | 270 ms | 300 ms |");

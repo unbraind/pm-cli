@@ -8,6 +8,7 @@ import {
   isPmSuccessfulExitCode,
   resolvePmCommandExitContract,
 } from "../cli-contracts/command-exit-contracts.js";
+import { parseBootstrapCommandName } from "../cli-bootstrap.js";
 import {
   PM_OUTPUT_ENVELOPE_KINDS,
   resolvePmCommandOutputEnvelope,
@@ -118,7 +119,13 @@ function assertTranscriptStepOutputContract(
       `${field} only refusal steps may declare expected_error_code or expected_refusal_surface`,
     );
   }
-  const exitContract = resolvePmCommandExitContract(args[0]);
+  const command = parseBootstrapCommandName([...args]);
+  if (command === undefined) {
+    throw new TypeError(
+      `${field}.args must identify a command after global flags`,
+    );
+  }
+  const exitContract = resolvePmCommandExitContract(command);
   if (
     !isPmSuccessfulExitCode(exitCode) ||
     (exitCode !== 0 &&
@@ -130,10 +137,10 @@ function assertTranscriptStepOutputContract(
       `${field} successful output must use exit code 0 or a command-declared successful effect exit`,
     );
   }
-  const declaredKind = resolvePmCommandOutputEnvelope(args[0]).kind;
+  const declaredKind = resolvePmCommandOutputEnvelope(command).kind;
   if (outputKind !== declaredKind) {
     throw new TypeError(
-      `${field} expected ${outputKind}, but ${args[0]} declares ${declaredKind}`,
+      `${field} expected ${outputKind}, but ${command} declares ${declaredKind}`,
     );
   }
 }

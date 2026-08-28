@@ -45,6 +45,15 @@ const OPERATION_NAMES = Object.freeze([
   "claim",
 ]);
 
+function assertNullableFiniteRss(value, field) {
+  if (
+    value !== null &&
+    (typeof value !== "number" || !Number.isFinite(value))
+  ) {
+    throw new TypeError(`${field} must be null or a finite number`);
+  }
+}
+
 function argsForOperation(operation, manifest, iteration) {
   if (operation === "get") return ["get", manifest.sample_ids.get, "--json"];
   if (operation === "list")
@@ -144,16 +153,26 @@ export function buildCliTransportFloorBudgets(report, headroom = 1.25) {
     policy:
       "Cold-start upper bounds may only decrease unless a reviewed platform correction is documented.",
     operations: Object.fromEntries(
-      Object.entries(report.operations).map(([operation, summary]) => [
-        operation,
-        {
-          max_latency_ms: Math.ceil(summary.min_ms * headroom),
-          max_peak_rss_bytes:
-            summary.median_peak_rss_bytes === null
-              ? null
-              : Math.ceil(summary.median_peak_rss_bytes * headroom),
-        },
-      ]),
+      Object.entries(report.operations).map(([operation, summary]) => {
+        assertNullableFiniteRss(
+          summary.median_peak_rss_bytes,
+          `operations.${operation}.median_peak_rss_bytes`,
+        );
+        assertNullableFiniteRss(
+          summary.max_peak_rss_bytes,
+          `operations.${operation}.max_peak_rss_bytes`,
+        );
+        return [
+          operation,
+          {
+            max_latency_ms: Math.ceil(summary.min_ms * headroom),
+            max_peak_rss_bytes:
+              summary.median_peak_rss_bytes === null
+                ? null
+                : Math.ceil(summary.median_peak_rss_bytes * headroom),
+          },
+        ];
+      }),
     ),
   };
 }
@@ -162,11 +181,23 @@ export function buildCliTransportFloorBudgets(report, headroom = 1.25) {
 export function compareCliTransportFloorBudgets(report, budgets) {
   const violations = [];
   for (const [operation, summary] of Object.entries(report.operations)) {
+    assertNullableFiniteRss(
+      summary.median_peak_rss_bytes,
+      `operations.${operation}.median_peak_rss_bytes`,
+    );
+    assertNullableFiniteRss(
+      summary.max_peak_rss_bytes,
+      `operations.${operation}.max_peak_rss_bytes`,
+    );
     const budget = budgets.operations?.[operation];
     if (!budget) {
       violations.push(`${operation}: missing budget`);
       continue;
     }
+    assertNullableFiniteRss(
+      budget.max_peak_rss_bytes,
+      `budgets.operations.${operation}.max_peak_rss_bytes`,
+    );
     if (summary.min_ms > budget.max_latency_ms + LATENCY_NOISE_MARGIN_MS) {
       violations.push(
         `${operation}: best ${summary.min_ms}ms > ${budget.max_latency_ms + LATENCY_NOISE_MARGIN_MS}ms`,

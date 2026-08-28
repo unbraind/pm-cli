@@ -229,6 +229,10 @@ describe("SDK output envelope contracts", () => {
       [{ ...validStep, args: [] }, ".args must be a non-empty string array"],
       [{ ...validStep, args: [7] }, ".args[0] must be a non-empty string"],
       [
+        { ...validStep, args: ["--json"] },
+        ".args must identify a command after global flags",
+      ],
+      [
         { ...validStep, expected_exit_code: 1.5 },
         ".expected_exit_code must be a safe integer",
       ],
@@ -324,14 +328,19 @@ describe("SDK output envelope contracts", () => {
           steps: [
             {
               id: "no-effect",
-              args: ["close-many", "pm-missing"],
+              args: ["--json", "close-many", "pm-missing"],
               expected_exit_code: 6,
               expected_output_kind: "collection",
               required_fields: ["rows"],
             },
             {
               id: "partial-effect",
-              args: ["update-many", "pm-one,pm-missing"],
+              args: [
+                "--pm-path",
+                "/tmp/project/.agents/pm",
+                "update-many",
+                "pm-one,pm-missing",
+              ],
               expected_exit_code: 7,
               expected_output_kind: "collection",
               required_fields: ["rows"],

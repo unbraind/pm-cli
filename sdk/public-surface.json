@@ -1349,6 +1349,14 @@
       ],
       "package_version": "2026.8.27",
       "reason": "Additive optional ifAbsent and changed fields extend every public annotation mutation contract; policy classifies exported signature growth as breaking and the next date release carries it."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.8.27",
+      "reason": "Advance the strict tool-parameter schema version for the additive annotation ifAbsent contract"
     }
   ],
   "entrypoints": {
@@ -10881,7 +10889,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.9.0\""
+          "signature": "\"4.10.0\""
         },
         {
           "classification": "contract_data",
@@ -20877,7 +20885,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.9.0\""
+          "signature": "\"4.10.0\""
         },
         {
           "classification": "contract_data",
