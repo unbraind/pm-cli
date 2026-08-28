@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Repository test runner inherits production Sentry and turns negative CLI fixtures into release-blocking incidents ([pm-5ug5xq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5ug5xq.toon))
 - Broad squash commits overflow hosted-analysis tree lookup and falsely lose reviewed PR provenance ([pm-gactwj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gactwj.toon))
 - Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate ([pm-8pnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8pnj.toon))
 - Unknown-option refusal textual flags bypass structured global-option filtering ([pm-x4wbui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x4wbui.toon))
