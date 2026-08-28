@@ -266,12 +266,15 @@ function readAnalyzerEvidence(repository, sha) {
 
 /** Read the immutable tree SHA for one GitHub commit. */
 function readCommitTree(repository, sha) {
-  const result = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}`]);
+  const result = runCaptured(GH, [
+    "api",
+    `repos/${repository}/git/commits/${sha}`,
+  ]);
   if (result.status !== 0) {
     return null;
   }
   const payload = parseObject(result.stdout, "GitHub commit API");
-  const treeSha = payload.ok ? payload.value.commit?.tree?.sha : null;
+  const treeSha = payload.ok ? payload.value.tree?.sha : null;
   return typeof treeSha === "string" && SHA_PATTERN.test(treeSha)
     ? treeSha.toLowerCase()
     : null;

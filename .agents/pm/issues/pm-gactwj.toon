@@ -1,0 +1,68 @@
+id: pm-gactwj
+title: Broad squash commits overflow hosted-analysis tree lookup and falsely lose reviewed PR provenance
+description: "The hosted analysis gate reads each commit through the heavyweight REST commits endpoint using spawnSync with Node default buffering. PR #1133 merged a 105-file squash whose response exceeds that buffer, so the subprocess terminates with status null and the gate treats the merge tree as unavailable even though GitHub associates PR #1133 and the merge/head trees are identical."
+type: Issue
+status: in_progress
+priority: 0
+tags[6]: analyzer-provenance,"area:ci","area:release",defect-escape,github-actions,regression
+created_at: "2026-08-28T15:09:32.562Z"
+updated_at: "2026-08-28T15:27:12.607Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#143da6b99c6d50ff73f411da"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "The gate requests commit tree metadata from a narrow immutable endpoint whose payload does not scale with changed-file patches; A focused negative regression proves the old heavyweight lookup would overflow while the new lookup resolves the exact tree; Fail-closed behavior for missing or malformed tree metadata remains intact; Focused tests, exact 100/100/100/100 repository coverage, static quality, manual temporary-directory acceptance, exact-head PR review, merged-main analyzer readiness, and release gates pass"
+definition_of_ready: "Production failure, exact merge/head/tree evidence, buffer root cause, canonical lineage, and no-duplicate all-status search are recorded."
+goal: project management = context management
+objective: Make reviewed-PR analyzer provenance deterministic for arbitrarily broad squash commits without increasing unbounded subprocess buffering.
+value: Broad SDK and CLI deliveries can pass the mandatory merged-main analyzer readiness gate and proceed to immutable release without weakening provenance.
+impact: "The only failed job on merged-main CI run 33182695715 blocks the 2026.8.28 release despite every product, coverage, static, compatibility, smoke, and Windows job passing."
+outcome: "Commit tree lookup uses a bounded Git database endpoint, retains fail-closed behavior, and has a regression test that prevents large standard commit payloads from reintroducing false provenance loss."
+why_now: PR #1133 is merged and release-ready except for this production defect; release must remain blocked until a reviewed fix passes exact-main CI.
+parent: pm-u9d0
+risk: high
+confidence: high
+severity: high
+environment: GitHub Actions hosted runner; unbraind/pm-cli main merge 0480ab6668d2699acc63558acf99c02bd3b5a571; CI run 33182695715 job 98887669749; Node spawnSync; GitHub REST API
+repro_steps: "Run scripts/release/hosted-analysis-gate.mjs for merge 0480ab6668d2699acc63558acf99c02bd3b5a571. The PR association resolves to #1133 and head 9f56a49524ae14d34e4a7c39370739bf2c4e2e9e; both git trees are 54f43f0400fcf0af653053cad1253cec7ca0ace1, but repos/unbraind/pm-cli/commits/<merge> exceeds spawnSync default maxBuffer and readCommitTree returns null."
+resolution: Use the Git Database commit endpoint to read immutable tree metadata without file/patch expansion; preserve malformed/unavailable fail-closed behavior and prove the old response-size failure with a regression control.
+expected_result: A reviewed squash merge with an identical reviewed head tree satisfies analyzer provenance regardless of the number of changed files.
+actual_result: "The standard commits endpoint emits more than one MiB of file and patch data; spawnSync returns status null, readCommitTree returns null, and the gate reports no exact or identical-tree reviewed evidence."
+affected_version: 2026.8.28
+fixed_version: 2026.8.28
+component: release automation / hosted analysis provenance
+regression: true
+customer_impact: "No broken artifact was published, but the valid daily SDK/CLI release is blocked until provenance lookup is repaired."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8pnj,discovered_from,"2026-08-28T15:09:32.562Z","harness:codex","cli:create:dep",detected
+  pm-e70zh5,discovered_from,"2026-08-28T15:09:32.562Z","harness:codex","cli:create:dep",detected
+  pm-u1baah,recurs_from,"2026-08-28T15:09:32.562Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-28T15:09:32.562Z","harness:codex","Duplicate-check and production evidence 2026-08-28: inspected all-status searches for the exact title, ENOBUFS, maxBuffer, and hosted-analysis commit-tree provenance; no item owns this broad-squash failure. Canonical pm-u1baah is closed with shipped analyzer-provenance behavior, so this item records a recurrence instead of reopening or duplicating that completed work. GitHub associates merge 0480ab6668d2699acc63558acf99c02bd3b5a571 with PR #1133 head 9f56a49524ae14d34e4a7c39370739bf2c4e2e9e, both trees equal 54f43f0400fcf0af653053cad1253cec7ca0ace1, and instrumentation shows the heavyweight commit request exits with null status after exceeding the default spawnSync buffer."
+  "2026-08-28T15:11:07.905Z","harness:codex","TDD red evidence: changed the existing identical-tree squash regression to expose only the bounded Git commit metadata endpoint while simulating the standard commits endpoint overflowing at 1,048,577 bytes with null subprocess status. The focused test failed exactly at provenance resolution: expected identical_tree_squash_pr_head but received the fail-closed exact_commit refusal. No product code changed before this red control."
+  "2026-08-28T15:27:12.607Z","harness:codex","Implementation and verification evidence: readCommitTree now uses repos/{repository}/git/commits/{sha} and validates tree.sha. The existing squash-provenance test simulates the old standard endpoint returning null status after a 1,048,577-byte response and requires exactly two bounded Git metadata reads. Focused suite passed 120/120. The real production control for merge 0480ab6668d2699acc63558acf99c02bd3b5a571 now passes as identical_tree_squash_pr_head at reviewed head 9f56a49524ae14d34e4a7c39370739bf2c4e2e9e with DeepScan and CodeFactor zero findings. Build, typecheck, repository static quality, graph composition, record integrity, SDK surface/import-cost/transport gates, and canonical coverage passed: 585 files, 8,088 tests, statements 60,000/60,000, branches 45,190/45,190, functions 12,477/12,477, lines 57,779/57,779. PM-linked tests passed 3/3, including isolated package-first dogfood in /tmp with 88 commands. npm reports pm-changelog 2026.8.22 as latest; project package doctor reports the managed package surface separately."
+learnings[1]{created_at,author,text}:
+  "2026-08-28T15:27:12.046Z","harness:codex","GitHub REST endpoints with equivalent-looking commit identities have materially different payload growth: repos/{owner}/{repo}/commits/{ref} expands files and patches, while repos/{owner}/{repo}/git/commits/{sha} returns bounded immutable commit metadata. Buffered subprocess consumers should choose the narrowest endpoint rather than raising maxBuffer, because broad reviewed deliveries are a normal production input."
+files[2]{path,scope,note}:
+  scripts/release/hosted-analysis-gate.mjs,project,Use bounded Git database commit metadata for reviewed squash tree provenance
+  tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,Regression proves broad standard commit payload overflow cannot erase identical-tree provenance
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,240,"harness:codex","2026-08-28T15:11:40.891Z",local_mutation,fix/hosted-analysis-tree-metadata
+  node scripts/release/hosted-analysis-gate.mjs --json --repo unbraind/pm-cli --sha 0480ab6668d2699acc63558acf99c02bd3b5a571,project,240,"harness:codex","2026-08-28T15:11:41.470Z",local_mutation,fix/hosted-analysis-tree-metadata
+  "pnpm dogfood:package-first",project,600,"harness:codex","2026-08-28T15:24:18.924Z",local_mutation,fix/hosted-analysis-tree-metadata
+test_runs[1]:
+  - run_id: test-local-mtd3txep-rh0wz8
+    kind: test
+    status: passed
+    started_at: "2026-08-28T15:25:29.874Z"
+    finished_at: "2026-08-28T15:26:33.313Z"
+    recorded_at: "2026-08-28T15:26:33.313Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/release/hosted-analysis-gate.mjs --json --repo unbraind/pm-cli --sha 0480ab6668d2699acc63558acf99c02bd3b5a571,schema,schema,source,local_source_ref
+      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
+escape_class: production_defect
+body: ""
