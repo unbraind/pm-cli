@@ -770,6 +770,50 @@ export function resolveAnnotationIndex(
   return oneBasedIndex - 1;
 }
 
+interface AnnotationResultMutation<TEntry extends AnnotationEntry> {
+  action: "add" | "edit" | "delete";
+  entryIndex: number;
+  entry?: TEntry;
+  changedCount?: 0 | 1;
+}
+
+/** Build the mutation and omission receipts attached to bounded annotation results. */
+function renderAnnotationMutationReceipts<TEntry extends AnnotationEntry>(
+  collectionKey: string,
+  mutation: AnnotationResultMutation<TEntry> | undefined,
+  historyOmitted: boolean,
+): {
+  mutation_receipt?: AnnotationMutationReceipt;
+  omission_receipt?: AnnotationOmissionReceipt;
+} {
+  if (mutation === undefined) return {};
+  return {
+    mutation_receipt: {
+      action: mutation.action,
+      entry_index: mutation.entryIndex,
+      changed_count: mutation.changedCount ?? 1,
+      full_history_included: !historyOmitted,
+    },
+    omission_receipt: {
+      has_omissions: historyOmitted,
+      omitted_field_group_count: historyOmitted ? 1 : 0,
+      omitted_field_groups: historyOmitted
+        ? [
+            {
+              name: `${collectionKey}_history`,
+              restore_with: {
+                selector: "full_history",
+                cli_flag: "--full-history",
+                sdk_option: "fullHistory",
+                mcp_option: "full",
+              },
+            },
+          ]
+        : [],
+    },
+  };
+}
+
 function renderAnnotationResult<
   TKey extends string,
   TEntry extends AnnotationEntry,
@@ -779,12 +823,7 @@ function renderAnnotationResult<
   allEntries: TEntry[],
   limit: number | undefined,
   includeMeta: boolean,
-  mutation?: {
-    action: "add" | "edit" | "delete";
-    entryIndex: number;
-    entry?: TEntry;
-    changedCount?: 0 | 1;
-  },
+  mutation?: AnnotationResultMutation<TEntry>,
   fullHistory = false,
 ): AnnotationCommandResult<TKey, TEntry> {
   const entries =
@@ -813,32 +852,10 @@ function renderAnnotationResult<
           ...(limit !== undefined ? { limit } : {}),
         }
       : {}),
-    ...(mutation === undefined
-      ? {}
-      : {
-          mutation_receipt: {
-            action: mutation.action,
-            entry_index: mutation.entryIndex,
-            changed_count: mutation.changedCount ?? 1,
-            full_history_included: !historyOmitted,
-          },
-          omission_receipt: {
-            has_omissions: historyOmitted,
-            omitted_field_group_count: historyOmitted ? 1 : 0,
-            omitted_field_groups: historyOmitted
-              ? [
-                  {
-                    name: `${collectionKey}_history`,
-                    restore_with: {
-                      selector: "full_history",
-                      cli_flag: "--full-history",
-                      sdk_option: "fullHistory",
-                      mcp_option: "full",
-                    },
-                  },
-                ]
-              : [],
-          },
-        }),
+    ...renderAnnotationMutationReceipts(
+      collectionKey,
+      mutation,
+      historyOmitted,
+    ),
   } as AnnotationCommandResult<TKey, TEntry>;
 }
