@@ -6,23 +6,26 @@ status: closed
 priority: 1
 tags[5]: "area:contracts","area:sdk",recovery,review-feedback,testing
 created_at: "2026-08-27T20:29:24.256Z"
-updated_at: "2026-08-28T05:37:07.251Z"
-closed_at: "2026-08-28T05:37:06.555Z"
-completed_at: "2026-08-28T05:37:06.555Z"
+updated_at: "2026-08-28T05:50:10.852Z"
+closed_at: "2026-08-28T05:50:10.171Z"
+completed_at: "2026-08-28T05:50:10.171Z"
 author: "harness:codex"
 acceptance_criteria: Every completed task terminates in a non-refusal output; successful outputs reject refusal-only metadata; every corrected retry binds to the refusal it recovers; adversarial parser and replay regressions pass
 parent: pm-f05lsg
 risk: high
 confidence: high
 severity: high
-resolution: "Enforced complete refusal-recovery topology, terminal-success semantics, and refusal metadata exclusivity in the public transcript parser and replay contract."
-expected_result: The public SDK transcript contract cannot represent an unsuccessfully terminated completed task or contradictory refusal metadata.
-actual_result: "The reopened correction interval was recorded in append-only order (open, claim/in_progress, evidence, close/release) so live lifecycle state remains reconcilable without rewriting prior history. The full code, coverage, static-quality, and fresh-directory acceptance evidence is attached before closure."
+resolution: "Enforced complete transcript recovery topology and reconciled review lifecycles, with typed verification edges connecting every explicitly cited correction owner."
+expected_result: "The public SDK transcript contract cannot represent an unsuccessfully terminated completed task or contradictory refusal metadata, and its reviewed correction evidence is represented by matching typed graph relationships."
+actual_result: "Transcript invariants remain fully enforced; the final review lifecycle is append-only and all three explicitly cited correction owners are connected by verifies edges. Exact graph composition now passes with 1,342 prose-edge gaps against the immutable 1,343 ceiling."
 component: sdk-output-contracts
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,verifies,"2026-08-27T20:29:24.256Z","harness:codex","cli:create:dep",detected
   pm-o360q6,recurs_from,"2026-08-27T20:29:24.256Z","harness:codex","cli:create:dep",detected
-comments[11]{created_at,author,text}:
+  pm-ea1yh2,verifies,"2026-08-28T05:49:37.364Z","harness:codex","cli:update:dep",detected
+  pm-pz49xc,verifies,"2026-08-28T05:49:37.364Z","harness:codex","cli:update:dep",detected
+  pm-wanwyc,verifies,"2026-08-28T05:49:37.364Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-08-27T20:29:24.256Z","harness:codex","Duplicate check evidence: all-status searches for terminal refusal completion, refusal metadata on successful transcripts, and retry recovery binding found the canonical pm-f05lsg/pm-8pnj lineage plus closed precursor pm-o360q6, but no item covering this combined terminal-topology recurrence. Review sources: Greptile and CodeRabbit on PR #1133 head baae93c."
   "2026-08-27T21:13:27.651Z","harness:codex","Evidence 2026-08-27: focused parser/error-guidance/replay suite passed 74/74 tests. Repository exact coverage passed 8,067/8,067 tests with statements 59,914/59,914, branches 45,102/45,102, functions 12,459/12,459, and lines 57,696/57,696. The versioned replay passes five completed tasks, 14 steps, two executable retries, and a 4,349-token composite ceiling at digest sha256:0eeb3296a4bcd5edeb13f6488ae0ebc806adc96b6caa89d87a0f528d37af5c4e."
   "2026-08-27T21:22:06.939Z","harness:codex","Exact-head recurrence 2026-08-27 (Greptile review thread PRRT_kwDORSgRDc6c-7LC): verified valid. Terminal-success alone does not prove recovery closure because an earlier refusal can be followed by an unrelated success without recovery_for. Extend the existing terminal-recovery issue, rather than creating a duplicate, so every refusal in a completed task must have a later successful recovery edge; add the missing adversarial parser case and rerun replay plus exact coverage."
@@ -34,6 +37,8 @@ comments[11]{created_at,author,text}:
   "2026-08-28T03:22:26.322Z","harness:codex","Review wording correction: the changelog is generated from PM titles. Updated this canonical title to state the implemented behavior: completed transcripts require terminal success, mutually exclusive refusal metadata, and an explicit later successful recovery for every refusal. No implementation or historical evidence changed."
   "2026-08-28T05:09:45.737Z","harness:codex","Append-only lifecycle reconciliation: CodeRabbit correctly identified the historical sequence at indices 16-20 where resolution was written after release and the item was reopened before a fresh claim. This ownership interval records the immutable mismatch explicitly and will end with evidence, close, and release in the correct order; tracker history is not edited directly."
   "2026-08-28T05:36:52.782Z","harness:codex","Lifecycle reconciliation evidence: only pm-pz49xc, pm-ea1yh2, pm-wanwyc, and pm-wa39rl were in progress during this correction round. All implementation and verification evidence is now recorded before the forthcoming close/release mutations, preserving canonical append-only ordering."
+  "2026-08-28T05:49:42.112Z","harness:codex","Hosted TDD evidence: graph-composition observed 1,345 prose-edge gaps against the 1,343 ceiling because the lifecycle evidence named the three correction owners without typed edges. Added verifies edges to pm-pz49xc, pm-ea1yh2, and pm-wanwyc; the exact local graph gate must return at or below the ratchet before re-closing."
+  "2026-08-28T05:50:05.894Z","harness:codex","Final graph evidence: exact graph-composition passes with 1,342 prose-edge gaps at ceiling 1,343 (explicit 1,215; implicit 127), reducing the hosted failure by three without changing the ratchet or adding generic related edges."
 learnings[2]{created_at,author,text}:
   "2026-08-27T21:13:28.188Z","harness:codex","A task-level completed boolean is insufficient evidence of successful completion: transcript validity must require a successful terminal step, mutually exclusive refusal metadata, and an explicit recovery_for edge for every retry."
   "2026-08-28T05:36:52.276Z","harness:codex",Append-only lifecycle recovery should create an explicit later work interval and close it in canonical order; never rewrite historical state to hide a prior mismatch.
@@ -92,7 +97,7 @@ test_runs[4]:
 docs[2]{path,scope,note}:
   docs/agent-task-transcripts.json,project,bound executable unknown-option recovery
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,terminal task and receipt integrity contract
-close_reason: "The correction interval is complete and its claim, evidence, close, and release sequence is recorded append-only after all validation passed."
+close_reason: Typed verification edges now match every correction-owner citation; graph composition passes below its immutable ceiling and terminal transcript/lifecycle evidence remains complete.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened
