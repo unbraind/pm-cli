@@ -29215,7 +29215,7 @@
       "required": []
     },
     {
-      "description": "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
+      "description": "List or add learnings on a pm item. Use options.add to capture a learning/insight, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing learnings.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -30371,7 +30371,7 @@
       "required": []
     },
     {
-      "description": "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
+      "description": "List or add structured notes on a pm item. Use options.add to append a note, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing notes.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [

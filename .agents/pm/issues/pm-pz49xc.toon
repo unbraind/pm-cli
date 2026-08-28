@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-28T01:06:15.788Z"
-updated_at: "2026-08-28T01:46:34.192Z"
-closed_at: "2026-08-28T01:46:07.515Z"
-completed_at: "2026-08-28T01:46:07.515Z"
+updated_at: "2026-08-28T03:21:31.929Z"
+closed_at: "2026-08-28T03:21:31.222Z"
+completed_at: "2026-08-28T03:21:31.222Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "CLI transport report retains maximum RSS as diagnostic evidence and adds an explicit median RSS admission value over the measured processes; committed RSS budgets are unchanged; comparison uses the median plus a fixed 512 KiB measurement-noise margin; one high outlier and page-level linked-harness variance pass; a persistent median above the budget plus margin fails; missing RSS remains fail-closed when a budget requires it; docs explain the policy; focused tests, live gate, linked receipts, and exact repository coverage pass at 100/100/100/100."
@@ -26,12 +26,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-cg1sjb,discovered_from,"2026-08-28T01:06:15.788Z","harness:codex","cli:create:dep",detected
   pm-ea1yh2,discovered_from,"2026-08-28T01:06:15.788Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,implements,"2026-08-28T01:06:15.788Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-28T01:06:15.788Z","harness:codex","Duplicate-check evidence: all-status searches for transport floor RSS noise, CLI transport flake, and peak RSS gate found canonical owner pm-yse5dt and timing-noise issue pm-cg1sjb. pm-cg1sjb explicitly retained strict maximum RSS and only repaired SDK timing admission; pm-yse5dt records load-sensitive latency misses but no RSS distribution policy. No open or closed item owns CLI-floor RSS sample admission. Reproduction is recorded on pm-ea1yh2 linked runs."
   "2026-08-28T01:07:18.918Z","harness:codex","TDD red: focused CLI transport-floor suite failed exactly on the missing admission policy. A report with median RSS 1000 and one max outlier 1200 still produced 'get: peak RSS 1200 > 1000'; 6 tests passed and the new negative control failed. Command: node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts."
   "2026-08-28T01:20:15.587Z","harness:codex","Implementation evidence: scripts/bench/cli-transport-floor.mjs now reports median_peak_rss_bytes over three measured post-warmup processes, retains max_peak_rss_bytes as a diagnostic, admits RSS against the unchanged committed budget by median, and fails closed when a required median is unavailable. The renderer and performance guide explain that one outlier is tolerated while a majority persistent increase fails."
   "2026-08-28T01:33:56.662Z","harness:codex","Second TDD red from the linked-test harness: median admission correctly removed isolated max-sample failures, but two repeated medians still exceeded the unchanged get/claim budgets by only 105 KiB to 238 KiB; the linked live check and its enclosing static gate both failed while all functional gates and exact coverage passed. New negative controls required the exact budget plus 512 KiB to pass and the next byte to fail; before implementation, 2 of 7 focused tests failed. The fixed 512 KiB measurement margin is 0.31-0.33 percent of these RSS budgets and does not alter their ratchet values."
   "2026-08-28T01:46:03.067Z","harness:codex","Final linked-test evidence: pm test pm-pz49xc --run --progress passed all 4/4 commands in one terminal run: focused transport-floor suite 7/7, live six-operation floor, full 585-file 8076-test exact coverage, and CI=1 repository static quality. The prior failed receipts remain as TDD/reproduction provenance; the terminal rerun has zero assertion, infra, trust, timeout, or empty-run failures."
+  "2026-08-28T03:21:30.660Z","harness:codex","Review lifecycle reconciliation: closeout metadata was appended after the previous release event without a fresh ownership interval. This corrective append-only interval reacquires ownership, preserves the transport-floor repair and its exact passing evidence, and restores an unambiguous terminal lifecycle."
 notes[2]{created_at,author,text}:
   "2026-08-28T01:20:16.054Z","harness:codex","Verification snapshot 2026-08-28: focused tests 7/7 passed; live six-operation CLI transport-floor check passed; CI=1 pnpm quality:static passed including repository assurance, public SDK surface, graph gates, and the transport floor; full coverage passed 585 files and 8076 tests at exact 100% statements 59934/59934, branches 45128/45128, functions 12465/12465, lines 57716/57716."
   "2026-08-28T01:46:03.517Z","harness:codex","Final admission contract: discard one warm-up; measure three fresh isolated processes; admit median peak RSS against the immutable command budget plus 524288 bytes; retain maximum peak RSS for diagnostics; refuse unavailable median when an RSS budget exists. This margin is deliberately explicit and bounded rather than hidden in regenerated budgets."
@@ -106,7 +107,7 @@ test_runs[2]:
       "CI=1 pnpm quality:static",tracker,tracker,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/performance/cli-transport-overhead.md,project,Measured RSS admission policy
-close_reason: "Implemented median RSS admission with an explicit 512 KiB page-noise bound and unchanged budget ratchets; negative controls, live six-command benchmark, exact coverage, and repository-wide static quality all pass in the terminal linked-test run."
+close_reason: CLI transport-floor repair remains complete; append-only review reconciliation restored ownership provenance for the later closeout metadata.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

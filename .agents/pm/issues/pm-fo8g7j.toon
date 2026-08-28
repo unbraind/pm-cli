@@ -1,14 +1,14 @@
 id: pm-fo8g7j
-title: Unknown-option refusals report the first valid provided flag as the failing surface
+title: Unknown-option refusals identify the actual rejected flag and fail closed at delimiters
 description: "A real invocation of pm search with the unsupported --include-body option emits code=unknown_option and correctly names --include-body in its title/detail, but refusal.surface is --status because the shared envelope builder selects the first provided field. That machine-readable contradiction sends SDK, MCP, and CLI agents toward a valid option instead of the rejected one and undermines recovery-closure scoring. Derive the refused surface and rejected value from the actual unknown-option diagnostic while preserving redaction and fallback behavior."
 type: Issue
 status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,recovery,structured-errors
 created_at: "2026-08-27T16:23:50.108Z"
-updated_at: "2026-08-27T22:53:17.748Z"
-closed_at: "2026-08-27T22:53:17.166Z"
-completed_at: "2026-08-27T22:53:17.166Z"
+updated_at: "2026-08-28T03:22:38.904Z"
+closed_at: "2026-08-28T03:22:38.302Z"
+completed_at: "2026-08-28T03:22:38.302Z"
 author: "harness:codex"
 acceptance_criteria: "unknown_option refusal.surface equals the actual rejected option regardless of valid options that precede it; refusal.rejected_value and recovery metadata remain internally consistent and redaction-safe; CLI JSON, SDK normalization, and executable recovery-corpus tests cover mixed valid-plus-unknown option orderings; The regression is represented in task-transcript and refusal-closure assurance"
 parent: pm-f05lsg
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-h8tpeh,recurs_from,"2026-08-27T16:23:50.108Z","harness:codex","cli:create:dep",detected
   pm-srns,discovered_from,"2026-08-27T16:23:50.108Z","harness:codex","cli:create:dep",detected
   pm-8pnj,implements,"2026-08-27T16:59:03.340Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-27T16:23:50.108Z","harness:codex","Duplicate check evidence: complete 2,563-item all-status census plus AND-mode unknown option refusal surface provided fields and exact refusal surface searches found no matching issue. Reproduction: pm search with valid --status/--limit/--json plus unsupported --include-body reports refusal.surface=--status while title/detail identify --include-body."
   "2026-08-27T16:25:47.895Z","harness:codex","Start: correct structured unknown-option refusals so surface and rejected_value identify the actual unsupported option even when valid flags precede it; cover the real CLI JSON path and include the regression in transcript/recovery assurance."
   "2026-08-27T16:53:58.179Z","harness:codex","Relationship rationale: pm-fo8g7j recurs_from pm-h8tpeh because both concern contradictory machine refusal identities; it was discovered_from pm-srns while replaying the uniform output contract, and parent pm-f05lsg owns the recovery-closure outcome."
@@ -28,6 +28,7 @@ comments[8]{created_at,author,text}:
   "2026-08-27T21:13:31.637Z","harness:codex","Corrective pre-close evidence 2026-08-27: error guidance now scans every mentioned option, excludes the full root-global option set, accepts inline --flag=value forms, preserves explicit producer corrections, and only advertises shell-free unknown-option removal when unambiguous. The focused 46-test error-guidance suite, 74-test transcript suite, canonical replay, and repository exact coverage all pass."
   "2026-08-27T22:46:11.813Z","harness:codex","Review remediation evidence (CodeRabbit PR #1133 thread PRRT_kwDORSgRDc6c_DrC): automatic unknown-option recovery now fails closed whenever normalized argv contains the explicit -- boundary, so removing an option can never reinterpret or discard a literal argument tail. The adversarial search --bogus -- literal-filter case proves both suggested_retry and suggested_retry_args stay absent. Linked test passed 55/55; combined focused suite passed 74/74; full repository coverage passed 585 files and 8067 tests at exact 100/100/100/100 (59919 statements, 45114 branches, 12461 functions, 57701 lines). Agent-task token gate remains 5/5 tasks, 14 steps, 2 retries, 4349 estimated tokens."
   "2026-08-27T22:53:16.689Z","harness:codex","Final black-box acceptance proof before closure: in a fresh mktemp workspace, the built CLI initialized a tracker and rejected pm --json search agent --bogus -- literal-filter with exit 2/code unknown_option while omitting both recovery.suggested_retry and recovery.suggested_retry_args. The temporary workspace was then removed."
+  "2026-08-28T03:22:37.706Z","harness:codex","Review wording correction: the changelog is generated from PM titles. Updated this canonical title to state the implemented behavior: refusal.surface identifies the actual unsupported flag after preceding valid options, while automatic recovery is omitted at an explicit delimiter. No implementation or historical evidence changed."
 learnings[2]{created_at,author,text}:
   "2026-08-27T17:34:24.098Z","harness:codex",Refusal attribution must prefer an explicit option named by the producer and present in normalized arguments; selecting the first dashed token confuses valid global flags with the failing surface.
   "2026-08-27T21:13:32.251Z","harness:codex","Recovery identity and recovery execution are one contract: the CLI must identify the true refused option after global flags and only publish suggested_retry_args when removing that option cannot consume an ambiguous positional value."
@@ -60,7 +61,7 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/agent-task-transcripts.json,project,real unknown-option regression workflow
-close_reason: "Completed delimiter-safe unknown-option recovery with adversarial, temporary-workspace, linked-test, and exact repository coverage proof."
+close_reason: Unknown-option refusal attribution and delimiter-safe recovery remain fully implemented and verified; the canonical generated-changelog title is now accurate.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

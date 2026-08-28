@@ -552,7 +552,7 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_notes",
     description:
-      "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
+      "List or add structured notes on a pm item. Use options.add to append a note, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing notes.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),
@@ -560,7 +560,7 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_learnings",
     description:
-      "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
+      "List or add learnings on a pm item. Use options.add to capture a learning/insight, options.ifAbsent=true for retry-safe author-and-text deduplication, or omit options.add to list existing learnings.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),
