@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,evidence-integrity,github,linked-tests,tdd
 created_at: "2026-08-28T14:43:01.407Z"
-updated_at: "2026-08-29T12:50:16.138Z"
-closed_at: "2026-08-29T12:50:15.479Z"
-completed_at: "2026-08-29T12:50:15.479Z"
+updated_at: "2026-08-29T13:28:14.071Z"
+closed_at: "2026-08-29T13:27:12.444Z"
+completed_at: "2026-08-29T13:27:12.444Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Add an SDK-owned executed-test assertion primitive and declarative minimum-count field; recognize supported runner receipts without brittle prose-only heuristics; fail zero-test filtered commands closed; preserve explicit non-test smoke commands; add unit, integration, CLI, MCP/schema, history, Node runner, and temp-workspace acceptance coverage."
@@ -29,7 +29,7 @@ customer_impact: "Renamed or mistyped test filters silently turn immutable PM ve
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4i73,discovered_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
   pm-m0b7h8,recurs_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
-comments[16]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-08-28T14:43:01.407Z","harness:codex","Duplicate check: complete all-status searches for test-name-pattern,zero tests,linked-test no-op success,GH-982,and test meaningfulness found pm-m0b7h8 for no-op linked-test mutation and pm-4i73 for meaningfulness,but no item owning zero-execution runner receipts. GitHub issue #1138 is a later recurrence with a distinct execution boundary."
   "2026-08-28T23:24:25.479Z","harness:codex","Verification evidence: linked-test execution and connected recovery regressions passed, including zero-run negative controls; full coverage passed 8,099 tests at exact 100/100/100/100."
   "2026-08-29T02:22:16.706Z","harness:codex","Review-round evidence: filtered linked-test success now requires a recognized positive runner receipt, so a dot-only reporter cannot certify execution and fails with missing_positive_execution_receipt. Shared structured-entry grammar removes duplicated classifiers; negative controls and exact coverage pass."
@@ -46,6 +46,9 @@ comments[16]{created_at,author,text}:
   "2026-08-29T11:50:01.252Z","harness:codex","CodeRabbit exact-head finding: positive Node spec reporter receipts accept the Unicode info prefix, but the zero-test patterns accept only hash or unprefixed forms. An unfiltered successful command emitting info-prefixed tests 0 and pass 0 can therefore bypass fail-on-empty-test-run. Adding a negative control before implementation."
   "2026-08-29T12:24:43.131Z","harness:codex","TDD evidence: an unfiltered successful command emitting Unicode info-prefixed tests 0 and pass 0 bypassed fail-on-empty-test-run and was recorded passed. Empty receipt patterns now share reporter prefix support with positive receipts. Focused graph, linked-test, command, and connected suites passed 106/106; full coverage passed 8,120 tests at exact 100/100/100/100."
   "2026-08-29T12:50:14.726Z","harness:codex","Final closure evidence: info-prefixed zero-count receipts fail closed symmetrically with positive Node spec receipt parsing. Linked acceptance passed 15/15, repository coverage passed 8,121/8,121 at exact 100/100/100/100, and the full static assurance pipeline passed."
+  "2026-08-29T13:08:17.333Z","harness:codex","CodeRabbit exact-head maintainability finding: the missing-positive-receipt and real Node spec reporter tests both spawn linked-test processes but omit the explicit 60-second timeout used by adjacent cases. Reopened for timeout parity and focused verification."
+  "2026-08-29T13:12:31.926Z","harness:codex","Review follow-up: added explicit 60-second Vitest bounds to the two process-spawning linked-test receipt regressions. Focused lint and the connected recovery suite pass."
+  "2026-08-29T13:27:09.851Z","harness:codex","Final local evidence: exact coverage passed 586 files and 8,122 tests at 100/100/100/100; pnpm quality:static passed; linked acceptance passed 1/1 with the two process-spawning regressions explicitly bounded at 60 seconds."
 learnings[3]{created_at,author,text}:
   "2026-08-29T05:25:27.756Z","harness:codex","A pass count is not an execution count: filtered-run integrity must use explicit executed-test evidence and expose missing positive receipts through the public refusal contract."
   "2026-08-29T07:43:04.604Z","harness:codex",Runner filter safety must operate on normalized shell command text; inspecting raw whitespace boundaries misses quoted arguments that the shell still passes as real flags.
@@ -61,7 +64,7 @@ files[8]{path,scope,note}:
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:06.723Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
-test_runs[6]:
+test_runs[7]:
   - run_id: test-all-local-mtdr7pg8-qj7z9n
     kind: test-all
     status: passed
@@ -136,10 +139,22 @@ test_runs[6]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
-docs[2]{path,scope,note}:
+  - run_id: test-local-mteez8wg-wuxpk6
+    kind: test
+    status: passed
+    started_at: "2026-08-29T13:26:11.699Z"
+    finished_at: "2026-08-29T13:26:23.440Z"
+    recorded_at: "2026-08-29T13:26:23.440Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for linked-test evidence integrity
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal closure contract evidence
-close_reason: "Linked-test receipt parsing now detects Unicode info-prefixed zero-test runs without weakening positive execution evidence; acceptance, coverage, and static gates pass."
+close_reason: "Review follow-up complete: process-spawning receipt regressions are explicitly bounded and all focused, linked, exact coverage, and static assurance gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

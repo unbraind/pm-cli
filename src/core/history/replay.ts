@@ -216,6 +216,18 @@ function supportedExplicitHistoryItemHashVersions(
   ];
 }
 
+/** Return whether an explicit hash epoch cannot be replayed by this build. */
+function isUnsupportedExplicitHistoryItemHashVersion(
+  version: HistoryEntry["item_hash_version"],
+): boolean {
+  return (
+    version !== undefined &&
+    !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+      version,
+    )
+  );
+}
+
 /** Select the hash epochs allowed for one entry under an authoritative stream marker. */
 function historyEntryHashCandidates(
   explicitVersion: HistoryEntry["item_hash_version"],
@@ -243,12 +255,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
-    if (
-      explicitVersion !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-        explicitVersion,
-      )
-    ) {
+    if (isUnsupportedExplicitHistoryItemHashVersion(explicitVersion)) {
       errors.push(
         `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
       );
@@ -472,12 +479,8 @@ export function reanchorHistoryEntries(
   entries: HistoryEntry[],
   itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
 ): ReanchorResult {
-  const unsupportedIndex = entries.findIndex(
-    (entry) =>
-      entry.item_hash_version !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-        entry.item_hash_version,
-      ),
+  const unsupportedIndex = entries.findIndex((entry) =>
+    isUnsupportedExplicitHistoryItemHashVersion(entry.item_hash_version),
   );
   if (unsupportedIndex >= 0) {
     throw new TypeError(

@@ -705,11 +705,9 @@ describe("context integrity recovery", () => {
     });
   });
 
-  it(
-    "fails a filtered linked test when the runner reports zero executed tests",
-    async () => {
-      const [unquoted, doubleQuoted, singleQuoted, infoPrefixed] =
-        await runLinkedTests(
+  it("fails a filtered linked test when the runner reports zero executed tests", async () => {
+    const [unquoted, doubleQuoted, singleQuoted, infoPrefixed] =
+      await runLinkedTests(
         [
           {
             command:
@@ -734,21 +732,14 @@ describe("context integrity recovery", () => {
         30,
         { failOnEmptyTestRun: true },
       );
-      for (const result of [
-        unquoted,
-        doubleQuoted,
-        singleQuoted,
-        infoPrefixed,
-      ]) {
-        expect(result).toMatchObject({
-          status: "failed",
-          failure_category: "empty_run",
-          error: expect.stringContaining("zero"),
-        });
-      }
-    },
-    60_000,
-  );
+    for (const result of [unquoted, doubleQuoted, singleQuoted, infoPrefixed]) {
+      expect(result).toMatchObject({
+        status: "failed",
+        failure_category: "empty_run",
+        error: expect.stringContaining("zero"),
+      });
+    }
+  }, 60_000);
 
   it("requires positive runner evidence for filtered linked tests", async () => {
     const [unproven, proven] = await runLinkedTests(
@@ -771,7 +762,7 @@ describe("context integrity recovery", () => {
       error: expect.stringContaining("missing_positive_execution_receipt"),
     });
     expect(proven).toMatchObject({ status: "passed" });
-  });
+  }, 60_000);
 
   it("does not treat arbitrary bare -t arguments as test-name filters", () => {
     expect(
@@ -802,23 +793,19 @@ describe("context integrity recovery", () => {
     );
     expect(result).toMatchObject({ status: "passed" });
     expect(`${result.stdout}\n${result.stderr}`).toMatch(/ℹ\s+tests\s+1/u);
-  });
+  }, 60_000);
 
-  it(
-    "does not treat zero passes as empty when a runner reports executed tests",
-    async () => {
-      const [result] = await runLinkedTests(
-        [
-          {
-            command:
-              "printf '# tests 1\\n# pass 0\\n' # --test-name-pattern present",
-            scope: "project",
-          },
-        ],
-        30,
-      );
-      expect(result).toMatchObject({ status: "passed" });
-    },
-    60_000,
-  );
+  it("does not treat zero passes as empty when a runner reports executed tests", async () => {
+    const [result] = await runLinkedTests(
+      [
+        {
+          command:
+            "printf '# tests 1\\n# pass 0\\n' # --test-name-pattern present",
+          scope: "project",
+        },
+      ],
+      30,
+    );
+    expect(result).toMatchObject({ status: "passed" });
+  }, 60_000);
 });
