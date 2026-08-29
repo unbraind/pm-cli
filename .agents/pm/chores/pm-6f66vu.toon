@@ -6,21 +6,25 @@ status: closed
 priority: 2
 tags[3]: dependencies,eslint,quality
 created_at: "2026-08-29T21:45:03.972Z"
-updated_at: "2026-08-29T22:09:59.622Z"
+updated_at: "2026-08-29T22:20:07.898Z"
 closed_at: "2026-08-29T22:09:59.114Z"
 completed_at: "2026-08-29T22:09:59.114Z"
 author: "harness:codex"
 acceptance_criteria: "eslint-plugin-unicorn is pinned to 74.0.0 and the lockfile resolves the intended artifact; strict ESLint, repo-wide quality gates, exact 100 percent coverage, and packed npx/bunx acceptance pass; remaining dependency drift is either upgraded or backed by a live canonical PM owner"
 parent: pm-u9d0
+resolution: completed
+expected_result: "Compatible Unicorn 74 is adopted without lint, quality, coverage, security, or packed-consumer regressions."
+actual_result: "Unicorn 74.0.0 is resolved; repo-wide lint/static gates, exact coverage, high-severity audit, and packed npx/bunx acceptance all pass."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,discovered_from,"2026-08-29T21:45:03.972Z","harness:codex","cli:create:dep",detected
   pm-vwuidf,recurs_from,"2026-08-29T21:45:03.972Z","harness:codex","cli:create:dep",detected
   pm-7gxbl8,recurs_from,"2026-08-29T22:02:41.359Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-29T21:45:03.972Z","harness:codex","Duplicate check: complete all-status strict-read corpus contained 2,601 items with no omissions, truncation, or continuation; exact searches for eslint-plugin-unicorn 74 found only historical pm-7gxbl8 and closed 2026-08-29 refresh pm-vwuidf, neither owns this newly published compatible release."
   "2026-08-29T21:46:23.071Z","harness:codex","Compatibility evidence: eslint-plugin-unicorn 74.0.0 declares Node >=22 and ESLint >=10.4; this repository declares Node >=22.18 and resolves ESLint 10.9.1. The first strict ESLint run passed with zero warnings, so the major introduces no active rule regressions."
   "2026-08-29T21:56:08.204Z","harness:codex","Gate diagnosis: the first combined lint run used the linked-test default schema sandbox, so repository-static-quality correctly saw zero governed terminal defects and failed closed. The defect-evidence gate passes against the real tracker with 89 governed terminal defects and zero findings. The lint link now explicitly declares tracker context; code/style ESLint, both duplication scans, exact coverage, packed npx/bunx smoke, and audit all passed."
   "2026-08-29T22:09:55.555Z","harness:codex","Final local evidence: eslint-plugin-unicorn 74.0.0 resolves with reviewed registry integrity; strict ESLint, both zero-duplication scans, the entire repository static-quality suite, graph composition, and record integrity pass. Exact coverage passed all 8,124 tests at 60,171/60,171 statements, 45,397/45,397 branches, 12,514/12,514 functions, and 57,941/57,941 lines. The packed local artifact passed all npx and bunx package/bin smokes across 13 packages, and pnpm audit reports no known vulnerabilities."
+  "2026-08-29T22:20:07.898Z","harness:codex","Evidence precision correction: the linked command used --audit-level high, so it proves there are no high-or-critical vulnerabilities at that threshold; it does not prove the absence of lower-severity advisories. The registry security-alert census and tracked secret scan are separate evidence surfaces."
 learnings[1]{created_at,author,text}:
   "2026-08-29T22:09:55.967Z","harness:codex",Repository-wide linked quality tests must declare pm_context_mode=tracker when their gates intentionally inspect the real PM corpus; schema isolation correctly fails closed because it contains no governed historical evidence.
 files[2]{path,scope,note}:
