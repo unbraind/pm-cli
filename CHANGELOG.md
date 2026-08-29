@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- GH-1144: hash-only merge receipts contradict report output and cannot reconcile truthfully ([pm-z1z96w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z1z96w.toon))
 - GH-1138: linked test name filters can pass after executing zero tests ([pm-ntnv4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ntnv4k.toon))
+- GH-1144: hash-only merge receipts contradict report output and cannot reconcile truthfully ([pm-z1z96w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z1z96w.toon))
 - GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
 - GH-1146/1147: external blockers remain stale and validation recommends deleting them ([pm-yhle2e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yhle2e.toon))
 - GH-1136: npm 12 object-form npm pack receipts break registry package installs ([pm-xrjy8o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xrjy8o.toon))

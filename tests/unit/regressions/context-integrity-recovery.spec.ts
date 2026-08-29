@@ -754,7 +754,7 @@ describe("context integrity recovery", () => {
           scope: "project",
         },
       ],
-      30,
+      10,
     );
     expect(unproven).toMatchObject({
       status: "failed",
