@@ -1,0 +1,94 @@
+id: pm-mwhv33
+title: Refresh @sentry/node 10.72 with packed SDK and release proof
+description: "Adopt registry-current @sentry/node 10.72.0 only after strict NodeNext packed-consumer, executable, telemetry, security, exact coverage, and release-gate verification; preserve the separately canonical npm-package-arg 14 and TypeScript 7 major deferrals."
+type: Chore
+status: closed
+priority: 2
+tags[5]: dependencies,packed-consumer,release-gate,sentry,telemetry
+created_at: "2026-08-29T17:35:05.919Z"
+updated_at: "2026-08-29T18:16:30.921Z"
+closed_at: "2026-08-29T18:16:30.396Z"
+completed_at: "2026-08-29T18:16:30.396Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve @sentry/node 10.72.0 without older Sentry runtime residue; the strict packed NodeNext SDK consumer and npx/bunx executable gates pass from temporary directories; Sentry telemetry, audit, security, typecheck, static assurance, and exact 100/100/100/100 coverage pass; pnpm outdated reports only the canonical npm-package-arg 14 and TypeScript 7 major deferrals"
+value: "Keep the public SDK observability runtime current without regressing declarations, startup isolation, telemetry, or release safety."
+outcome: "A reviewed, reproducible 10.72 adoption included in the single 2026.8.29 release."
+why_now: The post-merge live dependency census found 10.72.0 as the only compatible unowned update before today's release.
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Safely upgraded the public Sentry runtime to 10.72.0 with exact packed SDK, npx, bunx, coverage, audit, and observability proof."
+expected_result: "Sentry 10.72.0 resolves without older runtime residue and passes packed NodeNext consumer, executable, coverage, audit, telemetry, and security gates."
+actual_result: "The 10.72.0 graph removed obsolete transformer/parser production dependencies, 92 focused tests and all 8,124 repository tests passed at exact 100/100/100/100, packed TypeScript/npx and fresh-directory npx/bunx execution passed, audit found zero vulnerabilities, and the live Sentry/telemetry gate passed after the already-fixed PM-CLI-39 group was correctly resolved."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,discovered_from,"2026-08-29T17:35:05.919Z","harness:codex","cli:create:dep",detected
+  pm-fb0lkg,supersedes,"2026-08-29T17:35:05.919Z","harness:codex","cli:create:dep",detected
+  pm-3lhth4,verifies,"2026-08-29T18:01:52.070Z","harness:codex","cli:update:dep",detected
+  pm-do5b,verifies,"2026-08-29T18:03:39.867Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,verifies,"2026-08-29T18:03:39.867Z","harness:codex","cli:update:dep",detected
+comments[5]:
+  - created_at: "2026-08-29T17:35:05.919Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence 2026-08-29: all-status searches for @sentry/node 10.72.0 and Sentry dependency refreshes found the closed packed-consumer lineage pm-fb0lkg and older refresh items, but no item owns 10.72.0. Live pnpm outdated identifies 10.72.0 as the sole compatible candidate; npm-package-arg 14 and TypeScript 7 remain separately owned by pm-ksr40d and pm-do5b."
+  - created_at: "2026-08-29T17:47:56.651Z"
+    author: "harness:codex"
+    text: "Acceptance observation: focused Sentry/package tests and exact repository coverage passed, but the first live best-effort gate failed closed on PM-CLI-39. Full live event inspection mapped it to canonical host-fault umbrella pm-3lhth4 and the already-delivered v2026.8.28 raw-tar replacement. The latest event was from release 2026.8.21 and no current-release event exists; the stale group will be resolved with recurrence reopening preserved, then the identical linked command rerun."
+    edited_at: "2026-08-29T18:01:51.561Z"
+  - created_at: "2026-08-29T17:52:03.037Z"
+    author: "harness:codex"
+    text: "Implementation evidence 2026-08-29: official @sentry/node 10.72.0 supports Node >=18 and preserves the exported Node declaration surface PM consumes. The resolved graph contains only Sentry 10.72.0 runtime packages and removes the prior @apm-js-collab transformer/tracing-hooks, meriyah, astring, semifies, and source-map production chain. TDD red proved the 10.72 ratchet failed against 10.71 before the update. Green proof: 92 focused tests; 8,124 full tests at exact statements 60,169/60,169, branches 45,397/45,397, functions 12,514/12,514, lines 57,939/57,939; packed artifact; strict TypeScript/npx package smoke across 13 packages; fresh-directory npx and bunx both returned 2026.8.28; zero npm audit vulnerabilities; Sentry critical=0/high=0 and telemetry error rate 1.6% with zero missing error codes. pnpm outdated now leaves only canonical incompatible majors npm-package-arg 14 (pm-ksr40d) and TypeScript 7 (pm-do5b)."
+  - created_at: "2026-08-29T18:00:04.253Z"
+    author: "harness:codex"
+    text: "Graph-gate correction: the first static-quality run passed typecheck, ESLint, both jscpd zero-clone scans, changelog reproducibility, and the substantive SDK/CLI assurances, then correctly blocked because two newly introduced generic related edges exceeded the ratcheted ceiling and created one prose-edge mismatch. Replaced both generic edges with verifies: this item proves that adopting Sentry 10.72 leaves the separately owned npm-package-arg 14 and TypeScript 7 deferrals intact."
+  - created_at: "2026-08-29T18:16:29.893Z"
+    author: "harness:codex"
+    text: "Final local-quality evidence 2026-08-29: after restoring both typed compatibility-deferral verification edges, the complete non-interactive pnpm lint suite passed. ESLint reported zero warnings, both jscpd scans reported zero clones, repository-static-quality and every SDK/CLI contract/parity/token/refusal gate passed, graph-composition returned prose-edge-gaps exactly at its 1,343 ceiling and record-integrity passed across 56,714 append-only history events. This supplements the already-recorded 8,124-test exact 100/100/100/100 coverage, packed SDK, npx/bunx, audit, Sentry, and telemetry evidence."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,Generated release-facing dependency entry
+  package.json,project,Exact public Sentry runtime pin
+  pnpm-lock.yaml,project,Reproducible Sentry 10.72 dependency graph
+  tests/unit/packages/package-manifest.spec.ts,project,Packed-consumer declaration ratchet
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/packages/package-manifest.spec.ts,project,300,"harness:codex","2026-08-29T17:35:23.401Z",local_mutation,chore/sentry-10-72-packed-consumer
+  "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",project,900,"harness:codex","2026-08-29T17:35:23.903Z",local_mutation,chore/sentry-10-72-packed-consumer
+  node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,project,1500,"harness:codex","2026-08-29T17:35:24.425Z",local_mutation,chore/sentry-10-72-packed-consumer
+  "pnpm smoke:npx",project,600,"harness:codex","2026-08-29T17:49:47.627Z",local_mutation,chore/sentry-10-72-packed-consumer
+test_runs[3]:
+  - run_id: test-local-mteo7ifn-l7gmdx
+    kind: test
+    status: failed
+    started_at: "2026-08-29T17:36:46.955Z"
+    finished_at: "2026-08-29T17:44:45.587Z"
+    recorded_at: "2026-08-29T17:44:45.587Z"
+    passed: 2
+    failed: 1
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/packages/package-manifest.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,schema,schema,source,local_source_ref
+  - run_id: test-local-mteoddg7-ffptd2
+    kind: test
+    status: passed
+    started_at: "2026-08-29T17:48:42.198Z"
+    finished_at: "2026-08-29T17:49:19.063Z"
+    recorded_at: "2026-08-29T17:49:19.063Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",schema,schema,source,local_source_ref
+  - run_id: test-local-mteofc0o-6jvthe
+    kind: test
+    status: passed
+    started_at: "2026-08-29T17:49:48.070Z"
+    finished_at: "2026-08-29T17:50:50.520Z"
+    recorded_at: "2026-08-29T17:50:50.520Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+close_reason: "Adopted @sentry/node 10.72.0 with a single-version runtime graph, reduced production dependency surface, TDD manifest ratchet, exact 100/100/100/100 coverage, strict packed SDK and npx/bunx consumer proof, zero known vulnerabilities, live Sentry/telemetry gate proof, and complete repository static/graph/integrity gates."
+body: ""
