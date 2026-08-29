@@ -5,6 +5,8 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnlyCreateCommand,
+  parseFiles,
+  parseTests,
   runCreate,
   type CreateCommandOptions,
 } from "../../../src/cli/commands/create.js";
@@ -169,6 +171,29 @@ describe("runCreate", () => {
         "open",
       ),
     ).toEqual(["--message", '"Create Task item"']);
+  });
+
+  it("keeps comma-bearing bare create seeds on the stable ambiguity refusal path", () => {
+    expect(() => parseFiles(["README.md,docs/COMMANDS.md"])).toThrow(
+      expect.objectContaining({
+        code: "bare_comma_entry_ambiguous",
+        exitCode: EXIT_CODE.USAGE,
+      }),
+    );
+    expect(() => parseTests(["node -e \"console.log('a,b')\""])).toThrow(
+      expect.objectContaining({
+        code: "bare_comma_entry_ambiguous",
+        exitCode: EXIT_CODE.USAGE,
+      }),
+    );
+    expect(parseFiles([String.raw`path=README\,archive.md`])).toMatchObject({
+      values: [{ path: "README,archive.md" }],
+    });
+    expect(
+      parseTests([String.raw`command=node -e "console.log('a\,b')"`]),
+    ).toMatchObject({
+      values: [{ command: "node -e \"console.log('a,b')\"" }],
+    });
   });
 
   it("preserves literal stdin tokens in transport-decoded options", async () => {
@@ -3261,6 +3286,11 @@ describe("runCreate", () => {
           ],
           options: [
             {
+              key: "audience",
+              values: ["internal", "external"],
+              required: true,
+            },
+            {
               key: "category",
               values: ["feature", "maintenance"],
               required: true,
@@ -3279,7 +3309,7 @@ describe("runCreate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toThrow(
-        'Missing required options --message, --type-option category=<value> for type "Asset"',
+        'Missing required options --message, --type-option audience=<value>, --type-option category=<value> for type "Asset"',
       );
 
       await expect(
@@ -3297,7 +3327,9 @@ describe("runCreate", () => {
           code: "missing_required_option",
           examples: [
             expect.stringContaining("--clear-type-options"),
-            expect.stringContaining("--type-option category=feature"),
+            expect.stringMatching(
+              /--type-option audience=(?:external|internal).*--type-option category=feature/u,
+            ),
           ],
           nextSteps: expect.arrayContaining([
             expect.stringContaining("pm create --help --type Asset"),
@@ -3305,6 +3337,22 @@ describe("runCreate", () => {
           ]),
         },
       });
+      const refusal = await runCreate(
+        baseCreateOptions({
+          type: "Asset",
+          message: undefined,
+          typeOption: undefined,
+        }),
+        { path: context.pmPath },
+      ).catch((error: unknown) => error);
+      if (!(refusal instanceof PmCliError)) {
+        throw new Error("expected required create option refusal");
+      }
+      expect(
+        refusal.context.recovery?.suggested_flags?.filter(
+          (flag) => flag === "--clear-type-options",
+        ),
+      ).toEqual(["--clear-type-options"]);
     });
   });
 

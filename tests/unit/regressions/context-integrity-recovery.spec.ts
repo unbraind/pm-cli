@@ -215,6 +215,16 @@ describe("context integrity recovery", () => {
         resolve: async () => null,
       });
       cleanup.push(disposeUnsupported);
+      const disposeThrowingSupport = registerExternalDependencyResolver({
+        name: "throwing-support",
+        supports: () => {
+          throw new Error("support probe unavailable");
+        },
+        resolve: async () => {
+          throw new Error("excluded resolver must not execute");
+        },
+      });
+      cleanup.push(disposeThrowingSupport);
       const disposeThrowing = registerExternalDependencyResolver({
         name: "throwing",
         supports: () => true,

@@ -12,7 +12,10 @@
 import { isTerminalStatus, normalizeStatusForRegistry } from "./status.js";
 import type { RuntimeStatusRegistry } from "../schema/runtime-schema.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
-import { isExternalDependencyReference } from "./dependency-reference.js";
+import {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "./dependency-reference.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
@@ -62,7 +65,8 @@ export function collectBlockedByIds(
     ) {
       ids.set(
         normalizeItemId(dependencyId),
-        isExternalDependencyReference(dependencyId)
+        isExternalDependencyReference(dependencyId) ||
+          isExternalDependencySourceKind(dependency.source_kind)
           ? dependencyId
           : normalizeItemId(dependencyId),
       );
@@ -151,10 +155,22 @@ function resolveItemBlockersWithIndex(
           ...itemsById.values(),
         ]))
       : collectBlockedByIds(item);
+  const structuredExternalBlockerIds = new Set(
+    (item.dependencies ?? [])
+      .filter(
+        (dependency) =>
+          dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
+          isExternalDependencySourceKind(dependency.source_kind),
+      )
+      .map((dependency) => normalizeItemId(dependency.id)),
+  );
   return blockerIds.map((id) => {
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
-      if (isExternalDependencyReference(id)) {
+      if (
+        isExternalDependencyReference(id) ||
+        structuredExternalBlockerIds.has(normalizeItemId(id))
+      ) {
         return {
           id,
           title: null,

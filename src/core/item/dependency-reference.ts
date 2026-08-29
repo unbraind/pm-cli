@@ -15,3 +15,11 @@ export function isExternalDependencyReference(
     /^(?:github|gitlab|jira|linear):/iu.test(normalized)
   );
 }
+
+/** Return whether dependency provenance explicitly places a target outside the local workspace. */
+export function isExternalDependencySourceKind(
+  sourceKind: string | undefined,
+): boolean {
+  const normalized = sourceKind?.trim().toLowerCase();
+  return normalized === "global" || normalized === "external";
+}

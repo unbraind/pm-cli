@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:health","area:history","area:sdk",cache-integrity,context-integrity,github-1148
 created_at: "2026-08-29T00:20:31.873Z"
-updated_at: "2026-08-29T02:22:37.170Z"
-closed_at: "2026-08-29T02:22:36.644Z"
-completed_at: "2026-08-29T02:22:36.644Z"
+updated_at: "2026-08-29T03:06:34.907Z"
+closed_at: "2026-08-29T03:06:06.037Z"
+completed_at: "2026-08-29T03:06:06.037Z"
 author: "harness:codex"
 acceptance_criteria: "Metadata-mode health preserves the warm-cache fast path when cached hashes agree; A cached hash mismatch is never emitted until the item document and history stream are reread authoritatively; Stale cache evidence is replaced and the final diagnostic reports that a strict confirmation occurred; Cache schema records the runtime history-hash capability and invalidates incompatible envelopes; Regression and performance controls cover false-positive recovery, genuine drift retention, and zero extra rereads on clean cache hits; SDK CLI health validate and temporary-workspace acceptance retain contract parity and exact coverage"
 parent: pm-o2kc
@@ -18,9 +18,9 @@ reporter: GitHub issue #1148
 severity: high
 environment: pm 2026.8.24 and 2026.8.28 on a clean long-lived pm-brief workspace
 repro_steps: "Prime history and metadata caches, restore an older stat-compatible cache state through ordinary git/package operations, then run pm health and compare the hash-mismatch verdict with an authoritative cache-free scan."
-resolution: Health preserves clean metadata-cache performance but authoritatively rereads item sources and content-hashes history before emitting any cached corruption candidate; cache capability versioning invalidates incompatible drift evidence and diagnostics distinguish confirmed from cleared candidates.
-expected_result: "A cache may accelerate a clean verdict but can never originate a corruption verdict; any cached mismatch is confirmed against authoritative item files and history streams, stale evidence is invalidated, and diagnostics explain the confirmation path."
-actual_result: "The reproduced stat-compatible stale metadata cache is cleared by the authoritative fallback with no hash-mismatch warning, while independently corrupted streams remain confirmed and reported."
+resolution: "Fixed: authoritative drift confirmation now reloads current history streams, replaces stale cache evidence, and emits the correct resolved false-positive summary field."
+expected_result: "Metadata cache hits remain fast, but every suspected corruption or writer-version skew is confirmed from fresh item and history evidence before health reports it."
+actual_result: "Fresh-stream regression, linked health acceptance, full exact coverage, static assurance, defect evidence, record integrity, and secret scanning pass."
 component: "SDK health, history drift cache, metadata cache, and diagnostics"
 customer_impact: A false corruption warning can block releases or induce an agent to rewrite correct immutable history.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -28,11 +28,13 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-c90s,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
   pm-o2kc,implements,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
   pm-up22,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-29T00:20:31.873Z","harness:codex","Duplicate check evidence: complete 2596-item all-status strict read had no omissions; corpus-wide cache search found 20 historical or strategic candidates. Closed pm-up22 owns stat-preserving false-clean prevention, closed pm-c90s owns the intentional metadata health fast path, and closed pm-2qahia owns writer-version skew. None owns the new false-corruption confirmation failure reported by GitHub #1148, so this recurrence is canonical."
   "2026-08-29T00:27:16.900Z","harness:codex","Implementation evidence: SDK health keeps metadata verification for clean cache hits, but any cached hash, chain, or writer-version candidate now forces canonical item enumeration plus strict stream content hashing. Diagnostics publish candidate, confirmed, and resolved-false-positive sets. History drift cache schema v5 binds the current item-hash capability so incompatible cache meaning is never reused. Focused 73-test regression suite, ESLint, TypeScript projects, and diff hygiene pass."
   "2026-08-29T00:40:45.398Z","harness:codex","Final verification evidence: full repository coverage passed 586 files and 8,101 tests at exactly 60,128/60,128 statements, 45,317/45,317 branches, 12,500/12,500 functions, and 57,900/57,900 lines. Repository static assurance, SDK/package parity, contract snapshots, agent context/token gates, graph and record-integrity assurances, ESLint, both jscpd profiles with zero clones, TypeScript projects, secret scan, and git diff hygiene all pass. The existing packed npm/Bun/Node SDK and CLI temporary-workspace acceptance remains green for this delivery."
   "2026-08-29T02:22:17.210Z","harness:codex","Review-round evidence: brief health cache-confirmation vectors are bounded, unsupported cached hash capability rows invalidate regardless of legacy version_skew shape, and confirmed chain corruption remains independent from version skew. The 74-test linked health/drift suite, static gates, and exact coverage pass."
+  "2026-08-29T03:05:20.911Z","harness:codex","Second review-round evidence: strict and content drift verification now always reload authoritative stream evidence before confirming or clearing a cache candidate, so a forged cached writer-version result cannot survive an unchanged content hash. The brief health summary now emits the actual resolved_false_positive_items field. Focused drift/health regressions and the complete 8,108-test exact-coverage gate pass."
+  "2026-08-29T03:06:04.100Z","harness:codex","Linked acceptance: pm test-all selected all four active items and passed 4/4 with 2 executed commands, 2 intentional duplicate skips, zero failures; drift/health executed 75 tests."
 learnings[1]{created_at,author,text}:
   "2026-08-29T00:40:44.988Z","harness:codex","Cache evidence can safely accelerate a clean verdict, but a corruption verdict is a higher-trust claim: promote it through canonical source reads and content hashing before exposing it to agents. Bind persisted cache semantics to the hash-writer capability so version drift invalidates evidence rather than reinterpreting it."
 files[4]{path,scope,note}:
@@ -42,7 +44,7 @@ files[4]{path,scope,note}:
   tests/unit/core/history/drift-scan.spec.ts,project,Unit coverage for cache schema capability invalidation and stat-compatible stale rows
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,project,300,"harness:codex","2026-08-29T00:27:16.453Z",local_mutation,feat/sdk-context-integrity-recovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtdn5t85-y3ex07
     kind: test
     status: passed
@@ -67,9 +69,22 @@ test_runs[2]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtdssmei-8adiyd
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T03:05:22.730Z"
+    finished_at: "2026-08-29T03:05:53.111Z"
+    recorded_at: "2026-08-29T03:05:53.111Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Agent-facing cache trust and authoritative confirmation contract
-close_reason: Health cache vectors are bounded and cache capability or chain evidence is confirmed and classified independently; linked health regressions and exact coverage pass.
+close_reason: "Second review round resolved authoritative cache confirmation and brief diagnostic field parity; linked acceptance, 8,108-test exact coverage, static quality, defect evidence, record integrity, and secret scanning pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

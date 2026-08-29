@@ -650,10 +650,17 @@ export function parseTests(raw: string[] | undefined): {
   );
   const values = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredKeyValueEntry(
+    const isStructured = looksLikeStructuredEntry(
       trimmedEntry,
       STRUCTURED_LINKED_TEST_KEYS,
-    )
+    );
+    assertNoAmbiguousBareCommaEntry(
+      trimmedEntry,
+      "--test",
+      "test command",
+      isStructured,
+    );
+    const kv = isStructured
       ? normalizeStructuredLinkedTestEntry(
           parseCsvKv(entry, "--test"),
           "--test",
@@ -2346,11 +2353,15 @@ function assertNoMissingRequiredCreateOptions(params: {
       `Required custom field formats: ${runtimeFieldSyntax.map((field) => field.description).join("; ")}.`,
     );
   }
-  const collectionClearFlags = combinedMissingFlags.flatMap((flag) => {
-    const normalizedFlag = flag.split(" ", 1)[0];
-    const clearFlag = CLEAR_FLAG_BY_REQUIRED_CREATE_FLAG[normalizedFlag];
-    return clearFlag ? [clearFlag] : [];
-  });
+  const collectionClearFlags = [
+    ...new Set(
+      combinedMissingFlags.flatMap((flag) => {
+        const normalizedFlag = flag.split(" ", 1)[0];
+        const clearFlag = CLEAR_FLAG_BY_REQUIRED_CREATE_FLAG[normalizedFlag];
+        return clearFlag ? [clearFlag] : [];
+      }),
+    ),
+  ];
   if (collectionClearFlags.length > 0) {
     nextSteps.push(
       `If the truthful value is an empty collection, use ${collectionClearFlags.join(", ")} instead of inventing metadata.`,

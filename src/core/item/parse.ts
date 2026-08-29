@@ -35,7 +35,7 @@ export function looksLikeStructuredKeyValueEntry(
   raw: string,
   keys: readonly string[],
 ): boolean {
-  if (raw.startsWith("```") || raw.includes("\n") || raw.includes(",")) {
+  if (raw.startsWith("```") || raw.includes("\n")) {
     return true;
   }
   const keyPattern = keys

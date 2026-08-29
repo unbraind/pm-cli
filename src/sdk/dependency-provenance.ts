@@ -5,8 +5,14 @@
  * items outside the current workspace.
  */
 import { normalizeItemId } from "../core/item/id.js";
-import { isExternalDependencyReference } from "../core/item/dependency-reference.js";
-export { isExternalDependencyReference } from "../core/item/dependency-reference.js";
+import {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "../core/item/dependency-reference.js";
+export {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "../core/item/dependency-reference.js";
 
 /** Provenance value declaring that a dependency id belongs to another workspace. */
 export const EXTERNAL_DEPENDENCY_SOURCE_KIND = "global";
@@ -114,7 +120,13 @@ export async function resolveExternalDependencyReference(
     return null;
   }
   const resolvers = [...externalDependencyResolvers.values()].filter(
-    (resolver) => resolver.supports(id),
+    (resolver) => {
+      try {
+        return resolver.supports(id);
+      } catch {
+        return false;
+      }
+    },
   );
   const outcomes = await Promise.allSettled(
     resolvers.map((resolver) => resolver.resolve(id)),
@@ -155,17 +167,6 @@ export async function resolveExternalDependencyReference(
     };
   }
   return null;
-}
-
-/** Return whether a dependency provenance value identifies an external workspace target. */
-export function isExternalDependencySourceKind(
-  sourceKind: string | undefined,
-): boolean {
-  const normalized = sourceKind?.trim().toLowerCase();
-  return (
-    normalized === EXTERNAL_DEPENDENCY_SOURCE_KIND ||
-    normalized === EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS
-  );
 }
 
 /** Canonicalize external provenance while preserving other named source kinds. */

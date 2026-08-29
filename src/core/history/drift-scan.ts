@@ -181,11 +181,6 @@ function hashContent(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
 
-async function readHistoryContentHash(historyPath: string): Promise<string> {
-  const raw = await fs.readFile(historyPath, "utf8");
-  return hashContent(raw);
-}
-
 /** Read and fully verify one history stream's hash chain. Returns null for an empty/missing stream (caller records it as a missing stream). */
 async function verifyHistoryStream(
   historyPath: string,
@@ -292,39 +287,32 @@ async function resolveStreamVerification(params: {
       cacheDirty: true,
     };
   }
-  let currentContentHash: string;
   if (params.verifyCacheHitByContent) {
-    try {
-      currentContentHash = await readHistoryContentHash(params.historyPath);
-    } catch {
-      params.accumulator.unreadableStreams.push(params.itemId);
-      return { verification: null, cacheDirty: false };
-    }
-  } else {
-    currentContentHash = cachedContentHash;
-  }
-  if (
-    !params.verifyCacheHitByContent ||
-    currentContentHash === cachedContentHash
-  ) {
-    return {
-      verification: {
-        latestAfterHash: params.cached.latest_after_hash,
-        chainOk: params.cached.chain_ok,
-        versionSkew: params.cached.version_skew === true,
-        contentHash: currentContentHash,
-        itemHashVersion: params.cached.item_hash_version,
-      },
-      cacheDirty: false,
-    };
-  }
-  return {
-    verification: await loadFreshStreamVerification(
+    const verification = await loadFreshStreamVerification(
       params.itemId,
       params.historyPath,
       params.accumulator,
-    ),
-    cacheDirty: true,
+    );
+    return {
+      verification,
+      cacheDirty:
+        verification === null ||
+        verification.contentHash !== cachedContentHash ||
+        verification.latestAfterHash !== params.cached.latest_after_hash ||
+        verification.chainOk !== params.cached.chain_ok ||
+        verification.versionSkew !== (params.cached.version_skew === true) ||
+        verification.itemHashVersion !== params.cached.item_hash_version,
+    };
+  }
+  return {
+    verification: {
+      latestAfterHash: params.cached.latest_after_hash,
+      chainOk: params.cached.chain_ok,
+      versionSkew: params.cached.version_skew === true,
+      contentHash: cachedContentHash,
+      itemHashVersion: params.cached.item_hash_version,
+    },
+    cacheDirty: false,
   };
 }
 

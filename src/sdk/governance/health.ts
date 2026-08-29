@@ -1569,8 +1569,8 @@ const HEALTH_DETAIL_SUMMARIZERS = {
                 cacheConfirmation.confirmed_items,
                 limit,
               ),
-              resolved_false_positives: summarizeStringList(
-                cacheConfirmation.resolved_false_positives,
+              resolved_false_positive_items: summarizeStringList(
+                cacheConfirmation.resolved_false_positive_items,
                 limit,
               ),
             },

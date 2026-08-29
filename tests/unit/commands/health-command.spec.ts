@@ -275,7 +275,7 @@ describe("runHealth", () => {
             cache_confirmation: {
               candidate_items: ["a", "b", "c"],
               confirmed_items: ["a", "b", "c"],
-              resolved_false_positives: ["a", "b", "c"],
+              resolved_false_positive_items: ["a", "b", "c"],
             },
           },
         },
@@ -285,7 +285,7 @@ describe("runHealth", () => {
       cache_confirmation: {
         candidate_items: { count: 3, sample: ["a", "b"], truncated: true },
         confirmed_items: { count: 3, sample: ["a", "b"], truncated: true },
-        resolved_false_positives: {
+        resolved_false_positive_items: {
           count: 3,
           sample: ["a", "b"],
           truncated: true,

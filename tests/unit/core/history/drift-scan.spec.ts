@@ -20,7 +20,7 @@ interface DriftCacheFixtureEntry {
   content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
-  item_hash_version: 1 | 2 | 3;
+  item_hash_version: number;
   version_skew?: boolean;
 }
 
@@ -234,6 +234,47 @@ describe("core/history/drift-scan", () => {
       ).toMatchObject({
         item_hash_version: 3,
       });
+    });
+  });
+
+  it("freshly verifies cache-originated version skew even when stream content is unchanged", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Forged cached skew" });
+      const items = await listAllItemMetadataWithBody(context.pmPath);
+      await scanHistoryDrift(context.pmPath, items);
+      const cache = await readDriftCache(context.pmPath);
+      await fs.writeFile(
+        path.join(context.pmPath, DRIFT_CACHE_RELATIVE),
+        `${JSON.stringify(
+          {
+            ...cache,
+            entries: {
+              ...cache.entries,
+              [created.id]: {
+                ...cache.entries[created.id],
+                item_hash_version: 99,
+                version_skew: true,
+              },
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      expect(
+        await scanHistoryDrift(context.pmPath, items, {
+          cacheHitVerification: "metadata",
+        }),
+      ).toMatchObject({ versionSkews: [created.id] });
+      expect(await scanHistoryDrift(context.pmPath, items)).toMatchObject({
+        driftedItems: [],
+        versionSkews: [],
+      });
+      expect(
+        (await readDriftCache(context.pmPath)).entries[created.id],
+      ).toMatchObject({ item_hash_version: 3, version_skew: false });
     });
   });
 

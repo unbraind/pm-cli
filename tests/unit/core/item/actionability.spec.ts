@@ -112,6 +112,36 @@ describe("collectBlockedByIds", () => {
     ).toEqual(["https://example.test/Issue/Case", "jira:PM-42"]);
   });
 
+  it("preserves and projects non-locator blockers with explicit external provenance", () => {
+    const dependency: Dependency = {
+      ...blockedByDep("Upstream-42"),
+      source_kind: "external",
+    };
+    expect(collectBlockedByIds({ dependencies: [dependency] })).toEqual([
+      "Upstream-42",
+    ]);
+    expect(
+      resolveItemBlockers(
+        {
+          dependencies: [dependency],
+          updated_at: "2026-06-25T00:00:00.000Z",
+        } as ItemMetadata,
+        new Map(),
+        registry,
+      ),
+    ).toEqual([
+      {
+        id: "Upstream-42",
+        title: null,
+        status: null,
+        resolved: false,
+        external: true,
+        blocked_since: "2026-06-25T00:00:00.000Z",
+        resolver: null,
+      },
+    ]);
+  });
+
   it("resolves incoming blocks edges as blockers of the referenced item", () => {
     const target = item({ id: "pm-target" });
     const blocker = item({
