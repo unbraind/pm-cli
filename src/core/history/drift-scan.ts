@@ -248,7 +248,9 @@ async function verifyHistoryStream(
     versionSkew,
     latestHashComparable:
       latestHashVersion !== undefined &&
-      (!versionSkew || latestExplicitVersionSupported),
+      (!versionSkew ||
+        latestExplicitVersionSupported ||
+        latestExplicitVersion === undefined),
     contentHash,
     itemHashVersion: latestHashVersion ?? CURRENT_HISTORY_ITEM_HASH_VERSION,
   };

@@ -316,7 +316,13 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
       authoritativeExplicitVersion;
   }
   if (errors.length > 0) {
-    return { ok: false, errors };
+    return {
+      ok: false,
+      errors,
+      ...(detectedVersion === undefined
+        ? {}
+        : { item_hash_version: detectedVersion }),
+    };
   }
   return {
     ok: true,

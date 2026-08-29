@@ -6,9 +6,9 @@ status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-29T11:33:11.253Z"
-closed_at: "2026-08-29T11:33:10.490Z"
-completed_at: "2026-08-29T11:33:10.490Z"
+updated_at: "2026-08-29T12:50:12.454Z"
+closed_at: "2026-08-29T12:50:11.909Z"
+completed_at: "2026-08-29T12:50:11.909Z"
 author: "harness:codex"
 acceptance_criteria: A released-version fixture proves whether identical epoch-2 content can hash differently; every hash-input or algorithm change advances a format capability or preserves the previous comparator; drift diagnostics distinguish unsupported writer/version skew from same-version corruption; history events expose sufficient writer capability provenance for deterministic diagnosis; repair changed receipts match actual byte writes; SDK CLI health validate and repair contracts carry the distinction; focused cross-version packed-consumer and exact repository coverage gates pass
 parent: pm-o2kc
@@ -17,16 +17,16 @@ confidence: high
 severity: critical
 environment: Global pm 2026.8.23 writes trackers read by repository-pinned 2026.8.20 and 2026.8.21 binaries
 repro_steps: "Create and mutate an item with pm 2026.8.23, run pinned health --strict-exit, compare item_hash_version and hashes, run pinned history-repair, then compare changed receipt, bytes, and both readers' verdicts."
-resolution: "History verification records unsupported writer epochs, replays structurally valid unknown-version patches, and continues into later supported entries so independent corruption evidence is preserved."
-expected_result: "An unsupported writer entry remains a version-skew error while any later supported before-hash, after-hash, or patch failure is reported independently; an unreplayable unknown patch fails closed with both diagnostics."
-actual_result: "The verifier now accumulates unsupported-version evidence, safely advances through applicable unknown-version patches, resets epoch inference, and reports later supported corruption; an unreplayable unknown patch returns both unsupported-version and patch-apply failures."
+resolution: "History verification preserves inferred supported epochs after earlier version skew, including valid unversioned legacy final entries, so current-item drift remains independently comparable."
+expected_result: Unsupported writer evidence remains visible while any valid supported explicit or unversioned final epoch is compared with the current item independently.
+actual_result: "A mixed unsupported-plus-unversioned stream now reports version skew, chain mismatch, and current-item hash mismatch together; the 46-test focused suite, linked acceptance, exact coverage, and static assurance pass."
 component: "history hashing, drift diagnostics, and repair receipts"
 regression: true
 customer_impact: "Ordinary cross-version mutations make CI report corruption, train operators to normalize real integrity alarms away, and hide evidence-rewriting repairs behind a false no-change receipt."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[18]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
@@ -45,6 +45,8 @@ comments[18]{created_at,author,text}:
   "2026-08-29T11:05:44.133Z","harness:codex","DeepScan closure evidence: the focused context-integrity suite passed 15/15, focused ESLint passed, and all TypeScript projects passed after replacing the unsafe optional lookup with an explicit required-check guard."
   "2026-08-29T11:08:12.164Z","harness:codex","Greptile P1 verification: current-item drift after a future writer is already preserved, but verifyHistoryChainWithVersion returns immediately at the unsupported row. A later supported entry can still be checked after applying the unknown-version patch, so a precise supported before/after/patch failure is currently lost behind the generic skew error. Adding a two-error negative control before implementation."
   "2026-08-29T11:33:09.747Z","harness:codex","Final Greptile closure evidence: the verifier now preserves the unsupported writer diagnostic and continues after a structurally applicable future-version patch, allowing a later supported after_hash mismatch to surface independently. An invalid future-version patch fails closed with both unsupported-version and patch-apply diagnostics. Focused recovery tests passed 45/45. Full repository coverage passed 586 files and 8,120 tests at exactly 60,165/60,165 statements, 45,395/45,395 branches, 12,512/12,512 functions, and 57,935/57,935 lines. Repository static quality, graph composition, tracker context quality, and record integrity all passed."
+  "2026-08-29T12:32:32.406Z","harness:codex","Review-round finding: Greptile exact head d89acc27 identified that a mixed stream ending in a valid unversioned legacy entry can suppress the independent current-item hash comparison after earlier version skew. Reopened and claimed for a failing regression, minimal capability-inference correction, and exact-head verification."
+  "2026-08-29T12:50:11.381Z","harness:codex","Final review closure evidence: the negative control reproduced missing current-item drift for an unsupported entry followed by a valid unversioned legacy entry. Replay now retains the later inferred supported epoch even while returning earlier skew errors, and drift scanning compares supported unversioned final hashes without making explicit future epochs comparable. Focused 46/46, linked 3/3, repository 8,121/8,121, exact 100/100/100/100 (60,165 statements; 45,398 branches; 12,512 functions; 57,935 lines), and full static assurance passed."
 learnings[4]{created_at,author,text}:
   "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
   "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
@@ -73,7 +75,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:01.231Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,project,240,"harness:codex","2026-08-28T21:54:08.534Z",local_mutation,feat/sdk-context-integrity-recovery,history capability and version skew coverage
   node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,project,240,"harness:codex","2026-08-29T07:17:30.556Z",local_mutation,feat/sdk-context-integrity-recovery,Version-skew remediation registry regression
-test_runs[7]:
+test_runs[8]:
   - run_id: test-local-mtdkxs90-zu56nw
     kind: test
     status: passed
@@ -169,10 +171,23 @@ test_runs[7]:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtedms2f-3qjhhk
+    kind: test
+    status: passed
+    started_at: "2026-08-29T12:48:14.318Z"
+    finished_at: "2026-08-29T12:48:42.135Z"
+    recorded_at: "2026-08-29T12:48:42.135Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal/remediation census includes history version-skew guidance
-close_reason: "Resolved cross-epoch masking while preserving fail-closed recovery; focused tests, exact 100 percent repository coverage, and all static assurance gates pass."
+close_reason: "Preserved current-item drift evidence after mixed unsupported and supported unversioned history epochs; focused, linked, exact-coverage, and static gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

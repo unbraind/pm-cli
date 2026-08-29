@@ -4,10 +4,10 @@
 
 ### Fixed
 
+- GH-1138: linked test name filters can pass after executing zero tests ([pm-ntnv4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ntnv4k.toon))
+- GH-1146/1147: external blockers remain stale and validation recommends deleting them ([pm-yhle2e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yhle2e.toon))
 - GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
 - GH-1144: hash-only merge receipts contradict report output and cannot reconcile truthfully ([pm-z1z96w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z1z96w.toon))
-- GH-1146/1147: external blockers remain stale and validation recommends deleting them ([pm-yhle2e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yhle2e.toon))
-- GH-1138: linked test name filters can pass after executing zero tests ([pm-ntnv4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ntnv4k.toon))
 - GH-1136: npm 12 object-form npm pack receipts break registry package installs ([pm-xrjy8o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xrjy8o.toon))
 - GH-1148: cached drift mismatch can falsely report tracker corruption ([pm-sxg7wl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sxg7wl.toon))
 - The annotation key=value grammar has three divergent comma behaviours, two of which silently corrupt the evidence text before it is made immutable ([pm-hu92i3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hu92i3.toon))

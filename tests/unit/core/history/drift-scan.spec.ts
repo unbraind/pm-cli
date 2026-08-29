@@ -232,6 +232,46 @@ describe("core/history/drift-scan", () => {
     });
   });
 
+  it("compares a supported unversioned final item after an unsupported history entry", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Mixed legacy writer" });
+      const historyPath = getHistoryPath(context.pmPath, created.id);
+      const supportedEntry = JSON.parse(
+        (await fs.readFile(historyPath, "utf8")).trim(),
+      ) as Record<string, unknown>;
+      const unsupportedEntry = {
+        ...supportedEntry,
+        item_hash_version: 99,
+      };
+      const {
+        item_hash_version: _itemHashVersion,
+        ...unversionedSupportedEntry
+      } = supportedEntry;
+      const legacyEntry = {
+        ...unversionedSupportedEntry,
+        before_hash: supportedEntry.after_hash,
+        patch: [],
+      };
+      await fs.writeFile(
+        historyPath,
+        `${JSON.stringify(unsupportedEntry)}\n${JSON.stringify(legacyEntry)}\n`,
+        "utf8",
+      );
+      const items = (await listAllItemMetadataWithBody(context.pmPath)).map(
+        (item) =>
+          item.id === created.id
+            ? { ...item, body: `${item.body} tampered` }
+            : item,
+      );
+
+      const result = await scanHistoryDrift(context.pmPath, items);
+
+      expect(result.versionSkews).toEqual([created.id]);
+      expect(result.chainMismatches).toContain(created.id);
+      expect(result.hashMismatches).toContain(created.id);
+    });
+  });
+
   it("invalidates unsupported cached hash versions that lack skew evidence", async () => {
     await withTempPmPath(async (context) => {
       const created = createTestItem(context, { title: "Malformed cache row" });
