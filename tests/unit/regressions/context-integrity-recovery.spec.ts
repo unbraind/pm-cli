@@ -653,6 +653,28 @@ describe("context integrity recovery", () => {
     expect(proven).toMatchObject({ status: "passed" });
   });
 
+  it("accepts a real Node spec reporter receipt for a filtered linked test", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-node-spec-receipt-"));
+    temporaryRoots.push(root);
+    const testPath = path.join(root, "selected.test.mjs");
+    await writeFile(
+      testPath,
+      'import test from "node:test";\nimport assert from "node:assert/strict";\ntest("selected", () => assert.equal(1, 1));\n',
+      "utf8",
+    );
+    const [result] = await runLinkedTests(
+      [
+        {
+          command: `node --test --test-reporter=spec --test-name-pattern=selected ${JSON.stringify(testPath)}`,
+          scope: "project",
+        },
+      ],
+      30,
+    );
+    expect(result).toMatchObject({ status: "passed" });
+    expect(`${result.stdout}\n${result.stderr}`).toMatch(/ℹ\s+tests\s+1/u);
+  });
+
   it("does not treat zero passes as empty when a runner reports executed tests", async () => {
     const [result] = await runLinkedTests(
       [

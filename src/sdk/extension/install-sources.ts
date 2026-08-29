@@ -814,7 +814,9 @@ async function resolveNpmSourceDirectoryWithRunner(
     const packed = parsePackedNpmPackage(
       packStdout,
       packDirectory,
-      npmPackageNameFromSpec(source.spec),
+      normalizeNpmLocalFileAliasSpec(source.spec) === source.spec
+        ? npmPackageNameFromSpec(source.spec)
+        : undefined,
     );
     if (!(await pathExists(packed.tarball))) {
       throw new PmCliError(

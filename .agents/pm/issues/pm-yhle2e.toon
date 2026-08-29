@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:graph","area:sdk",context-integrity,external-references,github-1146,github-1147
 created_at: "2026-08-28T21:25:57.770Z"
-updated_at: "2026-08-29T07:43:15.755Z"
-closed_at: "2026-08-29T07:43:15.170Z"
-completed_at: "2026-08-29T07:43:15.170Z"
+updated_at: "2026-08-29T08:44:04.966Z"
+closed_at: "2026-08-29T08:44:04.400Z"
+completed_at: "2026-08-29T08:44:04.400Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: External references are typed and preserved rather than counted as dangling local ids; A public resolver extension point returns bounded status title source and checked-at evidence without core GitHub coupling; Unresolved external blockers expose age and resolver availability while resolved blockers can trigger the existing auto-unblock transition; Validation never recommends destructive deletion for a well-formed external locator; SDK CLI MCP health next validate and temporary-workspace acceptance remain contract-parity with exact coverage
@@ -28,7 +28,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6sc8jq,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-p9sc,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-uxkf,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
-comments[13]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-08-28T21:25:57.770Z","harness:codex","Duplicate check evidence: complete all-status strict read covered 2593 readable items with no omissions. Closed pm-6sc8jq owns truthful stale-lifecycle governance for external blockers while pm-p9sc owns local dangling projections and pm-uxkf owns edge-aware blocked reads. No open item owns re-resolution plus safe validation classification. This recurrence is canonical for GitHub 1146 and 1147."
   "2026-08-28T21:26:39.465Z","harness:codex","GitHub linkage evidence: issues #1146 and #1147 both point to this canonical combined external-blocker lifecycle and validation item at its merge-stable main-branch toon path."
   "2026-08-28T23:24:21.263Z","harness:codex","Verification evidence: external classification, graph, actionability, next, and validation regressions passed; packed Node and Bun SDK consumers imported the public classifier successfully; full coverage passed exact 100/100/100/100."
@@ -42,12 +42,17 @@ comments[13]{created_at,author,text}:
   "2026-08-29T06:28:55.117Z","harness:codex","Final review evidence: blocker de-duplication now uses provenance-qualified keys, preserves explicit external case, and isolates synchronous resolver throws without preventing later resolvers. Focused regressions, full 8,112-test exact coverage, quality:static, and linked acceptance passed."
   "2026-08-29T07:13:40.052Z","harness:codex","CodeRabbit exact-head finding: graph assembly still lowercases external target keys, collapsing case-distinct provider locators despite actionability preserving them. Reopened for graph-wide identity parity."
   "2026-08-29T07:43:03.256Z","harness:codex","Review closure evidence: external locator identity is now case-preserving through endpoint collection, graph lookup, duplicate-row classification, and ordering-contradiction classification while local PM ids remain case-folded. Case-distinct scalar and structured Jira locators create separate nodes; graph regressions and full exact coverage pass."
-learnings[5]{created_at,author,text}:
+  "2026-08-29T08:19:32.136Z","harness:codex","CodeRabbit exact-head finding: external blocked_by dependency projection trims id without validating its decoded runtime type, so a malformed package payload can abort corpus actionability. Reopened for fail-closed row skipping."
+  "2026-08-29T08:23:18.382Z","harness:codex","TDD review fix: added a malformed decoded external blocker dependency ([shell-expansion-redacted] absent at runtime), reproduced the  crash, then guarded the structured external-id projection. Focused actionability and context-integrity suites pass."
+  "2026-08-29T08:23:27.184Z","harness:codex","Correction to the immediately preceding shell-mangled evidence: the malformed decoded dependency had a missing runtime id field, and the reproduced failure was an unsafe trim call. The structured external-id projection now validates that id is a nonblank string before normalization."
+  "2026-08-29T08:44:03.462Z","harness:codex","Final local evidence: strict static quality passed; full suite passed 586 files and 8,115 tests with exact coverage statements 60,145/60,145, branches 45,366/45,366, functions 12,508/12,508, lines 57,915/57,915. Linked PM acceptance passed the external graph/provenance and malformed actionability regressions with zero failures."
+learnings[6]{created_at,author,text}:
   "2026-08-28T23:24:37.448Z","harness:codex","A syntactically valid remote locator is a typed graph node even when no resolver is installed. Unknown external state must remain explicit evidence, never be rewritten as local dangling corruption."
   "2026-08-29T00:14:46.442Z","harness:codex","Provider integrations belong behind the SDK resolver registry: core classifies and preserves external identity while bounded package-owned providers supply lifecycle evidence. Resolver failures and absent providers fail closed to explicit unknown state instead of deleting context."
   "2026-08-29T05:25:26.063Z","harness:codex","Dependency identity is provenance plus normalized identifier: spelling alone cannot decide whether a target belongs to the canonical local namespace or the external namespace."
   "2026-08-29T06:28:54.520Z","harness:codex",Dependency identity includes provenance and external case semantics; local canonicalization must never collapse distinct external references. Resolver isolation must also defer invocation so synchronous throws become settled failures.
   "2026-08-29T07:43:03.728Z","harness:codex","Reference identity must include its namespace: local item ids use case-insensitive canonicalization, while external locators preserve exact case and must never share a folded key."
+  "2026-08-29T08:44:03.888Z","harness:codex",Decoded tracker metadata remains an untrusted runtime boundary even when TypeScript declares a string field; dependency projections must validate scalar types before trimming or normalization.
 files[10]{path,scope,note}:
   sdk/public-surface.json,project,Public external dependency reference SDK export snapshot
   src/core/item/actionability.ts,project,external blocker staleness
@@ -59,10 +64,11 @@ files[10]{path,scope,note}:
   tests/unit/core/item/actionability.spec.ts,project,External locator case preservation and graph classification review regression
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
   tests/unit/sdk/dependency-provenance.spec.ts,project,Case-distinct external graph identity regression
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:03.402Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts,project,240,"harness:codex","2026-08-29T07:18:53.208Z",local_mutation,feat/sdk-context-integrity-recovery,External graph identity and governance coverage
-test_runs[6]:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-29T08:23:33.401Z",local_mutation,feat/sdk-context-integrity-recovery,Malformed external blocker and context projection regressions
+test_runs[7]:
   - run_id: test-local-mtdmottd-sfvxdl
     kind: test
     status: passed
@@ -144,9 +150,32 @@ test_runs[6]:
         pm_context_mode: schema
         workspace_context_mode: source
         trust_reason: local_source_ref
+  - run_id: test-all-local-mte4mb6s-rkgb2j
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T08:36:23.655Z"
+    finished_at: "2026-08-29T08:43:45.355Z"
+    recorded_at: "2026-08-29T08:43:45.355Z"
+    passed: 2
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 3
+    executions[3]:
+      - command: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+      - command: node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+      - command: node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "External dependency graph identities now preserve case by namespace across collection, resolution, duplicate detection, and contradiction governance; case-distinct regressions and all repository gates pass."
+close_reason: "External dependency primitives now preserve namespace and case identity, exclude external locators from dangling-local governance, expose bounded resolver provenance, and tolerate malformed decoded dependency ids; full exact coverage and linked acceptance pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

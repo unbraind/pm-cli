@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,evidence-integrity,github,linked-tests,tdd
 created_at: "2026-08-28T14:43:01.407Z"
-updated_at: "2026-08-29T07:43:16.858Z"
-closed_at: "2026-08-29T07:43:16.332Z"
-completed_at: "2026-08-29T07:43:16.332Z"
+updated_at: "2026-08-29T08:44:09.072Z"
+closed_at: "2026-08-29T08:44:08.444Z"
+completed_at: "2026-08-29T08:44:08.444Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Add an SDK-owned executed-test assertion primitive and declarative minimum-count field; recognize supported runner receipts without brittle prose-only heuristics; fail zero-test filtered commands closed; preserve explicit non-test smoke commands; add unit, integration, CLI, MCP/schema, history, Node runner, and temp-workspace acceptance coverage."
@@ -29,7 +29,7 @@ customer_impact: "Renamed or mistyped test filters silently turn immutable PM ve
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4i73,discovered_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
   pm-m0b7h8,recurs_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-28T14:43:01.407Z","harness:codex","Duplicate check: complete all-status searches for test-name-pattern,zero tests,linked-test no-op success,GH-982,and test meaningfulness found pm-m0b7h8 for no-op linked-test mutation and pm-4i73 for meaningfulness,but no item owning zero-execution runner receipts. GitHub issue #1138 is a later recurrence with a distinct execution boundary."
   "2026-08-28T23:24:25.479Z","harness:codex","Verification evidence: linked-test execution and connected recovery regressions passed, including zero-run negative controls; full coverage passed 8,099 tests at exact 100/100/100/100."
   "2026-08-29T02:22:16.706Z","harness:codex","Review-round evidence: filtered linked-test success now requires a recognized positive runner receipt, so a dot-only reporter cannot certify execution and fails with missing_positive_execution_receipt. Shared structured-entry grammar removes duplicated classifiers; negative controls and exact coverage pass."
@@ -37,9 +37,14 @@ comments[7]{created_at,author,text}:
   "2026-08-29T05:25:27.229Z","harness:codex","Final review evidence: a regression distinguishes execution count from pass count, the missing-positive-receipt refusal is present in generated SDK/CLI contracts, linked tests passed, all generated surfaces are current, and exact coverage passed 8,111 tests at 100/100/100/100."
   "2026-08-29T07:13:41.633Z","harness:codex","CodeRabbit exact-head finding: quoted --test-name-pattern/--testNamePattern/-t arguments bypass filtered-run detection and can accept a zero-test result. Reopened for normalized filter token recognition."
   "2026-08-29T07:43:04.144Z","harness:codex","Review closure evidence: linked-test name-filter detection now reuses normalized command validation so quoted single/double arguments and camelCase spellings cannot bypass empty-run enforcement. Unquoted, double-quoted, and single-quoted zero-test regressions all fail closed; 8,113-test exact coverage is green."
-learnings[2]{created_at,author,text}:
+  "2026-08-29T08:19:35.841Z","harness:codex","CodeRabbit exact-head finding: filtered Node spec reporter success emits info-prefixed tests/pass lines, which the positive receipt patterns reject. Reopened for reporter-compatible evidence parsing and a real runner regression."
+  "2026-08-29T08:23:19.656Z","harness:codex","TDD review fix: added a real Node  execution. Its Unicode info-prefixed test/pass receipt originally failed closed; receipt recognition now accepts the Node reporter prefix while retaining positive nonzero counts. Focused context-integrity suite passes."
+  "2026-08-29T08:23:27.641Z","harness:codex","Correction to the immediately preceding shell-mangled evidence: the real command used Node test runner with the spec reporter and a test-name-pattern filter. Its Unicode info-prefixed tests/pass receipt is now recognized only when the reported count is positive."
+  "2026-08-29T08:44:07.415Z","harness:codex","Final local evidence: real Node spec reporter filtering and quoted-filter regressions pass; strict static quality passed; full suite passed 586 files and 8,115 tests at exact 100/100/100/100 coverage; linked PM acceptance passed with zero failures."
+learnings[3]{created_at,author,text}:
   "2026-08-29T05:25:27.756Z","harness:codex","A pass count is not an execution count: filtered-run integrity must use explicit executed-test evidence and expose missing positive receipts through the public refusal contract."
   "2026-08-29T07:43:04.604Z","harness:codex",Runner filter safety must operate on normalized shell command text; inspecting raw whitespace boundaries misses quoted arguments that the shell still passes as real flags.
+  "2026-08-29T08:44:07.927Z","harness:codex","Filtered linked tests need both normalized command detection and reporter-aware positive execution receipts. Node spec output prefixes aggregate lines with a Unicode information marker, which must be accepted without weakening the positive nonzero count."
 files[8]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal closure census
   sdk/public-surface.json,project,Generated SDK public surface snapshot
@@ -51,7 +56,7 @@ files[8]{path,scope,note}:
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:06.723Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
-test_runs[3]:
+test_runs[4]:
   - run_id: test-all-local-mtdr7pg8-qj7z9n
     kind: test-all
     status: passed
@@ -91,10 +96,23 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+  - run_id: test-all-local-mte4mb6s-rkgb2j
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T08:36:23.655Z"
+    finished_at: "2026-08-29T08:36:36.225Z"
+    recorded_at: "2026-08-29T08:36:36.225Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal closure contract evidence
-close_reason: "Quoted and camelCase test-name filters now enter the mandatory positive-execution and empty-run gates through shared command normalization; all focused, linked, and full tests pass."
+close_reason: "Filtered linked tests now detect quoted name filters, reject zero or unproven execution, and accept real Node spec reporter positive receipts; focused, full-coverage, and linked acceptance gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

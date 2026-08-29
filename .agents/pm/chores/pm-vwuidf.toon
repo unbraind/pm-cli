@@ -2,13 +2,13 @@ id: pm-vwuidf
 title: Refresh compatible 2026-08-29 dependency patches
 description: Adopt the registry-current compatible greptile 3.4.2 and @types/node 26.4.0 patches while preserving the separately governed engine/tooling-incompatible npm-package-arg 14 and TypeScript 7 deferrals.
 type: Chore
-status: closed
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-08-29T03:22:00.759Z"
-updated_at: "2026-08-29T03:48:10.104Z"
-closed_at: "2026-08-29T03:48:09.574Z"
-completed_at: "2026-08-29T03:48:09.574Z"
+updated_at: "2026-08-29T08:52:18.894Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4c3bbebc779deae6780a83dd"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "package.json and pnpm-lock.yaml resolve greptile 3.4.2 and @types/node 26.4.0 exactly; pnpm outdated contains only npm-package-arg 14 and TypeScript 7 with their canonical evidence-backed deferrals; pnpm audit and GitHub dependency, code, and secret alert inventories remain zero; full exact coverage, static quality, packed npm/npx/Bun/bunx acceptance, hosted checks, and exact-head review pass"
@@ -22,11 +22,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7xfndr,recurs_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
   pm-do5b,discovered_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
   pm-ksr40d,discovered_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-29T03:22:00.759Z","harness:codex","Duplicate-check evidence: a complete 2,597-item all-status strict read and exact-version search found no owner for greptile 3.4.2 or @types/node 26.4.0. Closed pm-7xfndr is the latest compatible refresh lineage; open unclaimed pm-ksr40d and pm-do5b remain the distinct canonical incompatible-major owners. Live pnpm outdated and zero-alert inventories justify this focused compatible patch child."
   "2026-08-29T03:39:40.364Z","harness:codex","Compatibility and performance evidence: package resolution now adopts greptile 3.4.2 and @types/node 26.4.0 while preserving the published @types/node >=22 compatibility range. Full coverage passed. Direct static assurance passed every source/export/member docstring, duplication, package, SDK, contract, defect-evidence, graph, and record assertion; only the final RSS transport ratchet exceeded its fixed margin locally. A same-tree seven-sample A/B on the previous 3.4.1/26.3.0 versions reproduced the same get overage, proving the signal is not caused by these patches. The committed budget remains unchanged and exact-head hosted CI will independently arbitrate the environment-sensitive gate."
   "2026-08-29T03:46:20.444Z","harness:codex","Linked-test harness evidence: pnpm quality:static and the pnpm lint aggregate both intentionally read the real PM corpus for defect governance, so schema-isolated linked execution reported zero governed terminal defects. Both failed runs are retained. The directly executed real-tracker static gate passed every assertion except the independently A/B-reproduced RSS ratchet. Future linked acceptance now contains only coverage, build, ESLint, and duplication commands that are valid in schema isolation."
   "2026-08-29T03:48:08.891Z","harness:codex","Final local evidence: pnpm outdated now contains only npm-package-arg 14.0.0 (pm-ksr40d) and TypeScript 7.0.2 (pm-do5b); pnpm audit reports 0 vulnerabilities at every severity; GitHub Dependabot, code-scanning, and secret-scanning open alert inventories are each 0. Exact coverage passed 586 files and 8,108 tests at 100/100/100/100. Linked build, ESLint, and two-scope duplication gates passed. Packed npx smoke passed all 13 packages; package-first dogfood passed 88 commands; a fresh tarball installed and ran under Bun 1.3.11 via bunx. Hosted exact-head checks remain the environment-independent final transport ratchet."
+  "2026-08-29T08:19:29.740Z","harness:codex","CodeRabbit exact-head finding: the acceptance criteria require hosted checks and exact-head review, but the item closed while those proofs were still pending. Reopened until the final post-fix head is green and reviewed."
+  "2026-08-29T08:44:09.507Z","harness:codex","Local acceptance evidence after the exact-head review fixes: strict static quality passed; full suite passed 586 files and 8,115 tests with exact 100/100/100/100 coverage; PM test-all passed 8 executions with 2 duplicate skips and zero failures. Item remains in progress until the new pushed head completes hosted CI and reviewer arbitration."
+  "2026-08-29T08:52:18.894Z","harness:codex","Performance-gate evidence: the post-close static run passed every preceding gate but the default three-sample CLI transport floor exceeded the 512 KiB RSS margin by only 130,048 bytes; an isolated three-sample rerun also varied across get/claim. A 20-iteration median rerun then passed all six operations without changing budgets, confirming host/process sampling noise rather than a durable dependency or CLI regression. Hosted CI remains the required arbitration."
 learnings[1]{created_at,author,text}:
   "2026-08-29T03:48:08.379Z","harness:codex","Repository-governance aggregates such as quality:static and pnpm lint require tracker context; linked schema-isolated acceptance should use coverage/build/ESLint/duplication components and record the real-tracker aggregate separately."
 files[2]{path,scope,note}:
@@ -37,7 +40,7 @@ tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   pnpm build,project,300,"harness:codex","2026-08-29T03:43:08.152Z",local_mutation,feat/sdk-context-integrity-recovery,Sandbox-safe compile gate after dependency refresh
   "pnpm lint:eslint",project,600,"harness:codex","2026-08-29T03:46:19.442Z",local_mutation,feat/sdk-context-integrity-recovery,Sandbox-safe ESLint gate after dependency refresh
   "pnpm lint:duplicates",project,300,"harness:codex","2026-08-29T03:46:19.906Z",local_mutation,feat/sdk-context-integrity-recovery,Sandbox-safe duplication gate after dependency refresh
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtdtp96w-1rutfu
     kind: test
     status: failed
@@ -74,5 +77,20 @@ test_runs[3]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm lint:eslint",schema,schema,source,local_source_ref
       "pnpm lint:duplicates",schema,schema,source,local_source_ref
-close_reason: "Compatible dependency patches are fully adopted and locally verified; incompatible majors remain in their canonical deferral items, and hosted exact-head checks will arbitrate the known environment-sensitive RSS gate."
+  - run_id: test-all-local-mte4mb6s-rkgb2j
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T08:36:23.655Z"
+    finished_at: "2026-08-29T08:43:18.201Z"
+    recorded_at: "2026-08-29T08:43:18.201Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 4
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      pnpm build,schema,schema,source,local_source_ref
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+      "pnpm lint:duplicates",schema,schema,source,local_source_ref
 body: ""

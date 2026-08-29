@@ -310,6 +310,39 @@ describe("local npm package archives", () => {
     });
     await safeResolved.cleanup();
 
+    const normalizedAliasSpec = `archive-alias@file:${path.join(
+      safe.root,
+      "missing-package-root",
+    )}`;
+    const aliasResolved =
+      await _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        {
+          kind: "npm",
+          input: `npm:${normalizedAliasSpec}`,
+          spec: normalizedAliasSpec,
+        },
+        async (args) => {
+          expect(args[1]).toBe(
+            `archive-alias@${path.join(safe.root, "missing-package-root")}`,
+          );
+          const packDirectory = args.at(-1);
+          if (!packDirectory) throw new Error("missing pack destination");
+          await copyFile(safe.archive, path.join(packDirectory, "alias.tgz"));
+          return JSON.stringify({
+            "@example/pm-archive-demo": {
+              filename: "alias.tgz",
+              name: "@example/pm-archive-demo",
+              version: "1.2.3",
+            },
+          });
+        },
+      );
+    expect(aliasResolved).toMatchObject({
+      package: "@example/pm-archive-demo",
+      version: "1.2.3",
+    });
+    await aliasResolved.cleanup();
+
     const linked = await createPackageArchive(async (packageRoot) => {
       await symlink("../../outside", path.join(packageRoot, "escape"));
     });

@@ -199,6 +199,24 @@ describe("collectBlockedByIds", () => {
   });
 });
 describe("resolveItemBlockers", () => {
+  it("ignores malformed structured external blocker ids without throwing", () => {
+    expect(
+      resolveItemBlockers(
+        {
+          dependencies: [
+            {
+              id: undefined,
+              kind: "blocked_by",
+              source_kind: "external",
+            } as unknown as Dependency,
+          ],
+        },
+        new Map(),
+        registry,
+      ),
+    ).toEqual([]);
+  });
+
   it("keeps missing and non-terminal blockers unresolved while resolving terminal blockers", () => {
     const corpus = [
       item({ id: "pm-open", status: "open" }),

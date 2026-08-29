@@ -168,7 +168,9 @@ function resolveItemBlockersWithIndex(
       .filter(
         (dependency) =>
           dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
-          isExternalDependencySourceKind(dependency.source_kind),
+          isExternalDependencySourceKind(dependency.source_kind) &&
+          typeof dependency.id === "string" &&
+          dependency.id.trim().length > 0,
       )
       .map((dependency) => blockerReferenceKey(dependency.id.trim(), true)),
   );
