@@ -39,6 +39,11 @@ function normalizeItemId(id: string): string {
   return id.trim().toLowerCase();
 }
 
+/** Build a collision-safe blocker key without normalizing external identity. */
+function blockerReferenceKey(id: string, external: boolean): string {
+  return external ? `external:${id}` : `local:${normalizeItemId(id)}`;
+}
+
 /** Collects the blocker item ids declared by an item: the legacy scalar `blocked_by` field plus every `blocked_by` dependency edge. Ids are trimmed, de-duplicated, and returned in stable lexicographic order. This is the single source of truth for "what must close before this item can proceed", shared by `pm next` readiness classification and the close-time auto-unblock sweep. */
 export function collectBlockedByIds(
   item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
@@ -50,9 +55,10 @@ export function collectBlockedByIds(
     scalar.length > 0 &&
     normalizeItemId(scalar) !== NO_ACTIVE_BLOCKER_SENTINEL
   ) {
+    const external = isExternalDependencyReference(scalar);
     ids.set(
-      normalizeItemId(scalar),
-      isExternalDependencyReference(scalar) ? scalar : normalizeItemId(scalar),
+      blockerReferenceKey(scalar, external),
+      external ? scalar : normalizeItemId(scalar),
     );
   }
   for (const dependency of item.dependencies ?? []) {
@@ -63,10 +69,12 @@ export function collectBlockedByIds(
       dependencyId.length > 0 &&
       normalizeItemId(dependencyId) !== NO_ACTIVE_BLOCKER_SENTINEL
     ) {
-      ids.set(
-        normalizeItemId(dependencyId),
+      const external =
         isExternalDependencyReference(dependencyId) ||
-          isExternalDependencySourceKind(dependency.source_kind)
+        isExternalDependencySourceKind(dependency.source_kind);
+      ids.set(
+        blockerReferenceKey(dependencyId, external),
+        external
           ? dependencyId
           : normalizeItemId(dependencyId),
       );
@@ -162,12 +170,12 @@ function resolveItemBlockersWithIndex(
           dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
           isExternalDependencySourceKind(dependency.source_kind),
       )
-      .map((dependency) => normalizeItemId(dependency.id)),
+      .map((dependency) => blockerReferenceKey(dependency.id.trim(), true)),
   );
   return blockerIds.map((id) => {
     if (
       isExternalDependencyReference(id) ||
-      structuredExternalBlockerIds.has(normalizeItemId(id))
+      structuredExternalBlockerIds.has(blockerReferenceKey(id, true))
     ) {
       return {
         id,

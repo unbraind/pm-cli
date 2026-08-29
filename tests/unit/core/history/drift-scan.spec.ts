@@ -410,6 +410,17 @@ describe("core/history/drift-scan", () => {
           history_item_hash_version: 3,
           entries: "not-an-object",
         }),
+        JSON.stringify({
+          version: 6,
+          history_item_hash_version: 3,
+          entries: {
+            malformed: {
+              chain_ok: "true",
+              latest_hash_comparable: true,
+              item_hash_version: 3,
+            },
+          },
+        }),
       ]) {
         await fs.writeFile(cachePath, corrupt, "utf8");
         const result = await scanHistoryDrift(context.pmPath, items);

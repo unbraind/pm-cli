@@ -130,7 +130,7 @@ that receipt finding. When a drifted item also has a pending receipt, the
 `history_drift` remediation map prioritizes `pm merge reconcile` only
 when canonical item path, changed-field, and merged-value hash evidence all
 attribute that finding to one or more receipts loaded from the clone-local Git
-evidence store. Every field declared by each receipt must match its current merged-value
+evidence store or the authoritative durable receipt store. Every field declared by each receipt must match its current merged-value
 hash, even when only a subset appears in the history reconciliation diff.
 Disjoint valid receipts may collectively cover a multi-field reconciliation;
 the audit and settlement then retain every individually proven receipt id.
@@ -138,10 +138,12 @@ Serialized source claims are ignored. Receipt readers validate the complete
 bounded schema, safe identifiers, filename and item-path identity, timestamps,
 and bounded decision structure before a sidecar enters health or
 reconciliation. Reads use size-preflighted, no-follow regular-file descriptors;
-durable decisions must retain hash-only values. Legacy or durable-only receipts,
+durable decisions must retain hash-only values. Qualifying durable-only receipts
+are reloaded from the authoritative store and accepted only after exact canonical
+item path, declared-field, and merged-value hash verification. Legacy receipts,
 receipts whose declared fields disagree with their hashes, same-item tampering,
 and drift on unrelated items fail closed to the normal `pm history-repair`
-guidance. Health indexes clone-local evidence once by item and reconciliation
+guidance. Health indexes authoritative evidence once by item and reconciliation
 uses the same per-item groups with a fixed receipt-only worker pool, so committed
 sidecars cannot amplify drift scans into unbounded parallel repair work.
 The machine-executable remediation names the apply command because `--dry-run`

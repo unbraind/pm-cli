@@ -112,6 +112,28 @@ describe("collectBlockedByIds", () => {
     ).toEqual(["https://example.test/Issue/Case", "jira:PM-42"]);
   });
 
+  it("keeps case-distinct external and local blocker identities", () => {
+    expect(
+      collectBlockedByIds({
+        blocked_by: "pm-42",
+        dependencies: [
+          {
+            ...blockedByDep("PM-42"),
+            source_kind: "external",
+          },
+          {
+            ...blockedByDep("jira:Case"),
+            source_kind: "external",
+          },
+          {
+            ...blockedByDep("jira:case"),
+            source_kind: "external",
+          },
+        ],
+      }),
+    ).toEqual(["jira:case", "jira:Case", "pm-42", "PM-42"]);
+  });
+
   it("preserves and projects non-locator blockers with explicit external provenance", () => {
     const dependency: Dependency = {
       ...blockedByDep("Upstream-42"),

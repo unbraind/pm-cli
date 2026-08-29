@@ -129,7 +129,9 @@ export async function resolveExternalDependencyReference(
     },
   );
   const outcomes = await Promise.allSettled(
-    resolvers.map((resolver) => resolver.resolve(id)),
+    resolvers.map((resolver) =>
+      Promise.resolve().then(() => resolver.resolve(id)),
+    ),
   );
   for (const [index, outcome] of outcomes.entries()) {
     if (outcome.status !== "fulfilled" || outcome.value === null) {

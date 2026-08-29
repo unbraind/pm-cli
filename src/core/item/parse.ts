@@ -281,8 +281,8 @@ function unquoteValue(value: string): string {
 function findKeyValueDelimiter(segment: string): number {
   const equalsIndex = segment.indexOf("=");
   const colonIndex = segment.indexOf(":");
-  const hasEquals = equalsIndex > 0;
-  const hasColon = colonIndex > 0;
+  const hasEquals = equalsIndex >= 0;
+  const hasColon = colonIndex >= 0;
   if (hasEquals && hasColon) {
     return Math.min(equalsIndex, colonIndex);
   }
@@ -395,7 +395,7 @@ export function parseCsvKv(
 
   for (const segment of segments) {
     const delimiterIndex = findKeyValueDelimiter(segment);
-    if (delimiterIndex > 0) {
+    if (delimiterIndex >= 0) {
       const key = segment.slice(0, delimiterIndex).trim();
       if (!key) {
         throw new PmCliError(

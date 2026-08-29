@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts",evidence,history
 created_at: "2026-08-03T06:20:42.504Z"
-updated_at: "2026-08-28T23:38:20.674Z"
-closed_at: "2026-08-28T23:26:26.827Z"
-completed_at: "2026-08-28T23:26:26.827Z"
+updated_at: "2026-08-29T06:29:07.617Z"
+closed_at: "2026-08-29T06:29:07.100Z"
+completed_at: "2026-08-29T06:29:07.100Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A comma inside an annotation value round-trips byte-identically through --add and the JSON read, for files, docs, notes, learnings, comments, test and dep; Exactly one documented mechanism exists for embedding a separator in a value, and the other spellings either work identically or fail loudly; A backslash escape is either consumed as an escape or rejected, never stored literally; The chosen mechanism is named in the --help text of every command that accepts the key=value grammar; A regression test asserts the round-trip for all three spellings against a sandbox workspace"
@@ -32,21 +32,40 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,blocks,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
   pm-ya7x55,related,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
   pm-yql1,blocks,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-03T11:09:26.600Z","harness:codex","Estimate basis 2026-08-03: 300 minutes covers one shared annotation parser, migration-safe grammar choice, all seven annotation surfaces, help text, and byte-round-trip regression matrix."
   "2026-08-09T06:08:30.792Z","harness:claude-code","Still live at 2026.8.9, and the blast radius is wider than annotations. Reproduced unintentionally on 2026-08-09 while linking evidence with pm files, not while probing for it — which is the relevant part, because it means the corruption is reached by ordinary use rather than by adversarial input.\n\nSent:\n  pm files pm-sr3xzg --add \"path=src/sdk/governance/health.ts,scope=project,note=Lines 2512-2520 choose between metadata and withBody, never the light reader\"\n\nStored:\n  note = \"Lines 2512-2520 choose between metadata and withBody,never the light reader\"\n\nThe space after the comma is gone. The parser split the value on the comma, found no '=' in the tail, treated it as a continuation, and rejoined without restoring the separator. The note is not truncated and no warning is emitted, so the failure is invisible at both write time and read time: the text is still plausible English, one character shorter.\n\nTwo observations that extend this item rather than restate it. First, the same grammar governs pm files and pm docs, not only the annotation transports named in the title, so the corrupting behaviour reaches linked-resource notes as well. Second, a note is the field most likely of any to contain natural prose, and prose contains commas — so the field with the highest comma probability in the whole surface is parsed by the grammar least able to carry one. Rate of silent corruption scales with how carefully the author writes.\n\nRecorded during the ecosystem and code review pass of 2026-08-09; the mangled notes on pm-sr3xzg and pm-ulxdqp are left in place as live specimens rather than repaired, so a fix can be verified against real corrupted rows."
   "2026-08-28T21:26:38.899Z","harness:codex",GitHub #1145 is a current 2026.8.28 reproduction of this canonical lossless annotation-value grammar defect. The GitHub issue now links here; no duplicate PM item was created.
   "2026-08-28T23:24:27.541Z","harness:codex","Verification evidence: shared parser, release readiness, package extension, and connected recovery suites passed; packed npm and Bun acceptance passed; full coverage passed 8,099 tests at exact 100/100/100/100."
-files[4]{path,scope,note}:
+  "2026-08-29T06:08:49.343Z","harness:codex","Final CodeRabbit review finding: note=alpha,=beta and the colon equivalent treat an empty-key segment as continuable text. Reopened so delimiter-leading segments are rejected through the existing structured input error contract."
+  "2026-08-29T06:28:56.134Z","harness:codex","Final review evidence: comma-separated key/value parsing now rejects delimiter-leading equals and colon segments before continuation handling. Focused regressions, full 8,112-test exact coverage, quality:static, and linked acceptance passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-29T06:28:55.628Z","harness:codex","A delimiter at byte zero is an empty key, not a continuation segment; parsing must distinguish delimiter absence from delimiter position zero before continuation handling."
+files[5]{path,scope,note}:
   src/core/item/parse.ts,project,lossless CSV parser
   tests/integration/release-readiness-runtime.spec.ts,project,Packed release readiness regression coverage
+  tests/unit/core/item/parse-utils.spec.ts,project,Delimiter-leading empty-key rejection coverage
   tests/unit/extensions/extension-command.spec.ts,project,npm pack JSON receipt compatibility coverage
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:53:56.706Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+test_runs[1]:
+  - run_id: test-all-local-mte01e7z-w2i7qj
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T06:28:09.349Z"
+    finished_at: "2026-08-29T06:28:28.666Z"
+    recorded_at: "2026-08-29T06:28:28.666Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "Lossless annotation comma parsing, escaped delimiter behavior, packed npm and Bun acceptance, and exact coverage are verified."
+close_reason: "Rejected delimiter-leading empty keys with equals and colon regressions; focused, linked, full-coverage, and static quality gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

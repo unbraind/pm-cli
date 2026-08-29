@@ -92,6 +92,7 @@ async function loadDriftCache(
       parsed.entries === null ||
       Object.values(parsed.entries).some(
         (entry) =>
+          typeof entry.chain_ok !== "boolean" ||
           typeof entry.latest_hash_comparable !== "boolean" ||
           (!(
             SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]

@@ -282,7 +282,7 @@ describe("context integrity recovery", () => {
       const disposeThrowing = registerExternalDependencyResolver({
         name: "throwing",
         supports: () => true,
-        resolve: async () => {
+        resolve: () => {
           throw new Error("provider unavailable");
         },
       });
