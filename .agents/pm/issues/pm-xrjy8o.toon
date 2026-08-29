@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,github,npm,package-ecosystem,regression
 created_at: "2026-08-28T14:42:31.427Z"
-updated_at: "2026-08-29T09:59:02.936Z"
-closed_at: "2026-08-29T09:58:41.425Z"
-completed_at: "2026-08-29T09:58:41.425Z"
+updated_at: "2026-08-29T14:58:34.533Z"
+closed_at: "2026-08-29T14:58:33.989Z"
+completed_at: "2026-08-29T14:58:33.989Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Parse npm 11 array and npm 12 object receipts through one typed SDK-owned contract; select the requested entry deterministically; never apply a filename fallback after JSON parsed successfully; add npm 11/12 unit, integration, packed-consumer, and negative malformed-shape coverage; preserve actionable structured CLI errors."
@@ -19,9 +19,9 @@ reporter: GitHub issue #1136
 severity: high
 environment: "npm 12.0.2, Node 26.5.0, Linux; explicit npm: package sources"
 repro_steps: "Run `pm package install npm:pm-brief` under npm 12.0.2; observe the valid object-form pack receipt fall through to a tarball path named `}`."
-resolution: Bound structured npm pack receipts to the expected package using manifest name or object key before sole-candidate fallback.
-expected_result: A keyed nameless receipt for another package is rejected without weakening valid registry or file-alias installs.
-actual_result: Mismatched keyed receipts fail closed; matching keyed receipts and identity-free legacy sole receipts remain supported.
+resolution: Separated npm local-file alias classification from path normalization so unchanged UNC aliases do not force alias names into keyed npm pack receipt validation.
+expected_result: npm aliases whose UNC targets remain unchanged accept the package identity reported by npm pack while ordinary registry specs retain exact identity validation.
+actual_result: "The install-source runtime recognizes complete alias@file: specs independently of normalization and a real archive-backed UNC alias regression passes without relaxing ordinary npm receipt checks."
 affected_version: 2026.8.27-2026.8.28
 component: package-install
 regression: true
@@ -29,7 +29,7 @@ customer_impact: "All explicit registry extension installs are broken for users 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-495lkc,discovered_from,"2026-08-28T14:42:31.427Z","harness:codex","cli:create:dep",detected
   pm-tnud,discovered_from,"2026-08-28T14:42:31.427Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-28T14:42:31.427Z","harness:codex","Duplicate check: complete all-status searches for npm 12,npm pack,package install,tarball,and pack output shape found package-lifecycle ancestors and related closed incidents but no item owning the npm 12 object-form receipt plus fail-closed fallback defect. GitHub issue #1136 is therefore net-new canonical work."
   "2026-08-28T23:24:23.293Z","harness:codex","Verification evidence: extension package regressions passed; packed npm and Bun consumers installed the generated tarball and executed the CLI and SDK; npx packed smoke passed; full coverage passed exact 100/100/100/100."
   "2026-08-29T02:22:16.274Z","harness:codex","Review-round evidence: npm pack selection now requires a named candidate to match the requested package and permits sole-candidate fallback only when the receipt omits a name. Conflicting-name negative controls, packed npx, npm install, Bun install, Node SDK, Bun SDK, and CLI contracts all pass."
@@ -38,6 +38,8 @@ comments[8]{created_at,author,text}:
   "2026-08-29T08:44:05.446Z","harness:codex","Final local evidence: npm registry and file-alias receipt regressions pass; strict static quality passed; full suite passed 586 files and 8,115 tests at exact 100/100/100/100 coverage; linked PM acceptance passed with zero failures."
   "2026-08-29T09:36:41.342Z","harness:codex","TDD review evidence: an npm object receipt with one keyed, nameless candidate could be accepted for a different expected package. Sole-candidate fallback now validates the available name-or-key identity before binding the receipt. Focused green: 4 files, 115/115 tests."
   "2026-08-29T09:58:29.362Z","harness:codex","Verification: exact repository coverage passed at 100/100/100/100. PM acceptance ran both linked entries, covering 14 and 25 tests; all passed with zero failure categories. Static, contract, and assurance gates passed."
+  "2026-08-29T14:19:36.385Z","harness:codex","Exact-head CodeRabbit finding confirmed: unchanged valid UNC alias forms still have local-file alias semantics, but expected-package selection binds them to the alias name. Reopened for semantic alias detection and a keyed target-manifest regression."
+  "2026-08-29T14:58:22.071Z","harness:codex","Evidence: linked extension security plus context suites passed (27 assertions), full coverage passed all 8,123 tests at exact 100/100/100/100, pnpm quality:static passed, npm packed smoke passed for 13 packages, and a temporary Bun 1.3.11 consumer installed the packed tarball then completed bunx init/create/get/close/get lifecycle."
 learnings[2]{created_at,author,text}:
   "2026-08-28T23:24:37.938Z","harness:codex","After a machine-readable subprocess receipt parses successfully, an unsupported shape is a contract error. Falling back to display lines at that point converts structured incompatibility into unsafe filenames."
   "2026-08-29T08:44:05.939Z","harness:codex","An npm file alias names the request, not necessarily the packed manifest. After local alias normalization, bind a keyed receipt by cardinality and validated artifact metadata instead of the alias label; unchanged registry specs retain exact-name binding."
@@ -48,7 +50,7 @@ files[3]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:53:58.971Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-29T08:23:17.830Z",local_mutation,feat/sdk-context-integrity-recovery,npm pack receipt and alias normalization regression coverage
-test_runs[3]:
+test_runs[4]:
   - run_id: test-all-local-mtdr7pg8-qj7z9n
     kind: test-all
     status: passed
@@ -92,9 +94,21 @@ test_runs[3]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtei88br-i0i9tt
+    kind: test
+    status: passed
+    started_at: "2026-08-29T14:57:00.356Z"
+    finished_at: "2026-08-29T14:57:21.447Z"
+    recorded_at: "2026-08-29T14:57:21.447Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "CodeRabbit npm receipt finding resolved: keyed nameless single candidates cannot bind to a mismatched expected package; exact coverage and PM acceptance pass."
+close_reason: UNC npm alias receipt validation repaired with archive-backed regression and installed-consumer proof.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

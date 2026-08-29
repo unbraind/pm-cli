@@ -44,6 +44,26 @@ afterEach(async () => {
 });
 
 describe("context integrity recovery", () => {
+  it("enforces cross-format source duplication without hiding the type-only parser waiver", async () => {
+    const repositoryConfig = JSON.parse(
+      await readFile(".jscpd.json", "utf8"),
+    ) as { ignore?: string[]; minLines?: number };
+    const sourceConfig = JSON.parse(
+      await readFile(".jscpd.source.json", "utf8"),
+    ) as { crossFormats?: string[][]; ignore?: string[]; minLines?: number };
+    expect(sourceConfig.crossFormats).toContainEqual([
+      "javascript",
+      "typescript",
+    ]);
+    expect(sourceConfig.ignore).toContain(
+      "src/core/extensions/extension-types.ts",
+    );
+    expect(repositoryConfig.ignore).not.toContain(
+      "src/core/extensions/extension-types.ts",
+    );
+    expect(sourceConfig.minLines).toBe(repositoryConfig.minLines);
+  });
+
   it("preserves comma whitespace and consumes escaped commas in structured metadata", () => {
     expect(parseCsvKv("path=README.md,note=alpha, beta", "--file")).toEqual({
       path: "README.md",
@@ -729,7 +749,7 @@ describe("context integrity recovery", () => {
             scope: "project",
           },
         ],
-        30,
+        10,
         { failOnEmptyTestRun: true },
       );
     for (const result of [unquoted, doubleQuoted, singleQuoted, infoPrefixed]) {

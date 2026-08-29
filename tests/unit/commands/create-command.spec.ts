@@ -178,6 +178,9 @@ describe("runCreate", () => {
       expect.objectContaining({
         code: "bare_comma_entry_ambiguous",
         exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(
+          "quote or escape literal commas in a structured key=<value> entry",
+        ),
       }),
     );
     expect(() => parseTests(["node -e \"console.log('a,b')\""])).toThrow(

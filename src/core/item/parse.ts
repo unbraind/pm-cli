@@ -452,11 +452,11 @@ export function assertNoAmbiguousBareCommaEntry(
 ): void {
   if (structured || !raw.includes(",")) return;
   throw new PmCliError(
-    `${optionName} received an ambiguous comma-bearing bare ${noun}. Repeat ${optionName} for multiple values, or use a structured key=<value> entry so a comma remains literal.`,
+    `${optionName} received an ambiguous comma-bearing bare ${noun}. Repeat ${optionName} for multiple values, or quote or escape literal commas in a structured key=<value> entry.`,
     EXIT_CODE.USAGE,
     {
       code: "bare_comma_entry_ambiguous",
-      required: `Use one ${optionName} per bare ${noun}, or use the structured key=<value> form for a literal comma-bearing value.`,
+      required: `Use one ${optionName} per bare ${noun}, or quote or escape literal commas in a structured key=<value> entry.`,
     },
   );
 }

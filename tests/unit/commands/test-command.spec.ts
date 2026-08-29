@@ -1531,6 +1531,31 @@ describe("runTest", () => {
     expect(linkedExecution.exitCode).toBe(0);
     expect(linkedExecution.stdout).toContain("ok");
     expect(linkedExecution.stderr).toContain("warn");
+    const immediateExecutions = await Promise.all(
+      Array.from({ length: 16 }, (_, index) =>
+        testInternals.runLinkedTestCommand(
+          `printf 'fast-${index}\\n'`,
+          2_000,
+          process.env,
+          {
+            index: index + 1,
+            total: 16,
+            command: "printf fast",
+            timeoutMs: 2_000,
+          },
+          "auto",
+        ),
+      ),
+    );
+    expect(immediateExecutions).toEqual(
+      immediateExecutions.map((execution, index) =>
+        expect.objectContaining({
+          exitCode: 0,
+          stdout: `fast-${index}\n`,
+          timedOut: false,
+        }),
+      ),
+    );
     const tempRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-test-command-helpers-"),
     );

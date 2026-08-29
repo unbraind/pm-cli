@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,evidence-integrity,github,linked-tests,tdd
 created_at: "2026-08-28T14:43:01.407Z"
-updated_at: "2026-08-29T13:57:27.523Z"
-closed_at: "2026-08-29T13:57:21.763Z"
-completed_at: "2026-08-29T13:57:21.763Z"
+updated_at: "2026-08-29T14:58:35.530Z"
+closed_at: "2026-08-29T14:58:35.052Z"
+completed_at: "2026-08-29T14:58:35.052Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Add an SDK-owned executed-test assertion primitive and declarative minimum-count field; recognize supported runner receipts without brittle prose-only heuristics; fail zero-test filtered commands closed; preserve explicit non-test smoke commands; add unit, integration, CLI, MCP/schema, history, Node runner, and temp-workspace acceptance coverage."
@@ -19,9 +19,9 @@ reporter: GitHub issue #1138
 severity: high
 environment: "pm 2026.8.28, Node 26.5.0, Linux; node --test command with --test-name-pattern matching zero tests"
 repro_steps: "Link a `node --test --test-name-pattern` command whose pattern matches no test, run it through `pm test <id> --run`, and observe ok true with the runner reporting pass 0."
-resolution: Empty-run receipt parsing now accepts the same Unicode information marker as positive Node spec reporter receipts.
-expected_result: "Info-prefixed tests 0 and pass 0 output fails closed as an empty run whenever fail-on-empty-test-run is enabled, while positive info-prefixed counts remain valid evidence."
-actual_result: An unfiltered info-prefixed zero-count command now returns empty_run; the real filtered Node spec reporter positive-count regression still passes.
+resolution: "Attached linked-test child error and close listeners synchronously after spawn, before asynchronous capture-handle closure, eliminating missed fast-child lifecycle events and nested timeout collisions."
+expected_result: "Immediate linked-test processes settle from their actual close event rather than waiting for the timeout, and multi-probe tests remain below their outer runner budget."
+actual_result: "A 16-process concurrent immediate-child regression and five consecutive compiled stress runs passed; hosted-equivalent coverage shard 3/4 and the full 8,123-test exact-coverage run pass."
 affected_version: 2026.8.21-2026.8.28
 component: linked-tests
 regression: true
@@ -29,7 +29,7 @@ customer_impact: "Renamed or mistyped test filters silently turn immutable PM ve
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4i73,discovered_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
   pm-m0b7h8,recurs_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
-comments[21]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-08-28T14:43:01.407Z","harness:codex","Duplicate check: complete all-status searches for test-name-pattern,zero tests,linked-test no-op success,GH-982,and test meaningfulness found pm-m0b7h8 for no-op linked-test mutation and pm-4i73 for meaningfulness,but no item owning zero-execution runner receipts. GitHub issue #1138 is a later recurrence with a distinct execution boundary."
   "2026-08-28T23:24:25.479Z","harness:codex","Verification evidence: linked-test execution and connected recovery regressions passed, including zero-run negative controls; full coverage passed 8,099 tests at exact 100/100/100/100."
   "2026-08-29T02:22:16.706Z","harness:codex","Review-round evidence: filtered linked-test success now requires a recognized positive runner receipt, so a dot-only reporter cannot certify execution and fails with missing_positive_execution_receipt. Shared structured-entry grammar removes duplicated classifiers; negative controls and exact coverage pass."
@@ -51,11 +51,13 @@ comments[21]{created_at,author,text}:
   "2026-08-29T13:27:09.851Z","harness:codex","Final local evidence: exact coverage passed 586 files and 8,122 tests at 100/100/100/100; pnpm quality:static passed; linked acceptance passed 1/1 with the two process-spawning regressions explicitly bounded at 60 seconds."
   "2026-08-29T13:40:07.588Z","harness:codex","Hosted exact-head evidence: CI coverage shard 3/4 timed out this two-command regression at its 60-second Vitest bound on both attempts. Each linked command independently allowed 30 seconds, so their combined internal worst-case equaled the outer test deadline and left no teardown margin. Reopened to retain the requested explicit 60-second bound while reducing these immediate printf probes to a bounded 10 seconds each."
   "2026-08-29T13:57:15.606Z","harness:codex","Hosted recovery evidence: exact-head CI run 33255126316 coverage shard 3/4 exhausted the previous outer 60-second Vitest boundary because its two sequential linked-test probes each carried a 30-second internal budget. The regression now preserves the explicit 60-second outer bound while assigning 10 seconds to each immediate printf probe, leaving deterministic teardown margin without weakening the behavior assertion. Verification: five consecutive focused runs passed 15/15; exact local coverage shard 3/4 passed 146 files and 2,508 tests; linked acceptance passed 1/1; full repository coverage passed 586 files and 8,122 tests at 60,166/60,166 statements, 45,396/45,396 branches, 12,513/12,513 functions, and 57,936/57,936 lines; pnpm quality:static passed all repository, package, SDK, security, duplication, docstring, token, graph-composition, tracker-context, and record-integrity gates."
+  "2026-08-29T14:19:38.050Z","harness:codex","Hosted run 33256390849 plus CodeRabbit evidence: four instant linked-test probes consumed repeated 30-second budgets because child exit/close listeners are registered only after awaiting capture-handle closure. Reopened to close the SDK child-lifecycle race and cap the four-probe regression at 10 seconds per command."
+  "2026-08-29T14:58:23.066Z","harness:codex","Evidence: linked context and test-command suites passed (16 and 63 tests). Five consecutive compiled stress runs passed 395/395 assertions including 80 immediate child processes. Hosted-equivalent coverage shard 3/4 passed, full coverage passed 8,123 tests at exact 100/100/100/100, and pnpm quality:static passed."
 learnings[3]{created_at,author,text}:
   "2026-08-29T05:25:27.756Z","harness:codex","A pass count is not an execution count: filtered-run integrity must use explicit executed-test evidence and expose missing positive receipts through the public refusal contract."
   "2026-08-29T07:43:04.604Z","harness:codex",Runner filter safety must operate on normalized shell command text; inspecting raw whitespace boundaries misses quoted arguments that the shell still passes as real flags.
   "2026-08-29T08:44:07.927Z","harness:codex","Filtered linked tests need both normalized command detection and reporter-aware positive execution receipts. Node spec output prefixes aggregate lines with a Unicode information marker, which must be accepted without weakening the positive nonzero count."
-files[8]{path,scope,note}:
+files[9]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal closure census
   sdk/public-surface.json,project,Generated SDK public surface snapshot
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public refusal-code catalog partition
@@ -63,10 +65,12 @@ files[8]{path,scope,note}:
   src/sdk/test/entry.ts,project,structured linked-test input guard
   src/sdk/test/execution.ts,project,zero-execution runner guard
   tests/fixtures/contracts/full.json,project,Generated CLI and SDK contract fixture
+  tests/unit/commands/test-command.spec.ts,project,concurrent immediate-child lifecycle race regression
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:06.723Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
-test_runs[8]:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,project,240,"harness:codex","2026-08-29T14:25:06.521Z",local_mutation,feat/sdk-context-integrity-recovery,immediate child lifecycle race coverage
+test_runs[9]:
   - run_id: test-all-local-mtdr7pg8-qj7z9n
     kind: test-all
     status: passed
@@ -163,11 +167,23 @@ test_runs[8]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtei8wis-1el0dg
+    kind: test
+    status: passed
+    started_at: "2026-08-29T14:57:21.906Z"
+    finished_at: "2026-08-29T14:57:52.804Z"
+    recorded_at: "2026-08-29T14:57:52.804Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for linked-test evidence integrity
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal closure contract evidence
-close_reason: "Recovered the hosted coverage-shard timeout by separating the two 10-second linked-process budgets from the retained 60-second Vitest boundary; exact shard, linked acceptance, full 8,122-test 100% coverage, and complete static assurance all pass."
+close_reason: "Fast linked-test child lifecycle race eliminated with concurrent stress, shard, and full-suite proof."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

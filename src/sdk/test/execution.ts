@@ -1423,9 +1423,17 @@ async function runLinkedTestCommand(
         stderrHandle.fd,
         cwd,
       );
-    } finally {
+    } catch (error: unknown) {
       await Promise.all([stdoutHandle.close(), stderrHandle.close()]);
+      throw error;
     }
+    const childClose = waitForLinkedTestChildClose(child);
+    let spawnError: string | undefined;
+    /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
+    child.on("error", (error) => {
+      spawnError = error.message;
+    });
+    await Promise.all([stdoutHandle.close(), stderrHandle.close()]);
     closeLinkedTestStdin(child);
     const timers: LinkedTestTimerState = {
       heartbeat: beginLinkedTestProgress(progressContext, progressMode),
@@ -1437,13 +1445,6 @@ async function runLinkedTestCommand(
       timers,
     );
     let timedOut = false;
-    let spawnError: string | undefined;
-
-    /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
-    child.on("error", (error) => {
-      spawnError = error.message;
-    });
-
     /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
     timers.timedOutTimer = setTimeout(() => {
       timedOut = true;
@@ -1451,7 +1452,7 @@ async function runLinkedTestCommand(
     }, timeoutMs);
     timers.timedOutTimer.unref?.();
 
-    const { code, signal } = await waitForLinkedTestChildClose(child);
+    const { code, signal } = await childClose;
     clearLinkedTestTimers(timers);
     const [stdout, stderr] = await Promise.all([
       readLinkedTestCapture(stdoutPath),

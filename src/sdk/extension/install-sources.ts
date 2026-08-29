@@ -415,6 +415,17 @@ function npmPackageNameFromSpec(spec: string): string {
   return unscoped?.[1] ?? withoutAlias;
 }
 
+/** Return whether an npm spec is a complete local-file alias, including unchanged UNC targets. */
+function isNpmLocalFileAliasSpec(spec: string): boolean {
+  const marker = "@file:";
+  const markerIndex = spec.lastIndexOf(marker);
+  return (
+    markerIndex > 0 &&
+    spec.slice(0, markerIndex).trim().length > 0 &&
+    spec.slice(markerIndex + marker.length).trim().length > 0
+  );
+}
+
 /** Implements check whether npm not found error for the public runtime surface of this module. */
 export function isNpmNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -569,14 +580,11 @@ export function normalizeNpmLocalFileAliasSpec(
 ): string {
   const marker = "@file:";
   const markerIndex = spec.lastIndexOf(marker);
-  if (markerIndex <= 0) {
+  if (!isNpmLocalFileAliasSpec(spec)) {
     return spec;
   }
   const packageName = spec.slice(0, markerIndex);
   const target = spec.slice(markerIndex + marker.length);
-  if (packageName.trim().length === 0 || target.trim().length === 0) {
-    return spec;
-  }
   // `file://host/share` (exactly two leading slashes) is a UNC / network spec,
   // not a local path — leave it for npm to resolve.
   if (target.startsWith("//") && !target.startsWith("///")) {
@@ -817,9 +825,9 @@ async function resolveNpmSourceDirectoryWithRunner(
     const packed = parsePackedNpmPackage(
       packStdout,
       packDirectory,
-      normalizeNpmLocalFileAliasSpec(source.spec) === source.spec
-        ? npmPackageNameFromSpec(source.spec)
-        : undefined,
+      isNpmLocalFileAliasSpec(source.spec)
+        ? undefined
+        : npmPackageNameFromSpec(source.spec),
     );
     if (!(await pathExists(packed.tarball))) {
       throw new PmCliError(

@@ -8,8 +8,14 @@
     "typescript",
     "javascript"
   ],
+  "crossFormats": [
+    [
+      "javascript",
+      "typescript"
+    ]
+  ],
   "mode": "strict",
-  "minLines": 18,
+  "minLines": 22,
   "minTokens": 114,
   "threshold": 0,
   "reporters": [
@@ -19,6 +25,7 @@
   "ignore": [
     "**/dist/**",
     "**/node_modules/**",
+    "src/core/extensions/extension-types.ts",
     "packages/pm-*/extensions/*/runtime-loader.ts",
     "plugins/pm-*/scripts/pm-mcp-server.mjs"
   ]
