@@ -9,11 +9,11 @@ const SCRIPT_ABS = path.join(process.cwd(), "scripts/smoke-npx-from-pack.mjs");
 
 /**
  * Strip the win32 `.cmd` suffix the script's `resolveCommand` appends to
- * `npm`/`npx` on `process.platform === "win32"`, so these `execFileSync` mocks
- * match the spawned command on every host. Without this, the default `npm`/
- * `npx` keys never match `npm.cmd`/`npx.cmd` on `windows-latest`, the pack step
- * returns empty, and every case fails with "npm pack did not produce a tarball
- * name". The dedicated win32 test below keys on the `.cmd` names directly.
+ * `npm`/`npx`/`bunx` on `process.platform === "win32"`, so these
+ * `execFileSync` mocks match the spawned command on every host. Without this,
+ * the default executable keys never match their `.cmd` wrappers on
+ * `windows-latest`. The dedicated win32 test below keys on the `.cmd` names
+ * directly.
  */
 const baseCommand = (command: string): string => command.replace(/\.cmd$/, "");
 
@@ -123,6 +123,9 @@ function runExecFileSyncMock(
   if (cmd === "npm" && args[0] === "exec") {
     return handleNpmExec(args, pm);
   }
+  if (cmd === "bunx") {
+    return "2026.6.14\n";
+  }
   if (cmd !== "npx") {
     return "";
   }
@@ -160,7 +163,7 @@ describe("smoke-npx-from-pack", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     process.argv = ["node", SCRIPT_ABS];
     await harness.importModule(SCRIPT);
-    expect(String(logSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("npx packed package smoke passed");
+    expect(String(logSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("npx and bunx packed package smoke passed");
     expect(cleanupTempRoot).toHaveBeenCalledWith("/tmp/pm-pack-smoke");
     expect(String(warnSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("[pm-pack-smoke] cleanup warning");
   });
@@ -199,6 +202,14 @@ describe("smoke-npx-from-pack", () => {
     expect(
       execFileSync.mock.calls.some(
         ([command, args]) => command === process.execPath && args[0]?.endsWith("cli-consumer.mjs"),
+      ),
+    ).toBe(true);
+    expect(
+      execFileSync.mock.calls.some(
+        ([command, args]) =>
+          baseCommand(command) === "bunx" &&
+          args.join(" ") ===
+            "--silent --bun --package /tmp/pm-pack-smoke/pm-cli-2026.6.14.tgz pm --version",
       ),
     ).toBe(true);
   });
@@ -336,7 +347,7 @@ describe("smoke-npx-from-pack", () => {
         const pmArgs = args.slice(args.indexOf("pm") + 1);
         return defaultPm(pmArgs[0]);
       }
-      return "";
+      return { "bunx.cmd": "2026.6.14\n" }[command] ?? "";
     });
     vi.doMock("node:child_process", () => ({ execFileSync }));
     const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
@@ -350,6 +361,7 @@ describe("smoke-npx-from-pack", () => {
     }
     expect(execFileSync.mock.calls.some((call) => call[0] === "npm.cmd")).toBe(true);
     expect(execFileSync.mock.calls.some((call) => call[0] === "npx.cmd")).toBe(true);
+    expect(execFileSync.mock.calls.some((call) => call[0] === "bunx.cmd")).toBe(true);
   });
 
   it("readCommandError renders non-Error throwables and Errors carrying stdout/blank stderr", async () => {

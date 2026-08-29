@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: dependencies,packed-consumer,release-gate,sentry,telemetry
 created_at: "2026-08-29T17:35:05.919Z"
-updated_at: "2026-08-29T18:16:30.921Z"
-closed_at: "2026-08-29T18:16:30.396Z"
-completed_at: "2026-08-29T18:16:30.396Z"
+updated_at: "2026-08-29T18:40:35.157Z"
+closed_at: "2026-08-29T18:40:34.656Z"
+completed_at: "2026-08-29T18:40:34.656Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "package.json and pnpm-lock.yaml resolve @sentry/node 10.72.0 without older Sentry runtime residue; the strict packed NodeNext SDK consumer and npx/bunx executable gates pass from temporary directories; Sentry telemetry, audit, security, typecheck, static assurance, and exact 100/100/100/100 coverage pass; pnpm outdated reports only the canonical npm-package-arg 14 and TypeScript 7 major deferrals"
@@ -20,14 +20,14 @@ risk: medium
 confidence: high
 resolution: "Safely upgraded the public Sentry runtime to 10.72.0 with exact packed SDK, npx, bunx, coverage, audit, and observability proof."
 expected_result: "Sentry 10.72.0 resolves without older runtime residue and passes packed NodeNext consumer, executable, coverage, audit, telemetry, and security gates."
-actual_result: "The 10.72.0 graph removed obsolete transformer/parser production dependencies, 92 focused tests and all 8,124 repository tests passed at exact 100/100/100/100, packed TypeScript/npx and fresh-directory npx/bunx execution passed, audit found zero vulnerabilities, and the live Sentry/telemetry gate passed after the already-fixed PM-CLI-39 group was correctly resolved."
+actual_result: "The 10.72.0 graph removed obsolete transformer/parser production dependencies; the complete repository remains at exact 100/100/100/100 coverage; the packed TypeScript consumer passes; and the mandatory packed-executor gate now invokes both npx and bunx with command-specific failures, including Windows .cmd wrapper coverage. Audit, live Sentry, telemetry, static-quality, graph, and record-integrity gates pass."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,discovered_from,"2026-08-29T17:35:05.919Z","harness:codex","cli:create:dep",detected
   pm-fb0lkg,supersedes,"2026-08-29T17:35:05.919Z","harness:codex","cli:create:dep",detected
   pm-3lhth4,verifies,"2026-08-29T18:01:52.070Z","harness:codex","cli:update:dep",detected
   pm-do5b,verifies,"2026-08-29T18:03:39.867Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,verifies,"2026-08-29T18:03:39.867Z","harness:codex","cli:update:dep",detected
-comments[5]:
+comments[7]:
   - created_at: "2026-08-29T17:35:05.919Z"
     author: "harness:codex"
     text: "Duplicate-check evidence 2026-08-29: all-status searches for @sentry/node 10.72.0 and Sentry dependency refreshes found the closed packed-consumer lineage pm-fb0lkg and older refresh items, but no item owns 10.72.0. Live pnpm outdated identifies 10.72.0 as the sole compatible candidate; npm-package-arg 14 and TypeScript 7 remain separately owned by pm-ksr40d and pm-do5b."
@@ -44,17 +44,26 @@ comments[5]:
   - created_at: "2026-08-29T18:16:29.893Z"
     author: "harness:codex"
     text: "Final local-quality evidence 2026-08-29: after restoring both typed compatibility-deferral verification edges, the complete non-interactive pnpm lint suite passed. ESLint reported zero warnings, both jscpd scans reported zero clones, repository-static-quality and every SDK/CLI contract/parity/token/refusal gate passed, graph-composition returned prose-edge-gaps exactly at its 1,343 ceiling and record-integrity passed across 56,714 append-only history events. This supplements the already-recorded 8,124-test exact 100/100/100/100 coverage, packed SDK, npx/bunx, audit, Sentry, and telemetry evidence."
-files[4]{path,scope,note}:
+  - created_at: "2026-08-29T18:39:37.256Z"
+    author: "harness:codex"
+    text: "Review feedback resolution 2026-08-29: CodeRabbit correctly identified that the earlier linked smoke command exercised npx and npm-exec while bunx existed only as an unlinked manual acceptance command. TDD added exact bunx invocation and Windows wrapper expectations first; the focused suite failed 2 of 24 before implementation. The packed smoke now executes the same temporary tarball through bunx with a command-specific version assertion, and emits a joint npx/bunx success receipt. The full five-command PM acceptance run passed: 92 focused tests, package artifact plus Sentry/telemetry/audit, exact repository coverage, packed npx+bunx acceptance reporting version 2026.8.28 and 13 packages, and 24/24 focused gate tests."
+  - created_at: "2026-08-29T18:40:34.007Z"
+    author: "harness:codex"
+    text: "Focused quality follow-up: simplified the Windows executable-response mock without adding a one-use helper. Focused ESLint now passes with zero warnings, the 24-test smoke suite passes, and graph composition remains green at related=6,053/6,053 and prose gaps=1,343/1,343."
+files[6]{path,scope,note}:
   CHANGELOG.md,project,Generated release-facing dependency entry
   package.json,project,Exact public Sentry runtime pin
   pnpm-lock.yaml,project,Reproducible Sentry 10.72 dependency graph
+  scripts/smoke-npx-from-pack.mjs,project,Packed npx and bunx executable acceptance gate
   tests/unit/packages/package-manifest.spec.ts,project,Packed-consumer declaration ratchet
-tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,TDD coverage for bunx invocation and Windows wrappers
+tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/packages/package-manifest.spec.ts,project,300,"harness:codex","2026-08-29T17:35:23.401Z",local_mutation,chore/sentry-10-72-packed-consumer
   "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",project,900,"harness:codex","2026-08-29T17:35:23.903Z",local_mutation,chore/sentry-10-72-packed-consumer
   node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,project,1500,"harness:codex","2026-08-29T17:35:24.425Z",local_mutation,chore/sentry-10-72-packed-consumer
   "pnpm smoke:npx",project,600,"harness:codex","2026-08-29T17:49:47.627Z",local_mutation,chore/sentry-10-72-packed-consumer
-test_runs[3]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,300,"harness:codex","2026-08-29T18:29:59.033Z",local_mutation,chore/sentry-10-72-packed-consumer
+test_runs[4]:
   - run_id: test-local-mteo7ifn-l7gmdx
     kind: test
     status: failed
@@ -90,5 +99,20 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm smoke:npx",schema,schema,source,local_source_ref
-close_reason: "Adopted @sentry/node 10.72.0 with a single-version runtime graph, reduced production dependency surface, TDD manifest ratchet, exact 100/100/100/100 coverage, strict packed SDK and npx/bunx consumer proof, zero known vulnerabilities, live Sentry/telemetry gate proof, and complete repository static/graph/integrity gates."
+  - run_id: test-local-mteq5h4v-5b681t
+    kind: test
+    status: passed
+    started_at: "2026-08-29T18:30:14.305Z"
+    finished_at: "2026-08-29T18:39:09.823Z"
+    recorded_at: "2026-08-29T18:39:09.823Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/packages/package-manifest.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,schema,schema,source,local_source_ref
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
+close_reason: "Adopted Sentry 10.72.0 and strengthened packed release acceptance so both npx and bunx execute the exact temporary tarball with command-specific failures, backed by TDD, exact full coverage, security, Sentry, telemetry, graph, static-quality, and focused zero-warning lint evidence."
 body: ""
