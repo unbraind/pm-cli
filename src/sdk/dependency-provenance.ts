@@ -90,6 +90,22 @@ function boundedExternalText(
   return (value?.trim() || fallback).slice(0, maximumLength);
 }
 
+/** Reject provider payloads that violate the runtime resolver-result contract. */
+function isExternalDependencyResolverResult(
+  value: unknown,
+): value is ExternalDependencyResolverResult {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.status === "string" &&
+    (candidate.title == null || typeof candidate.title === "string") &&
+    (candidate.source == null || typeof candidate.source === "string") &&
+    (candidate.checkedAt == null || typeof candidate.checkedAt === "string")
+  );
+}
+
 /** Register a package-owned external dependency resolver and return its idempotent disposer. */
 export function registerExternalDependencyResolver(
   resolver: ExternalDependencyResolver,
@@ -138,7 +154,10 @@ export async function resolveExternalDependencyReference(
     ),
   );
   for (const [index, outcome] of outcomes.entries()) {
-    if (outcome.status !== "fulfilled" || outcome.value === null) {
+    if (
+      outcome.status !== "fulfilled" ||
+      !isExternalDependencyResolverResult(outcome.value)
+    ) {
       continue;
     }
     const resolver = resolvers[index];

@@ -528,7 +528,7 @@ async function resolveHistoryRepairMergeEvidence(params: {
       {
         code: "merge_reconcile_receipt_evidence_untrusted",
         required:
-          "Use clone-local driver evidence whose canonical path, declared fields, and merged-value hashes match the current item, or review the mismatch and rerun with --force.",
+          "Use authoritative clone-local or durable receipt evidence whose canonical path, declared fields, and merged-value hashes match the current item, or review the mismatch and rerun with --force.",
         recovery: { suggested_retry: "pm merge reconcile --dry-run" },
       },
     );

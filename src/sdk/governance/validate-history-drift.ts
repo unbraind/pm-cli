@@ -67,7 +67,7 @@ export async function buildValidateHistoryDriftCheck(
         workspace_state_mismatches: drift.workspaceStateMismatches,
         workspace_state_missing: drift.workspaceStateMissing,
         workspace_state_unreadable: drift.workspaceStateUnreadable,
-        version_skews: drift.versionSkews,
+        version_skews: drift.versionSkews.slice(0, diagnosticLimit),
       },
     },
     warnings,

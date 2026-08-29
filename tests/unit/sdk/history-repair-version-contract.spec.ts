@@ -219,7 +219,12 @@ describe("history repair hash epoch contract", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject({
-        context: { code: "merge_reconcile_receipt_evidence_untrusted" },
+        context: {
+          code: "merge_reconcile_receipt_evidence_untrusted",
+          required: expect.stringContaining(
+            "authoritative clone-local or durable receipt evidence",
+          ),
+        },
       });
     });
   });

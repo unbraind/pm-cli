@@ -376,6 +376,18 @@ describe("context integrity recovery", () => {
         resolve: async () => null,
       });
       cleanup.push(disposeEmpty);
+      const disposeUndefined = registerExternalDependencyResolver({
+        name: "undefined-result",
+        supports: () => true,
+        resolve: async () => undefined as never,
+      });
+      cleanup.push(disposeUndefined);
+      const disposeMalformedTitle = registerExternalDependencyResolver({
+        name: "malformed-title",
+        supports: () => true,
+        resolve: async () => ({ status: "closed", title: 42 }) as never,
+      });
+      cleanup.push(disposeMalformedTitle);
       const disposeGitHub = registerExternalDependencyResolver({
         name: " github-issues ",
         supports: (reference) => reference.startsWith("https://github.com/"),
@@ -409,6 +421,8 @@ describe("context integrity recovery", () => {
         resolver: "github-issues",
       });
       disposeGitHub();
+      disposeMalformedTitle();
+      disposeUndefined();
       disposeEmpty();
       disposeThrowing();
       disposeUnsupported();
@@ -530,6 +544,58 @@ describe("context integrity recovery", () => {
       expect(health.warnings).toContain(
         "history_drift_version_skew:_workspace",
       );
+    });
+  });
+
+  it("bounds version-skew diagnostics unless verbose evidence is requested", async () => {
+    await withTempPmPath(async (context) => {
+      for (let index = 0; index < 6; index += 1) {
+        const created = context.runCli(
+          [
+            "create",
+            "--title",
+            `Future writer ${index}`,
+            "--description",
+            "Version-skew diagnostic fixture",
+            "--type",
+            "Task",
+            "--status",
+            "open",
+            "--priority",
+            "1",
+            "--json",
+          ],
+          { expectJson: true },
+        );
+        const id = (created.json as { item: { id: string } }).item.id;
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const rows = (await readFile(historyPath, "utf8"))
+          .trim()
+          .split("\n")
+          .map((line) => ({
+            ...(JSON.parse(line) as Record<string, unknown>),
+            item_hash_version: 99,
+          }));
+        await writeFile(
+          historyPath,
+          `${rows.map((row) => JSON.stringify(row)).join("\n")}\n`,
+          "utf8",
+        );
+      }
+
+      const bounded = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
+      const verbose = await runValidate(
+        { checkHistoryDrift: true, verboseDiagnostics: true },
+        { path: context.pmPath },
+      );
+      const versionSkews = (result: typeof bounded) =>
+        (result.checks.find((check) => check.name === "history_drift")
+          ?.details as { version_skews: string[] }).version_skews;
+      expect(versionSkews(bounded)).toHaveLength(5);
+      expect(versionSkews(verbose)).toHaveLength(6);
     });
   });
 
