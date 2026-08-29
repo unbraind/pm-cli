@@ -708,7 +708,8 @@ describe("context integrity recovery", () => {
   it(
     "fails a filtered linked test when the runner reports zero executed tests",
     async () => {
-      const [unquoted, doubleQuoted, singleQuoted] = await runLinkedTests(
+      const [unquoted, doubleQuoted, singleQuoted, infoPrefixed] =
+        await runLinkedTests(
         [
           {
             command:
@@ -725,10 +726,20 @@ describe("context integrity recovery", () => {
               "printf '# tests 0\\n# pass 0\\n' # '--testNamePattern=missing'",
             scope: "project",
           },
+          {
+            command: "printf 'ℹ tests 0\\nℹ pass 0\\n'",
+            scope: "project",
+          },
         ],
         30,
+        { failOnEmptyTestRun: true },
       );
-      for (const result of [unquoted, doubleQuoted, singleQuoted]) {
+      for (const result of [
+        unquoted,
+        doubleQuoted,
+        singleQuoted,
+        infoPrefixed,
+      ]) {
         expect(result).toMatchObject({
           status: "failed",
           failure_category: "empty_run",

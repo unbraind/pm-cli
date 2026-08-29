@@ -2,13 +2,13 @@ id: pm-yhle2e
 title: "GH-1146/1147: external blockers remain stale and validation recommends deleting them"
 description: "GitHub issues #1146 and #1147 show that accepted external blocked_by locators are never re-resolved, remain permanently blocking with unknown status, and are then misclassified by validate as dangling local corruption with a destructive --unset blocked_by hint."
 type: Issue
-status: closed
+status: in_progress
 priority: 1
 tags[7]: agent-ux,"area:graph","area:sdk",context-integrity,external-references,github-1146,github-1147
 created_at: "2026-08-28T21:25:57.770Z"
-updated_at: "2026-08-29T10:58:55.078Z"
-closed_at: "2026-08-29T10:58:54.402Z"
-completed_at: "2026-08-29T10:58:54.402Z"
+updated_at: "2026-08-29T12:24:41.994Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4c3bbebc779deae6780a83dd"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: External references are typed and preserved rather than counted as dangling local ids; A public resolver extension point returns bounded status title source and checked-at evidence without core GitHub coupling; Unresolved external blockers expose age and resolver availability while resolved blockers can trigger the existing auto-unblock transition; Validation never recommends destructive deletion for a well-formed external locator; SDK CLI MCP health next validate and temporary-workspace acceptance remain contract-parity with exact coverage
@@ -19,16 +19,16 @@ reporter: GitHub issues #1146 and #1147
 severity: high
 environment: pm 2026.8.28 in fresh local workspaces plus a long-lived cross-repository blocker
 repro_steps: Block an item on a GitHub issue URL; close the remote issue; observe pm next still counting an unknown blocker and pm validate classifying the locator as dangling with an unset hint.
-resolution: Added runtime validation for package-owned external dependency resolver results before any provider payload is normalized or projected.
-expected_result: "Rejected, nullish, or malformed resolver results are skipped without crashing, provider-specific string statuses remain forward-compatible as unknown, and a later valid resolver can resolve the reference."
-actual_result: "Undefined results and results with non-string optional fields are ignored; the next valid GitHub resolver returns the canonical external dependency record, and all linked provenance and actionability tests pass."
+resolution: External endpoint collection now applies graph-target normalization to scalar and structured blockers before namespace assignment.
+expected_result: The no-active-blocker sentinel remains visible only in legacy sentinel governance and never becomes an external graph endpoint or disconnected detail node.
+actual_result: Scalar and global structured sentinel rows are excluded from external target collection while the scalar legacy sentinel remains classified in no_active_blocker_sentinels.
 component: "SDK dependency governance, external resolver hooks, next, validate, and CLI adapters"
 customer_impact: External dependencies silently park actionable work forever while the primary remediation can destroy the only machine-readable explanation.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6sc8jq,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-p9sc,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-uxkf,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
-comments[21]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-08-28T21:25:57.770Z","harness:codex","Duplicate check evidence: complete all-status strict read covered 2593 readable items with no omissions. Closed pm-6sc8jq owns truthful stale-lifecycle governance for external blockers while pm-p9sc owns local dangling projections and pm-uxkf owns edge-aware blocked reads. No open item owns re-resolution plus safe validation classification. This recurrence is canonical for GitHub 1146 and 1147."
   "2026-08-28T21:26:39.465Z","harness:codex","GitHub linkage evidence: issues #1146 and #1147 both point to this canonical combined external-blocker lifecycle and validation item at its merge-stable main-branch toon path."
   "2026-08-28T23:24:21.263Z","harness:codex","Verification evidence: external classification, graph, actionability, next, and validation regressions passed; packed Node and Bun SDK consumers imported the public classifier successfully; full coverage passed exact 100/100/100/100."
@@ -50,6 +50,8 @@ comments[21]{created_at,author,text}:
   "2026-08-29T09:58:28.812Z","harness:codex","Verification: exact repository coverage passed at 100/100/100/100. PM acceptance ran all 3 linked entries, covering 14, 28, and 35 tests respectively; all passed with zero failure categories. Static, contract, and assurance gates passed."
   "2026-08-29T10:42:49.670Z","harness:codex","TDD review evidence: supporting providers that fulfilled with undefined or a non-string optional field crashed resolution before a later valid provider could run. The new regressions fail on the unsafe status/trim access; the SDK now validates the runtime result object, required status, and optional string fields before projection."
   "2026-08-29T10:58:53.788Z","harness:codex","Final review evidence: linked acceptance passed 3/3 commands with 79 assertions across context integrity, dependency provenance, graph governance, and actionability suites. Full repository coverage passed 586 files and 8,119 tests at exact 100/100/100/100. Focused ESLint and every TypeScript project passed; static quality, security, and dependency audit passed."
+  "2026-08-29T11:49:59.815Z","harness:codex","CodeRabbit exact-head finding: external target collection uses reference normalization instead of graph normalization, allowing a global no-active-blocker sentinel to enter the external node namespace even though edge normalization drops it. Adding scalar and structured negative controls before implementation."
+  "2026-08-29T12:24:41.994Z","harness:codex","TDD evidence: scalar and global structured no-active-blocker rows reproduced an unwanted fifth external endpoint. Graph-target normalization now excludes both before namespace allocation while retaining the scalar row in legacy sentinel governance. Focused graph and connected suites passed; full repository rerun passed 586 files and 8,120 tests at exact 100/100/100/100 coverage."
 learnings[6]{created_at,author,text}:
   "2026-08-28T23:24:37.448Z","harness:codex","A syntactically valid remote locator is a typed graph node even when no resolver is installed. Unknown external state must remain explicit evidence, never be rewritten as local dangling corruption."
   "2026-08-29T00:14:46.442Z","harness:codex","Provider integrations belong behind the SDK resolver registry: core classifies and preserves external identity while bounded package-owned providers supply lifecycle evidence. Resolver failures and absent providers fail closed to explicit unknown state instead of deleting context."
@@ -205,7 +207,6 @@ test_runs[9]:
       node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: Validated untrusted resolver payloads at runtime and proved malformed providers cannot abort later valid resolution.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

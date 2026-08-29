@@ -436,7 +436,7 @@ export function collectExternalDependencyTargetIds(
 ): string[] {
   const targets = new Map<string, string>();
   for (const item of items) {
-    const scalarBlocker = normalizeDependencyReferenceTarget(item.blocked_by);
+    const scalarBlocker = normalizeDependencyGraphTarget(item.blocked_by);
     if (
       scalarBlocker &&
       isExternalGraphReference(scalarBlocker) &&
@@ -452,7 +452,7 @@ export function collectExternalDependencyTargetIds(
       ) {
         continue;
       }
-      const id = normalizeDependencyReferenceTarget(dependency.id);
+      const id = normalizeDependencyGraphTarget(dependency.id);
       if (id && !targets.has(id)) {
         targets.set(id, id);
       }

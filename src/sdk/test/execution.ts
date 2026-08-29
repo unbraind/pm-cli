@@ -2093,9 +2093,12 @@ const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   {
     code: "reported_zero_passes",
     regex:
-      /(?:^\s*#?\s*tests\s+0\s*$[\s\S]*^\s*#?\s*pass\s+0\s*$|^\s*#?\s*pass\s+0\s*$[\s\S]*^\s*#?\s*tests\s+0\s*$)/im,
+      /(?:^\s*(?:#|ℹ)?\s*tests\s+0\s*$[\s\S]*^\s*(?:#|ℹ)?\s*pass\s+0\s*$|^\s*(?:#|ℹ)?\s*pass\s+0\s*$[\s\S]*^\s*(?:#|ℹ)?\s*tests\s+0\s*$)/imu,
   },
-  { code: "reported_zero_tests", regex: /^\s*#?\s*tests\s+0\s*$/im },
+  {
+    code: "reported_zero_tests",
+    regex: /^\s*(?:#|ℹ)?\s*tests\s+0\s*$/imu,
+  },
 ];
 
 const POSITIVE_LINKED_TEST_RUN_PATTERNS = [
