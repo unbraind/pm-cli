@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:test-command",regression,sandbox-safety,trust
 created_at: "2026-08-29T15:17:13.352Z"
-updated_at: "2026-08-29T15:17:13.352Z"
+updated_at: "2026-08-29T15:42:41.933Z"
 author: "harness:codex"
 acceptance_criteria: "Define whether the linked-test add policy is a security boundary or an agent-safety nudge and encode that contract in the public SDK.; Normalize or safely inspect direct, sh -c, equals-spelled, package-manager, Node, and non-Node runner forms so equivalent capabilities cannot diverge accidentally.; Document command-content validation and safe recovery in pm test help and testing documentation.; Add negative and positive regression tests with exact 100/100/100/100 coverage and manual temporary-workspace acceptance."
 definition_of_ready: "Read the complete pm-q813, pm-mlc3, and pm-ed28wi lineage plus the current src/cli/commands/test.ts and public SDK trust contracts before choosing the enforcement model."
@@ -28,10 +28,11 @@ affected_version: 2026.8.28
 component: sdk/test-trust-and-cli-test-intake
 regression: true
 customer_impact: Agents encounter a surprising refusal for the canonical Node test form and are nudged toward less inspectable wrappers that bypass the same guard.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ed28wi,incident_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
   pm-q813,recurs_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
   pm-vwuidf,discovered_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
+  pm-mlc3,incident_from,"2026-08-29T15:42:41.718Z","harness:codex","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-29T15:17:13.352Z","harness:codex","Duplicate-check evidence: complete all-status keyword searches found closed pm-q813 for package-manager run-script wrappers, pm-mlc3 for package-manager flag prefixes, and pm-ed28wi for merge-time command provenance/trust. None owns capability-equivalent command normalization or missing pm test help disclosure. This issue recurs from pm-q813, is an incident in the broader trust boundary, and was discovered during pm-vwuidf exact-head closeout."
 notes[1]{created_at,author,text}:

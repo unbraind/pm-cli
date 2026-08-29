@@ -180,7 +180,12 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   // leading assignment syntax through the structured-key allowlist so typos
   // and malformed URL-plus-note input remain atomic failures (GH-258,
   // GH-1000).
-  const equalsIndex = raw.indexOf("=");
+  const firstCommaIndex = raw.indexOf(",");
+  const leadingSegment = raw.slice(
+    0,
+    firstCommaIndex >= 0 ? firstCommaIndex : raw.length,
+  );
+  const equalsIndex = leadingSegment.indexOf("=");
   if (
     equalsIndex >= 0 &&
     !/\s/u.test(raw) &&
@@ -192,7 +197,7 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   ) {
     return false;
   }
-  return raw.includes("=") || looksLikeGenericKeyValueEntry(raw);
+  return leadingSegment.includes("=") || looksLikeGenericKeyValueEntry(raw);
 }
 
 /** Whether a Markdown destination contains only balanced parentheses. */

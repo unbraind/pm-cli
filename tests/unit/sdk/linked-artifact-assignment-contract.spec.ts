@@ -75,6 +75,22 @@ describe("linked artifact assignment contract", () => {
     );
   });
 
+  it("refuses a bare first CSV segment before parsing later structured fields", () => {
+    expect(looksLikeStructuredPathEntry("README.md,scope=project")).toBe(
+      false,
+    );
+    for (const bareNoun of ["file", "doc"] as const) {
+      expect(() =>
+        parseAddEntries(["README.md,scope=project"], bareNoun),
+      ).toThrowError(
+        expect.objectContaining({
+          code: "bare_comma_entry_ambiguous",
+          exitCode: EXIT_CODE.USAGE,
+        }),
+      );
+    }
+  });
+
   it("keeps structured file and doc entries transport-neutral", () => {
     const entry = "path=docs/context.md,scope=project,note=decision evidence";
     expect(parseAddEntries([entry], "file")).toEqual(
