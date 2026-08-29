@@ -204,14 +204,19 @@ describe("smoke-npx-from-pack", () => {
         ([command, args]) => command === process.execPath && args[0]?.endsWith("cli-consumer.mjs"),
       ),
     ).toBe(true);
-    expect(
-      execFileSync.mock.calls.some(
-        ([command, args]) =>
-          baseCommand(command) === "bunx" &&
-          args.join(" ") ===
-            "--silent --bun --package /tmp/pm-pack-smoke/pm-cli-2026.6.14.tgz pm --version",
-      ),
-    ).toBe(true);
+    const bunxArgs = execFileSync.mock.calls.find(
+      ([command]) => baseCommand(command) === "bunx",
+    )?.[1];
+    expect(bunxArgs?.slice(0, 4)).toEqual([
+      "--silent",
+      "--bun",
+      "--package",
+      expect.any(String),
+    ]);
+    expect(path.basename(bunxArgs?.[3] ?? "")).toBe(
+      "pm-cli-2026.6.14.tgz",
+    );
+    expect(bunxArgs?.slice(4)).toEqual(["pm", "--version"]);
   });
 
   it("throws when npm pack produces no tarball name", async () => {

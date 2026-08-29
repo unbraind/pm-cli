@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: dependencies,packed-consumer,release-gate,sentry,telemetry
 created_at: "2026-08-29T17:35:05.919Z"
-updated_at: "2026-08-29T18:40:35.157Z"
-closed_at: "2026-08-29T18:40:34.656Z"
-completed_at: "2026-08-29T18:40:34.656Z"
+updated_at: "2026-08-29T19:03:12.788Z"
+closed_at: "2026-08-29T19:03:12.177Z"
+completed_at: "2026-08-29T19:03:12.177Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "package.json and pnpm-lock.yaml resolve @sentry/node 10.72.0 without older Sentry runtime residue; the strict packed NodeNext SDK consumer and npx/bunx executable gates pass from temporary directories; Sentry telemetry, audit, security, typecheck, static assurance, and exact 100/100/100/100 coverage pass; pnpm outdated reports only the canonical npm-package-arg 14 and TypeScript 7 major deferrals"
@@ -27,7 +27,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-3lhth4,verifies,"2026-08-29T18:01:52.070Z","harness:codex","cli:update:dep",detected
   pm-do5b,verifies,"2026-08-29T18:03:39.867Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,verifies,"2026-08-29T18:03:39.867Z","harness:codex","cli:update:dep",detected
-comments[7]:
+comments[8]:
   - created_at: "2026-08-29T17:35:05.919Z"
     author: "harness:codex"
     text: "Duplicate-check evidence 2026-08-29: all-status searches for @sentry/node 10.72.0 and Sentry dependency refreshes found the closed packed-consumer lineage pm-fb0lkg and older refresh items, but no item owns 10.72.0. Live pnpm outdated identifies 10.72.0 as the sole compatible candidate; npm-package-arg 14 and TypeScript 7 remain separately owned by pm-ksr40d and pm-do5b."
@@ -50,19 +50,26 @@ comments[7]:
   - created_at: "2026-08-29T18:40:34.007Z"
     author: "harness:codex"
     text: "Focused quality follow-up: simplified the Windows executable-response mock without adding a one-use helper. Focused ESLint now passes with zero warnings, the 24-test smoke suite passes, and graph composition remains green at related=6,053/6,053 and prose gaps=1,343/1,343."
-files[6]{path,scope,note}:
+  - created_at: "2026-08-29T19:03:11.545Z"
+    author: "harness:codex"
+    text: "Review-fix evidence: Greptile correctly found that the exact-head CI smoke gate invoked bunx without provisioning Bun, and Windows exposed a path-separator-dependent unit assertion. TDD red proof: the workflow contract failed 2/14 before provisioning/order changes. Green proof: focused workflow and smoke suites pass 38/38; the real packed-artifact smoke passes through both npx and bunx against pm-cli-2026.8.28.tgz; pnpm lint passes including eslint, zero jscpd clones, static-quality, SDK surface, graph-composition, and record-integrity gates. CI and release now use the SHA-pinned setup-bun v2 action before packed-executor smoke; the release workflow keeps exactly one Bun setup. Local actionlint was unavailable, so the SHA-pinned GitHub action remains the authoritative workflow syntax proof."
+files[9]{path,scope,note}:
+  .github/workflows/ci.yml,project,Provision pinned Bun for mandatory packed smoke gate
+  .github/workflows/release.yml,project,Provision Bun before pre-publish packed smoke
   CHANGELOG.md,project,Generated release-facing dependency entry
   package.json,project,Exact public Sentry runtime pin
   pnpm-lock.yaml,project,Reproducible Sentry 10.72 dependency graph
   scripts/smoke-npx-from-pack.mjs,project,Packed npx and bunx executable acceptance gate
+  tests/integration/ci-workflow-contract.spec.ts,project,TDD ordering contract for Bun provisioning before smoke
   tests/unit/packages/package-manifest.spec.ts,project,Packed-consumer declaration ratchet
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,TDD coverage for bunx invocation and Windows wrappers
-tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[6]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/packages/package-manifest.spec.ts,project,300,"harness:codex","2026-08-29T17:35:23.401Z",local_mutation,chore/sentry-10-72-packed-consumer
   "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",project,900,"harness:codex","2026-08-29T17:35:23.903Z",local_mutation,chore/sentry-10-72-packed-consumer
   node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,project,1500,"harness:codex","2026-08-29T17:35:24.425Z",local_mutation,chore/sentry-10-72-packed-consumer
   "pnpm smoke:npx",project,600,"harness:codex","2026-08-29T17:49:47.627Z",local_mutation,chore/sentry-10-72-packed-consumer
   node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,300,"harness:codex","2026-08-29T18:29:59.033Z",local_mutation,chore/sentry-10-72-packed-consumer
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,300,"harness:codex","2026-08-29T18:54:03.899Z",local_mutation,chore/sentry-10-72-packed-consumer
 test_runs[4]:
   - run_id: test-local-mteo7ifn-l7gmdx
     kind: test
@@ -114,5 +121,5 @@ test_runs[4]:
       node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,schema,schema,source,local_source_ref
       "pnpm smoke:npx",schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
-close_reason: "Adopted Sentry 10.72.0 and strengthened packed release acceptance so both npx and bunx execute the exact temporary tarball with command-specific failures, backed by TDD, exact full coverage, security, Sentry, telemetry, graph, static-quality, and focused zero-warning lint evidence."
+close_reason: "Provisioned Bun before the npx/bunx packed-consumer gates in CI and release, made the cross-platform command assertion portable, and proved the change with TDD, real executor smoke, focused tests, and the full lint/static/graph gate."
 body: ""
