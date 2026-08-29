@@ -35,6 +35,7 @@ const PUBLISH_OR_RELEASE_PATTERNS = [
 ];
 const SHA_PATTERN = "[0-9a-f]{40}";
 const PINNED_PNPM_VERSION = "version: 11.10.0";
+const PINNED_BUN_VERSION = "bun-version: 1.4.0";
 const PINNED_ACTIONS = {
   checkout: new RegExp(`uses: actions/checkout@${SHA_PATTERN}`),
   pnpmSetup: new RegExp(`uses: pnpm/action-setup@${SHA_PATTERN}`),
@@ -229,7 +230,7 @@ describe("GitHub workflow contract", () => {
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       PINNED_ACTIONS.setupBun,
-      "bun-version: latest",
+      PINNED_BUN_VERSION,
       "name: Restore exact TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
@@ -637,6 +638,7 @@ describe("GitHub workflow contract", () => {
       "path: ${{ runner.temp }}/release-notes.md",
       "body_path: ${{ runner.temp }}/release-notes.md",
       PINNED_ACTIONS.setupBun,
+      PINNED_BUN_VERSION,
       'NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
       "export NPM_PACKAGE",
       'anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version',
@@ -815,7 +817,7 @@ describe("GitHub workflow contract", () => {
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       PINNED_ACTIONS.setupBun,
-      "bun-version: latest",
+      PINNED_BUN_VERSION,
       "name: Restore TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
@@ -960,6 +962,11 @@ describe("GitHub workflow contract", () => {
       autoReleaseWorkflow.indexOf("name: Run auto release pipeline"),
     );
     expect(autoReleaseWorkflow.match(/name: Setup Bun/g)).toHaveLength(1);
+    expect(autoReleaseWorkflow).toMatch(
+      new RegExp(
+        `- name: Setup Bun\\n        if: steps\\.retry_target\\.outputs\\.existing_tag == ''\\n        uses: oven-sh/setup-bun@${SHA_PATTERN} # v2\\n        with:\\n          ${PINNED_BUN_VERSION}`,
+      ),
+    );
     expect(autoReleaseWorkflow).not.toContain("gh run rerun");
     expect(autoReleaseWorkflow).not.toContain(
       'gh run list --workflow Release --event push --branch "${EXISTING_RELEASE_TAG}"',
