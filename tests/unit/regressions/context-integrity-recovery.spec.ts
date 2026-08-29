@@ -25,6 +25,7 @@ import {
   assembleWorkspaceRelationshipGraph,
   collectExternalDependencyTargetIds,
 } from "../../../src/sdk/graph/assembly.js";
+import { parseLogSeed } from "../../../src/sdk/lifecycle/create.js";
 import { runNext } from "../../../src/sdk/query/next.js";
 import { runLinkedTests } from "../../../src/sdk/test/execution.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -48,6 +49,43 @@ describe("context integrity recovery", () => {
     expect(
       parseCsvKv(String.raw`path=README.md,note=alpha\, beta`, "--file"),
     ).toEqual({ path: "README.md", note: "alpha, beta" });
+  });
+
+  it("parses newline-separated log seed fields without exposing grammar as note text", () => {
+    expect(
+      parseLogSeed(
+        "--note",
+        ["author=test\ncreated_at=now\ntext=hello"],
+        "2026-08-29T06:45:49.546Z",
+        "fallback",
+      ),
+    ).toEqual({
+      values: [
+        {
+          author: "test",
+          created_at: "2026-08-29T06:45:49.546Z",
+          text: "hello",
+        },
+      ],
+      explicitEmpty: false,
+    });
+    expect(
+      parseLogSeed(
+        "--note",
+        ["ordinary free-form note"],
+        "2026-08-29T06:45:49.546Z",
+        "fallback",
+      ),
+    ).toEqual({
+      values: [
+        {
+          author: "fallback",
+          created_at: "2026-08-29T06:45:49.546Z",
+          text: "ordinary free-form note",
+        },
+      ],
+      explicitEmpty: false,
+    });
   });
 
   it("selects npm 12 keyed receipts by requested package and rejects ambiguity", () => {
