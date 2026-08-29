@@ -202,4 +202,53 @@ describe("history item hash versions", () => {
       verifyHistoryChainWithVersion([legacyEntry, currentEntry]),
     ).toMatchObject({ ok: true, item_hash_version: 2 });
   });
+
+  it("reports supported corruption after an unsupported writer entry", () => {
+    const futureDocument = document([]);
+    const supportedDocument = structuredClone(futureDocument);
+    supportedDocument.body = "supported entry after future writer";
+    const futureEntry = {
+      ...unversionedEntry(futureDocument, 2),
+      item_hash_version: 99 as HistoryItemHashVersion,
+    };
+    const corruptedSupportedEntry: HistoryEntry = {
+      ts: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(futureDocument),
+        toReplayDocument(supportedDocument),
+      ),
+      before_hash: hashDocumentForVersion(
+        futureDocument,
+        CURRENT_HISTORY_ITEM_HASH_VERSION,
+      ),
+      after_hash: "0".repeat(64),
+      item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
+    };
+
+    expect(
+      verifyHistoryChainWithVersion([futureEntry, corruptedSupportedEntry]),
+    ).toEqual({
+      ok: false,
+      errors: [
+        "verify_failed:unsupported_item_hash_version:99:entry_1",
+        "verify_failed:after_hash_mismatch:entry_2",
+      ],
+    });
+    expect(
+      verifyHistoryChainWithVersion([
+        {
+          ...futureEntry,
+          patch: [{ op: "remove" as const, path: "/missing" }],
+        },
+      ]),
+    ).toEqual({
+      ok: false,
+      errors: [
+        "verify_failed:unsupported_item_hash_version:99:entry_1",
+        "verify_failed:patch_apply_failed:entry_1",
+      ],
+    });
+  });
 });

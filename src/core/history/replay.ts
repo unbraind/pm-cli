@@ -239,6 +239,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   let replay = cloneEmptyReplayDocument();
   let detectedVersion: HistoryItemHashVersion | undefined;
   let authoritativeExplicitVersion: HistoryItemHashVersion | undefined;
+  const errors: string[] = [];
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
@@ -248,18 +249,32 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
         explicitVersion,
       )
     ) {
-      return {
-        ok: false,
-        errors: [
-          `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
-        ],
-      };
+      errors.push(
+        `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
+      );
+      const applied = tryApplyReplayPatch(replay, entry.patch);
+      if (!applied.ok) {
+        return {
+          ok: false,
+          errors: [
+            ...errors,
+            `verify_failed:patch_apply_failed:entry_${index + 1}`,
+          ],
+        };
+      }
+      replay = applied.document;
+      detectedVersion = undefined;
+      authoritativeExplicitVersion = undefined;
+      continue;
     }
     const applied = tryApplyReplayPatch(replay, entry.patch);
     if (!applied.ok) {
       return {
         ok: false,
-        errors: [`verify_failed:patch_apply_failed:entry_${index + 1}`],
+        errors: [
+          ...errors,
+          `verify_failed:patch_apply_failed:entry_${index + 1}`,
+        ],
       };
     }
     // Prefer legacy epoch 1 when an unversioned entry is valid under both
@@ -275,7 +290,10 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     if (beforeMatches.length === 0) {
       return {
         ok: false,
-        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
+        errors: [
+          ...errors,
+          `verify_failed:before_hash_mismatch:entry_${index + 1}`,
+        ],
       };
     }
     const version = beforeMatches.find(
@@ -285,14 +303,20 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     if (version === undefined) {
       return {
         ok: false,
-        errors: [`verify_failed:after_hash_mismatch:entry_${index + 1}`],
+        errors: [
+          ...errors,
+          `verify_failed:after_hash_mismatch:entry_${index + 1}`,
+        ],
       };
     }
     replay = applied.document;
     detectedVersion = version;
-    if (explicitVersion !== undefined) {
-      authoritativeExplicitVersion = version;
-    }
+    authoritativeExplicitVersion =
+      (explicitVersion as HistoryItemHashVersion | undefined) ??
+      authoritativeExplicitVersion;
+  }
+  if (errors.length > 0) {
+    return { ok: false, errors };
   }
   return {
     ok: true,
