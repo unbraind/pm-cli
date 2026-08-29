@@ -11,6 +11,7 @@ import { getHistoryPath } from "../store/paths.js";
 import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
+  SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
   hashDocumentForVersion,
   type HistoryItemHashVersion,
 } from "./history.js";
@@ -32,6 +33,8 @@ export interface DriftScanResult {
   hashMismatches: string[];
   /** Value that configures or reports chain mismatches for this contract. */
   chainMismatches: string[];
+  /** Streams written with a hash capability newer than this runtime understands. */
+  versionSkews: string[];
   /** Value that configures or reports drifted items for this contract. */
   driftedItems: string[];
   /** Governed singleton files whose JSON differs from workspace-history replay. */
@@ -42,7 +45,7 @@ export interface DriftScanResult {
   workspaceStateUnreadable: string[];
 }
 
-const DRIFT_CACHE_VERSION = 4;
+const DRIFT_CACHE_VERSION = 5;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
@@ -61,11 +64,13 @@ interface DriftCacheEntry {
   content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
+  version_skew?: boolean;
   item_hash_version: HistoryItemHashVersion;
 }
 
 interface DriftCacheEnvelope {
   version: number;
+  history_item_hash_version: HistoryItemHashVersion;
   entries: Record<string, DriftCacheEntry>;
 }
 
@@ -81,6 +86,7 @@ async function loadDriftCache(
     const parsed = JSON.parse(raw) as DriftCacheEnvelope;
     if (
       parsed.version !== DRIFT_CACHE_VERSION ||
+      parsed.history_item_hash_version !== CURRENT_HISTORY_ITEM_HASH_VERSION ||
       typeof parsed.entries !== "object" ||
       parsed.entries === null
     ) {
@@ -95,6 +101,7 @@ async function loadDriftCache(
 interface StreamVerification {
   latestAfterHash: string;
   chainOk: boolean;
+  versionSkew: boolean;
   contentHash: string;
   itemHashVersion: HistoryItemHashVersion;
 }
@@ -104,6 +111,7 @@ interface DriftScanAccumulator {
   unreadableStreams: string[];
   hashMismatches: string[];
   chainMismatches: string[];
+  versionSkews: string[];
   workspaceStateMismatches: string[];
   workspaceStateMissing: string[];
   workspaceStateUnreadable: string[];
@@ -144,7 +152,9 @@ async function scanWorkspaceHistory(
     accumulator.missingStreams.splice(missingCount);
     return resolved.cacheDirty;
   }
-  if (!resolved.verification.chainOk) {
+  if (resolved.verification.versionSkew) {
+    accumulator.versionSkews.push(WORKSPACE_HISTORY_ID);
+  } else if (!resolved.verification.chainOk) {
     accumulator.chainMismatches.push(WORKSPACE_HISTORY_ID);
   }
   nextEntries[WORKSPACE_HISTORY_ID] = {
@@ -154,6 +164,7 @@ async function scanWorkspaceHistory(
     content_hash: resolved.verification.contentHash,
     latest_after_hash: resolved.verification.latestAfterHash,
     chain_ok: resolved.verification.chainOk,
+    version_skew: resolved.verification.versionSkew,
     item_hash_version: resolved.verification.itemHashVersion,
   };
   return resolved.cacheDirty;
@@ -200,9 +211,17 @@ async function verifyHistoryStream(
   }
   /* c8 ignore stop */
   const verification = verifyHistoryChainWithVersion(entries);
+  const versionSkew = entries.some(
+    (entry) =>
+      entry.item_hash_version !== undefined &&
+      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+        entry.item_hash_version,
+      ),
+  );
   return {
     latestAfterHash,
-    chainOk: verification.ok,
+    chainOk: versionSkew || verification.ok,
+    versionSkew,
     contentHash,
     itemHashVersion:
       verification.item_hash_version ?? CURRENT_HISTORY_ITEM_HASH_VERSION,
@@ -285,6 +304,7 @@ async function resolveStreamVerification(params: {
       verification: {
         latestAfterHash: params.cached.latest_after_hash,
         chainOk: params.cached.chain_ok,
+        versionSkew: params.cached.version_skew === true,
         contentHash: currentContentHash,
         itemHashVersion:
           params.cached.item_hash_version ?? CURRENT_HISTORY_ITEM_HASH_VERSION,
@@ -329,8 +349,11 @@ async function scanItemHistory(
     accumulator,
   });
   if (!resolved.verification) return resolved.cacheDirty;
-  if (!resolved.verification.chainOk)
+  if (resolved.verification.versionSkew) {
+    accumulator.versionSkews.push(item.id);
+  } else if (!resolved.verification.chainOk) {
     accumulator.chainMismatches.push(item.id);
+  }
   cache.nextEntries[item.id] = {
     mtime_ms: stat.mtimeMs,
     ctime_ms: stat.ctimeMs,
@@ -338,9 +361,11 @@ async function scanItemHistory(
     content_hash: resolved.verification.contentHash,
     latest_after_hash: resolved.verification.latestAfterHash,
     chain_ok: resolved.verification.chainOk,
+    version_skew: resolved.verification.versionSkew,
     item_hash_version: resolved.verification.itemHashVersion,
   };
   const { body, ...itemMetadata } = item;
+  if (resolved.verification.versionSkew) return resolved.cacheDirty;
   const currentHash = hashDocumentForVersion(
     { metadata: itemMetadata as ItemMetadata, body },
     resolved.verification.itemHashVersion,
@@ -357,7 +382,8 @@ async function scanWorkspaceStateAgreement(
 ): Promise<void> {
   if (
     accumulator.unreadableStreams.includes(WORKSPACE_HISTORY_ID) ||
-    accumulator.chainMismatches.includes(WORKSPACE_HISTORY_ID)
+    accumulator.chainMismatches.includes(WORKSPACE_HISTORY_ID) ||
+    accumulator.versionSkews.includes(WORKSPACE_HISTORY_ID)
   )
     return;
   try {
@@ -394,6 +420,7 @@ export async function scanHistoryDrift(
     unreadableStreams: [],
     hashMismatches: [],
     chainMismatches: [],
+    versionSkews: [],
     workspaceStateMismatches: [],
     workspaceStateMissing: [],
     workspaceStateUnreadable: [],
@@ -435,7 +462,11 @@ export async function scanHistoryDrift(
       await fs.mkdir(path.dirname(cachePath), { recursive: true });
       await writeFileAtomic(
         cachePath,
-        JSON.stringify({ version: DRIFT_CACHE_VERSION, entries: nextEntries }),
+        JSON.stringify({
+          version: DRIFT_CACHE_VERSION,
+          history_item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
+          entries: nextEntries,
+        }),
       );
     } catch {
       // Best-effort cache write: a failed persist must never fail a health scan.
@@ -448,6 +479,7 @@ export async function scanHistoryDrift(
       ...accumulator.unreadableStreams,
       ...accumulator.hashMismatches,
       ...accumulator.chainMismatches,
+      ...accumulator.versionSkews,
       ...(accumulator.workspaceStateMismatches.length > 0 ||
       accumulator.workspaceStateMissing.length > 0 ||
       accumulator.workspaceStateUnreadable.length > 0

@@ -1,0 +1,73 @@
+id: pm-yhle2e
+title: "GH-1146/1147: external blockers remain stale and validation recommends deleting them"
+description: "GitHub issues #1146 and #1147 show that accepted external blocked_by locators are never re-resolved, remain permanently blocking with unknown status, and are then misclassified by validate as dangling local corruption with a destructive --unset blocked_by hint."
+type: Issue
+status: closed
+priority: 1
+tags[7]: agent-ux,"area:graph","area:sdk",context-integrity,external-references,github-1146,github-1147
+created_at: "2026-08-28T21:25:57.770Z"
+updated_at: "2026-08-29T00:14:53.235Z"
+closed_at: "2026-08-29T00:14:52.645Z"
+completed_at: "2026-08-29T00:14:52.645Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: External references are typed and preserved rather than counted as dangling local ids; A public resolver extension point returns bounded status title source and checked-at evidence without core GitHub coupling; Unresolved external blockers expose age and resolver availability while resolved blockers can trigger the existing auto-unblock transition; Validation never recommends destructive deletion for a well-formed external locator; SDK CLI MCP health next validate and temporary-workspace acceptance remain contract-parity with exact coverage
+parent: pm-33cw
+risk: high
+confidence: high
+reporter: GitHub issues #1146 and #1147
+severity: high
+environment: pm 2026.8.28 in fresh local workspaces plus a long-lived cross-repository blocker
+repro_steps: Block an item on a GitHub issue URL; close the remote issue; observe pm next still counting an unknown blocker and pm validate classifying the locator as dangling with an unset hint.
+resolution: "Added typed external graph references plus a public provider-neutral resolver registry with bounded status, title, source, checked-at, and resolver evidence; unresolved provider failures remain safe and well-formed locators never become dangling-local deletion candidates."
+expected_result: "Public SDK contracts distinguish local dangling references from typed external locators, expose resolver and staleness state, preserve unresolved evidence, and auto-unblock only after a trusted resolver proves closure."
+actual_result: External locators remain first-class graph nodes; next and validation expose bounded staleness and resolver context; package providers can register deterministic external resolvers without core GitHub coupling; closed evidence is explicitly distinguishable from open or unknown state.
+component: "SDK dependency governance, external resolver hooks, next, validate, and CLI adapters"
+customer_impact: External dependencies silently park actionable work forever while the primary remediation can destroy the only machine-readable explanation.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6sc8jq,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
+  pm-p9sc,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
+  pm-uxkf,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-28T21:25:57.770Z","harness:codex","Duplicate check evidence: complete all-status strict read covered 2593 readable items with no omissions. Closed pm-6sc8jq owns truthful stale-lifecycle governance for external blockers while pm-p9sc owns local dangling projections and pm-uxkf owns edge-aware blocked reads. No open item owns re-resolution plus safe validation classification. This recurrence is canonical for GitHub 1146 and 1147."
+  "2026-08-28T21:26:39.465Z","harness:codex","GitHub linkage evidence: issues #1146 and #1147 both point to this canonical combined external-blocker lifecycle and validation item at its merge-stable main-branch toon path."
+  "2026-08-28T23:24:21.263Z","harness:codex","Verification evidence: external classification, graph, actionability, next, and validation regressions passed; packed Node and Bun SDK consumers imported the public classifier successfully; full coverage passed exact 100/100/100/100."
+  "2026-08-29T00:14:46.009Z","harness:codex","Final verification evidence: linked acceptance passed 9/9; the complete repository suite passed 586/586 files and 8100/8100 tests; exact coverage passed 60114/60114 statements, 45310/45310 branches, 12497/12497 functions, and 57886/57886 lines; repository static quality, command grammar, MCP parity, defect evidence, duplication, docs links, secret scan, and packed npm+Bun acceptance all passed."
+learnings[2]{created_at,author,text}:
+  "2026-08-28T23:24:37.448Z","harness:codex","A syntactically valid remote locator is a typed graph node even when no resolver is installed. Unknown external state must remain explicit evidence, never be rewritten as local dangling corruption."
+  "2026-08-29T00:14:46.442Z","harness:codex","Provider integrations belong behind the SDK resolver registry: core classifies and preserves external identity while bounded package-owned providers supply lifecycle evidence. Resolver failures and absent providers fail closed to explicit unknown state instead of deleting context."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,Public external dependency reference SDK export snapshot
+  src/core/item/actionability.ts,project,external blocker staleness
+  src/core/item/dependency-reference.ts,project,external locator classifier
+  src/sdk/dependency-provenance.ts,project,public SDK export
+  src/sdk/graph/assembly.ts,project,external graph nodes
+  src/sdk/query/next.ts,project,agent-facing blocker context
+  tests/unit/commands/validate-command.spec.ts,project,External dependency validation classification coverage
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:03.402Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+test_runs[1]:
+  - run_id: test-local-mtdmottd-sfvxdl
+    kind: test
+    status: passed
+    started_at: "2026-08-29T00:14:18.053Z"
+    finished_at: "2026-08-29T00:14:28.081Z"
+    recorded_at: "2026-08-29T00:14:28.081Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "Delivered typed external-reference semantics and a public bounded SDK resolver registry; verified by linked acceptance, packed npm/Bun consumers, full static gates, 8100 tests, and exact 100/100/100/100 coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: external-dependency-context-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+  local_checks[2]: tests/unit/regressions/context-integrity-recovery.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-yhle2e
+body: ""

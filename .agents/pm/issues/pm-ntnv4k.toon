@@ -2,11 +2,13 @@ id: pm-ntnv4k
 title: "GH-1138: linked test name filters can pass after executing zero tests"
 description: "Track GitHub issue #1138: linked test commands using runner name filters can exit zero after matching no tests. `pm test <id> --run` records a green receipt even though the evidence command performed no assertions, silently invalidating the durable verification claim after a test rename or typo."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,evidence-integrity,github,linked-tests,tdd
 created_at: "2026-08-28T14:43:01.407Z"
-updated_at: "2026-08-28T20:44:38.781Z"
+updated_at: "2026-08-28T23:38:21.750Z"
+closed_at: "2026-08-28T23:26:24.221Z"
+completed_at: "2026-08-28T23:26:24.221Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Add an SDK-owned executed-test assertion primitive and declarative minimum-count field; recognize supported runner receipts without brittle prose-only heuristics; fail zero-test filtered commands closed; preserve explicit non-test smoke commands; add unit, integration, CLI, MCP/schema, history, Node runner, and temp-workspace acceptance coverage."
@@ -17,8 +19,9 @@ reporter: GitHub issue #1138
 severity: high
 environment: "pm 2026.8.28, Node 26.5.0, Linux; node --test command with --test-name-pattern matching zero tests"
 repro_steps: "Link a `node --test --test-name-pattern` command whose pattern matches no test, run it through `pm test <id> --run`, and observe ok true with the runner reporting pass 0."
+resolution: "Made filtered linked-test runs fail closed when output proves zero executed tests, including common tests 0 and pass 0 summaries, through the SDK-owned execution contract."
 expected_result: A linked test declares and enforces a minimum executed-test count through a public SDK-owned runner receipt contract; zero-test filtered runs fail closed with actionable evidence.
-actual_result: "The child process exits zero, pm reports the linked test passed, and no structured field distinguishes zero executed tests from a real passing assertion."
+actual_result: Named filters automatically require a non-empty run and zero-test child processes can no longer be recorded as passing evidence.
 affected_version: 2026.8.21-2026.8.28
 component: linked-tests
 regression: true
@@ -26,6 +29,24 @@ customer_impact: "Renamed or mistyped test filters silently turn immutable PM ve
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4i73,discovered_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
   pm-m0b7h8,recurs_from,"2026-08-28T14:43:01.407Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-28T14:43:01.407Z","harness:codex","Duplicate check: complete all-status searches for test-name-pattern,zero tests,linked-test no-op success,GH-982,and test meaningfulness found pm-m0b7h8 for no-op linked-test mutation and pm-4i73 for meaningfulness,but no item owning zero-execution runner receipts. GitHub issue #1138 is a later recurrence with a distinct execution boundary."
+  "2026-08-28T23:24:25.479Z","harness:codex","Verification evidence: linked-test execution and connected recovery regressions passed, including zero-run negative controls; full coverage passed 8,099 tests at exact 100/100/100/100."
+files[3]{path,scope,note}:
+  src/sdk/test/entry.ts,project,structured linked-test input guard
+  src/sdk/test/execution.ts,project,zero-execution runner guard
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:06.723Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "Filtered linked-test non-empty enforcement, zero-run negative controls, and exact coverage are verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: filtered-linked-test-nonempty
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+  local_checks[2]: zero-test runner negative control,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-ntnv4k
 body: ""

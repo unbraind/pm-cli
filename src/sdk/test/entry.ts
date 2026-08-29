@@ -44,7 +44,7 @@ const STRUCTURED_LINKED_TEST_ENTRY_PATTERN = new RegExp(
 
 /** Implements looks like structured linked test entry for the public runtime surface of this module. */
 export function looksLikeStructuredLinkedTestEntry(raw: string): boolean {
-  if (raw.startsWith("```") || raw.includes("\n")) {
+  if (raw.startsWith("```") || raw.includes("\n") || raw.includes(",")) {
     return true;
   }
   return STRUCTURED_LINKED_TEST_ENTRY_PATTERN.test(raw);

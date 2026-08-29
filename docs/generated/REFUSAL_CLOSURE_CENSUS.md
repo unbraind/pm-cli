@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 347
+- Catalog error codes: 350
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 328
-- Coverage fraction: 0.054755
+- Uncovered error codes: 331
+- Coverage fraction: 0.054286
 - Closed-domain probes: 19
 - Grammar probes: 94
 
@@ -30,6 +30,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `annotation_transposed_subcommand` | `annotation_transposed_subcommand` | uncovered | none | 0 |
 | `append_empty_body` | `append_empty_body` | uncovered | none | 0 |
 | `assurance_registry_invalid` | `assurance_registry_invalid` | uncovered | none | 0 |
+| `bare_comma_entry_ambiguous` | `bare_comma_entry_ambiguous` | uncovered | none | 0 |
 | `body_file_conflicts_with_body` | `body_file_conflicts_with_body` | uncovered | none | 0 |
 | `body_file_missing_path` | `body_file_missing_path` | uncovered | none | 0 |
 | `body_file_unreadable` | `body_file_unreadable` | uncovered | none | 0 |
@@ -185,7 +186,6 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `merge_git_config_unwritable` | `merge_git_config_unwritable` | uncovered | none | 0 |
 | `merge_receipt_evidence_invalid` | `merge_receipt_evidence_invalid` | uncovered | none | 0 |
 | `merge_receipts_pending` | `merge_receipts_pending` | uncovered | none | 0 |
-| `merge_reconcile_discards_require_acceptance` | `merge_reconcile_discards_require_acceptance` | uncovered | none | 0 |
 | `merge_reconcile_receipt_evidence_untrusted` | `merge_reconcile_receipt_evidence_untrusted` | uncovered | none | 0 |
 | `merge_root_not_found` | `merge_root_not_found` | uncovered | none | 0 |
 | `missing_allowed_values` | `missing_allowed_values` | uncovered | none | 0 |
@@ -214,6 +214,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `no_update_fields` | `no_update_fields` | uncovered | none | 0 |
 | `no_version_bounds_declared` | `no_version_bounds_declared` | executable | owned_state | 1 |
 | `non_refusal_exit` | `non_refusal_exit` | uncovered | none | 0 |
+| `npm_pack_json_shape_unsupported` | `npm_pack_json_shape_unsupported` | uncovered | none | 0 |
 | `npm_package_archive_missing` | `npm_package_archive_missing` | uncovered | none | 0 |
 | `npm_package_archive_unsafe` | `npm_package_archive_unsafe` | uncovered | none | 0 |
 | `npm_package_not_found` | `npm_package_not_found` | uncovered | none | 0 |
@@ -249,6 +250,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `reopen_reason_required` | `reopen_reason_required` | uncovered | none | 0 |
 | `reopen_receipt_missing` | `reopen_receipt_missing` | uncovered | none | 0 |
 | `reopen_target_status_invalid` | `reopen_target_status_invalid` | uncovered | none | 0 |
+| `reported_zero_passes` | `reported_zero_passes` | uncovered | none | 0 |
+| `reported_zero_tests` | `reported_zero_tests` | uncovered | none | 0 |
 | `reserved_item_field` | `reserved_item_field` | uncovered | none | 0 |
 | `retry_failed` | `retry_failed` | uncovered | none | 0 |
 | `schema_migration_input_required` | `schema_migration_input_required` | uncovered | none | 0 |

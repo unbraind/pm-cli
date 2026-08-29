@@ -3,6 +3,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  sha256Hex,
+  stableStringify,
+} from "../../../src/core/shared/serialization.js";
+import {
   runMergeReconcile,
   type MergeReconcileResult,
 } from "../../../src/sdk/merge/reconcile.js";
@@ -242,15 +246,18 @@ describe("merge reconcile command", () => {
         cwd: context.tempRoot,
         itemPath: `.agents/pm/tasks/${id!}.toon`,
         preferred: "ours",
-        fieldsFromTheirs: ["priority"],
-        unionFields: ["comments"],
+        fieldsFromTheirs: [],
+        unionFields: [],
+        mergedFieldHashes: {
+          title: sha256Hex(stableStringify("Clean receipt merge")),
+        },
         decisions: [
           {
             field: "title",
             base: "base",
-            ours: "retained",
+            ours: "Clean receipt merge",
             theirs: "discarded",
-            retained: "retained",
+            retained: "Clean receipt merge",
             discarded: "discarded",
           },
         ],
@@ -276,41 +283,13 @@ describe("merge reconcile command", () => {
       try {
         await expect(
           runMergeReconcile({ dryRun: false }, { path: context.pmPath }),
-        ).rejects.toMatchObject({
-          exitCode: 4,
-          context: {
-            code: "merge_reconcile_discards_require_acceptance",
-            nextSteps: [expect.stringContaining(receipt!.id)],
-          },
+        ).resolves.toMatchObject({
+          ok: true,
+          receipts: { pending_before: 1, reconciled: 1 },
         });
       } finally {
         process.chdir(originalCwd);
       }
-
-      const refused = context.runCli(["merge", "reconcile", "--json"], {
-        expectJson: true,
-        cwd: context.tempRoot,
-      });
-      expect(refused.code).toBe(4);
-      expect(`${refused.stdout}\n${refused.stderr}`).toContain(
-        "merge_reconcile_discards_require_acceptance",
-      );
-
-      const reconciled = context.runCli(
-        ["merge", "reconcile", "--force", "--json"],
-        {
-          expectJson: true,
-          cwd: context.tempRoot,
-        },
-      );
-      expect(
-        reconciled.code,
-        `${reconciled.stdout}\n${reconciled.stderr}`,
-      ).toBe(0);
-      expect(reconciled.json as MergeReconcileResult).toMatchObject({
-        ok: true,
-        receipts: { pending_before: 1, reconciled: 1 },
-      });
       const entries = (
         await readFile(
           path.join(context.pmPath, "history", `${id!}.jsonl`),

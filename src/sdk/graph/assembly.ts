@@ -14,7 +14,10 @@ import {
   RelationshipGraph,
   type RelationshipKindRegistry,
 } from "../relationships.js";
-import { isExternalDependencySourceKind } from "../dependency-provenance.js";
+import {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "../dependency-provenance.js";
 import {
   analyzeHierarchyIntegrity,
   type HierarchyIntegrityAnalysis,
@@ -309,7 +312,11 @@ export function collectDanglingDependencyReferences(
     source: DependencyReferenceSource,
   ): void => {
     const normalized = normalizeDependencyReferenceTarget(target);
-    if (!normalized || knownIds.has(normalized.toLowerCase())) {
+    if (
+      !normalized ||
+      knownIds.has(normalized.toLowerCase()) ||
+      isExternalDependencyReference(normalized)
+    ) {
       return;
     }
     const row: DanglingDependencyReference = {
@@ -387,6 +394,14 @@ export function collectExternalDependencyTargetIds(
 ): string[] {
   const targets = new Map<string, string>();
   for (const item of items) {
+    const scalarBlocker = normalizeDependencyReferenceTarget(item.blocked_by);
+    if (
+      scalarBlocker &&
+      isExternalDependencyReference(scalarBlocker) &&
+      !targets.has(scalarBlocker.toLowerCase())
+    ) {
+      targets.set(scalarBlocker.toLowerCase(), scalarBlocker);
+    }
     for (const dependency of item.dependencies ?? []) {
       if (
         typeof dependency !== "object" ||
@@ -453,7 +468,9 @@ const hierarchyIntegrityByAssembly = new WeakMap<
 export function getWorkspaceHierarchyIntegrity(
   assembly: WorkspaceRelationshipAssembly,
 ): HierarchyIntegrityAnalysis | undefined {
-  return assembly.hierarchyIntegrity ?? hierarchyIntegrityByAssembly.get(assembly);
+  return (
+    assembly.hierarchyIntegrity ?? hierarchyIntegrityByAssembly.get(assembly)
+  );
 }
 
 /** Count raw dependency rows that use a registered compatibility alias instead of its canonical kind. */
@@ -513,6 +530,7 @@ export function assembleWorkspaceRelationshipGraph(
     externalGraphIds.set(id.toLowerCase(), graphId);
     usedGraphIds.add(graphId.toLowerCase());
   }
+  const graphTargetIds = new Map([...canonicalIds, ...externalGraphIds]);
   const graphItems = safeItems.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);
     const blocker = normalizeDependencyGraphTarget(item.blocked_by);
@@ -537,7 +555,9 @@ export function assembleWorkspaceRelationshipGraph(
       id: item.id.trim(),
       ...(parent ? { parent: canonicalIds.get(parent.toLowerCase())! } : {}),
       ...(blocker
-        ? { blocked_by: canonicalIds.get(blocker.toLowerCase())! }
+        ? {
+            blocked_by: graphTargetIds.get(blocker.toLowerCase())!,
+          }
         : {}),
       dependencies,
     };

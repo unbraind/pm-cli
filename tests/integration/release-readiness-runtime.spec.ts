@@ -1704,6 +1704,7 @@ describe("release readiness runtime coverage", () => {
         "files",
         "changed",
         "count",
+        "validation",
       ]);
 
       const docsResult = context.runCli(
@@ -1722,6 +1723,7 @@ describe("release readiness runtime coverage", () => {
         "docs",
         "changed",
         "count",
+        "validation",
       ]);
 
       const depsTreeResult = context.runCli(["deps", createdId, "--json"], {

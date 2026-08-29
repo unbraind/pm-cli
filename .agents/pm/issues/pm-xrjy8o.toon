@@ -2,11 +2,13 @@ id: pm-xrjy8o
 title: "GH-1136: npm 12 object-form npm pack receipts break registry package installs"
 description: "Track GitHub issue #1136: npm 12 changed `npm pack --json` from an array to an object keyed by package name. The package-source parser accepts only the older array shape and then misclassifies valid but unrecognized JSON as a line-oriented filename, producing a tar path ending in `}` and breaking every explicit npm extension install."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,github,npm,package-ecosystem,regression
 created_at: "2026-08-28T14:42:31.427Z"
-updated_at: "2026-08-28T20:44:40.120Z"
+updated_at: "2026-08-28T23:38:22.963Z"
+closed_at: "2026-08-28T23:26:21.628Z"
+completed_at: "2026-08-28T23:26:21.628Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Parse npm 11 array and npm 12 object receipts through one typed SDK-owned contract; select the requested entry deterministically; never apply a filename fallback after JSON parsed successfully; add npm 11/12 unit, integration, packed-consumer, and negative malformed-shape coverage; preserve actionable structured CLI errors."
@@ -17,8 +19,9 @@ reporter: GitHub issue #1136
 severity: high
 environment: "npm 12.0.2, Node 26.5.0, Linux; explicit npm: package sources"
 repro_steps: "Run `pm package install npm:pm-brief` under npm 12.0.2; observe the valid object-form pack receipt fall through to a tarball path named `}`."
+resolution: "Accepted npm 11 array and npm 12 object keyed pack receipts, selected the requested package deterministically, and refused parsed but unsupported shapes without unsafe line fallback."
 expected_result: "The package source accepts every documented npm pack JSON shape, selects the requested package deterministically, and fails closed with a shape-specific diagnostic when well-formed JSON is unsupported."
-actual_result: "Object-form npm 12 receipts are ignored after successful JSON parsing; the last pretty-printed line `}` is treated as a filename and tar fails with ENOENT."
+actual_result: npm 12 object receipts install correctly; ambiguous or unsupported JSON produces npm_pack_json_shape_unsupported; text fallback is used only when JSON parsing fails.
 affected_version: 2026.8.27-2026.8.28
 component: package-install
 regression: true
@@ -26,6 +29,25 @@ customer_impact: "All explicit registry extension installs are broken for users 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-495lkc,discovered_from,"2026-08-28T14:42:31.427Z","harness:codex","cli:create:dep",detected
   pm-tnud,discovered_from,"2026-08-28T14:42:31.427Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-28T14:42:31.427Z","harness:codex","Duplicate check: complete all-status searches for npm 12,npm pack,package install,tarball,and pack output shape found package-lifecycle ancestors and related closed incidents but no item owning the npm 12 object-form receipt plus fail-closed fallback defect. GitHub issue #1136 is therefore net-new canonical work."
+  "2026-08-28T23:24:23.293Z","harness:codex","Verification evidence: extension package regressions passed; packed npm and Bun consumers installed the generated tarball and executed the CLI and SDK; npx packed smoke passed; full coverage passed exact 100/100/100/100."
+learnings[1]{created_at,author,text}:
+  "2026-08-28T23:24:37.938Z","harness:codex","After a machine-readable subprocess receipt parses successfully, an unsupported shape is a contract error. Falling back to display lines at that point converts structured incompatibility into unsafe filenames."
+files[2]{path,scope,note}:
+  src/sdk/extension/install-sources.ts,project,npm 11 and npm 12 receipt parser
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:53:58.971Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "npm 11 and npm 12 receipt compatibility, deterministic refusal semantics, packed npm and Bun consumers, and exact coverage are verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: npm-pack-json-receipt-shapes
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts
+  local_checks[2]: npm 11 and npm 12 receipt suite,packed npm and Bun acceptance
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-xrjy8o
 body: ""

@@ -2090,6 +2090,8 @@ const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   { code: "no_tests_found", regex: /\bNo tests found\b/i },
   { code: "no_matching_tests", regex: /\bNo matching tests?\b/i },
   { code: "collected_zero_items", regex: /\bcollected 0 items?\b/i },
+  { code: "reported_zero_tests", regex: /^\s*#?\s*tests\s+0\s*$/im },
+  { code: "reported_zero_passes", regex: /^\s*#?\s*pass\s+0\s*$/im },
 ];
 
 function detectEmptyLinkedTestRun(
@@ -2103,6 +2105,13 @@ function detectEmptyLinkedTestRun(
     }
   }
   return null;
+}
+
+/** Return whether a linked command applies a runner-level test-name filter that must match at least one test. */
+function commandUsesTestNameFilter(command: string): boolean {
+  return /(?:^|\s)(?:--test-name-pattern|--testNamePattern|-t)(?:=|\s)/u.test(
+    command,
+  );
 }
 
 /* c8 ignore start -- linked-test orchestration branch matrix is covered by end-to-end command integration runs */
@@ -2721,8 +2730,8 @@ function buildLinkedTestEmptyRunResult(params: {
     stdout: params.execution.stdout,
     stderr: params.execution.stderr,
     error:
-      `Linked test reported an empty test run (${params.emptyRunSignal}) while --fail-on-empty-test-run is enabled. ` +
-      "Update test selection or disable --fail-on-empty-test-run for this run.",
+      `Linked test reported an empty test run (${params.emptyRunSignal}). ` +
+      "Update the test selection so at least one test executes; unfiltered commands may opt out by omitting --fail-on-empty-test-run.",
   };
 }
 
@@ -2751,7 +2760,10 @@ function buildLinkedTestPassedExecutionResult(params: {
   execution: LinkedTestExecutionResult;
   options: RunLinkedTestsOptions | undefined;
 }): TestRunResult {
-  if (params.options?.failOnEmptyTestRun === true) {
+  if (
+    params.options?.failOnEmptyTestRun === true ||
+    commandUsesTestNameFilter(params.linkedTest.command ?? "")
+  ) {
     const emptyRunSignal = detectEmptyLinkedTestRun(
       params.execution.stdout,
       params.execution.stderr,
@@ -3514,6 +3526,7 @@ export const _testOnlyTestCommand = {
   buildPmContextMismatchHint,
   commandInvokesPmCli,
   commandInvokesPmTrackerReadCommand,
+  commandUsesTestNameFilter,
   copyIntoSandboxIfPresent,
   countLinkedTestItemFiles,
   ensureScope,

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-08-04T16:11:18.534Z"
+updated_at: "2026-08-28T23:28:59.181Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs.; A linked file path that is generated or ignored is refused at write time, so a link whose target is reconstructed by a build cannot be created and the missing-path count cannot be permanently non-zero for that reason"
@@ -26,7 +26,7 @@ dependencies[3]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[23]:
+comments[24]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor
     text: "Duplicate check: searched all statuses for linked-file validation, orphaned paths, missing linked paths, and stale linked artifacts. Prior canonical items (for example pm-xz1p and pm-0v2m) are closed; this item tracks the current 2026-06-25 audit finding under pm-57vh."
@@ -97,6 +97,9 @@ comments[23]:
   - created_at: "2026-08-04T16:11:17.602Z"
     author: "harness:codex"
     text: "Execution evidence 2026-08-04: clean-clone diagnosis identified 25 ignored or locally generated paths represented by 43 file/doc links across 14 terminal holders. Removed those current-state links through pm commands and appended provenance comments without reopening or reassigning historical delivery. Local and independent fresh-clone validation now agree at 195 missing paths, classified 134 moved and 61 deleted, with 0 orphaned paths. The linked tracker-context test passed. Remaining scope is the deliberate 195-row historical migration plus write-time refusal of generated or ignored paths, so this item returns to open rather than being falsely closed."
+  - created_at: "2026-08-28T23:28:59.181Z"
+    author: "harness:codex"
+    text: "Live validation refresh 2026-08-29: the canonical residual remains 195 missing historical linked paths, classified as 134 moved and 61 deleted, with zero orphaned current paths across 1,290 scanned candidates. The context-integrity delivery linked every changed source, test, docs, generated contract, managed package manifest, and changelog artifact to its active owner, so no new orphan was introduced; no historical closed holder was bulk-mutated."
 notes[6]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
   "2026-07-10T12:16:07.271Z",maintainer-agent,"2026-07-10 review pass: validate_files_missing_linked_paths rose 147 -> 154 (+7); orphaned_paths steady at 124. Likely cause: commits 21a7d884 (untracked vendored pm-changelog extension dist) and b573ef14 (contracts-snapshot gate rework) relocated/removed files still referenced by item linked paths. Worklist ids via pm validate --json .details.*_item_ids when picking this up."

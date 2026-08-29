@@ -1,0 +1,52 @@
+id: pm-f60039
+title: "GH-1143: Claude session-file provenance resolver ignores real nested stream fields"
+description: GitHub issue #1143 shows 85 model and version resolver attempts with zero success even though the canonical Claude session file exists and contains message.model plus top-level version after initial metadata rows. The shipped reader appears unable to traverse the real JSONL layout.
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:provenance","area:sdk",context-integrity,github-1143,harness,observability
+created_at: "2026-08-28T21:26:05.521Z"
+updated_at: "2026-08-28T23:38:19.595Z"
+closed_at: "2026-08-28T23:26:16.232Z"
+completed_at: "2026-08-28T23:26:16.232Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: The resolver parses a captured real-layout JSONL fixture with leading metadata and nested message.model; Scanning is byte and row bounded and never emits paths identifiers prompts or session content; Malformed and truncated rows fail closed while later complete rows remain discoverable; Model and version success counters move above zero in real-layout acceptance without additional provider calls; SDK health history CLI and exact coverage gates pass
+parent: pm-5oj5
+risk: high
+confidence: high
+reporter: GitHub issue #1143
+severity: high
+environment: pm 2026.8.28 with Claude Code 2.1.251 and a readable canonical session JSONL stream
+repro_steps: Run pm mutations under a real Claude session whose first rows are metadata; model first appears at message.model and version on later assistant rows; observe health zero-success warnings for every attempt.
+resolution: Implemented a privacy-preserving bounded Claude JSONL resolver that scans nested message metadata across head and tail windows with path-size-mtime caching.
+expected_result: The bounded privacy-preserving resolver scans complete real-layout rows until it finds supported nested model and version fields and records successful probe provenance without exposing session content.
+actual_result: "Real-layout nested model and version fixtures resolve successfully while malformed, deep, and oversized streams remain bounded and do not expose session content."
+component: SDK agent provenance resolver and health diagnostics
+customer_impact: Immutable history loses model and runtime attribution while a permanent health warning trains operators to ignore resolver failures.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0pzgit,discovered_from,"2026-08-28T21:26:05.521Z","harness:codex","cli:create:dep",detected
+  pm-9gvazz,discovered_from,"2026-08-28T21:26:05.521Z","harness:codex","cli:create:dep",detected
+  pm-lu6sca,discovered_from,"2026-08-28T21:26:05.521Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-28T21:26:05.521Z","harness:codex","Duplicate check evidence: complete all-status searches found closed pm-9gvazz for workspace slug encoding and pm-lu6sca for resolver outcome classification. GitHub 1143 reproduces after both fixes with a distinct real JSONL field-layout boundary. No open item owns nested model extraction and later-row scanning."
+  "2026-08-28T21:26:37.803Z","harness:codex","GitHub linkage evidence: issue #1143 now points to this canonical item at the merge-stable main-branch toon path."
+  "2026-08-28T23:24:19.352Z","harness:codex","Verification evidence: agent provenance and connected recovery suites passed, static docstring and complexity gates passed, and full repository coverage passed 8,099 tests at exact 100/100/100/100."
+files[3]{path,scope,note}:
+  src/core/shared/author.ts,project,bounded Claude session provenance resolver
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Agent provenance runtime coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:00.166Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "Bounded nested Claude session provenance resolution, privacy limits, focused tests, static assurance, and exact coverage are verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: claude-session-provenance-layout
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts
+  local_checks[2]: bounded provenance regression suite,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-f60039
+body: ""

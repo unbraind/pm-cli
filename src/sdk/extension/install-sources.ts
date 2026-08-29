@@ -612,37 +612,7 @@ export function normalizeNpmLocalFileAliasSpec(
  * Supports current JSON metadata and the legacy filename-only form while
  * refusing absolute or traversing results before the filesystem is consulted.
  */
-function parsePackedNpmPackage(
-  stdout: string,
-  packDirectory: string,
-): { tarball: string; package?: string; version?: string } {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stdout) as unknown;
-  } catch {
-    // Fall back to the last stdout line for older npm output.
-  }
-  const first = Array.isArray(parsed)
-    ? (parsed[0] as
-        | { filename?: unknown; name?: unknown; version?: unknown }
-        | undefined)
-    : undefined;
-  const filename =
-    first &&
-    typeof first.filename === "string" &&
-    first.filename.trim().length > 0
-      ? first.filename
-      : stdout
-          .split(/\r?\n/)
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0)
-          .at(-1);
-  if (!filename) {
-    throw new PmCliError(
-      "npm pack did not report a tarball filename.",
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
+function resolvePackedTarball(packDirectory: string, filename: string): string {
   const tarball = path.resolve(packDirectory, filename);
   const relativeTarball = path.relative(packDirectory, tarball);
   if (
@@ -662,10 +632,109 @@ function parsePackedNpmPackage(
       },
     );
   }
+  return tarball;
+}
+
+interface PackedNpmCandidate {
+  key?: string;
+  filename: string;
+  name?: string;
+  version?: string;
+}
+
+function decodePackedNpmCandidate(
+  value: unknown,
+  key?: string,
+): PackedNpmCandidate | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  if (
+    typeof record.filename !== "string" ||
+    record.filename.trim().length === 0
+  ) {
+    return undefined;
+  }
   return {
-    tarball,
-    package: typeof first?.name === "string" ? first.name : undefined,
-    version: typeof first?.version === "string" ? first.version : undefined,
+    ...(key === undefined ? {} : { key }),
+    filename: record.filename,
+    ...(typeof record.name === "string" ? { name: record.name } : {}),
+    ...(typeof record.version === "string"
+      ? { version: record.version }
+      : {}),
+  };
+}
+
+function collectPackedNpmCandidates(parsed: unknown): PackedNpmCandidate[] {
+  const entries: Array<{ key?: string; value: unknown }> = Array.isArray(parsed)
+    ? (parsed as unknown[]).map((value) => ({ value }))
+    : typeof parsed === "object" && parsed !== null
+      ? Object.entries(parsed).map(([key, value]) => ({ key, value }))
+      : [];
+  return entries.flatMap(({ key, value }) => {
+    const candidate = decodePackedNpmCandidate(value, key);
+    return candidate ? [candidate] : [];
+  });
+}
+
+function selectPackedNpmCandidate(
+  candidates: PackedNpmCandidate[],
+  expectedPackage: string | undefined,
+): PackedNpmCandidate | undefined {
+  const normalizedExpected = expectedPackage?.trim().toLowerCase();
+  const matchingCandidates = normalizedExpected
+    ? candidates.filter(
+        (candidate) =>
+          candidate.name?.trim().toLowerCase() === normalizedExpected ||
+          candidate.key?.trim().toLowerCase() === normalizedExpected,
+      )
+    : [];
+  if (matchingCandidates.length === 1) return matchingCandidates[0];
+  return candidates.length === 1 ? candidates[0] : undefined;
+}
+
+function parsePackedNpmPackage(
+  stdout: string,
+  packDirectory: string,
+  expectedPackage?: string,
+): { tarball: string; package?: string; version?: string } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stdout) as unknown;
+  } catch {
+    const filename = stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .at(-1);
+    if (!filename) {
+      throw new PmCliError(
+        "npm pack did not report a tarball filename.",
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    return { tarball: resolvePackedTarball(packDirectory, filename) };
+  }
+
+  const candidates = collectPackedNpmCandidates(parsed);
+  const selected = selectPackedNpmCandidate(candidates, expectedPackage);
+  if (!selected) {
+    throw new PmCliError(
+      "npm pack --json returned an unsupported or ambiguous package receipt.",
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "npm_pack_json_shape_unsupported",
+        required:
+          "Use an npm client that returns an array of package receipts or an object keyed by package name, with exactly one requested package entry containing filename.",
+        why: `Well-formed JSON contained ${candidates.length} usable package receipt(s), but pm could not select ${expectedPackage ?? "one package"} deterministically.`,
+      },
+    );
+  }
+  return {
+    tarball: resolvePackedTarball(packDirectory, selected.filename),
+    package: selected.name ?? selected.key,
+    version: selected.version,
   };
 }
 
@@ -737,7 +806,11 @@ async function resolveNpmSourceDirectoryWithRunner(
       "--pack-destination",
       packDirectory,
     ]);
-    const packed = parsePackedNpmPackage(packStdout, packDirectory);
+    const packed = parsePackedNpmPackage(
+      packStdout,
+      packDirectory,
+      npmPackageNameFromSpec(source.spec),
+    );
     if (!(await pathExists(packed.tarball))) {
       throw new PmCliError(
         "npm pack did not create its reported package archive.",

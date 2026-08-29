@@ -228,8 +228,7 @@ describe("merge receipt health classification", () => {
       ) as Record<string, unknown>;
       const divergentDurable = structuredClone(durableBefore);
       divergentDurable.item_id = "pm-cross-copy-forged";
-      divergentDurable.item_path =
-        ".agents/pm/tasks/pm-cross-copy-forged.toon";
+      divergentDurable.item_path = ".agents/pm/tasks/pm-cross-copy-forged.toon";
       divergentDurable.state = "reconciled";
       divergentDurable.reconciled_at = "2026-08-24T00:00:00.000Z";
       await fs.writeFile(
@@ -676,11 +675,7 @@ describe("merge receipt health classification", () => {
         merge_receipt_proof: { reason: "no_item_receipts" },
       });
       for (const untrustedReceipt of [
-        {
-          ...cloneLocalReceipt,
-          evidence_source: "durable" as const,
-          value_availability: "hash_only" as const,
-        },
+        { ...cloneLocalReceipt, evidence_source: undefined },
         {
           ...cloneLocalReceipt,
           item_path: ".agents/pm/tasks/pm-missing.toon",
@@ -758,7 +753,22 @@ describe("merge receipt health classification", () => {
         ),
       ).rejects.toThrow(/does not prove the exact item snapshot/);
       await expect(proofResult(cloneLocalReceipt)).resolves.toMatchObject({
-        merge_receipt_proof: { trusted: true },
+        merge_receipt_proof: {
+          trusted: true,
+          reason: "trusted_merge_driver_hash_evidence",
+        },
+      });
+      await expect(
+        proofResult({
+          ...cloneLocalReceipt,
+          evidence_source: "durable",
+          value_availability: "hash_only",
+        }),
+      ).resolves.toMatchObject({
+        merge_receipt_proof: {
+          trusted: true,
+          reason: "trusted_merge_driver_hash_evidence",
+        },
       });
       await expect(
         runHistoryRepairAll(
@@ -779,7 +789,7 @@ describe("merge receipt health classification", () => {
             id: "pm-merge-lossless",
             merge_receipt_proof: {
               trusted: true,
-              reason: "trusted_clone_local_driver_evidence",
+              reason: "trusted_merge_driver_hash_evidence",
               receipt_ids: [losslessReceipt?.id],
             },
           }),

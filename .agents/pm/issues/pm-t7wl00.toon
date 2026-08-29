@@ -2,11 +2,13 @@ id: pm-t7wl00
 title: "GH-1134: required collection recovery omits truthful --clear-* intent"
 description: "GitHub #1134 shows that strict required-field refusals suggest only value-bearing collection flags or progressive mode even though --clear-deps and the other --clear-* flags are the truthful considered-empty answer, steering agents toward fabricated context edges."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",context-management,github-1134,recovery
 created_at: "2026-08-28T08:13:27.374Z"
-updated_at: "2026-08-28T08:13:52.429Z"
+updated_at: "2026-08-29T00:17:19.167Z"
+closed_at: "2026-08-28T23:26:20.284Z"
+completed_at: "2026-08-28T23:26:20.284Z"
 author: "harness:codex"
 acceptance_criteria: Required collection failures map each supported collection to its exact --clear-* considered-empty flag; suggested_flags rank the truthful clear intent before value-bearing or policy-bypass alternatives; examples explain both empty and populated forms without invented identifiers; structured recovery and human diagnostics remain contract-parity; SDK CLI MCP completions and docs expose the same semantics; executable negative controls prove every advertised recovery succeeds without dangling or fabricated data; focused acceptance transcript and exact repository coverage gates pass
 parent: pm-f05lsg
@@ -15,14 +17,40 @@ confidence: high
 severity: high
 environment: pm 2026.8.23 with governance.preset=strict in an empty initialized workspace
 repro_steps: "Configure strict governance, invoke create with every required field except --dep, inspect suggested_flags and examples, then compare the advertised routes with the successful unadvertised --clear-deps command."
+resolution: Mapped every strict required collection to its truthful clear flag and ranked considered-empty recovery before value-bearing alternatives across generated contracts and diagnostics.
 expected_result: A missing required collection refusal advertises the exact truthful considered-empty flag first and every suggested recovery is executable.
-actual_result: "The refusal advertises --dep and progressive mode but omits --clear-deps, so its easiest successful path either invents a relationship or abandons configured policy."
+actual_result: "Strict create refusals now advertise executable clear-first recovery without fabricated graph data, with generated error catalogs and refusal census synchronized."
 component: required-field recovery bundles and create option policy
 customer_impact: Agents following first-party recovery guidance can permanently pollute the context graph with false edges that appear fully provenance-backed.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-h8tpeh,verifies,"2026-08-28T08:13:27.374Z","harness:codex","cli:create:dep",detected
   pm-st7wgu,recurs_from,"2026-08-28T08:13:27.374Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-28T08:13:27.374Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1134, GH-951, required collection recovery, clear-deps, suggested flags, and executable refusal closure; fully read closed pm-st7wgu and its comments plus the broader pm-f05lsg/pm-h8tpeh recovery lineage. pm-st7wgu owns the implemented considered-empty primitive; #1134 is the distinct discoverability escape where the refusal never advertises it. This open unclaimed child is canonical for GitHub #1134."
   "2026-08-28T08:13:52.429Z","harness:codex","GitHub linkage evidence: #1134 comment https://github.com/unbraind/pm-cli/issues/1134#issuecomment-5450113774 points to this canonical PM item and its merge-stable main-branch .toon path."
+  "2026-08-28T23:24:22.368Z","harness:codex","Verification evidence: create command, connected recovery, contract snapshot, refusal closure, docs links, and full 8,099-test exact-coverage gates passed."
+files[7]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog activation receipt used for reviewed changelog generation
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated refusal catalog recovery surface
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated refusal catalog recovery surface
+  src/sdk/lifecycle/create.ts,project,truthful clear-first recovery
+  tests/fixtures/contracts/full.json,project,Generated CLI contract recovery surface
+  tests/unit/commands/create-command.spec.ts,project,Truthful required collection recovery coverage
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:04.415Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,Latest pm-changelog 2026.8.22 generated reviewed closeout
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated executable refusal closure census
+  docs/README.md,project,Context recovery primitives documentation entry
+close_reason: "Truthful clear-first recovery, generated contracts and catalogs, refusal closure, documentation, and exact coverage are verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: strict-create-clear-first-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts
+  local_checks[2]: required collection recovery suite,refusal closure census
+  hosted_checks[2]: CI / exact-coverage,CI / refusal-closure
+  owner: pm-t7wl00
 body: "Source: https://github.com/unbraind/pm-cli/issues/1134"

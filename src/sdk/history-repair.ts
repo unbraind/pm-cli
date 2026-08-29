@@ -147,7 +147,7 @@ export interface MergeReceiptProofResult {
   trusted: boolean;
   /** Stable explanation for the trust decision. */
   reason:
-    | "trusted_clone_local_driver_evidence"
+    | "trusted_merge_driver_hash_evidence"
     | "git_workspace_unavailable"
     | "item_path_unavailable"
     | "no_item_receipts"
@@ -368,7 +368,12 @@ async function verifyReceiptAgainstSnapshot(params: {
   receipt: MergeDecisionReceipt;
   declaredFields: string[];
 } | null> {
-  if (params.receipt.evidence_source !== "clone_local") return null;
+  if (
+    params.receipt.evidence_source !== "clone_local" &&
+    params.receipt.evidence_source !== "durable"
+  ) {
+    return null;
+  }
   const receiptPath = await canonicalRealPath(
     path.resolve(params.gitWorkspaceRoot, params.receipt.item_path),
   );
@@ -456,7 +461,7 @@ async function verifyMergeReceiptProof(params: {
   ) {
     return {
       trusted: true,
-      reason: "trusted_clone_local_driver_evidence",
+      reason: "trusted_merge_driver_hash_evidence",
       receipt_ids: trustedReceipts.map(({ receipt }) => receipt.id),
     };
   }

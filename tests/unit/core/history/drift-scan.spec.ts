@@ -5,7 +5,10 @@ import { scanHistoryDrift } from "../../../../src/core/history/drift-scan.js";
 import { WORKSPACE_HISTORY_ID } from "../../../../src/core/history/workspace-history.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
 import { listAllItemMetadataWithBody } from "../../../../src/core/store/item-store.js";
-import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../../helpers/withTempPmPath.js";
 import { createTestItem } from "../../../helpers/itemFactory.js";
 
 const DRIFT_CACHE_RELATIVE = path.join("runtime", "history-drift-cache.json");
@@ -17,16 +20,20 @@ interface DriftCacheFixtureEntry {
   content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
-  item_hash_version: 1 | 2;
+  item_hash_version: 1 | 2 | 3;
+  version_skew?: boolean;
 }
 
 interface DriftCacheFixture {
   version: number;
+  history_item_hash_version: 1 | 2 | 3;
   entries: Record<string, DriftCacheFixtureEntry>;
 }
 
 async function readDriftCache(pmRoot: string): Promise<DriftCacheFixture> {
-  return JSON.parse(await fs.readFile(path.join(pmRoot, DRIFT_CACHE_RELATIVE), "utf8"));
+  return JSON.parse(
+    await fs.readFile(path.join(pmRoot, DRIFT_CACHE_RELATIVE), "utf8"),
+  );
 }
 
 // Seeds one item, scans to populate the cache, mutates the history stream via
@@ -37,7 +44,10 @@ async function seedStaleMetadataMatchedCache(
   context: TempPmContext,
   title: string,
   mutateStream: (historyPath: string) => Promise<void>,
-): Promise<{ createdId: string; items: Awaited<ReturnType<typeof listAllItemMetadataWithBody>> }> {
+): Promise<{
+  createdId: string;
+  items: Awaited<ReturnType<typeof listAllItemMetadataWithBody>>;
+}> {
   const created = createTestItem(context, { title });
   const items = await listAllItemMetadataWithBody(context.pmPath);
   await scanHistoryDrift(context.pmPath, items);
@@ -52,7 +62,8 @@ async function seedStaleMetadataMatchedCache(
   await mutateStream(historyPath);
   const mutatedStat = await fs.stat(historyPath);
   const forgedCache: DriftCacheFixture = {
-    version: 4,
+    version: 5,
+    history_item_hash_version: 3,
     entries: {
       [created.id]: {
         ...staleEntry,
@@ -62,7 +73,11 @@ async function seedStaleMetadataMatchedCache(
       },
     },
   };
-  await fs.writeFile(cachePath, `${JSON.stringify(forgedCache, null, 2)}\n`, "utf8");
+  await fs.writeFile(
+    cachePath,
+    `${JSON.stringify(forgedCache, null, 2)}\n`,
+    "utf8",
+  );
   return { createdId: created.id, items };
 }
 
@@ -103,7 +118,8 @@ describe("core/history/drift-scan", () => {
       expect(first.driftedItems).toEqual([]);
 
       const cache = await readDriftCache(context.pmPath);
-      expect(cache.version).toBe(4);
+      expect(cache.version).toBe(5);
+      expect(cache.history_item_hash_version).toBe(3);
       expect(Object.keys(cache.entries)).toHaveLength(items.length);
       const firstEntry = Object.values(cache.entries)[0];
       expect(typeof firstEntry.content_hash).toBe("string");
@@ -146,11 +162,40 @@ describe("core/history/drift-scan", () => {
       const created = createTestItem(context, { title: "Gamma" });
       const items = await listAllItemMetadataWithBody(context.pmPath);
       const tampered = items.map((item) =>
-        item.id === created.id ? { ...item, body: `${item.body} tampered` } : item,
+        item.id === created.id
+          ? { ...item, body: `${item.body} tampered` }
+          : item,
       );
 
       const result = await scanHistoryDrift(context.pmPath, tampered);
       expect(result.hashMismatches).toContain(created.id);
+      expect(result.driftedItems).toContain(created.id);
+    });
+  });
+
+  it("classifies unsupported writer capabilities as version skew instead of corruption", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Future writer" });
+      const historyPath = getHistoryPath(context.pmPath, created.id);
+      const futureHistory = (await fs.readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => ({
+          ...(JSON.parse(line) as Record<string, unknown>),
+          item_hash_version: 99,
+        }));
+      await fs.writeFile(
+        historyPath,
+        `${futureHistory.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        "utf8",
+      );
+      const items = await listAllItemMetadataWithBody(context.pmPath);
+
+      const result = await scanHistoryDrift(context.pmPath, items);
+
+      expect(result.versionSkews).toEqual([created.id]);
+      expect(result.hashMismatches).not.toContain(created.id);
+      expect(result.chainMismatches).not.toContain(created.id);
       expect(result.driftedItems).toContain(created.id);
     });
   });
@@ -169,14 +214,26 @@ describe("core/history/drift-scan", () => {
         "utf8",
       );
       // Valid JSON line missing after_hash → throws inside stream verification.
-      await fs.writeFile(getHistoryPath(context.pmPath, unreadable.id), `${JSON.stringify({ op: "noop" })}\n`, "utf8");
+      await fs.writeFile(
+        getHistoryPath(context.pmPath, unreadable.id),
+        `${JSON.stringify({ op: "noop" })}\n`,
+        "utf8",
+      );
       // Empty stream → treated as a missing stream.
-      await fs.writeFile(getHistoryPath(context.pmPath, empty.id), "\n", "utf8");
+      await fs.writeFile(
+        getHistoryPath(context.pmPath, empty.id),
+        "\n",
+        "utf8",
+      );
 
       // Parent path component is a file. POSIX reports ENOTDIR for the nested
       // stream, while Windows reports ENOENT, so assert drift instead of a
       // platform-specific bucket.
-      await fs.writeFile(path.join(context.pmPath, "history", "notdir"), "x", "utf8");
+      await fs.writeFile(
+        path.join(context.pmPath, "history", "notdir"),
+        "x",
+        "utf8",
+      );
 
       const withSynthetic = [
         ...items,
@@ -187,7 +244,9 @@ describe("core/history/drift-scan", () => {
 
       expect(result.chainMismatches).toContain(broken.id);
       expect(result.unreadableStreams).toContain(unreadable.id);
-      expect([...result.missingStreams, ...result.unreadableStreams]).toContain("notdir/child");
+      expect([...result.missingStreams, ...result.unreadableStreams]).toContain(
+        "notdir/child",
+      );
       expect(result.driftedItems).toContain("notdir/child");
       expect(result.missingStreams).toContain(empty.id);
       expect(result.missingStreams).toContain("pm-does-not-exist");
@@ -220,9 +279,27 @@ describe("core/history/drift-scan", () => {
 
       for (const corrupt of [
         "{ not json",
-        JSON.stringify({ version: 999, entries: {} }),
-        JSON.stringify({ version: 4, entries: null }),
-        JSON.stringify({ version: 4, entries: "not-an-object" }),
+        JSON.stringify({
+          version: 999,
+          history_item_hash_version: 3,
+          entries: {},
+        }),
+        JSON.stringify({ version: 5, entries: {} }),
+        JSON.stringify({
+          version: 5,
+          history_item_hash_version: 99,
+          entries: {},
+        }),
+        JSON.stringify({
+          version: 5,
+          history_item_hash_version: 3,
+          entries: null,
+        }),
+        JSON.stringify({
+          version: 5,
+          history_item_hash_version: 3,
+          entries: "not-an-object",
+        }),
       ]) {
         await fs.writeFile(cachePath, corrupt, "utf8");
         const result = await scanHistoryDrift(context.pmPath, items);
@@ -238,12 +315,16 @@ describe("core/history/drift-scan", () => {
       const items = await listAllItemMetadataWithBody(context.pmPath);
 
       await scanHistoryDrift(context.pmPath, items);
-      expect(Object.keys((await readDriftCache(context.pmPath)).entries)).toHaveLength(2);
+      expect(
+        Object.keys((await readDriftCache(context.pmPath)).entries),
+      ).toHaveLength(2);
 
       // Subset scan: each remaining stream is an unchanged cache hit, but the key
       // set shrank, so the cache is rewritten with fewer entries.
       await scanHistoryDrift(context.pmPath, items.slice(0, 1));
-      expect(Object.keys((await readDriftCache(context.pmPath)).entries)).toHaveLength(1);
+      expect(
+        Object.keys((await readDriftCache(context.pmPath)).entries),
+      ).toHaveLength(1);
     });
   });
 
@@ -251,7 +332,11 @@ describe("core/history/drift-scan", () => {
     await withTempPmPath(async (context) => {
       // Replace the stream with a different (invalid-chain) payload behind a
       // metadata-matched cache row. Hash-guarded cache hits must invalidate it.
-      const { createdId, items } = await seedStaleMetadataMatchedCache(context, "Hash guard", writeInvalidChainStream);
+      const { createdId, items } = await seedStaleMetadataMatchedCache(
+        context,
+        "Hash guard",
+        writeInvalidChainStream,
+      );
 
       const result = await scanHistoryDrift(context.pmPath, items);
       expect(result.chainMismatches).toContain(createdId);
@@ -261,9 +346,15 @@ describe("core/history/drift-scan", () => {
 
   it("metadata mode skips content rereads and trusts stat-matched cache entries after content changes", async () => {
     await withTempPmPath(async (context) => {
-      const { items } = await seedStaleMetadataMatchedCache(context, "Metadata trusted", writeInvalidChainStream);
+      const { items } = await seedStaleMetadataMatchedCache(
+        context,
+        "Metadata trusted",
+        writeInvalidChainStream,
+      );
 
-      const result = await scanHistoryDrift(context.pmPath, items, { cacheHitVerification: "metadata" });
+      const result = await scanHistoryDrift(context.pmPath, items, {
+        cacheHitVerification: "metadata",
+      });
       expect(result.driftedItems).toEqual([]);
     });
   });

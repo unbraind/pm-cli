@@ -12,6 +12,7 @@
 import { isTerminalStatus, normalizeStatusForRegistry } from "./status.js";
 import type { RuntimeStatusRegistry } from "../schema/runtime-schema.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
+import { isExternalDependencyReference } from "./dependency-reference.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
@@ -115,11 +116,18 @@ export interface ResolvedBlocker {
   status: ItemStatus | null;
   /** True when the blocker no longer gates work because the referenced item is terminal. */
   resolved: boolean;
+  /** Whether this blocker is a cross-system locator requiring an external resolver. */
+  external?: boolean;
+  /** Last holder mutation timestamp, used as a conservative external-block staleness marker. */
+  blocked_since?: string;
+  /** Resolver identity when an integration resolved this external blocker; null means unverifiable. */
+  resolver?: string | null;
 }
 
 /** Resolves an item's declared blockers against a corpus index, annotating each with the blocker's title/status and whether it still gates work. Unknown ids remain unresolved: silently treating a typo as satisfied would dispatch work whose prerequisite was never completed. Terminal referenced items alone are resolved. */
 function resolveItemBlockersWithIndex(
-  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies"> &
+    Partial<Pick<ItemMetadata, "id" | "updated_at">>,
   itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
   blockerIdsByItem?: ReadonlyMap<string, readonly string[]>,
@@ -136,6 +144,19 @@ function resolveItemBlockersWithIndex(
   return blockerIds.map((id) => {
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
+      if (isExternalDependencyReference(id)) {
+        return {
+          id,
+          title: null,
+          status: null,
+          resolved: false,
+          external: true,
+          ...(typeof item.updated_at === "string"
+            ? { blocked_since: item.updated_at }
+            : {}),
+          resolver: null,
+        };
+      }
       return { id, title: null, status: null, resolved: false };
     }
     return {

@@ -2951,7 +2951,10 @@ describe("runCreate", () => {
         exitCode: EXIT_CODE.USAGE,
         context: {
           code: "missing_required_option",
-          examples: [expect.stringContaining("--type-option category=feature")],
+          examples: expect.arrayContaining([
+            expect.stringContaining("--type-option category=feature"),
+            expect.stringContaining("--clear-type-options"),
+          ]),
           nextSteps: expect.arrayContaining([
             expect.stringContaining("pm create --help --type Asset"),
             expect.stringContaining("--create-mode progressive"),

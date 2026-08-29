@@ -1,0 +1,69 @@
+id: pm-z1z96w
+title: "GH-1144: hash-only merge receipts contradict report output and cannot reconcile truthfully"
+description: "GitHub issue #1144 proves that tracked hash_only merge receipts are reported as clone_local, remain pending forever because the reconciler demands unavailable values, and can report outcome repaired despite zero rehashes and an untrusted snapshot."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:merge","area:sdk",context-integrity,github-1144,merge-receipts,multi-agent
+created_at: "2026-08-28T21:25:58.746Z"
+updated_at: "2026-08-28T23:38:23.488Z"
+closed_at: "2026-08-28T23:26:17.504Z"
+completed_at: "2026-08-28T23:26:17.504Z"
+author: "harness:codex"
+estimated_minutes: 420
+acceptance_criteria: Merge report renders stored value_availability separately from evidence provenance and never labels tracked receipts clone-local; Hash-only receipts reconcile without force when their recorded hashes prove the current canonical snapshot; Untrusted or no-effect reconciliation never reports repaired; Pending and reconciled state transitions remain auditable and fail closed when proof is insufficient; SDK CLI docs merge-driver temp-repository and exact coverage gates pass
+parent: pm-dj98
+risk: critical
+confidence: high
+reporter: GitHub issue #1144
+severity: critical
+environment: pm 2026.8.28 with committed hash_only receipts produced by the field-aware merge driver
+repro_steps: Inspect a tracked pending hash_only receipt; compare pm merge report value_availability and evidence_source; run merge reconcile dry-run and observe untrusted proof plus outcome repaired with zero repair.
+resolution: "Made durable hash evidence first-class for merge reports and reconciliation, permitting settlement only when current canonical hashes prove the receipt while insufficient proof still fails closed."
+expected_result: Report fields reflect stored receipt evidence; hash-only proof can reconcile without ownership override when current canonical hashes satisfy the recorded merge; receipts remain pending only when evidence is actually insufficient; outcome names actual effects.
+actual_result: "Hash-only receipts retain truthful provenance, exact durable proof reconciles without force, and zero-effect or untrusted attempts no longer report a repaired outcome."
+component: "SDK merge receipt report, proof, reconcile, health, and CLI adapters"
+customer_impact: Normal multi-agent merges permanently poison health signals and pressure agents toward an unnecessary history ownership override.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9j2r3b,discovered_from,"2026-08-28T21:25:58.746Z","harness:codex","cli:create:dep",detected
+  pm-lwmstb,discovered_from,"2026-08-28T21:25:58.746Z","harness:codex","cli:create:dep",detected
+  pm-ysqb6n,discovered_from,"2026-08-28T21:25:58.746Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-28T21:25:58.746Z","harness:codex","Duplicate check evidence: complete all-status search found closed pm-lwmstb for post-merge remediation routing and pm-ysqb6n for pending receipt visibility plus pm-9j2r3b for merge history addressability. None owns hash-only proof impossibility or report field contradiction. This recurrence is canonical for GitHub 1144."
+  "2026-08-28T21:26:38.284Z","harness:codex","GitHub linkage evidence: issue #1144 now points to this canonical item at the merge-stable main-branch toon path."
+  "2026-08-28T23:24:20.262Z","harness:codex","Verification evidence: SDK, CLI, and temporary-repository merge receipt suites passed; live history validation found zero drift across 2,596 items; full repository coverage passed 8,099 tests at exact 100/100/100/100."
+files[6]{path,scope,note}:
+  src/sdk/history-repair.ts,project,durable hash proof
+  src/sdk/merge/reconcile.ts,project,proof-gated settlement
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Durable merge receipt acceptance coverage
+  tests/unit/commands/merge-reconcile-command.spec.ts,project,CLI proof-gated reconciliation coverage
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+  tests/unit/sdk/merge-reconcile.spec.ts,project,SDK proof-gated reconciliation coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:02.378Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts,project,240,"harness:codex","2026-08-28T21:54:09.102Z",local_mutation,feat/sdk-context-integrity-recovery,merge receipt proof and settlement coverage
+test_runs[1]:
+  - run_id: test-local-mtdky5po-vi0l6l
+    kind: test
+    status: passed
+    started_at: "2026-08-28T23:25:27.195Z"
+    finished_at: "2026-08-28T23:25:44.172Z"
+    recorded_at: "2026-08-28T23:25:44.172Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "Durable hash proof, truthful merge reporting, proof-gated reconciliation, temporary-repository acceptance, and exact coverage are verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: durable-merge-receipt-proof
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts
+  local_checks[2]: merge proof and reconciliation suite,temporary repository acceptance
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-z1z96w
+body: ""

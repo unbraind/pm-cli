@@ -10,6 +10,7 @@ import fg from "fast-glob";
 import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
+  assertNoAmbiguousBareCommaEntry,
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
@@ -20,7 +21,6 @@ import { isRemoteLinkedArtifactReference } from "../core/validate/linked-artifac
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { splitCommaList } from "../core/shared/split-comma-list.js";
 import { stableValueEquals } from "../core/shared/serialization.js";
 import {
   locateItem,
@@ -198,20 +198,6 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   return raw.includes("=") || looksLikeGenericKeyValueEntry(raw);
 }
 
-function expandBareCommaSeparatedAddEntries(raw: string[]): string[] {
-  return raw.flatMap((entry) => {
-    const trimmed = entry.trim();
-    if (
-      trimmed.length === 0 ||
-      looksLikeStructuredPathEntry(trimmed) ||
-      !trimmed.includes(",")
-    ) {
-      return [entry];
-    }
-    return splitCommaList(trimmed);
-  });
-}
-
 /** Whether a Markdown destination contains only balanced parentheses. */
 function hasBalancedParentheses(value: string): boolean {
   let depth = 0;
@@ -269,7 +255,13 @@ export function parseAddEntries(
       const reference = parseDocumentationReference(trimmed);
       if (reference !== undefined) return [reference];
     }
-    return expandBareCommaSeparatedAddEntries([entry]).map((expanded) => {
+    assertNoAmbiguousBareCommaEntry(
+      trimmed,
+      "--add",
+      `${bareNoun} path`,
+      looksLikeStructuredPathEntry(trimmed),
+    );
+    return [entry].map((expanded) => {
       const expandedTrimmed = expanded.trim();
       const kv = looksLikeStructuredPathEntry(expandedTrimmed)
         ? parseCsvKv(expanded, "--add")
@@ -687,7 +679,7 @@ async function buildLinkedArtifactResult(params: {
       params.migrationsApplied && params.migrationsApplied > 0
         ? params.migrationsApplied
         : undefined,
-    validation: params.options.validatePaths
+    validation: params.options.validatePaths || params.changed
       ? await validateLinkedPaths(paths, params.workspaceRoot)
       : undefined,
   };

@@ -225,7 +225,7 @@ function historyEntryHashCandidates(
     return [explicitVersion as HistoryItemHashVersion];
   }
   return authoritativeVersion === undefined
-    ? [1, CURRENT_HISTORY_ITEM_HASH_VERSION]
+    ? [...SUPPORTED_HISTORY_ITEM_HASH_VERSIONS]
     : [authoritativeVersion];
 }
 

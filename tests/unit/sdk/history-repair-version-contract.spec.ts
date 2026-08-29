@@ -11,6 +11,7 @@ import {
   type ReplayDocument,
 } from "../../../src/core/history/replay.js";
 import type { HistoryEntry, HistoryPatchOp } from "../../../src/types.js";
+import { CURRENT_HISTORY_ITEM_HASH_VERSION } from "../../../src/core/history/history.js";
 import { runHistoryRepair } from "../../../src/sdk/history-repair.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -83,7 +84,9 @@ describe("history repair hash epoch contract", () => {
 
   it("falls forward only for an irreconcilably mixed explicit stream", () => {
     const mixed = [historyEntry(1, true), historyEntry(2, true)];
-    expect(resolveHistoryRepairItemHashVersion(mixed)).toBe(2);
+    expect(resolveHistoryRepairItemHashVersion(mixed)).toBe(
+      CURRENT_HISTORY_ITEM_HASH_VERSION,
+    );
   });
 
   it("keeps one consistent explicit epoch on a drifted stream", () => {

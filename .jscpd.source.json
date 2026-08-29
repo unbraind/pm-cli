@@ -1,0 +1,25 @@
+{
+  "path": [
+    "src",
+    "packages",
+    "plugins"
+  ],
+  "format": [
+    "typescript",
+    "javascript"
+  ],
+  "mode": "strict",
+  "minLines": 18,
+  "minTokens": 114,
+  "threshold": 0,
+  "reporters": [
+    "console"
+  ],
+  "noTips": true,
+  "ignore": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "packages/pm-*/extensions/*/runtime-loader.ts",
+    "plugins/pm-*/scripts/pm-mcp-server.mjs"
+  ]
+}

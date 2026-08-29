@@ -4,6 +4,7 @@ import {
   mkdtemp,
   readFile,
   rm,
+  stat,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -588,6 +589,14 @@ describe("runHealth", () => {
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 1,
         cache_hit_verification: "metadata",
+        cache_confirmation: {
+          triggered: false,
+          reason: null,
+          candidate_items: [],
+          confirmed_items: [],
+          resolved_false_positive_items: [],
+          authoritative_item_source: false,
+        },
         drifted_items: [],
         counts: {
           drifted: 0,
@@ -630,6 +639,99 @@ describe("runHealth", () => {
         },
       });
       expect(health.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+  });
+
+  it("authoritatively rechecks cached corruption candidates before reporting drift", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createSeedItem(context);
+      const initial = await runHealth({ path: context.pmPath });
+      expect(initial.ok).toBe(true);
+
+      const metadataCachePath = path.join(
+        context.pmPath,
+        "runtime",
+        "metadata-cache.json",
+      );
+      const staleMetadataCache = JSON.parse(
+        await readFile(metadataCachePath, "utf8"),
+      ) as {
+        entries: Record<
+          string,
+          {
+            mtime_ms: number;
+            ctime_ms: number;
+            size: number;
+          }
+        >;
+      };
+      const itemCacheKey = Object.keys(staleMetadataCache.entries).find(
+        (entryPath) => entryPath.endsWith(`/${id}.toon`),
+      );
+      if (itemCacheKey === undefined) {
+        throw new Error(`expected metadata cache entry for ${id}`);
+      }
+
+      const update = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--priority",
+          "2",
+          "--author",
+          "test-author",
+          "--message",
+          "Advance the item while preserving its history chain",
+        ],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const itemPath = path.join(context.pmPath, itemCacheKey);
+      const currentItemStat = await stat(itemPath);
+      const staleEntry = staleMetadataCache.entries[itemCacheKey];
+      if (staleEntry === undefined) {
+        throw new Error(`expected metadata cache payload for ${id}`);
+      }
+      Object.assign(staleEntry, {
+        mtime_ms: currentItemStat.mtimeMs,
+        ctime_ms: currentItemStat.ctimeMs,
+        size: currentItemStat.size,
+      });
+      await rm(
+        path.join(context.pmPath, "runtime", "metadata-cache-delta.json"),
+        { force: true },
+      );
+      await rm(
+        path.join(context.pmPath, "runtime", "metadata-cache-manifest.json"),
+        { force: true },
+      );
+      await writeFile(
+        metadataCachePath,
+        `${JSON.stringify(staleMetadataCache)}\n`,
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.warnings).not.toContain(
+        `history_drift_hash_mismatch:${id}`,
+      );
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
+      expect(historyDriftCheck?.details).toMatchObject({
+        cache_hit_verification: "metadata_then_content_hash",
+        cache_confirmation: {
+          triggered: true,
+          reason: "cached_corruption_candidate",
+          candidate_items: [id],
+          confirmed_items: [],
+          resolved_false_positive_items: [id],
+          authoritative_item_source: true,
+        },
+        hash_mismatches: [],
+      });
     });
   });
 
@@ -1237,6 +1339,14 @@ describe("runHealth", () => {
       expect(historyDriftCheck?.status).toBe("warn");
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 3,
+        cache_hit_verification: "metadata_then_content_hash",
+        cache_confirmation: {
+          triggered: true,
+          candidate_items: [mismatchId],
+          confirmed_items: [mismatchId],
+          resolved_false_positive_items: [],
+          authoritative_item_source: true,
+        },
         drifted_items: [mismatchId, missingId, unreadableId].sort(
           (left, right) => left.localeCompare(right),
         ),

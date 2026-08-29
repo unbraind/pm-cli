@@ -655,24 +655,53 @@ const codexProvenanceSnapshotCache = new Map<
   Readonly<Record<string, string | undefined>>
 >();
 const EMPTY_CODEX_PROVENANCE_SNAPSHOT = Object.freeze({});
+const claudeProvenanceSnapshotCache = new Map<
+  string,
+  Readonly<Record<string, string | undefined>>
+>();
+const EMPTY_CLAUDE_PROVENANCE_SNAPSHOT = Object.freeze({});
+
+function asProvenanceRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
 
 function parseClaudeProvenanceLine(
   line: string,
-  dimension: string,
-): string | undefined {
+): Readonly<Record<string, string | undefined>> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(line) as unknown;
   } catch {
-    return undefined;
+    return EMPTY_CLAUDE_PROVENANCE_SNAPSHOT;
   }
-  const record = parsed as Record<string, unknown>;
-  const message =
-    typeof record.message === "object" && record.message !== null
-      ? (record.message as Record<string, unknown>)
-      : undefined;
-  const value = dimension === "model" ? message?.model : record.version;
-  return nonBlank(value)?.slice(0, 256);
+  const record = asProvenanceRecord(parsed);
+  if (!record) return EMPTY_CLAUDE_PROVENANCE_SNAPSHOT;
+  const queue: Array<{ value: Record<string, unknown>; depth: number }> = [
+    { value: record, depth: 0 },
+  ];
+  let visited = 0;
+  let model: string | undefined;
+  let version: string | undefined;
+  while (queue.length > 0 && visited < 64) {
+    const current = queue.shift()!;
+    visited += 1;
+    model ??= nonBlank(current.value.model)?.slice(0, 256);
+    version ??= nonBlank(current.value.version)?.slice(0, 256);
+    if (model && version) break;
+    if (current.depth >= 4) continue;
+    for (const value of Object.values(current.value)) {
+      const nested = asProvenanceRecord(value);
+      if (nested) {
+        queue.push({
+          value: nested,
+          depth: current.depth + 1,
+        });
+      }
+    }
+  }
+  return Object.freeze({ model, version });
 }
 
 function readClaudeSessionProvenance(
@@ -694,16 +723,35 @@ function readClaudeSessionProvenance(
   try {
     const file = fs.openSync(sessionPath, "r");
     try {
-      const size = fs.fstatSync(file).size;
-      const tailLength = Math.min(size, MAX_PROVENANCE_PROBE_BYTES);
+      const stats = fs.fstatSync(file);
+      const cacheKey = `${sessionPath}\u0000${stats.size}\u0000${stats.mtimeMs}`;
+      const cached = claudeProvenanceSnapshotCache.get(cacheKey);
+      if (cached) return cached[dimension];
+      const probeLength = Math.min(stats.size, MAX_PROVENANCE_PROBE_BYTES);
+      const headLength = Math.min(probeLength, Math.ceil(probeLength / 2));
+      const tailLength = Math.min(probeLength - headLength, stats.size - headLength);
+      const head = Buffer.alloc(headLength);
+      fs.readSync(file, head, 0, headLength, 0);
       const tail = Buffer.alloc(tailLength);
-      fs.readSync(file, tail, 0, tailLength, Math.max(0, size - tailLength));
-      const lines = tail.toString("utf8").split("\n").reverse().slice(0, 4_096);
-      for (const line of lines) {
-        if (line.length === 0 || line.length > 262_144) continue;
-        const value = parseClaudeProvenanceLine(line, dimension);
-        if (value) return value;
+      if (tailLength > 0) {
+        fs.readSync(file, tail, 0, tailLength, stats.size - tailLength);
       }
+      const text =
+        stats.size <= probeLength
+          ? Buffer.concat([head, tail]).toString("utf8")
+          : `${head.toString("utf8")}\n${tail.toString("utf8")}`;
+      const snapshot: Record<string, string | undefined> = {};
+      for (const line of text.split("\n").slice(0, 4_096)) {
+        if (line.length === 0 || line.length > 262_144) continue;
+        const parsed = parseClaudeProvenanceLine(line);
+        snapshot.model ??= parsed.model;
+        snapshot.version ??= parsed.version;
+        if (snapshot.model && snapshot.version) break;
+      }
+      const frozen = Object.freeze(snapshot);
+      claudeProvenanceSnapshotCache.clear();
+      claudeProvenanceSnapshotCache.set(cacheKey, frozen);
+      return frozen[dimension];
     } finally {
       fs.closeSync(file);
     }

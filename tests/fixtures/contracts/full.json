@@ -15692,6 +15692,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "bare_comma_entry_ambiguous",
+      "class": "usage",
+      "code": "bare_comma_entry_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Bare comma entry ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/parse.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "body_file_conflicts_with_body",
       "class": "usage",
       "code": "body_file_conflicts_with_body",
@@ -18398,23 +18415,6 @@
     },
     {
       "aliases": [],
-      "canonical_code": "merge_reconcile_discards_require_acceptance",
-      "class": "conflict",
-      "code": "merge_reconcile_discards_require_acceptance",
-      "emitting_commands": [
-        "*"
-      ],
-      "exit_code": 4,
-      "meaning": "Merge reconcile discards require acceptance condition.",
-      "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
-      "sources": [
-        "sdk/merge/reconcile.ts"
-      ],
-      "stability": "provisional"
-    },
-    {
-      "aliases": [],
       "canonical_code": "merge_reconcile_receipt_evidence_untrusted",
       "class": "conflict",
       "code": "merge_reconcile_receipt_evidence_untrusted",
@@ -18908,6 +18908,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "npm_pack_json_shape_unsupported",
+      "class": "generic_failure",
+      "code": "npm_pack_json_shape_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Npm pack json shape unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
       ],
       "stability": "provisional"
     },
@@ -19509,6 +19526,40 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/reopen.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reported_zero_passes",
+      "class": "generic_failure",
+      "code": "reported_zero_passes",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Reported zero passes condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reported_zero_tests",
+      "class": "generic_failure",
+      "code": "reported_zero_tests",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Reported zero tests condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
       ],
       "stability": "provisional"
     },

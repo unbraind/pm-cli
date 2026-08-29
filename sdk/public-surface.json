@@ -1377,6 +1377,27 @@
       ],
       "package_version": "2026.8.27",
       "reason": "Add optional transcript terminal-value assertions while preserving version-two parser compatibility"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CURRENT_HISTORY_ITEM_HASH_VERSION",
+        "signature ./sdk:MergeReceiptProofResult",
+        "signature ./sdk:NextBlockerRef",
+        "signature ./sdk:ResolvedBlocker",
+        "signature ./sdk:SUPPORTED_HISTORY_ITEM_HASH_VERSIONS",
+        "signature ./sdk/graph:ResolvedBlocker",
+        "signature ./sdk/query:NextBlockerRef",
+        "signature ./sdk/runtime:NextBlockerRef"
+      ],
+      "package_version": "2026.8.28",
+      "reason": "Adopt history hash epoch v3, proof-source-neutral merge receipts, and first-class external blocker projections."
+    },
+    {
+      "changes": [
+        "error code merge_reconcile_discards_require_acceptance removed"
+      ],
+      "package_version": "2026.8.28",
+      "reason": "Replace force-only merge decision acceptance with exact receipt proof and add structured bare-comma refusal diagnostics."
     }
   ],
   "entrypoints": {
@@ -4729,7 +4750,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "CURRENT_HISTORY_ITEM_HASH_VERSION",
-          "signature": "2"
+          "signature": "3"
         },
         {
           "classification": "supported",
@@ -6516,6 +6537,12 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "EXTERNAL_DEPENDENCY_RESOLUTION_STATUSES",
+          "signature": "readonly [\"open\", \"closed\", \"unknown\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "EXTERNAL_DEPENDENCY_SOURCE_KIND",
           "signature": "\"global\""
         },
@@ -6524,6 +6551,36 @@
           "kind": "value",
           "name": "EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS",
           "signature": "\"external\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExternalDependencyResolution",
+          "signature": "export interface ExternalDependencyResolution { id: string; status: ExternalDependencyResolutionStatus; resolved: boolean; title: string | null; source: string; checked_at: string; resolver: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExternalDependencyResolutionOptions",
+          "signature": "export interface ExternalDependencyResolutionOptions { now?: () => string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ExternalDependencyResolutionStatus",
+          "signature": "export type ExternalDependencyResolutionStatus = (typeof EXTERNAL_DEPENDENCY_RESOLUTION_STATUSES)[number];"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExternalDependencyResolver",
+          "signature": "export interface ExternalDependencyResolver { name: string; supports(reference: string): boolean; resolve(reference: string): Promise<ExternalDependencyResolverResult | null>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExternalDependencyResolverResult",
+          "signature": "export interface ExternalDependencyResolverResult { status: ExternalDependencyResolutionStatus; title?: string; source?: string; checkedAt?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -8040,6 +8097,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "isExternalDependencyReference",
+          "signature": "(target: string | undefined) => boolean | calls: (target: string | undefined) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "isExternalDependencySourceKind",
           "signature": "(sourceKind: string | undefined) => boolean | calls: (sourceKind: string | undefined) => boolean"
         },
@@ -9115,7 +9178,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MergeReceiptProofResult",
-          "signature": "export interface MergeReceiptProofResult { trusted: boolean; reason: \"trusted_clone_local_driver_evidence\" | \"git_workspace_unavailable\" | \"item_path_unavailable\" | \"no_item_receipts\" | \"no_receipt_set_proves_snapshot\"; receipt_ids: string[]; }"
+          "signature": "export interface MergeReceiptProofResult { trusted: boolean; reason: \"trusted_merge_driver_hash_evidence\" | \"git_workspace_unavailable\" | \"item_path_unavailable\" | \"no_item_receipts\" | \"no_receipt_set_proves_snapshot\"; receipt_ids: string[]; }"
         },
         {
           "classification": "supported",
@@ -9277,7 +9340,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextBlockerRef",
-          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; }"
+          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; external?: boolean; blocked_since?: string; resolver?: string | null; }"
         },
         {
           "classification": "supported",
@@ -13402,6 +13465,12 @@
           "signature": "export type RegisteredVectorStoreAdapterExpectation = NamedRegistrationExpectation<\"adapter\", string, { extensionName?: string; }>;"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "registerExternalDependencyResolver",
+          "signature": "(resolver: ExternalDependencyResolver) => () => void | calls: (resolver: ExternalDependencyResolver) => () => void"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "registerHarnessSignalDescriptors",
@@ -14347,7 +14416,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ResolvedBlocker",
-          "signature": "export interface ResolvedBlocker { id: string; title: string | null; status: ItemStatus | null; resolved: boolean; }"
+          "signature": "export interface ResolvedBlocker { id: string; title: string | null; status: ItemStatus | null; resolved: boolean; external?: boolean; blocked_since?: string; resolver?: string | null; }"
         },
         {
           "classification": "advanced_export",
@@ -14402,6 +14471,12 @@
           "kind": "function",
           "name": "resolveExtensionRoots",
           "signature": "(pmRoot: string, cwd?: string) => { global: string; project: string; } | calls: (pmRoot: string, cwd?: string) => { global: string; project: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveExternalDependencyReference",
+          "signature": "(reference: string, options?: ExternalDependencyResolutionOptions) => Promise<ExternalDependencyResolution | null> | calls: (reference: string, options?: ExternalDependencyResolutionOptions) => Promise<ExternalDependencyResolution | null>"
         },
         {
           "classification": "advanced_export",
@@ -17011,7 +17086,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "SUPPORTED_HISTORY_ITEM_HASH_VERSIONS",
-          "signature": "readonly [1, 2]"
+          "signature": "readonly [1, 2, 3]"
         },
         {
           "classification": "advanced_export",
@@ -26101,7 +26176,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ResolvedBlocker",
-          "signature": "export interface ResolvedBlocker { id: string; title: string | null; status: ItemStatus | null; resolved: boolean; }"
+          "signature": "export interface ResolvedBlocker { id: string; title: string | null; status: ItemStatus | null; resolved: boolean; external?: boolean; blocked_since?: string; resolver?: string | null; }"
         },
         {
           "classification": "supported",
@@ -27415,7 +27490,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextBlockerRef",
-          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; }"
+          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; external?: boolean; blocked_since?: string; resolver?: string | null; }"
         },
         {
           "classification": "supported",
@@ -29281,7 +29356,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextBlockerRef",
-          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; }"
+          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; external?: boolean; blocked_since?: string; resolver?: string | null; }"
         },
         {
           "classification": "supported",
@@ -31553,6 +31628,7 @@
     "annotation_transposed_subcommand",
     "append_empty_body",
     "assurance_registry_invalid",
+    "bare_comma_entry_ambiguous",
     "body_file_conflicts_with_body",
     "body_file_missing_path",
     "body_file_unreadable",
@@ -31708,7 +31784,6 @@
     "merge_git_config_unwritable",
     "merge_receipt_evidence_invalid",
     "merge_receipts_pending",
-    "merge_reconcile_discards_require_acceptance",
     "merge_reconcile_receipt_evidence_untrusted",
     "merge_root_not_found",
     "missing_allowed_values",
@@ -31737,6 +31812,7 @@
     "no_update_fields",
     "no_version_bounds_declared",
     "non_refusal_exit",
+    "npm_pack_json_shape_unsupported",
     "npm_package_archive_missing",
     "npm_package_archive_unsafe",
     "npm_package_not_found",
@@ -31772,6 +31848,8 @@
     "reopen_reason_required",
     "reopen_receipt_missing",
     "reopen_target_status_invalid",
+    "reported_zero_passes",
+    "reported_zero_tests",
     "reserved_item_field",
     "retry_failed",
     "schema_migration_input_required",
