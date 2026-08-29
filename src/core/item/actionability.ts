@@ -165,24 +165,24 @@ function resolveItemBlockersWithIndex(
       .map((dependency) => normalizeItemId(dependency.id)),
   );
   return blockerIds.map((id) => {
+    if (
+      isExternalDependencyReference(id) ||
+      structuredExternalBlockerIds.has(normalizeItemId(id))
+    ) {
+      return {
+        id,
+        title: null,
+        status: null,
+        resolved: false,
+        external: true,
+        ...(typeof item.updated_at === "string"
+          ? { blocked_since: item.updated_at }
+          : {}),
+        resolver: null,
+      };
+    }
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
-      if (
-        isExternalDependencyReference(id) ||
-        structuredExternalBlockerIds.has(normalizeItemId(id))
-      ) {
-        return {
-          id,
-          title: null,
-          status: null,
-          resolved: false,
-          external: true,
-          ...(typeof item.updated_at === "string"
-            ? { blocked_since: item.updated_at }
-            : {}),
-          resolver: null,
-        };
-      }
       return { id, title: null, status: null, resolved: false };
     }
     return {

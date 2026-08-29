@@ -31796,6 +31796,7 @@
     "missing_observation",
     "missing_observed_signature",
     "missing_parameter_alias",
+    "missing_positive_execution_receipt",
     "missing_probe",
     "missing_required_argument",
     "missing_required_option",

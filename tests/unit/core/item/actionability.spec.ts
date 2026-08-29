@@ -205,6 +205,33 @@ describe("resolveItemBlockers", () => {
       { id: "pm-open", title: "Item pm-open", status: "open", resolved: false },
     ]);
   });
+
+  it("keeps an explicit external blocker distinct from a same-spelled local item", () => {
+    const local = item({ id: "pm-42", status: "closed" });
+    expect(
+      resolveItemBlockers(
+        {
+          dependencies: [
+            {
+              ...blockedByDep("PM-42"),
+              source_kind: "external",
+            },
+          ],
+        },
+        new Map([["pm-42", local]]),
+        registry,
+      ),
+    ).toEqual([
+      {
+        id: "PM-42",
+        title: null,
+        status: null,
+        resolved: false,
+        external: true,
+        resolver: null,
+      },
+    ]);
+  });
 });
 
 describe("collectDependencyBlockedIds", () => {

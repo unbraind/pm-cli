@@ -2304,4 +2304,17 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     canonical_code: "missing_budget",
     aliases: [],
   },
+  {
+    code: "missing_cli_flag",
+    meaning: "Missing cli flag condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_cli_flag",
+    aliases: [],
+  },
 ];

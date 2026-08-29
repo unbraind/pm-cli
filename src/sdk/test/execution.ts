@@ -2090,8 +2090,12 @@ const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   { code: "no_tests_found", regex: /\bNo tests found\b/i },
   { code: "no_matching_tests", regex: /\bNo matching tests?\b/i },
   { code: "collected_zero_items", regex: /\bcollected 0 items?\b/i },
+  {
+    code: "reported_zero_passes",
+    regex:
+      /(?:^\s*#?\s*tests\s+0\s*$[\s\S]*^\s*#?\s*pass\s+0\s*$|^\s*#?\s*pass\s+0\s*$[\s\S]*^\s*#?\s*tests\s+0\s*$)/im,
+  },
   { code: "reported_zero_tests", regex: /^\s*#?\s*tests\s+0\s*$/im },
-  { code: "reported_zero_passes", regex: /^\s*#?\s*pass\s+0\s*$/im },
 ];
 
 const POSITIVE_LINKED_TEST_RUN_PATTERNS = [
@@ -2105,11 +2109,11 @@ const POSITIVE_LINKED_TEST_RUN_PATTERNS = [
 function detectEmptyLinkedTestRun(
   stdout: string,
   stderr: string,
-): string | null {
+): { code: string } | null {
   const combined = `${stdout}\n${stderr}`;
   for (const pattern of EMPTY_LINKED_TEST_RUN_PATTERNS) {
     if (pattern.regex.test(combined)) {
-      return pattern.code;
+      return { code: pattern.code };
     }
   }
   return null;
@@ -2737,7 +2741,7 @@ function buildLinkedTestEmptyRunResult(params: {
   linkedTest: LinkedTest;
   executionContext: NonNullable<TestRunResult["execution_context"]>;
   execution: LinkedTestExecutionResult;
-  emptyRunSignal: string;
+  emptyRunSignal: { code: string };
 }): TestRunResult {
   return {
     command: params.linkedTest.command,
@@ -2749,7 +2753,7 @@ function buildLinkedTestEmptyRunResult(params: {
     stdout: params.execution.stdout,
     stderr: params.execution.stderr,
     error:
-      `Linked test reported an empty test run (${params.emptyRunSignal}). ` +
+      `Linked test reported an empty test run (${params.emptyRunSignal.code}). ` +
       "Update the test selection so at least one test executes; unfiltered commands may opt out by omitting --fail-on-empty-test-run.",
   };
 }
@@ -2799,7 +2803,7 @@ function buildLinkedTestPassedExecutionResult(params: {
     ) {
       return buildLinkedTestEmptyRunResult({
         ...params,
-        emptyRunSignal: "missing_positive_execution_receipt",
+        emptyRunSignal: { code: "missing_positive_execution_receipt" },
       });
     }
   }

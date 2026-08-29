@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:graph","area:sdk",context-integrity,external-references,github-1146,github-1147
 created_at: "2026-08-28T21:25:57.770Z"
-updated_at: "2026-08-29T03:06:35.387Z"
-closed_at: "2026-08-29T03:06:07.170Z"
-completed_at: "2026-08-29T03:06:07.170Z"
+updated_at: "2026-08-29T05:25:39.529Z"
+closed_at: "2026-08-29T05:25:39.046Z"
+completed_at: "2026-08-29T05:25:39.046Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: External references are typed and preserved rather than counted as dangling local ids; A public resolver extension point returns bounded status title source and checked-at evidence without core GitHub coupling; Unresolved external blockers expose age and resolver availability while resolved blockers can trigger the existing auto-unblock transition; Validation never recommends destructive deletion for a well-formed external locator; SDK CLI MCP health next validate and temporary-workspace acceptance remain contract-parity with exact coverage
@@ -19,16 +19,16 @@ reporter: GitHub issues #1146 and #1147
 severity: high
 environment: pm 2026.8.28 in fresh local workspaces plus a long-lived cross-repository blocker
 repro_steps: Block an item on a GitHub issue URL; close the remote issue; observe pm next still counting an unknown blocker and pm validate classifying the locator as dangling with an unset hint.
-resolution: "Fixed: typed external source metadata is preserved for non-locator blockers and resolver capability exceptions fail closed behind the SDK registry."
+resolution: "Preserved typed external source metadata, keyed graph target identity by edge provenance, kept same-spelled local and external targets distinct, and retained dangling-parent validation for locator-shaped local parents."
 expected_result: "External dependencies remain typed graph context regardless of locator shape, and one failing resolver cannot crash or erase dependency resolution evidence."
-actual_result: "Actionability and resolver negative controls, linked acceptance, full exact coverage, static assurance, defect evidence, record integrity, and secret scanning pass."
+actual_result: "Actionability and graph assembly now resolve local and external references in separate namespaces, with collision and locator-parent regressions plus full exact coverage."
 component: "SDK dependency governance, external resolver hooks, next, validate, and CLI adapters"
 customer_impact: External dependencies silently park actionable work forever while the primary remediation can destroy the only machine-readable explanation.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6sc8jq,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-p9sc,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-uxkf,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-28T21:25:57.770Z","harness:codex","Duplicate check evidence: complete all-status strict read covered 2593 readable items with no omissions. Closed pm-6sc8jq owns truthful stale-lifecycle governance for external blockers while pm-p9sc owns local dangling projections and pm-uxkf owns edge-aware blocked reads. No open item owns re-resolution plus safe validation classification. This recurrence is canonical for GitHub 1146 and 1147."
   "2026-08-28T21:26:39.465Z","harness:codex","GitHub linkage evidence: issues #1146 and #1147 both point to this canonical combined external-blocker lifecycle and validation item at its merge-stable main-branch toon path."
   "2026-08-28T23:24:21.263Z","harness:codex","Verification evidence: external classification, graph, actionability, next, and validation regressions passed; packed Node and Bun SDK consumers imported the public classifier successfully; full coverage passed exact 100/100/100/100."
@@ -36,9 +36,12 @@ comments[7]{created_at,author,text}:
   "2026-08-29T02:22:15.295Z","harness:codex","Review-round evidence: external locators preserve provider-specific case, structured locators become graph nodes even without source_kind, and stale resolver disposers cannot delete a replacement registration. The actionability, graph, validation, resolver, packed Node SDK, and packed Bun SDK paths pass."
   "2026-08-29T03:05:21.328Z","harness:codex","Second review-round evidence: explicit global/external source_kind metadata now preserves non-locator external blockers and projects them into actionability context; the shared classifier has one core owner and the public SDK re-exports it. Resolver supports exceptions fail closed without invoking resolve. Focused actionability/resolver regressions and the complete 8,108-test exact-coverage gate pass."
   "2026-08-29T03:06:04.567Z","harness:codex","Linked acceptance: pm test-all passed all four active items with zero failures; the shared connected regression command executed once for all duplicate-linked owners."
-learnings[2]{created_at,author,text}:
+  "2026-08-29T04:41:15.752Z","harness:codex","Review-round findings: CodeRabbit and Greptile exact-head review identified local/external identifier collisions and an unsupported external-parent bypass. Reopened to keep edge provenance namespace-safe and parent validation truthful."
+  "2026-08-29T05:25:25.570Z","harness:codex","Final review evidence: explicit external PM-42 remains external even beside closed local pm-42; graph nodes use provenance-selected external:PM-42 identity; locator-shaped parents remain subject to local dangling validation. Connected and focused graph suites passed, exact repository coverage is literal 100/100/100/100, and the packed Bun SDK import succeeded."
+learnings[3]{created_at,author,text}:
   "2026-08-28T23:24:37.448Z","harness:codex","A syntactically valid remote locator is a typed graph node even when no resolver is installed. Unknown external state must remain explicit evidence, never be rewritten as local dangling corruption."
   "2026-08-29T00:14:46.442Z","harness:codex","Provider integrations belong behind the SDK resolver registry: core classifies and preserves external identity while bounded package-owned providers supply lifecycle evidence. Resolver failures and absent providers fail closed to explicit unknown state instead of deleting context."
+  "2026-08-29T05:25:26.063Z","harness:codex","Dependency identity is provenance plus normalized identifier: spelling alone cannot decide whether a target belongs to the canonical local namespace or the external namespace."
 files[9]{path,scope,note}:
   sdk/public-surface.json,project,Public external dependency reference SDK export snapshot
   src/core/item/actionability.ts,project,external blocker staleness
@@ -51,7 +54,7 @@ files[9]{path,scope,note}:
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:03.402Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtdmottd-sfvxdl
     kind: test
     status: passed
@@ -89,9 +92,22 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+  - run_id: test-all-local-mtdxrpce-qlhq4h
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T05:24:37.980Z"
+    finished_at: "2026-08-29T05:24:57.654Z"
+    recorded_at: "2026-08-29T05:24:57.654Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "Second review round resolved explicit external source metadata and resolver supports exception isolation; linked acceptance, 8,108-test exact coverage, static quality, defect evidence, record integrity, and secret scanning pass."
+close_reason: "Implemented provenance-separated external graph identity and locator-parent validation with focused, packed-consumer, and exact-coverage evidence."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

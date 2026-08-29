@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 350
+- Catalog error codes: 351
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 331
-- Coverage fraction: 0.054286
+- Uncovered error codes: 332
+- Coverage fraction: 0.054131
 - Closed-domain probes: 19
 - Grammar probes: 94
 
@@ -198,6 +198,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `missing_observation` | `missing_observation` | uncovered | none | 0 |
 | `missing_observed_signature` | `missing_observed_signature` | uncovered | none | 0 |
 | `missing_parameter_alias` | `missing_parameter_alias` | uncovered | none | 0 |
+| `missing_positive_execution_receipt` | `missing_positive_execution_receipt` | uncovered | none | 0 |
 | `missing_probe` | `missing_probe` | uncovered | none | 0 |
 | `missing_required_argument` | `missing_required_argument` | executable | grammar | 57 |
 | `missing_required_option` | `missing_required_option` | uncovered | none | 0 |

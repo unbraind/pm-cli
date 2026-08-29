@@ -27,10 +27,7 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {
-  resolvePmRoot,
-  resolveWorkspaceRoot,
-} from "../core/store/paths.js";
+import { resolvePmRoot, resolveWorkspaceRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { SCOPE_VALUES } from "../types/index.js";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -261,24 +258,23 @@ export function parseAddEntries(
       `${bareNoun} path`,
       looksLikeStructuredPathEntry(trimmed),
     );
-    return [entry].map((expanded) => {
-      const expandedTrimmed = expanded.trim();
-      const kv = looksLikeStructuredPathEntry(expandedTrimmed)
-        ? parseCsvKv(expanded, "--add")
-        : { path: expandedTrimmed };
-      assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
-      if (!kv.path) {
-        throw new PmCliError(
-          `--add requires path=<value> or a bare ${bareNoun} path`,
-          EXIT_CODE.USAGE,
-        );
-      }
-      return {
+    const kv = looksLikeStructuredPathEntry(trimmed)
+      ? parseCsvKv(entry, "--add")
+      : { path: trimmed };
+    assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
+    if (!kv.path) {
+      throw new PmCliError(
+        `--add requires path=<value> or a bare ${bareNoun} path`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return [
+      {
         path: kv.path,
         scope: ensureScope(kv.scope),
         note: kv.note?.trim() || undefined,
-      };
-    });
+      },
+    ];
   });
 }
 
@@ -679,9 +675,10 @@ async function buildLinkedArtifactResult(params: {
       params.migrationsApplied && params.migrationsApplied > 0
         ? params.migrationsApplied
         : undefined,
-    validation: params.options.validatePaths || params.changed
-      ? await validateLinkedPaths(paths, params.workspaceRoot)
-      : undefined,
+    validation:
+      params.options.validatePaths || params.changed
+        ? await validateLinkedPaths(paths, params.workspaceRoot)
+        : undefined,
   };
 }
 

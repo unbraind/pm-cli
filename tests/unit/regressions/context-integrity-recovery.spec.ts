@@ -196,6 +196,60 @@ describe("context integrity recovery", () => {
         kind: "blocked_by",
       },
     ]);
+
+    const collisionGraph = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-42",
+        title: "Local target",
+        status: "closed",
+      },
+      {
+        id: "pm-local-holder",
+        title: "Local holder",
+        status: "open",
+        dependencies: [{ id: "PM-42", kind: "related" }],
+      },
+      {
+        id: "pm-external-holder",
+        title: "External holder",
+        status: "blocked",
+        dependencies: [
+          {
+            id: "PM-42",
+            kind: "blocked_by",
+            source_kind: "external",
+          },
+        ],
+      },
+    ] as never);
+    expect(collisionGraph.graph.edges()).toEqual([
+      {
+        source: "pm-external-holder",
+        target: "external:PM-42",
+        kind: "blocked_by",
+      },
+      {
+        source: "pm-local-holder",
+        target: "pm-42",
+        kind: "related",
+      },
+    ]);
+
+    const externalParent = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-child",
+        title: "Child",
+        status: "open",
+        parent: "https://example.test/parent",
+      },
+    ] as never);
+    expect(externalParent.dangling.active).toEqual([
+      expect.objectContaining({
+        holder_id: "pm-child",
+        target_id: "https://example.test/parent",
+        source: "parent",
+      }),
+    ]);
   });
 
   it("resolves external blockers through bounded package-owned providers", async () => {
@@ -514,5 +568,19 @@ describe("context integrity recovery", () => {
       error: expect.stringContaining("missing_positive_execution_receipt"),
     });
     expect(proven).toMatchObject({ status: "passed" });
+  });
+
+  it("does not treat zero passes as empty when a runner reports executed tests", async () => {
+    const [result] = await runLinkedTests(
+      [
+        {
+          command:
+            "printf '# tests 1\\n# pass 0\\n' # --test-name-pattern present",
+          scope: "project",
+        },
+      ],
+      30,
+    );
+    expect(result).toMatchObject({ status: "passed" });
   });
 });

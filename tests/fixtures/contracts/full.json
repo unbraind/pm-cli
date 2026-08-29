@@ -18619,6 +18619,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "missing_positive_execution_receipt",
+      "class": "generic_failure",
+      "code": "missing_positive_execution_receipt",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing positive execution receipt condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "missing_probe",
       "class": "generic_failure",
       "code": "missing_probe",

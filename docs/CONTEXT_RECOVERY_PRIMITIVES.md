@@ -21,7 +21,7 @@ Bare comma-separated file and documentation paths are refused because the CLI ca
 
 ## Executed-test evidence
 
-A linked runner command carrying a name filter must execute at least one test. A zero-test or zero-pass runner summary is classified as `failure_category: empty_run`, even when the process exits zero. Unfiltered commands retain the explicit `--fail-on-empty-test-run` policy.
+A linked runner command carrying a name filter must execute at least one test. An explicit zero-test runner summary is classified as `failure_category: empty_run`, even when the process exits zero. A zero-pass count alone is not an empty-run receipt when the runner reports a positive test count. Filtered commands without either positive execution evidence or an explicit zero-test signal fail closed as `missing_positive_execution_receipt`; unfiltered commands retain the explicit `--fail-on-empty-test-run` policy.
 
 ## External blockers
 

@@ -20,6 +20,7 @@ interface DriftCacheFixtureEntry {
   content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
+  latest_hash_comparable: boolean;
   item_hash_version: number;
   version_skew?: boolean;
 }
@@ -62,7 +63,7 @@ async function seedStaleMetadataMatchedCache(
   await mutateStream(historyPath);
   const mutatedStat = await fs.stat(historyPath);
   const forgedCache: DriftCacheFixture = {
-    version: 5,
+    version: 6,
     history_item_hash_version: 3,
     entries: {
       [created.id]: {
@@ -118,7 +119,7 @@ describe("core/history/drift-scan", () => {
       expect(first.driftedItems).toEqual([]);
 
       const cache = await readDriftCache(context.pmPath);
-      expect(cache.version).toBe(5);
+      expect(cache.version).toBe(6);
       expect(cache.history_item_hash_version).toBe(3);
       expect(Object.keys(cache.entries)).toHaveLength(items.length);
       const firstEntry = Object.values(cache.entries)[0];
@@ -197,6 +198,37 @@ describe("core/history/drift-scan", () => {
       expect(result.hashMismatches).not.toContain(created.id);
       expect(result.chainMismatches).toContain(created.id);
       expect(result.driftedItems).toContain(created.id);
+    });
+  });
+
+  it("reports a comparable final item mismatch after an unsupported history entry", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Mixed writer" });
+      const historyPath = getHistoryPath(context.pmPath, created.id);
+      const supportedEntry = JSON.parse(
+        (await fs.readFile(historyPath, "utf8")).trim(),
+      ) as Record<string, unknown>;
+      const unsupportedEntry = {
+        ...supportedEntry,
+        item_hash_version: 99,
+      };
+      await fs.writeFile(
+        historyPath,
+        `${JSON.stringify(unsupportedEntry)}\n${JSON.stringify(supportedEntry)}\n`,
+        "utf8",
+      );
+      const items = (await listAllItemMetadataWithBody(context.pmPath)).map(
+        (item) =>
+          item.id === created.id
+            ? { ...item, body: `${item.body} tampered` }
+            : item,
+      );
+
+      const result = await scanHistoryDrift(context.pmPath, items);
+
+      expect(result.versionSkews).toEqual([created.id]);
+      expect(result.chainMismatches).toContain(created.id);
+      expect(result.hashMismatches).toContain(created.id);
     });
   });
 
@@ -362,19 +394,19 @@ describe("core/history/drift-scan", () => {
           history_item_hash_version: 3,
           entries: {},
         }),
-        JSON.stringify({ version: 5, entries: {} }),
+        JSON.stringify({ version: 6, entries: {} }),
         JSON.stringify({
-          version: 5,
+          version: 6,
           history_item_hash_version: 99,
           entries: {},
         }),
         JSON.stringify({
-          version: 5,
+          version: 6,
           history_item_hash_version: 3,
           entries: null,
         }),
         JSON.stringify({
-          version: 5,
+          version: 6,
           history_item_hash_version: 3,
           entries: "not-an-object",
         }),
