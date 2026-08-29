@@ -814,6 +814,8 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
+      PINNED_ACTIONS.setupBun,
+      "bun-version: latest",
       "name: Restore TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
@@ -954,6 +956,10 @@ describe("GitHub workflow contract", () => {
         /watch_release_workflow "\$\{RELEASE_RUN_ID\}" \|\| exit "\$\?"/gu,
       ),
     ).toHaveLength(3);
+    expect(autoReleaseWorkflow.indexOf("name: Setup Bun")).toBeLessThan(
+      autoReleaseWorkflow.indexOf("name: Run auto release pipeline"),
+    );
+    expect(autoReleaseWorkflow.match(/name: Setup Bun/g)).toHaveLength(1);
     expect(autoReleaseWorkflow).not.toContain("gh run rerun");
     expect(autoReleaseWorkflow).not.toContain(
       'gh run list --workflow Release --event push --branch "${EXISTING_RELEASE_TAG}"',
