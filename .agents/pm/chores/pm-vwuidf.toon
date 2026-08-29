@@ -2,13 +2,13 @@ id: pm-vwuidf
 title: Refresh compatible 2026-08-29 dependency releases
 description: "Adopt registry-current compatible greptile 3.4.2, @types/node 26.4.0, and @sentry/cli 3.7.0 releases while preserving the separately governed engine/tooling-incompatible npm-package-arg 14 and TypeScript 7 deferrals."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-08-29T03:22:00.759Z"
-updated_at: "2026-08-29T10:18:56.305Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4c3bbebc779deae6780a83dd"
+updated_at: "2026-08-29T15:17:58.064Z"
+closed_at: "2026-08-29T15:17:57.547Z"
+completed_at: "2026-08-29T15:17:57.547Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "package.json and pnpm-lock.yaml resolve greptile 3.4.2, @types/node 26.4.0, and @sentry/cli 3.7.0 exactly; pnpm outdated contains only npm-package-arg 14 and TypeScript 7 with their canonical evidence-backed deferrals; pnpm audit and GitHub dependency, code, and secret alert inventories remain zero; full exact coverage, static quality, packed npm/npx/Bun/bunx acceptance, hosted checks, and exact-head review pass"
@@ -17,12 +17,12 @@ risk: low
 confidence: high
 resolution: "Adopted compatible greptile 3.4.2, @types/node 26.4.0, and @sentry/cli 3.7.0 releases without changing the published Node compatibility range or the separately governed incompatible-major deferrals."
 expected_result: "Compatible dependency patches resolve exactly, all source gates and packed npm/Bun acceptance pass, security inventories remain empty, and only evidence-backed incompatible majors remain outdated."
-actual_result: "Resolved greptile 3.4.2, @types/node 26.4.0, and @sentry/cli 3.7.0; local coverage, build, static, security, and packed npm/Bun acceptance are green; hosted exact-head review remains pending; only pm-ksr40d and pm-do5b major deferrals remain."
+actual_result: "Resolved greptile 3.4.2, @types/node 26.4.0, and @sentry/cli 3.7.0; full exact coverage, static quality, packed npx/bunx acceptance, hosted exact-head CI, and Greptile 5/5 review are green. CodeRabbit confirmed every exact finding thread but its additional full-review request was rate-limited. pnpm outdated contains only the canonical npm-package-arg 14 and TypeScript 7 major deferrals; pnpm audit and all three GitHub alert inventories remain zero."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7xfndr,recurs_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
   pm-do5b,discovered_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
   pm-ksr40d,discovered_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-29T03:22:00.759Z","harness:codex","Duplicate-check evidence: a complete 2,597-item all-status strict read and exact-version search found no owner for greptile 3.4.2 or @types/node 26.4.0. Closed pm-7xfndr is the latest compatible refresh lineage; open unclaimed pm-ksr40d and pm-do5b remain the distinct canonical incompatible-major owners. Live pnpm outdated and zero-alert inventories justify this focused compatible patch child."
   "2026-08-29T03:39:40.364Z","harness:codex","Compatibility and performance evidence: package resolution now adopts greptile 3.4.2 and @types/node 26.4.0 while preserving the published @types/node >=22 compatibility range. Full coverage passed. Direct static assurance passed every source/export/member docstring, duplication, package, SDK, contract, defect-evidence, graph, and record assertion; only the final RSS transport ratchet exceeded its fixed margin locally. A same-tree seven-sample A/B on the previous 3.4.1/26.3.0 versions reproduced the same get overage, proving the signal is not caused by these patches. The committed budget remains unchanged and exact-head hosted CI will independently arbitrate the environment-sensitive gate."
   "2026-08-29T03:46:20.444Z","harness:codex","Linked-test harness evidence: pnpm quality:static and the pnpm lint aggregate both intentionally read the real PM corpus for defect governance, so schema-isolated linked execution reported zero governed terminal defects. Both failed runs are retained. The directly executed real-tracker static gate passed every assertion except the independently A/B-reproduced RSS ratchet. Future linked acceptance now contains only coverage, build, ESLint, and duplication commands that are valid in schema isolation."
@@ -33,6 +33,7 @@ comments[10]{created_at,author,text}:
   "2026-08-29T10:00:30.389Z","harness:codex","Post-review local evidence: exact coverage passed at 60,152/60,152 statements, 45,379/45,379 branches, 12,511/12,511 functions, and 57,922/57,922 lines. A fresh npm-packed tarball installed in an isolated temporary project; npx and bunx both reported 2026.8.28, and the published SDK import executed successfully under Node and Bun. The temporary project was removed after verification. Hosted exact-head checks and fresh reviews remain the closure boundary."
   "2026-08-29T10:03:35.933Z","harness:codex","Live dependency recurrence: @sentry/cli 3.7.0 appeared after the earlier inventory. Complete all-status PM search found closed historical Sentry refresh pm-4dz7 and the currently claimed same-day compatible refresh pm-vwuidf; no duplicate created. Upstream 3.7.0 requires Node >=18 and contains IPA dSYM upload, snapshot selective-upload, and docs fixes, so it remains compatible with this repository."
   "2026-08-29T10:18:56.305Z","harness:codex","Final local verification evidence before hosted review: exact full-suite coverage passed at 60,152/60,152 statements, 45,379/45,379 branches, 12,511/12,511 functions, and 57,922/57,922 lines (100/100/100/100). The complete repository static-quality chain passed, including build, contract/generated-surface parity, package SDK boundary, graph composition, record integrity, refusal closure, token budgets, and performance floors. Security scan reported no credential-like secrets; pnpm audit reported no vulnerabilities; live GitHub Dependabot, code-scanning, and secret-scanning inventories were empty. pm-changelog refreshed to registry version 2026.8.29 and verified CHANGELOG.md unchanged for 2,240 closed items. Manual packed-package acceptance in an isolated temporary directory passed npx, bunx, Node SDK import, and Bun SDK import. @sentry/cli 3.7.0 reports successfully and its 113 focused tests pass."
+  "2026-08-29T15:17:57.013Z","harness:codex","Final hosted evidence on exact pushed head c7efe0e187ff1cafb938c05004ac2683897e7ecd: Actions run 33259034280 passed build, four coverage shards, static/typecheck/smoke/compat/coverage gates, Linux/macOS/Windows runtime checks, CodeQL, Semgrep, Trivy, TruffleHog, CodeFactor, DeepScan, ShellCheck, PSScriptAnalyzer, Codecov, and Greptile. Greptile reported 5/5 with no blocking failure; every review thread is resolved and every bot artifact has a recorded reaction. CodeRabbit confirmed each exact finding thread; its final full-review retrigger was rate-limited and is recorded as a provider limitation, not approval. Live 2026-08-29 dependency/security inventory: only npm-package-arg 14.0.0 (pm-ksr40d) and TypeScript 7.0.2 (pm-do5b) remain outdated; pnpm audit advisories=0; Dependabot/code-scanning/secret-scanning open alerts=0."
 learnings[1]{created_at,author,text}:
   "2026-08-29T03:48:08.379Z","harness:codex","Repository-governance aggregates such as quality:static and pnpm lint require tracker context; linked schema-isolated acceptance should use coverage/build/ESLint/duplication components and record the real-tracker aggregate separately."
 files[2]{path,scope,note}:
@@ -96,4 +97,5 @@ test_runs[4]:
       pnpm build,schema,schema,source,local_source_ref
       "pnpm lint:eslint",schema,schema,source,local_source_ref
       "pnpm lint:duplicates",schema,schema,source,local_source_ref
+close_reason: "Compatible 2026-08-29 dependency patches are resolved and verified by exact 100/100/100/100 coverage, strict static quality, packed npm/Bun acceptance, complete hosted CI, exact-head Greptile review, and zero vulnerability/alert inventories; only canonical incompatible-major deferrals remain."
 body: ""
