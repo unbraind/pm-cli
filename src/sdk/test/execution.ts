@@ -2094,6 +2094,14 @@ const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   { code: "reported_zero_passes", regex: /^\s*#?\s*pass\s+0\s*$/im },
 ];
 
+const POSITIVE_LINKED_TEST_RUN_PATTERNS = [
+  /^\s*#?\s*tests\s+[1-9]\d*\s*$/imu,
+  /^\s*#?\s*pass\s+[1-9]\d*\s*$/imu,
+  /\bTests?\s+[1-9]\d*\s+passed\b/iu,
+  /\b[1-9]\d*\s+passed\b/iu,
+  /\bTests:\s+(?:.*\b)?[1-9]\d*\s+passed\b/iu,
+];
+
 function detectEmptyLinkedTestRun(
   stdout: string,
   stderr: string,
@@ -2105,6 +2113,17 @@ function detectEmptyLinkedTestRun(
     }
   }
   return null;
+}
+
+/** Return whether runner output contains a recognized positive executed-test receipt. */
+function hasPositiveLinkedTestRunReceipt(
+  stdout: string,
+  stderr: string,
+): boolean {
+  const combined = `${stdout}\n${stderr}`;
+  return POSITIVE_LINKED_TEST_RUN_PATTERNS.some((pattern) =>
+    pattern.test(combined),
+  );
 }
 
 /** Return whether a linked command applies a runner-level test-name filter that must match at least one test. */
@@ -2770,6 +2789,18 @@ function buildLinkedTestPassedExecutionResult(params: {
     );
     if (emptyRunSignal) {
       return buildLinkedTestEmptyRunResult({ ...params, emptyRunSignal });
+    }
+    if (
+      commandUsesTestNameFilter(params.linkedTest.command ?? "") &&
+      !hasPositiveLinkedTestRunReceipt(
+        params.execution.stdout,
+        params.execution.stderr,
+      )
+    ) {
+      return buildLinkedTestEmptyRunResult({
+        ...params,
+        emptyRunSignal: "missing_positive_execution_receipt",
+      });
     }
   }
   const assertionFailures = evaluateLinkedTestAssertions(

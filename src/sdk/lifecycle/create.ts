@@ -6,6 +6,7 @@
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   assertNoAmbiguousBareCommaEntry,
+  looksLikeStructuredKeyValueEntry,
   resolveMutationStdinTokenFields,
 } from "../../core/item/parse.js";
 import {
@@ -123,7 +124,7 @@ import {
   parseLinkedTestWorkspaceContextMode,
 } from "../test/parsers.js";
 import {
-  looksLikeStructuredLinkedTestEntry,
+  STRUCTURED_LINKED_TEST_KEYS,
   normalizeStructuredLinkedTestEntry,
 } from "../test/entry.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
@@ -508,13 +509,7 @@ function looksLikeStructuredEntry(
   raw: string,
   keys: readonly string[],
 ): boolean {
-  if (raw.startsWith("```") || raw.includes("\n")) {
-    return true;
-  }
-  const keyPattern = keys
-    .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("|");
-  if (new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw)) {
+  if (looksLikeStructuredKeyValueEntry(raw, keys)) {
     return true;
   }
   // A first-key typo (e.g. `bogus=v,id=pm-2`) must still be parsed so the unknown
@@ -655,7 +650,10 @@ export function parseTests(raw: string[] | undefined): {
   );
   const values = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredLinkedTestEntry(trimmedEntry)
+    const kv = looksLikeStructuredKeyValueEntry(
+      trimmedEntry,
+      STRUCTURED_LINKED_TEST_KEYS,
+    )
       ? normalizeStructuredLinkedTestEntry(
           parseCsvKv(entry, "--test"),
           "--test",
@@ -2366,10 +2364,10 @@ function assertNoMissingRequiredCreateOptions(params: {
     code: "missing_required_option",
     required: `Provide all required create options and type options for type "${type}" in one invocation.`,
     examples: [
-      nextValidExample,
       ...collectionClearFlags.map(
         (flag) => `pm create --type ${type} ${flag} ...`,
       ),
+      nextValidExample,
     ],
     nextSteps,
     recovery:

@@ -30,6 +30,20 @@ const CONTINUABLE_VALUE_KEYS = new Set([
   "why_now",
 ]);
 
+/** Classify plaintext as structured key/value input using an explicit accepted-key vocabulary. */
+export function looksLikeStructuredKeyValueEntry(
+  raw: string,
+  keys: readonly string[],
+): boolean {
+  if (raw.startsWith("```") || raw.includes("\n") || raw.includes(",")) {
+    return true;
+  }
+  const keyPattern = keys
+    .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  return new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw);
+}
+
 /** Implements parse tags for the public runtime surface of this module. */
 export function parseTags(raw: string): string[] {
   const trimmed = raw.trim();

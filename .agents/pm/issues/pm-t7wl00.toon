@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",context-management,github-1134,recovery
 created_at: "2026-08-28T08:13:27.374Z"
-updated_at: "2026-08-29T00:17:19.167Z"
-closed_at: "2026-08-28T23:26:20.284Z"
-completed_at: "2026-08-28T23:26:20.284Z"
+updated_at: "2026-08-29T02:22:33.759Z"
+closed_at: "2026-08-29T02:22:33.279Z"
+completed_at: "2026-08-29T02:22:33.279Z"
 author: "harness:codex"
 acceptance_criteria: Required collection failures map each supported collection to its exact --clear-* considered-empty flag; suggested_flags rank the truthful clear intent before value-bearing or policy-bypass alternatives; examples explain both empty and populated forms without invented identifiers; structured recovery and human diagnostics remain contract-parity; SDK CLI MCP completions and docs expose the same semantics; executable negative controls prove every advertised recovery succeeds without dangling or fabricated data; focused acceptance transcript and exact repository coverage gates pass
 parent: pm-f05lsg
@@ -25,10 +25,11 @@ customer_impact: Agents following first-party recovery guidance can permanently 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-h8tpeh,verifies,"2026-08-28T08:13:27.374Z","harness:codex","cli:create:dep",detected
   pm-st7wgu,recurs_from,"2026-08-28T08:13:27.374Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-28T08:13:27.374Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1134, GH-951, required collection recovery, clear-deps, suggested flags, and executable refusal closure; fully read closed pm-st7wgu and its comments plus the broader pm-f05lsg/pm-h8tpeh recovery lineage. pm-st7wgu owns the implemented considered-empty primitive; #1134 is the distinct discoverability escape where the refusal never advertises it. This open unclaimed child is canonical for GitHub #1134."
   "2026-08-28T08:13:52.429Z","harness:codex","GitHub linkage evidence: #1134 comment https://github.com/unbraind/pm-cli/issues/1134#issuecomment-5450113774 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:22.368Z","harness:codex","Verification evidence: create command, connected recovery, contract snapshot, refusal closure, docs links, and full 8,099-test exact-coverage gates passed."
+  "2026-08-29T02:22:15.826Z","harness:codex","Review-round evidence: generated recovery examples now rank truthful --clear-* intent before value-bearing alternatives, keeping the empty-collection recovery directly discoverable. Create command regressions, generated-contract gates, refusal closure, and exact coverage pass."
 files[7]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog activation receipt used for reviewed changelog generation
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated refusal catalog recovery surface
@@ -39,12 +40,26 @@ files[7]{path,scope,note}:
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:04.415Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+test_runs[1]:
+  - run_id: test-all-local-mtdr7pg8-qj7z9n
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T02:21:07.285Z"
+    finished_at: "2026-08-29T02:21:47.271Z"
+    recorded_at: "2026-08-29T02:21:47.271Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Latest pm-changelog 2026.8.22 generated reviewed closeout
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated executable refusal closure census
   docs/README.md,project,Context recovery primitives documentation entry
-close_reason: "Truthful clear-first recovery, generated contracts and catalogs, refusal closure, documentation, and exact coverage are verified."
+close_reason: "Required collection recovery is clear-first and consistent across generated contracts, diagnostics, refusal closure, and tests."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

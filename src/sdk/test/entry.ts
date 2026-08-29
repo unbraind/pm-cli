@@ -5,6 +5,7 @@
  */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { looksLikeStructuredKeyValueEntry } from "../../core/item/parse.js";
 
 // Keys accepted inside a structured linked-test entry. `cmd` is an alias for
 // `command`; everything else maps 1:1 to a LinkedTest field.
@@ -34,20 +35,9 @@ export const STRUCTURED_LINKED_TEST_KEYS = [
 const STRUCTURED_LINKED_TEST_KEY_SET = new Set<string>(
   STRUCTURED_LINKED_TEST_KEYS,
 );
-const STRUCTURED_LINKED_TEST_KEY_PATTERN = STRUCTURED_LINKED_TEST_KEYS.map(
-  (key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-).join("|");
-const STRUCTURED_LINKED_TEST_ENTRY_PATTERN = new RegExp(
-  `^(?:[-*+]\\s+)?(?:${STRUCTURED_LINKED_TEST_KEY_PATTERN})\\s*[:=]`,
-  "i",
-);
-
-/** Implements looks like structured linked test entry for the public runtime surface of this module. */
+/** Classify linked-test plaintext through the shared structured-entry grammar. */
 export function looksLikeStructuredLinkedTestEntry(raw: string): boolean {
-  if (raw.startsWith("```") || raw.includes("\n") || raw.includes(",")) {
-    return true;
-  }
-  return STRUCTURED_LINKED_TEST_ENTRY_PATTERN.test(raw);
+  return looksLikeStructuredKeyValueEntry(raw, STRUCTURED_LINKED_TEST_KEYS);
 }
 
 /** Implements normalize structured linked test entry for the public runtime surface of this module. */

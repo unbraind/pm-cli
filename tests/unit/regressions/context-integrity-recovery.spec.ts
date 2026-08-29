@@ -82,6 +82,13 @@ describe("context integrity recovery", () => {
         "/tmp/pack",
       ),
     ).toThrow("unsupported or ambiguous");
+    expect(() =>
+      _testOnlyInstallSources.parsePackedNpmPackage(
+        JSON.stringify([{ filename: "wrong.tgz", name: "wrong-package" }]),
+        "/tmp/pack",
+        "expected-package",
+      ),
+    ).toThrow("unsupported or ambiguous");
   });
 
   it("bounds Claude session probes and recursive metadata traversal", async () => {
@@ -111,10 +118,13 @@ describe("context integrity recovery", () => {
     const deepMetadata = {
       message: { one: { two: { three: { four: { model: "too-deep" } } } } },
     };
+    const leadingRows = Array.from({ length: 5_000 }, (_, index) =>
+      JSON.stringify({ type: "meta", index }),
+    ).join("\n");
     const padding = "x".repeat(1_100_000);
     await writeFile(
       sessionPath,
-      `${JSON.stringify(deepMetadata)}\n${padding}\n${JSON.stringify({ model: "claude-sonnet-5", version: "2.2.0" })}\n`,
+      `${JSON.stringify(deepMetadata)}\n${leadingRows}\n${padding}\n${JSON.stringify({ model: "claude-sonnet-5", version: "2.2.0" })}\n`,
       "utf8",
     );
     expect(detectAgentIdentity(signals)).toMatchObject({
@@ -134,7 +144,7 @@ describe("context integrity recovery", () => {
       ),
     ).toEqual([
       {
-        id: "jira:pm-42",
+        id: "jira:PM-42",
         title: null,
         status: null,
         resolved: false,
@@ -171,9 +181,25 @@ describe("context integrity recovery", () => {
         kind: "blocked_by",
       },
     ]);
+    const structuredExternalGraph = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-holder",
+        title: "Holder",
+        status: "blocked",
+        dependencies: [{ id: "linear:ENG-42", kind: "blocked_by" }],
+      },
+    ] as never);
+    expect(structuredExternalGraph.graph.edges()).toEqual([
+      {
+        source: "pm-holder",
+        target: "linear:ENG-42",
+        kind: "blocked_by",
+      },
+    ]);
   });
 
   it("resolves external blockers through bounded package-owned providers", async () => {
+    const cleanup: Array<() => void> = [];
     expect(await resolveExternalDependencyReference("pm-local")).toBeNull();
     expect(() =>
       registerExternalDependencyResolver({
@@ -182,102 +208,130 @@ describe("context integrity recovery", () => {
         resolve: async () => null,
       }),
     ).toThrow("must not be empty");
-    const disposeUnsupported = registerExternalDependencyResolver({
-      name: "unsupported",
-      supports: () => false,
-      resolve: async () => null,
-    });
-    const disposeThrowing = registerExternalDependencyResolver({
-      name: "throwing",
-      supports: () => true,
-      resolve: async () => {
-        throw new Error("provider unavailable");
-      },
-    });
-    const disposeEmpty = registerExternalDependencyResolver({
-      name: "empty",
-      supports: () => true,
-      resolve: async () => null,
-    });
-    const disposeGitHub = registerExternalDependencyResolver({
-      name: " github-issues ",
-      supports: (reference) => reference.startsWith("https://github.com/"),
-      resolve: async () => ({
-        status: "closed",
-        title: ` ${"x".repeat(300)} `,
-        source: ` ${"s".repeat(2_100)} `,
-        checkedAt: "not-a-timestamp",
-      }),
-    });
-    expect(() =>
-      registerExternalDependencyResolver({
-        name: "github-issues",
+    try {
+      const disposeUnsupported = registerExternalDependencyResolver({
+        name: "unsupported",
+        supports: () => false,
+        resolve: async () => null,
+      });
+      cleanup.push(disposeUnsupported);
+      const disposeThrowing = registerExternalDependencyResolver({
+        name: "throwing",
+        supports: () => true,
+        resolve: async () => {
+          throw new Error("provider unavailable");
+        },
+      });
+      cleanup.push(disposeThrowing);
+      const disposeEmpty = registerExternalDependencyResolver({
+        name: "empty",
         supports: () => true,
         resolve: async () => null,
-      }),
-    ).toThrow("already registered");
-    expect(
-      await resolveExternalDependencyReference(
-        " https://github.com/example/project/issues/42 ",
-        { now: () => "2026-08-29T00:00:00.000Z" },
-      ),
-    ).toEqual({
-      id: "https://github.com/example/project/issues/42",
-      status: "closed",
-      resolved: true,
-      title: "x".repeat(240),
-      source: "s".repeat(2_048),
-      checked_at: "2026-08-29T00:00:00.000Z",
-      resolver: "github-issues",
-    });
-    disposeGitHub();
-    disposeEmpty();
-    disposeThrowing();
-    disposeUnsupported();
+      });
+      cleanup.push(disposeEmpty);
+      const disposeGitHub = registerExternalDependencyResolver({
+        name: " github-issues ",
+        supports: (reference) => reference.startsWith("https://github.com/"),
+        resolve: async () => ({
+          status: "closed",
+          title: ` ${"x".repeat(300)} `,
+          source: ` ${"s".repeat(2_100)} `,
+          checkedAt: "not-a-timestamp",
+        }),
+      });
+      cleanup.push(disposeGitHub);
+      expect(() =>
+        registerExternalDependencyResolver({
+          name: "github-issues",
+          supports: () => true,
+          resolve: async () => null,
+        }),
+      ).toThrow("already registered");
+      expect(
+        await resolveExternalDependencyReference(
+          " https://github.com/example/project/issues/42 ",
+          { now: () => "2026-08-29T00:00:00.000Z" },
+        ),
+      ).toEqual({
+        id: "https://github.com/example/project/issues/42",
+        status: "closed",
+        resolved: true,
+        title: "x".repeat(240),
+        source: "s".repeat(2_048),
+        checked_at: "2026-08-29T00:00:00.000Z",
+        resolver: "github-issues",
+      });
+      disposeGitHub();
+      disposeEmpty();
+      disposeThrowing();
+      disposeUnsupported();
 
-    const disposeUnknown = registerExternalDependencyResolver({
-      name: "unknown-status",
-      supports: () => true,
-      resolve: async () => ({
-        status: "provider-specific" as never,
-        title: " ",
-        checkedAt: "2026-08-29T01:00:00.000Z",
-      }),
-    });
-    expect(
-      await resolveExternalDependencyReference("linear:ENG-42"),
-    ).toEqual({
-      id: "linear:ENG-42",
-      status: "unknown",
-      resolved: false,
-      title: null,
-      source: "linear:ENG-42",
-      checked_at: "2026-08-29T01:00:00.000Z",
-      resolver: "unknown-status",
-    });
-    disposeUnknown();
+      const disposeOriginal = registerExternalDependencyResolver({
+        name: "replacement-safe",
+        supports: () => true,
+        resolve: async () => null,
+      });
+      cleanup.push(disposeOriginal);
+      disposeOriginal();
+      const disposeReplacement = registerExternalDependencyResolver({
+        name: "replacement-safe",
+        supports: () => true,
+        resolve: async () => ({ status: "closed" }),
+      });
+      cleanup.push(disposeReplacement);
+      disposeOriginal();
+      expect(
+        await resolveExternalDependencyReference("linear:ENG-42"),
+      ).toMatchObject({ resolver: "replacement-safe", resolved: true });
+      disposeReplacement();
 
-    const disposeClockFallback = registerExternalDependencyResolver({
-      name: "clock-fallback",
-      supports: () => true,
-      resolve: async () => ({ status: "open" }),
-    });
-    const clockFallback = await resolveExternalDependencyReference(
-      "jira:PM-42",
-    );
-    disposeClockFallback();
-    expect(clockFallback).toMatchObject({
-      id: "jira:PM-42",
-      status: "open",
-      resolved: false,
-      resolver: "clock-fallback",
-    });
-    expect(clockFallback?.checked_at).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u,
-    );
-    expect(
-      await resolveExternalDependencyReference("linear:ENG-42"),
-    ).toBeNull();
+      const disposeUnknown = registerExternalDependencyResolver({
+        name: "unknown-status",
+        supports: () => true,
+        resolve: async () => ({
+          status: "provider-specific" as never,
+          title: " ",
+          checkedAt: "2026-08-29T01:00:00.000Z",
+        }),
+      });
+      cleanup.push(disposeUnknown);
+      expect(await resolveExternalDependencyReference("linear:ENG-42")).toEqual(
+        {
+          id: "linear:ENG-42",
+          status: "unknown",
+          resolved: false,
+          title: null,
+          source: "linear:ENG-42",
+          checked_at: "2026-08-29T01:00:00.000Z",
+          resolver: "unknown-status",
+        },
+      );
+      disposeUnknown();
+
+      const disposeClockFallback = registerExternalDependencyResolver({
+        name: "clock-fallback",
+        supports: () => true,
+        resolve: async () => ({ status: "open" }),
+      });
+      cleanup.push(disposeClockFallback);
+      const clockFallback =
+        await resolveExternalDependencyReference("jira:PM-42");
+      disposeClockFallback();
+      expect(clockFallback).toMatchObject({
+        id: "jira:PM-42",
+        status: "open",
+        resolved: false,
+        resolver: "clock-fallback",
+      });
+      expect(clockFallback?.checked_at).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u,
+      );
+      expect(
+        await resolveExternalDependencyReference("linear:ENG-42"),
+      ).toBeNull();
+    } finally {
+      for (const dispose of cleanup.reverse()) dispose();
+    }
   });
 
   it("reports future workspace history capabilities as version skew", async () => {
@@ -427,5 +481,28 @@ describe("context integrity recovery", () => {
       failure_category: "empty_run",
       error: expect.stringContaining("zero"),
     });
+  });
+
+  it("requires positive runner evidence for filtered linked tests", async () => {
+    const [unproven, proven] = await runLinkedTests(
+      [
+        {
+          command: "printf '.' # --test-name-pattern missing",
+          scope: "project",
+        },
+        {
+          command:
+            "printf '# tests 1\\n# pass 1\\n' # --test-name-pattern present",
+          scope: "project",
+        },
+      ],
+      30,
+    );
+    expect(unproven).toMatchObject({
+      status: "failed",
+      failure_category: "empty_run",
+      error: expect.stringContaining("missing_positive_execution_receipt"),
+    });
+    expect(proven).toMatchObject({ status: "passed" });
   });
 });

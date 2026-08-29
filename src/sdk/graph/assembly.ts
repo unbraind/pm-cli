@@ -406,7 +406,10 @@ export function collectExternalDependencyTargetIds(
       if (
         typeof dependency !== "object" ||
         dependency === null ||
-        !isExternalDependencySourceKind(dependency.source_kind)
+        (!isExternalDependencySourceKind(dependency.source_kind) &&
+          !isExternalDependencyReference(
+            normalizeDependencyReferenceTarget(dependency.id) ?? "",
+          ))
       ) {
         continue;
       }
@@ -540,9 +543,7 @@ export function assembleWorkspaceRelationshipGraph(
       const dependency = rawDependency as Partial<Dependency>;
       const target = normalizeDependencyGraphTarget(dependency.id);
       if (!target) return [];
-      const targetId = isExternalDependencySourceKind(dependency.source_kind)
-        ? externalGraphIds.get(target.toLowerCase())!
-        : canonicalIds.get(target.toLowerCase())!;
+      const targetId = graphTargetIds.get(target.toLowerCase())!;
       return [
         {
           id: targetId,

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:provenance","area:sdk",context-integrity,github-1143,harness,observability
 created_at: "2026-08-28T21:26:05.521Z"
-updated_at: "2026-08-28T23:38:19.595Z"
-closed_at: "2026-08-28T23:26:16.232Z"
-completed_at: "2026-08-28T23:26:16.232Z"
+updated_at: "2026-08-29T02:22:30.567Z"
+closed_at: "2026-08-29T02:22:30.013Z"
+completed_at: "2026-08-29T02:22:30.013Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: The resolver parses a captured real-layout JSONL fixture with leading metadata and nested message.model; Scanning is byte and row bounded and never emits paths identifiers prompts or session content; Malformed and truncated rows fail closed while later complete rows remain discoverable; Model and version success counters move above zero in real-layout acceptance without additional provider calls; SDK health history CLI and exact coverage gates pass
@@ -28,19 +28,34 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-0pzgit,discovered_from,"2026-08-28T21:26:05.521Z","harness:codex","cli:create:dep",detected
   pm-9gvazz,discovered_from,"2026-08-28T21:26:05.521Z","harness:codex","cli:create:dep",detected
   pm-lu6sca,discovered_from,"2026-08-28T21:26:05.521Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-28T21:26:05.521Z","harness:codex","Duplicate check evidence: complete all-status searches found closed pm-9gvazz for workspace slug encoding and pm-lu6sca for resolver outcome classification. GitHub 1143 reproduces after both fixes with a distinct real JSONL field-layout boundary. No open item owns nested model extraction and later-row scanning."
   "2026-08-28T21:26:37.803Z","harness:codex","GitHub linkage evidence: issue #1143 now points to this canonical item at the merge-stable main-branch toon path."
   "2026-08-28T23:24:19.352Z","harness:codex","Verification evidence: agent provenance and connected recovery suites passed, static docstring and complexity gates passed, and full repository coverage passed 8,099 tests at exact 100/100/100/100."
+  "2026-08-29T02:22:14.359Z","harness:codex","Review-round evidence: bounded Claude session scanning now reconstructs small head/tail windows before JSONL parsing and independently bounds the first and last 4,096 lines for large streams. Regressions cover more than 5,000 leading metadata rows and more than 1 MiB padding without exposing session content; exact coverage and static quality pass."
 files[3]{path,scope,note}:
   src/core/shared/author.ts,project,bounded Claude session provenance resolver
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Agent provenance runtime coverage
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:00.166Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+test_runs[1]:
+  - run_id: test-all-local-mtdr7pg8-qj7z9n
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T02:21:07.285Z"
+    finished_at: "2026-08-29T02:21:27.129Z"
+    recorded_at: "2026-08-29T02:21:27.129Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "Bounded nested Claude session provenance resolution, privacy limits, focused tests, static assurance, and exact coverage are verified."
+close_reason: Bounded Claude head and tail scanning covers real nested streams without privacy or resource regressions; exact coverage and package acceptance pass.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

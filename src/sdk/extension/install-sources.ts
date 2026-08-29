@@ -132,7 +132,9 @@ export async function findInstalledNpmPackageCandidate(
     const manifestPath = path.join(directory, "package.json");
     if (await pathExists(manifestPath)) {
       try {
-        const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as {
+        const manifest = JSON.parse(
+          await fs.readFile(manifestPath, "utf8"),
+        ) as {
           name?: unknown;
           version?: unknown;
         };
@@ -660,9 +662,7 @@ function decodePackedNpmCandidate(
     ...(key === undefined ? {} : { key }),
     filename: record.filename,
     ...(typeof record.name === "string" ? { name: record.name } : {}),
-    ...(typeof record.version === "string"
-      ? { version: record.version }
-      : {}),
+    ...(typeof record.version === "string" ? { version: record.version } : {}),
   };
 }
 
@@ -684,14 +684,19 @@ function selectPackedNpmCandidate(
 ): PackedNpmCandidate | undefined {
   const normalizedExpected = expectedPackage?.trim().toLowerCase();
   const matchingCandidates = normalizedExpected
-    ? candidates.filter(
-        (candidate) =>
-          candidate.name?.trim().toLowerCase() === normalizedExpected ||
-          candidate.key?.trim().toLowerCase() === normalizedExpected,
-      )
+    ? candidates.filter((candidate) => {
+        const normalizedName = candidate.name?.trim().toLowerCase();
+        return normalizedName !== undefined
+          ? normalizedName === normalizedExpected
+          : candidate.key?.trim().toLowerCase() === normalizedExpected;
+      })
     : [];
   if (matchingCandidates.length === 1) return matchingCandidates[0];
-  return candidates.length === 1 ? candidates[0] : undefined;
+  if (candidates.length !== 1) return undefined;
+  const soleCandidate = candidates[0];
+  return normalizedExpected && soleCandidate.name !== undefined
+    ? undefined
+    : soleCandidate;
 }
 
 function parsePackedNpmPackage(

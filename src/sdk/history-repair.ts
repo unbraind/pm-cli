@@ -52,6 +52,7 @@ import type {
 } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
 import {
+  inspectMergeReceiptEvidence,
   summarizeMergeReceipt,
   type MergeDecisionReceipt,
 } from "./merge/receipts.js";
@@ -368,12 +369,6 @@ async function verifyReceiptAgainstSnapshot(params: {
   receipt: MergeDecisionReceipt;
   declaredFields: string[];
 } | null> {
-  if (
-    params.receipt.evidence_source !== "clone_local" &&
-    params.receipt.evidence_source !== "durable"
-  ) {
-    return null;
-  }
   const receiptPath = await canonicalRealPath(
     path.resolve(params.gitWorkspaceRoot, params.receipt.item_path),
   );
@@ -384,12 +379,10 @@ async function verifyReceiptAgainstSnapshot(params: {
       ...params.receipt.union_fields,
       ...params.receipt.decisions.map((decision) => decision.field),
     ]),
-  ].sort((left, right) => left.localeCompare(right));
+  ].sort();
   const hashes = params.receipt.merged_field_hashes;
   if (!hashes || declaredFields.length === 0) return null;
-  const hashFields = Object.keys(hashes).sort((left, right) =>
-    left.localeCompare(right),
-  );
+  const hashFields = Object.keys(hashes).sort();
   if (
     declaredFields.length !== hashFields.length ||
     declaredFields.some((field, index) => field !== hashFields[index])
@@ -482,6 +475,7 @@ interface HistoryRepairItemReplayContext {
 
 async function resolveHistoryRepairMergeEvidence(params: {
   options: HistoryRepairCommandOptions;
+  pmRoot: string;
   subjectId: string;
   itemReplayContext: HistoryRepairItemReplayContext;
   reconciliation: HistoryRepairReconciliationReport | undefined;
@@ -489,9 +483,26 @@ async function resolveHistoryRepairMergeEvidence(params: {
   mergeReceiptProof: MergeReceiptProofResult | undefined;
   effectiveAuditContext: Record<string, unknown> | undefined;
 }> {
+  const requestedReceiptIds = new Set(
+    params.options.mergeReceiptProof?.receipts
+      .filter((receipt) => receipt.item_id === params.subjectId)
+      .map((receipt) => receipt.id) ?? [],
+  );
+  const authoritativeReceiptEvidence = params.options.mergeReceiptProof
+    ? await inspectMergeReceiptEvidence(
+        params.options.mergeReceiptProof.gitWorkspaceRoot ?? process.cwd(),
+        {
+          includeReconciled: true,
+          includeLossless: true,
+          pmRoot: params.pmRoot,
+        },
+      )
+    : undefined;
   const subjectMergeReceipts =
-    params.options.mergeReceiptProof?.receipts.filter(
-      (receipt) => receipt.item_id === params.subjectId,
+    authoritativeReceiptEvidence?.receipts.filter(
+      (receipt) =>
+        receipt.item_id === params.subjectId &&
+        requestedReceiptIds.has(receipt.id),
     ) ?? [];
   const mergeReceiptProof = params.options.mergeReceiptProof
     ? await verifyMergeReceiptProof({
@@ -787,6 +798,7 @@ export async function runHistoryRepair(
   const { mergeReceiptProof, effectiveAuditContext } =
     await resolveHistoryRepairMergeEvidence({
       options,
+      pmRoot,
       subjectId: subject.id,
       itemReplayContext,
       reconciliation,

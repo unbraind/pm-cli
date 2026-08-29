@@ -1547,35 +1547,62 @@ const HEALTH_DETAIL_SUMMARIZERS = {
       skipped: details.skipped,
     };
   },
-  history_drift: (details, limit) => ({
-    checked_items: details.checked_items,
-    cache_hit_verification: details.cache_hit_verification,
-    cache_confirmation: details.cache_confirmation,
-    counts: details.counts,
-    drifted_items: summarizeStringList(details.drifted_items, limit),
-    merge_receipt_attributed_items: summarizeStringList(
-      details.merge_receipt_attributed_items,
-      limit,
-    ),
-    missing_streams: summarizeStringList(details.missing_streams, limit),
-    unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
-    hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
-    chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
-    version_skews: summarizeStringList(details.version_skews, limit),
-    workspace_state_mismatches: summarizeStringList(
-      details.workspace_state_mismatches,
-      limit,
-    ),
-    workspace_state_missing: summarizeStringList(
-      details.workspace_state_missing,
-      limit,
-    ),
-    workspace_state_unreadable: summarizeStringList(
-      details.workspace_state_unreadable,
-      limit,
-    ),
-    skipped: details.skipped,
-  }),
+  history_drift: (details, limit) => {
+    const cacheConfirmation =
+      typeof details.cache_confirmation === "object" &&
+      details.cache_confirmation !== null
+        ? (details.cache_confirmation as Record<string, unknown>)
+        : undefined;
+    return {
+      checked_items: details.checked_items,
+      cache_hit_verification: details.cache_hit_verification,
+      cache_confirmation:
+        cacheConfirmation === undefined
+          ? details.cache_confirmation
+          : {
+              ...cacheConfirmation,
+              candidate_items: summarizeStringList(
+                cacheConfirmation.candidate_items,
+                limit,
+              ),
+              confirmed_items: summarizeStringList(
+                cacheConfirmation.confirmed_items,
+                limit,
+              ),
+              resolved_false_positives: summarizeStringList(
+                cacheConfirmation.resolved_false_positives,
+                limit,
+              ),
+            },
+      counts: details.counts,
+      drifted_items: summarizeStringList(details.drifted_items, limit),
+      merge_receipt_attributed_items: summarizeStringList(
+        details.merge_receipt_attributed_items,
+        limit,
+      ),
+      missing_streams: summarizeStringList(details.missing_streams, limit),
+      unreadable_streams: summarizeStringList(
+        details.unreadable_streams,
+        limit,
+      ),
+      hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
+      chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
+      version_skews: summarizeStringList(details.version_skews, limit),
+      workspace_state_mismatches: summarizeStringList(
+        details.workspace_state_mismatches,
+        limit,
+      ),
+      workspace_state_missing: summarizeStringList(
+        details.workspace_state_missing,
+        limit,
+      ),
+      workspace_state_unreadable: summarizeStringList(
+        details.workspace_state_unreadable,
+        limit,
+      ),
+      skipped: details.skipped,
+    };
+  },
   vectorization: (details, limit) => ({
     semantic_runtime_available: details.semantic_runtime_available,
     compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,

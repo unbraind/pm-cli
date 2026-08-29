@@ -13,12 +13,10 @@ import {
 import type { HistoryEntry, HistoryPatchOp } from "../../../src/types.js";
 import { CURRENT_HISTORY_ITEM_HASH_VERSION } from "../../../src/core/history/history.js";
 import { runHistoryRepair } from "../../../src/sdk/history-repair.js";
+import type { MergeDecisionReceipt } from "../../../src/sdk/merge/receipts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-function historyEntry(
-  version: 1 | 2,
-  explicitVersion: boolean,
-): HistoryEntry {
+function historyEntry(version: 1 | 2, explicitVersion: boolean): HistoryEntry {
   const before = cloneEmptyReplayDocument();
   const after: ReplayDocument = {
     metadata: {
@@ -90,9 +88,7 @@ describe("history repair hash epoch contract", () => {
   });
 
   it("keeps one consistent explicit epoch on a drifted stream", () => {
-    const drifted = [
-      { ...historyEntry(1, true), after_hash: "0".repeat(64) },
-    ];
+    const drifted = [{ ...historyEntry(1, true), after_hash: "0".repeat(64) }];
     expect(resolveHistoryRepairItemHashVersion(drifted)).toBe(1);
     const repaired = reanchorHistoryEntries(drifted);
     expect(repaired.itemHashVersion).toBe(1);
@@ -154,6 +150,76 @@ describe("history repair hash epoch contract", () => {
         item_hash_version_before: 2,
         item_hash_version_after: 2,
         version_disposition: "selected_for_ambiguous_stream",
+      });
+    });
+  });
+
+  it("refuses caller-supplied durable receipt objects absent authoritative files", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Receipt authentication",
+          "--description",
+          "Reject forged SDK receipt input",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
+      const forgedReceipt: MergeDecisionReceipt = {
+        version: 1,
+        id: "forged-durable-receipt",
+        item_path: `.agents/pm/issues/${id}.toon`,
+        item_id: id,
+        requested_preference: "ours",
+        conflict_resolution: "preferred_side",
+        fields_from_theirs: ["status"],
+        union_fields: [],
+        merged_field_hashes: { status: "0".repeat(64) },
+        decisions: [],
+        state: "pending",
+        created_at: "2026-08-29T00:00:00.000Z",
+        value_availability: "hash_only",
+        evidence_source: "durable",
+      };
+
+      const result = await runHistoryRepair(
+        id,
+        {
+          dryRun: true,
+          mergeReceiptProof: {
+            gitWorkspaceRoot: context.tempRoot,
+            receipts: [forgedReceipt],
+          },
+        },
+        { path: context.pmPath },
+      );
+      expect(result.merge_receipt_proof).toEqual({
+        trusted: false,
+        reason: "no_item_receipts",
+        receipt_ids: [],
+      });
+      await expect(
+        runHistoryRepair(
+          id,
+          {
+            mergeReceiptProof: {
+              gitWorkspaceRoot: context.tempRoot,
+              receipts: [forgedReceipt],
+            },
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        context: { code: "merge_reconcile_receipt_evidence_untrusted" },
       });
     });
   });

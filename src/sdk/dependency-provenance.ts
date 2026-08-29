@@ -95,9 +95,12 @@ export function registerExternalDependencyResolver(
   if (externalDependencyResolvers.has(name)) {
     throw new Error(`External dependency resolver already registered: ${name}`);
   }
-  externalDependencyResolvers.set(name, { ...resolver, name });
+  const registeredResolver = { ...resolver, name };
+  externalDependencyResolvers.set(name, registeredResolver);
   return () => {
-    externalDependencyResolvers.delete(name);
+    if (externalDependencyResolvers.get(name) === registeredResolver) {
+      externalDependencyResolvers.delete(name);
+    }
   };
 }
 

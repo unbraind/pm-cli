@@ -173,7 +173,7 @@ describe("core/history/drift-scan", () => {
     });
   });
 
-  it("classifies unsupported writer capabilities as version skew instead of corruption", async () => {
+  it("reports version skew without masking simultaneous chain corruption", async () => {
     await withTempPmPath(async (context) => {
       const created = createTestItem(context, { title: "Future writer" });
       const historyPath = getHistoryPath(context.pmPath, created.id);
@@ -195,8 +195,45 @@ describe("core/history/drift-scan", () => {
 
       expect(result.versionSkews).toEqual([created.id]);
       expect(result.hashMismatches).not.toContain(created.id);
-      expect(result.chainMismatches).not.toContain(created.id);
+      expect(result.chainMismatches).toContain(created.id);
       expect(result.driftedItems).toContain(created.id);
+    });
+  });
+
+  it("invalidates unsupported cached hash versions that lack skew evidence", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Malformed cache row" });
+      const items = await listAllItemMetadataWithBody(context.pmPath);
+      await scanHistoryDrift(context.pmPath, items);
+      const cache = await readDriftCache(context.pmPath);
+      await fs.writeFile(
+        path.join(context.pmPath, DRIFT_CACHE_RELATIVE),
+        `${JSON.stringify(
+          {
+            ...cache,
+            entries: {
+              ...cache.entries,
+              [created.id]: {
+                ...cache.entries[created.id],
+                item_hash_version: 99,
+              },
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const result = await scanHistoryDrift(context.pmPath, items, {
+        cacheHitVerification: "metadata",
+      });
+      expect(result.driftedItems).toEqual([]);
+      expect(
+        (await readDriftCache(context.pmPath)).entries[created.id],
+      ).toMatchObject({
+        item_hash_version: 3,
+      });
     });
   });
 

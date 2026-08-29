@@ -88,7 +88,13 @@ async function loadDriftCache(
       parsed.version !== DRIFT_CACHE_VERSION ||
       parsed.history_item_hash_version !== CURRENT_HISTORY_ITEM_HASH_VERSION ||
       typeof parsed.entries !== "object" ||
-      parsed.entries === null
+      parsed.entries === null ||
+      Object.values(parsed.entries).some(
+        (entry) =>
+          !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+            entry.item_hash_version,
+          ) && entry.version_skew !== true,
+      )
     ) {
       return null;
     }
@@ -154,7 +160,8 @@ async function scanWorkspaceHistory(
   }
   if (resolved.verification.versionSkew) {
     accumulator.versionSkews.push(WORKSPACE_HISTORY_ID);
-  } else if (!resolved.verification.chainOk) {
+  }
+  if (!resolved.verification.chainOk) {
     accumulator.chainMismatches.push(WORKSPACE_HISTORY_ID);
   }
   nextEntries[WORKSPACE_HISTORY_ID] = {
@@ -220,7 +227,7 @@ async function verifyHistoryStream(
   );
   return {
     latestAfterHash,
-    chainOk: versionSkew || verification.ok,
+    chainOk: verification.ok,
     versionSkew,
     contentHash,
     itemHashVersion:
@@ -306,8 +313,7 @@ async function resolveStreamVerification(params: {
         chainOk: params.cached.chain_ok,
         versionSkew: params.cached.version_skew === true,
         contentHash: currentContentHash,
-        itemHashVersion:
-          params.cached.item_hash_version ?? CURRENT_HISTORY_ITEM_HASH_VERSION,
+        itemHashVersion: params.cached.item_hash_version,
       },
       cacheDirty: false,
     };
@@ -351,7 +357,8 @@ async function scanItemHistory(
   if (!resolved.verification) return resolved.cacheDirty;
   if (resolved.verification.versionSkew) {
     accumulator.versionSkews.push(item.id);
-  } else if (!resolved.verification.chainOk) {
+  }
+  if (!resolved.verification.chainOk) {
     accumulator.chainMismatches.push(item.id);
   }
   cache.nextEntries[item.id] = {

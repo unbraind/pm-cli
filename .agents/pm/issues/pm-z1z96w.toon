@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:merge","area:sdk",context-integrity,github-1144,merge-receipts,multi-agent
 created_at: "2026-08-28T21:25:58.746Z"
-updated_at: "2026-08-28T23:38:23.488Z"
-closed_at: "2026-08-28T23:26:17.504Z"
-completed_at: "2026-08-28T23:26:17.504Z"
+updated_at: "2026-08-29T02:22:31.658Z"
+closed_at: "2026-08-29T02:22:31.085Z"
+completed_at: "2026-08-29T02:22:31.085Z"
 author: "harness:codex"
 estimated_minutes: 420
 acceptance_criteria: Merge report renders stored value_availability separately from evidence provenance and never labels tracked receipts clone-local; Hash-only receipts reconcile without force when their recorded hashes prove the current canonical snapshot; Untrusted or no-effect reconciliation never reports repaired; Pending and reconciled state transitions remain auditable and fail closed when proof is insufficient; SDK CLI docs merge-driver temp-repository and exact coverage gates pass
@@ -28,10 +28,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9j2r3b,discovered_from,"2026-08-28T21:25:58.746Z","harness:codex","cli:create:dep",detected
   pm-lwmstb,discovered_from,"2026-08-28T21:25:58.746Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,discovered_from,"2026-08-28T21:25:58.746Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-28T21:25:58.746Z","harness:codex","Duplicate check evidence: complete all-status search found closed pm-lwmstb for post-merge remediation routing and pm-ysqb6n for pending receipt visibility plus pm-9j2r3b for merge history addressability. None owns hash-only proof impossibility or report field contradiction. This recurrence is canonical for GitHub 1144."
   "2026-08-28T21:26:38.284Z","harness:codex","GitHub linkage evidence: issue #1144 now points to this canonical item at the merge-stable main-branch toon path."
   "2026-08-28T23:24:20.262Z","harness:codex","Verification evidence: SDK, CLI, and temporary-repository merge receipt suites passed; live history validation found zero drift across 2,596 items; full repository coverage passed 8,099 tests at exact 100/100/100/100."
+  "2026-08-29T02:22:14.859Z","harness:codex","Review-round evidence: history repair now treats caller receipts only as requested identifiers and reloads authoritative clone-local or durable receipt files before canonical field and hash verification. Forged, incomplete, mismatched, missing-path, bad-hash, dry-run, and non-dry-run controls pass; temporary-repository integration and exact coverage pass."
 files[6]{path,scope,note}:
   src/sdk/history-repair.ts,project,durable hash proof
   src/sdk/merge/reconcile.ts,project,proof-gated settlement
@@ -42,7 +43,7 @@ files[6]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:02.378Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts,project,240,"harness:codex","2026-08-28T21:54:09.102Z",local_mutation,feat/sdk-context-integrity-recovery,merge receipt proof and settlement coverage
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtdky5po-vi0l6l
     kind: test
     status: passed
@@ -55,9 +56,27 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtdr7pg8-qj7z9n
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T02:21:07.285Z"
+    finished_at: "2026-08-29T02:21:54.570Z"
+    recorded_at: "2026-08-29T02:21:54.570Z"
+    passed: 1
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 2
+    executions[2]:
+      - command: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+      - command: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "Durable hash proof, truthful merge reporting, proof-gated reconciliation, temporary-repository acceptance, and exact coverage are verified."
+close_reason: "History repair now reloads and verifies authoritative durable receipt evidence, rejecting forged or incomplete caller objects; integration and exact coverage pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

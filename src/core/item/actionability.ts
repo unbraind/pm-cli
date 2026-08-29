@@ -40,24 +40,35 @@ function normalizeItemId(id: string): string {
 export function collectBlockedByIds(
   item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
 ): string[] {
-  const ids = new Set<string>();
+  const ids = new Map<string, string>();
   const scalar =
-    typeof item.blocked_by === "string" ? normalizeItemId(item.blocked_by) : "";
-  if (scalar.length > 0 && scalar !== NO_ACTIVE_BLOCKER_SENTINEL) {
-    ids.add(scalar);
+    typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
+  if (
+    scalar.length > 0 &&
+    normalizeItemId(scalar) !== NO_ACTIVE_BLOCKER_SENTINEL
+  ) {
+    ids.set(
+      normalizeItemId(scalar),
+      isExternalDependencyReference(scalar) ? scalar : normalizeItemId(scalar),
+    );
   }
   for (const dependency of item.dependencies ?? []) {
     const dependencyId =
-      typeof dependency.id === "string" ? normalizeItemId(dependency.id) : "";
+      typeof dependency.id === "string" ? dependency.id.trim() : "";
     if (
       dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
       dependencyId.length > 0 &&
-      dependencyId !== NO_ACTIVE_BLOCKER_SENTINEL
+      normalizeItemId(dependencyId) !== NO_ACTIVE_BLOCKER_SENTINEL
     ) {
-      ids.add(dependencyId);
+      ids.set(
+        normalizeItemId(dependencyId),
+        isExternalDependencyReference(dependencyId)
+          ? dependencyId
+          : normalizeItemId(dependencyId),
+      );
     }
   }
-  return [...ids].sort((left, right) => left.localeCompare(right));
+  return [...ids.values()].sort((left, right) => left.localeCompare(right));
 }
 
 /** Build every forward and reverse blocker set in one corpus pass. */
@@ -136,10 +147,9 @@ function resolveItemBlockersWithIndex(
   const blockerIds =
     typeof itemWithId.id === "string"
       ? (blockerIdsByItem?.get(normalizeItemId(itemWithId.id)) ??
-        collectBlockedByIdsFromCorpus(
-          itemWithId as ItemMetadata,
-          [...itemsById.values()],
-        ))
+        collectBlockedByIdsFromCorpus(itemWithId as ItemMetadata, [
+          ...itemsById.values(),
+        ]))
       : collectBlockedByIds(item);
   return blockerIds.map((id) => {
     const blocker = itemsById.get(normalizeItemId(id));
@@ -218,9 +228,7 @@ export function collectDependencyBlockedIds(
         itemsById,
         statusRegistry,
         blockerIdsByItem,
-      ).some(
-        (blocker) => !blocker.resolved,
-      )
+      ).some((blocker) => !blocker.resolved)
     ) {
       blocked.add(normalizeItemId(item.id));
     }

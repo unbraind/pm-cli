@@ -661,7 +661,9 @@ const claudeProvenanceSnapshotCache = new Map<
 >();
 const EMPTY_CLAUDE_PROVENANCE_SNAPSHOT = Object.freeze({});
 
-function asProvenanceRecord(value: unknown): Record<string, unknown> | undefined {
+function asProvenanceRecord(
+  value: unknown,
+): Record<string, unknown> | undefined {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
@@ -729,19 +731,25 @@ function readClaudeSessionProvenance(
       if (cached) return cached[dimension];
       const probeLength = Math.min(stats.size, MAX_PROVENANCE_PROBE_BYTES);
       const headLength = Math.min(probeLength, Math.ceil(probeLength / 2));
-      const tailLength = Math.min(probeLength - headLength, stats.size - headLength);
+      const tailLength = Math.min(
+        probeLength - headLength,
+        stats.size - headLength,
+      );
       const head = Buffer.alloc(headLength);
       fs.readSync(file, head, 0, headLength, 0);
       const tail = Buffer.alloc(tailLength);
       if (tailLength > 0) {
         fs.readSync(file, tail, 0, tailLength, stats.size - tailLength);
       }
-      const text =
-        stats.size <= probeLength
-          ? Buffer.concat([head, tail]).toString("utf8")
-          : `${head.toString("utf8")}\n${tail.toString("utf8")}`;
       const snapshot: Record<string, string | undefined> = {};
-      for (const line of text.split("\n").slice(0, 4_096)) {
+      const lines =
+        stats.size <= probeLength
+          ? Buffer.concat([head, tail]).toString("utf8").split("\n")
+          : [
+              ...head.toString("utf8").split("\n").slice(0, 4_096),
+              ...tail.toString("utf8").split("\n").slice(-4_096),
+            ];
+      for (const line of lines) {
         if (line.length === 0 || line.length > 262_144) continue;
         const parsed = parseClaudeProvenanceLine(line);
         snapshot.model ??= parsed.model;
