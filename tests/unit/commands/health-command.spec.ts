@@ -4,6 +4,7 @@ import {
   mkdtemp,
   readFile,
   rm,
+  stat,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -264,6 +265,33 @@ describe("runHealth", () => {
       count: 3,
       sample: ["a", "b"],
       truncated: true,
+    });
+    expect(
+      healthInternals.summarizeHealthCheckDetails(
+        {
+          name: "history_drift",
+          ok: false,
+          status: "warn",
+          details: {
+            cache_confirmation: {
+              candidate_items: ["a", "b", "c"],
+              confirmed_items: ["a", "b", "c"],
+              resolved_false_positive_items: ["a", "b", "c"],
+            },
+          },
+        },
+        2,
+      ),
+    ).toMatchObject({
+      cache_confirmation: {
+        candidate_items: { count: 3, sample: ["a", "b"], truncated: true },
+        confirmed_items: { count: 3, sample: ["a", "b"], truncated: true },
+        resolved_false_positive_items: {
+          count: 3,
+          sample: ["a", "b"],
+          truncated: true,
+        },
+      },
     });
     expect(
       healthInternals.summarizeHealthCheckDetails(
@@ -588,6 +616,14 @@ describe("runHealth", () => {
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 1,
         cache_hit_verification: "metadata",
+        cache_confirmation: {
+          triggered: false,
+          reason: null,
+          candidate_items: [],
+          confirmed_items: [],
+          resolved_false_positive_items: [],
+          authoritative_item_source: false,
+        },
         drifted_items: [],
         counts: {
           drifted: 0,
@@ -630,6 +666,100 @@ describe("runHealth", () => {
         },
       });
       expect(health.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+  });
+
+  it("authoritatively rechecks cached corruption candidates before reporting drift", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createSeedItem(context);
+      const initial = await runHealth({ path: context.pmPath });
+      expect(initial.ok).toBe(true);
+
+      const metadataCachePath = path.join(
+        context.pmPath,
+        "runtime",
+        "metadata-cache.json",
+      );
+      const staleMetadataCache = JSON.parse(
+        await readFile(metadataCachePath, "utf8"),
+      ) as {
+        entries: Record<
+          string,
+          {
+            mtime_ms: number;
+            ctime_ms: number;
+            size: number;
+          }
+        >;
+      };
+      const itemCacheKey = Object.keys(staleMetadataCache.entries).find(
+        (entryPath) =>
+          entryPath.replaceAll("\\", "/").endsWith(`/${id}.toon`),
+      );
+      if (itemCacheKey === undefined) {
+        throw new Error(`expected metadata cache entry for ${id}`);
+      }
+
+      const update = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--priority",
+          "2",
+          "--author",
+          "test-author",
+          "--message",
+          "Advance the item while preserving its history chain",
+        ],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const itemPath = path.join(context.pmPath, itemCacheKey);
+      const currentItemStat = await stat(itemPath);
+      const staleEntry = staleMetadataCache.entries[itemCacheKey];
+      if (staleEntry === undefined) {
+        throw new Error(`expected metadata cache payload for ${id}`);
+      }
+      Object.assign(staleEntry, {
+        mtime_ms: currentItemStat.mtimeMs,
+        ctime_ms: currentItemStat.ctimeMs,
+        size: currentItemStat.size,
+      });
+      await rm(
+        path.join(context.pmPath, "runtime", "metadata-cache-delta.json"),
+        { force: true },
+      );
+      await rm(
+        path.join(context.pmPath, "runtime", "metadata-cache-manifest.json"),
+        { force: true },
+      );
+      await writeFile(
+        metadataCachePath,
+        `${JSON.stringify(staleMetadataCache)}\n`,
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.warnings).not.toContain(
+        `history_drift_hash_mismatch:${id}`,
+      );
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
+      expect(historyDriftCheck?.details).toMatchObject({
+        cache_hit_verification: "metadata_then_content_hash",
+        cache_confirmation: {
+          triggered: true,
+          reason: "cached_corruption_candidate",
+          candidate_items: [id],
+          confirmed_items: [],
+          resolved_false_positive_items: [id],
+          authoritative_item_source: true,
+        },
+        hash_mismatches: [],
+      });
     });
   });
 
@@ -1237,6 +1367,14 @@ describe("runHealth", () => {
       expect(historyDriftCheck?.status).toBe("warn");
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 3,
+        cache_hit_verification: "metadata_then_content_hash",
+        cache_confirmation: {
+          triggered: true,
+          candidate_items: [mismatchId],
+          confirmed_items: [mismatchId],
+          resolved_false_positive_items: [],
+          authoritative_item_source: true,
+        },
         drifted_items: [mismatchId, missingId, unreadableId].sort(
           (left, right) => left.localeCompare(right),
         ),
@@ -3310,12 +3448,30 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const firstId = createSeedItem(context);
       const secondId = createSeedItem(context);
+      const versionSkewId = createSeedItem(context);
       await rm(path.join(context.pmPath, "history", `${firstId}.jsonl`), {
         force: true,
       });
       await rm(path.join(context.pmPath, "history", `${secondId}.jsonl`), {
         force: true,
       });
+      const versionSkewPath = path.join(
+        context.pmPath,
+        "history",
+        `${versionSkewId}.jsonl`,
+      );
+      const versionSkewRows = (await readFile(versionSkewPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => ({
+          ...(JSON.parse(line) as Record<string, unknown>),
+          item_hash_version: 99,
+        }));
+      await writeFile(
+        versionSkewPath,
+        `${versionSkewRows.map((row) => JSON.stringify(row)).join("\n")}\n`,
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -3323,6 +3479,7 @@ describe("runHealth", () => {
         expect.arrayContaining([
           `history_drift_missing_stream:${firstId}`,
           `history_drift_missing_stream:${secondId}`,
+          `history_drift_version_skew:${versionSkewId}`,
         ]),
       );
       const historyDriftCheck = health.checks.find(
@@ -3332,8 +3489,10 @@ describe("runHealth", () => {
         | { remediation_map?: Record<string, string> }
         | undefined;
       const remediationMap = historyDriftDetails?.remediation_map;
-      expect(remediationMap).toEqual({
+      expect(remediationMap).toMatchObject({
         history_drift_missing_stream: "pm history-repair --all",
+        history_drift_version_skew:
+          "npm install -g @unbrained/pm-cli@latest",
       });
     });
   });

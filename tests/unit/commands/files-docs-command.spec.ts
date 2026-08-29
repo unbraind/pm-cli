@@ -519,26 +519,34 @@ describe("runFiles", () => {
     });
   });
 
-  it("splits bare comma-separated file paths without splitting structured entries (GH-296)", async () => {
+  it("refuses ambiguous comma-separated file paths while accepting structured entries", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "files-comma-add");
+      await expect(
+        runFiles(
+          id,
+          {
+            add: ["README.md,docs/COMMANDS.md"],
+            message: "refuse ambiguous file paths",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("ambiguous comma-bearing bare");
       const result = await runFiles(
         id,
         {
-          add: ["README.md,docs/COMMANDS.md", "path=docs/AGENT_GUIDE.md,scope=project,note=structured"],
-          message: "add comma-separated file paths",
+          add: ["path=docs/AGENT_GUIDE.md,scope=project,note=structured"],
+          message: "add structured file path",
         },
         { path: context.pmPath },
       );
 
       expect(result.files).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ path: "README.md", scope: "project" }),
-          expect.objectContaining({ path: "docs/COMMANDS.md", scope: "project" }),
           expect.objectContaining({ path: "docs/AGENT_GUIDE.md", scope: "project", note: "structured" }),
         ]),
       );
-      expect(result.count).toBe(3);
+      expect(result.count).toBe(1);
     });
   });
 
@@ -1261,26 +1269,34 @@ describe("runDocs", () => {
     });
   });
 
-  it("splits bare comma-separated doc paths without splitting structured entries (GH-296)", async () => {
+  it("refuses ambiguous comma-separated doc paths while accepting structured entries", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "docs-comma-add");
+      await expect(
+        runDocs(
+          id,
+          {
+            add: ["README.md,docs/COMMANDS.md"],
+            message: "refuse ambiguous doc paths",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("ambiguous comma-bearing bare");
       const result = await runDocs(
         id,
         {
-          add: ["README.md,docs/COMMANDS.md", "path=docs/AGENT_GUIDE.md,scope=project,note=structured"],
-          message: "add comma-separated doc paths",
+          add: ["path=docs/AGENT_GUIDE.md,scope=project,note=structured"],
+          message: "add structured doc path",
         },
         { path: context.pmPath },
       );
 
       expect(result.docs).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ path: "README.md", scope: "project" }),
-          expect.objectContaining({ path: "docs/COMMANDS.md", scope: "project" }),
           expect.objectContaining({ path: "docs/AGENT_GUIDE.md", scope: "project", note: "structured" }),
         ]),
       );
-      expect(result.count).toBe(3);
+      expect(result.count).toBe(1);
     });
   });
 

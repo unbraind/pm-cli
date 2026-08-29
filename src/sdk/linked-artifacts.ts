@@ -10,6 +10,7 @@ import fg from "fast-glob";
 import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
+  assertNoAmbiguousBareCommaEntry,
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
@@ -20,17 +21,13 @@ import { isRemoteLinkedArtifactReference } from "../core/validate/linked-artifac
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { splitCommaList } from "../core/shared/split-comma-list.js";
 import { stableValueEquals } from "../core/shared/serialization.js";
 import {
   locateItem,
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {
-  resolvePmRoot,
-  resolveWorkspaceRoot,
-} from "../core/store/paths.js";
+import { resolvePmRoot, resolveWorkspaceRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { SCOPE_VALUES } from "../types/index.js";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -183,7 +180,12 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   // leading assignment syntax through the structured-key allowlist so typos
   // and malformed URL-plus-note input remain atomic failures (GH-258,
   // GH-1000).
-  const equalsIndex = raw.indexOf("=");
+  const firstCommaIndex = raw.indexOf(",");
+  const leadingSegment = raw.slice(
+    0,
+    firstCommaIndex >= 0 ? firstCommaIndex : raw.length,
+  );
+  const equalsIndex = leadingSegment.indexOf("=");
   if (
     equalsIndex >= 0 &&
     !/\s/u.test(raw) &&
@@ -195,21 +197,7 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   ) {
     return false;
   }
-  return raw.includes("=") || looksLikeGenericKeyValueEntry(raw);
-}
-
-function expandBareCommaSeparatedAddEntries(raw: string[]): string[] {
-  return raw.flatMap((entry) => {
-    const trimmed = entry.trim();
-    if (
-      trimmed.length === 0 ||
-      looksLikeStructuredPathEntry(trimmed) ||
-      !trimmed.includes(",")
-    ) {
-      return [entry];
-    }
-    return splitCommaList(trimmed);
-  });
+  return leadingSegment.includes("=") || looksLikeGenericKeyValueEntry(raw);
 }
 
 /** Whether a Markdown destination contains only balanced parentheses. */
@@ -269,24 +257,29 @@ export function parseAddEntries(
       const reference = parseDocumentationReference(trimmed);
       if (reference !== undefined) return [reference];
     }
-    return expandBareCommaSeparatedAddEntries([entry]).map((expanded) => {
-      const expandedTrimmed = expanded.trim();
-      const kv = looksLikeStructuredPathEntry(expandedTrimmed)
-        ? parseCsvKv(expanded, "--add")
-        : { path: expandedTrimmed };
-      assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
-      if (!kv.path) {
-        throw new PmCliError(
-          `--add requires path=<value> or a bare ${bareNoun} path`,
-          EXIT_CODE.USAGE,
-        );
-      }
-      return {
+    assertNoAmbiguousBareCommaEntry(
+      trimmed,
+      "--add",
+      `${bareNoun} path`,
+      looksLikeStructuredPathEntry(trimmed),
+    );
+    const kv = looksLikeStructuredPathEntry(trimmed)
+      ? parseCsvKv(entry, "--add")
+      : { path: trimmed };
+    assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
+    if (!kv.path) {
+      throw new PmCliError(
+        `--add requires path=<value> or a bare ${bareNoun} path`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return [
+      {
         path: kv.path,
         scope: ensureScope(kv.scope),
         note: kv.note?.trim() || undefined,
-      };
-    });
+      },
+    ];
   });
 }
 
@@ -687,9 +680,10 @@ async function buildLinkedArtifactResult(params: {
       params.migrationsApplied && params.migrationsApplied > 0
         ? params.migrationsApplied
         : undefined,
-    validation: params.options.validatePaths
-      ? await validateLinkedPaths(paths, params.workspaceRoot)
-      : undefined,
+    validation:
+      params.options.validatePaths || params.changed
+        ? await validateLinkedPaths(paths, params.workspaceRoot)
+        : undefined,
   };
 }
 

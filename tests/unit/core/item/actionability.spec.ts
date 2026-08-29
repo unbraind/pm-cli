@@ -10,7 +10,11 @@ import {
 } from "../../../../src/core/item/actionability.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import { createRelationshipKindRegistry } from "../../../../src/sdk/relationships.js";
-import type { Dependency, ItemMetadata, ItemType } from "../../../../src/types/index.js";
+import type {
+  Dependency,
+  ItemMetadata,
+  ItemType,
+} from "../../../../src/types/index.js";
 
 const registry = resolveRuntimeStatusRegistry(undefined);
 
@@ -36,8 +40,12 @@ function item(overrides: ItemOverrides): ItemMetadata {
     created_at: "2026-06-24T00:00:00.000Z",
     updated_at: "2026-06-24T00:00:00.000Z",
     ...(overrides.parent !== undefined ? { parent: overrides.parent } : {}),
-    ...(overrides.blocked_by !== undefined ? { blocked_by: overrides.blocked_by as string } : {}),
-    ...(overrides.dependencies !== undefined ? { dependencies: overrides.dependencies } : {}),
+    ...(overrides.blocked_by !== undefined
+      ? { blocked_by: overrides.blocked_by as string }
+      : {}),
+    ...(overrides.dependencies !== undefined
+      ? { dependencies: overrides.dependencies }
+      : {}),
   } as ItemMetadata;
 }
 
@@ -65,15 +73,25 @@ describe("collectBlockedByIds", () => {
       dependencies: [
         blockedByDep("pm-a"),
         { id: "pm-c", kind: "related", created_at: "2026-06-24T00:00:00.000Z" },
-        { id: "   ", kind: "blocked_by", created_at: "2026-06-24T00:00:00.000Z" },
-        { id: 5 as never, kind: "blocked_by", created_at: "2026-06-24T00:00:00.000Z" },
+        {
+          id: "   ",
+          kind: "blocked_by",
+          created_at: "2026-06-24T00:00:00.000Z",
+        },
+        {
+          id: 5 as never,
+          kind: "blocked_by",
+          created_at: "2026-06-24T00:00:00.000Z",
+        },
       ],
     });
     expect(ids).toEqual(["pm-a", "pm-b"]);
   });
 
   it("ignores a non-string scalar and absent dependencies", () => {
-    expect(collectBlockedByIds({ blocked_by: 7 as never, dependencies: undefined })).toEqual([]);
+    expect(
+      collectBlockedByIds({ blocked_by: 7 as never, dependencies: undefined }),
+    ).toEqual([]);
   });
 
   it("ignores the retired no-active-blocker sentinel in scalar and edge forms", () => {
@@ -85,9 +103,73 @@ describe("collectBlockedByIds", () => {
     ).toEqual([]);
   });
 
+  it("preserves case-sensitive external blocker locators", () => {
+    expect(
+      collectBlockedByIds({
+        blocked_by: " jira:PM-42 ",
+        dependencies: [blockedByDep("https://example.test/Issue/Case")],
+      }),
+    ).toEqual(["https://example.test/Issue/Case", "jira:PM-42"]);
+  });
+
+  it("keeps case-distinct external and local blocker identities", () => {
+    expect(
+      collectBlockedByIds({
+        blocked_by: "pm-42",
+        dependencies: [
+          {
+            ...blockedByDep("PM-42"),
+            source_kind: "external",
+          },
+          {
+            ...blockedByDep("jira:Case"),
+            source_kind: "external",
+          },
+          {
+            ...blockedByDep("jira:case"),
+            source_kind: "external",
+          },
+        ],
+      }),
+    ).toEqual(["jira:case", "jira:Case", "pm-42", "PM-42"]);
+  });
+
+  it("preserves and projects non-locator blockers with explicit external provenance", () => {
+    const dependency: Dependency = {
+      ...blockedByDep("Upstream-42"),
+      source_kind: "external",
+    };
+    expect(collectBlockedByIds({ dependencies: [dependency] })).toEqual([
+      "Upstream-42",
+    ]);
+    expect(
+      resolveItemBlockers(
+        {
+          dependencies: [dependency],
+          updated_at: "2026-06-25T00:00:00.000Z",
+        },
+        new Map(),
+        registry,
+      ),
+    ).toEqual([
+      {
+        id: "Upstream-42",
+        title: null,
+        status: null,
+        resolved: false,
+        external: true,
+        blocked_since: "2026-06-25T00:00:00.000Z",
+        resolver: null,
+      },
+    ]);
+  });
+
   it("resolves incoming blocks edges as blockers of the referenced item", () => {
     const target = item({ id: "pm-target" });
-    const blocker = item({ id: "pm-blocker", dependencies: [blocksDep("PM-TARGET")] });
+    const blocker = item({
+      id: "pm-blocker",
+      dependencies: [blocksDep("PM-TARGET")],
+    });
     expect(collectBlockedByIdsFromCorpus(target, [target, blocker])).toEqual([
       "pm-blocker",
     ]);
@@ -103,7 +185,9 @@ describe("collectBlockedByIds", () => {
     const index = indexBlockedByIds([target, blocker, blank]);
     expect(index.get("pm-target")).toEqual(["pm-blocker"]);
     expect(index.has("")).toBe(false);
-    expect(indexBlockedByIds([blocker]).get("pm-target")).toEqual(["pm-blocker"]);
+    expect(indexBlockedByIds([blocker]).get("pm-target")).toEqual([
+      "pm-blocker",
+    ]);
   });
 
   it("does not scan reverse edges for a blank legacy item id", () => {
@@ -115,6 +199,24 @@ describe("collectBlockedByIds", () => {
   });
 });
 describe("resolveItemBlockers", () => {
+  it("ignores malformed structured external blocker ids without throwing", () => {
+    expect(
+      resolveItemBlockers(
+        {
+          dependencies: [
+            {
+              id: undefined,
+              kind: "blocked_by",
+              source_kind: "external",
+            } as unknown as Dependency,
+          ],
+        },
+        new Map(),
+        registry,
+      ),
+    ).toEqual([]);
+  });
+
   it("keeps missing and non-terminal blockers unresolved while resolving terminal blockers", () => {
     const corpus = [
       item({ id: "pm-open", status: "open" }),
@@ -122,14 +224,52 @@ describe("resolveItemBlockers", () => {
     ];
     const byId = new Map(corpus.map((entry) => [entry.id, entry]));
     const blockers = resolveItemBlockers(
-      { dependencies: [blockedByDep("pm-open"), blockedByDep("pm-closed"), blockedByDep("pm-missing")] },
+      {
+        dependencies: [
+          blockedByDep("pm-open"),
+          blockedByDep("pm-closed"),
+          blockedByDep("pm-missing"),
+        ],
+      },
       byId,
       registry,
     );
     expect(blockers).toEqual([
-      { id: "pm-closed", title: "Item pm-closed", status: "closed", resolved: true },
+      {
+        id: "pm-closed",
+        title: "Item pm-closed",
+        status: "closed",
+        resolved: true,
+      },
       { id: "pm-missing", title: null, status: null, resolved: false },
       { id: "pm-open", title: "Item pm-open", status: "open", resolved: false },
+    ]);
+  });
+
+  it("keeps an explicit external blocker distinct from a same-spelled local item", () => {
+    const local = item({ id: "pm-42", status: "closed" });
+    expect(
+      resolveItemBlockers(
+        {
+          dependencies: [
+            {
+              ...blockedByDep("PM-42"),
+              source_kind: "external",
+            },
+          ],
+        },
+        new Map([["pm-42", local]]),
+        registry,
+      ),
+    ).toEqual([
+      {
+        id: "PM-42",
+        title: null,
+        status: null,
+        resolved: false,
+        external: true,
+        resolver: null,
+      },
     ]);
   });
 });
@@ -146,73 +286,124 @@ describe("collectDependencyBlockedIds", () => {
       id: "pm-resolved",
       dependencies: [blockedByDep("pm-closed-blocker")],
     });
-    const lifecycleBlocked = item({ id: "pm-status-blocked", status: "blocked" });
+    const lifecycleBlocked = item({
+      id: "pm-status-blocked",
+      status: "blocked",
+    });
     const terminal = item({
       id: "pm-terminal",
       status: "closed",
       dependencies: [blockedByDep("pm-open-blocker")],
     });
     expect(
-      [...collectDependencyBlockedIds(
-        [openBlocker, closedBlocker, edgeBlocked, resolved, lifecycleBlocked, terminal],
-        registry,
-      )].sort(),
+      [
+        ...collectDependencyBlockedIds(
+          [
+            openBlocker,
+            closedBlocker,
+            edgeBlocked,
+            resolved,
+            lifecycleBlocked,
+            terminal,
+          ],
+          registry,
+        ),
+      ].sort(),
     ).toEqual(["pm-edge-blocked", "pm-status-blocked"]);
   });
 
   it("does not classify an active item with only a retired blocker sentinel as blocked", () => {
-    const sentinel = item({ id: "pm-sentinel", blocked_by: "no-active-blocker" });
+    const sentinel = item({
+      id: "pm-sentinel",
+      blocked_by: "no-active-blocker",
+    });
     expect([...collectDependencyBlockedIds([sentinel], registry)]).toEqual([]);
   });
 
   it("gives reverse blocks edges the same readiness semantics as blocked_by", () => {
-    const blocker = item({ id: "pm-blocker", dependencies: [blocksDep("pm-target")] });
+    const blocker = item({
+      id: "pm-blocker",
+      dependencies: [blocksDep("pm-target")],
+    });
     const target = item({ id: "pm-target" });
     const corpus = [blocker, target];
-    expect([...collectDependencyBlockedIds(corpus, registry)]).toEqual(["pm-target"]);
-    const report = computeActionabilityReport(corpus, corpus, registry);
-    expect(report.ready.find((entry) => entry.item.id === "pm-blocker")?.unblocks).toEqual([
+    expect([...collectDependencyBlockedIds(corpus, registry)]).toEqual([
       "pm-target",
     ]);
-    expect(report.blocked[0]?.open_blockers.map(({ id }) => id)).toEqual(["pm-blocker"]);
+    const report = computeActionabilityReport(corpus, corpus, registry);
+    expect(
+      report.ready.find((entry) => entry.item.id === "pm-blocker")?.unblocks,
+    ).toEqual(["pm-target"]);
+    expect(report.blocked[0]?.open_blockers.map(({ id }) => id)).toEqual([
+      "pm-blocker",
+    ]);
   });
 });
 
 describe("computeActionabilityReport", () => {
   it("classifies ready leaves, excludes containers, and surfaces blocked leaves with downstream unblocks", () => {
     const epic = item({ id: "pm-epic", type: "Epic", status: "open" });
-    const openChild = item({ id: "pm-child", parent: "pm-epic", status: "open", priority: 1 });
+    const openChild = item({
+      id: "pm-child",
+      parent: "pm-epic",
+      status: "open",
+      priority: 1,
+    });
     const wip = item({ id: "pm-wip", status: "in_progress" });
     const blocker = item({ id: "pm-blocker", status: "open", priority: 0 });
-    const blockee = item({ id: "pm-blockee", status: "open", dependencies: [blockedByDep("pm-blocker")] });
-    const closedDownstream = item({ id: "pm-done", status: "closed", dependencies: [blockedByDep("pm-blocker")] });
+    const blockee = item({
+      id: "pm-blockee",
+      status: "open",
+      dependencies: [blockedByDep("pm-blocker")],
+    });
+    const closedDownstream = item({
+      id: "pm-done",
+      status: "closed",
+      dependencies: [blockedByDep("pm-blocker")],
+    });
     const corpus = [epic, openChild, wip, blocker, blockee, closedDownstream];
 
     const report = computeActionabilityReport(corpus, corpus, registry);
     const readyIds = report.ready.map((entry) => entry.item.id).sort();
     expect(readyIds).toEqual(["pm-blocker", "pm-child", "pm-wip"]);
-    expect(report.ready.some((entry) => entry.item.id === "pm-epic")).toBe(false);
+    expect(report.ready.some((entry) => entry.item.id === "pm-epic")).toBe(
+      false,
+    );
     expect(report.container_count).toBe(1);
     expect(report.active_count).toBe(5);
 
-    const blockerEntry = report.ready.find((entry) => entry.item.id === "pm-blocker");
+    const blockerEntry = report.ready.find(
+      (entry) => entry.item.id === "pm-blocker",
+    );
     // The closed downstream dependent is filtered out of unblocks; only the open one remains.
     expect(blockerEntry?.unblocks).toEqual(["pm-blockee"]);
 
     expect(report.blocked).toHaveLength(1);
     expect(report.blocked[0].item.id).toBe("pm-blockee");
-    expect(report.blocked[0].open_blockers.map((blocked) => blocked.id)).toEqual(["pm-blocker"]);
+    expect(
+      report.blocked[0].open_blockers.map((blocked) => blocked.id),
+    ).toEqual(["pm-blocker"]);
   });
 
   it("treats a parent whose descendants are terminal as ready but keeps a missing blocker blocked", () => {
     const parent = item({ id: "pm-parent", type: "Epic", status: "open" });
-    const closedChild = item({ id: "pm-closed-child", parent: "pm-parent", status: "closed" });
-    const resolvedBlockee = item({ id: "pm-resolved", status: "open", blocked_by: "pm-gone" });
+    const closedChild = item({
+      id: "pm-closed-child",
+      parent: "pm-parent",
+      status: "closed",
+    });
+    const resolvedBlockee = item({
+      id: "pm-resolved",
+      status: "open",
+      blocked_by: "pm-gone",
+    });
     const corpus = [parent, closedChild, resolvedBlockee];
 
     const report = computeActionabilityReport(corpus, corpus, registry);
     expect(report.ready.map((entry) => entry.item.id)).toEqual(["pm-parent"]);
-    expect(report.blocked.map((entry) => entry.item.id)).toEqual(["pm-resolved"]);
+    expect(report.blocked.map((entry) => entry.item.id)).toEqual([
+      "pm-resolved",
+    ]);
     expect(report.container_count).toBe(0);
   });
 
@@ -220,26 +411,45 @@ describe("computeActionabilityReport", () => {
     const epic = item({ id: "pm-EPIC", type: "Epic", status: "open" });
     const child = item({ id: "pm-CHILD", parent: "pm-epic", status: "open" });
     const blocker = item({ id: "pm-BLK", status: "open" });
-    const blockee = item({ id: "pm-DEP", status: "open", dependencies: [blockedByDep("PM-blk")] });
+    const blockee = item({
+      id: "pm-DEP",
+      status: "open",
+      dependencies: [blockedByDep("PM-blk")],
+    });
     const corpus = [epic, child, blocker, blockee];
 
     const report = computeActionabilityReport(corpus, corpus, registry);
     // pm-EPIC is a container via its mixed-case child link; pm-CHILD and pm-BLK are ready.
-    expect(report.ready.map((entry) => entry.item.id).sort()).toEqual(["pm-BLK", "pm-CHILD"]);
+    expect(report.ready.map((entry) => entry.item.id).sort()).toEqual([
+      "pm-BLK",
+      "pm-CHILD",
+    ]);
     // pm-DEP is blocked by pm-BLK even though it references it as "PM-blk".
     expect(report.blocked.map((entry) => entry.item.id)).toEqual(["pm-DEP"]);
     expect(report.blocked[0].open_blockers[0].id).toBe("pm-blk");
-    expect(report.ready.find((entry) => entry.item.id === "pm-BLK")?.unblocks).toEqual(["pm-DEP"]);
+    expect(
+      report.ready.find((entry) => entry.item.id === "pm-BLK")?.unblocks,
+    ).toEqual(["pm-DEP"]);
   });
 
   it("returns the downstream unblocks list sorted when an item gates several dependents", () => {
     const blocker = item({ id: "pm-blocker", status: "open" });
-    const second = item({ id: "pm-d2", status: "open", dependencies: [blockedByDep("pm-blocker")] });
-    const first = item({ id: "pm-d1", status: "open", dependencies: [blockedByDep("pm-blocker")] });
+    const second = item({
+      id: "pm-d2",
+      status: "open",
+      dependencies: [blockedByDep("pm-blocker")],
+    });
+    const first = item({
+      id: "pm-d1",
+      status: "open",
+      dependencies: [blockedByDep("pm-blocker")],
+    });
     const corpus = [blocker, second, first];
 
     const report = computeActionabilityReport(corpus, corpus, registry);
-    const blockerEntry = report.ready.find((entry) => entry.item.id === "pm-blocker");
+    const blockerEntry = report.ready.find(
+      (entry) => entry.item.id === "pm-blocker",
+    );
     expect(blockerEntry?.unblocks).toEqual(["pm-d1", "pm-d2"]);
   });
 

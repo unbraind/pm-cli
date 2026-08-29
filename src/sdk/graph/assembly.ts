@@ -14,7 +14,10 @@ import {
   RelationshipGraph,
   type RelationshipKindRegistry,
 } from "../relationships.js";
-import { isExternalDependencySourceKind } from "../dependency-provenance.js";
+import {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "../dependency-provenance.js";
 import {
   analyzeHierarchyIntegrity,
   type HierarchyIntegrityAnalysis,
@@ -92,6 +95,42 @@ export function normalizeDependencyGraphTarget(
     : normalized;
 }
 
+/** Return whether edge provenance assigns a normalized target to the external graph namespace. */
+function isExternalGraphReference(
+  target: unknown,
+  sourceKind?: string,
+  externalAllowed = true,
+): boolean {
+  const normalized = normalizeDependencyReferenceTarget(target);
+  return (
+    externalAllowed &&
+    (isExternalDependencySourceKind(sourceKind) ||
+      (normalized !== undefined && isExternalDependencyReference(normalized)))
+  );
+}
+
+/** Build a namespace-aware reference identity: local ids are case-folded while external locators retain case. */
+function dependencyReferenceIdentityKey(
+  target: string,
+  sourceKind?: string,
+): string {
+  return isExternalGraphReference(target, sourceKind)
+    ? `external\u0000${target}`
+    : `local\u0000${target.toLowerCase()}`;
+}
+
+/** Resolve one normalized edge target through the namespace selected by its provenance. */
+function resolveGraphReferenceTarget(
+  target: string,
+  sourceKind: string | undefined,
+  canonicalIds: ReadonlyMap<string, string>,
+  externalGraphIds: ReadonlyMap<string, string>,
+): string {
+  return isExternalGraphReference(target, sourceKind)
+    ? externalGraphIds.get(target)!
+    : canonicalIds.get(target.toLowerCase())!;
+}
+
 /**
  * Resolve the default workspace relationship-kind registry: the built-in kinds
  * merged with every active extension-contributed relationship-kind
@@ -156,7 +195,7 @@ function countDependencyRowIdentities(
       typeof legacyDependency.kind === "string"
         ? legacyDependency.kind
         : "related";
-    const key = `${kind}\u0000${target.toLowerCase()}`;
+    const key = `${kind}\u0000${dependencyReferenceIdentityKey(target, legacyDependency.source_kind)}`;
     const existing = occurrences.get(key);
     if (existing) existing.count += 1;
     else occurrences.set(key, { target_id: target, kind, count: 1 });
@@ -216,7 +255,11 @@ function decodeOrderingStorageContradiction(
 ): OrderingStorageContradiction | undefined {
   if (typeof dependency !== "object" || dependency === null) return undefined;
   const target = normalizeDependencyReferenceTarget(dependency.id);
-  if (!target || target.toLowerCase() !== blocker.toLowerCase())
+  if (
+    !target ||
+    dependencyReferenceIdentityKey(target, dependency.source_kind) !==
+      dependencyReferenceIdentityKey(blocker)
+  )
     return undefined;
   const definition = registry.resolve(
     typeof dependency.kind === "string" ? dependency.kind : "related",
@@ -307,9 +350,14 @@ export function collectDanglingDependencyReferences(
     target: unknown,
     kind: string,
     source: DependencyReferenceSource,
+    externalAllowed: boolean,
   ): void => {
     const normalized = normalizeDependencyReferenceTarget(target);
-    if (!normalized || knownIds.has(normalized.toLowerCase())) {
+    if (
+      !normalized ||
+      knownIds.has(normalized.toLowerCase()) ||
+      isExternalGraphReference(normalized, undefined, externalAllowed)
+    ) {
       return;
     }
     const row: DanglingDependencyReference = {
@@ -328,8 +376,8 @@ export function collectDanglingDependencyReferences(
     );
   };
   for (const item of safeItems) {
-    addReference(item, item.parent, "parent", "parent");
-    addReference(item, item.blocked_by, "blocked_by", "blocked_by");
+    addReference(item, item.parent, "parent", "parent", false);
+    addReference(item, item.blocked_by, "blocked_by", "blocked_by", true);
     for (const dependency of item.dependencies ?? []) {
       // Public SDK callers may supply legacy or JSON-decoded payloads that do
       // not yet satisfy the current structured dependency contract.
@@ -347,6 +395,7 @@ export function collectDanglingDependencyReferences(
           ? legacyDependency.kind
           : "related",
         "dependency",
+        true,
       );
     }
   }
@@ -387,17 +436,25 @@ export function collectExternalDependencyTargetIds(
 ): string[] {
   const targets = new Map<string, string>();
   for (const item of items) {
+    const scalarBlocker = normalizeDependencyGraphTarget(item.blocked_by);
+    if (
+      scalarBlocker &&
+      isExternalGraphReference(scalarBlocker) &&
+      !targets.has(scalarBlocker)
+    ) {
+      targets.set(scalarBlocker, scalarBlocker);
+    }
     for (const dependency of item.dependencies ?? []) {
       if (
         typeof dependency !== "object" ||
         dependency === null ||
-        !isExternalDependencySourceKind(dependency.source_kind)
+        !isExternalGraphReference(dependency.id, dependency.source_kind)
       ) {
         continue;
       }
-      const id = normalizeDependencyReferenceTarget(dependency.id);
-      if (id && !targets.has(id.toLowerCase())) {
-        targets.set(id.toLowerCase(), id);
+      const id = normalizeDependencyGraphTarget(dependency.id);
+      if (id && !targets.has(id)) {
+        targets.set(id, id);
       }
     }
   }
@@ -453,7 +510,9 @@ const hierarchyIntegrityByAssembly = new WeakMap<
 export function getWorkspaceHierarchyIntegrity(
   assembly: WorkspaceRelationshipAssembly,
 ): HierarchyIntegrityAnalysis | undefined {
-  return assembly.hierarchyIntegrity ?? hierarchyIntegrityByAssembly.get(assembly);
+  return (
+    assembly.hierarchyIntegrity ?? hierarchyIntegrityByAssembly.get(assembly)
+  );
 }
 
 /** Count raw dependency rows that use a registered compatibility alias instead of its canonical kind. */
@@ -510,7 +569,7 @@ export function assembleWorkspaceRelationshipGraph(
     while (usedGraphIds.has(graphId.toLowerCase())) {
       graphId = `external:${graphId}`;
     }
-    externalGraphIds.set(id.toLowerCase(), graphId);
+    externalGraphIds.set(id, graphId);
     usedGraphIds.add(graphId.toLowerCase());
   }
   const graphItems = safeItems.map((item) => {
@@ -522,9 +581,12 @@ export function assembleWorkspaceRelationshipGraph(
       const dependency = rawDependency as Partial<Dependency>;
       const target = normalizeDependencyGraphTarget(dependency.id);
       if (!target) return [];
-      const targetId = isExternalDependencySourceKind(dependency.source_kind)
-        ? externalGraphIds.get(target.toLowerCase())!
-        : canonicalIds.get(target.toLowerCase())!;
+      const targetId = resolveGraphReferenceTarget(
+        target,
+        dependency.source_kind,
+        canonicalIds,
+        externalGraphIds,
+      );
       return [
         {
           id: targetId,
@@ -537,7 +599,14 @@ export function assembleWorkspaceRelationshipGraph(
       id: item.id.trim(),
       ...(parent ? { parent: canonicalIds.get(parent.toLowerCase())! } : {}),
       ...(blocker
-        ? { blocked_by: canonicalIds.get(blocker.toLowerCase())! }
+        ? {
+            blocked_by: resolveGraphReferenceTarget(
+              blocker,
+              undefined,
+              canonicalIds,
+              externalGraphIds,
+            ),
+          }
         : {}),
       dependencies,
     };
@@ -553,7 +622,7 @@ export function assembleWorkspaceRelationshipGraph(
         ...graphItems,
         ...missingIds.map((id) => ({ id })),
         ...externalIds.map((id) => ({
-          id: externalGraphIds.get(id.toLowerCase())!,
+          id: externalGraphIds.get(id)!,
         })),
       ],
       relationshipRegistry,
@@ -573,7 +642,7 @@ export function assembleWorkspaceRelationshipGraph(
         status: "missing",
       })),
       ...externalIds.map((id) => ({
-        id: externalGraphIds.get(id.toLowerCase())!,
+        id: externalGraphIds.get(id)!,
         title: `[external] ${id}`,
         status: "external",
       })),

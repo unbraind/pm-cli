@@ -8,32 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_budget",
-    meaning: "Missing budget condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_budget",
-    aliases: [],
-  },
-  {
-    code: "missing_cli_flag",
-    meaning: "Missing cli flag condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_cli_flag",
-    aliases: [],
-  },
-  {
     code: "missing_destination",
     meaning: "Missing destination condition.",
     stability: "provisional",
@@ -122,6 +96,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_parameter_alias",
+    aliases: [],
+  },
+  {
+    code: "missing_positive_execution_receipt",
+    meaning: "Missing positive execution receipt condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/test/execution.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_positive_execution_receipt",
     aliases: [],
   },
   {
@@ -347,6 +334,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/agent/refusal-closure.ts"],
     emitting_commands: ["*"],
     canonical_code: "non_refusal_exit",
+    aliases: [],
+  },
+  {
+    code: "npm_pack_json_shape_unsupported",
+    meaning: "Npm pack json shape unsupported condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/install-sources.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "npm_pack_json_shape_unsupported",
     aliases: [],
   },
   {
@@ -802,6 +802,32 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/lifecycle/reopen.ts"],
     emitting_commands: ["item reopen"],
     canonical_code: "reopen_target_status_invalid",
+    aliases: [],
+  },
+  {
+    code: "reported_zero_passes",
+    meaning: "Reported zero passes condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/test/execution.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "reported_zero_passes",
+    aliases: [],
+  },
+  {
+    code: "reported_zero_tests",
+    meaning: "Reported zero tests condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/test/execution.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "reported_zero_tests",
     aliases: [],
   },
   {
@@ -1715,6 +1741,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "history_drift_unreadable_stream",
+    aliases: [],
+  },
+  {
+    code: "validate_history_drift_version_skews",
+    meaning: "Validate history drift version skews condition.",
+    stability: "stable",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "history_drift_version_skew",
     aliases: [],
   },
   {

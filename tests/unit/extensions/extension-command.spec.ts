@@ -1921,9 +1921,12 @@ describe("extension command runtime", () => {
       expect(_testOnlyInstallSources.parsePackedNpmPackage("npm notice\nlegacy.tgz\n", tempRoot)).toEqual({
         tarball: path.join(tempRoot, "legacy.tgz"),
       });
-      expect(_testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify({ filename: "not-an-array.tgz" }), tempRoot)).toEqual({
-        tarball: path.join(tempRoot, '{"filename":"not-an-array.tgz"}'),
+      expect(_testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify({ pkg: { filename: "pkg-1.0.0.tgz", name: "pkg", version: "1.0.0" } }), tempRoot, "pkg")).toEqual({
+        tarball: path.join(tempRoot, "pkg-1.0.0.tgz"),
+        package: "pkg",
+        version: "1.0.0",
       });
+      expect(() => _testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify({ filename: "not-a-keyed-receipt.tgz" }), tempRoot)).toThrow(/unsupported or ambiguous/);
       expect(_testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify([{ filename: "pkg-2.0.0.tgz", name: 42, version: false }]), tempRoot)).toEqual({
         tarball: path.join(tempRoot, "pkg-2.0.0.tgz"),
       });

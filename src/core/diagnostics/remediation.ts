@@ -237,9 +237,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "merge_receipts_pending",
-    command: "pm merge reconcile --dry-run",
+    command: "pm merge reconcile",
     summary:
-      "A lossless merge receipt is still pending; preview and run pm merge reconcile so a green health gate certifies receipt settlement, not only intact data.",
+      "A lossless merge receipt is still pending; run pm merge reconcile to settle it (optionally preview first with --dry-run) so a green health gate certifies receipt settlement, not only intact data.",
   },
   {
     code: "merge_receipt_evidence_invalid",
@@ -281,10 +281,16 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
-    code: "history_drift_merge_receipt",
-    command: "pm merge reconcile --dry-run",
+    code: "history_drift_version_skew",
+    command: "npm install -g @unbrained/pm-cli@latest",
     summary:
-      "Canonical path, changed-field, and merged-value hash evidence attributes this drift to a pending receipt; preview reconciliation instead of repairing history directly.",
+      "A history stream declares an item hash version this runtime does not support; upgrade pm to verify the chain instead of re-anchoring it.",
+  },
+  {
+    code: "history_drift_merge_receipt",
+    command: "pm merge reconcile",
+    summary:
+      "Canonical path, changed-field, and merged-value hash evidence attributes this drift to a pending receipt; run reconciliation (optionally preview first with --dry-run) instead of repairing history directly.",
   },
   // --- pm health: storage (history compaction policy) ---
   {
@@ -505,6 +511,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm history-repair <id>",
     summary:
       "Re-anchor the history chains of the items with a broken history chain.",
+  },
+  {
+    code: "validate_history_drift_version_skews",
+    command: "npm install -g @unbrained/pm-cli@latest",
+    summary:
+      "One or more history streams declare an item hash version this runtime does not support; upgrade pm to verify the chains instead of re-anchoring them.",
   },
   // --- pm validate: command_references ---
   {

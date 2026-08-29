@@ -1423,9 +1423,17 @@ async function runLinkedTestCommand(
         stderrHandle.fd,
         cwd,
       );
-    } finally {
+    } catch (error: unknown) {
       await Promise.all([stdoutHandle.close(), stderrHandle.close()]);
+      throw error;
     }
+    const childClose = waitForLinkedTestChildClose(child);
+    let spawnError: string | undefined;
+    /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
+    child.on("error", (error) => {
+      spawnError = error.message;
+    });
+    await Promise.all([stdoutHandle.close(), stderrHandle.close()]);
     closeLinkedTestStdin(child);
     const timers: LinkedTestTimerState = {
       heartbeat: beginLinkedTestProgress(progressContext, progressMode),
@@ -1437,13 +1445,6 @@ async function runLinkedTestCommand(
       timers,
     );
     let timedOut = false;
-    let spawnError: string | undefined;
-
-    /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
-    child.on("error", (error) => {
-      spawnError = error.message;
-    });
-
     /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
     timers.timedOutTimer = setTimeout(() => {
       timedOut = true;
@@ -1451,7 +1452,7 @@ async function runLinkedTestCommand(
     }, timeoutMs);
     timers.timedOutTimer.unref?.();
 
-    const { code, signal } = await waitForLinkedTestChildClose(child);
+    const { code, signal } = await childClose;
     clearLinkedTestTimers(timers);
     const [stdout, stderr] = await Promise.all([
       readLinkedTestCapture(stdoutPath),
@@ -2090,19 +2091,64 @@ const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   { code: "no_tests_found", regex: /\bNo tests found\b/i },
   { code: "no_matching_tests", regex: /\bNo matching tests?\b/i },
   { code: "collected_zero_items", regex: /\bcollected 0 items?\b/i },
+  {
+    code: "reported_zero_passes",
+    regex:
+      /(?:^\s*(?:#|ℹ)?\s*tests\s+0\s*$[\s\S]*^\s*(?:#|ℹ)?\s*pass\s+0\s*$|^\s*(?:#|ℹ)?\s*pass\s+0\s*$[\s\S]*^\s*(?:#|ℹ)?\s*tests\s+0\s*$)/imu,
+  },
+  {
+    code: "reported_zero_tests",
+    regex: /^\s*(?:#|ℹ)?\s*tests\s+0\s*$/imu,
+  },
+];
+
+const POSITIVE_LINKED_TEST_RUN_PATTERNS = [
+  /^\s*(?:#|ℹ)?\s*tests\s+[1-9]\d*\s*$/imu,
+  /^\s*(?:#|ℹ)?\s*pass\s+[1-9]\d*\s*$/imu,
+  /\bTests?\s+[1-9]\d*\s+passed\b/iu,
+  /\b[1-9]\d*\s+passed\b/iu,
+  /\bTests:\s+(?:.*\b)?[1-9]\d*\s+passed\b/iu,
 ];
 
 function detectEmptyLinkedTestRun(
   stdout: string,
   stderr: string,
-): string | null {
+): { code: string } | null {
   const combined = `${stdout}\n${stderr}`;
   for (const pattern of EMPTY_LINKED_TEST_RUN_PATTERNS) {
     if (pattern.regex.test(combined)) {
-      return pattern.code;
+      return { code: pattern.code };
     }
   }
   return null;
+}
+
+/** Return whether runner output contains a recognized positive executed-test receipt. */
+function hasPositiveLinkedTestRunReceipt(
+  stdout: string,
+  stderr: string,
+): boolean {
+  const combined = `${stdout}\n${stderr}`;
+  return POSITIVE_LINKED_TEST_RUN_PATTERNS.some((pattern) =>
+    pattern.test(combined),
+  );
+}
+
+/** Return whether a linked command applies a runner-level test-name filter that must match at least one test. */
+function commandUsesTestNameFilter(command: string): boolean {
+  const normalized = normalizeCommandForValidation(command);
+  if (
+    /(?:^|\s)(?:--test-name-pattern|--testnamepattern)(?:=|\s)/u.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  return splitNormalizedCommandSegments(normalized).some(
+    (segment) =>
+      /(?:^|\s)-t(?:=|\s)/u.test(segment) &&
+      segmentInvokesUnsafeDirectTestRunner(segment),
+  );
 }
 
 /* c8 ignore start -- linked-test orchestration branch matrix is covered by end-to-end command integration runs */
@@ -2709,7 +2755,7 @@ function buildLinkedTestEmptyRunResult(params: {
   linkedTest: LinkedTest;
   executionContext: NonNullable<TestRunResult["execution_context"]>;
   execution: LinkedTestExecutionResult;
-  emptyRunSignal: string;
+  emptyRunSignal: { code: string };
 }): TestRunResult {
   return {
     command: params.linkedTest.command,
@@ -2721,8 +2767,8 @@ function buildLinkedTestEmptyRunResult(params: {
     stdout: params.execution.stdout,
     stderr: params.execution.stderr,
     error:
-      `Linked test reported an empty test run (${params.emptyRunSignal}) while --fail-on-empty-test-run is enabled. ` +
-      "Update test selection or disable --fail-on-empty-test-run for this run.",
+      `Linked test reported an empty test run (${params.emptyRunSignal.code}). ` +
+      "Update the test selection so at least one test executes; unfiltered commands may opt out by omitting --fail-on-empty-test-run.",
   };
 }
 
@@ -2751,13 +2797,28 @@ function buildLinkedTestPassedExecutionResult(params: {
   execution: LinkedTestExecutionResult;
   options: RunLinkedTestsOptions | undefined;
 }): TestRunResult {
-  if (params.options?.failOnEmptyTestRun === true) {
+  if (
+    params.options?.failOnEmptyTestRun === true ||
+    commandUsesTestNameFilter(params.linkedTest.command ?? "")
+  ) {
     const emptyRunSignal = detectEmptyLinkedTestRun(
       params.execution.stdout,
       params.execution.stderr,
     );
     if (emptyRunSignal) {
       return buildLinkedTestEmptyRunResult({ ...params, emptyRunSignal });
+    }
+    if (
+      commandUsesTestNameFilter(params.linkedTest.command ?? "") &&
+      !hasPositiveLinkedTestRunReceipt(
+        params.execution.stdout,
+        params.execution.stderr,
+      )
+    ) {
+      return buildLinkedTestEmptyRunResult({
+        ...params,
+        emptyRunSignal: { code: "missing_positive_execution_receipt" },
+      });
     }
   }
   const assertionFailures = evaluateLinkedTestAssertions(
@@ -3514,6 +3575,7 @@ export const _testOnlyTestCommand = {
   buildPmContextMismatchHint,
   commandInvokesPmCli,
   commandInvokesPmTrackerReadCommand,
+  commandUsesTestNameFilter,
   copyIntoSandboxIfPresent,
   countLinkedTestItemFiles,
   ensureScope,

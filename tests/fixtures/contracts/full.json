@@ -15692,6 +15692,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "bare_comma_entry_ambiguous",
+      "class": "usage",
+      "code": "bare_comma_entry_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Bare comma entry ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/parse.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "body_file_conflicts_with_body",
       "class": "usage",
       "code": "body_file_conflicts_with_body",
@@ -17176,6 +17193,25 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_history_drift_version_skews"
+      ],
+      "canonical_code": "history_drift_version_skew",
+      "class": "generic_failure",
+      "code": "history_drift_version_skew",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift version skew condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "aliases": [],
       "canonical_code": "merge_conflict_markers_detected",
       "class": "generic_failure",
@@ -18398,23 +18434,6 @@
     },
     {
       "aliases": [],
-      "canonical_code": "merge_reconcile_discards_require_acceptance",
-      "class": "conflict",
-      "code": "merge_reconcile_discards_require_acceptance",
-      "emitting_commands": [
-        "*"
-      ],
-      "exit_code": 4,
-      "meaning": "Merge reconcile discards require acceptance condition.",
-      "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
-      "sources": [
-        "sdk/merge/reconcile.ts"
-      ],
-      "stability": "provisional"
-    },
-    {
-      "aliases": [],
       "canonical_code": "merge_reconcile_receipt_evidence_untrusted",
       "class": "conflict",
       "code": "merge_reconcile_receipt_evidence_untrusted",
@@ -18614,6 +18633,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/cli-contracts/tool-option-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "missing_positive_execution_receipt",
+      "class": "generic_failure",
+      "code": "missing_positive_execution_receipt",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Missing positive execution receipt condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
       ],
       "stability": "provisional"
     },
@@ -18908,6 +18944,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "npm_pack_json_shape_unsupported",
+      "class": "generic_failure",
+      "code": "npm_pack_json_shape_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Npm pack json shape unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
       ],
       "stability": "provisional"
     },
@@ -19509,6 +19562,40 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/reopen.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reported_zero_passes",
+      "class": "generic_failure",
+      "code": "reported_zero_passes",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Reported zero passes condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "reported_zero_tests",
+      "class": "generic_failure",
+      "code": "reported_zero_tests",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Reported zero tests condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
       ],
       "stability": "provisional"
     },
@@ -20754,6 +20841,23 @@
       ],
       "exit_code": 1,
       "meaning": "Validate history drift unreadable streams condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_drift_version_skew",
+      "class": "generic_failure",
+      "code": "validate_history_drift_version_skews",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Validate history drift version skews condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [

@@ -5,6 +5,7 @@ import {
   buildRemediationMap,
   resolveRemediation,
 } from "../../src/core/diagnostics/remediation.js";
+import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
 
 describe("shared remediation registry", () => {
   it("exposes a non-empty, internally-consistent registry", () => {
@@ -17,6 +18,25 @@ describe("shared remediation registry", () => {
       expect(entry.command.length).toBeGreaterThan(0);
       expect(entry.summary.length).toBeGreaterThan(0);
     }
+  });
+
+  it("publishes validate version skew as an alias of the health code", () => {
+    expect(
+      PM_ERROR_CODE_CATALOG.find(
+        ({ code }) => code === "history_drift_version_skew",
+      ),
+    ).toMatchObject({
+      canonical_code: "history_drift_version_skew",
+      aliases: ["validate_history_drift_version_skews"],
+    });
+    expect(
+      PM_ERROR_CODE_CATALOG.find(
+        ({ code }) => code === "validate_history_drift_version_skews",
+      ),
+    ).toMatchObject({
+      canonical_code: "history_drift_version_skew",
+      aliases: [],
+    });
   });
 
   it("keeps every registry code mutually exclusive under colon-boundary matching", () => {
@@ -105,11 +125,11 @@ describe("shared remediation registry", () => {
 
     it("routes pending lossless merge receipts to receipt-aware reconciliation", () => {
       expect(resolveRemediation("merge_receipts_pending:1")?.command).toBe(
-        "pm merge reconcile --dry-run",
+        "pm merge reconcile",
       );
       expect(
         resolveRemediation("history_drift_merge_receipt:pm-merge")?.command,
-      ).toBe("pm merge reconcile --dry-run");
+      ).toBe("pm merge reconcile");
     });
 
     it("resolves pm health locks warnings to gc lock-sweep guidance", () => {
@@ -143,6 +163,12 @@ describe("shared remediation registry", () => {
       ).toBe("npm install -g @unbrained/pm-cli@latest");
       expect(
         resolveRemediation("validate_format_version_ahead_items:1")?.command,
+      ).toBe("npm install -g @unbrained/pm-cli@latest");
+      expect(
+        resolveRemediation("history_drift_version_skew:pm-x")?.command,
+      ).toBe("npm install -g @unbrained/pm-cli@latest");
+      expect(
+        resolveRemediation("validate_history_drift_version_skews:1")?.command,
       ).toBe("npm install -g @unbrained/pm-cli@latest");
     });
 

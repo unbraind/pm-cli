@@ -19,7 +19,6 @@ import { runValidate, type ValidateResult } from "../governance/validate.js";
 import {
   inspectMergeReceiptEvidence,
   markMergeReceiptReconciled,
-  partitionMergeReceipts,
   summarizeMergeReceipt,
   type MergeDecisionReceiptSummary,
 } from "./receipts.js";
@@ -203,28 +202,6 @@ export async function runMergeReconcile(
     );
   }
   const pendingReceipts = receiptEvidence.receipts;
-  const { pendingDecisions: discardedReceipts } =
-    partitionMergeReceipts(pendingReceipts);
-  if (!dryRun && options.force !== true && discardedReceipts.length > 0) {
-    throw new PmCliError(
-      `Merge reconciliation would accept ${discardedReceipts.length} receipt(s) containing discarded scalar values. Review pm merge report and rerun with --force only after deciding which values to retain or re-apply.`,
-      EXIT_CODE.CONFLICT,
-      {
-        code: "merge_reconcile_discards_require_acceptance",
-        required:
-          "Explicitly review every discarded field before accepting reconciliation.",
-        nextSteps: discardedReceipts.map(
-          (receipt) =>
-            `Review receipt ${receipt.id} for ${receipt.item_id}: ${receipt.decisions
-              .map((decision) => decision.field)
-              .join(", ")}.`,
-        ),
-        recovery: {
-          suggested_retry: "pm merge reconcile --dry-run",
-        },
-      },
-    );
-  }
   const receiptsByItem = new Map<string, typeof pendingReceipts>();
   for (const receipt of pendingReceipts) {
     const receipts = receiptsByItem.get(receipt.item_id) ?? [];

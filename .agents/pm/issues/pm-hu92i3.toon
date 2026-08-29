@@ -2,11 +2,13 @@ id: pm-hu92i3
 title: "The annotation key=value grammar has three divergent comma behaviours, two of which silently corrupt the evidence text before it is made immutable"
 description: "Measured on 2026-08-03 against pm 2026.8.3 in a clean isolated sandbox workspace. The key=value CSV grammar shared by every annotation facet (files, docs, notes, learnings, test, dep) resolves an embedded comma three different ways, and two of the three change the text that is then written permanently into the immutable history stream.\n\nProbe, one item, three adds, read back through --json:\n\n- bare value: --add 'path=a.ts,scope=project,note=alpha, beta, gamma' records note 'alpha,beta,gamma'. The value is tokenized on commas and rejoined on a bare comma, so every separator space is lost. Silent, exit 0.\n- backslash escape: --add 'path=b.ts,scope=project,note=escaped\\, value' records note 'escaped\\, value'. The escape is never consumed, so the recorded text carries a literal backslash that the agent did not write. Silent, exit 0.\n- inner quotes: --add 'path=c.ts,scope=project,note=\"quoted, value\"' records note 'quoted, value'. This is the only correct outcome, and it is the only one no help text mentions.\n\npm docs behaves identically to pm files, so this is grammar-level and not per-command.\n\nWhy this is not cosmetic. Evidence notes are the project's stated mechanism for justifying a change, and the Non-Negotiables require every code, docs or test change to be linked with an evidence note. That note is appended to an append-only history stream and hashed into the integrity chain. The chain therefore proves, correctly and permanently, that a corrupted string was recorded. Integrity verification cannot detect this because the corruption happens above the storage layer, before hashing: pm validate --check-history-drift reports ok, because nothing drifted. The record is faithful to a value that was already wrong.\n\nThe failure mode is also biased toward exactly the values that matter most. Prose evidence notes contain commas; ids, paths and enum values do not. So the grammar is lossless for the fields that would be noticed and lossy for the free text that carries the reasoning.\n\nThis is the same class as the closed finding that --add stored the flag-like token '--stdin' as literal content: the annotation parser accepts a shape it cannot faithfully represent and reports success. That one was fixed at the flag-token layer; the separator layer was not covered.\n\nScope is the value-parsing grammar for key=value annotation payloads only. The positional-argument lexicon has its own owner, and the flag-spelling lexicon has its own owner. This is whether a value survives the parser unchanged."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts",evidence,history
 created_at: "2026-08-03T06:20:42.504Z"
-updated_at: "2026-08-09T06:08:30.792Z"
+updated_at: "2026-08-29T06:59:20.349Z"
+closed_at: "2026-08-29T06:59:19.814Z"
+completed_at: "2026-08-29T06:59:19.814Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A comma inside an annotation value round-trips byte-identically through --add and the JSON read, for files, docs, notes, learnings, comments, test and dep; Exactly one documented mechanism exists for embedding a separator in a value, and the other spellings either work identically or fail loudly; A backslash escape is either consumed as an escape or rejected, never stored literally; The chosen mechanism is named in the --help text of every command that accepts the key=value grammar; A regression test asserts the round-trip for all three spellings against a sandbox workspace"
@@ -16,8 +18,9 @@ confidence: high
 severity: high
 environment: "pm 2026.8.3, clean sandbox workspace (PM_PATH isolated), Linux"
 repro_steps: "pm files <id> --add \"path=a.ts,scope=project,note=alpha, beta, gamma\" then pm files <id> --json"
+resolution: "Reworked the shared key-value splitter to preserve post-comma whitespace, consume escaped commas, and retain unrelated escape sequences losslessly."
 expected_result: "The recorded note is the text the agent wrote: 'alpha, beta, gamma'."
-actual_result: "The recorded note is 'alpha,beta,gamma'. The value is split on every comma and rejoined with the bare separator, so the whitespace after each comma is destroyed. Exit code is 0 and nothing warns."
+actual_result: "Annotation text such as alpha, beta, gamma round-trips byte-for-byte while structured delimiters and escaped commas retain their intended grammar."
 component: cli/annotations
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-3oq022,related,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
@@ -29,7 +32,60 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,blocks,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
   pm-ya7x55,related,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
   pm-yql1,blocks,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-03T11:09:26.600Z","harness:codex","Estimate basis 2026-08-03: 300 minutes covers one shared annotation parser, migration-safe grammar choice, all seven annotation surfaces, help text, and byte-round-trip regression matrix."
   "2026-08-09T06:08:30.792Z","harness:claude-code","Still live at 2026.8.9, and the blast radius is wider than annotations. Reproduced unintentionally on 2026-08-09 while linking evidence with pm files, not while probing for it — which is the relevant part, because it means the corruption is reached by ordinary use rather than by adversarial input.\n\nSent:\n  pm files pm-sr3xzg --add \"path=src/sdk/governance/health.ts,scope=project,note=Lines 2512-2520 choose between metadata and withBody, never the light reader\"\n\nStored:\n  note = \"Lines 2512-2520 choose between metadata and withBody,never the light reader\"\n\nThe space after the comma is gone. The parser split the value on the comma, found no '=' in the tail, treated it as a continuation, and rejoined without restoring the separator. The note is not truncated and no warning is emitted, so the failure is invisible at both write time and read time: the text is still plausible English, one character shorter.\n\nTwo observations that extend this item rather than restate it. First, the same grammar governs pm files and pm docs, not only the annotation transports named in the title, so the corrupting behaviour reaches linked-resource notes as well. Second, a note is the field most likely of any to contain natural prose, and prose contains commas — so the field with the highest comma probability in the whole surface is parsed by the grammar least able to carry one. Rate of silent corruption scales with how carefully the author writes.\n\nRecorded during the ecosystem and code review pass of 2026-08-09; the mangled notes on pm-sr3xzg and pm-ulxdqp are left in place as live specimens rather than repaired, so a fix can be verified against real corrupted rows."
+  "2026-08-28T21:26:38.899Z","harness:codex",GitHub #1145 is a current 2026.8.28 reproduction of this canonical lossless annotation-value grammar defect. The GitHub issue now links here; no duplicate PM item was created.
+  "2026-08-28T23:24:27.541Z","harness:codex","Verification evidence: shared parser, release readiness, package extension, and connected recovery suites passed; packed npm and Bun acceptance passed; full coverage passed 8,099 tests at exact 100/100/100/100."
+  "2026-08-29T06:08:49.343Z","harness:codex","Final CodeRabbit review finding: note=alpha,=beta and the colon equivalent treat an empty-key segment as continuable text. Reopened so delimiter-leading segments are rejected through the existing structured input error contract."
+  "2026-08-29T06:28:56.134Z","harness:codex","Final review evidence: comma-separated key/value parsing now rejects delimiter-leading equals and colon segments before continuation handling. Focused regressions, full 8,112-test exact coverage, quality:static, and linked acceptance passed."
+  "2026-08-29T06:45:34.326Z","harness:codex","GitHub #1152 recurrence: newline-separated field-looking note payloads are accepted as literal free text, exposing parser syntax and silently falling back author metadata. Reopened to reject this ambiguous input while retaining ordinary free-form notes."
+  "2026-08-29T06:59:08.338Z","harness:codex","GH-1152 live evidence: replayed the exact newline-separated --note payload in an isolated current-build workspace; it stored author=test and text=hello rather than literal grammar. Added a direct parseLogSeed regression that also proves ordinary free-form notes remain supported. Focused suite passed 12/12; the transient first coverage run timed out one unrelated process at 30 seconds, then a complete terminal rerun passed 586 files and 8,113 tests at exact 60,144/60,144 statements, 45,360/45,360 branches, 12,507/12,507 functions, and 57,914/57,914 lines."
+learnings[2]{created_at,author,text}:
+  "2026-08-29T06:28:55.628Z","harness:codex","A delimiter at byte zero is an empty key, not a continuation segment; parsing must distinguish delimiter absence from delimiter position zero before continuation handling."
+  "2026-08-29T06:59:07.917Z","harness:codex","Version-stamped issue reports must be replayed against the current build before adding parser branches: current newline markdown parsing already satisfied GH-1152, so the right change was an explicit regression and release linkage."
+files[5]{path,scope,note}:
+  src/core/item/parse.ts,project,lossless CSV parser
+  tests/integration/release-readiness-runtime.spec.ts,project,Packed release readiness regression coverage
+  tests/unit/core/item/parse-utils.spec.ts,project,Delimiter-leading empty-key rejection coverage
+  tests/unit/extensions/extension-command.spec.ts,project,npm pack JSON receipt compatibility coverage
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:53:56.706Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+test_runs[2]:
+  - run_id: test-all-local-mte01e7z-w2i7qj
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T06:28:09.349Z"
+    finished_at: "2026-08-29T06:28:28.666Z"
+    recorded_at: "2026-08-29T06:28:28.666Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+  - run_id: test-local-mte15h1r-wyoxx4
+    kind: test
+    status: passed
+    started_at: "2026-08-29T06:59:08.748Z"
+    finished_at: "2026-08-29T06:59:19.311Z"
+    recorded_at: "2026-08-29T06:59:19.311Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "Confirmed GH-1152 is resolved by the current multiline grammar, added an explicit newline-field/free-text regression, and passed linked plus full exact coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: lossless-annotation-comma-grammar
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts tests/unit/extensions/extension-command.spec.ts
+  local_checks[2]: lossless CSV regression suite,packed npm and Bun acceptance
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-hu92i3
 body: ""

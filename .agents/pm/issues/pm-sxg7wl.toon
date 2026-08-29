@@ -1,0 +1,138 @@
+id: pm-sxg7wl
+title: "GH-1148: cached drift mismatch can falsely report tracker corruption"
+description: "GitHub issue #1148 demonstrates that pm health can combine stat-trusted history and item metadata caches into a history_drift_hash_mismatch verdict that strict authoritative rereads disprove, while the diagnostic omits cache invalidation evidence and remediation."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:health","area:history","area:sdk",cache-integrity,context-integrity,github-1148
+created_at: "2026-08-29T00:20:31.873Z"
+updated_at: "2026-08-29T16:28:01.660Z"
+closed_at: "2026-08-29T16:28:01.043Z"
+completed_at: "2026-08-29T16:28:01.043Z"
+author: "harness:codex"
+acceptance_criteria: "Metadata-mode health preserves the warm-cache fast path when cached hashes agree; A cached hash mismatch is never emitted until the item document and history stream are reread authoritatively; Stale cache evidence is replaced and the final diagnostic reports that a strict confirmation occurred; Cache schema records the runtime history-hash capability and invalidates incompatible envelopes; Regression and performance controls cover false-positive recovery, genuine drift retention, and zero extra rereads on clean cache hits; SDK CLI health validate and temporary-workspace acceptance retain contract parity and exact coverage"
+parent: pm-o2kc
+risk: high
+confidence: high
+reporter: GitHub issue #1148
+severity: high
+environment: pm 2026.8.24 and 2026.8.28 on a clean long-lived pm-brief workspace
+repro_steps: "Prime history and metadata caches, restore an older stat-compatible cache state through ordinary git/package operations, then run pm health and compare the hash-mismatch verdict with an authoritative cache-free scan."
+resolution: "Invalidated pre-comparability history drift caches by advancing the schema to v7, forcing authoritative stream verification before metadata mode can reuse legacy rows."
+expected_result: A cache written before supported legacy-final comparability semantics cannot suppress the current item hash comparison.
+actual_result: "Schema-v6 cache rows are rejected under schema v7; the mixed future-writer and unversioned legacy-final negative control now refreshes authoritative evidence and reports the item hash mismatch in metadata mode. Linked 78-test acceptance, full 8,124-test exact coverage, and every static, SDK, graph, record, security, and token gate pass."
+component: "SDK health, history drift cache, metadata cache, and diagnostics"
+customer_impact: A false corruption warning can block releases or induce an agent to rewrite correct immutable history.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2qahia,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
+  pm-c90s,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
+  pm-o2kc,implements,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
+  pm-up22,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
+comments[12]{created_at,author,text}:
+  "2026-08-29T00:20:31.873Z","harness:codex","Duplicate check evidence: complete 2596-item all-status strict read had no omissions; corpus-wide cache search found 20 historical or strategic candidates. Closed pm-up22 owns stat-preserving false-clean prevention, closed pm-c90s owns the intentional metadata health fast path, and closed pm-2qahia owns writer-version skew. None owns the new false-corruption confirmation failure reported by GitHub #1148, so this recurrence is canonical."
+  "2026-08-29T00:27:16.900Z","harness:codex","Implementation evidence: SDK health keeps metadata verification for clean cache hits, but any cached hash, chain, or writer-version candidate now forces canonical item enumeration plus strict stream content hashing. Diagnostics publish candidate, confirmed, and resolved-false-positive sets. History drift cache schema v5 binds the current item-hash capability so incompatible cache meaning is never reused. Focused 73-test regression suite, ESLint, TypeScript projects, and diff hygiene pass."
+  "2026-08-29T00:40:45.398Z","harness:codex","Final verification evidence: full repository coverage passed 586 files and 8,101 tests at exactly 60,128/60,128 statements, 45,317/45,317 branches, 12,500/12,500 functions, and 57,900/57,900 lines. Repository static assurance, SDK/package parity, contract snapshots, agent context/token gates, graph and record-integrity assurances, ESLint, both jscpd profiles with zero clones, TypeScript projects, secret scan, and git diff hygiene all pass. The existing packed npm/Bun/Node SDK and CLI temporary-workspace acceptance remains green for this delivery."
+  "2026-08-29T02:22:17.210Z","harness:codex","Review-round evidence: brief health cache-confirmation vectors are bounded, unsupported cached hash capability rows invalidate regardless of legacy version_skew shape, and confirmed chain corruption remains independent from version skew. The 74-test linked health/drift suite, static gates, and exact coverage pass."
+  "2026-08-29T03:05:20.911Z","harness:codex","Second review-round evidence: strict and content drift verification now always reload authoritative stream evidence before confirming or clearing a cache candidate, so a forged cached writer-version result cannot survive an unchanged content hash. The brief health summary now emits the actual resolved_false_positive_items field. Focused drift/health regressions and the complete 8,108-test exact-coverage gate pass."
+  "2026-08-29T03:06:04.100Z","harness:codex","Linked acceptance: pm test-all selected all four active items and passed 4/4 with 2 executed commands, 2 intentional duplicate skips, zero failures; drift/health executed 75 tests."
+  "2026-08-29T07:13:43.405Z","harness:codex","CodeRabbit exact-head finding: health confirmation lookup assumes slash-normalized metadata-cache keys and its fixture omits required ok, making the focused contract non-portable to Windows. Reopened for path normalization and type-complete coverage."
+  "2026-08-29T07:43:05.066Z","harness:codex","Review closure evidence: health regression fixtures now satisfy the HealthCheck contract and normalize metadata-cache separators before suffix matching, preserving the authoritative stale-cache proof on Windows. The focused 60-test health suite, linked tests, and full exact coverage pass."
+  "2026-08-29T09:36:40.416Z","harness:codex","TDD review evidence: a forged supported-version cache row with chain_ok=true and latest_hash_comparable=false hid a modified item before the fix. Cache loading now rejects that internally inconsistent clean entry and forces authoritative stream verification. Focused green: 4 files, 115/115 tests."
+  "2026-08-29T09:58:28.221Z","harness:codex","Verification: exact repository coverage passed at 100/100/100/100. PM acceptance ran the linked history drift and health command suite: 77/77 tests passed with zero failure categories. Static, contract, and assurance gates passed."
+  "2026-08-29T16:10:11.468Z","harness:codex","Greptile exact-head finding on PR #1149: history drift cache schema v6 predates the supported legacy-final comparability correction. A stat-matched v6 row with version_skew=true and latest_hash_comparable=false can bypass the current item hash comparison in metadata mode. TDD will prove v6 invalidation and authoritative refresh under the next cache schema."
+  "2026-08-29T16:27:50.753Z","harness:codex","Final local evidence: TDD negative control failed before schema fencing and passed after DRIFT_CACHE_VERSION advanced to 7. Canonical linked acceptance passed 78/78 tests; repository coverage passed 586 files and 8,124 tests at 60,169/60,169 statements, 45,397/45,397 branches, 12,514/12,514 functions, and 57,939/57,939 lines; pnpm quality:static passed with prose-edge-gaps exactly 1,343/1,343 and zero record-integrity drift."
+learnings[2]{created_at,author,text}:
+  "2026-08-29T00:40:44.988Z","harness:codex","Cache evidence can safely accelerate a clean verdict, but a corruption verdict is a higher-trust claim: promote it through canonical source reads and content hashing before exposing it to agents. Bind persisted cache semantics to the hash-writer capability so version drift invalidates evidence rather than reinterpreting it."
+  "2026-08-29T07:43:05.489Z","harness:codex",Cross-platform cache regressions should compare normalized portable paths and construct complete public-contract fixtures so platform drift cannot hide the behavior under test.
+files[4]{path,scope,note}:
+  src/core/history/drift-scan.ts,project,Versioned history-drift cache capability fence and content-hash confirmation state
+  src/sdk/governance/health.ts,project,SDK-owned authoritative cached-corruption confirmation and diagnostics
+  tests/unit/commands/health-command.spec.ts,project,End-to-end health regression for stale metadata false corruption and genuine drift retention
+  tests/unit/core/history/drift-scan.spec.ts,project,Unit coverage for cache schema capability invalidation and stat-compatible stale rows
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,project,300,"harness:codex","2026-08-29T00:27:16.453Z",local_mutation,feat/sdk-context-integrity-recovery
+test_runs[6]:
+  - run_id: test-local-mtdn5t85-y3ex07
+    kind: test
+    status: passed
+    started_at: "2026-08-29T00:27:20.933Z"
+    finished_at: "2026-08-29T00:27:40.469Z"
+    recorded_at: "2026-08-29T00:27:40.469Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtdr7pg8-qj7z9n
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T02:21:07.285Z"
+    finished_at: "2026-08-29T02:21:47.233Z"
+    recorded_at: "2026-08-29T02:21:47.233Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtdssmei-8adiyd
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T03:05:22.730Z"
+    finished_at: "2026-08-29T03:05:53.111Z"
+    recorded_at: "2026-08-29T03:05:53.111Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mte2kogd-50fz0x
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T07:39:08.311Z"
+    finished_at: "2026-08-29T07:39:53.562Z"
+    recorded_at: "2026-08-29T07:39:53.562Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mte7hwbo-o81570
+    kind: test
+    status: passed
+    started_at: "2026-08-29T09:56:34.296Z"
+    finished_at: "2026-08-29T09:56:56.676Z"
+    recorded_at: "2026-08-29T09:56:56.676Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtekz7tp-hnc3eo
+    kind: test
+    status: passed
+    started_at: "2026-08-29T16:13:57.183Z"
+    finished_at: "2026-08-29T16:14:19.741Z"
+    recorded_at: "2026-08-29T16:14:19.741Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Agent-facing cache trust and authoritative confirmation contract
+close_reason: "Review recurrence fixed: cache schema v7 invalidates stale legacy comparability evidence; TDD, linked acceptance, exact coverage, and complete static assurance pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: history-drift-cache-authoritative-confirmation
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts
+  local_checks[2]: stale metadata cache false-positive regression,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-sxg7wl
+body: ""

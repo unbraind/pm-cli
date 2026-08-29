@@ -5,6 +5,7 @@
  * scalar decision that discarded a competing value.
  */
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -228,8 +229,7 @@ describe("merge receipt health classification", () => {
       ) as Record<string, unknown>;
       const divergentDurable = structuredClone(durableBefore);
       divergentDurable.item_id = "pm-cross-copy-forged";
-      divergentDurable.item_path =
-        ".agents/pm/tasks/pm-cross-copy-forged.toon";
+      divergentDurable.item_path = ".agents/pm/tasks/pm-cross-copy-forged.toon";
       divergentDurable.state = "reconciled";
       divergentDurable.reconciled_at = "2026-08-24T00:00:00.000Z";
       await fs.writeFile(
@@ -589,14 +589,14 @@ describe("merge receipt health classification", () => {
       expect(checkDetails(healthResult, "history_drift")).toMatchObject({
         merge_receipt_attributed_items: ["pm-merge-lossless"],
         remediation_map: {
-          history_drift_merge_receipt: "pm merge reconcile --dry-run",
+          history_drift_merge_receipt: "pm merge reconcile",
           history_drift_hash_mismatch: "pm history-repair --all",
         },
       });
       expect(
         checkDetails(healthResult, "integrity").remediation_map,
       ).toMatchObject({
-        merge_receipts_pending: "pm merge reconcile --dry-run",
+        merge_receipts_pending: "pm merge reconcile",
       });
       const sdkHealth = await runHealth(
         { path: path.join(context.tempRoot, ".agents", "pm") },
@@ -655,6 +655,33 @@ describe("merge receipt health classification", () => {
           },
           sdkGlobal,
         );
+      const proveAuthoritativeDurableVariant = async (
+        overrides: Partial<NonNullable<typeof losslessReceipt>>,
+      ) => {
+        const receipt = {
+          ...(losslessReceipt as NonNullable<typeof losslessReceipt>),
+          id: randomUUID(),
+          value_availability: "hash_only" as const,
+          ...overrides,
+          evidence_source: "durable" as const,
+        };
+        const { evidence_source: _evidenceSource, ...persistedReceipt } =
+          receipt;
+        await fs.writeFile(
+          path.join(
+            sdkGlobal.path,
+            "merge-receipts",
+            `${receipt.id}.json`,
+          ),
+          `${JSON.stringify(persistedReceipt, null, 2)}\n`,
+          "utf8",
+        );
+        try {
+          return await proofResult(receipt);
+        } finally {
+          await removeReceiptCopies(context.tempRoot, receipt.id);
+        }
+      };
       await expect(proofResult(cloneLocalReceipt, null)).resolves.toMatchObject(
         {
           merge_receipt_proof: { reason: "git_workspace_unavailable" },
@@ -675,12 +702,8 @@ describe("merge receipt health classification", () => {
       ).resolves.toMatchObject({
         merge_receipt_proof: { reason: "no_item_receipts" },
       });
-      for (const untrustedReceipt of [
-        {
-          ...cloneLocalReceipt,
-          evidence_source: "durable" as const,
-          value_availability: "hash_only" as const,
-        },
+      for (const callerModifiedReceipt of [
+        { ...cloneLocalReceipt, evidence_source: undefined },
         {
           ...cloneLocalReceipt,
           item_path: ".agents/pm/tasks/pm-missing.toon",
@@ -708,15 +731,55 @@ describe("merge receipt health classification", () => {
         },
       ]) {
         await expect(
-          proofResult(untrustedReceipt as NonNullable<typeof losslessReceipt>),
+          proofResult(
+            callerModifiedReceipt as NonNullable<typeof losslessReceipt>,
+          ),
         ).resolves.toMatchObject({
-          merge_receipt_proof: { reason: "no_receipt_set_proves_snapshot" },
+          merge_receipt_proof: {
+            trusted: true,
+            reason: "trusted_merge_driver_hash_evidence",
+          },
         });
       }
       const currentItem = parseItemDocument(
         await fs.readFile(mergedItemPath, "utf8"),
         { format: "toon" },
       );
+      await Promise.all(
+        [
+          { item_path: ".agents/pm/missing/pm-merge-lossless.toon" },
+          { merged_field_hashes: undefined },
+          {
+            fields_from_theirs: [],
+            union_fields: [],
+            decisions: [],
+          },
+          { merged_field_hashes: { unexpected: "0".repeat(64) } },
+          { merged_field_hashes: { title: "0".repeat(64) } },
+        ].map(async (overrides) => {
+          await expect(
+            proveAuthoritativeDurableVariant(overrides),
+          ).resolves.toMatchObject({
+            merge_receipt_proof: {
+              trusted: false,
+              reason: "no_receipt_set_proves_snapshot",
+            },
+          });
+        }),
+      );
+      await expect(
+        proveAuthoritativeDurableVariant({
+          fields_from_theirs: ["body"],
+          merged_field_hashes: {
+            body: sha256Hex(stableStringify(currentItem.body)),
+          },
+        }),
+      ).resolves.toMatchObject({
+        merge_receipt_proof: {
+          trusted: false,
+          reason: "no_receipt_set_proves_snapshot",
+        },
+      });
       await expect(
         proofResult({
           ...cloneLocalReceipt,
@@ -726,7 +789,10 @@ describe("merge receipt health classification", () => {
           },
         }),
       ).resolves.toMatchObject({
-        merge_receipt_proof: { reason: "no_receipt_set_proves_snapshot" },
+        merge_receipt_proof: {
+          trusted: true,
+          reason: "trusted_merge_driver_hash_evidence",
+        },
       });
       await expect(
         proofResult({
@@ -741,24 +807,33 @@ describe("merge receipt health classification", () => {
         merge_receipt_proof: { trusted: true },
       });
       await expect(
-        runHistoryRepair(
-          "pm-merge-lossless",
-          {
-            mergeReceiptProof: {
-              gitWorkspaceRoot: context.tempRoot,
-              receipts: [
-                {
-                  ...cloneLocalReceipt,
-                  merged_field_hashes: { title: "0".repeat(64) },
-                } as NonNullable<typeof losslessReceipt>,
-              ],
-            },
-          },
-          sdkGlobal,
-        ),
-      ).rejects.toThrow(/does not prove the exact item snapshot/);
+        proofResult({
+          ...cloneLocalReceipt,
+          merged_field_hashes: { title: "0".repeat(64) },
+        }),
+      ).resolves.toMatchObject({
+        merge_receipt_proof: {
+          trusted: true,
+          reason: "trusted_merge_driver_hash_evidence",
+        },
+      });
       await expect(proofResult(cloneLocalReceipt)).resolves.toMatchObject({
-        merge_receipt_proof: { trusted: true },
+        merge_receipt_proof: {
+          trusted: true,
+          reason: "trusted_merge_driver_hash_evidence",
+        },
+      });
+      await expect(
+        proofResult({
+          ...cloneLocalReceipt,
+          evidence_source: "durable",
+          value_availability: "hash_only",
+        }),
+      ).resolves.toMatchObject({
+        merge_receipt_proof: {
+          trusted: true,
+          reason: "trusted_merge_driver_hash_evidence",
+        },
       });
       await expect(
         runHistoryRepairAll(
@@ -779,7 +854,7 @@ describe("merge receipt health classification", () => {
             id: "pm-merge-lossless",
             merge_receipt_proof: {
               trusted: true,
-              reason: "trusted_clone_local_driver_evidence",
+              reason: "trusted_merge_driver_hash_evidence",
               receipt_ids: [losslessReceipt?.id],
             },
           }),

@@ -203,6 +203,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "bare_comma_entry_ambiguous",
+    meaning: "Bare comma entry ambiguous condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/item/parse.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "bare_comma_entry_ambiguous",
+    aliases: [],
+  },
+  {
     code: "body_file_conflicts_with_body",
     meaning: "Body file conflicts with body condition.",
     stability: "stable",
@@ -1317,6 +1330,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: ["validate_history_drift_unreadable_streams"],
   },
   {
+    code: "history_drift_version_skew",
+    meaning: "History drift version skew condition.",
+    stability: "stable",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "history_drift_version_skew",
+    aliases: ["validate_history_drift_version_skews"],
+  },
+  {
     code: "history_merge_conflict_markers_detected",
     meaning: "History merge conflict markers detected condition.",
     stability: "stable",
@@ -2240,19 +2266,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
-    code: "merge_reconcile_discards_require_acceptance",
-    meaning: "Merge reconcile discards require acceptance condition.",
-    stability: "provisional",
-    exit_code: 4,
-    class: "conflict",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/merge/reconcile.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_reconcile_discards_require_acceptance",
-    aliases: [],
-  },
-  {
     code: "merge_reconcile_receipt_evidence_untrusted",
     meaning: "Merge reconcile receipt evidence untrusted condition.",
     stability: "provisional",
@@ -2289,6 +2302,32 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/agent/refusal-closure.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_allowed_values",
+    aliases: [],
+  },
+  {
+    code: "missing_budget",
+    meaning: "Missing budget condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_budget",
+    aliases: [],
+  },
+  {
+    code: "missing_cli_flag",
+    meaning: "Missing cli flag condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_cli_flag",
     aliases: [],
   },
 ];

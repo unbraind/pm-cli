@@ -30,6 +30,20 @@ const CONTINUABLE_VALUE_KEYS = new Set([
   "why_now",
 ]);
 
+/** Classify plaintext as structured key/value input using an explicit accepted-key vocabulary. */
+export function looksLikeStructuredKeyValueEntry(
+  raw: string,
+  keys: readonly string[],
+): boolean {
+  if (raw.startsWith("```") || raw.includes("\n")) {
+    return true;
+  }
+  const keyPattern = keys
+    .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  return new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw);
+}
+
 /** Implements parse tags for the public runtime surface of this module. */
 export function parseTags(raw: string): string[] {
   const trimmed = raw.trim();
@@ -219,17 +233,17 @@ function splitCsvSegments(raw: string): string[] {
   const segments: string[] = [];
   let current = "";
   let inQuotes = false;
-  let escaped = false;
 
-  for (const char of raw) {
-    if (escaped) {
-      current += char;
-      escaped = false;
+  for (let index = 0; index < raw.length; index += 1) {
+    const char = raw[index];
+    if (char === "\\" && raw[index + 1] === ",") {
+      current += ",";
+      index += 1;
       continue;
     }
-    if (char === "\\") {
-      current += char;
-      escaped = true;
+    if (char === "\\" && raw[index + 1] !== undefined) {
+      current += `${char}${raw[index + 1]}`;
+      index += 1;
       continue;
     }
     if (char === '"') {
@@ -238,14 +252,14 @@ function splitCsvSegments(raw: string): string[] {
       continue;
     }
     if (char === "," && !inQuotes) {
-      segments.push(current.trim());
+      segments.push(current);
       current = "";
       continue;
     }
     current += char;
   }
   if (current.trim()) {
-    segments.push(current.trim());
+    segments.push(current);
   }
   return segments;
 }
@@ -267,8 +281,8 @@ function unquoteValue(value: string): string {
 function findKeyValueDelimiter(segment: string): number {
   const equalsIndex = segment.indexOf("=");
   const colonIndex = segment.indexOf(":");
-  const hasEquals = equalsIndex > 0;
-  const hasColon = colonIndex > 0;
+  const hasEquals = equalsIndex >= 0;
+  const hasColon = colonIndex >= 0;
   if (hasEquals && hasColon) {
     return Math.min(equalsIndex, colonIndex);
   }
@@ -381,15 +395,21 @@ export function parseCsvKv(
 
   for (const segment of segments) {
     const delimiterIndex = findKeyValueDelimiter(segment);
-    if (delimiterIndex > 0) {
+    if (delimiterIndex >= 0) {
       const key = segment.slice(0, delimiterIndex).trim();
+      if (!key) {
+        throw new PmCliError(
+          buildInvalidKvMessage(raw, optionName),
+          EXIT_CODE.USAGE,
+        );
+      }
       const value = unquoteValue(segment.slice(delimiterIndex + 1).trim());
       result[key] = value;
       activeKey = key;
       continue;
     }
     if (activeKey && CONTINUABLE_VALUE_KEYS.has(activeKey.toLowerCase())) {
-      result[activeKey] = `${result[activeKey]},${segment.trim()}`;
+      result[activeKey] = `${result[activeKey]},${segment}`;
       continue;
     }
     throw new PmCliError(
@@ -421,6 +441,24 @@ export function looksLikeGenericKeyValueEntry(raw: string): boolean {
     return false;
   }
   return GENERIC_LEADING_KV_KEY_PATTERN.test(trimmed);
+}
+
+/** Refuse a comma-bearing bare value whose meaning depends on guessing whether the comma separates values or belongs to one value. */
+export function assertNoAmbiguousBareCommaEntry(
+  raw: string,
+  optionName: string,
+  noun: string,
+  structured: boolean,
+): void {
+  if (structured || !raw.includes(",")) return;
+  throw new PmCliError(
+    `${optionName} received an ambiguous comma-bearing bare ${noun}. Repeat ${optionName} for multiple values, or quote or escape literal commas in a structured key=<value> entry.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "bare_comma_entry_ambiguous",
+      required: `Use one ${optionName} per bare ${noun}, or quote or escape literal commas in a structured key=<value> entry.`,
+    },
+  );
 }
 
 /**

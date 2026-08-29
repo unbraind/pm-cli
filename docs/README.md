@@ -68,6 +68,7 @@ pm guide release --json
 - [Recurrence and Executable Recovery Contracts](RECURRENCE_RECOVERY_CONTRACTS.md) - terminal-item recurrence, duplicate-intake routing, capability-aware reindex recovery, and target-aware generated test guidance.
 - [Trustworthy Context and Evidence Contracts](TRUSTWORTHY_CONTEXT_EVIDENCE.md) - full-record assurance, graph composition, boolean health rows, lossless linked-test removal, and role-labelled recovery.
 - [Context Integrity Contracts](CONTEXT_INTEGRITY_CONTRACTS.md) - sparse-read identity, closed extension manifests, lossless remote docs, direction-locked graph impact, and cross-version history epochs.
+- [Context Integrity and Recovery Primitives](CONTEXT_RECOVERY_PRIMITIVES.md) - lossless metadata, write-time link receipts, executed-test evidence, external blockers, npm receipts, history capabilities, and truthful recovery.
 - [SDK Evidence Traceability and Integrity](SDK_EVIDENCE_TRACEABILITY.md) - reverse source-to-item lookup, atomic evidence replacement, no-op history, linked-test collision classification, and telemetry drain receipts.
 - [SDK Context and Evidence Contracts](SDK_CONTEXT_EVIDENCE_CONTRACTS.md) - material omission receipts, scoped preflight activation, truthful merge preference, claim-race classification, and versioned history hashes.
 - [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md) - deterministic SDK recipes and content-addressed authoritative tracker restore points.

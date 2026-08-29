@@ -352,6 +352,12 @@ describe("core/item/parse", () => {
     expect(() => parseCsvKv("path=README.md, =value", "--file")).toThrow(
       'Invalid --file value "path=README.md, =value"',
     );
+    expect(() => parseCsvKv("note=alpha,=beta", "--file")).toThrow(
+      'Invalid --file value "note=alpha,=beta"',
+    );
+    expect(() => parseCsvKv("note=alpha,:beta", "--file")).toThrow(
+      'Invalid --file value "note=alpha,:beta"',
+    );
     expect(() => parseCsvKv("```", "--file")).toThrow(
       'Invalid --file value "```"',
     );

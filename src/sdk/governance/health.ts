@@ -1547,32 +1547,62 @@ const HEALTH_DETAIL_SUMMARIZERS = {
       skipped: details.skipped,
     };
   },
-  history_drift: (details, limit) => ({
-    checked_items: details.checked_items,
-    counts: details.counts,
-    drifted_items: summarizeStringList(details.drifted_items, limit),
-    merge_receipt_attributed_items: summarizeStringList(
-      details.merge_receipt_attributed_items,
-      limit,
-    ),
-    missing_streams: summarizeStringList(details.missing_streams, limit),
-    unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
-    hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
-    chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
-    workspace_state_mismatches: summarizeStringList(
-      details.workspace_state_mismatches,
-      limit,
-    ),
-    workspace_state_missing: summarizeStringList(
-      details.workspace_state_missing,
-      limit,
-    ),
-    workspace_state_unreadable: summarizeStringList(
-      details.workspace_state_unreadable,
-      limit,
-    ),
-    skipped: details.skipped,
-  }),
+  history_drift: (details, limit) => {
+    const cacheConfirmation =
+      typeof details.cache_confirmation === "object" &&
+      details.cache_confirmation !== null
+        ? (details.cache_confirmation as Record<string, unknown>)
+        : undefined;
+    return {
+      checked_items: details.checked_items,
+      cache_hit_verification: details.cache_hit_verification,
+      cache_confirmation:
+        cacheConfirmation === undefined
+          ? details.cache_confirmation
+          : {
+              ...cacheConfirmation,
+              candidate_items: summarizeStringList(
+                cacheConfirmation.candidate_items,
+                limit,
+              ),
+              confirmed_items: summarizeStringList(
+                cacheConfirmation.confirmed_items,
+                limit,
+              ),
+              resolved_false_positive_items: summarizeStringList(
+                cacheConfirmation.resolved_false_positive_items,
+                limit,
+              ),
+            },
+      counts: details.counts,
+      drifted_items: summarizeStringList(details.drifted_items, limit),
+      merge_receipt_attributed_items: summarizeStringList(
+        details.merge_receipt_attributed_items,
+        limit,
+      ),
+      missing_streams: summarizeStringList(details.missing_streams, limit),
+      unreadable_streams: summarizeStringList(
+        details.unreadable_streams,
+        limit,
+      ),
+      hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
+      chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
+      version_skews: summarizeStringList(details.version_skews, limit),
+      workspace_state_mismatches: summarizeStringList(
+        details.workspace_state_mismatches,
+        limit,
+      ),
+      workspace_state_missing: summarizeStringList(
+        details.workspace_state_missing,
+        limit,
+      ),
+      workspace_state_unreadable: summarizeStringList(
+        details.workspace_state_unreadable,
+        limit,
+      ),
+      skipped: details.skipped,
+    };
+  },
   vectorization: (details, limit) => ({
     semantic_runtime_available: details.semantic_runtime_available,
     compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,
@@ -2183,26 +2213,66 @@ async function buildLocksCheck(
   };
 }
 
-async function buildHistoryDriftCheck(
-  pmRoot: string,
-  items: ItemWithBody[],
-): Promise<{ check: HealthCheck; warnings: string[] }> {
+async function buildHistoryDriftCheck(params: {
+  pmRoot: string;
+  items: ItemWithBody[];
+  settings: PmSettings;
+  typeRegistry: HealthTypeRegistry;
+  itemReadWarnings: string[];
+}): Promise<{ check: HealthCheck; warnings: string[] }> {
   const cacheHitVerification = "metadata" as const;
+  let items = params.items;
+  let drift = await scanHistoryDrift(params.pmRoot, items, {
+    cacheHitVerification,
+  });
+  const cacheConfirmationCandidates = [
+    ...new Set([
+      ...drift.hashMismatches,
+      ...drift.chainMismatches,
+      ...drift.versionSkews,
+    ]),
+  ].sort((left, right) => left.localeCompare(right));
+  let confirmedItems: string[] = [];
+  let resolvedFalsePositiveItems: string[] = [];
+  if (cacheConfirmationCandidates.length > 0) {
+    items = await listAllItemMetadataWithBody(
+      params.pmRoot,
+      params.settings.item_format,
+      params.typeRegistry.type_to_folder,
+      params.itemReadWarnings,
+      params.settings.schema,
+      { forceSourceScan: true },
+    );
+    drift = await scanHistoryDrift(params.pmRoot, items);
+    confirmedItems = [
+      ...new Set([
+        ...drift.hashMismatches,
+        ...drift.chainMismatches,
+        ...drift.versionSkews,
+      ]),
+    ].sort((left, right) => left.localeCompare(right));
+    const confirmedSet = new Set(confirmedItems);
+    resolvedFalsePositiveItems = cacheConfirmationCandidates.filter(
+      (id) => !confirmedSet.has(id),
+    );
+  }
   const {
     missingStreams,
     unreadableStreams,
     hashMismatches,
     chainMismatches,
+    versionSkews,
     driftedItems,
     workspaceStateMismatches,
     workspaceStateMissing,
     workspaceStateUnreadable,
-  } = await scanHistoryDrift(pmRoot, items, { cacheHitVerification });
+  } = drift;
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
     ...unreadableStreams.map((id) => `history_drift_unreadable_stream:${id}`),
     ...hashMismatches.map((id) => `history_drift_hash_mismatch:${id}`),
     ...chainMismatches.map((id) => `history_drift_chain_mismatch:${id}`),
+    ...versionSkews.map((id) => `history_drift_version_skew:${id}`),
     ...workspaceStateMismatches.map(
       (documentPath) =>
         `history_drift_workspace_state_mismatch:${documentPath}`,
@@ -2222,7 +2292,21 @@ async function buildHistoryDriftCheck(
       ok: warnings.length === 0,
       details: {
         checked_items: items.length,
-        cache_hit_verification: cacheHitVerification,
+        cache_hit_verification:
+          cacheConfirmationCandidates.length > 0
+            ? "metadata_then_content_hash"
+            : cacheHitVerification,
+        cache_confirmation: {
+          triggered: cacheConfirmationCandidates.length > 0,
+          reason:
+            cacheConfirmationCandidates.length > 0
+              ? "cached_corruption_candidate"
+              : null,
+          candidate_items: cacheConfirmationCandidates,
+          confirmed_items: confirmedItems,
+          resolved_false_positive_items: resolvedFalsePositiveItems,
+          authoritative_item_source: cacheConfirmationCandidates.length > 0,
+        },
         drifted_items: driftedItems,
         counts: {
           drifted: driftedItems.length,
@@ -2230,6 +2314,7 @@ async function buildHistoryDriftCheck(
           unreadable_streams: unreadableStreams.length,
           hash_mismatches: hashMismatches.length,
           chain_mismatches: chainMismatches.length,
+          version_skews: versionSkews.length,
           workspace_state_mismatches: workspaceStateMismatches.length,
           workspace_state_missing: workspaceStateMissing.length,
           workspace_state_unreadable: workspaceStateUnreadable.length,
@@ -2238,6 +2323,7 @@ async function buildHistoryDriftCheck(
         unreadable_streams: unreadableStreams,
         hash_mismatches: hashMismatches,
         chain_mismatches: chainMismatches,
+        version_skews: versionSkews,
         workspace_state_mismatches: workspaceStateMismatches,
         workspace_state_missing: workspaceStateMissing,
         workspace_state_unreadable: workspaceStateUnreadable,
@@ -3027,7 +3113,10 @@ function rewriteBulkHealthRemediation(params: {
 }): void {
   if (params.check.name === "history_drift" && params.historyDriftedCount > 1) {
     for (const code of Object.keys(params.remediationMap)) {
-      if (code !== "history_drift_merge_receipt") {
+      if (
+        code !== "history_drift_merge_receipt" &&
+        code !== "history_drift_version_skew"
+      ) {
         params.remediationMap[code] = "pm history-repair --all";
       }
     }
@@ -3222,7 +3311,6 @@ export async function runHealth(
     itemReadWarnings,
   });
   const itemsWithBody = items as Array<ItemMetadata & { body: string }>;
-  const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
   const historyPolicy = skipPolicy.skipDrift
     ? { warnings: [] }
     : await enforceHistoryStreamPolicyForItems({
@@ -3273,7 +3361,14 @@ export async function runHealth(
       );
   const historyDriftCheck = skipPolicy.skipDrift
     ? buildSkippedHealthCheck("history_drift")
-    : await buildHistoryDriftCheck(pmRoot, itemsWithBody);
+    : await buildHistoryDriftCheck({
+        pmRoot,
+        items: itemsWithBody,
+        settings,
+        typeRegistry,
+        itemReadWarnings,
+      });
+  const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
   const mergeReceiptAttributedHistoryDriftItems =
     await correlateMergeReceiptHistoryDriftItems({
       gitWorkspaceRoot: integrityCheck.gitWorkspaceRoot,

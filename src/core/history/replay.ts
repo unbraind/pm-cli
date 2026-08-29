@@ -216,6 +216,18 @@ function supportedExplicitHistoryItemHashVersions(
   ];
 }
 
+/** Return whether an explicit hash epoch cannot be replayed by this build. */
+function isUnsupportedExplicitHistoryItemHashVersion(
+  version: HistoryEntry["item_hash_version"],
+): boolean {
+  return (
+    version !== undefined &&
+    !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+      version,
+    )
+  );
+}
+
 /** Select the hash epochs allowed for one entry under an authoritative stream marker. */
 function historyEntryHashCandidates(
   explicitVersion: HistoryEntry["item_hash_version"],
@@ -225,7 +237,7 @@ function historyEntryHashCandidates(
     return [explicitVersion as HistoryItemHashVersion];
   }
   return authoritativeVersion === undefined
-    ? [1, CURRENT_HISTORY_ITEM_HASH_VERSION]
+    ? [...SUPPORTED_HISTORY_ITEM_HASH_VERSIONS]
     : [authoritativeVersion];
 }
 
@@ -239,27 +251,37 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   let replay = cloneEmptyReplayDocument();
   let detectedVersion: HistoryItemHashVersion | undefined;
   let authoritativeExplicitVersion: HistoryItemHashVersion | undefined;
+  const errors: string[] = [];
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
-    if (
-      explicitVersion !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-        explicitVersion,
-      )
-    ) {
-      return {
-        ok: false,
-        errors: [
-          `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
-        ],
-      };
+    if (isUnsupportedExplicitHistoryItemHashVersion(explicitVersion)) {
+      errors.push(
+        `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
+      );
+      const applied = tryApplyReplayPatch(replay, entry.patch);
+      if (!applied.ok) {
+        return {
+          ok: false,
+          errors: [
+            ...errors,
+            `verify_failed:patch_apply_failed:entry_${index + 1}`,
+          ],
+        };
+      }
+      replay = applied.document;
+      detectedVersion = undefined;
+      authoritativeExplicitVersion = undefined;
+      continue;
     }
     const applied = tryApplyReplayPatch(replay, entry.patch);
     if (!applied.ok) {
       return {
         ok: false,
-        errors: [`verify_failed:patch_apply_failed:entry_${index + 1}`],
+        errors: [
+          ...errors,
+          `verify_failed:patch_apply_failed:entry_${index + 1}`,
+        ],
       };
     }
     // Prefer legacy epoch 1 when an unversioned entry is valid under both
@@ -275,7 +297,10 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     if (beforeMatches.length === 0) {
       return {
         ok: false,
-        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
+        errors: [
+          ...errors,
+          `verify_failed:before_hash_mismatch:entry_${index + 1}`,
+        ],
       };
     }
     const version = beforeMatches.find(
@@ -285,14 +310,26 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     if (version === undefined) {
       return {
         ok: false,
-        errors: [`verify_failed:after_hash_mismatch:entry_${index + 1}`],
+        errors: [
+          ...errors,
+          `verify_failed:after_hash_mismatch:entry_${index + 1}`,
+        ],
       };
     }
     replay = applied.document;
     detectedVersion = version;
-    if (explicitVersion !== undefined) {
-      authoritativeExplicitVersion = version;
-    }
+    authoritativeExplicitVersion =
+      (explicitVersion as HistoryItemHashVersion | undefined) ??
+      authoritativeExplicitVersion;
+  }
+  if (errors.length > 0) {
+    return {
+      ok: false,
+      errors,
+      ...(detectedVersion === undefined
+        ? {}
+        : { item_hash_version: detectedVersion }),
+    };
   }
   return {
     ok: true,
@@ -442,12 +479,8 @@ export function reanchorHistoryEntries(
   entries: HistoryEntry[],
   itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
 ): ReanchorResult {
-  const unsupportedIndex = entries.findIndex(
-    (entry) =>
-      entry.item_hash_version !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-        entry.item_hash_version,
-      ),
+  const unsupportedIndex = entries.findIndex((entry) =>
+    isUnsupportedExplicitHistoryItemHashVersion(entry.item_hash_version),
   );
   if (unsupportedIndex >= 0) {
     throw new TypeError(

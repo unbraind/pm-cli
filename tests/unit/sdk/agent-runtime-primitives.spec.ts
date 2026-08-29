@@ -9,7 +9,10 @@ import {
   setActiveCommandContext,
   type ExtensionLoadResult,
 } from "../../../src/core/extensions/index.js";
-import { createHistoryEntry } from "../../../src/core/history/history.js";
+import {
+  CURRENT_HISTORY_ITEM_HASH_VERSION,
+  createHistoryEntry,
+} from "../../../src/core/history/history.js";
 import {
   detectAgentIdentity,
   diagnoseAgentIdentity,
@@ -813,7 +816,7 @@ describe("agent runtime SDK primitives", () => {
           patch: expect.any(Array),
           before_hash: expect.any(String),
           after_hash: expect.any(String),
-          item_hash_version: 2,
+          item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
         },
         {
           op: "close",
@@ -835,7 +838,7 @@ describe("agent runtime SDK primitives", () => {
           patch: expect.any(Array),
           before_hash: expect.any(String),
           after_hash: expect.any(String),
-          item_hash_version: 2,
+          item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
         },
       ]);
     });

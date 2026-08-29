@@ -52,6 +52,7 @@ import type {
 } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
 import {
+  inspectMergeReceiptEvidence,
   summarizeMergeReceipt,
   type MergeDecisionReceipt,
 } from "./merge/receipts.js";
@@ -147,7 +148,7 @@ export interface MergeReceiptProofResult {
   trusted: boolean;
   /** Stable explanation for the trust decision. */
   reason:
-    | "trusted_clone_local_driver_evidence"
+    | "trusted_merge_driver_hash_evidence"
     | "git_workspace_unavailable"
     | "item_path_unavailable"
     | "no_item_receipts"
@@ -368,7 +369,6 @@ async function verifyReceiptAgainstSnapshot(params: {
   receipt: MergeDecisionReceipt;
   declaredFields: string[];
 } | null> {
-  if (params.receipt.evidence_source !== "clone_local") return null;
   const receiptPath = await canonicalRealPath(
     path.resolve(params.gitWorkspaceRoot, params.receipt.item_path),
   );
@@ -379,12 +379,10 @@ async function verifyReceiptAgainstSnapshot(params: {
       ...params.receipt.union_fields,
       ...params.receipt.decisions.map((decision) => decision.field),
     ]),
-  ].sort((left, right) => left.localeCompare(right));
+  ].sort();
   const hashes = params.receipt.merged_field_hashes;
   if (!hashes || declaredFields.length === 0) return null;
-  const hashFields = Object.keys(hashes).sort((left, right) =>
-    left.localeCompare(right),
-  );
+  const hashFields = Object.keys(hashes).sort();
   if (
     declaredFields.length !== hashFields.length ||
     declaredFields.some((field, index) => field !== hashFields[index])
@@ -456,7 +454,7 @@ async function verifyMergeReceiptProof(params: {
   ) {
     return {
       trusted: true,
-      reason: "trusted_clone_local_driver_evidence",
+      reason: "trusted_merge_driver_hash_evidence",
       receipt_ids: trustedReceipts.map(({ receipt }) => receipt.id),
     };
   }
@@ -477,6 +475,7 @@ interface HistoryRepairItemReplayContext {
 
 async function resolveHistoryRepairMergeEvidence(params: {
   options: HistoryRepairCommandOptions;
+  pmRoot: string;
   subjectId: string;
   itemReplayContext: HistoryRepairItemReplayContext;
   reconciliation: HistoryRepairReconciliationReport | undefined;
@@ -484,9 +483,26 @@ async function resolveHistoryRepairMergeEvidence(params: {
   mergeReceiptProof: MergeReceiptProofResult | undefined;
   effectiveAuditContext: Record<string, unknown> | undefined;
 }> {
+  const requestedReceiptIds = new Set(
+    params.options.mergeReceiptProof?.receipts
+      .filter((receipt) => receipt.item_id === params.subjectId)
+      .map((receipt) => receipt.id) ?? [],
+  );
+  const authoritativeReceiptEvidence = params.options.mergeReceiptProof
+    ? await inspectMergeReceiptEvidence(
+        params.options.mergeReceiptProof.gitWorkspaceRoot ?? process.cwd(),
+        {
+          includeReconciled: true,
+          includeLossless: true,
+          pmRoot: params.pmRoot,
+        },
+      )
+    : undefined;
   const subjectMergeReceipts =
-    params.options.mergeReceiptProof?.receipts.filter(
-      (receipt) => receipt.item_id === params.subjectId,
+    authoritativeReceiptEvidence?.receipts.filter(
+      (receipt) =>
+        receipt.item_id === params.subjectId &&
+        requestedReceiptIds.has(receipt.id),
     ) ?? [];
   const mergeReceiptProof = params.options.mergeReceiptProof
     ? await verifyMergeReceiptProof({
@@ -512,7 +528,7 @@ async function resolveHistoryRepairMergeEvidence(params: {
       {
         code: "merge_reconcile_receipt_evidence_untrusted",
         required:
-          "Use clone-local driver evidence whose canonical path, declared fields, and merged-value hashes match the current item, or review the mismatch and rerun with --force.",
+          "Use authoritative clone-local or durable receipt evidence whose canonical path, declared fields, and merged-value hashes match the current item, or review the mismatch and rerun with --force.",
         recovery: { suggested_retry: "pm merge reconcile --dry-run" },
       },
     );
@@ -782,6 +798,7 @@ export async function runHistoryRepair(
   const { mergeReceiptProof, effectiveAuditContext } =
     await resolveHistoryRepairMergeEvidence({
       options,
+      pmRoot,
       subjectId: subject.id,
       itemReplayContext,
       reconciliation,

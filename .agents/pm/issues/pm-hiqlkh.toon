@@ -2,11 +2,13 @@ id: pm-hiqlkh
 title: "GH-1137: linked docs writes silently persist nonexistent workspace paths"
 description: "Track GitHub issue #1137: `pm docs <id> --add` accepts and persists a local project path that does not exist, reports success, and leaves validation to a separate opt-in read. The durable dangling link then contaminates future agent context and is absent from the default health signal."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,context-integrity,docs,github,linked-resources
 created_at: "2026-08-28T14:42:57.920Z"
-updated_at: "2026-08-28T20:44:39.545Z"
+updated_at: "2026-08-28T23:38:20.143Z"
+closed_at: "2026-08-28T23:26:23.032Z"
+completed_at: "2026-08-28T23:26:23.032Z"
 author: "harness:codex"
 estimated_minutes: 420
 acceptance_criteria: "Promote path validation policy to the public SDK; return structured existing/missing/remote counts on files and docs writes; support warn and strict modes while preserving explicit forward references; include dangling linked resources in health; add CLI, SDK, MCP, history, config, and temp-workspace acceptance coverage."
@@ -17,8 +19,9 @@ reporter: GitHub issue #1137
 severity: medium
 environment: "pm 2026.8.28, Linux; repository-backed tracker with a nonexistent project-relative docs path"
 repro_steps: "Run `pm docs <id> --add path=test/nonexistent-linked-doc.ts,note=planned coverage`; observe changed true, then run `pm docs <id> --validate-paths` to reveal the dangling path."
+resolution: Returned linked-path validation in SDK mutation receipts so missing workspace paths are visible immediately while preserving explicit forward-reference writes.
 expected_result: Linked-resource writes make path existence visible at mutation time and expose repository-configurable strict refusal plus fleet-wide health detection without prohibiting explicit forward references.
-actual_result: "The write succeeds silently, the nonexistent path persists in the item and history, and only a separate opt-in validation call reveals it."
+actual_result: "File and docs mutations report checked, existing, and missing paths at write time; the packed CLI acceptance surfaced the missing docs path without silently hiding it."
 affected_version: 2026.8.21-2026.8.28
 component: linked-resources
 regression: false
@@ -26,6 +29,23 @@ customer_impact: Agents persist false documentation provenance that is repeatedl
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-chyh,discovered_from,"2026-08-28T14:42:57.920Z","harness:codex","cli:create:dep",detected
   pm-k2n4,discovered_from,"2026-08-28T14:42:57.920Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-28T14:42:57.920Z","harness:codex","Duplicate check: complete all-status searches for validate-paths,dangling docs,missing linked paths,and the GH-544 lineage found pm-chyh for anchoring and pm-k2n4 for remote-reference pruning,but no owner for mutation-time nonexistent-path visibility and health coverage. GitHub issue #1137 is net-new canonical work."
+  "2026-08-28T23:24:24.348Z","harness:codex","Verification evidence: files/docs command coverage and isolated packed-workspace validation passed; mutation receipts include validation; full coverage passed 8,099 tests at exact 100/100/100/100."
+files[2]{path,scope,note}:
+  src/sdk/linked-artifacts.ts,project,write-time path validation receipt
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:05.538Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "SDK mutation path validation, CLI projections, isolated workspace acceptance, and exact coverage are verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-path-write-validation
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/files-docs-command.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts
+  local_checks[2]: linked path mutation receipt suite,packed workspace acceptance
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-hiqlkh
 body: ""

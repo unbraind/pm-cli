@@ -4,7 +4,11 @@
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
+import {
+  assertNoAmbiguousBareCommaEntry,
+  looksLikeStructuredKeyValueEntry,
+  resolveMutationStdinTokenFields,
+} from "../../core/item/parse.js";
 import {
   removeFileIfExists,
   writeFileAtomic,
@@ -120,7 +124,7 @@ import {
   parseLinkedTestWorkspaceContextMode,
 } from "../test/parsers.js";
 import {
-  looksLikeStructuredLinkedTestEntry,
+  STRUCTURED_LINKED_TEST_KEYS,
   normalizeStructuredLinkedTestEntry,
 } from "../test/entry.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
@@ -505,13 +509,7 @@ function looksLikeStructuredEntry(
   raw: string,
   keys: readonly string[],
 ): boolean {
-  if (raw.startsWith("```") || raw.includes("\n")) {
-    return true;
-  }
-  const keyPattern = keys
-    .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("|");
-  if (new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw)) {
+  if (looksLikeStructuredKeyValueEntry(raw, keys)) {
     return true;
   }
   // A first-key typo (e.g. `bogus=v,id=pm-2`) must still be parsed so the unknown
@@ -611,6 +609,12 @@ export function parseFiles(raw: string[] | undefined): {
       trimmedEntry,
       LINKED_ARTIFACT_SEED_KEYS,
     );
+    assertNoAmbiguousBareCommaEntry(
+      trimmedEntry,
+      "--file",
+      "file path",
+      isStructured,
+    );
     const kv = isStructured
       ? parseCsvKv(entry, "--file")
       : { path: trimmedEntry };
@@ -646,7 +650,17 @@ export function parseTests(raw: string[] | undefined): {
   );
   const values = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredLinkedTestEntry(trimmedEntry)
+    const isStructured = looksLikeStructuredEntry(
+      trimmedEntry,
+      STRUCTURED_LINKED_TEST_KEYS,
+    );
+    assertNoAmbiguousBareCommaEntry(
+      trimmedEntry,
+      "--test",
+      "test command",
+      isStructured,
+    );
+    const kv = isStructured
       ? normalizeStructuredLinkedTestEntry(
           parseCsvKv(entry, "--test"),
           "--test",
@@ -2249,6 +2263,20 @@ function assertNoCreateFieldUnsetConflicts(
 }
 
 /** Throw the aggregated `missing_required_option` error when a type's required create options and/or required type-option keys were not all supplied in one invocation. Builds a type-aware valid example and staged-onboarding next steps (a strict-mode invocation also carries a compact recovery envelope). A no-op when nothing is missing. */
+/** Truthful empty-collection alternatives for strict required create fields. */
+const CLEAR_FLAG_BY_REQUIRED_CREATE_FLAG: Readonly<Record<string, string>> = {
+  "--comment": "--clear-comments",
+  "--dep": "--clear-deps",
+  "--doc": "--clear-docs",
+  "--event": "--clear-events",
+  "--file": "--clear-files",
+  "--learning": "--clear-learnings",
+  "--note": "--clear-notes",
+  "--reminder": "--clear-reminders",
+  "--test": "--clear-tests",
+  "--type-option": "--clear-type-options",
+};
+
 function assertNoMissingRequiredCreateOptions(params: {
   combinedMissingFlags: string[];
   typeDefinition: ResolvedItemTypeDefinition;
@@ -2301,14 +2329,15 @@ function assertNoMissingRequiredCreateOptions(params: {
   ].join(" ");
   const nextSteps = [
     `Run "pm create --help --type ${type}" for type-aware required option guidance.`,
+    ...combinedMissingFlags
+      .filter((flag) => flag === "--title")
+      .map(
+        () =>
+          'Title can also be passed as the first positional argument (example: pm create "Your title" --type ' +
+          type +
+          ").",
+      ),
   ];
-  if (combinedMissingFlags.includes("--title")) {
-    nextSteps.push(
-      'Title can also be passed as the first positional argument (example: pm create "Your title" --type ' +
-        type +
-        ").",
-    );
-  }
   if (createMode === "strict") {
     nextSteps.push(
       'For staged onboarding, retry with "--create-mode progressive".',
@@ -2324,6 +2353,20 @@ function assertNoMissingRequiredCreateOptions(params: {
       `Required custom field formats: ${runtimeFieldSyntax.map((field) => field.description).join("; ")}.`,
     );
   }
+  const collectionClearFlags = [
+    ...new Set(
+      combinedMissingFlags.flatMap((flag) => {
+        const normalizedFlag = flag.split(" ", 1)[0];
+        const clearFlag = CLEAR_FLAG_BY_REQUIRED_CREATE_FLAG[normalizedFlag];
+        return clearFlag ? [clearFlag] : [];
+      }),
+    ),
+  ];
+  if (collectionClearFlags.length > 0) {
+    nextSteps.push(
+      `If the truthful value is an empty collection, use ${collectionClearFlags.join(", ")} instead of inventing metadata.`,
+    );
+  }
   const errorMessage =
     combinedMissingFlags.length === 1
       ? `Missing required option ${combinedMissingFlags[0]} for type "${type}"`
@@ -2331,7 +2374,12 @@ function assertNoMissingRequiredCreateOptions(params: {
   throw new PmCliError(errorMessage, EXIT_CODE.USAGE, {
     code: "missing_required_option",
     required: `Provide all required create options and type options for type "${type}" in one invocation.`,
-    examples: [nextValidExample],
+    examples: [
+      ...collectionClearFlags.map(
+        (flag) => `pm create --type ${type} ${flag} ...`,
+      ),
+      nextValidExample,
+    ],
     nextSteps,
     recovery:
       createMode === "strict"
@@ -2339,8 +2387,9 @@ function assertNoMissingRequiredCreateOptions(params: {
             recovery_mode: "compact",
             missing_required_fields: combinedMissingFlags,
             suggested_flags: [
-              "--create-mode progressive",
+              ...collectionClearFlags,
               ...combinedMissingFlags,
+              "--create-mode progressive",
             ],
           }
         : undefined,

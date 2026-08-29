@@ -38,10 +38,10 @@ const EMPTY_LEGACY_HASH_DOCUMENT = {
   body: "",
 };
 
-/** Hash epoch that preserves linked-test insertion order in immutable history. */
-export const CURRENT_HISTORY_ITEM_HASH_VERSION = 2 as const;
+/** Hash epoch for the current canonical item surface written into immutable history. */
+export const CURRENT_HISTORY_ITEM_HASH_VERSION = 3 as const;
 /** Hash epochs understood by this runtime. */
-export const SUPPORTED_HISTORY_ITEM_HASH_VERSIONS = [1, 2] as const;
+export const SUPPORTED_HISTORY_ITEM_HASH_VERSIONS = [1, 2, 3] as const;
 /** Restricts item hash versions accepted by history replay. */
 export type HistoryItemHashVersion =
   (typeof SUPPORTED_HISTORY_ITEM_HASH_VERSIONS)[number];

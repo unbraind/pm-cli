@@ -162,7 +162,7 @@ describe("merge reconciliation SDK", () => {
       },
       merge_receipt_proof: {
         trusted: true,
-        reason: "trusted_clone_local_driver_evidence",
+        reason: "trusted_merge_driver_hash_evidence",
         receipt_ids: [receipt.id],
       },
       warnings: [],
@@ -205,7 +205,7 @@ describe("merge reconciliation SDK", () => {
       },
       merge_receipt_proof: {
         trusted: true,
-        reason: "trusted_clone_local_driver_evidence",
+        reason: "trusted_merge_driver_hash_evidence",
         receipt_ids: ["receipt-1"],
       },
       warnings: [],
@@ -258,7 +258,7 @@ describe("merge reconciliation SDK", () => {
           outcome: "repaired",
           merge_receipt_proof: {
             trusted: true,
-            reason: "trusted_clone_local_driver_evidence",
+            reason: "trusted_merge_driver_hash_evidence",
             receipt_ids: ["receipt-trusted"],
           },
         },
@@ -364,5 +364,48 @@ describe("merge reconciliation SDK", () => {
     expect(result.repair.totals.skipped_clean).toBe(1);
     expect(result.ok).toBe(false);
     expect(mocks.markMergeReceiptReconciled).not.toHaveBeenCalled();
+  });
+
+  it("routes discarded-value receipts through exact hash proof instead of requiring force up front", async () => {
+    const receipt = {
+      id: "durable-hash-proof",
+      item_id: "pm-durable",
+      state: "pending",
+      decisions: [{ field: "status" }],
+      value_availability: "hash_only",
+      evidence_source: "durable",
+    };
+    mocks.listMergeReceipts.mockResolvedValue([receipt]);
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [
+        {
+          id: receipt.item_id,
+          outcome: "repaired",
+          merge_receipt_proof: {
+            trusted: true,
+            reason: "trusted_merge_driver_hash_evidence",
+            receipt_ids: [receipt.id],
+          },
+        },
+      ],
+      totals: { repaired: 1, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "ok" }],
+      generated_at: "2026-07-21T00:06:00.000Z",
+    });
+
+    const result = await runMergeReconcile({}, globalOptions);
+
+    expect(mocks.runHistoryRepairAll).toHaveBeenCalledWith(
+      expect.objectContaining({ force: undefined }),
+      globalOptions,
+    );
+    expect(mocks.markMergeReceiptReconciled).toHaveBeenCalledWith(
+      "/workspace",
+      receipt,
+      { requireExisting: true },
+    );
+    expect(result.ok).toBe(true);
   });
 });

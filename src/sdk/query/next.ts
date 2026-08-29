@@ -107,6 +107,12 @@ export interface NextBlockerRef {
   title: string | null;
   /** Lifecycle state reported for status. */
   status: ItemStatus | null;
+  /** Whether this reference must be checked outside the local tracker. */
+  external?: boolean;
+  /** Conservative timestamp from which the unresolved external block may be stale. */
+  blocked_since?: string;
+  /** External resolver identity, or null when no integration verified the reference. */
+  resolver?: string | null;
 }
 
 /**
@@ -250,6 +256,11 @@ function toNextActionableItem(
       id: blocker.id,
       title: blocker.title,
       status: blocker.status,
+      ...(blocker.external ? { external: true } : {}),
+      ...(blocker.blocked_since
+        ? { blocked_since: blocker.blocked_since }
+        : {}),
+      ...(blocker.external ? { resolver: blocker.resolver ?? null } : {}),
     })),
     unblocks: entry.unblocks,
     rank,

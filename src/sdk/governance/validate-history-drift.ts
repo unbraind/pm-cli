@@ -23,6 +23,7 @@ export async function buildValidateHistoryDriftCheck(
     ["validate_history_drift_unreadable_streams", drift.unreadableStreams.length],
     ["validate_history_drift_hash_mismatches", drift.hashMismatches.length],
     ["validate_history_drift_chain_mismatches", drift.chainMismatches.length],
+    ["validate_history_drift_version_skews", drift.versionSkews.length],
     [
       "validate_history_drift_workspace_state_mismatches",
       drift.workspaceStateMismatches.length,
@@ -58,6 +59,7 @@ export async function buildValidateHistoryDriftCheck(
           unreadable_streams: drift.unreadableStreams.length,
           hash_mismatches: drift.hashMismatches.length,
           chain_mismatches: drift.chainMismatches.length,
+          version_skews: drift.versionSkews.length,
           workspace_state_mismatches: drift.workspaceStateMismatches.length,
           workspace_state_missing: drift.workspaceStateMissing.length,
           workspace_state_unreadable: drift.workspaceStateUnreadable.length,
@@ -65,6 +67,7 @@ export async function buildValidateHistoryDriftCheck(
         workspace_state_mismatches: drift.workspaceStateMismatches,
         workspace_state_missing: drift.workspaceStateMissing,
         workspace_state_unreadable: drift.workspaceStateUnreadable,
+        version_skews: drift.versionSkews.slice(0, diagnosticLimit),
       },
     },
     warnings,

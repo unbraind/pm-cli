@@ -3235,6 +3235,7 @@ describe("runValidate", () => {
           unreadable_streams: number;
           hash_mismatches: number;
           chain_mismatches: number;
+          version_skews: number;
         };
       };
       expect(details.drifted_items_count).toBe(4);
@@ -3243,6 +3244,7 @@ describe("runValidate", () => {
         unreadable_streams: 1,
         hash_mismatches: 1,
         chain_mismatches: 0,
+        version_skews: 0,
         workspace_state_mismatches: 0,
         workspace_state_missing: 0,
         workspace_state_unreadable: 0,

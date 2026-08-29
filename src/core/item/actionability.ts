@@ -12,6 +12,10 @@
 import { isTerminalStatus, normalizeStatusForRegistry } from "./status.js";
 import type { RuntimeStatusRegistry } from "../schema/runtime-schema.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
+import {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "./dependency-reference.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
@@ -35,28 +39,48 @@ function normalizeItemId(id: string): string {
   return id.trim().toLowerCase();
 }
 
+/** Build a collision-safe blocker key without normalizing external identity. */
+function blockerReferenceKey(id: string, external: boolean): string {
+  return external ? `external:${id}` : `local:${normalizeItemId(id)}`;
+}
+
 /** Collects the blocker item ids declared by an item: the legacy scalar `blocked_by` field plus every `blocked_by` dependency edge. Ids are trimmed, de-duplicated, and returned in stable lexicographic order. This is the single source of truth for "what must close before this item can proceed", shared by `pm next` readiness classification and the close-time auto-unblock sweep. */
 export function collectBlockedByIds(
   item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
 ): string[] {
-  const ids = new Set<string>();
+  const ids = new Map<string, string>();
   const scalar =
-    typeof item.blocked_by === "string" ? normalizeItemId(item.blocked_by) : "";
-  if (scalar.length > 0 && scalar !== NO_ACTIVE_BLOCKER_SENTINEL) {
-    ids.add(scalar);
+    typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
+  if (
+    scalar.length > 0 &&
+    normalizeItemId(scalar) !== NO_ACTIVE_BLOCKER_SENTINEL
+  ) {
+    const external = isExternalDependencyReference(scalar);
+    ids.set(
+      blockerReferenceKey(scalar, external),
+      external ? scalar : normalizeItemId(scalar),
+    );
   }
   for (const dependency of item.dependencies ?? []) {
     const dependencyId =
-      typeof dependency.id === "string" ? normalizeItemId(dependency.id) : "";
+      typeof dependency.id === "string" ? dependency.id.trim() : "";
     if (
       dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
       dependencyId.length > 0 &&
-      dependencyId !== NO_ACTIVE_BLOCKER_SENTINEL
+      normalizeItemId(dependencyId) !== NO_ACTIVE_BLOCKER_SENTINEL
     ) {
-      ids.add(dependencyId);
+      const external =
+        isExternalDependencyReference(dependencyId) ||
+        isExternalDependencySourceKind(dependency.source_kind);
+      ids.set(
+        blockerReferenceKey(dependencyId, external),
+        external
+          ? dependencyId
+          : normalizeItemId(dependencyId),
+      );
     }
   }
-  return [...ids].sort((left, right) => left.localeCompare(right));
+  return [...ids.values()].sort((left, right) => left.localeCompare(right));
 }
 
 /** Build every forward and reverse blocker set in one corpus pass. */
@@ -115,11 +139,18 @@ export interface ResolvedBlocker {
   status: ItemStatus | null;
   /** True when the blocker no longer gates work because the referenced item is terminal. */
   resolved: boolean;
+  /** Whether this blocker is a cross-system locator requiring an external resolver. */
+  external?: boolean;
+  /** Last holder mutation timestamp, used as a conservative external-block staleness marker. */
+  blocked_since?: string;
+  /** Resolver identity when an integration resolved this external blocker; null means unverifiable. */
+  resolver?: string | null;
 }
 
 /** Resolves an item's declared blockers against a corpus index, annotating each with the blocker's title/status and whether it still gates work. Unknown ids remain unresolved: silently treating a typo as satisfied would dispatch work whose prerequisite was never completed. Terminal referenced items alone are resolved. */
 function resolveItemBlockersWithIndex(
-  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies"> &
+    Partial<Pick<ItemMetadata, "id" | "updated_at">>,
   itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
   blockerIdsByItem?: ReadonlyMap<string, readonly string[]>,
@@ -128,12 +159,38 @@ function resolveItemBlockersWithIndex(
   const blockerIds =
     typeof itemWithId.id === "string"
       ? (blockerIdsByItem?.get(normalizeItemId(itemWithId.id)) ??
-        collectBlockedByIdsFromCorpus(
-          itemWithId as ItemMetadata,
-          [...itemsById.values()],
-        ))
+        collectBlockedByIdsFromCorpus(itemWithId as ItemMetadata, [
+          ...itemsById.values(),
+        ]))
       : collectBlockedByIds(item);
+  const structuredExternalBlockerIds = new Set(
+    (item.dependencies ?? [])
+      .filter(
+        (dependency) =>
+          dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
+          isExternalDependencySourceKind(dependency.source_kind) &&
+          typeof dependency.id === "string" &&
+          dependency.id.trim().length > 0,
+      )
+      .map((dependency) => blockerReferenceKey(dependency.id.trim(), true)),
+  );
   return blockerIds.map((id) => {
+    if (
+      isExternalDependencyReference(id) ||
+      structuredExternalBlockerIds.has(blockerReferenceKey(id, true))
+    ) {
+      return {
+        id,
+        title: null,
+        status: null,
+        resolved: false,
+        external: true,
+        ...(typeof item.updated_at === "string"
+          ? { blocked_since: item.updated_at }
+          : {}),
+        resolver: null,
+      };
+    }
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
       return { id, title: null, status: null, resolved: false };
@@ -149,7 +206,8 @@ function resolveItemBlockersWithIndex(
 
 /** Resolves an item's blockers against a corpus index with reverse `blocks` support. */
 export function resolveItemBlockers(
-  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies"> &
+    Partial<Pick<ItemMetadata, "id" | "updated_at">>,
   itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
 ): ResolvedBlocker[] {
@@ -197,9 +255,7 @@ export function collectDependencyBlockedIds(
         itemsById,
         statusRegistry,
         blockerIdsByItem,
-      ).some(
-        (blocker) => !blocker.resolved,
-      )
+      ).some((blocker) => !blocker.resolved)
     ) {
       blocked.add(normalizeItemId(item.id));
     }

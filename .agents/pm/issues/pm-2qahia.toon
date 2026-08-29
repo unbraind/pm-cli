@@ -2,11 +2,13 @@ id: pm-2qahia
 title: "GH-1135: item_hash_version 2 still masks writer hash divergence as corruption"
 description: "GitHub #1135 reproduces supported pm writers computing different history hashes while stamping the same item_hash_version=2, so pinned readers classify version skew as hash/chain corruption and history-repair can truthfully report changed=false while rewriting bytes."
 type: Issue
-status: open
+status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-28T08:13:51.701Z"
+updated_at: "2026-08-29T13:28:13.562Z"
+closed_at: "2026-08-29T13:27:11.138Z"
+completed_at: "2026-08-29T13:27:11.138Z"
 author: "harness:codex"
 acceptance_criteria: A released-version fixture proves whether identical epoch-2 content can hash differently; every hash-input or algorithm change advances a format capability or preserves the previous comparator; drift diagnostics distinguish unsupported writer/version skew from same-version corruption; history events expose sufficient writer capability provenance for deterministic diagnosis; repair changed receipts match actual byte writes; SDK CLI health validate and repair contracts carry the distinction; focused cross-version packed-consumer and exact repository coverage gates pass
 parent: pm-o2kc
@@ -15,15 +17,200 @@ confidence: high
 severity: critical
 environment: Global pm 2026.8.23 writes trackers read by repository-pinned 2026.8.20 and 2026.8.21 binaries
 repro_steps: "Create and mutate an item with pm 2026.8.23, run pinned health --strict-exit, compare item_hash_version and hashes, run pinned history-repair, then compare changed receipt, bytes, and both readers' verdicts."
-expected_result: "Supported readers attribute incompatible persisted hash capabilities as version skew, and repair never reports a no-op when bytes changed."
-actual_result: Three repositories reproduced opposite integrity verdicts while both writers stamped item_hash_version 2; pinned repair rewrote the stream despite changed=false and inverted which reader accepted it.
+resolution: "History verification preserves inferred supported epochs after earlier version skew, including valid unversioned legacy final entries, so current-item drift remains independently comparable."
+expected_result: Unsupported writer evidence remains visible while any valid supported explicit or unversioned final epoch is compared with the current item independently.
+actual_result: "A mixed unsupported-plus-unversioned stream now reports version skew, chain mismatch, and current-item hash mismatch together; the 46-test focused suite, linked acceptance, exact coverage, and static assurance pass."
 component: "history hashing, drift diagnostics, and repair receipts"
 regression: true
 customer_impact: "Ordinary cross-version mutations make CI report corruption, train operators to normalize real integrity alarms away, and hide evidence-rewriting repairs behind a false no-change receipt."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
+  "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
+  "2026-08-29T02:22:13.930Z","harness:codex","Review-round evidence: unsupported cache epochs now invalidate even when older rows omit version_skew, and compatible-version chain corruption remains independently visible instead of being masked by writer skew. Focused regressions passed; current-head coverage passed 586 files and 8,105 tests at exactly 60,136/60,136 statements, 45,331/45,331 branches, 12,503/12,503 functions, and 57,907/57,907 lines."
+  "2026-08-29T04:41:15.281Z","harness:codex","Review-round finding: Greptile exact head 89031f identified that mixed-version streams still suppress an independently checkable final supported after_hash mismatch. Reopened to preserve both version-skew and item-drift evidence."
+  "2026-08-29T05:25:24.096Z","harness:codex","Final review evidence: the scanner continues past an unsupported earlier epoch for the independent final supported after_hash comparison. Focused linked tests passed 39 assertions (11 connected plus 28 history); the exact repository coverage run passed 8,111 tests at 60,140/60,140 statements, 45,357/45,357 branches, 12,505/12,505 functions, and 57,911/57,911 lines."
+  "2026-08-29T06:08:46.316Z","harness:codex","Final CodeRabbit review finding: drift cache loading accepts non-boolean chain_ok values, allowing truthy malformed metadata to bypass chain mismatch detection. Reopened for strict cache schema validation and a negative control."
+  "2026-08-29T06:28:53.971Z","harness:codex","Final review evidence: drift cache decoding now rejects non-boolean chain_ok values. The focused four-file review suite passed 103/103, full coverage passed 8,112 tests at 100/100/100/100, repository quality:static passed, and linked acceptance passed."
+  "2026-08-29T07:13:38.431Z","harness:codex","CodeRabbit exact-head finding: new history version-skew health and validate codes lack registry guidance, leaving agents without the safe runtime-upgrade command. Reopened for executable remediation parity."
+  "2026-08-29T07:43:02.400Z","harness:codex","Review closure evidence: registered executable npm upgrade remediation for both health history_drift_version_skew and validate_history_drift_version_skews, regenerated the error catalog, refusal census, contract fixture, and SDK surface, and proved the registry regression. Full repository result: 586 files and 8,113 tests passed at exact 100/100/100/100 coverage (60,145 statements, 45,362 branches, 12,508 functions, 57,915 lines)."
+  "2026-08-29T09:36:40.015Z","harness:codex","TDD review evidence: a focused negative-control suite reproduced both the bulk-remediation overwrite of history_drift_version_skew and the missing canonical validate alias. The implementation now preserves upgrade guidance during bulk repair, promotes both codes to stable, and publishes validate_history_drift_version_skews as an alias of history_drift_version_skew. Focused green: 4 files, 115/115 tests."
+  "2026-08-29T09:58:27.655Z","harness:codex","Verification: exact repository coverage passed at 60,152/60,152 statements, 45,379/45,379 branches, 12,511/12,511 functions, and 57,922/57,922 lines. Typecheck, ESLint, zero-clone jscpd scans, generated contracts, public SDK surface, and repository assurance passed. PM acceptance ran all 3 linked tests: 3/3 passed."
+  "2026-08-29T10:42:48.139Z","harness:codex","TDD review evidence: six future-writer streams produced an unbounded default version_skews array. The new regression fails at six versus the five-row diagnostic budget; implementation now slices version-skew evidence by the same default/verbose limit as drifted_items."
+  "2026-08-29T10:58:48.630Z","harness:codex","Final review evidence: linked acceptance passed 3/3 commands with 68 assertions across context integrity, history capability, repair, and remediation suites. Full repository coverage passed 586 files and 8,119 tests at exactly 60,156/60,156 statements, 45,391/45,391 branches, 12,512/12,512 functions, and 57,926/57,926 lines. Static quality, graph and record integrity, security secret scan, and dependency audit passed."
+  "2026-08-29T11:04:56.200Z","harness:codex","DeepScan exact-head finding: the new diagnostic test helper accessed version_skews after an optional history_drift lookup. The test now fails explicitly when the required check is absent before reading its typed details, preserving a useful assertion and eliminating the analyzer-visible null path."
+  "2026-08-29T11:05:44.133Z","harness:codex","DeepScan closure evidence: the focused context-integrity suite passed 15/15, focused ESLint passed, and all TypeScript projects passed after replacing the unsafe optional lookup with an explicit required-check guard."
+  "2026-08-29T11:08:12.164Z","harness:codex","Greptile P1 verification: current-item drift after a future writer is already preserved, but verifyHistoryChainWithVersion returns immediately at the unsupported row. A later supported entry can still be checked after applying the unknown-version patch, so a precise supported before/after/patch failure is currently lost behind the generic skew error. Adding a two-error negative control before implementation."
+  "2026-08-29T11:33:09.747Z","harness:codex","Final Greptile closure evidence: the verifier now preserves the unsupported writer diagnostic and continues after a structurally applicable future-version patch, allowing a later supported after_hash mismatch to surface independently. An invalid future-version patch fails closed with both unsupported-version and patch-apply diagnostics. Focused recovery tests passed 45/45. Full repository coverage passed 586 files and 8,120 tests at exactly 60,165/60,165 statements, 45,395/45,395 branches, 12,512/12,512 functions, and 57,935/57,935 lines. Repository static quality, graph composition, tracker context quality, and record integrity all passed."
+  "2026-08-29T12:32:32.406Z","harness:codex","Review-round finding: Greptile exact head d89acc27 identified that a mixed stream ending in a valid unversioned legacy entry can suppress the independent current-item hash comparison after earlier version skew. Reopened and claimed for a failing regression, minimal capability-inference correction, and exact-head verification."
+  "2026-08-29T12:50:11.381Z","harness:codex","Final review closure evidence: the negative control reproduced missing current-item drift for an unsupported entry followed by a valid unversioned legacy entry. Replay now retains the later inferred supported epoch even while returning earlier skew errors, and drift scanning compares supported unversioned final hashes without making explicit future epochs comparable. Focused 46/46, linked 3/3, repository 8,121/8,121, exact 100/100/100/100 (60,165 statements; 45,398 branches; 12,512 functions; 57,935 lines), and full static assurance passed."
+  "2026-08-29T13:08:15.730Z","harness:codex","Hosted exact-head failure: CI static gate passed build/contracts/security and then failed ESLint sonarjs/cognitive-complexity at src/core/history/replay.ts:234 (17 > 16). Reopened for a shared supported-version predicate that reduces verifier branching without changing the mixed-epoch contract."
+  "2026-08-29T13:12:31.447Z","harness:codex","Review follow-up: hosted static analysis identified cognitive complexity 17 in verifyHistoryChainWithVersion. Reused an explicit-version support predicate across verification and repair to restore the mandatory threshold without changing behavior; focused lint and 60-test history/recovery/merge suite pass."
+  "2026-08-29T13:27:09.329Z","harness:codex","Final local evidence: exact coverage passed 586 files and 8,122 tests at 60,166/60,166 statements, 45,396/45,396 branches, 12,513/12,513 functions, and 57,936/57,936 lines. pnpm quality:static passed the complete assurance stack. Linked acceptance passed 3/3 with no skips or failures."
+learnings[4]{created_at,author,text}:
+  "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
+  "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
+  "2026-08-29T06:28:53.527Z","harness:codex","Persisted caches are untrusted inputs: validate every required scalar type before reusing a cached integrity verdict, even when version and fingerprint fields match."
+  "2026-08-29T07:43:02.818Z","harness:codex","A newer history hash capability is a runtime compatibility boundary, not repairable corruption; every health and validation projection must route to upgrade guidance rather than history-repair."
+files[18]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census reflects canonical version-skew alias
+  scripts/error-code-stability.json,project,Canonical stability and alias policy for version-skew diagnostics
+  sdk/public-surface.json,project,Public SDK surface advertises history version-skew remediation codes
+  src/core/diagnostics/remediation.ts,project,Executable upgrade guidance for history hash version skew
+  src/core/history/drift-scan.ts,project,version-skew classification
+  src/core/history/history.ts,project,hash capability epoch
+  src/core/history/replay.ts,project,cross-epoch replay
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public catalog includes version-skew remediation code
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated public catalog includes validation version-skew remediation code
+  src/sdk/governance/health.ts,project,health projection
+  src/sdk/governance/validate-history-drift.ts,project,validation projection
+  tests/fixtures/contracts/full.json,project,Generated contract snapshot for version-skew remediation entries
+  tests/integration/remediation-registry.spec.ts,project,Registry regression for health and validate version-skew warnings
+  tests/unit/commands/health-command.spec.ts,project,Bulk remediation preserves non-repairable version-skew upgrade guidance
+  tests/unit/core/history/drift-scan.spec.ts,project,History capability skew coverage
+  tests/unit/core/history/history-hash-version.spec.ts,project,History hash epoch compatibility coverage
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
+  tests/unit/sdk/history-repair-version-contract.spec.ts,project,Cross-version repair receipt coverage
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:01.231Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
+  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,project,240,"harness:codex","2026-08-28T21:54:08.534Z",local_mutation,feat/sdk-context-integrity-recovery,history capability and version skew coverage
+  node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,project,240,"harness:codex","2026-08-29T07:17:30.556Z",local_mutation,feat/sdk-context-integrity-recovery,Version-skew remediation registry regression
+test_runs[9]:
+  - run_id: test-local-mtdkxs90-zu56nw
+    kind: test
+    status: passed
+    started_at: "2026-08-28T23:25:07.242Z"
+    finished_at: "2026-08-28T23:25:26.724Z"
+    recorded_at: "2026-08-28T23:25:26.724Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtdr7pg8-qj7z9n
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T02:21:07.285Z"
+    finished_at: "2026-08-29T02:21:27.086Z"
+    recorded_at: "2026-08-29T02:21:27.086Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtdxrpce-qlhq4h
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T05:24:37.980Z"
+    finished_at: "2026-08-29T05:24:57.519Z"
+    recorded_at: "2026-08-29T05:24:57.519Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mte01e7z-w2i7qj
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T06:28:09.349Z"
+    finished_at: "2026-08-29T06:28:28.614Z"
+    recorded_at: "2026-08-29T06:28:28.614Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mte2kogd-50fz0x
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T07:39:08.311Z"
+    finished_at: "2026-08-29T07:39:33.927Z"
+    recorded_at: "2026-08-29T07:39:33.927Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mte7helx-dea41j
+    kind: test
+    status: passed
+    started_at: "2026-08-29T09:56:04.150Z"
+    finished_at: "2026-08-29T09:56:33.717Z"
+    recorded_at: "2026-08-29T09:56:33.717Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mte98y66-zb3lpc
+    kind: test
+    status: passed
+    started_at: "2026-08-29T10:45:30.760Z"
+    finished_at: "2026-08-29T10:45:58.398Z"
+    recorded_at: "2026-08-29T10:45:58.398Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtedms2f-3qjhhk
+    kind: test
+    status: passed
+    started_at: "2026-08-29T12:48:14.318Z"
+    finished_at: "2026-08-29T12:48:42.135Z"
+    recorded_at: "2026-08-29T12:48:42.135Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mteeyzhm-fun3l6
+    kind: test
+    status: passed
+    started_at: "2026-08-29T13:25:42.849Z"
+    finished_at: "2026-08-29T13:26:11.242Z"
+    recorded_at: "2026-08-29T13:26:11.242Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for history integrity and version-skew recovery
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal/remediation census includes history version-skew guidance
+close_reason: "Review follow-up complete: supported history epochs retain integrity diagnostics under the static complexity ceiling; focused, linked, exact coverage, and static assurance all pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: history-capability-skew-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts
+  local_checks[2]: history capability regression suite,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / exact-coverage,CI / static-quality
+  owner: pm-2qahia
 body: "Source: https://github.com/unbraind/pm-cli/issues/1135"

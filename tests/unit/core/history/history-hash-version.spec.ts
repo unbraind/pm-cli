@@ -40,7 +40,7 @@ function document(tests: ItemDocument["metadata"]["tests"]): ItemDocument {
 
 function unversionedEntry(
   after: ItemDocument,
-  hashVersion: 1 | 2,
+  hashVersion: HistoryItemHashVersion,
 ): HistoryEntry {
   const beforeReplay = structuredClone(EMPTY_REPLAY_DOCUMENT);
   const afterReplay = toReplayDocument(after);
@@ -74,22 +74,26 @@ describe("history item hash versions", () => {
     expect(hashDocumentForVersion(insertionOrder, 2)).not.toBe(
       hashDocumentForVersion(sortedOrder, 2),
     );
-    expect(
-      createHistoryEntry({
-        nowIso: "2026-08-11T00:01:00.000Z",
-        author: "fixture",
-        op: "tests_add",
-        before: sortedOrder,
-        after: insertionOrder,
-      }).item_hash_version,
-    ).toBe(CURRENT_HISTORY_ITEM_HASH_VERSION);
+    expect(hashDocumentForVersion(insertionOrder, 3)).toBe(
+      hashDocumentForVersion(insertionOrder, 2),
+    );
+    const currentEntry = createHistoryEntry({
+      nowIso: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "tests_add",
+      before: sortedOrder,
+      after: insertionOrder,
+    });
+    expect(currentEntry.item_hash_version).toBe(
+      CURRENT_HISTORY_ITEM_HASH_VERSION,
+    );
   });
 
   it("auto-detects unversioned legacy streams and rejects unknown epochs precisely", () => {
     const insertionOrder = document([first, second]);
     expect(() =>
-      hashDocumentForVersion(insertionOrder, 3 as HistoryItemHashVersion),
-    ).toThrow("unsupported_item_hash_version:3");
+      hashDocumentForVersion(insertionOrder, 4 as HistoryItemHashVersion),
+    ).toThrow("unsupported_item_hash_version:4");
     expect(
       verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 1)]),
     ).toMatchObject({
@@ -197,5 +201,54 @@ describe("history item hash versions", () => {
     expect(
       verifyHistoryChainWithVersion([legacyEntry, currentEntry]),
     ).toMatchObject({ ok: true, item_hash_version: 2 });
+  });
+
+  it("reports supported corruption after an unsupported writer entry", () => {
+    const futureDocument = document([]);
+    const supportedDocument = structuredClone(futureDocument);
+    supportedDocument.body = "supported entry after future writer";
+    const futureEntry = {
+      ...unversionedEntry(futureDocument, 2),
+      item_hash_version: 99 as HistoryItemHashVersion,
+    };
+    const corruptedSupportedEntry: HistoryEntry = {
+      ts: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(futureDocument),
+        toReplayDocument(supportedDocument),
+      ),
+      before_hash: hashDocumentForVersion(
+        futureDocument,
+        CURRENT_HISTORY_ITEM_HASH_VERSION,
+      ),
+      after_hash: "0".repeat(64),
+      item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
+    };
+
+    expect(
+      verifyHistoryChainWithVersion([futureEntry, corruptedSupportedEntry]),
+    ).toEqual({
+      ok: false,
+      errors: [
+        "verify_failed:unsupported_item_hash_version:99:entry_1",
+        "verify_failed:after_hash_mismatch:entry_2",
+      ],
+    });
+    expect(
+      verifyHistoryChainWithVersion([
+        {
+          ...futureEntry,
+          patch: [{ op: "remove" as const, path: "/missing" }],
+        },
+      ]),
+    ).toEqual({
+      ok: false,
+      errors: [
+        "verify_failed:unsupported_item_hash_version:99:entry_1",
+        "verify_failed:patch_apply_failed:entry_1",
+      ],
+    });
   });
 });
