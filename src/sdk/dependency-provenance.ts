@@ -101,7 +101,11 @@ export function registerExternalDependencyResolver(
   if (externalDependencyResolvers.has(name)) {
     throw new Error(`External dependency resolver already registered: ${name}`);
   }
-  const registeredResolver = { ...resolver, name };
+  const registeredResolver: ExternalDependencyResolver = {
+    name,
+    supports: (reference) => resolver.supports(reference),
+    resolve: (reference) => resolver.resolve(reference),
+  };
   externalDependencyResolvers.set(name, registeredResolver);
   return () => {
     if (externalDependencyResolvers.get(name) === registeredResolver) {

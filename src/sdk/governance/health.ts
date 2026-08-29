@@ -3113,7 +3113,10 @@ function rewriteBulkHealthRemediation(params: {
 }): void {
   if (params.check.name === "history_drift" && params.historyDriftedCount > 1) {
     for (const code of Object.keys(params.remediationMap)) {
-      if (code !== "history_drift_merge_receipt") {
+      if (
+        code !== "history_drift_merge_receipt" &&
+        code !== "history_drift_version_skew"
+      ) {
         params.remediationMap[code] = "pm history-repair --all";
       }
     }

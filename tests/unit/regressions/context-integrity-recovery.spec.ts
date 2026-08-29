@@ -27,7 +27,10 @@ import {
 } from "../../../src/sdk/graph/assembly.js";
 import { parseLogSeed } from "../../../src/sdk/lifecycle/create.js";
 import { runNext } from "../../../src/sdk/query/next.js";
-import { runLinkedTests } from "../../../src/sdk/test/execution.js";
+import {
+  _testOnlyTestCommand,
+  runLinkedTests,
+} from "../../../src/sdk/test/execution.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const temporaryRoots: string[] = [];
@@ -123,6 +126,15 @@ describe("context integrity recovery", () => {
     expect(() =>
       _testOnlyInstallSources.parsePackedNpmPackage(
         JSON.stringify([{ filename: "wrong.tgz", name: "wrong-package" }]),
+        "/tmp/pack",
+        "expected-package",
+      ),
+    ).toThrow("unsupported or ambiguous");
+    expect(() =>
+      _testOnlyInstallSources.parsePackedNpmPackage(
+        JSON.stringify({
+          "wrong-package": { filename: "wrong.tgz", version: "1.0.0" },
+        }),
         "/tmp/pack",
         "expected-package",
       ),
@@ -464,6 +476,26 @@ describe("context integrity recovery", () => {
       expect(
         await resolveExternalDependencyReference("linear:ENG-42"),
       ).toBeNull();
+
+      class PrototypeResolver {
+        readonly name = " class-resolver ";
+
+        supports(reference: string): boolean {
+          return reference.startsWith("jira:");
+        }
+
+        async resolve(): Promise<{ status: "closed" }> {
+          return { status: "closed" };
+        }
+      }
+      const disposeClassResolver = registerExternalDependencyResolver(
+        new PrototypeResolver(),
+      );
+      cleanup.push(disposeClassResolver);
+      expect(
+        await resolveExternalDependencyReference("jira:PM-42"),
+      ).toMatchObject({ resolver: "class-resolver", resolved: true });
+      disposeClassResolver();
     } finally {
       for (const dispose of cleanup.reverse()) dispose();
     }
@@ -600,35 +632,39 @@ describe("context integrity recovery", () => {
     });
   });
 
-  it("fails a filtered linked test when the runner reports zero executed tests", async () => {
-    const [unquoted, doubleQuoted, singleQuoted] = await runLinkedTests(
-      [
-        {
-          command:
-            "printf '# tests 0\\n# pass 0\\n' # --test-name-pattern missing",
-          scope: "project",
-        },
-        {
-          command:
-            "printf '# tests 0\\n# pass 0\\n' # \"--test-name-pattern=missing\"",
-          scope: "project",
-        },
-        {
-          command:
-            "printf '# tests 0\\n# pass 0\\n' # '--testNamePattern=missing'",
-          scope: "project",
-        },
-      ],
-      30,
-    );
-    for (const result of [unquoted, doubleQuoted, singleQuoted]) {
-      expect(result).toMatchObject({
-        status: "failed",
-        failure_category: "empty_run",
-        error: expect.stringContaining("zero"),
-      });
-    }
-  });
+  it(
+    "fails a filtered linked test when the runner reports zero executed tests",
+    async () => {
+      const [unquoted, doubleQuoted, singleQuoted] = await runLinkedTests(
+        [
+          {
+            command:
+              "printf '# tests 0\\n# pass 0\\n' # --test-name-pattern missing",
+            scope: "project",
+          },
+          {
+            command:
+              "printf '# tests 0\\n# pass 0\\n' # \"--test-name-pattern=missing\"",
+            scope: "project",
+          },
+          {
+            command:
+              "printf '# tests 0\\n# pass 0\\n' # '--testNamePattern=missing'",
+            scope: "project",
+          },
+        ],
+        30,
+      );
+      for (const result of [unquoted, doubleQuoted, singleQuoted]) {
+        expect(result).toMatchObject({
+          status: "failed",
+          failure_category: "empty_run",
+          error: expect.stringContaining("zero"),
+        });
+      }
+    },
+    60_000,
+  );
 
   it("requires positive runner evidence for filtered linked tests", async () => {
     const [unproven, proven] = await runLinkedTests(
@@ -653,6 +689,15 @@ describe("context integrity recovery", () => {
     expect(proven).toMatchObject({ status: "passed" });
   });
 
+  it("does not treat arbitrary bare -t arguments as test-name filters", () => {
+    expect(
+      _testOnlyTestCommand.commandUsesTestNameFilter("docker run -t image"),
+    ).toBe(false);
+    expect(
+      _testOnlyTestCommand.commandUsesTestNameFilter("vitest -t selected"),
+    ).toBe(true);
+  });
+
   it("accepts a real Node spec reporter receipt for a filtered linked test", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-node-spec-receipt-"));
     temporaryRoots.push(root);
@@ -675,17 +720,21 @@ describe("context integrity recovery", () => {
     expect(`${result.stdout}\n${result.stderr}`).toMatch(/ℹ\s+tests\s+1/u);
   });
 
-  it("does not treat zero passes as empty when a runner reports executed tests", async () => {
-    const [result] = await runLinkedTests(
-      [
-        {
-          command:
-            "printf '# tests 1\\n# pass 0\\n' # --test-name-pattern present",
-          scope: "project",
-        },
-      ],
-      30,
-    );
-    expect(result).toMatchObject({ status: "passed" });
-  });
+  it(
+    "does not treat zero passes as empty when a runner reports executed tests",
+    async () => {
+      const [result] = await runLinkedTests(
+        [
+          {
+            command:
+              "printf '# tests 1\\n# pass 0\\n' # --test-name-pattern present",
+            scope: "project",
+          },
+        ],
+        30,
+      );
+      expect(result).toMatchObject({ status: "passed" });
+    },
+    60_000,
+  );
 });

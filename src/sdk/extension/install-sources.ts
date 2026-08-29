@@ -694,7 +694,10 @@ function selectPackedNpmCandidate(
   if (matchingCandidates.length === 1) return matchingCandidates[0];
   if (candidates.length !== 1) return undefined;
   const soleCandidate = candidates[0];
-  return normalizedExpected && soleCandidate.name !== undefined
+  const soleIdentity = soleCandidate.name ?? soleCandidate.key;
+  return normalizedExpected &&
+    soleIdentity !== undefined &&
+    soleIdentity.trim().toLowerCase() !== normalizedExpected
     ? undefined
     : soleCandidate;
 }

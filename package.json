@@ -217,10 +217,10 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/ext-apps": "1.7.5",
     "@codspeed/vitest-plugin": "^5.7.1",
     "@eslint/js": "^10.0.1",
-    "@sentry/cli": "^3.6.2",
+    "@modelcontextprotocol/ext-apps": "1.7.5",
+    "@sentry/cli": "^3.7.0",
     "@types/node": "^26.4.0",
     "@types/npm-package-arg": "^6.1.4",
     "@vitest/coverage-v8": "^4.1.11",

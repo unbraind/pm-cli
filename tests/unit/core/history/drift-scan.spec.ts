@@ -310,6 +310,50 @@ describe("core/history/drift-scan", () => {
     });
   });
 
+  it("rejects supported clean cache rows that suppress the current-item comparison", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, {
+        title: "Forged incomparable cache row",
+      });
+      const items = await listAllItemMetadataWithBody(context.pmPath);
+      await scanHistoryDrift(context.pmPath, items);
+      const cache = await readDriftCache(context.pmPath);
+      await fs.writeFile(
+        path.join(context.pmPath, DRIFT_CACHE_RELATIVE),
+        `${JSON.stringify(
+          {
+            ...cache,
+            entries: {
+              ...cache.entries,
+              [created.id]: {
+                ...cache.entries[created.id],
+                chain_ok: true,
+                version_skew: false,
+                latest_hash_comparable: false,
+                item_hash_version: 3,
+              },
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      const tampered = items.map((item) =>
+        item.id === created.id
+          ? { ...item, body: `${item.body} tampered` }
+          : item,
+      );
+
+      const result = await scanHistoryDrift(context.pmPath, tampered, {
+        cacheHitVerification: "metadata",
+      });
+
+      expect(result.hashMismatches).toContain(created.id);
+      expect(result.driftedItems).toContain(created.id);
+    });
+  });
+
   it("detects broken chains, unreadable and empty streams, and missing streams", async () => {
     await withTempPmPath(async (context) => {
       const broken = createTestItem(context, { title: "Broken" });

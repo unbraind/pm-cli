@@ -97,7 +97,13 @@ async function loadDriftCache(
           (!(
             SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]
           ).includes(entry.item_hash_version) &&
-            entry.version_skew !== true),
+            entry.version_skew !== true) ||
+          (entry.chain_ok &&
+            entry.version_skew !== true &&
+            (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+              entry.item_hash_version,
+            ) &&
+            !entry.latest_hash_comparable),
       )
     ) {
       return null;

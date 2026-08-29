@@ -1332,7 +1332,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
   {
     code: "history_drift_version_skew",
     meaning: "History drift version skew condition.",
-    stability: "provisional",
+    stability: "stable",
     exit_code: 1,
     class: "generic_failure",
     recovery:
@@ -1340,7 +1340,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "history_drift_version_skew",
-    aliases: [],
+    aliases: ["validate_history_drift_version_skews"],
   },
   {
     code: "history_merge_conflict_markers_detected",

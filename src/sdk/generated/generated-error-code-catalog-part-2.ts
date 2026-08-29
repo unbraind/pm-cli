@@ -1746,14 +1746,14 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
     code: "validate_history_drift_version_skews",
     meaning: "Validate history drift version skews condition.",
-    stability: "provisional",
+    stability: "stable",
     exit_code: 1,
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
-    canonical_code: "validate_history_drift_version_skews",
+    canonical_code: "history_drift_version_skew",
     aliases: [],
   },
   {

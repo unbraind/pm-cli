@@ -3448,12 +3448,30 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const firstId = createSeedItem(context);
       const secondId = createSeedItem(context);
+      const versionSkewId = createSeedItem(context);
       await rm(path.join(context.pmPath, "history", `${firstId}.jsonl`), {
         force: true,
       });
       await rm(path.join(context.pmPath, "history", `${secondId}.jsonl`), {
         force: true,
       });
+      const versionSkewPath = path.join(
+        context.pmPath,
+        "history",
+        `${versionSkewId}.jsonl`,
+      );
+      const versionSkewRows = (await readFile(versionSkewPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => ({
+          ...(JSON.parse(line) as Record<string, unknown>),
+          item_hash_version: 99,
+        }));
+      await writeFile(
+        versionSkewPath,
+        `${versionSkewRows.map((row) => JSON.stringify(row)).join("\n")}\n`,
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -3461,6 +3479,7 @@ describe("runHealth", () => {
         expect.arrayContaining([
           `history_drift_missing_stream:${firstId}`,
           `history_drift_missing_stream:${secondId}`,
+          `history_drift_version_skew:${versionSkewId}`,
         ]),
       );
       const historyDriftCheck = health.checks.find(
@@ -3470,8 +3489,10 @@ describe("runHealth", () => {
         | { remediation_map?: Record<string, string> }
         | undefined;
       const remediationMap = historyDriftDetails?.remediation_map;
-      expect(remediationMap).toEqual({
+      expect(remediationMap).toMatchObject({
         history_drift_missing_stream: "pm history-repair --all",
+        history_drift_version_skew:
+          "npm install -g @unbrained/pm-cli@latest",
       });
     });
   });

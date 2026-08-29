@@ -2132,8 +2132,18 @@ function hasPositiveLinkedTestRunReceipt(
 
 /** Return whether a linked command applies a runner-level test-name filter that must match at least one test. */
 function commandUsesTestNameFilter(command: string): boolean {
-  return /(?:^|\s)(?:--test-name-pattern|--testnamepattern|-t)(?:=|\s)/u.test(
-    normalizeCommandForValidation(command),
+  const normalized = normalizeCommandForValidation(command);
+  if (
+    /(?:^|\s)(?:--test-name-pattern|--testnamepattern)(?:=|\s)/u.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  return splitNormalizedCommandSegments(normalized).some(
+    (segment) =>
+      /(?:^|\s)-t(?:=|\s)/u.test(segment) &&
+      segmentInvokesUnsafeDirectTestRunner(segment),
   );
 }
 

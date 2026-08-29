@@ -17193,7 +17193,9 @@
       "stability": "stable"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "validate_history_drift_version_skews"
+      ],
       "canonical_code": "history_drift_version_skew",
       "class": "generic_failure",
       "code": "history_drift_version_skew",
@@ -17207,7 +17209,7 @@
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
-      "stability": "provisional"
+      "stability": "stable"
     },
     {
       "aliases": [],
@@ -20848,7 +20850,7 @@
     },
     {
       "aliases": [],
-      "canonical_code": "validate_history_drift_version_skews",
+      "canonical_code": "history_drift_version_skew",
       "class": "generic_failure",
       "code": "validate_history_drift_version_skews",
       "emitting_commands": [
@@ -20861,7 +20863,7 @@
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
-      "stability": "provisional"
+      "stability": "stable"
     },
     {
       "aliases": [],

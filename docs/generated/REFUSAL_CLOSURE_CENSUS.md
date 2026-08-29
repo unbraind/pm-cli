@@ -322,7 +322,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `validate_history_drift_hash_mismatches` | `history_drift_hash_mismatch` | uncovered | none | 0 |
 | `validate_history_drift_missing_streams` | `history_drift_missing_stream` | uncovered | none | 0 |
 | `validate_history_drift_unreadable_streams` | `history_drift_unreadable_stream` | uncovered | none | 0 |
-| `validate_history_drift_version_skews` | `validate_history_drift_version_skews` | uncovered | none | 0 |
+| `validate_history_drift_version_skews` | `history_drift_version_skew` | uncovered | none | 0 |
 | `validate_history_unknown_author_events` | `history_unknown_author_events` | uncovered | none | 0 |
 | `validate_lifecycle_active_closure_like_metadata` | `validate_lifecycle_active_closure_like_metadata` | uncovered | none | 0 |
 | `validate_lifecycle_active_terminal_parent` | `validate_lifecycle_active_terminal_parent` | uncovered | none | 0 |
