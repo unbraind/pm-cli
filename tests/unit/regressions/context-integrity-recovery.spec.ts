@@ -235,6 +235,39 @@ describe("context integrity recovery", () => {
       },
     ]);
 
+    const caseDistinctExternalGraph = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-upper-holder",
+        title: "Uppercase locator holder",
+        status: "blocked",
+        blocked_by: "jira:Case",
+      },
+      {
+        id: "pm-lower-holder",
+        title: "Lowercase locator holder",
+        status: "blocked",
+        blocked_by: "jira:case",
+      },
+      {
+        id: "pm-structured-holder",
+        title: "Case-distinct structured locator holder",
+        status: "open",
+        dependencies: [
+          { id: "jira:Case", kind: "related" },
+          { id: "jira:case", kind: "related" },
+        ],
+      },
+    ] as never);
+    const caseDistinctEdges = caseDistinctExternalGraph.graph.edges();
+    expect(caseDistinctEdges).toHaveLength(4);
+    expect(new Set(caseDistinctEdges.map((edge) => edge.target)).size).toBe(2);
+    expect(caseDistinctExternalGraph.duplicateRows).toEqual([]);
+    expect(
+      caseDistinctExternalGraph.details.filter(
+        (detail) => detail.status === "external",
+      ),
+    ).toHaveLength(2);
+
     const collisionGraph = assembleWorkspaceRelationshipGraph([
       {
         id: "pm-42",
@@ -568,21 +601,33 @@ describe("context integrity recovery", () => {
   });
 
   it("fails a filtered linked test when the runner reports zero executed tests", async () => {
-    const [result] = await runLinkedTests(
+    const [unquoted, doubleQuoted, singleQuoted] = await runLinkedTests(
       [
         {
           command:
             "printf '# tests 0\\n# pass 0\\n' # --test-name-pattern missing",
           scope: "project",
         },
+        {
+          command:
+            "printf '# tests 0\\n# pass 0\\n' # \"--test-name-pattern=missing\"",
+          scope: "project",
+        },
+        {
+          command:
+            "printf '# tests 0\\n# pass 0\\n' # '--testNamePattern=missing'",
+          scope: "project",
+        },
       ],
       30,
     );
-    expect(result).toMatchObject({
-      status: "failed",
-      failure_category: "empty_run",
-      error: expect.stringContaining("zero"),
-    });
+    for (const result of [unquoted, doubleQuoted, singleQuoted]) {
+      expect(result).toMatchObject({
+        status: "failed",
+        failure_category: "empty_run",
+        error: expect.stringContaining("zero"),
+      });
+    }
   });
 
   it("requires positive runner evidence for filtered linked tests", async () => {

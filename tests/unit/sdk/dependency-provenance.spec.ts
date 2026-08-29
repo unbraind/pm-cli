@@ -5,7 +5,7 @@ import {
 } from "../../../src/sdk/graph/assembly.js";
 
 describe("external dependency graph assembly", () => {
-  it("deduplicates external endpoints and materializes them without dangling findings", () => {
+  it("deduplicates exact external endpoints while preserving locator case", () => {
     const items = [
       {
         id: "pm-local",
@@ -30,12 +30,20 @@ describe("external dependency graph assembly", () => {
     expect(collectExternalDependencyTargetIds(items as never)).toEqual([
       "foreign-a",
       "foreign-blocker",
+      "foreign-z",
       "Foreign-Z",
     ]);
     const assembled = assembleWorkspaceRelationshipGraph(items as never);
     expect(assembled.details).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "Foreign-Z", status: "external" }),
+        expect.objectContaining({
+          title: "[external] Foreign-Z",
+          status: "external",
+        }),
+        expect.objectContaining({
+          title: "[external] foreign-z",
+          status: "external",
+        }),
         expect.objectContaining({ id: "foreign-a", status: "external" }),
         expect.objectContaining({
           id: "pm-local-missing",
@@ -44,7 +52,9 @@ describe("external dependency graph assembly", () => {
       ]),
     );
     expect(assembled.dangling.active).toHaveLength(1);
-    expect(assembled.graph.hasNode("Foreign-Z")).toBe(true);
+    expect(
+      assembled.graph.nodes().filter((id) => id.toLowerCase().endsWith("foreign-z")),
+    ).toHaveLength(2);
   });
 
   it("keeps colliding local, missing, and external identities distinct", () => {

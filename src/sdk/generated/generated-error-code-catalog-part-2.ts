@@ -1744,6 +1744,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "validate_history_drift_version_skews",
+    meaning: "Validate history drift version skews condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "validate_history_drift_version_skews",
+    aliases: [],
+  },
+  {
     code: "validate_history_unknown_author_events",
     meaning: "Validate history unknown author events condition.",
     stability: "stable",

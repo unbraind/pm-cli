@@ -6,9 +6,9 @@ status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-29T06:29:05.451Z"
-closed_at: "2026-08-29T06:29:04.932Z"
-completed_at: "2026-08-29T06:29:04.932Z"
+updated_at: "2026-08-29T07:43:14.562Z"
+closed_at: "2026-08-29T07:43:13.912Z"
+completed_at: "2026-08-29T07:43:13.912Z"
 author: "harness:codex"
 acceptance_criteria: A released-version fixture proves whether identical epoch-2 content can hash differently; every hash-input or algorithm change advances a format capability or preserves the previous comparator; drift diagnostics distinguish unsupported writer/version skew from same-version corruption; history events expose sufficient writer capability provenance for deterministic diagnosis; repair changed receipts match actual byte writes; SDK CLI health validate and repair contracts carry the distinction; focused cross-version packed-consumer and exact repository coverage gates pass
 parent: pm-o2kc
@@ -26,7 +26,7 @@ customer_impact: "Ordinary cross-version mutations make CI report corruption, tr
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
@@ -35,24 +35,34 @@ comments[8]{created_at,author,text}:
   "2026-08-29T05:25:24.096Z","harness:codex","Final review evidence: the scanner continues past an unsupported earlier epoch for the independent final supported after_hash comparison. Focused linked tests passed 39 assertions (11 connected plus 28 history); the exact repository coverage run passed 8,111 tests at 60,140/60,140 statements, 45,357/45,357 branches, 12,505/12,505 functions, and 57,911/57,911 lines."
   "2026-08-29T06:08:46.316Z","harness:codex","Final CodeRabbit review finding: drift cache loading accepts non-boolean chain_ok values, allowing truthy malformed metadata to bypass chain mismatch detection. Reopened for strict cache schema validation and a negative control."
   "2026-08-29T06:28:53.971Z","harness:codex","Final review evidence: drift cache decoding now rejects non-boolean chain_ok values. The focused four-file review suite passed 103/103, full coverage passed 8,112 tests at 100/100/100/100, repository quality:static passed, and linked acceptance passed."
-learnings[3]{created_at,author,text}:
+  "2026-08-29T07:13:38.431Z","harness:codex","CodeRabbit exact-head finding: new history version-skew health and validate codes lack registry guidance, leaving agents without the safe runtime-upgrade command. Reopened for executable remediation parity."
+  "2026-08-29T07:43:02.400Z","harness:codex","Review closure evidence: registered executable npm upgrade remediation for both health history_drift_version_skew and validate_history_drift_version_skews, regenerated the error catalog, refusal census, contract fixture, and SDK surface, and proved the registry regression. Full repository result: 586 files and 8,113 tests passed at exact 100/100/100/100 coverage (60,145 statements, 45,362 branches, 12,508 functions, 57,915 lines)."
+learnings[4]{created_at,author,text}:
   "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
   "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
   "2026-08-29T06:28:53.527Z","harness:codex","Persisted caches are untrusted inputs: validate every required scalar type before reusing a cached integrity verdict, even when version and fingerprint fields match."
-files[9]{path,scope,note}:
+  "2026-08-29T07:43:02.818Z","harness:codex","A newer history hash capability is a runtime compatibility boundary, not repairable corruption; every health and validation projection must route to upgrade guidance rather than history-repair."
+files[15]{path,scope,note}:
+  sdk/public-surface.json,project,Public SDK surface advertises history version-skew remediation codes
+  src/core/diagnostics/remediation.ts,project,Executable upgrade guidance for history hash version skew
   src/core/history/drift-scan.ts,project,version-skew classification
   src/core/history/history.ts,project,hash capability epoch
   src/core/history/replay.ts,project,cross-epoch replay
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public catalog includes version-skew remediation code
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated public catalog includes validation version-skew remediation code
   src/sdk/governance/health.ts,project,health projection
   src/sdk/governance/validate-history-drift.ts,project,validation projection
+  tests/fixtures/contracts/full.json,project,Generated contract snapshot for version-skew remediation entries
+  tests/integration/remediation-registry.spec.ts,project,Registry regression for health and validate version-skew warnings
   tests/unit/core/history/drift-scan.spec.ts,project,History capability skew coverage
   tests/unit/core/history/history-hash-version.spec.ts,project,History hash epoch compatibility coverage
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
   tests/unit/sdk/history-repair-version-contract.spec.ts,project,Cross-version repair receipt coverage
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:01.231Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,project,240,"harness:codex","2026-08-28T21:54:08.534Z",local_mutation,feat/sdk-context-integrity-recovery,history capability and version skew coverage
-test_runs[4]:
+  node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,project,240,"harness:codex","2026-08-29T07:17:30.556Z",local_mutation,feat/sdk-context-integrity-recovery,Version-skew remediation registry regression
+test_runs[5]:
   - run_id: test-local-mtdkxs90-zu56nw
     kind: test
     status: passed
@@ -107,9 +117,25 @@ test_runs[4]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope,note}:
+  - run_id: test-all-local-mte2kogd-50fz0x
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T07:39:08.311Z"
+    finished_at: "2026-08-29T07:39:33.927Z"
+    recorded_at: "2026-08-29T07:39:33.927Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "Validated malformed-cache rejection and preserved exact history-drift verification; focused, linked, full-coverage, and static quality gates pass."
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal/remediation census includes history version-skew guidance
+close_reason: "History hash capability skew now fails closed with executable runtime-upgrade remediation across health, validate, contracts, and the public error catalog; focused, linked, full exact-coverage, static, package, npm, and Bun acceptance all pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

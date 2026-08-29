@@ -17194,6 +17194,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_drift_version_skew",
+      "class": "generic_failure",
+      "code": "history_drift_version_skew",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift version skew condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_conflict_markers_detected",
       "class": "generic_failure",
       "code": "history_merge_conflict_markers_detected",
@@ -20828,6 +20845,23 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "validate_history_drift_version_skews",
+      "class": "generic_failure",
+      "code": "validate_history_drift_version_skews",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Validate history drift version skews condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

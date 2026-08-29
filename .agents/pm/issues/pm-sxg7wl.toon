@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:health","area:history","area:sdk",cache-integrity,context-integrity,github-1148
 created_at: "2026-08-29T00:20:31.873Z"
-updated_at: "2026-08-29T03:06:34.907Z"
-closed_at: "2026-08-29T03:06:06.037Z"
-completed_at: "2026-08-29T03:06:06.037Z"
+updated_at: "2026-08-29T07:43:17.982Z"
+closed_at: "2026-08-29T07:43:17.434Z"
+completed_at: "2026-08-29T07:43:17.434Z"
 author: "harness:codex"
 acceptance_criteria: "Metadata-mode health preserves the warm-cache fast path when cached hashes agree; A cached hash mismatch is never emitted until the item document and history stream are reread authoritatively; Stale cache evidence is replaced and the final diagnostic reports that a strict confirmation occurred; Cache schema records the runtime history-hash capability and invalidates incompatible envelopes; Regression and performance controls cover false-positive recovery, genuine drift retention, and zero extra rereads on clean cache hits; SDK CLI health validate and temporary-workspace acceptance retain contract parity and exact coverage"
 parent: pm-o2kc
@@ -28,15 +28,18 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-c90s,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
   pm-o2kc,implements,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
   pm-up22,discovered_from,"2026-08-29T00:20:31.873Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-29T00:20:31.873Z","harness:codex","Duplicate check evidence: complete 2596-item all-status strict read had no omissions; corpus-wide cache search found 20 historical or strategic candidates. Closed pm-up22 owns stat-preserving false-clean prevention, closed pm-c90s owns the intentional metadata health fast path, and closed pm-2qahia owns writer-version skew. None owns the new false-corruption confirmation failure reported by GitHub #1148, so this recurrence is canonical."
   "2026-08-29T00:27:16.900Z","harness:codex","Implementation evidence: SDK health keeps metadata verification for clean cache hits, but any cached hash, chain, or writer-version candidate now forces canonical item enumeration plus strict stream content hashing. Diagnostics publish candidate, confirmed, and resolved-false-positive sets. History drift cache schema v5 binds the current item-hash capability so incompatible cache meaning is never reused. Focused 73-test regression suite, ESLint, TypeScript projects, and diff hygiene pass."
   "2026-08-29T00:40:45.398Z","harness:codex","Final verification evidence: full repository coverage passed 586 files and 8,101 tests at exactly 60,128/60,128 statements, 45,317/45,317 branches, 12,500/12,500 functions, and 57,900/57,900 lines. Repository static assurance, SDK/package parity, contract snapshots, agent context/token gates, graph and record-integrity assurances, ESLint, both jscpd profiles with zero clones, TypeScript projects, secret scan, and git diff hygiene all pass. The existing packed npm/Bun/Node SDK and CLI temporary-workspace acceptance remains green for this delivery."
   "2026-08-29T02:22:17.210Z","harness:codex","Review-round evidence: brief health cache-confirmation vectors are bounded, unsupported cached hash capability rows invalidate regardless of legacy version_skew shape, and confirmed chain corruption remains independent from version skew. The 74-test linked health/drift suite, static gates, and exact coverage pass."
   "2026-08-29T03:05:20.911Z","harness:codex","Second review-round evidence: strict and content drift verification now always reload authoritative stream evidence before confirming or clearing a cache candidate, so a forged cached writer-version result cannot survive an unchanged content hash. The brief health summary now emits the actual resolved_false_positive_items field. Focused drift/health regressions and the complete 8,108-test exact-coverage gate pass."
   "2026-08-29T03:06:04.100Z","harness:codex","Linked acceptance: pm test-all selected all four active items and passed 4/4 with 2 executed commands, 2 intentional duplicate skips, zero failures; drift/health executed 75 tests."
-learnings[1]{created_at,author,text}:
+  "2026-08-29T07:13:43.405Z","harness:codex","CodeRabbit exact-head finding: health confirmation lookup assumes slash-normalized metadata-cache keys and its fixture omits required ok, making the focused contract non-portable to Windows. Reopened for path normalization and type-complete coverage."
+  "2026-08-29T07:43:05.066Z","harness:codex","Review closure evidence: health regression fixtures now satisfy the HealthCheck contract and normalize metadata-cache separators before suffix matching, preserving the authoritative stale-cache proof on Windows. The focused 60-test health suite, linked tests, and full exact coverage pass."
+learnings[2]{created_at,author,text}:
   "2026-08-29T00:40:44.988Z","harness:codex","Cache evidence can safely accelerate a clean verdict, but a corruption verdict is a higher-trust claim: promote it through canonical source reads and content hashing before exposing it to agents. Bind persisted cache semantics to the hash-writer capability so version drift invalidates evidence rather than reinterpreting it."
+  "2026-08-29T07:43:05.489Z","harness:codex",Cross-platform cache regressions should compare normalized portable paths and construct complete public-contract fixtures so platform drift cannot hide the behavior under test.
 files[4]{path,scope,note}:
   src/core/history/drift-scan.ts,project,Versioned history-drift cache capability fence and content-hash confirmation state
   src/sdk/governance/health.ts,project,SDK-owned authoritative cached-corruption confirmation and diagnostics
@@ -44,7 +47,7 @@ files[4]{path,scope,note}:
   tests/unit/core/history/drift-scan.spec.ts,project,Unit coverage for cache schema capability invalidation and stat-compatible stale rows
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,project,300,"harness:codex","2026-08-29T00:27:16.453Z",local_mutation,feat/sdk-context-integrity-recovery
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtdn5t85-y3ex07
     kind: test
     status: passed
@@ -82,9 +85,22 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mte2kogd-50fz0x
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T07:39:08.311Z"
+    finished_at: "2026-08-29T07:39:53.562Z"
+    recorded_at: "2026-08-29T07:39:53.562Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Agent-facing cache trust and authoritative confirmation contract
-close_reason: "Second review round resolved authoritative cache confirmation and brief diagnostic field parity; linked acceptance, 8,108-test exact coverage, static quality, defect evidence, record integrity, and secret scanning pass."
+close_reason: "The cached-drift health regression is type-complete and path-separator portable, retaining authoritative false-positive confirmation on Windows; all focused, linked, and full gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

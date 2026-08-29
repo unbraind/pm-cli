@@ -109,6 +109,16 @@ function isExternalGraphReference(
   );
 }
 
+/** Build a namespace-aware reference identity: local ids are case-folded while external locators retain case. */
+function dependencyReferenceIdentityKey(
+  target: string,
+  sourceKind?: string,
+): string {
+  return isExternalGraphReference(target, sourceKind)
+    ? `external\u0000${target}`
+    : `local\u0000${target.toLowerCase()}`;
+}
+
 /** Resolve one normalized edge target through the namespace selected by its provenance. */
 function resolveGraphReferenceTarget(
   target: string,
@@ -116,11 +126,9 @@ function resolveGraphReferenceTarget(
   canonicalIds: ReadonlyMap<string, string>,
   externalGraphIds: ReadonlyMap<string, string>,
 ): string {
-  return (
-    isExternalGraphReference(target, sourceKind)
-      ? externalGraphIds
-      : canonicalIds
-  ).get(target.toLowerCase())!;
+  return isExternalGraphReference(target, sourceKind)
+    ? externalGraphIds.get(target)!
+    : canonicalIds.get(target.toLowerCase())!;
 }
 
 /**
@@ -187,7 +195,7 @@ function countDependencyRowIdentities(
       typeof legacyDependency.kind === "string"
         ? legacyDependency.kind
         : "related";
-    const key = `${kind}\u0000${target.toLowerCase()}`;
+    const key = `${kind}\u0000${dependencyReferenceIdentityKey(target, legacyDependency.source_kind)}`;
     const existing = occurrences.get(key);
     if (existing) existing.count += 1;
     else occurrences.set(key, { target_id: target, kind, count: 1 });
@@ -247,7 +255,11 @@ function decodeOrderingStorageContradiction(
 ): OrderingStorageContradiction | undefined {
   if (typeof dependency !== "object" || dependency === null) return undefined;
   const target = normalizeDependencyReferenceTarget(dependency.id);
-  if (!target || target.toLowerCase() !== blocker.toLowerCase())
+  if (
+    !target ||
+    dependencyReferenceIdentityKey(target, dependency.source_kind) !==
+      dependencyReferenceIdentityKey(blocker)
+  )
     return undefined;
   const definition = registry.resolve(
     typeof dependency.kind === "string" ? dependency.kind : "related",
@@ -428,9 +440,9 @@ export function collectExternalDependencyTargetIds(
     if (
       scalarBlocker &&
       isExternalGraphReference(scalarBlocker) &&
-      !targets.has(scalarBlocker.toLowerCase())
+      !targets.has(scalarBlocker)
     ) {
-      targets.set(scalarBlocker.toLowerCase(), scalarBlocker);
+      targets.set(scalarBlocker, scalarBlocker);
     }
     for (const dependency of item.dependencies ?? []) {
       if (
@@ -441,8 +453,8 @@ export function collectExternalDependencyTargetIds(
         continue;
       }
       const id = normalizeDependencyReferenceTarget(dependency.id);
-      if (id && !targets.has(id.toLowerCase())) {
-        targets.set(id.toLowerCase(), id);
+      if (id && !targets.has(id)) {
+        targets.set(id, id);
       }
     }
   }
@@ -557,7 +569,7 @@ export function assembleWorkspaceRelationshipGraph(
     while (usedGraphIds.has(graphId.toLowerCase())) {
       graphId = `external:${graphId}`;
     }
-    externalGraphIds.set(id.toLowerCase(), graphId);
+    externalGraphIds.set(id, graphId);
     usedGraphIds.add(graphId.toLowerCase());
   }
   const graphItems = safeItems.map((item) => {
@@ -610,7 +622,7 @@ export function assembleWorkspaceRelationshipGraph(
         ...graphItems,
         ...missingIds.map((id) => ({ id })),
         ...externalIds.map((id) => ({
-          id: externalGraphIds.get(id.toLowerCase())!,
+          id: externalGraphIds.get(id)!,
         })),
       ],
       relationshipRegistry,
@@ -630,7 +642,7 @@ export function assembleWorkspaceRelationshipGraph(
         status: "missing",
       })),
       ...externalIds.map((id) => ({
-        id: externalGraphIds.get(id.toLowerCase())!,
+        id: externalGraphIds.get(id)!,
         title: `[external] ${id}`,
         status: "external",
       })),

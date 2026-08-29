@@ -270,6 +270,7 @@ describe("runHealth", () => {
       healthInternals.summarizeHealthCheckDetails(
         {
           name: "history_drift",
+          ok: false,
           status: "warn",
           details: {
             cache_confirmation: {
@@ -692,7 +693,8 @@ describe("runHealth", () => {
         >;
       };
       const itemCacheKey = Object.keys(staleMetadataCache.entries).find(
-        (entryPath) => entryPath.endsWith(`/${id}.toon`),
+        (entryPath) =>
+          entryPath.replaceAll("\\", "/").endsWith(`/${id}.toon`),
       );
       if (itemCacheKey === undefined) {
         throw new Error(`expected metadata cache entry for ${id}`);

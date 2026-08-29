@@ -144,6 +144,12 @@ describe("shared remediation registry", () => {
       expect(
         resolveRemediation("validate_format_version_ahead_items:1")?.command,
       ).toBe("npm install -g @unbrained/pm-cli@latest");
+      expect(
+        resolveRemediation("history_drift_version_skew:pm-x")?.command,
+      ).toBe("npm install -g @unbrained/pm-cli@latest");
+      expect(
+        resolveRemediation("validate_history_drift_version_skews:1")?.command,
+      ).toBe("npm install -g @unbrained/pm-cli@latest");
     });
 
     it("returns undefined for an unknown warning code", () => {

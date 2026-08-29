@@ -281,6 +281,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
+    code: "history_drift_version_skew",
+    command: "npm install -g @unbrained/pm-cli@latest",
+    summary:
+      "A history stream declares an item hash version this runtime does not support; upgrade pm to verify the chain instead of re-anchoring it.",
+  },
+  {
     code: "history_drift_merge_receipt",
     command: "pm merge reconcile",
     summary:
@@ -505,6 +511,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm history-repair <id>",
     summary:
       "Re-anchor the history chains of the items with a broken history chain.",
+  },
+  {
+    code: "validate_history_drift_version_skews",
+    command: "npm install -g @unbrained/pm-cli@latest",
+    summary:
+      "One or more history streams declare an item hash version this runtime does not support; upgrade pm to verify the chains instead of re-anchoring them.",
   },
   // --- pm validate: command_references ---
   {
