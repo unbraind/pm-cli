@@ -472,7 +472,7 @@ describe("context integrity recovery", () => {
         resolve: async () => ({
           status: "provider-specific" as never,
           title: " ",
-          checkedAt: "2026-08-29T01:00:00.000Z",
+          checkedAt: "2026-08-29 01:00:00Z",
         }),
       });
       cleanup.push(disposeUnknown);

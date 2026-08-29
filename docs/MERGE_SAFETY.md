@@ -118,7 +118,7 @@ After every branch merge that touches `.agents/pm`, run:
 ```bash
 pm merge reconcile --dry-run --json
 pm merge reconcile --message "Reconcile merged tracker histories" --json
-# Required only after every discarded field has been reviewed or re-applied:
+# Required only to accept a receipt that lacks qualifying exact hash proof:
 pm merge reconcile --force --message "Accept reviewed merge decisions" --json
 ```
 
@@ -157,10 +157,14 @@ settlement include only the individually proven receipt id, so one valid receipt
 cannot authorize an untrusted same-item sibling. Failed or unproven receipts
 remain pending unless the coordinator explicitly reviews and supplies `--force`.
 Receipts with discarded scalar values retain the distinct
-`merge_decisions_unreviewed:<n>` finding, and the apply pass refuses them unless
-the coordinator explicitly supplies `--force` after review. This prevents a
-routine history repair from hiding unfinished reconciliation or silently
-accepting data loss.
+`merge_decisions_unreviewed:<n>` finding. Matching authoritative hash proof
+allows those receipts to settle without `--force`; without qualifying proof,
+the apply pass refuses them until the coordinator explicitly supplies `--force`
+after review. The `history_drift_merge_receipt` remediation may therefore emit
+an unforced apply command that clears `merge_decisions_unreviewed` when the
+receipt proves the exact current merged values. This prevents routine repair
+from hiding unfinished reconciliation while avoiding redundant force for an
+already-proven canonical snapshot.
 It exits nonzero while either merge-critical validation check is non-green, so
 CI and explicit post-merge hooks cannot approve unresolved receipts or drift.
 The apply pass uses the audited history rewrite boundary to append a

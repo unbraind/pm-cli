@@ -206,7 +206,8 @@ function resolveItemBlockersWithIndex(
 
 /** Resolves an item's blockers against a corpus index with reverse `blocks` support. */
 export function resolveItemBlockers(
-  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies"> &
+    Partial<Pick<ItemMetadata, "id" | "updated_at">>,
   itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
 ): ResolvedBlocker[] {

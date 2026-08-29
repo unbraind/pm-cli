@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:graph","area:sdk",context-integrity,external-references,github-1146,github-1147
 created_at: "2026-08-28T21:25:57.770Z"
-updated_at: "2026-08-29T12:50:14.108Z"
-closed_at: "2026-08-29T12:50:13.597Z"
-completed_at: "2026-08-29T12:50:13.597Z"
+updated_at: "2026-08-29T17:11:05.184Z"
+closed_at: "2026-08-29T17:11:04.536Z"
+completed_at: "2026-08-29T17:11:04.536Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: External references are typed and preserved rather than counted as dangling local ids; A public resolver extension point returns bounded status title source and checked-at evidence without core GitHub coupling; Unresolved external blockers expose age and resolver availability while resolved blockers can trigger the existing auto-unblock transition; Validation never recommends destructive deletion for a well-formed external locator; SDK CLI MCP health next validate and temporary-workspace acceptance remain contract-parity with exact coverage
@@ -19,16 +19,16 @@ reporter: GitHub issues #1146 and #1147
 severity: high
 environment: pm 2026.8.28 in fresh local workspaces plus a long-lived cross-repository blocker
 repro_steps: Block an item on a GitHub issue URL; close the remote issue; observe pm next still counting an unknown blocker and pm validate classifying the locator as dangling with an unset hint.
-resolution: External endpoint collection now applies graph-target normalization to scalar and structured blockers before namespace assignment.
-expected_result: The no-active-blocker sentinel remains visible only in legacy sentinel governance and never becomes an external graph endpoint or disconnected detail node.
-actual_result: Scalar and global structured sentinel rows are excluded from external target collection while the scalar legacy sentinel remains classified in no_active_blocker_sentinels.
+resolution: Aligned the public blocker input contract with projected staleness context and canonicalized every parseable provider observation timestamp to ISO-8601.
+expected_result: "SDK callers can supply optional item identity and mutation time without casts, and checked_at always has one canonical sortable timestamp format."
+actual_result: resolveItemBlockers now accepts optional id and updated_at; external resolver results normalize parsed checkedAt values with toISOString while retaining the deterministic fallback for invalid or absent timestamps.
 component: "SDK dependency governance, external resolver hooks, next, validate, and CLI adapters"
 customer_impact: External dependencies silently park actionable work forever while the primary remediation can destroy the only machine-readable explanation.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6sc8jq,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-p9sc,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
   pm-uxkf,discovered_from,"2026-08-28T21:25:57.770Z","harness:codex","cli:create:dep",detected
-comments[24]{created_at,author,text}:
+comments[28]{created_at,author,text}:
   "2026-08-28T21:25:57.770Z","harness:codex","Duplicate check evidence: complete all-status strict read covered 2593 readable items with no omissions. Closed pm-6sc8jq owns truthful stale-lifecycle governance for external blockers while pm-p9sc owns local dangling projections and pm-uxkf owns edge-aware blocked reads. No open item owns re-resolution plus safe validation classification. This recurrence is canonical for GitHub 1146 and 1147."
   "2026-08-28T21:26:39.465Z","harness:codex","GitHub linkage evidence: issues #1146 and #1147 both point to this canonical combined external-blocker lifecycle and validation item at its merge-stable main-branch toon path."
   "2026-08-28T23:24:21.263Z","harness:codex","Verification evidence: external classification, graph, actionability, next, and validation regressions passed; packed Node and Bun SDK consumers imported the public classifier successfully; full coverage passed exact 100/100/100/100."
@@ -53,6 +53,10 @@ comments[24]{created_at,author,text}:
   "2026-08-29T11:49:59.815Z","harness:codex","CodeRabbit exact-head finding: external target collection uses reference normalization instead of graph normalization, allowing a global no-active-blocker sentinel to enter the external node namespace even though edge normalization drops it. Adding scalar and structured negative controls before implementation."
   "2026-08-29T12:24:41.994Z","harness:codex","TDD evidence: scalar and global structured no-active-blocker rows reproduced an unwanted fifth external endpoint. Graph-target normalization now excludes both before namespace allocation while retaining the scalar row in legacy sentinel governance. Focused graph and connected suites passed; full repository rerun passed 586 files and 8,120 tests at exact 100/100/100/100 coverage."
   "2026-08-29T12:50:12.982Z","harness:codex","Final closure evidence: sentinel normalization excludes scalar and structured no-active-blocker markers before external namespace allocation while preserving legacy sentinel reporting. Linked acceptance passed 3/3 commands (79 assertions), repository coverage passed 8,121/8,121 at exact 100/100/100/100, and the full static assurance pipeline passed."
+  "2026-08-29T16:48:25.291Z","harness:codex","Exact-head review follow-up: CodeRabbit found that resolveItemBlockers accepts less context than its SDK-owned implementation, making blocked_since unreachable without a cast, and that valid but non-ISO provider timestamps escape through checked_at. Both findings reproduce against the current public signatures and belong to this canonical external-blocker item."
+  "2026-08-29T16:56:27.842Z","harness:codex","TDD evidence: a parseable non-ISO provider timestamp escaped verbatim and failed the canonical ISO assertion. The implementation now emits new Date(parsed).toISOString(); the public resolveItemBlockers signature accepts optional id/updated_at without a cast. The first full suite failed closed only because this public signature changed the SDK surface snapshot, which is now regenerated with an explicit compatibility rationale."
+  "2026-08-29T17:09:54.135Z","harness:codex","Static-gate environment evidence: every correctness, contract, docs, security, graph, record, SDK surface, and package gate passed. The aggregate stopped only at the CLI transport RSS ratchet. Three current-tree probes and a clean detached 6bb29b22 baseline worktree both exceeded the same get/claim thresholds, proving the local host variance predates these review fixes; the temporary baseline worktree was removed. Hosted exact-head CI remains the authoritative fresh-runner arbitration."
+  "2026-08-29T17:11:03.959Z","harness:codex","Final review-fix evidence: linked PM acceptance passed all 3 external-blocker entries; full repository coverage passed 586 files and 8,124 tests at exact 60,169/45,397/12,514/57,939 (100/100/100/100); SDK surface, contracts, ESLint, package, docs, security, graph, and record assurances pass. Fresh-runner hosted CI will arbitrate the baseline-reproduced local RSS variance."
 learnings[6]{created_at,author,text}:
   "2026-08-28T23:24:37.448Z","harness:codex","A syntactically valid remote locator is a typed graph node even when no resolver is installed. Unknown external state must remain explicit evidence, never be rewritten as local dangling corruption."
   "2026-08-29T00:14:46.442Z","harness:codex","Provider integrations belong behind the SDK resolver registry: core classifies and preserves external identity while bounded package-owned providers supply lifecycle evidence. Resolver failures and absent providers fail closed to explicit unknown state instead of deleting context."
@@ -75,7 +79,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:03.402Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts,project,240,"harness:codex","2026-08-29T07:18:53.208Z",local_mutation,feat/sdk-context-integrity-recovery,External graph identity and governance coverage
   node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-29T08:23:33.401Z",local_mutation,feat/sdk-context-integrity-recovery,Malformed external blocker and context projection regressions
-test_runs[10]:
+test_runs[11]:
   - run_id: test-local-mtdmottd-sfvxdl
     kind: test
     status: passed
@@ -219,9 +223,24 @@ test_runs[10]:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mtemypfm-2qyv3b
+    kind: test-all
+    status: passed
+    started_at: "2026-08-29T17:09:55.084Z"
+    finished_at: "2026-08-29T17:10:26.582Z"
+    recorded_at: "2026-08-29T17:10:26.582Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: "External dependency graph normalization now preserves typed external identities and excludes governance sentinels; linked acceptance, exact coverage, and static assurance pass."
+close_reason: "Public blocker staleness input and provider timestamp normalization are contract-aligned, regression-tested, and covered by exact repository evidence."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

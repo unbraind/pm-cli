@@ -177,9 +177,9 @@ export async function resolveExternalDependencyReference(
       id,
       MAX_EXTERNAL_SOURCE_LENGTH,
     );
-    const observedAt = candidate.checkedAt?.trim() ?? "";
-    const checkedAt = Number.isFinite(Date.parse(observedAt))
-      ? observedAt
+    const observedAtMs = Date.parse(candidate.checkedAt?.trim() ?? "");
+    const checkedAt = Number.isFinite(observedAtMs)
+      ? new Date(observedAtMs).toISOString()
       : (options.now?.() ?? new Date().toISOString());
     return {
       id,

@@ -1398,6 +1398,14 @@
       ],
       "package_version": "2026.8.28",
       "reason": "Replace force-only merge decision acceptance with exact receipt proof and add structured bare-comma refusal diagnostics."
+    },
+    {
+      "changes": [
+        "signature ./sdk:resolveItemBlockers",
+        "signature ./sdk/graph:resolveItemBlockers"
+      ],
+      "package_version": "2026.8.28",
+      "reason": "Broaden resolveItemBlockers input to accept optional id and updated_at context already consumed by blocker projection"
     }
   ],
   "entrypoints": {
@@ -14536,7 +14544,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "resolveItemBlockers",
-          "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[]"
+          "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\"> & Partial<Pick<ItemMetadata, \"id\" | \"updated_at\">>, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\"> & Partial<Pick<ItemMetadata, \"id\" | \"updated_at\">>, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[]"
         },
         {
           "classification": "advanced_export",
@@ -26182,7 +26190,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "resolveItemBlockers",
-          "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[]"
+          "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\"> & Partial<Pick<ItemMetadata, \"id\" | \"updated_at\">>, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\"> & Partial<Pick<ItemMetadata, \"id\" | \"updated_at\">>, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[]"
         },
         {
           "classification": "supported",

@@ -147,7 +147,7 @@ describe("collectBlockedByIds", () => {
         {
           dependencies: [dependency],
           updated_at: "2026-06-25T00:00:00.000Z",
-        } as ItemMetadata,
+        },
         new Map(),
         registry,
       ),
