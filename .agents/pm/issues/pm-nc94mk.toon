@@ -2,13 +2,13 @@ id: pm-nc94mk
 title: "GH-1140: reject ambiguous bare comma tuples for linked file and test mutations"
 description: "GitHub issue #1140 proves that update/create --file and linked-test add paths accept a comma-bearing bare value with no structured key before the first comma, persist the entire tuple as path or command, and return success. The result is a linked file that cannot resolve or a linked test that cannot execute, while TOON rendering can make the corruption look like a valid row."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:sdk",data-integrity,linked-artifacts,parser
 created_at: "2026-08-28T19:16:55.859Z"
-updated_at: "2026-08-29T15:58:49.472Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4c3bbebc779deae6780a83dd"
+updated_at: "2026-08-29T16:28:03.171Z"
+closed_at: "2026-08-29T16:28:02.328Z"
+completed_at: "2026-08-29T16:28:02.328Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "A shared public SDK parser rejects ambiguous comma-bearing bare file and test entries before mutation with a stable typed refusal and token-efficient keyed/JSON recovery; explicit path= and command= forms preserve literal commas losslessly; create, update, files, test, CLI, SDK, MCP, contracts, completions, and help expose one consistent grammar; health and validation identify legacy corrupted rows without rewriting history; focused unit/integration/packed npm+npx+bun+bunx/temp-workspace acceptance plus literal 100/100/100/100 coverage, docstrings, static, and security gates pass"
@@ -25,17 +25,21 @@ reporter: GitHub #1140
 severity: medium
 environment: pm 2026.8.21 through 2026.8.28; Node 26.5.0; Linux
 repro_steps: "Run pm update <id> --file \".github/workflows/release.yml,project,the publish step\" or pm test <id> --add \"node scripts/verify.ts,project,120\"; read the item as JSON and observe the entire tuple stored in path or command."
-actual_result: "The linked-artifact classifier now examines only the leading CSV segment for assignment syntax. README.md,scope=project reaches bare_comma_entry_ambiguous for both files and docs, while leading path=/scope=/note= entries, unknown leading assignments, equals-bearing filesystem paths, and URL query strings preserve their established behavior. Local focused, linked, strict static, full coverage, and temporary-workspace acceptance are green; hosted exact-head checks remain pending."
+resolution: Restricted linked-artifact assignment classification to the leading CSV segment so trailing structured fields cannot bypass bare-comma refusal.
+expected_result: "README.md,scope=project must return bare_comma_entry_ambiguous while valid leading keyed entries and equals-bearing literal paths retain their established behavior."
+actual_result: "The leading-segment classifier, regression suite, linked PM tests, temporary-workspace CLI acceptance, full 8,124-test exact coverage, and complete static assurance stack pass. Exact graph verification is traversable through verifies edges to pm-s8cth5 and pm-mlc3."
 affected_version: 2026.8.21-2026.8.28
 component: SDK linked-artifact input grammar and CLI adapters
 regression: false
 customer_impact: Agents receive successful writes for unusable context and verification evidence; observed across 38 items in 16 repositories.
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0v9k,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
   pm-fpdk37,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
   pm-m0b7h8,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
   pm-swie,discovered_from,"2026-08-28T19:16:55.859Z","harness:codex","cli:create:dep",detected
-comments[12]{created_at,author,text}:
+  pm-mlc3,verifies,"2026-08-29T16:13:27.517Z","harness:codex","cli:update:dep",detected
+  pm-s8cth5,verifies,"2026-08-29T16:13:27.517Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
   "2026-08-28T19:17:15.695Z","harness:codex","Duplicate-check evidence: complete all-status strict read covered 2,584 items with no unreadable entries or omissions. Exact/conjunctive searches found no item owning bare comma tuples that silently become the first linked-file/test field. Closed pm-swie owns structured linked-test keys, pm-0v9k owns unknown-key rejection, pm-fpdk37 owns docs URL/pair preservation, and pm-m0b7h8 owns delimiter-safe removal; their full live status, resolution, close reason, comments, notes, learnings, relationships, and histories were read before this distinct item was created. The item remains open and unclaimed because this intake records future work rather than active implementation."
   "2026-08-28T23:24:26.500Z","harness:codex","Verification evidence: files/docs, create, linked-test, and connected recovery suites passed; packed CLI refused an ambiguous docs tuple with structured path= guidance; full coverage passed exact 100/100/100/100."
   "2026-08-29T02:22:17.699Z","harness:codex","Review-round evidence: create and linked-test mutation paths now share the same structured key-value classifier from core parsing, eliminating grammar drift while preserving keyed literal commas and refusing ambiguous bare tuples. CLI, SDK, packed consumer, and exact-coverage acceptance pass."
@@ -48,6 +52,8 @@ comments[12]{created_at,author,text}:
   "2026-08-29T15:42:41.236Z","harness:codex","Active exact-head review remediation: verify structured-path detection against the first segment so a later scope= segment cannot reclassify a bare leading path; preserve valid leading path=/scope=/note= and deliberate unknown-leading-key refusal. Add a focused negative control before implementation."
   "2026-08-29T15:44:26.777Z","harness:codex","TDD evidence: the new README.md,scope=project regression failed because looksLikeStructuredPathEntry returned true. The implementation now limits equals classification to the leading CSV segment while preserving known leading keys, unknown leading assignments, filesystem equals signs, and URL query strings. Focused assignment, files/docs, and connected recovery suites pass 54/54 tests."
   "2026-08-29T15:58:49.472Z","harness:codex","Verification evidence: three focused suites passed 54/54 tests; all three linked PM tests passed (16 + 127 + 4 tests); pnpm quality:static passed every repository, SDK, contract, refusal, token, graph, record, and performance assertion, including prose-edge-gaps at its 1,343 ceiling after pm-s8cth5 gained the missing pm-mlc3 incident edge. Full coverage passed 586 files and 8,124 tests at 60,169/60,169 statements, 45,397/45,397 branches, 12,514/12,514 functions, and 57,939/57,939 lines. Temporary CLI workspace /tmp/pm-linked-artifact-acceptance-1Np4xd returned typed bare_comma_entry_ambiguous for README.md,scope=project and accepted path=README.md,scope=project."
+  "2026-08-29T16:13:28.461Z","harness:codex","Relationship rationale: this item's exact static acceptance directly verified both the open pm-s8cth5 intake graph and its typed incident connection to historical guard owner pm-mlc3. The two verifies edges make that evidence traversable and close the exact prose references without generic related links."
+  "2026-08-29T16:27:52.033Z","harness:codex","Final local closeout evidence: focused assignment/files-docs/context suites passed 54/54, three linked PM commands passed 16 + 127 + 4 tests, full coverage passed 8,124 tests at exact 100/100/100/100, and temporary CLI acceptance refused README.md,scope=project with bare_comma_entry_ambiguous while accepting path=README.md,scope=project. The complete static stack now passes with the two verification references encoded as directed graph edges."
 notes[1]{created_at,author,text}:
   "2026-08-28T19:17:16.138Z","harness:codex","Design boundary: do not reject all commas. The ambiguity predicate is a comma-bearing plaintext candidate without an explicit recognized key before the first delimiter. Keyed path=/command= and JSON inputs must preserve literal commas byte-for-byte. The shared public SDK owns parsing/refusal; CLI and MCP remain adapters."
 learnings[3]{created_at,author,text}:
@@ -134,6 +140,7 @@ test_runs[5]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/linked-artifact-assignment-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
+close_reason: "Exact-head parsing recurrence fixed: trailing keyed fields cannot reclassify a bare leading path; focused, linked, temporary-workspace, exact coverage, and static gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

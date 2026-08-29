@@ -45,7 +45,7 @@ export interface DriftScanResult {
   workspaceStateUnreadable: string[];
 }
 
-const DRIFT_CACHE_VERSION = 6;
+const DRIFT_CACHE_VERSION = 7;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */

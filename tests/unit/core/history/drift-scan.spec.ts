@@ -63,7 +63,7 @@ async function seedStaleMetadataMatchedCache(
   await mutateStream(historyPath);
   const mutatedStat = await fs.stat(historyPath);
   const forgedCache: DriftCacheFixture = {
-    version: 6,
+    version: 7,
     history_item_hash_version: 3,
     entries: {
       [created.id]: {
@@ -119,7 +119,7 @@ describe("core/history/drift-scan", () => {
       expect(first.driftedItems).toEqual([]);
 
       const cache = await readDriftCache(context.pmPath);
-      expect(cache.version).toBe(6);
+      expect(cache.version).toBe(7);
       expect(cache.history_item_hash_version).toBe(3);
       expect(Object.keys(cache.entries)).toHaveLength(items.length);
       const firstEntry = Object.values(cache.entries)[0];
@@ -269,6 +269,36 @@ describe("core/history/drift-scan", () => {
       expect(result.versionSkews).toEqual([created.id]);
       expect(result.chainMismatches).toContain(created.id);
       expect(result.hashMismatches).toContain(created.id);
+
+      const cache = await readDriftCache(context.pmPath);
+      const cacheEntry = cache.entries[created.id];
+      if (!cacheEntry) {
+        throw new Error("expected cache entry for mixed legacy writer");
+      }
+      await fs.writeFile(
+        path.join(context.pmPath, DRIFT_CACHE_RELATIVE),
+        `${JSON.stringify(
+          {
+            ...cache,
+            version: 6,
+            entries: {
+              ...cache.entries,
+              [created.id]: {
+                ...cacheEntry,
+                latest_hash_comparable: false,
+              },
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const metadataResult = await scanHistoryDrift(context.pmPath, items, {
+        cacheHitVerification: "metadata",
+      });
+      expect(metadataResult.hashMismatches).toContain(created.id);
     });
   });
 
@@ -478,24 +508,24 @@ describe("core/history/drift-scan", () => {
           history_item_hash_version: 3,
           entries: {},
         }),
-        JSON.stringify({ version: 6, entries: {} }),
+        JSON.stringify({ version: 7, entries: {} }),
         JSON.stringify({
-          version: 6,
+          version: 7,
           history_item_hash_version: 99,
           entries: {},
         }),
         JSON.stringify({
-          version: 6,
+          version: 7,
           history_item_hash_version: 3,
           entries: null,
         }),
         JSON.stringify({
-          version: 6,
+          version: 7,
           history_item_hash_version: 3,
           entries: "not-an-object",
         }),
         JSON.stringify({
-          version: 6,
+          version: 7,
           history_item_hash_version: 3,
           entries: {
             malformed: {
