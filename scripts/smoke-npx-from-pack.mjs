@@ -233,6 +233,7 @@ function assertPackedTypescriptConsumer(npm, tarballPath, tempRoot) {
 function run() {
   const npm = resolveCommand("npm");
   const npx = resolveCommand("npx");
+  const bunx = resolveCommand("bunx");
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-pack-smoke-"));
 
   try {
@@ -241,6 +242,15 @@ function run() {
     const runPackedPm = buildPackedPmRunner(npm, npx, tarballPath);
     const version = runPackedPm(["--version"]);
     assertNonEmptyOutput("npx smoke test", version, "version output");
+    assertEqualOutput(
+      "bunx packed pm smoke",
+      runSmokeCommand(
+        bunx,
+        ["--silent", "--bun", "--package", tarballPath, "pm", "--version"],
+      ),
+      version,
+      "version output",
+    );
     assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version);
     const { commandOptions } = createPackedSmokeProject(tempRoot);
     const packages = assertPackedPackageWorkflows(runPackedPm, commandOptions);
@@ -251,7 +261,7 @@ function run() {
     }
     assertPackedTypescriptConsumer(npm, tarballPath, tempRoot);
 
-    console.log(`npx packed package smoke passed (${version}, packages=${packages.length}).`);
+    console.log(`npx and bunx packed package smoke passed (${version}, packages=${packages.length}).`);
   } finally {
     try {
       cleanupTempRoot(tempRoot);

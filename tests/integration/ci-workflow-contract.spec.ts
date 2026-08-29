@@ -228,6 +228,8 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
+      PINNED_ACTIONS.setupBun,
+      "bun-version: latest",
       "name: Restore exact TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
@@ -290,6 +292,9 @@ describe("GitHub workflow contract", () => {
     expect(
       gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g),
     ).toHaveLength(1);
+    expect(gatesJob.indexOf("name: Setup Bun")).toBeLessThan(
+      gatesJob.indexOf("name: Run npx + plugin smoke gates"),
+    );
     expectContainsAll(coverageShardsJob, [
       "needs: build-foundation",
       "persist-credentials: false",
@@ -678,6 +683,10 @@ describe("GitHub workflow contract", () => {
         "run: node dist/cli.js merge install --no-extensions",
       ),
     ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
+    expect(releaseWorkflow.indexOf("name: Setup Bun")).toBeLessThan(
+      releaseWorkflow.indexOf("name: npx tarball smoke check"),
+    );
+    expect(releaseWorkflow.match(/name: Setup Bun/g)).toHaveLength(1);
     expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
       releaseWorkflow.indexOf("run: pnpm quality:static"),
     );

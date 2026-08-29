@@ -20,6 +20,7 @@
 
 ### Other
 
+- Refresh @sentry/node 10.72 with packed SDK and release proof ([pm-mwhv33](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mwhv33.toon))
 - Refresh compatible 2026-08-29 dependency releases ([pm-vwuidf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vwuidf.toon))
 - Close the jscpd/CodeFactor sensitivity gap: minTokens 115 misses low-token table clones the CodeFactor bot still files ([pm-xspd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xspd.toon))
 
