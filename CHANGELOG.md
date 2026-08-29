@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- Adopt eslint-plugin-unicorn 74 with strict lint and packed-consumer proof ([pm-6f66vu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6f66vu.toon))
+
 ## 2026.8.29 - 2026-08-29
 
 ### Fixed
