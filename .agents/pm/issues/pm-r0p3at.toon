@@ -1,0 +1,80 @@
+id: pm-r0p3at
+title: "GH-1150: health remediation for pending merge receipts must perform the repair"
+description: "GitHub issue #1150 reproduces pm health emitting pm merge reconcile --dry-run as the machine-executable remediation for merge_receipts_pending and history_drift_merge_receipt. The named command exits zero without applying state, so an autonomous agent loops between a red health gate and a successful no-op."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-29T04:05:49.104Z"
+updated_at: "2026-08-29T04:25:36.533Z"
+closed_at: "2026-08-29T04:25:36.061Z"
+completed_at: "2026-08-29T04:25:36.061Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "The remediation registry returns pm merge reconcile without --dry-run for pending merge receipt health findings; Preview guidance still teaches the optional dry-run review step before apply where human review is appropriate; SDK health, generated contracts, docs, temporary merge acceptance, and exact coverage pass"
+parent: pm-dj98
+risk: medium
+confidence: high
+reporter: GitHub issue #1150
+severity: high
+environment: pm 2026.8.28 in a fresh two-branch repository with one pending lossless merge receipt
+repro_steps: "Create divergent agent branches, merge one branch, run pm health --strict-exit, execute its remediation verbatim, and observe the pending receipt remains because --dry-run applies nothing."
+resolution: Changed the shared SDK remediation registry so pending lossless merge receipt and receipt-attributed history drift findings name the state-changing pm merge reconcile command while retaining dry-run as optional preview guidance.
+expected_result: An agent executing either pending-receipt remediation verbatim settles the receipt and clears health; optional preview remains explicitly documented.
+actual_result: "Both health remediation maps now emit pm merge reconcile. Focused 26-test integration, an exact two-branch manual temporary-repository workflow, 8,108-test exact coverage, docstring and governance assurance, ESLint, duplication, and packed npm/Bun smoke pass; only the previously A/B-reproduced local RSS transport variance remains for hosted exact-head arbitration."
+affected_version: 2026.8.28
+fixed_version: 2026.8.29
+component: "SDK diagnostics remediation registry, health, merge reconciliation, and agent guidance"
+regression: true
+customer_impact: Autonomous agents treat a successful no-op as repair and enter a self-perpetuating health remediation loop after otherwise-correct multi-agent merges.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-baksix,recurs_from,"2026-08-29T04:05:49.104Z","harness:codex",github_issue,detected
+  pm-lwmstb,recurs_from,"2026-08-29T04:05:49.104Z","harness:codex",github_issue,detected
+  pm-z1z96w,discovered_from,"2026-08-29T04:05:49.104Z","harness:codex",github_issue,detected
+comments[2]{created_at,author,text}:
+  "2026-08-29T04:06:08.272Z","harness:codex","Duplicate-check evidence: complete strict reads covered all 299 open items and zero in-progress items; all-status search recovered closed pm-lwmstb for post-merge routing, pm-baksix for pending receipt health, and pm-z1z96w for exact hash-only reconciliation. Their live resolutions do not own the newly proven machine-executable no-op remediation boundary. GitHub #1150 is therefore a distinct recurrence under the canonical concurrency lineage, not a duplicate."
+  "2026-08-29T04:25:35.547Z","harness:codex","Verification evidence: the linked registry plus temporary-repository suite passed 26/26. Manual acceptance in a fresh Git repository produced merge_receipts_pending and history_drift_merge_receipt, both mapped to pm merge reconcile; dry-run left strict health red and apply cleared it. The complete suite passed 586 files and 8,108 tests with exact 60,136/45,340/12,504/57,907 coverage at 100/100/100/100. Repository assurance, contracts, SDK/package parity, docstrings, defect evidence, graph and record gates passed; direct static reached only the known local RSS ratchet also reproduced on unchanged dependencies, while the prior exact hosted head passed that gate. ESLint, both zero-clone profiles, packed 13-package npx smoke, and fresh Bun/bunx tarball smoke passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-29T04:25:35.098Z","harness:codex","Machine-executable remediation fields must name an operation whose successful completion changes the reported state. Preview commands belong in summaries and workflows, not as the only executable fix for a red gate."
+files[3]{path,scope,note}:
+  src/core/diagnostics/remediation.ts,project,Machine-executable remediation registry contract
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Temporary-repository health and remediation integration coverage
+  tests/integration/remediation-registry.spec.ts,project,Registry-level regression coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,project,300,"harness:codex","2026-08-29T04:08:12.138Z",local_mutation,feat/sdk-context-integrity-recovery,Receipt remediation registry and temporary-repository integration acceptance
+  node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-08-29T04:11:11.011Z",local_mutation,feat/sdk-context-integrity-recovery,Exact repository coverage after executable remediation change
+test_runs[2]:
+  - run_id: test-local-mtdv23hd-nehyqm
+    kind: test
+    status: passed
+    started_at: "2026-08-29T04:08:12.698Z"
+    finished_at: "2026-08-29T04:08:44.065Z"
+    recorded_at: "2026-08-29T04:08:44.065Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtdvdtkj-u1krwg
+    kind: test
+    status: passed
+    started_at: "2026-08-29T04:11:11.475Z"
+    finished_at: "2026-08-29T04:17:51.091Z"
+    recorded_at: "2026-08-29T04:17:51.091Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Preview versus executable settlement guidance
+close_reason: "Pending merge health now emits an executable state-changing reconciliation command; focused and complete coverage, manual two-branch acceptance, static governance, and packed npm/Bun smoke pass, with exact-head hosted checks to arbitrate the environment-sensitive transport ratchet."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: executable-merge-receipt-remediation
+  negative_control: Run the emitted dry-run command and prove health remains red before the apply remediation clears it.
+  local_checks[3]: tests/integration/remediation-registry.spec.ts,tests/integration/merge-receipt-health-classification.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  owner: pm-r0p3at
+body: ""

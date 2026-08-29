@@ -237,9 +237,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "merge_receipts_pending",
-    command: "pm merge reconcile --dry-run",
+    command: "pm merge reconcile",
     summary:
-      "A lossless merge receipt is still pending; preview and run pm merge reconcile so a green health gate certifies receipt settlement, not only intact data.",
+      "A lossless merge receipt is still pending; run pm merge reconcile to settle it (optionally preview first with --dry-run) so a green health gate certifies receipt settlement, not only intact data.",
   },
   {
     code: "merge_receipt_evidence_invalid",
@@ -282,9 +282,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "history_drift_merge_receipt",
-    command: "pm merge reconcile --dry-run",
+    command: "pm merge reconcile",
     summary:
-      "Canonical path, changed-field, and merged-value hash evidence attributes this drift to a pending receipt; preview reconciliation instead of repairing history directly.",
+      "Canonical path, changed-field, and merged-value hash evidence attributes this drift to a pending receipt; run reconciliation (optionally preview first with --dry-run) instead of repairing history directly.",
   },
   // --- pm health: storage (history compaction policy) ---
   {

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1150: health remediation for pending merge receipts must perform the repair ([pm-r0p3at](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r0p3at.toon))
 - GH-1134: required collection recovery omits truthful --clear-\* intent ([pm-t7wl00](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t7wl00.toon))
 - GH-1140: reject ambiguous bare comma tuples for linked file and test mutations ([pm-nc94mk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nc94mk.toon))
 - GH-1146/1147: external blockers remain stale and validation recommends deleting them ([pm-yhle2e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yhle2e.toon))

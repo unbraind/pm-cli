@@ -105,11 +105,11 @@ describe("shared remediation registry", () => {
 
     it("routes pending lossless merge receipts to receipt-aware reconciliation", () => {
       expect(resolveRemediation("merge_receipts_pending:1")?.command).toBe(
-        "pm merge reconcile --dry-run",
+        "pm merge reconcile",
       );
       expect(
         resolveRemediation("history_drift_merge_receipt:pm-merge")?.command,
-      ).toBe("pm merge reconcile --dry-run");
+      ).toBe("pm merge reconcile");
     });
 
     it("resolves pm health locks warnings to gc lock-sweep guidance", () => {

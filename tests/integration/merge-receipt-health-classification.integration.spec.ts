@@ -589,14 +589,14 @@ describe("merge receipt health classification", () => {
       expect(checkDetails(healthResult, "history_drift")).toMatchObject({
         merge_receipt_attributed_items: ["pm-merge-lossless"],
         remediation_map: {
-          history_drift_merge_receipt: "pm merge reconcile --dry-run",
+          history_drift_merge_receipt: "pm merge reconcile",
           history_drift_hash_mismatch: "pm history-repair --all",
         },
       });
       expect(
         checkDetails(healthResult, "integrity").remediation_map,
       ).toMatchObject({
-        merge_receipts_pending: "pm merge reconcile --dry-run",
+        merge_receipts_pending: "pm merge reconcile",
       });
       const sdkHealth = await runHealth(
         { path: path.join(context.tempRoot, ".agents", "pm") },
