@@ -591,9 +591,16 @@ describe("context integrity recovery", () => {
         { checkHistoryDrift: true, verboseDiagnostics: true },
         { path: context.pmPath },
       );
-      const versionSkews = (result: typeof bounded) =>
-        (result.checks.find((check) => check.name === "history_drift")
-          ?.details as { version_skews: string[] }).version_skews;
+      const versionSkews = (result: typeof bounded) => {
+        const historyDrift = result.checks.find(
+          (check) => check.name === "history_drift",
+        );
+        if (historyDrift === undefined) {
+          throw new Error("Expected history_drift validation evidence");
+        }
+        return (historyDrift.details as { version_skews: string[] })
+          .version_skews;
+      };
       expect(versionSkews(bounded)).toHaveLength(5);
       expect(versionSkews(verbose)).toHaveLength(6);
     });
