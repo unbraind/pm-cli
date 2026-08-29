@@ -1,0 +1,78 @@
+id: pm-vwuidf
+title: Refresh compatible 2026-08-29 dependency patches
+description: Adopt the registry-current compatible greptile 3.4.2 and @types/node 26.4.0 patches while preserving the separately governed engine/tooling-incompatible npm-package-arg 14 and TypeScript 7 deferrals.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-08-29T03:22:00.759Z"
+updated_at: "2026-08-29T03:48:10.104Z"
+closed_at: "2026-08-29T03:48:09.574Z"
+completed_at: "2026-08-29T03:48:09.574Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve greptile 3.4.2 and @types/node 26.4.0 exactly; pnpm outdated contains only npm-package-arg 14 and TypeScript 7 with their canonical evidence-backed deferrals; pnpm audit and GitHub dependency, code, and secret alert inventories remain zero; full exact coverage, static quality, packed npm/npx/Bun/bunx acceptance, hosted checks, and exact-head review pass"
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Adopted compatible greptile 3.4.2 and @types/node 26.4.0 patches without changing the published Node compatibility range or the separately governed incompatible-major deferrals.
+expected_result: "Compatible dependency patches resolve exactly, all source gates and packed npm/Bun acceptance pass, security inventories remain empty, and only evidence-backed incompatible majors remain outdated."
+actual_result: "Resolved greptile 3.4.2 and @types/node 26.4.0; coverage, build, ESLint, duplication, npx smoke, 88-command package-first dogfood, and packed Bun/bunx smoke passed; audit and all three GitHub alert inventories are zero; only pm-ksr40d and pm-do5b major deferrals remain."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7xfndr,recurs_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
+  pm-do5b,discovered_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,discovered_from,"2026-08-29T03:22:00.759Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-29T03:22:00.759Z","harness:codex","Duplicate-check evidence: a complete 2,597-item all-status strict read and exact-version search found no owner for greptile 3.4.2 or @types/node 26.4.0. Closed pm-7xfndr is the latest compatible refresh lineage; open unclaimed pm-ksr40d and pm-do5b remain the distinct canonical incompatible-major owners. Live pnpm outdated and zero-alert inventories justify this focused compatible patch child."
+  "2026-08-29T03:39:40.364Z","harness:codex","Compatibility and performance evidence: package resolution now adopts greptile 3.4.2 and @types/node 26.4.0 while preserving the published @types/node >=22 compatibility range. Full coverage passed. Direct static assurance passed every source/export/member docstring, duplication, package, SDK, contract, defect-evidence, graph, and record assertion; only the final RSS transport ratchet exceeded its fixed margin locally. A same-tree seven-sample A/B on the previous 3.4.1/26.3.0 versions reproduced the same get overage, proving the signal is not caused by these patches. The committed budget remains unchanged and exact-head hosted CI will independently arbitrate the environment-sensitive gate."
+  "2026-08-29T03:46:20.444Z","harness:codex","Linked-test harness evidence: pnpm quality:static and the pnpm lint aggregate both intentionally read the real PM corpus for defect governance, so schema-isolated linked execution reported zero governed terminal defects. Both failed runs are retained. The directly executed real-tracker static gate passed every assertion except the independently A/B-reproduced RSS ratchet. Future linked acceptance now contains only coverage, build, ESLint, and duplication commands that are valid in schema isolation."
+  "2026-08-29T03:48:08.891Z","harness:codex","Final local evidence: pnpm outdated now contains only npm-package-arg 14.0.0 (pm-ksr40d) and TypeScript 7.0.2 (pm-do5b); pnpm audit reports 0 vulnerabilities at every severity; GitHub Dependabot, code-scanning, and secret-scanning open alert inventories are each 0. Exact coverage passed 586 files and 8,108 tests at 100/100/100/100. Linked build, ESLint, and two-scope duplication gates passed. Packed npx smoke passed all 13 packages; package-first dogfood passed 88 commands; a fresh tarball installed and ran under Bun 1.3.11 via bunx. Hosted exact-head checks remain the environment-independent final transport ratchet."
+learnings[1]{created_at,author,text}:
+  "2026-08-29T03:48:08.379Z","harness:codex","Repository-governance aggregates such as quality:static and pnpm lint require tracker context; linked schema-isolated acceptance should use coverage/build/ESLint/duplication components and record the real-tracker aggregate separately."
+files[2]{path,scope,note}:
+  package.json,project,Exact compatible dependency versions
+  pnpm-lock.yaml,project,Resolved compatible dependency graph
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-08-29T03:22:11.619Z",local_mutation,feat/sdk-context-integrity-recovery,Exact repository coverage after dependency refresh
+  pnpm build,project,300,"harness:codex","2026-08-29T03:43:08.152Z",local_mutation,feat/sdk-context-integrity-recovery,Sandbox-safe compile gate after dependency refresh
+  "pnpm lint:eslint",project,600,"harness:codex","2026-08-29T03:46:19.442Z",local_mutation,feat/sdk-context-integrity-recovery,Sandbox-safe ESLint gate after dependency refresh
+  "pnpm lint:duplicates",project,300,"harness:codex","2026-08-29T03:46:19.906Z",local_mutation,feat/sdk-context-integrity-recovery,Sandbox-safe duplication gate after dependency refresh
+test_runs[3]:
+  - run_id: test-local-mtdtp96w-1rutfu
+    kind: test
+    status: failed
+    started_at: "2026-08-29T03:23:04.434Z"
+    finished_at: "2026-08-29T03:30:45.319Z"
+    recorded_at: "2026-08-29T03:30:45.319Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      "pnpm quality:static",schema,schema,source,local_source_ref
+  - run_id: test-local-mtdu8vxe-6j6eyb
+    kind: test
+    status: failed
+    started_at: "2026-08-29T03:43:17.981Z"
+    finished_at: "2026-08-29T03:46:01.250Z"
+    recorded_at: "2026-08-29T03:46:01.250Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm build,schema,schema,source,local_source_ref
+      pnpm lint,schema,schema,source,local_source_ref
+  - run_id: test-local-mtdua7so-evjytk
+    kind: test
+    status: passed
+    started_at: "2026-08-29T03:46:20.962Z"
+    finished_at: "2026-08-29T03:47:03.287Z"
+    recorded_at: "2026-08-29T03:47:03.287Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+      "pnpm lint:duplicates",schema,schema,source,local_source_ref
+close_reason: "Compatible dependency patches are fully adopted and locally verified; incompatible majors remain in their canonical deferral items, and hosted exact-head checks will arbitrate the known environment-sensitive RSS gate."
+body: ""

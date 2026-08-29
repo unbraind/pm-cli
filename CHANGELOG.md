@@ -19,6 +19,7 @@
 
 ### Other
 
+- Refresh compatible 2026-08-29 dependency patches ([pm-vwuidf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vwuidf.toon))
 - Close the jscpd/CodeFactor sensitivity gap: minTokens 115 misses low-token table clones the CodeFactor bot still files ([pm-xspd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xspd.toon))
 
 ## 2026.8.28 - 2026-08-28
