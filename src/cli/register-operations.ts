@@ -951,12 +951,12 @@ export function registerOperationCommands(program: Command): void {
     .argument("<id>", "Item id")
     .option(
       "--add <value>",
-      "Add linked test entry (CSV/markdown pairs or - for stdin)",
+      "Add verified isolated test (CSV/markdown or stdin)",
       collect,
     )
     .option(
       "--add-json <value>",
-      "Add linked test entry from JSON object/array (or - for stdin)",
+      "Add verified isolated test (JSON object/array or stdin)",
       collect,
     )
     .option(

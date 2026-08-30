@@ -52,7 +52,7 @@ describe("release automation contract", () => {
       "node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.lint).toBe(
-      "pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor",
+      "pnpm quality:static",
     );
     expect(packageJson.scripts?.["lint:codefactor"]).toBe(
       "pnpm quality:static",

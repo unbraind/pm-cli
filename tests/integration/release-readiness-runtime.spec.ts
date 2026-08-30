@@ -2641,7 +2641,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.lint).toBe(
-      "pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor",
+      "pnpm quality:static",
     );
     expect(packageJson.scripts?.["quality:docs-skills"]).toBe(
       "node scripts/release/docs-skills-gate.mjs",

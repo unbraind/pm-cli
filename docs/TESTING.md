@@ -8,10 +8,11 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
 
 - Unit and integration tests must not read or write real `.agents/pm` data.
 - Prefer `node scripts/run-tests.mjs ...` because it creates sandboxed `PM_PATH` and `PM_GLOBAL_PATH`.
-- Linked tests added through `pm test` should use sandbox-safe commands.
-  Package-manager scripts such as `pnpm test` are allowed because linked-test
-  execution injects isolated `PM_PATH` and `PM_GLOBAL_PATH`; direct runners such
-  as `vitest` still need `node scripts/run-tests.mjs ...` or inline sandbox env.
+- Linked-test execution injects isolated `PM_PATH` and `PM_GLOBAL_PATH` for
+  every command and applies stored-command provenance checks before process
+  creation. Direct runners are accepted; prefer
+  `node scripts/run-tests.mjs ...` when the repository provides it because the
+  wrapper also reproduces build, coverage, and cleanup policy.
 - Run linked tests before closing the item that owns the work.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
@@ -62,7 +63,8 @@ and stable error-code drift across the aggregate and every narrow SDK
 entrypoint. The performance gates protect entrypoint import cost and one-item
 CLI cold-start overhead without touching the repository tracker.
 
-`pnpm lint` is the local CodeFactor parity check. It layers ESLint rules for
+`pnpm lint` and `pnpm quality:static` are the same canonical local static gate.
+The gate layers ESLint rules for
 shipped source, package, plugin, and script surfaces that match the CodeFactor
 maintainability findings this repo tracks (`complexity`,
 `no-unsafe-optional-chaining`, and the relevant `eslint-plugin-unicorn`
@@ -385,12 +387,12 @@ correction; executable retry argv is never collection-truncated. The
 missing-probe negative control and the authoritative tracker-state snapshot
 prove that the corpus cannot silently shrink or turn a refusal into a mutation.
 
-The gate derives every supported harness, model, session, and provenance
-environment key from the SDK-owned harness descriptor registry. It deletes
-those host inputs before each fixture invocation, then supplies only the
-fixture's deterministic author and isolated tracker settings. Unrelated host
-environment values remain available, so the test process stays representative
-without allowing the launching agent or CI harness to change measured output.
+The gate starts every fixture command from a closed environment allowlist. It
+retains only declared process-portability inputs such as `PATH`, temporary and
+home roots, and Windows process-launch variables, then supplies fixed locale,
+timezone, author, telemetry, and isolated tracker settings. Undeclared host
+values cannot reach measured output, including future harness variables that
+the descriptor registry does not yet know about.
 
 ## Linked Tests
 
@@ -492,6 +494,13 @@ and receives the same fail-closed treatment; it is never normalized into a
 trusted legacy command.
 These pre-execution refusals use the `trust_refusal` failure category, separate
 from command or assertion failures.
+
+Command-string shape is intentionally not treated as a security boundary.
+Direct `node --test`, Vitest, package-manager, shell-wrapped, and non-Node
+runners are accepted consistently because the runtime injects tracker
+isolation for all of them. `classifyLinkedTestCommandSafety` exposes the same
+SDK policy to package hosts and returns advisory runner classification;
+provenance review and acknowledgment remain the execution trust boundary.
 
 Choose one explicit recovery:
 

@@ -2,11 +2,13 @@ id: pm-s8cth5
 title: "GH-1154: linked-test sandbox guard is command-shape inconsistent and undocumented"
 description: "The linked-test add guard rejects direct node --test commands containing space-separated flags but accepts equivalent execution through sh -c, equals-spelled flags, or alternate runners. This makes the policy both bypassable and unnecessarily obstructive, while pm test help does not disclose content validation."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:test-command",regression,sandbox-safety,trust
 created_at: "2026-08-29T15:17:13.352Z"
-updated_at: "2026-08-29T15:42:41.933Z"
+updated_at: "2026-08-30T15:32:14.646Z"
+closed_at: "2026-08-30T15:28:07.959Z"
+completed_at: "2026-08-30T15:28:07.959Z"
 author: "harness:codex"
 acceptance_criteria: "Define whether the linked-test add policy is a security boundary or an agent-safety nudge and encode that contract in the public SDK.; Normalize or safely inspect direct, sh -c, equals-spelled, package-manager, Node, and non-Node runner forms so equivalent capabilities cannot diverge accidentally.; Document command-content validation and safe recovery in pm test help and testing documentation.; Add negative and positive regression tests with exact 100/100/100/100 coverage and manual temporary-workspace acceptance."
 definition_of_ready: "Read the complete pm-q813, pm-mlc3, and pm-ed28wi lineage plus the current src/cli/commands/test.ts and public SDK trust contracts before choosing the enforcement model."
@@ -22,22 +24,48 @@ confidence: high
 severity: medium
 environment: pm 2026.8.28 and 2026.8.21 on Linux/Node 24; linked-test mutation paths in CLI and SDK.
 repro_steps: "Run pm test ITEM --add-json with node --test x.ts and observe refusal; then add sh -c wrapping, an equals-spelled Node flag, node test/x.test.ts, or pytest -k and observe acceptance."
+resolution: "Replaced the shape-based intake refusal with a public SDK capability classifier, retained runtime tracker isolation and provenance enforcement, and documented the contract in CLI help and operator guidance."
 expected_result: "Commands with equivalent execution capability are classified consistently, the policy's security boundary is explicit, and help reveals all content constraints before mutation."
 actual_result: Direct node --test x.ts is refused while multiple equivalent or broader command forms are stored; the help contract does not mention command-content validation.
 affected_version: 2026.8.28
 component: sdk/test-trust-and-cli-test-intake
 regression: true
 customer_impact: Agents encounter a surprising refusal for the canonical Node test form and are nudged toward less inspectable wrappers that bypass the same guard.
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-ed28wi,incident_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
   pm-q813,recurs_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
   pm-vwuidf,discovered_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
   pm-mlc3,incident_from,"2026-08-29T15:42:41.718Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-ed28wi,verifies,"2026-08-30T14:50:11.636Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-08-29T15:17:13.352Z","harness:codex","Duplicate-check evidence: complete all-status keyword searches found closed pm-q813 for package-manager run-script wrappers, pm-mlc3 for package-manager flag prefixes, and pm-ed28wi for merge-time command provenance/trust. None owns capability-equivalent command normalization or missing pm test help disclosure. This issue recurs from pm-q813, is an incident in the broader trust boundary, and was discovered during pm-vwuidf exact-head closeout."
+  "2026-08-30T15:28:04.347Z","harness:codex","Evidence: TDD first proved direct Node, shell-wrapped, Vitest, and package-manager forms diverged. The final tests cover 16 equivalent direct-runner spellings, sandbox-runner forms, non-runner forms, JSON intake, runtime isolation, and provenance. Manual acceptance in a temporary initialized workspace stored and ran a direct node --test command while proving injected PM_PATH and PM_GLOBAL_PATH, then imported the built SDK classifier. The workspace was removed afterward. Full coverage passed 8,144 tests at exact 100/100/100/100; pm test help is three estimated tokens below its ratcheted baseline."
 notes[1]{created_at,author,text}:
   "2026-08-29T15:17:13.352Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1154. Keep this item open and unclaimed until implementation is actively scheduled; PR #1149 only performs durable intake."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-08-29T15:17:13.352Z","harness:codex","String-token deny rules are not execution-capability boundaries: accepting sh -c around a refused command makes the bypass less inspectable than the direct form and creates counterproductive agent UX."
+  "2026-08-30T15:28:04.818Z","harness:codex","Command spelling is not a security boundary. Classify capabilities for guidance, then enforce safety at the runtime boundary with isolated tracker roots and provenance-aware execution."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,reviewed additive SDK surface
+  src/cli/register-operations.ts,project,discoverable CLI help
+  src/sdk/index.ts,project,public SDK export
+  src/sdk/test/execution.ts,project,SDK-owned capability classification and intake policy
+  tests/fixtures/contracts/full.json,project,CLI help contract snapshot
+  tests/unit/commands/test-command.spec.ts,project,intake acceptance and runtime isolation coverage
+  tests/unit/sdk/linked-command-identity.spec.ts,project,capability-equivalence and intake regression
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/linked-command-identity.spec.ts,project,240,"harness:codex","2026-08-30T14:50:10.904Z",local_mutation,feat/sdk-execution-boundary-reliability,direct shell-wrapped package-manager and non-Node intake
+  node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-08-30T15:27:27.465Z",local_mutation,feat/sdk-execution-boundary-reliability,exact repository coverage gate
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,test command intake behavior
+  docs/TESTING.md,project,trust boundary and runner policy
+close_reason: SDK-owned capability classification replaces inconsistent intake refusal while runtime isolation and provenance remain the trust boundary; exact coverage and manual acceptance are recorded.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-s8cth5
+  gate_id: linked-test-runtime-isolation-and-provenance
+  negative_control: "tests/unit/sdk/linked-command-identity.spec.ts exercises direct, shell-wrapped, sandbox, and non-runner capability classes while runtime trust tests refuse unacknowledged provenance"
+  local_checks[3]: node scripts/run-tests.mjs coverage,"pnpm quality:static",temporary-workspace direct node --test acceptance
+  hosted_checks[2]: .github/workflows/ci.yml cross-platform test matrix,.github/workflows/ci.yml exact coverage gate
 body: ""

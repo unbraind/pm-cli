@@ -1,0 +1,32 @@
+id: pm-46hpx8
+title: "GH-1158: Windows Node 24 nightly receipt fixture derives a root-relative expectation from a drive-qualified path"
+description: "Nightly Validation run 33304991848 failed only on windows-latest / Node 24 because the npm 12 keyed-receipt regression fixture compares the production drive-qualified tarball path against path.join('/tmp/pack', 'beta.tgz'), which is root-relative on Windows. The product selection behavior succeeded; the supposedly cross-platform acceptance test encoded a POSIX root and made the nightly release signal red."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-08-30T14:39:02.916Z"
+updated_at: "2026-08-30T15:28:05.892Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#115e5d2bde0a0f29c20d9e3c"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: The fixture derives expected package tarballs from the same explicit temporary root on every platform without weakening the production assertion; A focused regression passes locally and the hosted Windows Node 24 matrix is green; GitHub issue 1158 links this canonical item and the release-health lineage records the terminal result
+parent: pm-u9d0
+risk: high
+confidence: high
+expected_result: The keyed npm receipt fixture derives all expected tarball paths from one platform-qualified temporary root and the Windows Node 24 matrix passes.
+actual_result: The fixture now uses path.resolve for the shared pack root; focused and full Linux runs pass without weakening the keyed selection assertion. Hosted Windows confirmation remains pending on the PR.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,incident_from,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
+  pm-j668gl,recurs_from,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
+  pm-xrjy8o,verifies,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-30T14:39:02.916Z","harness:codex","Duplicate-check evidence: complete all-status searches for run 33304991848 and the exact Nightly Validation Windows Node 24 wording found no item for GH-1158. Historical pm-gh1075, pm-lt6n, pm-zno2iu, pm-v3umtp, pm-wr8utz, and pm-j668gl own distinct prior Windows failures; this item records the new drive-qualified npm-receipt fixture mismatch."
+  "2026-08-30T15:28:05.892Z","harness:codex","Local evidence: tests/unit/regressions/context-integrity-recovery.spec.ts passes in the focused suite and the complete 8,144-test coverage run at exact 100/100/100/100. The expected beta tarball now derives from the same path.resolve pack root as the production input. Item remains in progress until the PR's hosted Windows Node 24 job is terminal green."
+files[1]{path,scope,note}:
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,drive-qualified npm receipt expectation
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-30T14:50:14.774Z",local_mutation,feat/sdk-execution-boundary-reliability,portable receipt regression
+  node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-08-30T15:27:28.063Z",local_mutation,feat/sdk-execution-boundary-reliability,exact repository coverage gate
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-08-29T18:01:51.016Z"
+updated_at: "2026-08-30T14:47:54.098Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -23,7 +23,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
-comments[12]:
+comments[13]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -61,6 +61,9 @@ comments[12]:
   - created_at: "2026-08-29T17:48:36.203Z"
     author: "harness:codex"
     text: "Sentry recurrence verification: PM-CLI-39 resolved as fixed and the identical 14-day reliability query immediately returned critical=0, high=0, blocking_short_ids=[], access_ok=true, threshold_ok=true. Telemetry remained healthy at 1.6% finish error rate with zero failures lacking error codes. The umbrella remains open for its broader all-call-site boundary and recurrence-gate acceptance; this evidence-only claim is released."
+  - created_at: "2026-08-30T14:47:53.020Z"
+    author: "harness:codex"
+    text: "Scope decision: the live item requires a population-complete all-filesystem-call-site migration plus a new recurrence gate. This delivery actively inspected the full lineage and existing shared primitive, but no implementation for that acceptance boundary belongs in the linked-test and preflight environment tranche. Returning it to open and releasing ownership now; no completion is claimed."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
