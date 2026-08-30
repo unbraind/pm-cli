@@ -38,12 +38,13 @@ export function runCommand(command, args, options = {}) {
   const {
     cwd = repoRoot,
     env = {},
+    inheritEnvironment = true,
     input,
     capture = false,
     allowFailure = false,
     timeout,
   } = options;
-  const mergedEnv = { ...process.env, ...env };
+  const mergedEnv = inheritEnvironment ? { ...process.env, ...env } : { ...env };
 
   const result = spawnSync(command, args, {
     cwd,

@@ -855,7 +855,10 @@ describe("scripts/release/token-budget-gate", () => {
 
     expect(runtime.runCommand).toHaveBeenCalledTimes(135);
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as
-      | { env?: Record<string, string | undefined> }
+      | {
+          env?: Record<string, string | undefined>;
+          inheritEnvironment?: boolean;
+        }
       | undefined;
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
@@ -867,6 +870,7 @@ describe("scripts/release/token-budget-gate", () => {
       PM_TELEMETRY_PROMPT: "0",
     });
     expect(runOptions?.env).not.toHaveProperty("PM_TOKEN_BUDGET_SENTINEL");
+    expect(runOptions?.inheritEnvironment).toBe(false);
     expect(mod.HARNESS_SIGNAL_ENVIRONMENT_KEYS).toEqual(
       harnessSignalEnvironmentKeys,
     );

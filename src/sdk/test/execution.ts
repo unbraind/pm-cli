@@ -865,12 +865,17 @@ function packageManagerInvokesDirectTestRunner(
           ? parsePnpmDlxCommand(args)
           : parseNpmExecCommand(args)
         )?.command,
-      ) || firstDirectTestRunnerSubcommand(executable, args) === "vitest"
+      ) ||
+      isDirectTestRunnerSubcommand(
+        firstDirectTestRunnerSubcommand(executable, args),
+      )
     );
   }
   return (
     (executable === "yarn" || executable === "bun") &&
-    firstDirectTestRunnerSubcommand(executable, args) === "vitest"
+    isDirectTestRunnerSubcommand(
+      firstDirectTestRunnerSubcommand(executable, args),
+    )
   );
 }
 

@@ -63,10 +63,18 @@ describe("linked command executable identity", () => {
       "bunx test x.ts",
       "pnpm dlx vitest run x.ts",
       "pnpm run vitest x.ts",
+      "pnpm run test:unit x.ts",
+      "pnpm test -- --runInBand",
       "npm exec -- vitest run x.ts",
       "npm run vitest x.ts",
+      "npm run test:unit x.ts",
+      "npm test -- --runInBand",
       "yarn run vitest x.ts",
+      "yarn run test:unit x.ts",
+      "yarn test --runInBand",
       "bun run vitest x.ts",
+      "bun run test:unit x.ts",
+      "bun test --runInBand",
     ];
     for (const command of equivalentCommands) {
       expect(classifyLinkedTestCommandSafety(command)).toMatchObject({
@@ -97,7 +105,6 @@ describe("linked command executable identity", () => {
       "sh script.sh",
       "node --test-name-pattern=abc x.ts",
       "node test/x.test.ts",
-      "pnpm test -- --runInBand",
       "pytest -k name",
     ]) {
       expect(classifyLinkedTestCommandSafety(command)).toMatchObject({

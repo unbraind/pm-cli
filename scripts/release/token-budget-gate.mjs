@@ -96,6 +96,7 @@ function runCli(cliPath, args, options, allowFailure = false) {
   return runCommand(process.execPath, [cliPath, ...args], {
     cwd: options.workspaceRoot,
     env,
+    inheritEnvironment: false,
     capture: true,
     allowFailure,
   });
