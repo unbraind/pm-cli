@@ -676,13 +676,18 @@ describe("runHealth", () => {
         `${JSON.stringify({ statuses: [{ id: "review" }] }, null, 2)}\n`,
         "utf8",
       );
-      const health = await runHealth({ path: context.pmPath, checkOnly: true });
+      const health = await runHealth(
+        { path: context.pmPath },
+        { checkOnly: true, full: true },
+      );
       const settingValuesCheck = health.checks.find(
         (check) => check.name === "settings_values",
       );
       expect(settingValuesCheck?.details).toMatchObject({
         lifecycle_status_roles: {
+          roleless_status_count: 1,
           roleless_statuses: ["review"],
+          roleless_statuses_truncated: false,
           affected_item_count: 0,
         },
       });

@@ -31,6 +31,7 @@ import { readValidateItems } from "./validate-item-reader.js";
 export type WorkspacePositionState =
   | "ready"
   | "merge_evidence_invalid"
+  | "history_evidence_invalid"
   | "merge_reconciliation_required"
   | "history_repair_required"
   | "merge_fence_unprepared";
@@ -64,6 +65,8 @@ export interface WorkspacePositionResult {
   };
   /** Bounded append-only history drift evidence. */
   history_drift: {
+    /** Whether the required history-drift evidence has its expected shape. */
+    evidence_valid: boolean;
     drifted_item_count: number;
     drifted_item_ids: string[];
     drifted_item_ids_truncated: boolean;
@@ -80,12 +83,17 @@ export interface WorkspacePositionResult {
 function selectWorkspacePositionState(params: {
   invalidEvidenceCount: number;
   pendingDecisionCount: number;
+  losslessCount: number;
+  historyEvidenceValid: boolean;
   driftedItemCount: number;
   fence: MergeFenceAuditResult;
   drivers: MergeDriverConfigurationAuditResult | null;
 }): WorkspacePositionState {
   if (params.invalidEvidenceCount > 0) return "merge_evidence_invalid";
-  if (params.pendingDecisionCount > 0) return "merge_reconciliation_required";
+  if (!params.historyEvidenceValid) return "history_evidence_invalid";
+  if (params.pendingDecisionCount > 0 || params.losslessCount > 0) {
+    return "merge_reconciliation_required";
+  }
   if (params.driftedItemCount > 0) return "history_repair_required";
   if (
     params.fence.status !== "ok" ||
@@ -105,6 +113,12 @@ function commandForWorkspacePositionState(
   const commandArgs = ["--pm-path", pmRoot];
   if (state === "merge_evidence_invalid")
     return renderPmCommand([...commandArgs, "merge", "report"], platform);
+  if (state === "history_evidence_invalid") {
+    return renderPmCommand(
+      [...commandArgs, "validate", "--check-history-drift", "--full"],
+      platform,
+    );
+  }
   if (state === "merge_reconciliation_required") {
     return renderPmCommand([...commandArgs, "merge", "reconcile"], platform);
   }
@@ -129,7 +143,18 @@ function normalizeWorkspaceHistoryDrift(
         (entry): entry is string => typeof entry === "string",
       )
     : [];
+  const evidenceValid =
+    Array.isArray(details.drifted_items) &&
+    details.drifted_items.every((entry) => typeof entry === "string") &&
+    typeof details.drifted_items_count === "number" &&
+    Number.isInteger(details.drifted_items_count) &&
+    details.drifted_items_count >= 0 &&
+    typeof details.drifted_items_truncated === "boolean" &&
+    typeof details.counts === "object" &&
+    details.counts !== null &&
+    !Array.isArray(details.counts);
   return {
+    evidence_valid: evidenceValid,
     drifted_item_count:
       typeof details.drifted_items_count === "number"
         ? details.drifted_items_count
@@ -185,6 +210,8 @@ export async function readWorkspacePosition(
   const state = selectWorkspacePositionState({
     invalidEvidenceCount: receiptEvidence.invalid_evidence_count,
     pendingDecisionCount: pendingDecisions.length,
+    losslessCount: lossless.length,
+    historyEvidenceValid: historyDrift.evidence_valid,
     driftedItemCount: historyDrift.drifted_item_count,
     fence,
     drivers,

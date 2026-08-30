@@ -25,18 +25,33 @@ const cleanDrivers = {
 
 describe("workspace position decision", () => {
   it("fails closed when a history-check provider returns malformed detail shapes", () => {
-    expect(
-      _testOnlyWorkspacePosition.normalizeWorkspaceHistoryDrift({
+    const malformed = _testOnlyWorkspacePosition.normalizeWorkspaceHistoryDrift(
+      {
         counts: null,
         drifted_items: "pm-not-an-array",
         drifted_items_count: "one",
         drifted_items_truncated: false,
-      }),
-    ).toEqual({
+      },
+    );
+    expect(malformed).toEqual({
+      evidence_valid: false,
       counts: {},
       drifted_item_count: 0,
       drifted_item_ids: [],
       drifted_item_ids_truncated: false,
+    });
+    const state = _testOnlyWorkspacePosition.selectWorkspacePositionState({
+      invalidEvidenceCount: 0,
+      pendingDecisionCount: 0,
+      losslessCount: 0,
+      historyEvidenceValid: malformed.evidence_valid,
+      driftedItemCount: malformed.drifted_item_count,
+      fence: cleanFence,
+      drivers: cleanDrivers,
+    });
+    expect({ ok: state === "ready", state }).toEqual({
+      ok: false,
+      state: "history_evidence_invalid",
     });
   });
 
@@ -65,6 +80,24 @@ describe("workspace position decision", () => {
         ok: true,
         state: "ready",
         merge_fence: { clone_local_drivers: { status: "ok" } },
+      });
+
+      await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: ".agents/pm/tasks/pm-lossless.toon",
+        preferred: "ours",
+        fieldsFromTheirs: [],
+        unionFields: ["relationships"],
+        decisions: [],
+      });
+      const lossless = await readWorkspacePosition({ path: context.pmPath });
+      expect(lossless).toMatchObject({
+        ok: false,
+        state: "merge_reconciliation_required",
+        merge_receipts: {
+          lossless_count: 1,
+          pending_decision_count: 0,
+        },
       });
 
       expect(
@@ -135,6 +168,8 @@ describe("workspace position decision", () => {
     const base = {
       invalidEvidenceCount: 0,
       pendingDecisionCount: 0,
+      losslessCount: 0,
+      historyEvidenceValid: true,
       driftedItemCount: 0,
       fence: cleanFence,
       drivers: cleanDrivers,
@@ -149,6 +184,16 @@ describe("workspace position decision", () => {
         { ...base, pendingDecisionCount: 1 },
         "merge_reconciliation_required",
         "pm merge reconcile",
+      ],
+      [
+        { ...base, losslessCount: 1 },
+        "merge_reconciliation_required",
+        "pm merge reconcile",
+      ],
+      [
+        { ...base, historyEvidenceValid: false },
+        "history_evidence_invalid",
+        "pm validate --check-history-drift --full",
       ],
       [
         { ...base, driftedItemCount: 1 },
@@ -187,18 +232,14 @@ describe("workspace position decision", () => {
         "/tmp/review's tracker/.agents/pm",
         "linux",
       ),
-    ).toBe(
-      `pm --pm-path "/tmp/review's tracker/.agents/pm" merge install`,
-    );
+    ).toBe(`pm --pm-path "/tmp/review's tracker/.agents/pm" merge install`);
     expect(
       _testOnlyWorkspacePosition.commandForWorkspacePositionState(
         "merge_fence_unprepared",
         "C:\\review & tracker\\.agents\\pm",
         "win32",
       ),
-    ).toBe(
-      `pm --pm-path "C:\\review & tracker\\.agents\\pm" merge install`,
-    );
+    ).toBe(`pm --pm-path "C:\\review & tracker\\.agents\\pm" merge install`);
   });
 
   it("treats committed-fence drift as unprepared", () => {
@@ -206,6 +247,8 @@ describe("workspace position decision", () => {
       _testOnlyWorkspacePosition.selectWorkspacePositionState({
         invalidEvidenceCount: 0,
         pendingDecisionCount: 0,
+        losslessCount: 0,
+        historyEvidenceValid: true,
         driftedItemCount: 0,
         fence: { ...cleanFence, status: "drift" },
         drivers: cleanDrivers,
@@ -215,6 +258,8 @@ describe("workspace position decision", () => {
       _testOnlyWorkspacePosition.selectWorkspacePositionState({
         invalidEvidenceCount: 0,
         pendingDecisionCount: 0,
+        losslessCount: 0,
+        historyEvidenceValid: true,
         driftedItemCount: 0,
         fence: cleanFence,
         drivers: { ...cleanDrivers, status: "drift" },
@@ -238,6 +283,7 @@ describe("workspace position decision", () => {
         invalid_evidence_count: 0,
       },
       history_drift: {
+        evidence_valid: true,
         drifted_item_count: 0,
         drifted_item_ids: [],
         drifted_item_ids_truncated: false,

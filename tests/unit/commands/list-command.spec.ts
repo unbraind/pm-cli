@@ -1511,6 +1511,25 @@ describe("runList", () => {
       expect(closedViaStatusOption.count).toBe(1);
       expect(closedViaStatusOption.items[0].status).toBe("closed");
 
+      const closedWithLifecycleBucket = await runList(
+        undefined,
+        { status: "closed", lifecycleBucket: "open" },
+        { path: context.pmPath },
+      );
+      expect(closedWithLifecycleBucket.count).toBe(1);
+      expect(closedWithLifecycleBucket.filters.status).toBe("closed");
+
+      const multiplePositionalStatuses = await runList(
+        "open,closed",
+        {},
+        { path: context.pmPath },
+      );
+      expect(multiplePositionalStatuses.count).toBe(2);
+      expect(multiplePositionalStatuses.filters.status).toEqual([
+        "open",
+        "closed",
+      ]);
+
       // --status all is also explicit: keep every lifecycle bucket while echoing
       // the caller intent instead of falling back to the active-only default.
       const allViaStatusOption = await runList(

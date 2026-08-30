@@ -1434,6 +1434,18 @@
       ],
       "package_version": "2026.8.30",
       "reason": "Add lifecycle-aware list selection, explicit workflow anchors, and workspace position contracts for SDK consumers."
+    },
+    {
+      "changes": [
+        "signature ./sdk:StatusRoleDiagnostics",
+        "signature ./sdk:WorkspacePositionResult",
+        "signature ./sdk:WorkspacePositionState",
+        "signature ./sdk/governance:StatusRoleDiagnostics",
+        "signature ./sdk/governance:WorkspacePositionResult",
+        "signature ./sdk/governance:WorkspacePositionState"
+      ],
+      "package_version": "2026.8.30",
+      "reason": "Fail closed on malformed history evidence and expose complete bounded lifecycle-role diagnostics"
     }
   ],
   "entrypoints": {
@@ -17068,7 +17080,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "StatusRoleDiagnostics",
-          "signature": "export interface StatusRoleDiagnostics { roleless_statuses: string[]; affected_item_count: number; affected_item_ids: string[]; affected_item_ids_truncated: boolean; }"
+          "signature": "export interface StatusRoleDiagnostics { roleless_status_count: number; roleless_statuses: string[]; roleless_statuses_truncated: boolean; affected_item_count: number; affected_item_ids: string[]; affected_item_ids_truncated: boolean; }"
         },
         {
           "classification": "supported",
@@ -18394,13 +18406,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspacePositionResult",
-          "signature": "export interface WorkspacePositionResult { ok: boolean; state: WorkspacePositionState; merge_fence: { committed: MergeFenceAuditResult; clone_local_drivers: MergeDriverConfigurationAuditResult | null; }; merge_receipts: { pending_decision_count: number; pending_item_ids: string[]; pending_item_ids_truncated: boolean; lossless_count: number; invalid_evidence_count: number; }; history_drift: { drifted_item_count: number; drifted_item_ids: string[]; drifted_item_ids_truncated: boolean; counts: Record<string, unknown>; }; next_action: WorkspacePositionNextAction; warnings: string[]; generated_at: string; }"
+          "signature": "export interface WorkspacePositionResult { ok: boolean; state: WorkspacePositionState; merge_fence: { committed: MergeFenceAuditResult; clone_local_drivers: MergeDriverConfigurationAuditResult | null; }; merge_receipts: { pending_decision_count: number; pending_item_ids: string[]; pending_item_ids_truncated: boolean; lossless_count: number; invalid_evidence_count: number; }; history_drift: { evidence_valid: boolean; drifted_item_count: number; drifted_item_ids: string[]; drifted_item_ids_truncated: boolean; counts: Record<string, unknown>; }; next_action: WorkspacePositionNextAction; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "WorkspacePositionState",
-          "signature": "export type WorkspacePositionState = \"ready\" | \"merge_evidence_invalid\" | \"merge_reconciliation_required\" | \"history_repair_required\" | \"merge_fence_unprepared\";"
+          "signature": "export type WorkspacePositionState = \"ready\" | \"merge_evidence_invalid\" | \"history_evidence_invalid\" | \"merge_reconciliation_required\" | \"history_repair_required\" | \"merge_fence_unprepared\";"
         },
         {
           "classification": "advanced_export",
@@ -24844,7 +24856,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "StatusRoleDiagnostics",
-          "signature": "export interface StatusRoleDiagnostics { roleless_statuses: string[]; affected_item_count: number; affected_item_ids: string[]; affected_item_ids_truncated: boolean; }"
+          "signature": "export interface StatusRoleDiagnostics { roleless_status_count: number; roleless_statuses: string[]; roleless_statuses_truncated: boolean; affected_item_count: number; affected_item_ids: string[]; affected_item_ids_truncated: boolean; }"
         },
         {
           "classification": "supported",
@@ -25018,13 +25030,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspacePositionResult",
-          "signature": "export interface WorkspacePositionResult { ok: boolean; state: WorkspacePositionState; merge_fence: { committed: MergeFenceAuditResult; clone_local_drivers: MergeDriverConfigurationAuditResult | null; }; merge_receipts: { pending_decision_count: number; pending_item_ids: string[]; pending_item_ids_truncated: boolean; lossless_count: number; invalid_evidence_count: number; }; history_drift: { drifted_item_count: number; drifted_item_ids: string[]; drifted_item_ids_truncated: boolean; counts: Record<string, unknown>; }; next_action: WorkspacePositionNextAction; warnings: string[]; generated_at: string; }"
+          "signature": "export interface WorkspacePositionResult { ok: boolean; state: WorkspacePositionState; merge_fence: { committed: MergeFenceAuditResult; clone_local_drivers: MergeDriverConfigurationAuditResult | null; }; merge_receipts: { pending_decision_count: number; pending_item_ids: string[]; pending_item_ids_truncated: boolean; lossless_count: number; invalid_evidence_count: number; }; history_drift: { evidence_valid: boolean; drifted_item_count: number; drifted_item_ids: string[]; drifted_item_ids_truncated: boolean; counts: Record<string, unknown>; }; next_action: WorkspacePositionNextAction; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "WorkspacePositionState",
-          "signature": "export type WorkspacePositionState = \"ready\" | \"merge_evidence_invalid\" | \"merge_reconciliation_required\" | \"history_repair_required\" | \"merge_fence_unprepared\";"
+          "signature": "export type WorkspacePositionState = \"ready\" | \"merge_evidence_invalid\" | \"history_evidence_invalid\" | \"merge_reconciliation_required\" | \"history_repair_required\" | \"merge_fence_unprepared\";"
         }
       ],
       "types": "dist/sdk/governance.d.ts"

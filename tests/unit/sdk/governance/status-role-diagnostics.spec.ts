@@ -36,7 +36,9 @@ describe("status role diagnostics", () => {
       1,
     );
     expect(diagnostics).toEqual({
-      roleless_statuses: ["review", "verification"],
+      roleless_status_count: 2,
+      roleless_statuses: ["review"],
+      roleless_statuses_truncated: true,
       affected_item_count: 2,
       affected_item_ids: ["pm-a"],
       affected_item_ids_truncated: true,
@@ -55,7 +57,9 @@ describe("status role diagnostics", () => {
       workflow: { open_status: "todo", close_status: "done" },
     });
     const diagnostics = inspectStatusRoleAssignments(registry, []);
+    expect(diagnostics.roleless_status_count).toBe(0);
     expect(diagnostics.roleless_statuses).toEqual([]);
+    expect(diagnostics.roleless_statuses_truncated).toBe(false);
     expect(buildStatusRoleWarnings(diagnostics)).toEqual([]);
   });
 });

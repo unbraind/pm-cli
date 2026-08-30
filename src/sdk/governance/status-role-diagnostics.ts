@@ -12,8 +12,12 @@ import {
 
 /** Bounded evidence describing roleless status definitions and affected items. */
 export interface StatusRoleDiagnostics {
+  /** Total number of registered status ids that have no lifecycle role. */
+  roleless_status_count: number;
   /** Registered status ids that have no lifecycle role. */
   roleless_statuses: string[];
+  /** Whether roleless status ids were omitted from the bounded sample. */
+  roleless_statuses_truncated: boolean;
   /** Number of items whose status resolves to a roleless definition. */
   affected_item_count: number;
   /** Bounded, deterministic sample of affected item ids. */
@@ -44,7 +48,9 @@ export function inspectStatusRoleAssignments(
     .map((item) => item.id)
     .sort((left, right) => left.localeCompare(right));
   return {
-    roleless_statuses: rolelessStatuses,
+    roleless_status_count: rolelessStatuses.length,
+    roleless_statuses: rolelessStatuses.slice(0, itemLimit),
+    roleless_statuses_truncated: rolelessStatuses.length > itemLimit,
     affected_item_count: affectedItemIds.length,
     affected_item_ids: affectedItemIds.slice(0, itemLimit),
     affected_item_ids_truncated: affectedItemIds.length > itemLimit,
@@ -55,9 +61,9 @@ export function inspectStatusRoleAssignments(
 export function buildStatusRoleWarnings(
   diagnostics: StatusRoleDiagnostics,
 ): string[] {
-  return diagnostics.roleless_statuses.length === 0
+  return diagnostics.roleless_status_count === 0
     ? []
     : [
-        `schema_status_missing_lifecycle_role:${diagnostics.roleless_statuses.length}`,
+        `schema_status_missing_lifecycle_role:${diagnostics.roleless_status_count}`,
       ];
 }

@@ -1047,22 +1047,24 @@ function preferredStatusForRole(
   definitions: RuntimeStatusDefinitionResolved[],
   role: RuntimeStatusRole,
   fallbackValues: string[],
+  fallbackFirst = false,
 ): string | undefined {
-  const withRole = definitions.filter((definition) =>
-    definition.roles.includes(role),
-  );
-  if (withRole.length > 0) {
-    return withRole[0].id;
-  }
   const normalizedFallbacks = fallbackValues
     .map((value) => normalizeStatusId(value))
     .filter((value): value is string => typeof value === "string");
-  for (const normalized of normalizedFallbacks) {
-    if (definitions.some((definition) => definition.id === normalized)) {
-      return normalized;
-    }
+  const fallbackMatch = normalizedFallbacks.find((normalized) =>
+    definitions.some((definition) => definition.id === normalized),
+  );
+  if (fallbackFirst && fallbackMatch !== undefined) {
+    return fallbackMatch;
   }
-  return definitions[0]?.id;
+  const withRole = definitions.find((definition) =>
+    definition.roles.includes(role),
+  );
+  if (withRole !== undefined) {
+    return withRole.id;
+  }
+  return fallbackMatch ?? definitions[0]?.id;
 }
 
 interface RuntimeStatusIndexes {
@@ -1163,11 +1165,12 @@ export function resolveRuntimeStatusRegistry(
     ])) as string;
   const inProgressStatus =
     normalizeStatusId(workflow.in_progress_status) ??
-    preferredStatusForRole(definitions, "active", [
-      "in_progress",
-      "in-progress",
-      openStatus,
-    ]);
+    preferredStatusForRole(
+      definitions,
+      "active",
+      ["in_progress", "in-progress", openStatus],
+      true,
+    );
   const blockedStatus =
     normalizeStatusId(workflow.blocked_status) ??
     preferredStatusForRole(definitions, "blocked", ["blocked"]);

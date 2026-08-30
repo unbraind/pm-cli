@@ -2865,7 +2865,7 @@ function buildSettingsValuesHealthCheck(
     ok: settingWarnings.length === 0,
     details: {
       warnings: settingWarnings,
-      ...(statusRoleDiagnostics.roleless_statuses.length > 0
+      ...(statusRoleDiagnostics.roleless_status_count > 0
         ? { lifecycle_status_roles: statusRoleDiagnostics }
         : {}),
     },

@@ -429,6 +429,18 @@ describe("runtime schema command flag registration", () => {
   });
 
   it("uses role and first-definition fallbacks for status registry defaults", () => {
+    const canonicalInProgressFallback = resolveRuntimeStatusRegistry(
+      normalizeRuntimeSchemaSettings({
+        statuses: [
+          { id: "review", roles: ["active"], order: 0 },
+          { id: "open", roles: ["active", "default_open"], order: 10 },
+          { id: "in_progress", roles: ["active"], order: 20 },
+        ],
+        workflow: {},
+      }),
+    );
+    expect(canonicalInProgressFallback.in_progress_status).toBe("in_progress");
+
     const roleFallback = resolveRuntimeStatusRegistry(
       normalizeRuntimeSchemaSettings({
         statuses: [

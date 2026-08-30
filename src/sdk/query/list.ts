@@ -1776,14 +1776,14 @@ function resolveListStatusSelection(
     options.status as ItemStatus | undefined,
     statusRegistry,
   );
-  const lifecycleStatus =
-    options.lifecycleBucket === "in_progress"
-      ? [statusRegistry.in_progress_status]
-      : options.lifecycleBucket === "open"
-        ? [...statusRegistry.active_statuses]
-            .filter((entry) => entry !== statusRegistry.in_progress_status)
-            .sort((left, right) => left.localeCompare(right))
-        : undefined;
+  let lifecycleStatus: ItemStatus[] | undefined;
+  if (options.lifecycleBucket === "in_progress") {
+    lifecycleStatus = [statusRegistry.in_progress_status];
+  } else if (options.lifecycleBucket === "open") {
+    lifecycleStatus = [...statusRegistry.active_statuses]
+      .filter((entry) => entry !== statusRegistry.in_progress_status)
+      .sort((left, right) => left.localeCompare(right));
+  }
   const resolvedStatus =
     explicitStatus ??
     lifecycleStatus ??
@@ -1793,16 +1793,20 @@ function resolveListStatusSelection(
     explicitStatus || explicitAllStatuses
       ? { ...options, excludeTerminal: false }
       : options;
-  const filtersStatus = explicitAllStatuses
-    ? "all"
-    : (options.lifecycleBucket ??
-      (resolvedStatus === undefined
-        ? effectiveOptions.excludeTerminal === true
-          ? null
-          : "all"
-        : resolvedStatus.length === 1
-          ? resolvedStatus[0]
-          : resolvedStatus));
+  let filtersStatus: ItemStatus | ItemStatus[] | "all" | null = "all";
+  if (explicitAllStatuses) {
+    filtersStatus = "all";
+  } else if (explicitStatus !== undefined) {
+    filtersStatus =
+      explicitStatus.length === 1 ? explicitStatus[0] : explicitStatus;
+  } else if (options.lifecycleBucket !== undefined) {
+    filtersStatus = options.lifecycleBucket;
+  } else if (resolvedStatus !== undefined) {
+    filtersStatus =
+      resolvedStatus.length === 1 ? resolvedStatus[0] : resolvedStatus;
+  } else if (effectiveOptions.excludeTerminal === true) {
+    filtersStatus = null;
+  }
   return {
     resolvedStatus,
     explicitAllStatuses,

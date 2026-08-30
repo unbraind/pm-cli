@@ -38,7 +38,11 @@ pm health --check-only --full --json
 pm validate --check-lifecycle --json
 ```
 
-Look for `schema_status_missing_lifecycle_role:<count>` and `lifecycle_status_roles`. Repair the schema by re-registering each status with its intended role before making workflow decisions.
+Look for `schema_status_missing_lifecycle_role:<count>` and
+`lifecycle_status_roles`. Diagnostics retain `roleless_status_count` while
+bounding both status and affected-item ID samples with explicit truncation
+flags. Repair the schema by re-registering each status with its intended role
+before making workflow decisions.
 
 ## One Workspace Position Read
 
@@ -65,13 +69,14 @@ tokenized recovery actions.
 
 Recovery precedence is intentional:
 
-| State                           | Next action                 | Why it comes first |
-| ------------------------------- | --------------------------- | ------------------ |
-| `merge_evidence_invalid`        | `pm merge report`           | Untrusted evidence must be inspected before it can drive repair. |
-| `merge_reconciliation_required` | `pm merge reconcile`        | Pending scalar decisions can explain and settle merge-created divergence. |
-| `history_repair_required`       | `pm history-repair --all`   | Remaining append-only drift needs an audited re-anchor. |
-| `merge_fence_unprepared`        | `pm merge install`          | The committed fence or clone-local drivers are absent or drifted. |
-| `ready`                         | none                        | All included readiness predicates passed. |
+| State                           | Next action                                | Why it comes first                                                        |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| `merge_evidence_invalid`        | `pm merge report`                          | Untrusted evidence must be inspected before it can drive repair.          |
+| `history_evidence_invalid`      | `pm validate --check-history-drift --full` | Required history evidence could not be interpreted safely.                |
+| `merge_reconciliation_required` | `pm merge reconcile`                       | Pending scalar decisions can explain and settle merge-created divergence. |
+| `history_repair_required`       | `pm history-repair --all`                  | Remaining append-only drift needs an audited re-anchor.                   |
+| `merge_fence_unprepared`        | `pm merge install`                         | The committed fence or clone-local drivers are absent or drifted.         |
+| `ready`                         | none                                       | All included readiness predicates passed.                                 |
 
 `pm health --strict-exit` also treats missing clone-local merge drivers as blocking. Default health remains advisory for never-installed drivers so ordinary diagnostics retain backward compatibility.
 
