@@ -35,6 +35,199 @@ function lastId(stdinWrite: ReturnType<typeof vi.fn>): unknown {
   return JSON.parse(String(stdinWrite.mock.calls.at(-1)?.[0] ?? "{}")).id;
 }
 
+/**
+ * Drive the mocked child so every JSON-RPC request written to stdin is answered
+ * by `respond`, which returns either a result or an error body for that request.
+ */
+function autoRespond(
+  env: ReturnType<typeof mockSpawnedChild>,
+  respond: (method: string, params: Record<string, unknown>) => Record<string, unknown>,
+): void {
+  env.stdinWrite.mockImplementation((chunk: string) => {
+    const message = JSON.parse(String(chunk));
+    const body = respond(message.method, message.params ?? {});
+    queueMicrotask(() => {
+      env.readlineEmitter.emit(
+        "line",
+        JSON.stringify({ jsonrpc: "2.0", id: message.id, ...body }),
+      );
+    });
+  });
+}
+
+const MATRIX_OPTIONS = {
+  serverPath: "/tmp/mock-plugin-server.mjs",
+  author: "harness-test",
+  tmpPrefix: "pm-harness-",
+  modernProtocolVersion: "2026-07-28",
+};
+
+describe("plugin-mcp-smoke-harness handshake matrix", () => {
+  it("negotiates every declared revision, refuses an undeclared one, and confirms discovery", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (method, params) => {
+      if (method === "server/discover") {
+        return { result: { supportedVersions: ["2026-07-28"] } };
+      }
+      const requested = String((params as { protocolVersion?: string }).protocolVersion);
+      if (requested === "1900-01-01") {
+        return { error: { code: -32022, message: "Unsupported legacy MCP protocol version" } };
+      }
+      return {
+        result: { protocolVersion: requested, serverInfo: { name: "pm-mcp" } },
+      };
+    });
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    const outcome = await mod.assertProtocolHandshakeMatrix({
+      ...MATRIX_OPTIONS,
+      legacyProtocolVersions: ["2025-11-25", "2025-06-18"],
+    });
+    expect(outcome.negotiated).toEqual(["2025-11-25", "2025-06-18"]);
+    expect(outcome.refused).toContain("protocol version");
+  });
+
+  it("falls back to the revision list declared by the built SDK when none is supplied", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (method, params) => {
+      if (method === "server/discover") {
+        return { result: { supportedVersions: ["2026-07-28"] } };
+      }
+      const requested = String((params as { protocolVersion?: string }).protocolVersion);
+      return requested === "1900-01-01"
+        ? { error: { code: -32022, message: "Unsupported legacy MCP protocol version" } }
+        : { result: { protocolVersion: requested, serverInfo: { name: "pm-mcp" } } };
+    });
+    // The fallback dynamically imports the built SDK, which pulls the rest of
+    // node:child_process, so the spawn override has to sit on the real module.
+    vi.doMock("node:child_process", async () => ({
+      ...(await vi.importActual<typeof import("node:child_process")>("node:child_process")),
+      spawn: env.spawn,
+    }));
+    vi.doMock("node:fs/promises", async () => ({
+      ...(await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises")),
+      mkdtemp: vi.fn(async () => "/tmp/pm-mcp-harness"),
+      rm: vi.fn(async () => undefined),
+    }));
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    const outcome = await mod.assertProtocolHandshakeMatrix({
+      serverPath: "/tmp/mock-plugin-server.mjs",
+      author: "harness-test",
+      tmpPrefix: "pm-harness-",
+    });
+    // Derived from the artifact, so the matrix cannot iterate a shorter list
+    // than the transport accepts.
+    expect(outcome.negotiated.length).toBeGreaterThan(0);
+    expect(outcome.negotiated).toContain("2025-11-25");
+  });
+
+  it("rejects an empty declared revision list rather than passing vacuously", async () => {
+    mockSpawnedChild();
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({ ...MATRIX_OPTIONS, legacyProtocolVersions: [] }),
+    ).rejects.toThrow("declared legacy revision list");
+  });
+
+  it("fails when the server answers a revision the client did not request", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, () => ({
+      result: { protocolVersion: "2025-06-18", serverInfo: { name: "pm-mcp" } },
+    }));
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({
+        ...MATRIX_OPTIONS,
+        legacyProtocolVersions: ["2025-11-25"],
+      }),
+    ).rejects.toThrow("cannot fall forward");
+  });
+
+  it("fails when the handshake omits server identity", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (_method, params) => ({
+      result: { protocolVersion: String((params as { protocolVersion?: string }).protocolVersion) },
+    }));
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({
+        ...MATRIX_OPTIONS,
+        legacyProtocolVersions: ["2025-11-25"],
+      }),
+    ).rejects.toThrow("serverInfo.name");
+  });
+
+  it("fails when an undeclared revision is accepted, so the accept list enforces something", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (_method, params) => ({
+      result: {
+        protocolVersion: String((params as { protocolVersion?: string }).protocolVersion),
+        serverInfo: { name: "pm-mcp" },
+      },
+    }));
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({
+        ...MATRIX_OPTIONS,
+        legacyProtocolVersions: ["2025-11-25"],
+      }),
+    ).rejects.toThrow("negative control failed");
+  });
+
+  it("rethrows a refusal that is not a protocol-version refusal", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (_method, params) => {
+      const requested = String((params as { protocolVersion?: string }).protocolVersion);
+      return requested === "1900-01-01"
+        ? { error: { code: -32603, message: "spawn failed" } }
+        : { result: { protocolVersion: requested, serverInfo: { name: "pm-mcp" } } };
+    });
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({
+        ...MATRIX_OPTIONS,
+        legacyProtocolVersions: ["2025-11-25"],
+      }),
+    ).rejects.toThrow("spawn failed");
+  });
+
+  it("fails when discovery returns no result at all", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (method, params) => {
+      if (method === "server/discover") return {};
+      const requested = String((params as { protocolVersion?: string }).protocolVersion);
+      return requested === "1900-01-01"
+        ? { error: { code: -32022, message: "Unsupported legacy MCP protocol version" } }
+        : { result: { protocolVersion: requested, serverInfo: { name: "pm-mcp" } } };
+    });
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({
+        ...MATRIX_OPTIONS,
+        legacyProtocolVersions: ["2025-11-25"],
+      }),
+    ).rejects.toThrow("omits the declared canonical revision");
+  });
+
+  it("fails when discovery omits the declared canonical revision", async () => {
+    const env = mockSpawnedChild();
+    autoRespond(env, (method, params) => {
+      // No supportedVersions key at all, so the nullish fallback is exercised.
+      if (method === "server/discover") return { result: {} };
+      const requested = String((params as { protocolVersion?: string }).protocolVersion);
+      return requested === "1900-01-01"
+        ? { error: { code: -32022, message: "Unsupported legacy MCP protocol version" } }
+        : { result: { protocolVersion: requested, serverInfo: { name: "pm-mcp" } } };
+    });
+    const mod = await harness.importModule<HarnessModule>(SCRIPT);
+    await expect(
+      mod.assertProtocolHandshakeMatrix({
+        ...MATRIX_OPTIONS,
+        legacyProtocolVersions: ["2025-11-25"],
+      }),
+    ).rejects.toThrow("omits the declared canonical revision");
+  });
+});
+
 describe("plugin-mcp-smoke-harness", () => {
   it("resolves requests, parses structured + text tool results, and disposes", async () => {
     const env = mockSpawnedChild();

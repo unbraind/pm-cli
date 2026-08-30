@@ -71,53 +71,68 @@ export async function assertProtocolHandshakeMatrix({
       "handshake matrix requires the declared legacy revision list from the built SDK",
     );
   }
+  const spawnOptions = { serverPath, author, tmpPrefix };
   const negotiated = [];
   for (const version of legacyProtocolVersions) {
-    const smoke = await startPluginMcpSmoke({ serverPath, author, tmpPrefix });
-    try {
-      const result = await smoke.request("initialize", {
-        protocolVersion: version,
-        capabilities: {},
-        clientInfo: { name: author, version: "1.0.0" },
-      });
-      if (result?.protocolVersion !== version) {
-        throw new Error(
-          `initialize(${version}) negotiated "${result?.protocolVersion}"; a legacy client cannot fall forward from a version it did not request`,
-        );
-      }
-      if (!result?.serverInfo?.name) {
-        throw new Error(`initialize(${version}) returned no serverInfo.name`);
-      }
-      negotiated.push(version);
-    } finally {
-      await smoke.dispose();
-    }
+    negotiated.push(await negotiateLegacyRevision(spawnOptions, version));
   }
+  const refused = await assertUndeclaredRevisionRefused(spawnOptions);
+  await assertModernRevisionDiscoverable(spawnOptions, modernProtocolVersion);
+  return { negotiated, refused };
+}
 
-  const unsupported = "1900-01-01";
-  const control = await startPluginMcpSmoke({ serverPath, author, tmpPrefix });
-  let refused = "";
+/** Open one handshake at `version` and require the server to echo it back. */
+async function negotiateLegacyRevision(spawnOptions, version) {
+  const smoke = await startPluginMcpSmoke(spawnOptions);
   try {
-    await control.request("initialize", {
+    const result = await smoke.request("initialize", {
+      protocolVersion: version,
+      capabilities: {},
+      clientInfo: { name: spawnOptions.author, version: "1.0.0" },
+    });
+    if (result?.protocolVersion !== version) {
+      throw new Error(
+        `initialize(${version}) negotiated "${result?.protocolVersion}"; a legacy client cannot fall forward from a version it did not request`,
+      );
+    }
+    if (!result?.serverInfo?.name) {
+      throw new Error(`initialize(${version}) returned no serverInfo.name`);
+    }
+    return version;
+  } finally {
+    await smoke.dispose();
+  }
+}
+
+/** Require an undeclared revision to be refused, and return the refusal text. */
+async function assertUndeclaredRevisionRefused(spawnOptions) {
+  const unsupported = "1900-01-01";
+  const smoke = await startPluginMcpSmoke(spawnOptions);
+  try {
+    await smoke.request("initialize", {
       protocolVersion: unsupported,
       capabilities: {},
-      clientInfo: { name: author, version: "1.0.0" },
+      clientInfo: { name: spawnOptions.author, version: "1.0.0" },
     });
-    throw new Error(
-      `negative control failed: initialize(${unsupported}) was accepted, so the accept list enforces nothing`,
-    );
   } catch (error) {
-    refused = error instanceof Error ? error.message : String(error);
-    if (!refused.toLowerCase().includes("protocol version")) {
-      throw error;
-    }
+    // startPluginMcpSmoke rejects only with Error instances; template
+    // stringification keeps any other rejection legible without a dead branch.
+    const refused = `${error}`;
+    if (!refused.toLowerCase().includes("protocol version")) throw error;
+    return refused;
   } finally {
-    await control.dispose();
+    await smoke.dispose();
   }
+  throw new Error(
+    `negative control failed: initialize(${unsupported}) was accepted, so the accept list enforces nothing`,
+  );
+}
 
-  const probe = await startPluginMcpSmoke({ serverPath, author, tmpPrefix });
+/** Require discovery to advertise the declared canonical stateless revision. */
+async function assertModernRevisionDiscoverable(spawnOptions, modernProtocolVersion) {
+  const smoke = await startPluginMcpSmoke(spawnOptions);
   try {
-    const discovered = await probe.request("server/discover", {});
+    const discovered = await smoke.request("server/discover", {});
     const supported = discovered?.supportedVersions ?? [];
     if (!supported.includes(modernProtocolVersion)) {
       throw new Error(
@@ -125,10 +140,8 @@ export async function assertProtocolHandshakeMatrix({
       );
     }
   } finally {
-    await probe.dispose();
+    await smoke.dispose();
   }
-
-  return { negotiated, refused };
 }
 
 export async function startPluginMcpSmoke({

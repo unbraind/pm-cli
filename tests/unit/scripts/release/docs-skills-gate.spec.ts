@@ -36,6 +36,9 @@ type DocsModule = {
   runGuideChecks: (failures: string[]) => Promise<void>;
   validateRequiredGuideMentions: (failures: string[]) => Promise<void>;
   loadDeprecatedCommandSpellings: () => Promise<Map<string, string>>;
+  mapDeprecatedCommandSpellings: (
+    contracts?: { alias: string; canonical_argv: string[]; lifecycle: string }[],
+  ) => Map<string, string>;
   extractFencedPmInvocations: (
     content: string,
   ) => { line: number; command: string; text: string }[];
@@ -428,6 +431,21 @@ describe("docs-skills-gate", () => {
         "package",
       ]);
       expect(found[0]).toMatchObject({ line: 3 });
+    });
+
+    it("mapDeprecatedCommandSpellings tolerates an absent alias table", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      // An unreadable table must reduce to an empty map so the caller's
+      // vacuous-pass guard fires instead of the check silently passing.
+      expect(mod.mapDeprecatedCommandSpellings().size).toBe(0);
+      expect(mod.mapDeprecatedCommandSpellings(undefined).size).toBe(0);
+      expect(
+        mod.mapDeprecatedCommandSpellings([
+          { alias: "install", canonical_argv: ["package", "install"], lifecycle: "deprecated" },
+          { alias: "show", canonical_argv: ["get"], lifecycle: "permanent" },
+        ]),
+      ).toEqual(new Map([["install", "pm package install"]]));
     });
 
     it("loadDeprecatedCommandSpellings maps every deprecated alias to its canonical form", async () => {

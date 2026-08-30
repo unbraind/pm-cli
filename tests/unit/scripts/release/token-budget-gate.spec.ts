@@ -86,6 +86,10 @@ type TokenBudgetGateModule = {
     measurement: TokenBudgetMeasurement,
     multiplier: number,
   ) => TokenBudgetManifest["budgets"][number];
+  describeObservedOutput: (measurement: {
+    observed_excerpt?: unknown;
+    bytes?: number;
+  }) => string;
   buildManifest: (
     measurements: TokenBudgetMeasurement[],
     multiplier: number,
@@ -377,6 +381,23 @@ describe("scripts/release/token-budget-gate", () => {
         100,
       ),
     ).toBe(100);
+  });
+
+  it("describes the observed output behind a size verdict, and stays silent without one", async () => {
+    const mod = await loadModule();
+    // A verdict that names only a number cannot be acted on.
+    expect(mod.describeObservedOutput({ bytes: 10 })).toBe("");
+    expect(mod.describeObservedOutput({ observed_excerpt: "", bytes: 10 })).toBe("");
+    expect(mod.describeObservedOutput({ observed_excerpt: 42 as never, bytes: 10 })).toBe("");
+    const short = mod.describeObservedOutput({ observed_excerpt: "ok: true", bytes: 8 });
+    expect(short).toContain("Observed output:");
+    expect(short).toContain("ok: true");
+    expect(short).not.toContain("first");
+    const long = mod.describeObservedOutput({
+      observed_excerpt: "x".repeat(1400),
+      bytes: 5000,
+    });
+    expect(long).toContain("first 1400 bytes");
   });
 
   it("builds budget entries with explicit headroom", async () => {

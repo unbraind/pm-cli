@@ -538,14 +538,18 @@ const DEPRECATED_SPELLING_SCAN_DIRECTORIES = Object.freeze([
  * aliases the CLI actually deprecates, which is the defect class this check
  * exists to catch.
  */
-export async function loadDeprecatedCommandSpellings() {
-  const sdk = await import("../../dist/cli-bundle/sdk.js");
-  const contracts = sdk.PM_COMMAND_ALIAS_CONTRACTS ?? [];
+export function mapDeprecatedCommandSpellings(contracts) {
   return new Map(
-    contracts
+    (contracts ?? [])
       .filter((contract) => contract.lifecycle === "deprecated")
       .map((contract) => [contract.alias, `pm ${contract.canonical_argv.join(" ")}`]),
   );
+}
+
+/** Read the alias table from the built SDK and reduce it to deprecated spellings. */
+export async function loadDeprecatedCommandSpellings() {
+  const sdk = await import("../../dist/cli-bundle/sdk.js");
+  return mapDeprecatedCommandSpellings(sdk.PM_COMMAND_ALIAS_CONTRACTS);
 }
 
 /** Return fenced-block lines that invoke `pm <command>` in command position. */
@@ -586,7 +590,7 @@ export async function validateDeprecatedCommandSpellings(failures, options = {})
   for (const directory of DEPRECATED_SPELLING_SCAN_DIRECTORIES) {
     files.push(...(await collectMarkdownFiles(directory)));
   }
-  for (const markdownFile of [...new Set(files)]) {
+  for (const markdownFile of new Set(files)) {
     if (!(await pathExists(markdownFile))) continue;
     const content = await readUtf8(markdownFile);
     for (const invocation of extractFencedPmInvocations(content)) {
