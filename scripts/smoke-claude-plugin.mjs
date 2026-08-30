@@ -11,12 +11,17 @@
  *    pm_get, pm_context, pm_search, pm_events, pm_validate, pm_health all succeed
  * 6. Session-start hook script runs without errors
  * 7. Marketplace plugin name matches plugin.json name
+ * 8. Every SDK-declared protocol revision completes a real initialize handshake,
+ *    and an undeclared revision is refused (negative control)
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { startPluginMcpSmoke } from "./plugin-mcp-smoke-harness.mjs";
+import {
+  assertProtocolHandshakeMatrix,
+  startPluginMcpSmoke,
+} from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const launcherPath = path.join(repoRoot, "plugins", "pm-claude", "scripts", "pm-mcp-server.mjs");
@@ -231,6 +236,17 @@ try {
       throw new Error(`session-start hook failed with exit ${err.status}: ${err.stderr}`);
     }
   }
+
+  // 5. Every protocol revision the built SDK declares must complete a real
+  //    handshake against this launcher, and an undeclared one must not.
+  const matrix = await assertProtocolHandshakeMatrix({
+    serverPath: launcherPath,
+    author: "claude-smoke",
+    tmpPrefix: "pm-claude-handshake-",
+  });
+  console.log(
+    `protocol handshake matrix: ok (negotiated ${matrix.negotiated.join(", ")}; unsupported refused)`,
+  );
 
   console.log(`\nClaude Code plugin smoke passed for ${id}`);
 } finally {

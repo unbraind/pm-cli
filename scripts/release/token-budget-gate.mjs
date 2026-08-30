@@ -40,6 +40,8 @@ export const HARNESS_SIGNAL_ENVIRONMENT_KEYS = Object.freeze(
   ].sort((left, right) => left.localeCompare(right)),
 );
 
+const OBSERVED_EXCERPT_LIMIT = 1400;
+
 function distCliPath() {
   return path.join(repoRoot, "dist", "cli.js");
 }
@@ -575,6 +577,10 @@ function measureCorpus(cliPath) {
           ? {}
           : { contract_max_estimated_tokens: contractMaxEstimatedTokens }),
         ...renderedMeasurement,
+        // A size verdict that names no content cannot be acted on: the failure
+        // says a number grew but not which rows grew it. Carried in memory only;
+        // budgetForMeasurement never persists it into the manifest.
+        observed_excerpt: stdout.slice(0, OBSERVED_EXCERPT_LIMIT),
         ...(entry.kind === "answer"
           ? {
               contract_estimated_tokens: readOutputContractEstimate(
@@ -627,6 +633,20 @@ function measureCorpus(cliPath) {
   } finally {
     cleanupTempRoot(workspaceRoot);
   }
+}
+
+/**
+ * Render the bounded observed output behind a size violation.
+ *
+ * Without it the verdict reports only that a number moved, so a maintainer has
+ * to reconstruct the fixture by hand to learn which rows grew — which is how a
+ * host-dependent row in a supposedly isolated fixture stays undiagnosed.
+ */
+export function describeObservedOutput(measurement) {
+  const excerpt = measurement.observed_excerpt;
+  if (typeof excerpt !== "string" || excerpt.length === 0) return "";
+  const truncated = measurement.bytes > OBSERVED_EXCERPT_LIMIT;
+  return `\nObserved output${truncated ? ` (first ${OBSERVED_EXCERPT_LIMIT} bytes)` : ""}:\n${excerpt}`;
 }
 
 export function budgetForMeasurement(measurement, multiplier) {
@@ -765,10 +785,10 @@ function measurementViolation(measurement, budget) {
     return `${measurement.id}: ${contractEstimate} contract-estimated tokens exceeds ${measurement.command} contract ${measurement.contract_max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
   }
   if (measurement.estimated_tokens > budget.max_estimated_tokens) {
-    return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds budget ${budget.max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
+    return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds budget ${budget.max_estimated_tokens} tokens (${measurement.args.join(" ")})${describeObservedOutput(measurement)}`;
   }
   if (measurement.bytes > budget.max_bytes) {
-    return `${measurement.id}: ${measurement.bytes} bytes exceeds budget ${budget.max_bytes} bytes (${measurement.args.join(" ")})`;
+    return `${measurement.id}: ${measurement.bytes} bytes exceeds budget ${budget.max_bytes} bytes (${measurement.args.join(" ")})${describeObservedOutput(measurement)}`;
   }
   return undefined;
 }

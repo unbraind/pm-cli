@@ -29,7 +29,7 @@ profiles over the same substrate.
 Optional deep routing that never goes stale:
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide extensions
 ```
 
@@ -59,7 +59,7 @@ pm contracts --runtime-only --availability-only
 pm package explore --project              # inspect state first
 pm package manage --detail summary
 pm package doctor --detail deep
-pm install <package> --project            # then mutate
+pm package install <package> --project            # then mutate
 pm contracts --command <extension-command> --flags-only
 pm package doctor --detail deep           # verify after
 ```

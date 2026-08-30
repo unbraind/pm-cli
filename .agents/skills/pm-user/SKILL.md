@@ -28,7 +28,7 @@ agent can rebuild the full situation from it alone.
 Optional deep routing that never goes stale:
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide quickstart
 pm guide commands --depth brief
 ```
@@ -47,7 +47,7 @@ pm guide commands --depth brief
 ```bash
 pm context --limit 10
 pm search "<request keywords>" --limit 10
-pm list-open --limit 20 --output-include id,title,type,priority
+pm list --status open --limit 20 --brief
 # reuse if it exists; otherwise create with lineage
 pm create --create-mode progressive \
   --title "..." --description "..." --type Task --status open \

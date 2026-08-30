@@ -7,7 +7,7 @@ This directory is the public documentation home for `pm-cli`. It is organized fo
 `pm guide` is provided by the optional `guide-shell` package. Install it when local in-CLI documentation routing is useful:
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide
 pm guide quickstart
 pm guide commands --depth standard

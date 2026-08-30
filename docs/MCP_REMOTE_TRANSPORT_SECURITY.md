@@ -7,7 +7,7 @@ Tracker references: [pm-v7e337](../.agents/pm/features/pm-v7e337.toon),
 pm exposes the same MCP 2026-07-28 dispatcher through two adapters:
 
 - `pm-mcp` is the local JSON-RPC/stdio process. It retains a bounded
-  `2025-06-18` compatibility adapter for existing local consumers.
+  initialize-era compatibility adapter for existing local consumers.
 - `pm-mcp-http` is the canonical sessionless Streamable HTTP POST process. It
   accepts only modern request-local protocol metadata and never creates an
   MCP session.
@@ -155,7 +155,9 @@ an unlisted source path cannot create that exemption. Any canonical match for a
 removed method, session header, SSE resume mechanism, legacy
 resource-subscription method, or deprecated server policy fails the gate.
 
-The compatibility adapter supports only protocol `2025-06-18` on local stdio.
+The compatibility adapter supports the initialize-era revisions declared by
+`PM_MCP_LEGACY_PROTOCOL_VERSIONS` (`2025-11-25` and `2025-06-18`) on local
+stdio.
 It may be removed after telemetry and installed-consumer probes show no
 required legacy clients for two consecutive release windows. Deprecated
 2026-07-28 fields remain available only where the normative registry requires

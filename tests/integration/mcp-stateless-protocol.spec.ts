@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
 import {
   PM_MCP_ERROR_CODES,
+  PM_MCP_LEGACY_PROTOCOL_VERSIONS,
   PM_MCP_META_KEYS,
   PM_MCP_PROTOCOL_VERSION,
   PM_MCP_APPS_EXTENSION,
@@ -745,7 +746,7 @@ describe("MCP 2026-07-28 stateless server", () => {
     ).rejects.toMatchObject({
       code: PM_MCP_ERROR_CODES.unsupportedProtocolVersion,
       data: {
-        supported: ["2025-06-18"],
+        supported: [...PM_MCP_LEGACY_PROTOCOL_VERSIONS],
         requested: "1900-01-01",
         modern: PM_MCP_PROTOCOL_VERSION,
       },

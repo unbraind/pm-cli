@@ -748,6 +748,15 @@
           {
             "holder_id": "pm-ob9z4y",
             "reason": "The measurement owner documents candidate gaps as analysis subjects before remediation."
+          },
+          {
+            "holder_id": "pm-7zs0",
+            "reason": "The recurring release-health check records a census of outstanding owners for each cut; naming the item that canonically owns an outstanding piece of work is an inventory statement, not a pairwise relationship, in the same shape already exempted for the roadmap ledger."
+          },
+          {
+            "holder_id": "pm-gxs55a",
+            "text_contains": "carry neither a semantic nor an ordering edge",
+            "reason": "This sentence names the items that are the measurement's own subjects. Linking a measurement to the population it measured would destroy the property being reported, which is the analysis-subject case already exempted for the measurement owner."
           }
         ]
       },

@@ -32,6 +32,105 @@ const MCP_PROTOCOL_VERSION = "2026-07-28";
  * @param {number} [options.requestTimeoutMs] - per-request timeout
  * @returns {Promise<{tmpRoot: string, request: Function, callTool: Function, getStderr: Function, dispose: Function}>}
  */
+/**
+ * Drive a real `initialize` handshake against a launcher once for EVERY protocol
+ * revision the published SDK surface declares, plus a negative control.
+ *
+ * The revision list is read from the built SDK rather than restated here, so the
+ * matrix can never iterate a shorter hand-maintained list than the one the
+ * transport actually accepts. Each accepted revision must be echoed back
+ * verbatim, because a legacy client has no fall-forward mechanism and treats the
+ * answered version as the negotiated one. The negative control proves the widened
+ * set still refuses an unknown revision and names every supported revision in the
+ * refusal, since that error text is the only diagnostic such a client can surface.
+ *
+ * @param {object} options
+ * @param {string} options.serverPath - launcher entrypoint to spawn per revision
+ * @param {string} options.author - PM_AUTHOR value for the sandbox
+ * @param {string} options.tmpPrefix - mkdtemp prefix for the sandbox root
+ * @param {readonly string[]} [options.legacyProtocolVersions] - declared initialize-era revisions; defaults to the built SDK's own list
+ * @param {string} [options.modernProtocolVersion] - declared canonical stateless revision; defaults to the built SDK's own value
+ * @returns {Promise<{negotiated: string[], refused: string}>}
+ */
+export async function assertProtocolHandshakeMatrix({
+  serverPath,
+  author,
+  tmpPrefix,
+  legacyProtocolVersions,
+  modernProtocolVersion,
+}) {
+  // Read the declared revisions from the built SDK lazily: a static import would
+  // pull the whole bundle into every consumer of this module's spawn plumbing.
+  if (legacyProtocolVersions === undefined || modernProtocolVersion === undefined) {
+    const sdk = await import("../dist/cli-bundle/sdk.js");
+    legacyProtocolVersions ??= sdk.PM_MCP_LEGACY_PROTOCOL_VERSIONS;
+    modernProtocolVersion ??= sdk.PM_MCP_PROTOCOL_VERSION;
+  }
+  if (!Array.isArray(legacyProtocolVersions) || legacyProtocolVersions.length === 0) {
+    throw new Error(
+      "handshake matrix requires the declared legacy revision list from the built SDK",
+    );
+  }
+  const negotiated = [];
+  for (const version of legacyProtocolVersions) {
+    const smoke = await startPluginMcpSmoke({ serverPath, author, tmpPrefix });
+    try {
+      const result = await smoke.request("initialize", {
+        protocolVersion: version,
+        capabilities: {},
+        clientInfo: { name: author, version: "1.0.0" },
+      });
+      if (result?.protocolVersion !== version) {
+        throw new Error(
+          `initialize(${version}) negotiated "${result?.protocolVersion}"; a legacy client cannot fall forward from a version it did not request`,
+        );
+      }
+      if (!result?.serverInfo?.name) {
+        throw new Error(`initialize(${version}) returned no serverInfo.name`);
+      }
+      negotiated.push(version);
+    } finally {
+      await smoke.dispose();
+    }
+  }
+
+  const unsupported = "1900-01-01";
+  const control = await startPluginMcpSmoke({ serverPath, author, tmpPrefix });
+  let refused = "";
+  try {
+    await control.request("initialize", {
+      protocolVersion: unsupported,
+      capabilities: {},
+      clientInfo: { name: author, version: "1.0.0" },
+    });
+    throw new Error(
+      `negative control failed: initialize(${unsupported}) was accepted, so the accept list enforces nothing`,
+    );
+  } catch (error) {
+    refused = error instanceof Error ? error.message : String(error);
+    if (!refused.toLowerCase().includes("protocol version")) {
+      throw error;
+    }
+  } finally {
+    await control.dispose();
+  }
+
+  const probe = await startPluginMcpSmoke({ serverPath, author, tmpPrefix });
+  try {
+    const discovered = await probe.request("server/discover", {});
+    const supported = discovered?.supportedVersions ?? [];
+    if (!supported.includes(modernProtocolVersion)) {
+      throw new Error(
+        `server/discover advertised ${JSON.stringify(supported)} which omits the declared canonical revision ${modernProtocolVersion}`,
+      );
+    }
+  } finally {
+    await probe.dispose();
+  }
+
+  return { negotiated, refused };
+}
+
 export async function startPluginMcpSmoke({
   serverPath,
   author,

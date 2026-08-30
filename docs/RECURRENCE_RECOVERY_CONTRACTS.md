@@ -129,7 +129,7 @@ pm reindex --mode hybrid
 If the command is absent, recovery is a two-step executable sequence:
 
 ```bash
-pm install search-advanced --project
+pm package install search-advanced --project
 pm reindex --mode hybrid
 ```
 

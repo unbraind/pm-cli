@@ -12,7 +12,7 @@ pm search "<request keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
 pm init --agent-guidance status
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide workflows
 ```
 

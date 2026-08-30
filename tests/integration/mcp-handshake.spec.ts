@@ -24,6 +24,7 @@ import {
   createEmptyExtensionRendererRegistry,
   createEmptyExtensionServiceRegistry,
 } from "../../src/core/extensions/extension-registries.js";
+import { PM_MCP_LEGACY_PROTOCOL_VERSIONS } from "../../src/sdk/mcp/protocol.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import {
@@ -98,6 +99,60 @@ describe("MCP protocol handshake", () => {
         method: "ping",
       }),
     ).resolves.toEqual({});
+  });
+
+  it("negotiates every declared legacy revision and echoes the requested one", async () => {
+    // The revision list is read from the contract rather than restated, so this
+    // test can never iterate a shorter set than the transport accepts.
+    for (const version of PM_MCP_LEGACY_PROTOCOL_VERSIONS) {
+      const result = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {
+          protocolVersion: version,
+          capabilities: {},
+          clientInfo: { name: "handshake-matrix", version: "1.0.0" },
+        },
+      })) as { protocolVersion?: string };
+      // A legacy client has no fall-forward mechanism: answering a version it
+      // did not request strands it on a revision it never agreed to.
+      expect(result.protocolVersion).toBe(version);
+    }
+  });
+
+  it("offers the newest legacy revision when the client omits protocolVersion", async () => {
+    const result = (await handleRequest({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        capabilities: {},
+        clientInfo: { name: "handshake-default", version: "1.0.0" },
+      },
+    })) as { protocolVersion?: string };
+    expect(result.protocolVersion).toBe(PM_MCP_LEGACY_PROTOCOL_VERSIONS[0]);
+  });
+
+  it("refuses an undeclared revision and names every supported revision", async () => {
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-03-26",
+          capabilities: {},
+          clientInfo: { name: "handshake-refusal", version: "1.0.0" },
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: -32022,
+      data: {
+        supported: [...PM_MCP_LEGACY_PROTOCOL_VERSIONS],
+        requested: "2025-03-26",
+      },
+    });
   });
 
   it("initialize returns protocolVersion, serverInfo, and instructions", async () => {

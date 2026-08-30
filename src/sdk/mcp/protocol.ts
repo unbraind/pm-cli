@@ -8,8 +8,19 @@
 /** Canonical stateless MCP revision implemented by pm. */
 export const PM_MCP_PROTOCOL_VERSION = "2026-07-28" as const;
 
-/** Legacy initialize-era revisions accepted only by the bounded stdio adapter. */
-export const PM_MCP_LEGACY_PROTOCOL_VERSIONS = ["2025-06-18"] as const;
+/**
+ * Legacy initialize-era revisions accepted only by the bounded stdio adapter.
+ *
+ * The canonical revision defines legacy as every version that establishes a
+ * session with the handshake method, which is `2025-11-25` and earlier, so this
+ * set tracks that boundary rather than a single historical revision.
+ * Ordered newest first: element zero is the revision offered to a client that
+ * omits `protocolVersion`.
+ */
+export const PM_MCP_LEGACY_PROTOCOL_VERSIONS = [
+  "2025-11-25",
+  "2025-06-18",
+] as const;
 
 /** Modern per-request protocol versions accepted by the stateless core. */
 export const PM_MCP_SUPPORTED_PROTOCOL_VERSIONS = [

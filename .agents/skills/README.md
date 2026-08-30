@@ -35,7 +35,7 @@ contracts.
 ## Runtime Routing
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide                       # topic index
 pm guide skills
 pm guide harnesses --depth standard

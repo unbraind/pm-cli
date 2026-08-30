@@ -34,7 +34,7 @@ routed into by section from the references below.
 Optional deep routing that never goes stale:
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide workflows --depth brief
 ```
 

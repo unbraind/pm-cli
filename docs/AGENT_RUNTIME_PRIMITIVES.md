@@ -158,8 +158,8 @@ summary. No history entry is rewritten.
 
 MCP 2026-07-28 reads `io.modelcontextprotocol/clientInfo` independently from
 every request's `_meta` and scopes only that request to the client signal. The
-bounded legacy adapter still reads `clientInfo` during `2025-06-18`
-`initialize`. Optional host-provided `model`, `session`, `provenance`, and
+bounded legacy adapter still reads `clientInfo` during an initialize-era
+handshake. Optional host-provided `model`, `session`, `provenance`, and
 `episode` fields are supported, but version is not misclassified as a model or
 session. Provenance keys must use the bounded
 lowercase dimension vocabulary; blank, malformed, and oversized data is

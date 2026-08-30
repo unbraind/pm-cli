@@ -26,7 +26,7 @@ cp -R docs/examples/policy-restricted-extension .agents/pm/extensions/policy-res
 cd .agents/pm/extensions/policy-restricted-extension
 npm install
 cd -
-pm extension --install --project .agents/pm/extensions/policy-restricted-extension
+pm package install --project .agents/pm/extensions/policy-restricted-extension
 ```
 
 Add policy in `.agents/pm/settings.json`:
@@ -68,7 +68,7 @@ Add policy in `.agents/pm/settings.json`:
 Then validate:
 
 ```bash
-pm extension --doctor --project --detail summary
+pm package doctor --project --detail summary
 pm policy demo
 ```
 

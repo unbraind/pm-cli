@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { startPluginMcpSmoke } from "./plugin-mcp-smoke-harness.mjs";
+import {
+  assertProtocolHandshakeMatrix,
+  startPluginMcpSmoke,
+} from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = process.cwd();
 const serverPath = path.join(repoRoot, "dist", "mcp", "server.js");
@@ -71,6 +74,14 @@ try {
   }
   await callTool("pm_context", { cwd: tmpRoot, options: { limit: "5" } });
   await callTool("pm_validate", { cwd: tmpRoot, options: { checkResolution: true } });
+  const matrix = await assertProtocolHandshakeMatrix({
+    serverPath,
+    author: "codex-smoke",
+    tmpPrefix: "pm-codex-handshake-",
+  });
+  console.log(
+    `protocol handshake matrix: ok (negotiated ${matrix.negotiated.join(", ")}; unsupported refused)`,
+  );
   console.log(`Codex plugin MCP smoke passed for ${id}`);
 } finally {
   await dispose();

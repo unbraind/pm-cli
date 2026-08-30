@@ -1,7 +1,7 @@
 /**
  * @module mcp/legacy-adapter
  *
- * Isolates the bounded MCP 2025-06-18 stdio compatibility surface from the
+ * Isolates the bounded initialize-era stdio compatibility surface from the
  * canonical stateless dispatcher. No modern transport imports policy from it.
  */
 import { PmCliError, type AgentClientInfo } from "../sdk/runtime-primitives.js";
@@ -55,6 +55,35 @@ export interface LegacyMcpAdapterOptions {
   ) => Record<string, unknown>;
 }
 
+/**
+ * Resolve the legacy revision a handshake negotiates, or refuse with the full
+ * supported set.
+ *
+ * A legacy client has no fall-forward mechanism, so the refusal names every
+ * accepted legacy revision alongside the canonical modern one: the error text
+ * is the only diagnostic such a client can surface.
+ */
+export function resolveLegacyProtocolVersion(
+  requestedVersion: unknown,
+): (typeof PM_MCP_LEGACY_PROTOCOL_VERSIONS)[number] {
+  if (requestedVersion === undefined || requestedVersion === null) {
+    return PM_MCP_LEGACY_PROTOCOL_VERSIONS[0];
+  }
+  const accepted = PM_MCP_LEGACY_PROTOCOL_VERSIONS.find(
+    (candidate) => candidate === requestedVersion,
+  );
+  if (accepted) return accepted;
+  throw new PmMcpProtocolError(
+    "Unsupported legacy MCP protocol version",
+    PM_MCP_ERROR_CODES.unsupportedProtocolVersion,
+    {
+      supported: [...PM_MCP_LEGACY_PROTOCOL_VERSIONS],
+      requested: requestedVersion,
+      modern: PM_MCP_PROTOCOL_VERSION,
+    },
+  );
+}
+
 /** Explicit compatibility adapter with no cross-process or modern-session role. */
 export class LegacyMcpAdapter {
   readonly #options: LegacyMcpAdapterOptions;
@@ -75,25 +104,10 @@ export class LegacyMcpAdapter {
     params: Record<string, unknown> | undefined,
   ): Record<string, unknown> {
     const requestedVersion = params?.protocolVersion;
-    if (
-      typeof requestedVersion === "string" &&
-      !PM_MCP_LEGACY_PROTOCOL_VERSIONS.includes(
-        requestedVersion as (typeof PM_MCP_LEGACY_PROTOCOL_VERSIONS)[number],
-      )
-    ) {
-      throw new PmMcpProtocolError(
-        "Unsupported legacy MCP protocol version",
-        PM_MCP_ERROR_CODES.unsupportedProtocolVersion,
-        {
-          supported: [...PM_MCP_LEGACY_PROTOCOL_VERSIONS],
-          requested: requestedVersion,
-          modern: PM_MCP_PROTOCOL_VERSION,
-        },
-      );
-    }
+    const negotiatedVersion = resolveLegacyProtocolVersion(requestedVersion);
     this.#clientInfo = this.#options.parseClientInfo(params?.clientInfo);
     return {
-      protocolVersion: PM_MCP_LEGACY_PROTOCOL_VERSIONS[0],
+      protocolVersion: negotiatedVersion,
       capabilities: structuredClone(this.#options.capabilities),
       serverInfo: { ...this.#options.serverInfo },
       instructions: this.#options.instructions,

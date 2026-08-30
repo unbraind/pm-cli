@@ -144,7 +144,7 @@ consumer therefore cannot interpret the missing command or action arrays as a
 successful empty contract.
 
 ```bash
-pm list-open --output-include id,title,status --output-limit 10
+pm list --status open --output-include id,title,status --output-limit 10
 pm context --for orient --output-budget 900 --output-format toon
 pm search "runtime contracts" --output-limit 5 --output-format json
 pm stats --output-row-contract

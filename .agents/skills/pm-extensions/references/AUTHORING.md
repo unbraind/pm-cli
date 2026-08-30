@@ -74,7 +74,7 @@ moment the package publishes.
 ```bash
 pm package init <name>                       # scaffold
 # ...implement extensions/*.ts...
-pm install <path-or-name> --project          # install locally
+pm package install <path-or-name> --project          # install locally
 pm package doctor --detail deep              # activation diagnostics
 pm contracts --command <your-command> --flags-only
 pm <your-command> --help --json              # the contract a consumer will read

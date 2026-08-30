@@ -26,7 +26,7 @@ Use the same low-token route in every harness:
 Before release, run:
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide skills --depth standard
 node scripts/release/docs-skills-gate.mjs
 ```

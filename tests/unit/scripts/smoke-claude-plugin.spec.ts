@@ -88,7 +88,14 @@ function setupSmoke(overrides: SmokeOverrides = {}) {
   const startPluginMcpSmoke = overrides.startNever
     ? vi.fn()
     : vi.fn(async () => ({ tmpRoot: "/tmp/pm-claude-smoke", request, callTool, dispose }));
-  vi.doMock("../../../scripts/plugin-mcp-smoke-harness.mjs", () => ({ startPluginMcpSmoke }));
+  const assertProtocolHandshakeMatrix = vi.fn(async () => ({
+    negotiated: ["2025-11-25", "2025-06-18"],
+    refused: "Unsupported legacy MCP protocol version",
+  }));
+  vi.doMock("../../../scripts/plugin-mcp-smoke-harness.mjs", () => ({
+    assertProtocolHandshakeMatrix,
+    startPluginMcpSmoke,
+  }));
   vi.doMock("node:fs", () => ({
     existsSync: vi.fn(overrides.existsSync ?? (() => true)),
     readFileSync: vi.fn((target: string) => {

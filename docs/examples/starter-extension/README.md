@@ -38,7 +38,7 @@ cd -
 
 # 3) Install/activate in project scope (package-first vocabulary;
 #    `pm extension --install` remains as a compatibility form)
-pm install .agents/pm/extensions/starter-extension --project
+pm package install .agents/pm/extensions/starter-extension --project
 
 # 4) Run a starter command
 pm starter ping --name "agent"

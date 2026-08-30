@@ -19,7 +19,7 @@ Use runtime contracts for exact flags because packages and settings can change t
 ```bash
 pm <command> --help --json
 pm contracts --command <command> --flags-only --json
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide <topic>
 ```
 

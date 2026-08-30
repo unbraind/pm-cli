@@ -84,7 +84,7 @@ Modern MCP clients may supply a bounded
 `io.modelcontextprotocol/clientInfo.provenance` map in each request's `_meta`.
 The server retains only valid dimension names and trimmed values, then resolves
 that map inside the invocation-scoped identity context for that request. The
-bounded `2025-06-18` adapter accepts the same map during legacy `initialize`.
+bounded initialize-era adapter accepts the same map during legacy `initialize`.
 A missing MCP signal is recorded as explicit `null`; it is never confused with
 a legacy entry that predates the dimension.
 

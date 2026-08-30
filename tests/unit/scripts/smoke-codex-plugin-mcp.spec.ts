@@ -23,6 +23,10 @@ const FULL_TOOLS = [
 function mockHarness(request: unknown, callTool: unknown) {
   const dispose = vi.fn(async () => undefined);
   vi.doMock("../../../scripts/plugin-mcp-smoke-harness.mjs", () => ({
+    assertProtocolHandshakeMatrix: vi.fn(async () => ({
+      negotiated: ["2025-11-25", "2025-06-18"],
+      refused: "Unsupported legacy MCP protocol version",
+    })),
     startPluginMcpSmoke: vi.fn(async () => ({
       tmpRoot: "/tmp/pm-codex-smoke",
       request,

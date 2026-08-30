@@ -210,7 +210,7 @@ Markdown item files are treated as legacy migration input only. Mutations always
 Most commands default to sparse TOON:
 
 ```bash
-pm list-open --limit 10
+pm list --status open --limit 10
 ```
 
 Use JSON for strict machine parsing:

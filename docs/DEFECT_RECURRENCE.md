@@ -79,6 +79,8 @@ The repository example is [config/defect-recurrence-policy.json](../config/defec
 
 Repository policy validation rejects duplicate ids, absent historical examples, missing family negative controls, invalid taxonomy values, and budgets outside zero through one. Deterministic sorting makes the serialized policy merge-friendly.
 
+Register a family whenever a defect is recorded as a recurrence of an earlier one, meaning the new item carries a `recurs_from` edge to its predecessor. A recurrence with no family produces no local and no hosted protection, so the next instance is rediscovered by hand. Coverage of recorded recurrence lineages is not yet computed by any gate; that gap is tracked on [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon).
+
 ## Defect Evidence on PM Items
 
 Projects can register the structured fields without changing the SDK:

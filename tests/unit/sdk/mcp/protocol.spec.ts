@@ -29,7 +29,12 @@ describe("MCP 2026-07-28 SDK protocol contracts", () => {
   it("publishes canonical modern, legacy, metadata, and error vocabularies", () => {
     expect(PM_MCP_PROTOCOL_VERSION).toBe("2026-07-28");
     expect(PM_MCP_SUPPORTED_PROTOCOL_VERSIONS).toEqual(["2026-07-28"]);
-    expect(PM_MCP_LEGACY_PROTOCOL_VERSIONS).toEqual(["2025-06-18"]);
+    // Legacy is every initialize-era revision the canonical spec names, newest
+    // first, not a single historical revision.
+    expect(PM_MCP_LEGACY_PROTOCOL_VERSIONS).toEqual([
+      "2025-11-25",
+      "2025-06-18",
+    ]);
     expect(PM_MCP_ERROR_CODES).toEqual({
       headerMismatch: -32020,
       missingRequiredClientCapability: -32021,

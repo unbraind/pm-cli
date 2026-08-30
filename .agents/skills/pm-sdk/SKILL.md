@@ -29,7 +29,7 @@ integration should never import repository internals to get it.
 Optional deep routing that never goes stale:
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide sdk
 pm guide tokens --depth brief
 ```

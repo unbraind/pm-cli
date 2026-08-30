@@ -1406,6 +1406,13 @@
       ],
       "package_version": "2026.8.28",
       "reason": "Broaden resolveItemBlockers input to accept optional id and updated_at context already consumed by blocker projection"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_MCP_LEGACY_PROTOCOL_VERSIONS"
+      ],
+      "package_version": "2026.8.30",
+      "reason": "pm-edywqn: the legacy accept list widens to the full initialize-era set (2025-11-25 plus 2025-06-18) so every current MCP host can complete a handshake; the tuple literal type changes because the declared set is the contract, and no runtime behaviour is removed"
     }
   ],
   "entrypoints": {
@@ -10704,7 +10711,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_MCP_LEGACY_PROTOCOL_VERSIONS",
-          "signature": "readonly [\"2025-06-18\"]"
+          "signature": "readonly [\"2025-11-25\", \"2025-06-18\"]"
         },
         {
           "classification": "advanced_export",

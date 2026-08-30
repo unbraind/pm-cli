@@ -22,7 +22,7 @@ Skipping this is the single most common cause of tracker merge conflicts.
 - `pm claim <ID>` before substantial edits. A claim is a recorded lease, not a
   lock file, and it survives branching.
 - `pm release <ID>` when pausing, handing off, closing, or canceling.
-- `pm list-in-progress` shows what the fleet currently holds.
+- `pm list --status in_progress` shows what the fleet currently holds.
 - Never force an ownership or lock override without explicit human approval.
 
 Author identity is detected per invocation — harness, model, effort, role, and

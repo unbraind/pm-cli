@@ -15,7 +15,7 @@ pnpm build
 ```bash
 pm context --limit 10
 pm search "<keywords>" --limit 10
-pm list-open --limit 20
+pm list --status open --limit 20
 pm claim <ID>
 pm update <ID> --status in_progress --description "..."
 pm append <ID> --body "Implementation notes"
@@ -42,7 +42,7 @@ pm release <ID>
 ## Local Docs Routing
 
 ```bash
-pm install guide-shell --project
+pm package install guide-shell --project
 pm guide workflows
 pm guide commands --depth standard
 pm guide release --json

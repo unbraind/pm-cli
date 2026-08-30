@@ -193,7 +193,7 @@ Fixture source:
 Local run:
 
 ```bash
-pm install search-advanced --project
+pm package install search-advanced --project
 pm reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
 ```
 
@@ -577,7 +577,7 @@ Linked tests can include assertion metadata:
 
 ```bash
 pm test <item-id> --add \
-  command="pm list-open --json",timeout_seconds=120,assert_json_field_gte=count:0
+  command="pm list --status open --json",timeout_seconds=120,assert_json_field_gte=count:0
 ```
 
 Common assertion keys include:
@@ -614,7 +614,7 @@ exemplar for background run management. Install it in an isolated project when
 validating package-provided test-run surfaces:
 
 ```bash
-pm install linked-test-adapters --project
+pm package install linked-test-adapters --project
 pm package doctor --project --detail deep --trace
 pm test-runs list --json
 ```

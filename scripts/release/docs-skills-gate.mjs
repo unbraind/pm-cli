@@ -18,6 +18,15 @@ const REQUIRED_DOC_FILES = [
   "docs/RELEASING.md",
 ];
 
+/**
+ * Canonical install spelling the routing marker must use.
+ *
+ * The deprecated `pm install` alias is still executable, so a marker written in
+ * that spelling would require every skill and doc to instruct the spelling the
+ * grammar freeze intends to retire.
+ */
+const GUIDE_SHELL_INSTALL_MARKER = "pm package install guide-shell";
+
 const REQUIRED_PM_GUIDE_DOCS = ["README.md", "docs/README.md", "docs/COMMANDS.md", "docs/AGENT_GUIDE.md"];
 const DOC_LINK_CHECK_ROOT_FILES = ["README.md", "AGENTS.md", "CONTRIBUTING.md"];
 
@@ -153,8 +162,10 @@ export function validateSkillFrontmatter(skillName, rawContent, failures) {
   if (!body.includes("pm guide")) {
     failures.push(`Skill ${skillName}: body must include optional pm guide routing to avoid stale deep links`);
   }
-  if (!body.includes("pm install guide-shell")) {
-    failures.push(`Skill ${skillName}: body must mention installing guide-shell before pm guide examples`);
+  if (!body.includes(GUIDE_SHELL_INSTALL_MARKER)) {
+    failures.push(
+      `Skill ${skillName}: body must mention \`${GUIDE_SHELL_INSTALL_MARKER}\` before pm guide examples`,
+    );
   }
 }
 
@@ -422,8 +433,10 @@ export async function validateRequiredGuideMentions(failures) {
     if (!content.includes("pm guide")) {
       failures.push(`Required docs routing marker missing in ${filePath}: expected "pm guide" reference`);
     }
-    if (!content.includes("pm install guide-shell")) {
-      failures.push(`Required docs routing marker missing in ${filePath}: expected "pm install guide-shell" prerequisite`);
+    if (!content.includes(GUIDE_SHELL_INSTALL_MARKER)) {
+      failures.push(
+        `Required docs routing marker missing in ${filePath}: expected "${GUIDE_SHELL_INSTALL_MARKER}" prerequisite`,
+      );
     }
   }
 }
@@ -498,6 +511,94 @@ export async function runSkillChecks(failures) {
   }
 }
 
+/**
+ * Instructional markdown roots agents read and copy commands from.
+ *
+ * A deprecated spelling written here is not a compatibility record; it is a
+ * standing instruction to type the spelling the grammar freeze intends to
+ * retire, and it manufactures the alias-usage signal that decides when a
+ * removal is safe.
+ */
+const DEPRECATED_SPELLING_SCAN_ROOTS = Object.freeze([
+  "AGENTS.md",
+  "README.md",
+  "CONTRIBUTING.md",
+]);
+const DEPRECATED_SPELLING_SCAN_DIRECTORIES = Object.freeze([
+  "docs",
+  ".agents/skills",
+  "plugins",
+]);
+
+/**
+ * Read the deprecated command spellings from the built SDK's own alias table.
+ *
+ * Deriving the set from the shipped artifact rather than restating it here is
+ * the whole point: a hand-maintained copy would silently stop covering the
+ * aliases the CLI actually deprecates, which is the defect class this check
+ * exists to catch.
+ */
+export async function loadDeprecatedCommandSpellings() {
+  const sdk = await import("../../dist/cli-bundle/sdk.js");
+  const contracts = sdk.PM_COMMAND_ALIAS_CONTRACTS ?? [];
+  return new Map(
+    contracts
+      .filter((contract) => contract.lifecycle === "deprecated")
+      .map((contract) => [contract.alias, `pm ${contract.canonical_argv.join(" ")}`]),
+  );
+}
+
+/** Return fenced-block lines that invoke `pm <command>` in command position. */
+export function extractFencedPmInvocations(content) {
+  const invocations = [];
+  let insideFence = false;
+  const lines = content.split(/\r?\n/u);
+  for (const [index, line] of lines.entries()) {
+    if (/^```/u.test(line)) {
+      insideFence = !insideFence;
+      continue;
+    }
+    if (!insideFence) continue;
+    const match = /^\s*(?:\$\s*)?pm\s+([a-z][a-z0-9-]*)/u.exec(line);
+    if (match) {
+      invocations.push({ line: index + 1, command: match[1], text: line.trim() });
+    }
+  }
+  return invocations;
+}
+
+/**
+ * Fail when agent-facing markdown instructs a deprecated command spelling.
+ *
+ * `options.deprecatedSpellings` overrides the table read from the built SDK so
+ * the vacuous-pass guard below is exercisable without a built artifact.
+ */
+export async function validateDeprecatedCommandSpellings(failures, options = {}) {
+  const deprecated =
+    options.deprecatedSpellings ?? (await loadDeprecatedCommandSpellings());
+  if (deprecated.size === 0) {
+    failures.push(
+      "Deprecated-spelling check found no deprecated aliases in the built SDK alias table; the check would pass vacuously",
+    );
+    return;
+  }
+  const files = [...DEPRECATED_SPELLING_SCAN_ROOTS];
+  for (const directory of DEPRECATED_SPELLING_SCAN_DIRECTORIES) {
+    files.push(...(await collectMarkdownFiles(directory)));
+  }
+  for (const markdownFile of [...new Set(files)]) {
+    if (!(await pathExists(markdownFile))) continue;
+    const content = await readUtf8(markdownFile);
+    for (const invocation of extractFencedPmInvocations(content)) {
+      const canonical = deprecated.get(invocation.command);
+      if (!canonical) continue;
+      failures.push(
+        `${markdownFile}:${invocation.line}: instructs deprecated command spelling \`pm ${invocation.command}\`; use \`${canonical}\` (${invocation.text})`,
+      );
+    }
+  }
+}
+
 export async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -514,6 +615,7 @@ export async function main() {
     await requireFiles(REQUIRED_DOC_FILES, failures);
     await validatePublicDocBudgets(failures);
     await validateRequiredGuideMentions(failures);
+    await validateDeprecatedCommandSpellings(failures);
     await runSkillChecks(failures);
     await runGuideChecks(failures);
   }

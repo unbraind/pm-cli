@@ -134,8 +134,8 @@ pnpm smoke:codex-plugin
 ```bash
 pm contracts --schema-only --json
 pm contracts --command extension --flags-only --json
-pm extension --doctor --project --detail summary --strict-exit
-pm extension --reload --project
+pm package doctor --project --detail summary --strict-exit
+pm package reload --project
 ```
 
 Why this matters:
@@ -188,7 +188,7 @@ The authoritative plugin version is `plugins/pm-claude/.claude-plugin/plugin.jso
 
 The MCP server uses JSON-RPC 2.0 over stdio with canonical protocol version
 `2026-07-28`. A bounded legacy path remains for unversioned older hosts, with
-`2025-06-18` initialize available to enrich client identity; current hosts
+initialize-era handshakes available to enrich client identity; current hosts
 discover the server and send metadata on every request.
 
 ## Extension Policy Diagnostics

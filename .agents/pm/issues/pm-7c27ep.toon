@@ -1,0 +1,37 @@
+id: pm-7c27ep
+title: "The tracker's recurrence edges and the CI recurrence policy are two ledgers with no join, so 59 of the 75 items in a recorded recurrence lineage produce no gate anywhere"
+description: "Two capabilities shipped separately and were never connected.\n\npm-ouyq3n gave the relationship lexicon a recurs_from kind so a defect family fixed thirty times stops being thirty unrelated nodes. pm-1qkivy gave the repository a defect recurrence policy that turns resolved incident patterns into targeted local and hosted CI protections. Both are closed and both work. Nothing joins them.\n\nMeasured 2026-08-30 across all 2,602 items and the 8 families in config/defect-recurrence-policy.json. The record holds 52 recurs_from edges spanning 75 distinct items. The policy's families, counting owner, trigger and historical item ids together, name 16 of those 75. So 59 items sit in a recurrence lineage the tracker can already traverse and are covered by no family, which means no local check and no hosted check fires when their files are touched. Of those 59, 54 are closed and 5 are open.\n\nThe absence is structural rather than an oversight in one file. Outside src/types.ts, the relationship-kind contract, and graph governance, the string recurs_from does not appear anywhere in the repository. No gate, no script, and no policy validator reads the tracker's recurrence edges. Family registration is therefore an act of memory: someone has to notice a recurrence, remember the policy exists, and hand-write a family, and nothing fails when they do not.\n\nThis is the mechanism behind two recurrences observed on the same day this was measured. pm-4o7tlx is a verbatim recurrence of pm-t7wn04, a preflight gate red on a workstation and green in hosted CI for the same commit. pm-edywqn is the eighth measured instance of the family in which a checker enumerates its own hand-maintained list instead of iterating the artifact the outside world resolves. Both lineages were recordable as recurs_from edges and neither had a family, so neither had a gate, so both were rediscovered by hand.\n\nIt is also why the recurrence policy cannot answer its own governing question. The policy declares per-family escape-rate budgets, but an escape rate computed over registered families alone measures the families someone remembered to register. The denominator that matters is every recurrence the record can see."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:ci",denominator,governance,graph,recurrence
+created_at: "2026-08-30T11:09:10.152Z"
+updated_at: "2026-08-30T11:19:42.787Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "The recurrence policy's family coverage is computed against the tracker's recurs_from lineages rather than against itself, so the covered and uncovered populations are both reported; An item that acquires a recurs_from edge and belongs to no registered family is surfaced as a named finding by a gate that already runs, rather than depending on someone remembering the policy exists; Registering a family is possible from the recorded lineage without hand-transcribing item ids, so the join is derived from the record rather than restated in a second file; Escape-rate budgets are reported against the full recurrence population the record can see, and a budget computed over registered families alone is labelled as such; A negative control proves the finding fires when a recurrence lineage is deliberately left unregistered, and does not fire for an item with no recurrence edge; The coverage computation stays inside the graph analytics token and latency budgets and remains bounded at million-item scale"
+parent: pm-33cw
+risk: high
+confidence: 95
+dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,discovered_from,"2026-08-30T11:09:10.152Z","harness:claude-code","cli:create:dep",detected
+  pm-96h7,implements,"2026-08-30T11:09:10.152Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,implements,"2026-08-30T11:09:10.152Z","harness:claude-code","cli:create:dep",detected
+  pm-ouyq3n,discovered_from,"2026-08-30T11:09:10.152Z","harness:claude-code","cli:create:dep",detected
+  pm-1jrdri,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-4o7tlx,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-6j7r1a,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-7wx1f9,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-b84irw,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-edywqn,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-suhxny,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-t7wn04,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-te6elw,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+  pm-xpumg4,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-30T11:09:42.251Z","harness:claude-code","Two families were registered by hand in the same pass that measured this gap, which is the behaviour this item asks to make unnecessary rather than a fix for it.\n\nAdded to config/defect-recurrence-policy.json:\n- declared-set-versus-hand-maintained-list, owner pm-suhxny, escape class production_defect, historical lineage pm-b84irw, pm-te6elw, pm-1jrdri, pm-6j7r1a, pm-xpumg4, pm-7wx1f9, pm-suhxny, pm-edywqn. Eight measured instances, the largest recurrence family in the record, previously unregistered.\n- ambient-host-state-in-measured-fixture, owner pm-4o7tlx, escape class review_caught_late, historical lineage pm-t7wn04 and pm-4o7tlx.\n\nSelection proven against the built SDK with analyzeDefectChangeRisk over the parsed policy. A change touching src/mcp/legacy-adapter.ts selects declared-set-versus-hand-maintained-list, review-caught-contract-drift and security-scanner-finding. A change touching scripts/release/token-budget-gate.mjs selects ambient-host-state-in-measured-fixture and cross-platform-nightly-regression. A change touching sdk/public-surface.json selects declared-set-versus-hand-maintained-list. The negative control, a change touching only README.md, selects nothing, so the triggers discriminate rather than matching everything.\n\nPolicy validation and the scale benchmark both accept the additions: defect-evidence-gate reports PASS with 8 families and 0 findings, and defect-recurrence-index --check passes at 1,000,000 items with full 18.7s and incremental 25ms.\n\nCoverage after the additions is 16 of the 75 items in a recurrence lineage. Registering the remaining 59 by hand is not the fix and is not proposed here; deriving family coverage from the recorded lineages is."
+files[1]{path,scope,note}:
+  config/defect-recurrence-policy.json,project,the policy ledger whose family coverage is not computed against the tracker's recurrence lineages
+docs[1]{path,scope,note}:
+  docs/DEFECT_RECURRENCE.md,project,records the family-registration rule and names this item as the unclosed coverage gap
+body: ""

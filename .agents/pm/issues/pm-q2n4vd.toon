@@ -1,0 +1,47 @@
+id: pm-q2n4vd
+title: "The project's own agent-facing documentation and skills instruct deprecated command spellings, so the alias-usage signal that decides when a spelling can be retired is manufactured by the instructions rather than observed from callers"
+description: "Measured 2026-08-30. PM_COMMAND_ALIAS_CONTRACTS declares 23 executable command aliases, of which 10 carry lifecycle deprecated: list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, extension, install and upgrade. Each remains executable, prints a migration hint on stderr, and is intentionally absent from help and completion discovery.\n\nTwenty-seven fenced command-position invocations across nineteen agent-facing markdown files instructed one of those ten spellings. The distribution is what makes it structural rather than cosmetic. AGENTS.md, the file the operating rules name as the low-context entrypoint, told every agent to run pm install guide-shell --project. Four of the five .agents/skills SKILL.md files repeated it, as did docs/AGENT_GUIDE.md, docs/README.md, docs/ONBOARDING.md and .agents/skills/HARNESS_COMPATIBILITY.md. docs/COMMANDS.md, the canonical command reference, additionally asserted in prose that pm install and pm package are the preferred package-first workflow, which contradicts the alias table that marks install as deprecated. One skill instructed pm list-open, whose canonical form is pm list --status open.\n\nTwo consequences compound. Every such invocation emits a deprecation hint line the agent then has to read and discard, which is pure token cost on the highest-frequency paths. More seriously, pm-0mox proposes alias-usage counters precisely so grammar-freeze removals are evidence-based; if the project's own instructions are the dominant source of alias invocations, the counter measures the documentation rather than the installed base, and the removal decision it is supposed to inform is made from a signal the project generated for itself.\n\nThe docs and skills gate could not catch this because it enforced the presence of the deprecated spelling: its required routing marker was the literal string pm install guide-shell, so a skill written in the canonical spelling failed the gate and a skill written in the deprecated spelling passed. The enforcement pointed the wrong way."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:docs",denominator,governance,token-efficiency
+created_at: "2026-08-30T11:29:04.685Z"
+updated_at: "2026-08-30T11:29:42.281Z"
+closed_at: "2026-08-30T11:29:41.538Z"
+completed_at: "2026-08-30T11:29:41.538Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "No fenced command-position invocation in agent-facing markdown instructs a spelling the alias table marks deprecated, and the canonical replacement is named in the failure when one does; The deprecated set the check iterates is read from the shipped alias table rather than restated, so a newly deprecated spelling is covered without editing the check; The gate's own required markers use canonical spellings, so conforming content cannot fail and deprecated content cannot pass; A negative control proves the check fails when one deprecated instruction is reintroduced, and a second control proves it refuses to pass vacuously when the alias table is empty; Prose that documents the alias compatibility contract remains permitted, because recording that a spelling still executes is not an instruction to type it; The documented preference and the alias table agree on which spelling is canonical"
+parent: pm-n7rr
+risk: medium
+confidence: 95
+resolution: fixed
+expected_result: "Agent-facing markdown instructs only canonical command spellings, and a reintroduced deprecated instruction fails a gate that already runs."
+actual_result: 27 instructions across 19 files rewritten; the gate's own two enforcement sites repaired; the new check passes with both a negative and a vacuous-pass control proven.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0mox,discovered_from,"2026-08-30T11:29:04.685Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-30T11:29:04.685Z","harness:claude-code","cli:create:dep",detected
+  pm-pbyu,implements,"2026-08-30T11:29:04.685Z","harness:claude-code","cli:create:dep",detected
+  pm-pfqi,discovered_from,"2026-08-30T11:29:04.685Z","harness:claude-code","cli:create:dep",detected
+  pm-suhxny,recurs_from,"2026-08-30T11:29:04.685Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-30T11:29:31.763Z","harness:claude-code","Fixed and gated in one pass on 2026-08-30.\n\nRewrote all 27 fenced command-position invocations across 19 files to canonical spellings: pm install -> pm package install, pm upgrade -> pm package upgrade, pm extension -> pm package, pm list-open -> pm list --status open. Flag-style package actions introduced by the rewrite were normalised to subcommand form (pm package doctor, pm package reload, pm package install). Every replacement was executed against a sandbox tracker before editing, so no doc now instructs a command that does not run.\n\nReconciled docs/COMMANDS.md: the preference sentence now names pm package as canonical and states that pm install, pm upgrade and pm extension remain executable deprecated compatibility spellings that must not appear as instructions. Five inline instruction occurrences in the same file were rewritten.\n\nThe gate itself was pointing the wrong way and had to be repaired before the check could be added: two enforcement sites required the literal string 'pm install guide-shell', so a skill written canonically failed and a skill written deprecated passed. Both now reference a single GUIDE_SHELL_INSTALL_MARKER constant holding the canonical spelling.\n\nNew check validateDeprecatedCommandSpellings reads the deprecated set from the built SDK's PM_COMMAND_ALIAS_CONTRACTS by dynamic import rather than restating it, scans only fenced blocks in command position so prose documenting the compatibility contract stays legal, and names the canonical replacement in each failure.\n\nControls, both run:\n- Negative control: reintroducing pm install guide-shell --project into AGENTS.md fails with 'AGENTS.md:22: instructs deprecated command spelling pm install; use pm package install'; restoring the canonical spelling passes.\n- Vacuous-pass control: an empty alias table makes the check fail with an explicit message rather than passing, so the check cannot silently stop enforcing if the table is ever unreadable.\n\nUnit coverage added for extractFencedPmInvocations fence and command-position boundaries, for the alias-table mapping including the property that a permanent alias such as show is not flagged, for the positive detection path, and for the vacuous-pass guard. docs-skills-gate.spec.ts 27 passed; the gate passes end to end."
+files[2]{path,scope,note}:
+  scripts/release/docs-skills-gate.mjs,project,"deprecated-spelling check derived from the shipped alias table, plus the canonical routing marker that replaced the deprecated literal"
+  tests/unit/scripts/release/docs-skills-gate.spec.ts,project,"positive, negative and vacuous-pass controls for the new check"
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/release/docs-skills-gate.mjs,project,300,"harness:claude-code","2026-08-30T11:29:18.501Z",local_mutation,main,fails when agent-facing markdown instructs a deprecated spelling
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,project,300,"harness:claude-code","2026-08-30T11:29:18.501Z",local_mutation,main,unit controls for the check
+docs[2]{path,scope,note}:
+  AGENTS.md,project,low-context entrypoint now instructs the canonical package install spelling
+  docs/COMMANDS.md,project,preference prose reconciled with the alias table
+close_reason: "Rewrote every deprecated instruction to its canonical spelling, reconciled the contradicting preference prose, repaired the two gate sites that required the deprecated literal, and added an artifact-derived check with a proven negative control and a vacuous-pass guard."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: "harness:claude-code"
+  gate_id: docs-skills-deprecated-spellings
+  negative_control: Reintroducing one deprecated instruction into AGENTS.md fails the gate naming the canonical replacement; an empty alias table fails rather than passing vacuously.
+  local_checks[2]: node scripts/release/docs-skills-gate.mjs,node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts
+  hosted_checks[1]: CI / Gates (static)
+body: ""

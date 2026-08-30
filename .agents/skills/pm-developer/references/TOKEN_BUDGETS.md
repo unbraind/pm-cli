@@ -81,5 +81,5 @@ pm next                 # ~2.5k tok — one actionable item with its context
 pm contracts --summary  # ~2.6k tok — the command surface with per-command ceilings
 ```
 
-Prefer `pm next` over `pm list-open` when the goal is to start work: it applies
+Prefer `pm next` over `pm list --status open` when the goal is to start work: it applies
 relevance ranking and returns a working set rather than a page of rows.

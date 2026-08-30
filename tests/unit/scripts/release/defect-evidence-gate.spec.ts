@@ -42,7 +42,7 @@ describe("defect evidence repository gate", () => {
       ok: true,
       boundary: { ok: true, boundary_count: 9, captured_count: 5 },
       defect_evidence: { ok: true },
-      recurrence_policy: { ok: true, family_count: 6 },
+      recurrence_policy: { ok: true, family_count: 8 },
     });
   });
 

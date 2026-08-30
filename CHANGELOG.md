@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The bounded legacy MCP compatibility set stops one revision short of the spec's own legacy boundary, so every current host is refused at initialize and the dual-era guarantee is unmet ([pm-edywqn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-edywqn.toon))
+
+### Deprecated
+
+- The project's own agent-facing documentation and skills instruct deprecated command spellings, so the alias-usage signal that decides when a spelling can be retired is manufactured by the instructions rather than observed from callers ([pm-q2n4vd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q2n4vd.toon))
+
 ## 2026.8.30 - 2026-08-30
 
 ### Other

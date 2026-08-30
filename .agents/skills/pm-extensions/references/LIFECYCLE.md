@@ -11,7 +11,7 @@ pm package doctor --detail deep
 ## Install and Activate
 
 ```bash
-pm install <target> --project
+pm package install <target> --project
 pm package activate <target> --project
 pm package doctor --detail summary
 ```

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: "area:search","area:semantic",backlog,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:42:11.422Z"
-updated_at: "2026-08-28T20:44:37.682Z"
+updated_at: "2026-08-30T11:14:52.019Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: Keyword and semantic search verified against the eval harness golden set; provider and adapter values auto-normalize; inline field-query syntax documented.
@@ -17,7 +17,7 @@ why_now: "At million-item scale a syntactically correct query is useless if retr
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[6]:
+dependencies[8]:
   - id: pm-qljv
     kind: related
     created_at: "2026-07-14T17:05:02.344Z"
@@ -39,8 +39,22 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-801d
+    kind: blocked_by
+    created_at: "2026-08-30T11:14:51.803Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ag9nka
+    kind: blocked_by
+    created_at: "2026-08-30T11:14:51.803Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-08-28T20:42:45.505Z","harness:codex","Semantic-search verification: project settings now explicitly configure provider ollama, model qwen3-embedding:0.6b, and vector adapter lancedb. A full rebuild embedded and upserted all 2,592 then-existing items with 2,504 batches; mutation refresh kept the expanded 2,593-item corpus current, and a final incremental reindex reported zero stale rows. Health reports provider and adapter source configured, vector dimension 1024, 2,593 ledger entries, and no stale items. Seeded-tracker linked search passed and ranked pm-gstv4k first for delegated authority without static API tokens at score 0.698. Targeted semantic retrieval also ranks the newly discovered batching defect pm-vjgqj5 first at score 0.831. The rebuild ratio exposed that the Ollama character ceiling defeats configured batching; that performance defect is separately tracked rather than weakening the functional search claim."
+notes[1]{created_at,author,text}:
+  "2026-08-30T11:03:38.381Z","harness:claude-code","Retrieval stack verified end to end on 2026-08-30 against the live repository workspace, not a fixture.\n\nConfiguration in .agents/pm/settings.json: search.provider ollama, providers.ollama.model qwen3-embedding:0.6b at http://localhost:11434, vector_store.adapter lancedb, hybrid_semantic_weight 0.7, max_results 50, score_threshold 0. The vectorization ledger reports provider ollama, model qwen3-embedding:0.6b, vector_dimension 1024, and 2,602 of 2,602 items embedded with an empty pending-refresh set, so semantic coverage is complete rather than partial.\n\nBehaviour: --mode semantic returns ranked hits with matched_fields semantic and scores in the expected 0.60 to 0.62 band for a paraphrased query that shares no keyword with the top result, which is the property keyword retrieval cannot have. --mode hybrid returns matched_fields spanning body, comments, description, learnings, semantic, tags and title with score 1.0 on the exact-intent hit, so the fusion is combining both channels rather than falling back to one. Inline field:value filtering and the keyword path are unaffected.\n\nLatency, three runs each on this workstation after warm-up: semantic 3.97s, 3.03s, 2.96s; keyword 1.96s, 1.89s; hybrid 3.31s. The first semantic call of a cold session cost 16.0s, which is the ollama model load and not a pm cost. The marginal cost of the embedding call is therefore about 1.1s over the keyword baseline. The keyword baseline itself is the larger number and the more interesting one: pm --version costs 0.26s, pm list --limit 1 costs 1.07s, pm context --limit 5 costs 1.74s and pm next costs 1.80s, so roughly a second of every read is paid before any retrieval work begins. That distribution is evidence for pm-801d and pm-ag9nka rather than for this epic, and it is recorded here because it was measured in the same pass.\n\nWhole-corpus projection cost for comparison: pm list --all --no-truncate --fields with thirteen projected fields over all 2,602 items completed in 0.59s, which is faster than a single one-item default read. The default read path, not the data volume, is what costs."
 files[1]{path,scope,note}:
   .agents/pm/settings.json,project,Project-scoped Ollama qwen3 embedding provider and LanceDB adapter configuration
 tests[1]{command,scope,timeout_seconds,pm_context_mode,provenance{author,created_at,source_kind,source_ref},note}:

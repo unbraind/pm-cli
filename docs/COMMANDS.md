@@ -67,7 +67,7 @@ JSON ceiling; TOON uses the smaller default agent ceiling.
 | Packages     | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups                                                    | install, upgrade, manage, and run package-backed extension commands                                                                                                                                                                                    |
 | Machines     | `contracts`, `help`, optional `guide`/`completion`                                                                                            | command contracts plus optional guide-shell docs routing and shell helpers                                                                                                                                                                             |
 
-`†` `test-runs` subcommands are provided by the optional `linked-test-adapters` package (`pm install linked-test-adapters --project`).
+`†` `test-runs` subcommands are provided by the optional `linked-test-adapters` package (`pm package install linked-test-adapters --project`).
 
 ## Bootstrap
 
@@ -113,21 +113,21 @@ Use `--with-packages` for one-step agent setup when bundled package commands sho
 
 ```bash
 pm package                     # bare command defaults to --explore (list installed)
-pm install '*' --project
+pm package install '*' --project
 pm package catalog --project
 pm package manage --project --output-format json
-pm install npm:@scope/pm-package --project
+pm package install npm:@scope/pm-package --project
 pm package describe --project   # by-name surface map of every loaded package
 pm package describe my-package --markdown --output docs/my-package-reference.md
 pm package doctor --project --detail summary
 pm package migrate --project --dry-run --json
 pm package migrate --project --json
-pm upgrade --dry-run
-pm upgrade --packages-only
-pm upgrade --cli-only --repair
+pm package upgrade --dry-run
+pm package upgrade --packages-only
+pm package upgrade --cli-only --repair
 ```
 
-`pm install` and `pm package` are the preferred package-first workflow. `pm package` and `pm extension` bare invocations default to `--explore` so agents can list installed packages without remembering an action flag. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
+`pm package` is the canonical package-first workflow. `pm package` and the hidden `pm extension` alias default to `--explore` on a bare invocation so agents can list installed packages without remembering an action flag. `pm package install '*'`, shell-expanded `pm package install *`, and `pm package install all` install bundled first-party packages. `pm install`, `pm upgrade`, and `pm extension` remain executable as deprecated compatibility spellings declared in `PM_COMMAND_ALIAS_CONTRACTS`; they emit a migration hint and must not appear in documentation or skills as instructions.
 `pm package catalog` emits one row per package, with every resolvable bundled
 alias preserved in `aliases`; totals therefore measure packages rather than
 alias-index entries. `pm package manage` participates in the universal read
@@ -141,7 +141,7 @@ the choice ambiguous and provides explicit bare and `npm:` retry commands.
 durable workspace-history receipts; a successful migration is skipped on later
 processes, while a failed migration remains retryable. `extension migrate` is
 the compatibility spelling.
-When package-owned commands are unavailable, usage guidance includes an install-ready retry (for example `pm install calendar`, `pm install search-advanced`, `pm install governance-audit`, or `pm install guide-shell`).
+When package-owned commands are unavailable, usage guidance includes an install-ready retry (for example `pm package install calendar`, `pm package install search-advanced`, `pm package install governance-audit`, or `pm package install guide-shell`).
 
 ## Triage
 
@@ -669,7 +669,7 @@ Tracker references: [pm-72xf](../.agents/pm/features/pm-72xf.toon).
 
 ## Templates
 
-After `pm install templates --project`, `pm templates` lists both saved templates and built-in starters:
+After `pm package install templates --project`, `pm templates` lists both saved templates and built-in starters:
 
 ```bash
 pm templates
@@ -818,7 +818,7 @@ pm test <id> --run \
 
 ## Search Reindex and Eval
 
-`reindex` is provided by the `search-advanced` package (`pm install search-advanced --project`).
+`reindex` is provided by the `search-advanced` package (`pm package install search-advanced --project`).
 
 ```bash
 pm reindex --mode keyword
@@ -1240,7 +1240,7 @@ only after selecting the exact path.
 
 ## Completion
 
-`pm completion` is provided by the optional `guide-shell` package (`pm install guide-shell --project`).
+`pm completion` is provided by the optional `guide-shell` package (`pm package install guide-shell --project`).
 
 ```bash
 pm completion bash

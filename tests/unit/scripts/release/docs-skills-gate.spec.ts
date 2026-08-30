@@ -35,6 +35,14 @@ type DocsModule = {
   ) => void;
   runGuideChecks: (failures: string[]) => Promise<void>;
   validateRequiredGuideMentions: (failures: string[]) => Promise<void>;
+  loadDeprecatedCommandSpellings: () => Promise<Map<string, string>>;
+  extractFencedPmInvocations: (
+    content: string,
+  ) => { line: number; command: string; text: string }[];
+  validateDeprecatedCommandSpellings: (
+    failures: string[],
+    options?: { deprecatedSpellings?: Map<string, string> },
+  ) => Promise<void>;
   validatePublicDocBudgets: (failures: string[]) => Promise<void>;
   runSkillChecks: (failures: string[]) => Promise<void>;
   main: () => Promise<void>;
@@ -96,7 +104,7 @@ function mockFullModePassingEnvironment(): void {
     'description: "Use when working with pm."',
     "---",
     "",
-    "Body mentions pm guide and pm install guide-shell.",
+    "Body mentions pm guide and pm package install guide-shell.",
   ].join("\n");
   mockFsPromises({
     readdir: vi.fn(async () => [] as never) as never,
@@ -108,7 +116,7 @@ function mockFullModePassingEnvironment(): void {
       if (match) {
         return validSkill.replace("__SKILLNAME__", match[1]);
       }
-      return "# Title\npm guide\npm install guide-shell";
+      return "# Title\npm guide\npm package install guide-shell";
     }) as never,
     stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
   });
@@ -164,16 +172,16 @@ describe("docs-skills-gate", () => {
       expect(f3.some((x) => x.includes("must match directory name"))).toBe(true);
       expect(f3.some((x) => x.includes('explicit "Use when" routing'))).toBe(true);
       expect(f3.some((x) => x.includes("pm guide routing"))).toBe(true);
-      expect(f3.some((x) => x.includes("installing guide-shell"))).toBe(true);
+      expect(f3.some((x) => x.includes("pm package install guide-shell"))).toBe(true);
 
-      const longBody = ["---", "name: s", 'description: "use when"', "---", "pm guide", "pm install guide-shell"]
+      const longBody = ["---", "name: s", 'description: "use when"', "---", "pm guide", "pm package install guide-shell"]
         .concat(Array.from({ length: 510 }, () => "x"))
         .join("\n");
       const f4: string[] = [];
       mod.validateSkillFrontmatter("s", longBody, f4);
       expect(f4.some((x) => x.includes("under 500 lines"))).toBe(true);
 
-      const valid = ["---", "name: s", 'description: "use when X"', "---", "pm guide", "pm install guide-shell"].join(
+      const valid = ["---", "name: s", 'description: "use when X"', "---", "pm guide", "pm package install guide-shell"].join(
         "\n",
       );
       const f5: string[] = [];
@@ -388,7 +396,7 @@ describe("docs-skills-gate", () => {
       mockFsPromises({
         readFile: vi.fn(async (p: string) => {
           if (String(p).endsWith("README.md")) {
-            return "pm guide\npm install guide-shell";
+            return "pm guide\npm package install guide-shell";
           }
           return "no markers here";
         }) as never,
@@ -397,7 +405,67 @@ describe("docs-skills-gate", () => {
       const failures: string[] = [];
       await mod.validateRequiredGuideMentions(failures);
       expect(failures.some((f) => f.includes("pm guide"))).toBe(true);
-      expect(failures.some((f) => f.includes("pm install guide-shell"))).toBe(true);
+      expect(failures.some((f) => f.includes("pm package install guide-shell"))).toBe(true);
+    });
+
+    it("extractFencedPmInvocations reads command position inside fences only", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const content = [
+        "pm list-open --limit 1",
+        "```bash",
+        "pm list-open --limit 2",
+        "$ pm install guide-shell",
+        "  pm package install guide-shell",
+        "echo pm list-open",
+        "```",
+        "pm list-open --limit 3",
+      ].join("\n");
+      const found = mod.extractFencedPmInvocations(content);
+      expect(found.map((entry) => entry.command)).toEqual([
+        "list-open",
+        "install",
+        "package",
+      ]);
+      expect(found[0]).toMatchObject({ line: 3 });
+    });
+
+    it("loadDeprecatedCommandSpellings maps every deprecated alias to its canonical form", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const spellings = await mod.loadDeprecatedCommandSpellings();
+      expect(spellings.size).toBeGreaterThan(0);
+      expect(spellings.get("install")).toBe("pm package install");
+      expect(spellings.get("list-open")).toBe("pm list --status open");
+      // A permanent alias is ergonomics, not migration debt, and must not be flagged.
+      expect(spellings.has("show")).toBe(false);
+    });
+
+    it("validateDeprecatedCommandSpellings flags an instructed deprecated spelling", async () => {
+      mockUtils();
+      mockFsPromises({
+        readdir: vi.fn(async () => [] as never) as never,
+        readFile: vi.fn(async (p: string) =>
+          String(p).replaceAll("\\", "/").endsWith("AGENTS.md")
+            ? "```bash\npm install guide-shell --project\n```"
+            : "no commands here",
+        ) as never,
+      });
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const failures: string[] = [];
+      await mod.validateDeprecatedCommandSpellings(failures);
+      expect(failures.some((entry) => entry.includes("pm package install"))).toBe(true);
+      expect(failures.some((entry) => entry.includes("AGENTS.md:2"))).toBe(true);
+    });
+
+    it("validateDeprecatedCommandSpellings refuses to pass vacuously on an empty alias table", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const failures: string[] = [];
+      await mod.validateDeprecatedCommandSpellings(failures, {
+        deprecatedSpellings: new Map(),
+      });
+      expect(failures.some((entry) => entry.includes("pass vacuously"))).toBe(true);
     });
 
     it("validatePublicDocBudgets flags over-budget, multi-h1, duplicate headings", async () => {
@@ -656,7 +724,7 @@ describe("docs-skills-gate", () => {
         "",
         "Install the guide package first:",
         "",
-        "`pm install guide-shell --project`",
+        "`pm package install guide-shell --project`",
         "",
         "Then route via `pm guide workflows`.",
         "",
@@ -677,7 +745,7 @@ describe("docs-skills-gate", () => {
           "# Extensions",
           "",
           "## Install",
-          "Use `pm install guide-shell --project` and route via `pm guide`.",
+          "Use `pm package install guide-shell --project` and route via `pm guide`.",
           "",
           "## Validate",
           "Keep this page compact.",
@@ -709,7 +777,7 @@ describe("docs-skills-gate", () => {
             "",
             "# Body",
             "",
-            "Run `pm install guide-shell --project` before using `pm guide workflows`.",
+            "Run `pm package install guide-shell --project` before using `pm guide workflows`.",
           ].join("\n"),
           "utf8",
         );

@@ -1,0 +1,20 @@
+id: pm-hf54tb
+title: "The legacy MCP adapter's sunset criterion reads a signal nothing writes: two documents condition removal on client telemetry that the server never records, so the compatibility surface can only ever be retired on assertion"
+description: "Two documents state the same retirement rule. docs/MCP_2026_07_28.md: the adapter is scheduled for removal only after published-client telemetry and release probes show no required legacy consumers for two consecutive release windows. docs/MCP_REMOTE_TRANSPORT_SECURITY.md repeats it. Both make retirement conditional on a measurement of the installed base.\n\nThat measurement does not exist. Measured 2026-08-30: no source file under src/core/telemetry references any protocol version, and src/mcp/server.ts reads PM_MCP_META_KEYS.protocolVersion only to dispatch the current request. Neither the modern per-request metadata nor the legacy initialize handshake emits an event carrying the revision a client negotiated, its client name, or its version. Nothing counts how many hosts opened on which revision, so no window can be evaluated and the two-consecutive-window criterion can never become true or false.\n\nThe cost is not hypothetical. The first measurement of the installed base this project has ever taken was produced during pm-edywqn by attaching an ad-hoc stdio logging shim to the launcher, and it immediately overturned the assumption the accept list encoded: the dominant host, Claude Code 2.1.251, opens with protocolVersion 2025-11-25, a revision the server had never been configured to accept. A product that recorded the revisions its clients requested would have surfaced that as a stream of refusals with a named client and version rather than as a connection failure a maintainer had to reproduce by hand.\n\nThis is the read-with-no-writer family, applied to a deprecation policy rather than to a gate. The consequence is a compatibility surface that is permanently un-retirable on evidence: every future removal argument has to be made from assertion, and every future accept-list decision is made without knowing what the installed base actually speaks. It also means the conformance programme cannot answer the one empirical question the spec's compatibility matrix raises, which is which era the real clients are in."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:mcp","area:observability","area:telemetry",denominator,governance,protocol
+created_at: "2026-08-30T10:40:58.579Z"
+updated_at: "2026-08-30T11:19:41.771Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Every completed MCP handshake and every modern per-request dispatch records the protocol revision it negotiated, together with the bounded client name and version already parsed from clientInfo, through the existing telemetry channel and under the existing redaction policy; A bounded read reports, per release window, the distinct revisions requested and the count and identity of clients per revision, so the two-consecutive-window sunset criterion is evaluable rather than rhetorical; A refused handshake is recorded as a distinct outcome from an accepted one, so a host locked out by an accept-list gap appears as a measurable population rather than as an unreproducible support report; The two documents that state the sunset rule cite the specific read that evaluates it, so the criterion names its own evidence source; A negative control proves the read reports zero for a revision no client requested, so presence in the report cannot be an artifact of the declared accept list; No revision, client name, or version is recorded in a form that violates the existing telemetry consent and redaction contract"
+parent: pm-5oj5
+risk: high
+confidence: 95
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-edywqn,discovered_from,"2026-08-30T10:40:58.579Z","harness:claude-code","cli:create:dep",detected
+  pm-rs9vry,implements,"2026-08-30T10:40:58.579Z","harness:claude-code","cli:create:dep",detected
+  pm-s00mpf,implements,"2026-08-30T10:40:58.579Z","harness:claude-code","cli:create:dep",detected
+body: ""
