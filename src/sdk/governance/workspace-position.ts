@@ -10,6 +10,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { nowIso } from "../../core/shared/time.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { renderPmCommand } from "../command-line.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   auditMergeAttributeFence,
@@ -99,18 +100,22 @@ function selectWorkspacePositionState(params: {
 function commandForWorkspacePositionState(
   state: WorkspacePositionState,
   pmRoot: string,
+  platform: NodeJS.Platform = process.platform,
 ): string | null {
-  const commandPrefix = `pm --pm-path '${pmRoot.replaceAll("'", `'"'"'`)}'`;
+  const commandArgs = ["--pm-path", pmRoot];
   if (state === "merge_evidence_invalid")
-    return `${commandPrefix} merge report`;
+    return renderPmCommand([...commandArgs, "merge", "report"], platform);
   if (state === "merge_reconciliation_required") {
-    return `${commandPrefix} merge reconcile`;
+    return renderPmCommand([...commandArgs, "merge", "reconcile"], platform);
   }
   if (state === "history_repair_required") {
-    return `${commandPrefix} history-repair --all`;
+    return renderPmCommand(
+      [...commandArgs, "history-repair", "--all"],
+      platform,
+    );
   }
   if (state === "merge_fence_unprepared") {
-    return `${commandPrefix} merge install`;
+    return renderPmCommand([...commandArgs, "merge", "install"], platform);
   }
   return null;
 }

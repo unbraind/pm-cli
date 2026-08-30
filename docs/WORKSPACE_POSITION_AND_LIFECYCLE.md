@@ -57,6 +57,12 @@ The read requires no feature flag or session state. It reports:
 - bounded append-only history-drift counts and affected item IDs;
 - one deterministic `state` and one `next_action.command`.
 
+The next action always pins the inspected tracker with `--pm-path` and uses the
+SDK's platform-aware command renderer. Paths with spaces or shell-significant
+characters are therefore copy-safe on both POSIX shells and Windows command
+lines, while package consumers can reuse `renderPmCommand` for their own
+tokenized recovery actions.
+
 Recovery precedence is intentional:
 
 | State                           | Next action                 | Why it comes first |

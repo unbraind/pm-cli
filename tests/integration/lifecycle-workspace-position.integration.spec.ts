@@ -169,7 +169,7 @@ describe("lifecycle roles and workspace position", () => {
         ok: false,
         state: "merge_fence_unprepared",
         next_action: {
-          command: `pm --pm-path '${context.pmPath}' merge install`,
+          command: `pm --pm-path ${context.pmPath} merge install`,
         },
       });
 

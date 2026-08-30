@@ -170,11 +170,12 @@ describe("workspace position decision", () => {
         _testOnlyWorkspacePosition.commandForWorkspacePositionState(
           state,
           "/tmp/inspected workspace/.agents/pm",
+          "linux",
         ),
       ).toBe(
         expectedCommand === null
           ? null
-          : `pm --pm-path '/tmp/inspected workspace/.agents/pm' ${expectedCommand.slice(3)}`,
+          : `pm --pm-path "/tmp/inspected workspace/.agents/pm" ${expectedCommand.slice(3)}`,
       );
     }
   });
@@ -184,8 +185,20 @@ describe("workspace position decision", () => {
       _testOnlyWorkspacePosition.commandForWorkspacePositionState(
         "merge_fence_unprepared",
         "/tmp/review's tracker/.agents/pm",
+        "linux",
       ),
-    ).toBe(`pm --pm-path '/tmp/review'"'"'s tracker/.agents/pm' merge install`);
+    ).toBe(
+      `pm --pm-path "/tmp/review's tracker/.agents/pm" merge install`,
+    );
+    expect(
+      _testOnlyWorkspacePosition.commandForWorkspacePositionState(
+        "merge_fence_unprepared",
+        "C:\\review & tracker\\.agents\\pm",
+        "win32",
+      ),
+    ).toBe(
+      `pm --pm-path "C:\\review & tracker\\.agents\\pm" merge install`,
+    );
   });
 
   it("treats committed-fence drift as unprepared", () => {
