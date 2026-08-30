@@ -40,16 +40,51 @@ export const HARNESS_SIGNAL_ENVIRONMENT_KEYS = Object.freeze(
   ].sort((left, right) => left.localeCompare(right)),
 );
 
+/** Host variables explicitly required for portable child-process execution. */
+export const TOKEN_BUDGET_FIXTURE_ENVIRONMENT_KEYS = Object.freeze([
+  "ComSpec",
+  "COMSPEC",
+  "HOME",
+  "Path",
+  "PATH",
+  "PATHEXT",
+  "SystemRoot",
+  "SYSTEMROOT",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "USERPROFILE",
+  "WINDIR",
+]);
+
 const OBSERVED_EXCERPT_LIMIT = 1400;
 
 function distCliPath() {
   return path.join(repoRoot, "dist", "cli.js");
 }
 
+/** Build a closed fixture environment from declared portability inputs and deterministic overrides. */
+export function buildTokenBudgetFixtureEnvironment(
+  hostEnvironment,
+  overrides,
+) {
+  const environment = {};
+  for (const key of TOKEN_BUDGET_FIXTURE_ENVIRONMENT_KEYS) {
+    if (hostEnvironment[key] !== undefined) {
+      environment[key] = hostEnvironment[key];
+    }
+  }
+  return {
+    ...environment,
+    LANG: "C",
+    LC_ALL: "C",
+    TZ: "UTC",
+    ...overrides,
+  };
+}
+
 function runCli(cliPath, args, options, allowFailure = false) {
-  const env = { ...process.env };
-  for (const key of HARNESS_SIGNAL_ENVIRONMENT_KEYS) delete env[key];
-  Object.assign(env, {
+  const env = buildTokenBudgetFixtureEnvironment(process.env, {
     PM_AUTHOR: "token-budget-gate",
     PM_PATH: options.pmPath,
     PM_GLOBAL_PATH: options.globalPath,
@@ -61,6 +96,7 @@ function runCli(cliPath, args, options, allowFailure = false) {
   return runCommand(process.execPath, [cliPath, ...args], {
     cwd: options.workspaceRoot,
     env,
+    inheritEnvironment: false,
     capture: true,
     allowFailure,
   });

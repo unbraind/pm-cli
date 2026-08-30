@@ -1653,10 +1653,10 @@ describe("runTest", () => {
     }
   });
 
-  it("rejects sandbox-unsafe test-runner commands and allows sandbox-safe variants", async () => {
+  it("accepts direct test runners while preserving sandbox-aware command variants", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "reject-unsafe-test-runners");
-      const unsafeRunnerCommands = [
+      const directRunnerId = createTask(context, "accept-direct-test-runners");
+      const directRunnerCommands = [
         "command=npm --cache /tmp vitest run,scope=project",
         "command=pnpm dlx vitest run,scope=project",
         "command=npm exec -- vitest run,scope=project",
@@ -1672,27 +1672,23 @@ describe("runTest", () => {
         "command=node ./scripts/run-tests.mjs coverage; vitest run,scope=project",
       ];
 
-      for (const addEntry of unsafeRunnerCommands) {
-        await expect(
-          runTest(id, { add: [addEntry] }, { path: context.pmPath }),
-        ).rejects.toMatchObject({
-          exitCode: EXIT_CODE.USAGE,
-        });
-      }
-      // pm-fl0c #3 (2026-05-28): the rejection error MUST tell agents that
-      // env vars need to be INLINE in the command string — exporting them
-      // in the parent shell does not satisfy the guard. Previously the
-      // message said "set both PM_PATH and PM_GLOBAL_PATH" without that
-      // distinction, leading to repeated agent retries.
-      await expect(
-        runTest(
-          id,
-          { add: ["command=vitest run,scope=project"] },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject({
-        message: expect.stringContaining("INLINE in the command string"),
-      });
+      const acceptedDirectRunners = await runTest(
+        directRunnerId,
+        { add: directRunnerCommands },
+        { path: context.pmPath },
+      );
+      expect(acceptedDirectRunners.count).toBe(directRunnerCommands.length);
+      expect(
+        acceptedDirectRunners.tests.map((entry) => entry.command).sort(),
+      ).toEqual(
+        directRunnerCommands
+          .map((candidate) =>
+            candidate.slice("command=".length, candidate.indexOf(",scope=")),
+          )
+          .sort(),
+      );
+
+      const id = createTask(context, "sandbox-aware-test-runners");
 
       const safeWithRunner = await runTest(
         id,

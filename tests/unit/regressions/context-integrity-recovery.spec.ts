@@ -112,6 +112,7 @@ describe("context integrity recovery", () => {
   });
 
   it("selects npm 12 keyed receipts by requested package and rejects ambiguity", () => {
+    const packRoot = path.resolve("tmp", "pack");
     const receipt = JSON.stringify({
       alpha: { filename: "alpha.tgz", name: "alpha", version: "1.0.0" },
       beta: { filename: "beta.tgz", name: "beta", version: "2.0.0" },
@@ -119,34 +120,34 @@ describe("context integrity recovery", () => {
     expect(
       _testOnlyInstallSources.parsePackedNpmPackage(
         receipt,
-        "/tmp/pack",
+        packRoot,
         "beta",
       ),
     ).toEqual({
-      tarball: path.join("/tmp/pack", "beta.tgz"),
+      tarball: path.join(packRoot, "beta.tgz"),
       package: "beta",
       version: "2.0.0",
     });
     expect(() =>
-      _testOnlyInstallSources.parsePackedNpmPackage(receipt, "/tmp/pack"),
+      _testOnlyInstallSources.parsePackedNpmPackage(receipt, packRoot),
     ).toThrow("unsupported or ambiguous");
     expect(() =>
       _testOnlyInstallSources.parsePackedNpmPackage(
         JSON.stringify({ beta: { filename: "", name: "beta" } }),
-        "/tmp/pack",
+        packRoot,
         "beta",
       ),
     ).toThrow("unsupported or ambiguous");
     expect(() =>
       _testOnlyInstallSources.parsePackedNpmPackage(
         JSON.stringify("not-a-receipt"),
-        "/tmp/pack",
+        packRoot,
       ),
     ).toThrow("unsupported or ambiguous");
     expect(() =>
       _testOnlyInstallSources.parsePackedNpmPackage(
         JSON.stringify([{ filename: "wrong.tgz", name: "wrong-package" }]),
-        "/tmp/pack",
+        packRoot,
         "expected-package",
       ),
     ).toThrow("unsupported or ambiguous");
@@ -155,7 +156,7 @@ describe("context integrity recovery", () => {
         JSON.stringify({
           "wrong-package": { filename: "wrong.tgz", version: "1.0.0" },
         }),
-        "/tmp/pack",
+        packRoot,
         "expected-package",
       ),
     ).toThrow("unsupported or ambiguous");

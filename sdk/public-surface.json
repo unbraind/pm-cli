@@ -3486,6 +3486,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "classifyLinkedTestCommandSafety",
+          "signature": "(command: string) => LinkedTestCommandSafetyClassification | calls: (command: string) => LinkedTestCommandSafetyClassification"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "classifyLinkedTestFailure",
           "signature": "(result: Pick<LinkedTestExecutionResult, \"maxBufferExceeded\" | \"signal\" | \"spawnError\" | \"stderr\" | \"stdout\" | \"timedOut\">) => LinkedTestFailureCategory | calls: (result: Pick<LinkedTestExecutionResult, \"stdout\" | \"stderr\" | \"spawnError\" | \"signal\" | \"timedOut\" | \"maxBufferExceeded\">) => LinkedTestFailureCategory"
         },
@@ -8564,6 +8570,12 @@
           "kind": "interface",
           "name": "LinkedTest",
           "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LinkedTestCommandSafetyClassification",
+          "signature": "export interface LinkedTestCommandSafetyClassification { accepted: true; command_kind: \"direct_runner\" | \"sandbox_runner\" | \"other\"; tracker_isolation: \"runtime_injected\"; trust_boundary: \"provenance\"; advisory: string; }"
         },
         {
           "classification": "advanced_export",

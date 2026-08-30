@@ -72,6 +72,10 @@ type TokenBudgetManifest = {
 
 type TokenBudgetGateModule = {
   HARNESS_SIGNAL_ENVIRONMENT_KEYS: readonly string[];
+  buildTokenBudgetFixtureEnvironment: (
+    hostEnvironment: NodeJS.ProcessEnv,
+    overrides: NodeJS.ProcessEnv,
+  ) => NodeJS.ProcessEnv;
   measureOutput: (stdout: string) => {
     bytes: number;
     estimated_tokens: number;
@@ -361,6 +365,38 @@ describe("scripts/release/token-budget-gate", () => {
       estimated_tokens: 2,
       lines: 2,
     });
+  });
+
+  it("builds a closed fixture environment that cannot inherit undeclared host state", async () => {
+    const mod = await loadModule();
+    const environment = mod.buildTokenBudgetFixtureEnvironment(
+      {
+        PATH: "/host/bin",
+        HOME: "/host/home",
+        TMPDIR: "/host/tmp",
+        AI_AGENT: "ambient-agent",
+        PM_TOKEN_BUDGET_SENTINEL: "must-not-leak",
+        NODE_OPTIONS: "--inspect",
+      },
+      {
+        PM_AUTHOR: "token-budget-gate",
+        PM_PATH: "/fixture/.agents/pm",
+      },
+    );
+
+    expect(environment).toMatchObject({
+      HOME: "/host/home",
+      LANG: "C",
+      LC_ALL: "C",
+      PATH: "/host/bin",
+      PM_AUTHOR: "token-budget-gate",
+      PM_PATH: "/fixture/.agents/pm",
+      TMPDIR: "/host/tmp",
+      TZ: "UTC",
+    });
+    expect(environment).not.toHaveProperty("AI_AGENT");
+    expect(environment).not.toHaveProperty("NODE_OPTIONS");
+    expect(environment).not.toHaveProperty("PM_TOKEN_BUDGET_SENTINEL");
   });
 
   it("uses JSON read receipts for command contracts without hiding transport bytes", async () => {
@@ -819,7 +855,10 @@ describe("scripts/release/token-budget-gate", () => {
 
     expect(runtime.runCommand).toHaveBeenCalledTimes(135);
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as
-      | { env?: Record<string, string | undefined> }
+      | {
+          env?: Record<string, string | undefined>;
+          inheritEnvironment?: boolean;
+        }
       | undefined;
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
@@ -829,8 +868,9 @@ describe("scripts/release/token-budget-gate", () => {
       PM_TELEMETRY_DISABLED: "1",
       PM_TELEMETRY_OTEL_DISABLED: "1",
       PM_TELEMETRY_PROMPT: "0",
-      PM_TOKEN_BUDGET_SENTINEL: "kept",
     });
+    expect(runOptions?.env).not.toHaveProperty("PM_TOKEN_BUDGET_SENTINEL");
+    expect(runOptions?.inheritEnvironment).toBe(false);
     expect(mod.HARNESS_SIGNAL_ENVIRONMENT_KEYS).toEqual(
       harnessSignalEnvironmentKeys,
     );

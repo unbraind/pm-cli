@@ -802,17 +802,7 @@ function commandUsesSandboxRunner(normalizedCommand: string): boolean {
   );
 }
 
-function segmentHasExplicitSandboxEnv(normalizedSegment: string): boolean {
-  const hasExplicitPmPath =
-    /\bpm_path\s*=/.test(normalizedSegment) ||
-    /\$env:pm_path\s*=/.test(normalizedSegment);
-  const hasExplicitPmGlobalPath =
-    /\bpm_global_path\s*=/.test(normalizedSegment) ||
-    /\$env:pm_global_path\s*=/.test(normalizedSegment);
-  return hasExplicitPmPath && hasExplicitPmGlobalPath;
-}
-
-function segmentInvokesUnsafeDirectTestRunner(
+function segmentInvokesDirectTestRunner(
   normalizedSegment: string,
 ): boolean {
   const rawTokens = normalizedSegment
@@ -823,6 +813,18 @@ function segmentInvokesUnsafeDirectTestRunner(
     return false;
   }
   const [executable, ...args] = tokens;
+  const shellCommandFlagPattern = SHELL_COMMAND_FLAG_PATTERNS.get(executable);
+  if (shellCommandFlagPattern) {
+    const commandFlagIndex = args.findIndex((argument) =>
+      shellCommandFlagPattern.test(argument),
+    );
+    return (
+      commandFlagIndex >= 0 &&
+      segmentInvokesDirectTestRunner(
+        args.slice(commandFlagIndex + 1).join(" "),
+      )
+    );
+  }
   if (
     executable === "vitest" ||
     executable.endsWith("/vitest") ||
@@ -831,12 +833,12 @@ function segmentInvokesUnsafeDirectTestRunner(
     return true;
   }
   if (executable === "node") {
-    return nodeArgsInvokeUnsafeDirectTestRunner(args);
+    return nodeArgsInvokeDirectTestRunner(args);
   }
-  return packageManagerInvokesUnsafeDirectTestRunner(executable, args);
+  return packageManagerInvokesDirectTestRunner(executable, args);
 }
 
-function nodeArgsInvokeUnsafeDirectTestRunner(args: string[]): boolean {
+function nodeArgsInvokeDirectTestRunner(args: string[]): boolean {
   return (
     args.includes("--test") ||
     args.some(
@@ -849,7 +851,7 @@ function nodeArgsInvokeUnsafeDirectTestRunner(args: string[]): boolean {
   );
 }
 
-function packageManagerInvokesUnsafeDirectTestRunner(
+function packageManagerInvokesDirectTestRunner(
   executable: string,
   args: string[],
 ): boolean {
@@ -863,33 +865,59 @@ function packageManagerInvokesUnsafeDirectTestRunner(
           ? parsePnpmDlxCommand(args)
           : parseNpmExecCommand(args)
         )?.command,
-      ) || firstDirectTestRunnerSubcommand(executable, args) === "vitest"
+      ) ||
+      isDirectTestRunnerSubcommand(
+        firstDirectTestRunnerSubcommand(executable, args),
+      )
     );
   }
   return (
     (executable === "yarn" || executable === "bun") &&
-    firstDirectTestRunnerSubcommand(executable, args) === "vitest"
+    isDirectTestRunnerSubcommand(
+      firstDirectTestRunnerSubcommand(executable, args),
+    )
   );
 }
 
-function assertSandboxSafeTestRunnerCommand(command: string): void {
+/** Describes the SDK-owned safety policy applied when a linked command is recorded. */
+export interface LinkedTestCommandSafetyClassification {
+  /** Whether intake accepts the command before provenance checks at execution time. */
+  accepted: true;
+  /** Capability-oriented command family, independent of shell wrapping. */
+  command_kind: "direct_runner" | "sandbox_runner" | "other";
+  /** Tracker isolation is injected by the linked-test runtime for every command. */
+  tracker_isolation: "runtime_injected";
+  /** Stored-command provenance and explicit acknowledgment form the execution trust boundary. */
+  trust_boundary: "provenance";
+  /** Human guidance for reproducible execution without presenting string shape as enforcement. */
+  advisory: string;
+}
+
+/** Classify linked-test commands without pretending string shape is a security boundary. */
+export function classifyLinkedTestCommandSafety(
+  command: string,
+): LinkedTestCommandSafetyClassification {
   const normalized = normalizeCommandForValidation(command);
   const segments = splitNormalizedCommandSegments(normalized);
-  const hasUnsafeDirectRunnerSegment = segments.some(
+  const directRunner = segments.some(
     (segment) =>
       !commandUsesSandboxRunner(segment) &&
-      segmentInvokesUnsafeDirectTestRunner(segment) &&
-      !segmentHasExplicitSandboxEnv(segment),
+      segmentInvokesDirectTestRunner(segment),
   );
-
-  if (!hasUnsafeDirectRunnerSegment) {
-    return;
-  }
-
-  throw new PmCliError(
-    'Linked test runner commands must be sandbox-safe: use "node scripts/run-tests.mjs <test|coverage>", use a package-manager script such as "pnpm test", or include PM_PATH=... PM_GLOBAL_PATH=... INLINE in the command string (exporting them in your shell environment is not checked). Example: "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run".',
-    EXIT_CODE.USAGE,
-  );
+  const sandboxRunner = segments.some(commandUsesSandboxRunner);
+  return {
+    accepted: true,
+    command_kind: directRunner
+      ? "direct_runner"
+      : sandboxRunner
+        ? "sandbox_runner"
+        : "other",
+    tracker_isolation: "runtime_injected",
+    trust_boundary: "provenance",
+    advisory: directRunner
+      ? "Accepted with runtime-injected tracker isolation. Prefer the repository sandbox runner when available for reproducible build and coverage setup."
+      : "Accepted with runtime-injected tracker isolation and provenance checks before execution.",
+  };
 }
 
 function getRuntimeSafetySkipReason(command: string): string | undefined {
@@ -915,7 +943,6 @@ function parseAddEntry(entry: string): LinkedTest {
     );
   }
   assertNoRecursiveTestAllCommand(command);
-  assertSandboxSafeTestRunnerCommand(command);
   return {
     command,
     path: trimLinkedTestEntryField(kv.path),
@@ -1026,7 +1053,6 @@ function parseAddJsonEntries(raw: string[] | undefined): LinkedTest[] {
         );
       }
       assertNoRecursiveTestAllCommand(command);
-      assertSandboxSafeTestRunnerCommand(command);
     }
     return parsed;
   });
@@ -2147,7 +2173,7 @@ function commandUsesTestNameFilter(command: string): boolean {
   return splitNormalizedCommandSegments(normalized).some(
     (segment) =>
       /(?:^|\s)-t(?:=|\s)/u.test(segment) &&
-      segmentInvokesUnsafeDirectTestRunner(segment),
+      segmentInvokesDirectTestRunner(segment),
   );
 }
 

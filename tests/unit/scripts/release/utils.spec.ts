@@ -138,6 +138,37 @@ describe("scripts/release/utils: runCommand", () => {
     expect(utils.runCommand("echo", ["hi"])).toEqual({ status: 0, stdout: "", stderr: "" });
   });
 
+  it("can replace the ambient environment for deterministic child processes", async () => {
+    const spawnSync = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    const utils = await loadUtils("utilsRunClosedEnvironment");
+    const previousSentinel = process.env.PM_UTILS_AMBIENT_SENTINEL;
+    process.env.PM_UTILS_AMBIENT_SENTINEL = "must-not-leak";
+
+    try {
+      utils.runCommand("pm", ["--version"], {
+        env: { PATH: "/fixture/bin", PM_PATH: "/fixture/.agents/pm" },
+        inheritEnvironment: false,
+      });
+      expect(spawnSync).toHaveBeenCalledWith(
+        "pm",
+        ["--version"],
+        expect.objectContaining({
+          env: {
+            PATH: "/fixture/bin",
+            PM_PATH: "/fixture/.agents/pm",
+          },
+        }),
+      );
+    } finally {
+      if (previousSentinel === undefined) {
+        delete process.env.PM_UTILS_AMBIENT_SENTINEL;
+      } else {
+        process.env.PM_UTILS_AMBIENT_SENTINEL = previousSentinel;
+      }
+    }
+  });
+
   it("rejects input when capture is disabled", async () => {
     const spawnSync = vi.fn();
     vi.doMock("node:child_process", () => ({ spawnSync }));

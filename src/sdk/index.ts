@@ -1219,6 +1219,7 @@ export {
   type TelemetrySubcommand,
 } from "./telemetry.js";
 export {
+  classifyLinkedTestCommandSafety,
   classifyLinkedTestFailure,
   countFailureCategories,
   extractReferencedPmItemIdsFromCommand,
@@ -1227,6 +1228,7 @@ export {
   runTest,
   summarizeContextPreflight,
   type LinkedTestFailureCategory,
+  type LinkedTestCommandSafetyClassification,
   type TestCommandOptions,
   type TestResult,
   type TestRunResult,
