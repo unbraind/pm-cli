@@ -23,7 +23,7 @@ function createItem(
   context: TempPmContext,
   params: {
     title: string;
-    status: "open" | "triage" | "blocked" | "closed";
+    status: "open" | "in_progress" | "review" | "triage" | "blocked" | "closed";
     priority: string;
     tags: string;
     deadline: string;
@@ -106,18 +106,43 @@ describe("runList", () => {
           "--json",
         ]).code,
       ).toBe(0);
+      const openId = createItem(context, {
+        title: "Built-in open work",
+        status: "open",
+        priority: "1",
+        tags: "lifecycle-bucket",
+        deadline: "+1d",
+      });
+      const reviewId = createItem(context, {
+        title: "Custom active review work",
+        status: "review",
+        priority: "1",
+        tags: "lifecycle-bucket",
+        deadline: "+1d",
+      });
+      const inProgressId = createItem(context, {
+        title: "Built-in in-progress work",
+        status: "in_progress",
+        priority: "1",
+        tags: "lifecycle-bucket",
+        deadline: "+1d",
+      });
       const open = await runList(
         undefined,
         { lifecycleBucket: "open" },
         { path: context.pmPath },
       );
       expect(open.filters).toMatchObject({ status: "open" });
+      expect(open.items.map((entry) => entry.id).sort()).toEqual(
+        [openId, reviewId].sort(),
+      );
       const inProgress = await runList(
         undefined,
         { lifecycleBucket: "in_progress" },
         { path: context.pmPath },
       );
       expect(inProgress.filters).toMatchObject({ status: "in_progress" });
+      expect(inProgress.items.map((entry) => entry.id)).toEqual([inProgressId]);
     });
   });
 

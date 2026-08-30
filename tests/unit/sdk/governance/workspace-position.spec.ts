@@ -167,9 +167,25 @@ describe("workspace position decision", () => {
         _testOnlyWorkspacePosition.selectWorkspacePositionState(input);
       expect(state).toBe(expectedState);
       expect(
-        _testOnlyWorkspacePosition.commandForWorkspacePositionState(state),
-      ).toBe(expectedCommand);
+        _testOnlyWorkspacePosition.commandForWorkspacePositionState(
+          state,
+          "/tmp/inspected workspace/.agents/pm",
+        ),
+      ).toBe(
+        expectedCommand === null
+          ? null
+          : `pm --pm-path '/tmp/inspected workspace/.agents/pm' ${expectedCommand.slice(3)}`,
+      );
     }
+  });
+
+  it("shell-quotes the exact inspected tracker in every recovery action", () => {
+    expect(
+      _testOnlyWorkspacePosition.commandForWorkspacePositionState(
+        "merge_fence_unprepared",
+        "/tmp/review's tracker/.agents/pm",
+      ),
+    ).toBe(`pm --pm-path '/tmp/review'"'"'s tracker/.agents/pm' merge install`);
   });
 
   it("treats committed-fence drift as unprepared", () => {

@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[4]: agent-ergonomics,concurrency,consolidation,grammar
 created_at: "2026-08-02T21:19:40.466Z"
-updated_at: "2026-08-30T19:55:00.589Z"
-closed_at: "2026-08-30T19:55:00.017Z"
-completed_at: "2026-08-30T19:55:00.017Z"
+updated_at: "2026-08-30T21:02:07.455Z"
+closed_at: "2026-08-30T21:02:06.794Z"
+completed_at: "2026-08-30T21:02:06.794Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "A single bounded read reports whether the merge fence is active for this clone, whether receipts are pending, whether history drift is present, and which command is the next correct action, in a projection cheap enough for an agent loop; The read is derived entirely from recorded workspace and repository state, with no flag the caller must know to pass and no dependence on output from an earlier command in the session; A clone whose committed merge fence names drivers that are not configured is reported as an unprepared workspace by the aggregate health verdict, not only as a warning line beneath ok:true; Every existing surface in the family keeps its current behaviour and spelling; the new read composes them rather than replacing them, and the noun-verb table records each of them as state-conditional with its condition named"
@@ -19,9 +19,9 @@ why_now: "Ruling K makes state-conditional verbs without a detectable condition 
 parent: pm-mpbb
 risk: medium
 confidence: high
-resolution: "Added SDK-owned workspace position aggregation across merge-fence configuration, merge receipts, and history drift; exposed it through CLI, generic runtime, and MCP contracts; strict health now treats missing clone-local merge drivers as a failing readiness condition."
-expected_result: "One bounded read determines workspace merge readiness and the next correct command without remembered protocol, while existing merge surfaces retain their behavior."
-actual_result: "pm workspace position and the public governance SDK return deterministic ready, fence-unprepared, reconciliation, history-repair, and invalid states with bounded item identifiers and remediation; the real checkout reports ready with zero pending receipts and zero drift."
+resolution: "Added SDK-owned workspace position aggregation across merge-fence configuration, merge receipts, and history drift; exposed it through CLI, generic runtime, and MCP contracts; strict health treats missing clone-local merge drivers as a failing readiness condition; every recovery action explicitly targets the inspected tracker."
+expected_result: "One bounded read determines workspace merge readiness and the next correct command without remembered protocol, while existing merge surfaces retain their behavior and recovery cannot be redirected by inherited source coordinates."
+actual_result: "pm workspace position and the public governance SDK return deterministic ready, fence-unprepared, reconciliation, history-repair, and invalid states with bounded item identifiers and an explicitly tracker-pinned remediation command; two-repository acceptance proved source coordinates cannot redirect recovery."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-6apl,related,"2026-08-02T21:21:10.701Z","harness:claude-code","cli:update:dep",detected
   pm-dlx7v7,related,"2026-08-02T21:21:10.701Z","harness:claude-code","cli:update:dep",detected
@@ -31,12 +31,16 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-pbyu,discovered_from,"2026-08-02T21:21:10.701Z","harness:claude-code","cli:update:dep",detected
   pm-tqel,related,"2026-08-02T21:21:10.701Z","harness:claude-code","cli:update:dep",detected
   pm-wt43zj,blocked_by,"2026-08-02T21:21:10.701Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-30T17:06:50.343Z","harness:codex","Implementation start 2026-08-30: canonical GH-1159 owner confirmed after complete all-status duplicate search. Deliver one bounded SDK-owned workspace position read across CLI and MCP, make health --strict-exit require configured merge drivers while preserving advisory default health, and verify clean/prepared/unprepared/pending-receipt/drift states."
   "2026-08-30T19:54:48.388Z","harness:codex","Delivery evidence 2026-08-30: implemented the public workspacePosition governance SDK and CLI/MCP/runtime contracts; strict health now fails missing clone-local drivers while advisory health remains compatible. PM-linked suite passed 4 files/16 tests. Full repository coverage passed 590/590 files and 8160/8160 tests at exactly 100% statements (60340/60340), branches (45511/45511), functions (12551/12551), and lines (58096/58096). pnpm quality:static passed including ESLint, zero duplication, architecture limits, contracts, refusal closure, token budgets, graph/record integrity, and 100% source/export/member docstrings. Trivy found 0 high/critical findings; npm audit found 0 known vulnerabilities; credential scan and ShellCheck passed. Package artifact gate (1551 files), package-first 88-command dogfood, packed npx/bunx smoke, and independent temporary-directory npm/npx and Bun/bunx SDK/CLI acceptance passed. Real checkout position is ready with configured fence, zero receipts, and zero history drift across 2608 items."
+  "2026-08-30T21:00:58.376Z","harness:codex","PR review correction evidence: accepted Greptile's workspace-target finding. Every non-ready next action now embeds an explicitly shell-quoted --pm-path for the exact inspected tracker, so inherited source-write coordinates cannot redirect recovery. A two-repository temporary acceptance enabled PM_SOURCE_WORKSPACE_ROOT, PM_SOURCE_PM_PATH, read-only source context, and the write override; the reported command installed drivers only in the inspected repository, left the source repository untouched, and returned ready. The required token-surface baseline now includes workspace position at 136 bytes and all 55 surfaces pass."
+  "2026-08-30T21:02:06.165Z","harness:codex","Final correction gates: PM-linked workspace suite passes 4 files/17 tests; exact repository coverage passes 590 files and 8161 tests at 100/100/100/100; pnpm quality:static passes all source/export/member docstrings, ESLint, zero duplication, contracts, SDK parity, refusal/token/graph/record gates; npm audit, credential scan, Trivy HIGH/CRITICAL, and ShellCheck are clean."
 learnings[1]{created_at,author,text}:
   "2026-08-30T19:54:47.847Z","harness:codex",A workspace readiness primitive is most useful when it composes recorded subsystem state into one deterministic next action; exposing the same public SDK result through CLI and MCP prevents adapters from reimplementing sequencing policy.
-files[13]{path,scope,note}:
+files[14]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Required workspace-position token-surface baseline and bounded output gate
+  sdk/public-surface.json,project,Reviewed additive and acknowledged SDK signature surface for workspace position
   src/cli/register-operations.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
   src/sdk/cli-contracts/flag-contracts.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
   src/sdk/cli-contracts/grammar-contracts.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
@@ -46,13 +50,12 @@ files[13]{path,scope,note}:
   src/sdk/runtime-extended-actions.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
   tests/fixtures/contracts/full.json,project,Workspace position SDK CLI runtime contract and acceptance implementation
   tests/integration/lifecycle-workspace-position.integration.spec.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
-  tests/unit/sdk/runtime-extended-actions.spec.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
-  tests/unit/sdk/governance/workspace-position.spec.ts,project,Workspace position decision and formatting unit coverage
-  sdk/public-surface.json,project,Reviewed additive and acknowledged SDK signature surface for workspace position
   tests/unit/cli/register-operations.spec.ts,project,Workspace position CLI adapter coverage
+  tests/unit/sdk/governance/workspace-position.spec.ts,project,Workspace position decision and formatting unit coverage
+  tests/unit/sdk/runtime-extended-actions.spec.ts,project,Workspace position SDK CLI runtime contract and acceptance implementation
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/integration/lifecycle-workspace-position.integration.spec.ts tests/unit/sdk/governance/workspace-position.spec.ts tests/unit/cli/register-operations.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,project,2400,"harness:codex","2026-08-30T19:53:36.753Z",local_mutation,feat/workspace-position-lifecycle-context,"Workspace position SDK, CLI, MCP runtime, and end-to-end lifecycle states"
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtg89j5h-h31uxj
     kind: test
     status: passed
@@ -64,8 +67,19 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/lifecycle-workspace-position.integration.spec.ts tests/unit/sdk/governance/workspace-position.spec.ts tests/unit/cli/register-operations.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtgao2gc-gfw6vn
+    kind: test
+    status: passed
+    started_at: "2026-08-30T21:00:59.496Z"
+    finished_at: "2026-08-30T21:01:15.756Z"
+    recorded_at: "2026-08-30T21:01:15.756Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle-workspace-position.integration.spec.ts tests/unit/sdk/governance/workspace-position.spec.ts tests/unit/cli/register-operations.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/README.md,project,Documentation index entry
   docs/WORKSPACE_POSITION_AND_LIFECYCLE.md,project,Workspace position states SDK contract and operator recovery guidance
-close_reason: "Delivered SDK-owned bounded workspace readiness and deterministic next-action routing across CLI and MCP; all focused, repository-wide, security, packaging, and independent npm/Bun acceptance gates passed."
+close_reason: "Delivered SDK-owned bounded workspace readiness with exact tracker-pinned recovery across CLI/MCP and accepted review corrections; focused, full coverage, static, security, token-surface, and real two-repository acceptance gates pass."
 body: ""

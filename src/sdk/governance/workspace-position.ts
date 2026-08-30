@@ -98,11 +98,20 @@ function selectWorkspacePositionState(params: {
 
 function commandForWorkspacePositionState(
   state: WorkspacePositionState,
+  pmRoot: string,
 ): string | null {
-  if (state === "merge_evidence_invalid") return "pm merge report";
-  if (state === "merge_reconciliation_required") return "pm merge reconcile";
-  if (state === "history_repair_required") return "pm history-repair --all";
-  if (state === "merge_fence_unprepared") return "pm merge install";
+  const commandPrefix = `pm --pm-path '${pmRoot.replaceAll("'", `'"'"'`)}'`;
+  if (state === "merge_evidence_invalid")
+    return `${commandPrefix} merge report`;
+  if (state === "merge_reconciliation_required") {
+    return `${commandPrefix} merge reconcile`;
+  }
+  if (state === "history_repair_required") {
+    return `${commandPrefix} history-repair --all`;
+  }
+  if (state === "merge_fence_unprepared") {
+    return `${commandPrefix} merge install`;
+  }
   return null;
 }
 
@@ -191,7 +200,7 @@ export async function readWorkspacePosition(
     },
     history_drift: historyDrift,
     next_action: {
-      command: commandForWorkspacePositionState(state),
+      command: commandForWorkspacePositionState(state, pmRoot),
       reason: state,
     },
     warnings: [...new Set(itemReadWarnings)].sort((left, right) =>

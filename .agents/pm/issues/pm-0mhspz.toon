@@ -6,25 +6,27 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:schema",customization
 created_at: "2026-07-25T21:12:41.727Z"
-updated_at: "2026-08-30T20:00:15.137Z"
-closed_at: "2026-08-30T20:00:14.486Z"
-completed_at: "2026-08-30T20:00:14.486Z"
+updated_at: "2026-08-30T21:02:10.145Z"
+closed_at: "2026-08-30T21:02:09.514Z"
+completed_at: "2026-08-30T21:02:09.514Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "pm schema add-status either requires a lifecycle role or defaults to a documented role and reports which role was applied; registering a role-less status is impossible or warns loudly at registration time. pm validate and pm health each gain a check that reports every registered status carrying no lifecycle role, with the affected item ids. pm context summary.open and summary.in_progress are derived from lifecycle roles rather than the literal built-in status ids, so active_items reconciles with its component buckets in a workspace using custom active statuses. A regression test registers a custom status per lifecycle role and asserts next/context/list-open/list-blocked classify its items consistently with the equivalent built-in status."
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: "Made lifecycle roles mandatory for new custom statuses, preserved roles on existing-status updates, added bounded roleless-status diagnostics to validate and health, and derived context/list work buckets from configured roles through the public SDK."
-expected_result: "Custom workflows cannot silently create lifecycle-orphaned statuses, and all agent work-selection summaries classify custom active statuses consistently."
-actual_result: "Roleless registration is refused with a stable error; health and validate diagnose legacy roleless definitions; open and in-progress lifecycle buckets are role-derived and shared by SDK, CLI, and MCP surfaces. The production defect now carries strengthened gate ownership with a runnable negative control."
+resolution: "Made lifecycle roles mandatory for new custom statuses, preserved roles on existing-status updates, added bounded roleless-status diagnostics to validate and health, and derived context/list work buckets, sorting, hierarchy, progress, and workload from configured roles through the public SDK."
+expected_result: "Custom workflows cannot silently create lifecycle-orphaned statuses, and all agent work-selection summaries and optional context sections classify custom active statuses consistently."
+actual_result: "Roleless registration is refused with a stable error; health and validate diagnose legacy roleless definitions; open and in-progress lifecycle buckets plus context sorting, hierarchy, progress, and workload are role-derived. Exact-ID regression tests distinguish custom active review from configured in-progress work, and strengthened production-defect gate evidence remains attached."
 dependencies[2]{id,kind,created_at}:
   pm-8jdc,implements,"2026-07-25T21:12:41.727Z"
   pm-pww8ax,related,"2026-07-25T21:12:41.727Z"
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-30T17:06:51.909Z","harness:codex","Implementation start 2026-08-30: current dist reproduction confirmed role-less custom status registration succeeds silently, its item is absent from next/context, and health reports ok with zero warnings. Deliver role-required registration, SDK-owned role classification, validate/health findings, role-derived context/list aliases, contracts, docs, and sandbox acceptance."
   "2026-08-30T19:54:50.219Z","harness:codex","Delivery evidence 2026-08-30: new custom statuses must carry an effective lifecycle role; existing definitions retain roles when omitted during updates; health/validate emit bounded legacy diagnostics; context and list aliases now use public SDK lifecycle buckets. PM-linked suite passed 6 files/212 tests. Full repository coverage passed 590/590 files and 8160/8160 tests at exactly 100% statements (60340/60340), branches (45511/45511), functions (12551/12551), and lines (58096/58096). pnpm quality:static passed including ESLint, zero duplication, architecture limits, contracts, refusal closure, token budgets, graph/record integrity, and 100% source/export/member docstrings. Trivy found 0 high/critical findings; npm audit found 0 known vulnerabilities; credential scan and ShellCheck passed. Package-first dogfood, packed npx/bunx smoke, and independent npm/npx plus Bun/bunx SDK/CLI acceptance passed, including roleless refusal and a custom active status appearing in the open lifecycle bucket."
   "2026-08-30T19:59:52.504Z","harness:codex","Final static-gate amendment: classified this shipped behavior as production_defect and recorded gate_strengthened evidence owned by pm-0mhspz. The lifecycle-role registration/selection gate names a runnable negative control plus local coverage/static/defect-evidence and hosted coverage/static/Linux/Windows checks. node scripts/release/defect-evidence-gate.mjs --json now passes all boundary, defect-evidence, and recurrence-policy checks with zero findings and no waiver."
+  "2026-08-30T21:00:58.978Z","harness:codex","PR review correction evidence: accepted CodeRabbit's lifecycle findings. Context status rank, open/in-progress predicates, hierarchy, progress, workload, and sorting now derive from active_statuses and in_progress_status rather than literal ids. List tests seed built-in open/in-progress and custom active review items and assert exact result ids. Focused suite passes 81/81; full repository coverage passes 590/590 files and 8161/8161 tests at exact 100/100/100/100."
+  "2026-08-30T21:02:08.791Z","harness:codex","Final correction gates: PM-linked lifecycle suite passes 6 files/212 tests and focused cross-item correction suite passes 81/81; exact repository coverage passes 590 files and 8161 tests at 100/100/100/100; pnpm quality:static and all security gates pass. The strengthened negative control now includes exact list-result assertions and every context lifecycle consumer."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:40:48.466Z","harness:claude-code","Reproduction extended 2026-07-25: the second half of this class ships inside a first-party profile, so it is reachable without anyone mis-using pm schema add-status.\n\npm profile apply research registers the custom status 'analyzing' correctly — schema/statuses.json records roles [\"active\"], pm schema show-status analyzing reports source custom, roles active, order 12, and pm profile lint research reports ok with 0 warnings. Everything the workspace is told about the status is right.\n\nAn item moved into it then behaves inconsistently across the read surface:\n  pm next            recommends it, reasons \"open and ready to start\", ready 1   (role-derived, correct)\n  pm context         active_items 1, open 0, in_progress 0                        (mixed, the arithmetic stops adding up)\n  pm list-open       count 0                                                      (literal status id, wrong)\n  pm validate        ok true, pm health ok true                                   (silent)\n\nSo list-open belongs to the literal-id half alongside context summary.open / summary.in_progress, and this item's acceptance criterion already names it in the regression-test clause. Worth keeping because it changes the severity argument: the fix is not only about guarding a mis-used flag, it is about the three shipped profiles (agile, ops, research) each adding an active-role status whose items are already invisible to list-open today. Any workspace that applies a built-in profile — the intended path for customising pm to a domain — lands in the inconsistent state without doing anything unusual."
 learnings[1]{created_at,author,text}:
@@ -56,7 +58,7 @@ files[24]{path,scope,note}:
   src/sdk/governance/validate-normalization.ts,project,Extracted validation normalization keeps lifecycle diagnostics within repository architecture limits
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,project,2400,"harness:codex","2026-08-30T19:53:37.289Z",local_mutation,feat/workspace-position-lifecycle-context,"Lifecycle role registration, diagnostics, health, context, and list selection"
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtg8a09t-ipuu0z
     kind: test
     status: passed
@@ -68,10 +70,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtgaok5s-yl2yx4
+    kind: test
+    status: passed
+    started_at: "2026-08-30T21:01:16.264Z"
+    finished_at: "2026-08-30T21:01:38.704Z"
+    recorded_at: "2026-08-30T21:01:38.704Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/README.md,project,Documentation index entry
   docs/WORKSPACE_POSITION_AND_LIFECYCLE.md,project,Lifecycle role registration diagnostics and query invariant guidance
-close_reason: "Eliminated lifecycle-orphaned custom statuses and completed mandatory production-defect classification with strengthened negative-control gate ownership; all focused, repository-wide, security, packaging, and independent npm/Bun acceptance gates passed."
+close_reason: "Eliminated lifecycle-orphaned custom statuses and completed role-derived behavior across all context consumers with exact-result regression proof; full coverage, static, security, and production-defect evidence gates pass."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
