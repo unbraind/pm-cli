@@ -150,6 +150,11 @@ export function normalizeAddStatusInput(
         roles.push(role as RuntimeStatusRole);
       }
     }
+    if (roles.length === 0) {
+      throw new Error(
+        `Status role must include at least one lifecycle role. Allowed roles: ${RUNTIME_STATUS_ROLE_VALUES.join(", ")}.`,
+      );
+    }
   }
   const aliases =
     raw.aliases === undefined

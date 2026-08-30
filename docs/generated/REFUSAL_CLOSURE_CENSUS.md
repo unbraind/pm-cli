@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 353
+- Catalog error codes: 354
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 334
-- Coverage fraction: 0.053824
+- Uncovered error codes: 335
+- Coverage fraction: 0.053672
 - Closed-domain probes: 19
 - Grammar probes: 94
 
@@ -267,6 +267,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `stale_observed_signature` | `stale_observed_signature` | uncovered | none | 0 |
 | `status_duplicate` | `status_duplicate` | uncovered | none | 0 |
 | `status_invalid` | `status_invalid` | uncovered | none | 0 |
+| `status_lifecycle_role_required` | `status_lifecycle_role_required` | uncovered | none | 0 |
 | `stdin_json_invalid` | `stdin_json_invalid` | uncovered | none | 0 |
 | `stdin_json_unknown_key` | `stdin_json_unknown_key` | uncovered | none | 0 |
 | `structured_event_immutable` | `structured_event_immutable` | uncovered | none | 0 |

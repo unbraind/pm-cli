@@ -1395,6 +1395,7 @@
           "update",
           "validate",
           "workspace",
+          "workspace position",
           "workspace snapshot",
           "workspace snapshot create",
           "workspace snapshot delete",
@@ -8265,6 +8266,11 @@
       "provider": "core"
     },
     {
+      "command": "workspace position",
+      "flags": [],
+      "provider": "core"
+    },
+    {
       "command": "workspace snapshot",
       "flags": [
         {
@@ -11971,6 +11977,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
+        "command": "workspace position",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace position",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
         "command": "workspace snapshot",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
@@ -13672,6 +13705,16 @@
       "intent_source": "command"
     },
     {
+      "command": "workspace position",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run workspace position.",
+      "intent_source": "generated"
+    },
+    {
       "command": "workspace snapshot",
       "default_max_estimated_tokens": 4000,
       "default_max_estimated_tokens_by_format": {
@@ -15251,6 +15294,7 @@
     "update-many",
     "validate",
     "workspace",
+    "workspace position",
     "workspace snapshot",
     "workspace snapshot create",
     "workspace snapshot delete",
@@ -19823,6 +19867,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "status_lifecycle_role_required",
+      "class": "usage",
+      "code": "status_lifecycle_role_required",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Status lifecycle role required condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/schema.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "stdin_json_invalid",
       "class": "usage",
       "code": "stdin_json_invalid",
@@ -22120,6 +22181,13 @@
         "target": "workspace"
       },
       {
+        "command": "workspace position",
+        "disposition": "target_noun",
+        "noun": "workspace",
+        "owner": "pm-pbyu",
+        "target": "workspace"
+      },
+      {
         "command": "workspace snapshot",
         "disposition": "target_noun",
         "noun": "workspace",
@@ -22897,10 +22965,11 @@
       "contracts",
       "help"
     ],
-    "positional_action_count": 32,
+    "positional_action_count": 33,
     "positional_action_parents": [
       "assurance",
       "plan",
+      "workspace",
       "workspace snapshot"
     ],
     "positional_shape_budget": 21,
@@ -23548,6 +23617,10 @@
       },
       {
         "command": "workspace",
+        "slots": []
+      },
+      {
+        "command": "workspace position",
         "slots": []
       },
       {
@@ -53923,6 +53996,25 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "snapshot"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "snapshotAction"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "workspace",
@@ -54035,8 +54127,7 @@
         },
         "required": [
           "action",
-          "subcommand",
-          "snapshotAction"
+          "subcommand"
         ],
         "title": "pm action \"workspace\" parameters",
         "type": "object"

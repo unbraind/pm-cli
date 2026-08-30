@@ -71,35 +71,47 @@ describe("normalizeAddTypeInput", () => {
   });
 
   it("throws on missing/empty name", () => {
-    expect(() => normalizeAddTypeInput({ name: undefined })).toThrow(/must not be empty/);
-    expect(() => normalizeAddTypeInput({ name: "   " })).toThrow(/must not be empty/);
+    expect(() => normalizeAddTypeInput({ name: undefined })).toThrow(
+      /must not be empty/,
+    );
+    expect(() => normalizeAddTypeInput({ name: "   " })).toThrow(
+      /must not be empty/,
+    );
   });
 
   it("throws when colliding with a built-in type", () => {
-    expect(() => normalizeAddTypeInput({ name: "task" })).toThrow(/Cannot redefine built-in item type "Task"/);
+    expect(() => normalizeAddTypeInput({ name: "task" })).toThrow(
+      /Cannot redefine built-in item type "Task"/,
+    );
   });
 
   it("throws when an alias collides with a built-in type", () => {
-    expect(() => normalizeAddTypeInput({ name: "Spike", aliases: ["Task"] })).toThrow(
-      /Alias "Task" collides with built-in item type "Task"/,
-    );
+    expect(() =>
+      normalizeAddTypeInput({ name: "Spike", aliases: ["Task"] }),
+    ).toThrow(/Alias "Task" collides with built-in item type "Task"/);
   });
 
   it("GH-248: rejects malformed type names (spaces, leading digit, punctuation)", () => {
     for (const name of ["Spike Type", "1Spike", "-spike", "spike!", "spi ke"]) {
-      expect(() => normalizeAddTypeInput({ name })).toThrow(/is not a valid identifier/);
+      expect(() => normalizeAddTypeInput({ name })).toThrow(
+        /is not a valid identifier/,
+      );
     }
   });
 
   it("GH-248: accepts letter-led tokens with internal hyphen/underscore", () => {
-    expect(normalizeAddTypeInput({ name: "code-review" }).name).toBe("code-review");
-    expect(normalizeAddTypeInput({ name: "bug_report" }).name).toBe("bug_report");
+    expect(normalizeAddTypeInput({ name: "code-review" }).name).toBe(
+      "code-review",
+    );
+    expect(normalizeAddTypeInput({ name: "bug_report" }).name).toBe(
+      "bug_report",
+    );
   });
 
   it("GH-248: rejects malformed aliases", () => {
-    expect(() => normalizeAddTypeInput({ name: "Spike", aliases: ["bad alias"] })).toThrow(
-      /Alias "bad alias" is not a valid identifier/,
-    );
+    expect(() =>
+      normalizeAddTypeInput({ name: "Spike", aliases: ["bad alias"] }),
+    ).toThrow(/Alias "bad alias" is not a valid identifier/);
   });
 });
 
@@ -114,30 +126,47 @@ describe("assertTypeFolderAvailable", () => {
   } as never;
 
   it("passes when the resolved folder does not collide", () => {
-    expect(() => assertTypeFolderAvailable({ name: "Bug", aliases: [] }, existing)).not.toThrow();
+    expect(() =>
+      assertTypeFolderAvailable({ name: "Bug", aliases: [] }, existing),
+    ).not.toThrow();
   });
 
   it("throws when a distinct name's default slug collides with an existing folder", () => {
     // "Spikes" slugs to folder "spikes", already owned by "Spike".
-    expect(() => assertTypeFolderAvailable({ name: "Spikes", aliases: [] }, existing)).toThrow(
+    expect(() =>
+      assertTypeFolderAvailable({ name: "Spikes", aliases: [] }, existing),
+    ).toThrow(
       /would store items in folder "spikes", which already belongs to existing item type "Spike"/,
     );
   });
 
   it("throws when an explicit --folder collides with another definition's default slug", () => {
-    expect(() => assertTypeFolderAvailable({ name: "Audit", folder: "reviews", aliases: [] }, existing)).toThrow(
+    expect(() =>
+      assertTypeFolderAvailable(
+        { name: "Audit", folder: "reviews", aliases: [] },
+        existing,
+      ),
+    ).toThrow(
       /folder "reviews", which already belongs to existing item type "Review"/,
     );
   });
 
   it("ignores the same-named definition being upserted (recase/idempotent re-run)", () => {
-    expect(() => assertTypeFolderAvailable({ name: "spike", aliases: [] }, existing)).not.toThrow();
+    expect(() =>
+      assertTypeFolderAvailable({ name: "spike", aliases: [] }, existing),
+    ).not.toThrow();
   });
 
   it("rejects a folder collision with a reserved (built-in/extension) folder", () => {
     // "Tasks" slugs to folder "tasks", owned by the built-in Task.
     const reserved = new Map<string, string>([["tasks", "Task"]]);
-    expect(() => assertTypeFolderAvailable({ name: "Tasks", aliases: [] }, { definitions: [] }, reserved)).toThrow(
+    expect(() =>
+      assertTypeFolderAvailable(
+        { name: "Tasks", aliases: [] },
+        { definitions: [] },
+        reserved,
+      ),
+    ).toThrow(
       /folder "tasks", which already belongs to existing item type "Task"/,
     );
   });
@@ -146,59 +175,104 @@ describe("assertTypeFolderAvailable", () => {
     // Re-registering a custom type whose folder is already reserved under its own
     // name (case-insensitive) is a no-op, not a collision.
     const reserved = new Map<string, string>([["spikes", "Spike"]]);
-    expect(() => assertTypeFolderAvailable({ name: "spike", aliases: [] }, { definitions: [] }, reserved)).not.toThrow();
+    expect(() =>
+      assertTypeFolderAvailable(
+        { name: "spike", aliases: [] },
+        { definitions: [] },
+        reserved,
+      ),
+    ).not.toThrow();
   });
 
   it("passes when no reserved folder collides", () => {
     const reserved = new Map<string, string>([["tasks", "Task"]]);
-    expect(() => assertTypeFolderAvailable({ name: "Bug", aliases: [] }, { definitions: [] }, reserved)).not.toThrow();
+    expect(() =>
+      assertTypeFolderAvailable(
+        { name: "Bug", aliases: [] },
+        { definitions: [] },
+        reserved,
+      ),
+    ).not.toThrow();
   });
 });
 
 describe("assertAliasesAvailable", () => {
   const existing = {
     definitions: [
-      { name: "Gateway", aliases: ["gate", "checkpoint"] } as Record<string, unknown>,
+      { name: "Gateway", aliases: ["gate", "checkpoint"] } as Record<
+        string,
+        unknown
+      >,
       { name: "Spike", aliases: ["research"] } as Record<string, unknown>,
       { name: "Bare" } as Record<string, unknown>, // valid name, no aliases array
-      { name: "Messy", aliases: ["", "  ", 7, "from-messy"] } as unknown as Record<string, unknown>, // malformed alias entries
-      { name: "Weird", aliases: "notanarray" } as unknown as Record<string, unknown>, // non-array aliases value
+      {
+        name: "Messy",
+        aliases: ["", "  ", 7, "from-messy"],
+      } as unknown as Record<string, unknown>, // malformed alias entries
+      { name: "Weird", aliases: "notanarray" } as unknown as Record<
+        string,
+        unknown
+      >, // non-array aliases value
       { notName: true } as unknown as { name: string },
     ],
   } as never;
 
   it("passes when no alias or name collides with another definition", () => {
-    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["defect"] }, existing)).not.toThrow();
+    expect(() =>
+      assertAliasesAvailable({ name: "Bug", aliases: ["defect"] }, existing),
+    ).not.toThrow();
   });
 
   it("tolerates definitions without aliases, malformed entries, and non-array aliases", () => {
     // "Bare" (no aliases), blank/non-string entries on "Messy", and the non-array
     // "Weird".aliases are all tolerated; only well-formed string aliases are taken.
-    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["bare-ish"] }, existing)).not.toThrow();
-    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["notanarray"] }, existing)).not.toThrow();
-    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["from-messy"] }, existing)).toThrow(
-      /Alias "from-messy" already maps to existing item type "Messy"/,
-    );
+    expect(() =>
+      assertAliasesAvailable({ name: "Bug", aliases: ["bare-ish"] }, existing),
+    ).not.toThrow();
+    expect(() =>
+      assertAliasesAvailable(
+        { name: "Bug", aliases: ["notanarray"] },
+        existing,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertAliasesAvailable(
+        { name: "Bug", aliases: ["from-messy"] },
+        existing,
+      ),
+    ).toThrow(/Alias "from-messy" already maps to existing item type "Messy"/);
   });
 
   it("ignores tokens belonging to the same-named definition (idempotent re-run)", () => {
-    expect(() => assertAliasesAvailable({ name: "spike", aliases: ["research"] }, existing)).not.toThrow();
+    expect(() =>
+      assertAliasesAvailable(
+        { name: "spike", aliases: ["research"] },
+        existing,
+      ),
+    ).not.toThrow();
   });
 
   it("throws when an alias maps to another definition's canonical name", () => {
-    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["gateway"] }, existing)).toThrow(
-      /Alias "gateway" already maps to existing item type "Gateway"/,
-    );
+    expect(() =>
+      assertAliasesAvailable({ name: "Bug", aliases: ["gateway"] }, existing),
+    ).toThrow(/Alias "gateway" already maps to existing item type "Gateway"/);
   });
 
   it("throws when an alias maps to another definition's alias", () => {
-    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["checkpoint"] }, existing)).toThrow(
+    expect(() =>
+      assertAliasesAvailable(
+        { name: "Bug", aliases: ["checkpoint"] },
+        existing,
+      ),
+    ).toThrow(
       /Alias "checkpoint" already maps to existing item type "Gateway"/,
     );
   });
 
   it("throws when the new type name collides with another definition's alias", () => {
-    expect(() => assertAliasesAvailable({ name: "research", aliases: [] }, existing)).toThrow(
+    expect(() =>
+      assertAliasesAvailable({ name: "research", aliases: [] }, existing),
+    ).toThrow(
       /Type name "research" collides with an alias of existing item type "Spike"/,
     );
   });
@@ -216,7 +290,9 @@ describe("parseItemTypesFile", () => {
   });
 
   it("reads the canonical { definitions: [...] } shape", () => {
-    const parsed = parseItemTypesFile(JSON.stringify({ definitions: [{ name: "Spike" }] }));
+    const parsed = parseItemTypesFile(
+      JSON.stringify({ definitions: [{ name: "Spike" }] }),
+    );
     expect(parsed.definitions).toEqual([{ name: "Spike" }]);
   });
 
@@ -226,16 +302,26 @@ describe("parseItemTypesFile", () => {
   });
 
   it("reads the nested { item_types: { definitions: [...] } } shape", () => {
-    const parsed = parseItemTypesFile(JSON.stringify({ item_types: { definitions: [{ name: "Spike" }] } }));
+    const parsed = parseItemTypesFile(
+      JSON.stringify({ item_types: { definitions: [{ name: "Spike" }] } }),
+    );
     expect(parsed.definitions).toEqual([{ name: "Spike" }]);
   });
 
   it("returns empty definitions for an unrecognized object shape", () => {
-    expect(parseItemTypesFile(JSON.stringify({ other: true }))).toEqual({ definitions: [] });
-    expect(parseItemTypesFile(JSON.stringify({ item_types: { other: true } }))).toEqual({ definitions: [] });
-    expect(parseItemTypesFile(JSON.stringify({ item_types: 42 }))).toEqual({ definitions: [] });
+    expect(parseItemTypesFile(JSON.stringify({ other: true }))).toEqual({
+      definitions: [],
+    });
+    expect(
+      parseItemTypesFile(JSON.stringify({ item_types: { other: true } })),
+    ).toEqual({ definitions: [] });
+    expect(parseItemTypesFile(JSON.stringify({ item_types: 42 }))).toEqual({
+      definitions: [],
+    });
     expect(parseItemTypesFile(JSON.stringify(42))).toEqual({ definitions: [] });
-    expect(parseItemTypesFile(JSON.stringify(null))).toEqual({ definitions: [] });
+    expect(parseItemTypesFile(JSON.stringify(null))).toEqual({
+      definitions: [],
+    });
   });
 
   it("skips malformed entries (non-objects, arrays, missing/blank name)", () => {
@@ -275,14 +361,20 @@ describe("upsertItemType", () => {
       folder: "alphas",
       aliases: ["a"],
     });
-    expect(result.file.definitions.map((d) => d.name)).toEqual(["Alpha", "Zeta"]);
+    expect(result.file.definitions.map((d) => d.name)).toEqual([
+      "Alpha",
+      "Zeta",
+    ]);
   });
 
   it("inserts with no optional fields when none are provided", () => {
-    const result = upsertItemType({ definitions: [] }, {
-      name: "Spike",
-      aliases: [],
-    });
+    const result = upsertItemType(
+      { definitions: [] },
+      {
+        name: "Spike",
+        aliases: [],
+      },
+    );
     expect(result.replaced).toBe(false);
     expect(result.definition).toEqual({ name: "Spike" });
   });
@@ -332,14 +424,26 @@ describe("upsertItemType", () => {
   });
 
   it("tolerates a non-array persisted aliases value on the existing definition", () => {
-    const file = { definitions: [{ name: "Spike", aliases: "corrupt" } as unknown as { name: string }] };
-    const result = upsertItemType(file as never, { name: "Spike", aliases: ["research"] });
+    const file = {
+      definitions: [
+        { name: "Spike", aliases: "corrupt" } as unknown as { name: string },
+      ],
+    };
+    const result = upsertItemType(file as never, {
+      name: "Spike",
+      aliases: ["research"],
+    });
     expect(result.replaced).toBe(true);
     expect(result.definition.aliases).toEqual(["research"]);
   });
 
   it("ignores definitions whose name is not a string when locating an existing entry", () => {
-    const file = { definitions: [{ notName: true } as unknown as { name: string }, { name: "Spike" }] };
+    const file = {
+      definitions: [
+        { notName: true } as unknown as { name: string },
+        { name: "Spike" },
+      ],
+    };
     const result = upsertItemType(file, { name: "Spike", aliases: [] });
     expect(result.replaced).toBe(true);
   });
@@ -347,7 +451,9 @@ describe("upsertItemType", () => {
 
 describe("removeItemType", () => {
   it("removes a matching custom definition case-insensitively", () => {
-    const file = { definitions: [{ name: "Alpha" }, { name: "Spike", folder: "spikes" }] };
+    const file = {
+      definitions: [{ name: "Alpha" }, { name: "Spike", folder: "spikes" }],
+    };
     const result = removeItemType(file, "spike");
     expect(result.removed).toBe(true);
     expect(result.definition).toEqual({ name: "Spike", folder: "spikes" });
@@ -363,8 +469,12 @@ describe("removeItemType", () => {
   });
 
   it("throws on an empty/whitespace name", () => {
-    expect(() => removeItemType({ definitions: [] }, undefined)).toThrow(/must not be empty/);
-    expect(() => removeItemType({ definitions: [] }, "   ")).toThrow(/must not be empty/);
+    expect(() => removeItemType({ definitions: [] }, undefined)).toThrow(
+      /must not be empty/,
+    );
+    expect(() => removeItemType({ definitions: [] }, "   ")).toThrow(
+      /must not be empty/,
+    );
   });
 
   it("refuses to remove a built-in type", () => {
@@ -374,7 +484,12 @@ describe("removeItemType", () => {
   });
 
   it("ignores definitions whose name is not a string when locating the entry", () => {
-    const file = { definitions: [{ notName: true } as unknown as { name: string }, { name: "Spike" }] };
+    const file = {
+      definitions: [
+        { notName: true } as unknown as { name: string },
+        { name: "Spike" },
+      ],
+    };
     const result = removeItemType(file, "Spike");
     expect(result.removed).toBe(true);
     expect(result.file.definitions).toEqual([{ notName: true }]);
@@ -383,8 +498,12 @@ describe("removeItemType", () => {
 
 describe("serializeItemTypesFile", () => {
   it("serializes with a trailing newline and only the definitions key", () => {
-    const serialized = serializeItemTypesFile({ definitions: [{ name: "Spike" }] });
-    expect(serialized).toBe(`${JSON.stringify({ definitions: [{ name: "Spike" }] }, null, 2)}\n`);
+    const serialized = serializeItemTypesFile({
+      definitions: [{ name: "Spike" }],
+    });
+    expect(serialized).toBe(
+      `${JSON.stringify({ definitions: [{ name: "Spike" }] }, null, 2)}\n`,
+    );
     expect(serialized.endsWith("\n")).toBe(true);
   });
 });
@@ -439,7 +558,13 @@ describe("buildInvalidTypeError", () => {
   });
 
   it("threads the resolved types-file path into the hint", () => {
-    expect(buildInvalidTypeError("Spike", ["Task", "Feature"], "/srv/proj/schema/types.json")).toBe(
+    expect(
+      buildInvalidTypeError(
+        "Spike",
+        ["Task", "Feature"],
+        "/srv/proj/schema/types.json",
+      ),
+    ).toBe(
       'Invalid type value "Spike". Allowed: Task, Feature. To register a custom type, run: pm schema add-type "Spike" (writes /srv/proj/schema/types.json).',
     );
   });
@@ -471,7 +596,14 @@ describe("normalizeStatusToken", () => {
 
 describe("BUILTIN_STATUS_IDS", () => {
   it("contains the canonical default status ids", () => {
-    for (const id of ["draft", "open", "in_progress", "blocked", "closed", "canceled"]) {
+    for (const id of [
+      "draft",
+      "open",
+      "in_progress",
+      "blocked",
+      "closed",
+      "canceled",
+    ]) {
       expect(BUILTIN_STATUS_IDS.has(id)).toBe(true);
     }
   });
@@ -511,37 +643,60 @@ describe("normalizeAddStatusInput", () => {
   });
 
   it("leaves roles/aliases undefined when the lists are omitted (so upsert preserves existing)", () => {
-    const result = normalizeAddStatusInput({ id: "review", description: "   ", order: Number.NaN });
-    expect(result).toEqual({ id: "review", roles: undefined, aliases: undefined, description: undefined, order: undefined });
+    const result = normalizeAddStatusInput({
+      id: "review",
+      description: "   ",
+      order: Number.NaN,
+    });
+    expect(result).toEqual({
+      id: "review",
+      roles: undefined,
+      aliases: undefined,
+      description: undefined,
+      order: undefined,
+    });
   });
 
-  it("normalizes a supplied-but-empty roles/aliases list to an explicit empty array (clear)", () => {
-    const result = normalizeAddStatusInput({ id: "review", roles: [], aliases: [] });
-    expect(result.roles).toEqual([]);
-    expect(result.aliases).toEqual([]);
+  it("rejects a supplied-but-empty role list instead of creating an orphaned lifecycle status", () => {
+    expect(() =>
+      normalizeAddStatusInput({ id: "review", roles: [], aliases: [] }),
+    ).toThrow(/must include at least one lifecycle role/);
   });
 
   it("throws on a missing/empty id", () => {
-    expect(() => normalizeAddStatusInput({ id: undefined })).toThrow(/must not be empty/);
-    expect(() => normalizeAddStatusInput({ id: "   " })).toThrow(/must not be empty/);
+    expect(() => normalizeAddStatusInput({ id: undefined })).toThrow(
+      /must not be empty/,
+    );
+    expect(() => normalizeAddStatusInput({ id: "   " })).toThrow(
+      /must not be empty/,
+    );
   });
 
   it("rejects built-in status ids (reserved, symmetric with remove-status)", () => {
-    expect(() => normalizeAddStatusInput({ id: "open" })).toThrow(/built-in status "open"/);
-    expect(() => normalizeAddStatusInput({ id: "Closed", roles: ["terminal_done"] })).toThrow(
-      /built-in status "closed"/,
+    expect(() => normalizeAddStatusInput({ id: "open" })).toThrow(
+      /built-in status "open"/,
     );
-    expect(() => normalizeAddStatusInput({ id: "in-progress" })).toThrow(/built-in status "in_progress"/);
+    expect(() =>
+      normalizeAddStatusInput({ id: "Closed", roles: ["terminal_done"] }),
+    ).toThrow(/built-in status "closed"/);
+    expect(() => normalizeAddStatusInput({ id: "in-progress" })).toThrow(
+      /built-in status "in_progress"/,
+    );
   });
 
   it("throws on an invalid role", () => {
-    expect(() => normalizeAddStatusInput({ id: "review", roles: ["bogus"] })).toThrow(
+    expect(() =>
+      normalizeAddStatusInput({ id: "review", roles: ["bogus"] }),
+    ).toThrow(
       /Invalid status role "bogus"\. Allowed roles: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel\./,
     );
   });
 
   it("ignores non-string role entries", () => {
-    const result = normalizeAddStatusInput({ id: "review", roles: [42 as unknown as string, "active"] });
+    const result = normalizeAddStatusInput({
+      id: "review",
+      roles: [42 as unknown as string, "active"],
+    });
     expect(result.roles).toEqual(["active"]);
   });
 });
@@ -558,7 +713,9 @@ describe("parseStatusDefsFile", () => {
   });
 
   it("reads the canonical { statuses: [...] } shape", () => {
-    const parsed = parseStatusDefsFile(JSON.stringify({ statuses: [{ id: "review" }] }));
+    const parsed = parseStatusDefsFile(
+      JSON.stringify({ statuses: [{ id: "review" }] }),
+    );
     expect(parsed.statuses).toEqual([{ id: "review" }]);
   });
 
@@ -568,12 +725,16 @@ describe("parseStatusDefsFile", () => {
   });
 
   it("reads the { definitions: [...] } shape", () => {
-    const parsed = parseStatusDefsFile(JSON.stringify({ definitions: [{ id: "review" }] }));
+    const parsed = parseStatusDefsFile(
+      JSON.stringify({ definitions: [{ id: "review" }] }),
+    );
     expect(parsed.statuses).toEqual([{ id: "review" }]);
   });
 
   it("returns empty statuses for an unrecognized object shape", () => {
-    expect(parseStatusDefsFile(JSON.stringify({ other: true }))).toEqual({ statuses: [] });
+    expect(parseStatusDefsFile(JSON.stringify({ other: true }))).toEqual({
+      statuses: [],
+    });
     expect(parseStatusDefsFile(JSON.stringify(42))).toEqual({ statuses: [] });
     expect(parseStatusDefsFile(JSON.stringify(null))).toEqual({ statuses: [] });
   });
@@ -581,7 +742,15 @@ describe("parseStatusDefsFile", () => {
   it("skips malformed entries (non-objects, arrays, missing/blank id)", () => {
     const parsed = parseStatusDefsFile(
       JSON.stringify({
-        statuses: ["string", ["array"], null, { id: "" }, { id: "  " }, { noId: true }, { id: "review", order: 9 }],
+        statuses: [
+          "string",
+          ["array"],
+          null,
+          { id: "" },
+          { id: "  " },
+          { noId: true },
+          { id: "review", order: 9 },
+        ],
       }),
     );
     expect(parsed.statuses).toEqual([{ id: "review", order: 9 }]);
@@ -590,8 +759,12 @@ describe("parseStatusDefsFile", () => {
 
 describe("serializeStatusDefsFile", () => {
   it("serializes with a trailing newline and only the statuses key", () => {
-    const serialized = serializeStatusDefsFile({ statuses: [{ id: "review" }] });
-    expect(serialized).toBe(`${JSON.stringify({ statuses: [{ id: "review" }] }, null, 2)}\n`);
+    const serialized = serializeStatusDefsFile({
+      statuses: [{ id: "review" }],
+    });
+    expect(serialized).toBe(
+      `${JSON.stringify({ statuses: [{ id: "review" }] }, null, 2)}\n`,
+    );
     expect(serialized.endsWith("\n")).toBe(true);
   });
 });
@@ -600,7 +773,13 @@ describe("upsertStatusDef", () => {
   it("inserts a new definition with roles/aliases/description/order", () => {
     const result = upsertStatusDef(
       { statuses: [] },
-      { id: "review", roles: ["active"], aliases: ["in_review"], description: "needs eyes", order: 2 },
+      {
+        id: "review",
+        roles: ["active"],
+        aliases: ["in_review"],
+        description: "needs eyes",
+        order: 2,
+      },
     );
     expect(result.replaced).toBe(false);
     expect(result.definition).toEqual({
@@ -614,7 +793,10 @@ describe("upsertStatusDef", () => {
   });
 
   it("inserts with only an id when no optional fields are provided", () => {
-    const result = upsertStatusDef({ statuses: [] }, { id: "review", roles: [], aliases: [] });
+    const result = upsertStatusDef(
+      { statuses: [] },
+      { id: "review", roles: [], aliases: [] },
+    );
     expect(result.replaced).toBe(false);
     expect(result.definition).toEqual({ id: "review" });
   });
@@ -622,7 +804,14 @@ describe("upsertStatusDef", () => {
   it("upserts by normalized id, replacing roles/aliases and overriding description/order", () => {
     const file = {
       statuses: [
-        { id: "review", roles: ["active"], aliases: ["in_review"], description: "old", order: 1, custom_extra: true },
+        {
+          id: "review",
+          roles: ["active"],
+          aliases: ["in_review"],
+          description: "old",
+          order: 1,
+          custom_extra: true,
+        },
       ] as never,
     };
     const result = upsertStatusDef(file, {
@@ -645,8 +834,16 @@ describe("upsertStatusDef", () => {
   });
 
   it("clears previously-set roles/aliases when an explicit empty array is supplied", () => {
-    const file = { statuses: [{ id: "review", roles: ["active"], aliases: ["in_review"] }] as never };
-    const result = upsertStatusDef(file, { id: "review", roles: [], aliases: [] });
+    const file = {
+      statuses: [
+        { id: "review", roles: ["active"], aliases: ["in_review"] },
+      ] as never,
+    };
+    const result = upsertStatusDef(file, {
+      id: "review",
+      roles: [],
+      aliases: [],
+    });
     expect(result.replaced).toBe(true);
     expect(result.definition).not.toHaveProperty("roles");
     expect(result.definition).not.toHaveProperty("aliases");
@@ -656,8 +853,15 @@ describe("upsertStatusDef", () => {
     // Regression for the data-loss finding: `add-status review --description x`
     // must NOT wipe a previously-set role/alias just because --role/--alias were
     // omitted (normalizeAddStatusInput yields undefined for an omitted flag).
-    const file = { statuses: [{ id: "review", roles: ["active"], aliases: ["in_review"] }] as never };
-    const result = upsertStatusDef(file, { id: "review", description: "needs eyes" });
+    const file = {
+      statuses: [
+        { id: "review", roles: ["active"], aliases: ["in_review"] },
+      ] as never,
+    };
+    const result = upsertStatusDef(file, {
+      id: "review",
+      description: "needs eyes",
+    });
     expect(result.replaced).toBe(true);
     expect(result.definition).toMatchObject({
       id: "review",
@@ -668,24 +872,50 @@ describe("upsertStatusDef", () => {
   });
 
   it("preserves existing roles while applying an explicit alias clear (and vice versa)", () => {
-    const file = { statuses: [{ id: "review", roles: ["active"], aliases: ["in_review"] }] as never };
+    const file = {
+      statuses: [
+        { id: "review", roles: ["active"], aliases: ["in_review"] },
+      ] as never,
+    };
     const result = upsertStatusDef(file, { id: "review", aliases: [] });
-    expect(result.definition).toMatchObject({ id: "review", roles: ["active"] });
+    expect(result.definition).toMatchObject({
+      id: "review",
+      roles: ["active"],
+    });
     expect(result.definition).not.toHaveProperty("aliases");
   });
 
   it("preserves description/order when not supplied on the re-add", () => {
-    const file = { statuses: [{ id: "review", description: "keep", order: 4 }] as never };
-    const result = upsertStatusDef(file, { id: "review", roles: [], aliases: [] });
-    expect(result.definition).toMatchObject({ id: "review", description: "keep", order: 4 });
+    const file = {
+      statuses: [{ id: "review", description: "keep", order: 4 }] as never,
+    };
+    const result = upsertStatusDef(file, {
+      id: "review",
+      roles: [],
+      aliases: [],
+    });
+    expect(result.definition).toMatchObject({
+      id: "review",
+      description: "keep",
+      order: 4,
+    });
   });
 
   it("seeds from baseDefinition when the status is absent from the file (settings-defined)", () => {
     // Regression: a status defined only in settings.schema.statuses (not the
     // file) must keep its roles/aliases when `add-status --description x` omits
     // --role/--alias; the resolved definition is passed as baseDefinition.
-    const base = { id: "review", roles: ["active"], aliases: ["in_review"], order: 3 } as never;
-    const result = upsertStatusDef({ statuses: [] }, { id: "review", description: "needs eyes" }, base);
+    const base = {
+      id: "review",
+      roles: ["active"],
+      aliases: ["in_review"],
+      order: 3,
+    } as never;
+    const result = upsertStatusDef(
+      { statuses: [] },
+      { id: "review", description: "needs eyes" },
+      base,
+    );
     expect(result.replaced).toBe(true);
     expect(result.definition).toMatchObject({
       id: "review",
@@ -698,7 +928,11 @@ describe("upsertStatusDef", () => {
   });
 
   it("reports replaced=false for a brand-new status with no file entry and no base", () => {
-    const result = upsertStatusDef({ statuses: [] }, { id: "fresh" }, undefined);
+    const result = upsertStatusDef(
+      { statuses: [] },
+      { id: "fresh" },
+      undefined,
+    );
     expect(result.replaced).toBe(false);
     expect(result.definition).toEqual({ id: "fresh" });
   });
@@ -709,29 +943,46 @@ describe("assertStatusTokensAvailable", () => {
     // A new id equal to another status's token (here "cancelled" owned by the
     // built-in "canceled") would shadow that lifecycle token.
     expect(() =>
-      assertStatusTokensAvailable({ id: "cancelled" }, new Map([["cancelled", "canceled"]])),
+      assertStatusTokensAvailable(
+        { id: "cancelled" },
+        new Map([["cancelled", "canceled"]]),
+      ),
     ).toThrow(/already belongs to status "canceled"/);
   });
 
   it("throws when a supplied alias collides with a different status", () => {
     expect(() =>
-      assertStatusTokensAvailable({ id: "review", aliases: ["open"] }, new Map([["open", "open"]])),
+      assertStatusTokensAvailable(
+        { id: "review", aliases: ["open"] },
+        new Map([["open", "open"]]),
+      ),
     ).toThrow(/already belongs to status "open"/);
   });
 
   it("allows re-adding the same status (token owned by itself)", () => {
     expect(() =>
-      assertStatusTokensAvailable({ id: "review", aliases: ["in_review"] }, new Map([["review", "review"]])),
+      assertStatusTokensAvailable(
+        { id: "review", aliases: ["in_review"] },
+        new Map([["review", "review"]]),
+      ),
     ).not.toThrow();
   });
 
   it("allows a brand-new status whose tokens are unowned", () => {
-    expect(() => assertStatusTokensAvailable({ id: "triage", aliases: ["queued"] }, new Map())).not.toThrow();
+    expect(() =>
+      assertStatusTokensAvailable(
+        { id: "triage", aliases: ["queued"] },
+        new Map(),
+      ),
+    ).not.toThrow();
   });
 
   it("skips empty/whitespace tokens", () => {
     expect(() =>
-      assertStatusTokensAvailable({ id: "review", aliases: ["   "] }, new Map([["open", "open"]])),
+      assertStatusTokensAvailable(
+        { id: "review", aliases: ["   "] },
+        new Map([["open", "open"]]),
+      ),
     ).not.toThrow();
   });
 });
@@ -753,15 +1004,30 @@ describe("removeStatusDef", () => {
   });
 
   it("throws on an empty/whitespace id", () => {
-    expect(() => removeStatusDef({ statuses: [] }, undefined)).toThrow(/must not be empty/);
-    expect(() => removeStatusDef({ statuses: [] }, "   ")).toThrow(/must not be empty/);
+    expect(() => removeStatusDef({ statuses: [] }, undefined)).toThrow(
+      /must not be empty/,
+    );
+    expect(() => removeStatusDef({ statuses: [] }, "   ")).toThrow(
+      /must not be empty/,
+    );
   });
 
   it("refuses to remove each built-in default status", () => {
-    for (const id of ["draft", "open", "in_progress", "blocked", "closed", "canceled"]) {
-      expect(() => removeStatusDef({ statuses: [] }, id)).toThrow(/Cannot remove built-in status/);
+    for (const id of [
+      "draft",
+      "open",
+      "in_progress",
+      "blocked",
+      "closed",
+      "canceled",
+    ]) {
+      expect(() => removeStatusDef({ statuses: [] }, id)).toThrow(
+        /Cannot remove built-in status/,
+      );
     }
     // hyphen/space variants normalize to the built-in id and are still refused.
-    expect(() => removeStatusDef({ statuses: [] }, "in-progress")).toThrow(/Cannot remove built-in status "in_progress"/);
+    expect(() => removeStatusDef({ statuses: [] }, "in-progress")).toThrow(
+      /Cannot remove built-in status "in_progress"/,
+    );
   });
 });

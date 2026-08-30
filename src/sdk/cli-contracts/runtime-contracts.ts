@@ -856,6 +856,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["search", SEARCH_FLAG_CONTRACTS],
   ["eval", EVAL_FLAG_CONTRACTS],
   ["workspace", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace position", []],
   ["workspace snapshot", WORKSPACE_FLAG_CONTRACTS],
   ["workspace snapshot create", WORKSPACE_FLAG_CONTRACTS],
   ["workspace snapshot list", WORKSPACE_FLAG_CONTRACTS],

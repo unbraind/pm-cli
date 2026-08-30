@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   listWorkspaceSnapshots: vi.fn(),
   planWorkspaceSnapshotRestore: vi.fn(),
   restoreWorkspaceSnapshotWithRecovery: vi.fn(),
+  readWorkspacePosition: vi.fn(),
   runEval: vi.fn(),
   runEvent: vi.fn(),
   runMeet: vi.fn(),
@@ -48,6 +49,9 @@ vi.mock("../../../src/sdk/workspace-snapshot.js", () => ({
   planWorkspaceSnapshotRestore: mocks.planWorkspaceSnapshotRestore,
   restoreWorkspaceSnapshotWithRecovery:
     mocks.restoreWorkspaceSnapshotWithRecovery,
+}));
+vi.mock("../../../src/sdk/governance/workspace-position.js", () => ({
+  readWorkspacePosition: mocks.readWorkspacePosition,
 }));
 
 import {
@@ -205,6 +209,13 @@ describe("runtime extended action adapters", () => {
   });
 
   it("dispatches every workspace snapshot action with guarded restore controls", async () => {
+    await runRuntimeWorkspaceAction(
+      context("workspace", {}, { subcommand: "position" }),
+    );
+    expect(mocks.readWorkspacePosition).toHaveBeenCalledWith(
+      expect.objectContaining({ path: expect.any(String) }),
+    );
+
     await runRuntimeWorkspaceAction(
       context(
         "workspace",

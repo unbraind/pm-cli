@@ -669,6 +669,26 @@ describe("runHealth", () => {
     });
   });
 
+  it("includes bounded lifecycle-role evidence only when a legacy roleless status exists", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(
+        path.join(context.pmPath, "schema", "statuses.json"),
+        `${JSON.stringify({ statuses: [{ id: "review" }] }, null, 2)}\n`,
+        "utf8",
+      );
+      const health = await runHealth({ path: context.pmPath, checkOnly: true });
+      const settingValuesCheck = health.checks.find(
+        (check) => check.name === "settings_values",
+      );
+      expect(settingValuesCheck?.details).toMatchObject({
+        lifecycle_status_roles: {
+          roleless_statuses: ["review"],
+          affected_item_count: 0,
+        },
+      });
+    });
+  });
+
   it("authoritatively rechecks cached corruption candidates before reporting drift", async () => {
     await withTempPmPath(async (context) => {
       const id = createSeedItem(context);
@@ -693,8 +713,7 @@ describe("runHealth", () => {
         >;
       };
       const itemCacheKey = Object.keys(staleMetadataCache.entries).find(
-        (entryPath) =>
-          entryPath.replaceAll("\\", "/").endsWith(`/${id}.toon`),
+        (entryPath) => entryPath.replaceAll("\\", "/").endsWith(`/${id}.toon`),
       );
       if (itemCacheKey === undefined) {
         throw new Error(`expected metadata cache entry for ${id}`);
@@ -3491,8 +3510,7 @@ describe("runHealth", () => {
       const remediationMap = historyDriftDetails?.remediation_map;
       expect(remediationMap).toMatchObject({
         history_drift_missing_stream: "pm history-repair --all",
-        history_drift_version_skew:
-          "npm install -g @unbrained/pm-cli@latest",
+        history_drift_version_skew: "npm install -g @unbrained/pm-cli@latest",
       });
     });
   });

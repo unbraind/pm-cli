@@ -25,6 +25,7 @@ import {
   restoreWorkspaceSnapshotWithRecovery,
   WORKSPACE_SNAPSHOT_ACTIONS,
 } from "../sdk/workspace-snapshot.js";
+import { readWorkspacePosition } from "../sdk/governance/workspace-position.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";
 import { runContracts } from "./commands/contracts.js";
@@ -238,6 +239,7 @@ function buildRunTestOptions(
 export const _testOnlyRegisterOperations = {
   buildRunTestOptions,
   buildRunTestAllOptions,
+  runWorkspacePositionAction,
   validateBackgroundTestOptions,
 };
 
@@ -475,7 +477,7 @@ async function runHealthAction(
   const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
   const result = await runHealth(globalOptions, {
     strictDirectories: Boolean(options.strictDirectories),
-    requireMergeDrivers: Boolean(options.requireMergeDrivers),
+    requireMergeDrivers: Boolean(options.requireMergeDrivers) || strictExit,
     checkOnly: Boolean(options.checkOnly),
     checkTelemetry: Boolean(options.checkTelemetry),
     noRefresh: Boolean(options.noRefresh),
@@ -650,6 +652,14 @@ async function runWorkspaceSnapshotAction(
     return;
   }
   printResult(await deleteWorkspaceSnapshot(pmRoot, target), globalOptions);
+}
+
+async function runWorkspacePositionAction(
+  _options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  printResult(await readWorkspacePosition(globalOptions), globalOptions);
 }
 
 async function runContractsAction(
@@ -1255,21 +1265,21 @@ export function registerOperationCommands(program: Command): void {
     )
     .action(runGcAction);
 
-  program
+  const workspaceCommand = program
     .command("workspace")
-    .description("Manage portable workspace-level SDK primitives.")
+    .description("Inspect workspace state and snapshots.");
+  workspaceCommand
+    .command("position")
+    .description("Show merge and history readiness.")
+    .action(runWorkspacePositionAction);
+  workspaceCommand
     .command("snapshot")
-    .argument(
-      "<action>",
-      "Snapshot action: create, list, inspect, restore, delete",
-    )
+    .argument("<action>", "Action: create, list, inspect, restore, delete")
     .argument(
       "[target]",
       "Optional name for create; name or fingerprint otherwise",
     )
-    .description(
-      "Create, inspect, list, restore, or delete content-addressed tracker snapshots.",
-    )
+    .description("Manage content-addressed tracker snapshots.")
     .option(
       "--dry-run",
       "Preview restore file, item, stream, and history-entry impact without mutating state",

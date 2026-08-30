@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Workspace position read: one bounded answer to where this workspace stands in the branch-and-merge workflow and what to run next, replacing a protocol the agent must remember ([pm-bq0ii8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bq0ii8.toon))
+
 ### Fixed
 
+- Custom statuses registered without a lifecycle role are silently orphaned from every work-selection surface ([pm-0mhspz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mhspz.toon))
 - GH-1158: Windows Node 24 nightly receipt fixture derives a root-relative expectation from a drive-qualified path ([pm-46hpx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-46hpx8.toon))
 - GH-1154: linked-test sandbox guard is command-shape inconsistent and undocumented ([pm-s8cth5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8cth5.toon))
 - The local preflight token-budget gate is red on a workstation and green in hosted CI for the same commit again, because the earlier remediation closed the one ambient channel that had bitten instead of closing the fixture's environment ([pm-4o7tlx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4o7tlx.toon))

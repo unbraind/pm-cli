@@ -2778,14 +2778,10 @@ export async function runContext(
   );
   const inProgressCount = countContextStatus(
     focusGroups.activeItems,
-    normalizeStatusInput("in_progress", runtime.statusRegistry),
+    runtime.statusRegistry.in_progress_status,
     runtime.statusRegistry,
   );
-  const openCount = countContextStatus(
-    focusGroups.activeItems,
-    normalizeStatusInput("open", runtime.statusRegistry),
-    runtime.statusRegistry,
-  );
+  const openCount = focusGroups.activeItems.length - inProgressCount;
   const sections = await buildOptionalContextSections({
     runtime,
     allItems: corpus.allItems,

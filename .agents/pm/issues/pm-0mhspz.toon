@@ -2,20 +2,82 @@ id: pm-0mhspz
 title: Custom statuses registered without a lifecycle role are silently orphaned from every work-selection surface
 description: "pm schema add-status accepts a status with no --role and registers it with an empty roles list, with no warning. Items in that status then exist but are invisible to the entire agent work-selection surface, and no diagnostic reports the condition. Reproduced on a clean sandbox workspace against dist build 2026.7.25.\n\nRepro: pm schema add-status needs_review (exit 0, no warning; schema/statuses.json records {\"id\":\"needs_review\"} with no roles key, unlike every built-in which carries roles such as active/terminal/default_open). pm create --status needs_review succeeds. Then: pm next -> recommended null, ready 0, candidates 0, blocked 0. pm context -> active_items 0, open 0. pm list-open -> 0 rows. pm validate -> ok true with no role-related warning. pm health -> ok true, all 10 checks ok. The item IS visible to pm stats by_status and to pm list --status needs_review, so it is not terminal either: it is lifecycle-orphaned.\n\nControl: registering the same status with --role active makes the identical item recommended by pm next (ready 1, candidates 1) and active in pm context (active_items 1). The single missing role flag is the whole difference between fully tracked work and work no agent will ever be offered.\n\nSecond half of the same class: pm context summary.open and summary.in_progress are computed by matching the literal built-in status ids open and in_progress (src/cli/commands/context.ts around lines 2645-2654 call normalizeStatusInput with hardcoded \"open\"/\"in_progress\"), while summary.active_items is role-derived. In the --role active control above the result is active_items 1 with open 0 and in_progress 0, so the summary arithmetic silently stops adding up in any workspace that uses a custom active status. Agents read that summary to decide whether work exists.\n\nThis directly contradicts epic pm-8jdc acceptance ('any project archetype can model its domain end-to-end with custom statuses without code changes') and is exactly the class the pm-pww8ax dogfood ratchet exists to catch: custom statuses are at zero adoption in this workspace, so the orphaning has never been exercised."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:schema",customization
 created_at: "2026-07-25T21:12:41.727Z"
-updated_at: "2026-07-25T21:40:48.466Z"
+updated_at: "2026-08-30T20:00:15.137Z"
+closed_at: "2026-08-30T20:00:14.486Z"
+completed_at: "2026-08-30T20:00:14.486Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "pm schema add-status either requires a lifecycle role or defaults to a documented role and reports which role was applied; registering a role-less status is impossible or warns loudly at registration time. pm validate and pm health each gain a check that reports every registered status carrying no lifecycle role, with the affected item ids. pm context summary.open and summary.in_progress are derived from lifecycle roles rather than the literal built-in status ids, so active_items reconciles with its component buckets in a workspace using custom active statuses. A regression test registers a custom status per lifecycle role and asserts next/context/list-open/list-blocked classify its items consistently with the equivalent built-in status."
 parent: pm-8jdc
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-8jdc,implements,"2026-07-25T21:12:41.727Z",null,null
-  pm-pww8ax,related,"2026-07-25T21:12:41.727Z",null,null
+resolution: "Made lifecycle roles mandatory for new custom statuses, preserved roles on existing-status updates, added bounded roleless-status diagnostics to validate and health, and derived context/list work buckets from configured roles through the public SDK."
+expected_result: "Custom workflows cannot silently create lifecycle-orphaned statuses, and all agent work-selection summaries classify custom active statuses consistently."
+actual_result: "Roleless registration is refused with a stable error; health and validate diagnose legacy roleless definitions; open and in-progress lifecycle buckets are role-derived and shared by SDK, CLI, and MCP surfaces. The production defect now carries strengthened gate ownership with a runnable negative control."
+dependencies[2]{id,kind,created_at}:
+  pm-8jdc,implements,"2026-07-25T21:12:41.727Z"
+  pm-pww8ax,related,"2026-07-25T21:12:41.727Z"
+comments[3]{created_at,author,text}:
+  "2026-08-30T17:06:51.909Z","harness:codex","Implementation start 2026-08-30: current dist reproduction confirmed role-less custom status registration succeeds silently, its item is absent from next/context, and health reports ok with zero warnings. Deliver role-required registration, SDK-owned role classification, validate/health findings, role-derived context/list aliases, contracts, docs, and sandbox acceptance."
+  "2026-08-30T19:54:50.219Z","harness:codex","Delivery evidence 2026-08-30: new custom statuses must carry an effective lifecycle role; existing definitions retain roles when omitted during updates; health/validate emit bounded legacy diagnostics; context and list aliases now use public SDK lifecycle buckets. PM-linked suite passed 6 files/212 tests. Full repository coverage passed 590/590 files and 8160/8160 tests at exactly 100% statements (60340/60340), branches (45511/45511), functions (12551/12551), and lines (58096/58096). pnpm quality:static passed including ESLint, zero duplication, architecture limits, contracts, refusal closure, token budgets, graph/record integrity, and 100% source/export/member docstrings. Trivy found 0 high/critical findings; npm audit found 0 known vulnerabilities; credential scan and ShellCheck passed. Package-first dogfood, packed npx/bunx smoke, and independent npm/npx plus Bun/bunx SDK/CLI acceptance passed, including roleless refusal and a custom active status appearing in the open lifecycle bucket."
+  "2026-08-30T19:59:52.504Z","harness:codex","Final static-gate amendment: classified this shipped behavior as production_defect and recorded gate_strengthened evidence owned by pm-0mhspz. The lifecycle-role registration/selection gate names a runnable negative control plus local coverage/static/defect-evidence and hosted coverage/static/Linux/Windows checks. node scripts/release/defect-evidence-gate.mjs --json now passes all boundary, defect-evidence, and recurrence-policy checks with zero findings and no waiver."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:40:48.466Z","harness:claude-code","Reproduction extended 2026-07-25: the second half of this class ships inside a first-party profile, so it is reachable without anyone mis-using pm schema add-status.\n\npm profile apply research registers the custom status 'analyzing' correctly — schema/statuses.json records roles [\"active\"], pm schema show-status analyzing reports source custom, roles active, order 12, and pm profile lint research reports ok with 0 warnings. Everything the workspace is told about the status is right.\n\nAn item moved into it then behaves inconsistently across the read surface:\n  pm next            recommends it, reasons \"open and ready to start\", ready 1   (role-derived, correct)\n  pm context         active_items 1, open 0, in_progress 0                        (mixed, the arithmetic stops adding up)\n  pm list-open       count 0                                                      (literal status id, wrong)\n  pm validate        ok true, pm health ok true                                   (silent)\n\nSo list-open belongs to the literal-id half alongside context summary.open / summary.in_progress, and this item's acceptance criterion already names it in the regression-test clause. Worth keeping because it changes the severity argument: the fix is not only about guarding a mis-used flag, it is about the three shipped profiles (agile, ops, research) each adding an active-role status whose items are already invisible to list-open today. Any workspace that applies a built-in profile — the intended path for customising pm to a domain — lands in the inconsistent state without doing anything unusual."
+learnings[1]{created_at,author,text}:
+  "2026-08-30T19:54:49.659Z","harness:codex",Customization requires semantic lifecycle roles to be a schema invariant rather than a CLI convention; role-derived SDK buckets keep every adapter consistent and let literal built-in status names remain compatibility aliases only.
+files[24]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/cli/register-list-query.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/cli/register-operations.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/core/schema/runtime-schema.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/core/schema/status-defs-file.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/governance.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/governance/health.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/governance/status-role-diagnostics.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/governance/validate.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/query/context.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/query/list.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/schema.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  tests/integration/lifecycle-workspace-position.integration.spec.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  tests/unit/commands/schema-command.spec.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  tests/unit/sdk/governance/status-role-diagnostics.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  tests/unit/sdk/governance/status-role-registration.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  tests/unit/commands/health-command.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  tests/unit/core/schema/item-types-file.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  tests/integration/mcp-handshake.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  sdk/public-surface.json,project,Reviewed lifecycle list and runtime registry SDK signature surface
+  tests/unit/cli/register-list-query.spec.ts,project,Lifecycle alias to SDK bucket adapter coverage
+  tests/unit/commands/list-command.spec.ts,project,Public SDK lifecycle bucket selection coverage
+  src/sdk/governance/validate-normalization.ts,project,Extracted validation normalization keeps lifecycle diagnostics within repository architecture limits
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,project,2400,"harness:codex","2026-08-30T19:53:37.289Z",local_mutation,feat/workspace-position-lifecycle-context,"Lifecycle role registration, diagnostics, health, context, and list selection"
+test_runs[1]:
+  - run_id: test-local-mtg8a09t-ipuu0z
+    kind: test
+    status: passed
+    started_at: "2026-08-30T19:53:58.954Z"
+    finished_at: "2026-08-30T19:54:20.513Z"
+    recorded_at: "2026-08-30T19:54:20.513Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/README.md,project,Documentation index entry
+  docs/WORKSPACE_POSITION_AND_LIFECYCLE.md,project,Lifecycle role registration diagnostics and query invariant guidance
+close_reason: "Eliminated lifecycle-orphaned custom statuses and completed mandatory production-defect classification with strengthened negative-control gate ownership; all focused, repository-wide, security, packaging, and independent npm/Bun acceptance gates passed."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-0mhspz
+  gate_id: lifecycle-role-registration-and-selection-consistency
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/lifecycle-workspace-position.integration.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts
+  local_checks[4]: PM-linked lifecycle suite (212 assertions),node scripts/run-tests.mjs coverage,"pnpm quality:static",node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[4]: CI / Gates (coverage),CI / Gates (static),CI / Linux integration,CI / Windows regression (Node 24)
 body: ""

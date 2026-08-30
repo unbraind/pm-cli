@@ -94,6 +94,33 @@ function createItem(
 }
 
 describe("runList", () => {
+  it("selects configured open and in-progress lifecycle buckets through the public SDK", async () => {
+    await withTempPmPath(async (context) => {
+      expect(
+        context.runCli([
+          "schema",
+          "add-status",
+          "review",
+          "--role",
+          "active",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      const open = await runList(
+        undefined,
+        { lifecycleBucket: "open" },
+        { path: context.pmPath },
+      );
+      expect(open.filters).toMatchObject({ status: "open" });
+      const inProgress = await runList(
+        undefined,
+        { lifecycleBucket: "in_progress" },
+        { path: context.pmPath },
+      );
+      expect(inProgress.filters).toMatchObject({ status: "in_progress" });
+    });
+  });
+
   it("selects lifecycle and dependency-edge blocked rows through one public filter", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createItem(context, {
@@ -381,9 +408,7 @@ describe("runList", () => {
     ]);
     expect(
       listInternals.orderItemsAsTree(
-        [
-          { ...openItem, id: "Orphan-ID", parent: "Missing-Root" },
-        ] as never,
+        [{ ...openItem, id: "Orphan-ID", parent: "Missing-Root" }] as never,
         "missing-root",
         undefined,
       )[0]?.tree_parent,

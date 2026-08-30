@@ -2,14 +2,28 @@ import { Command } from "commander";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 vi.mock("../../../src/cli/commands/get.js", () => ({ runGet: vi.fn() }));
-vi.mock("../../../src/cli/commands/history.js", () => ({ runHistory: vi.fn() }));
-vi.mock("../../../src/cli/commands/activity.js", () => ({ runActivity: vi.fn() }));
+vi.mock("../../../src/cli/commands/history.js", () => ({
+  runHistory: vi.fn(),
+}));
+vi.mock("../../../src/cli/commands/activity.js", () => ({
+  runActivity: vi.fn(),
+}));
 vi.mock("../../../src/cli/commands/search.js", () => ({ runSearch: vi.fn() }));
 vi.mock("../../../src/cli/commands/eval.js", () => ({ runEval: vi.fn() }));
-vi.mock("../../../src/cli/commands/aggregate.js", () => ({ runAggregate: vi.fn() }));
+vi.mock("../../../src/cli/commands/aggregate.js", () => ({
+  runAggregate: vi.fn(),
+}));
 vi.mock("../../../src/cli/commands/context.js", () => ({
   runContext: vi.fn(),
   resolveContextOutputFormat: vi.fn(),
@@ -29,7 +43,10 @@ vi.mock("../../../src/sdk/mutation-events.js", () => ({
 }));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../src/cli/registration-helpers.js")>();
+  const actual =
+    await importOriginal<
+      typeof import("../../../src/cli/registration-helpers.js")
+    >();
   return {
     ...actual,
     printResult: vi.fn(),
@@ -40,15 +57,26 @@ vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   };
 });
 
-import { _testOnlyRegisterListQuery, registerListQueryCommands } from "../../../src/cli/register-list-query.js";
+import {
+  _testOnlyRegisterListQuery,
+  registerListQueryCommands,
+} from "../../../src/cli/register-list-query.js";
 import { runGet } from "../../../src/cli/commands/get.js";
 import { runHistory } from "../../../src/cli/commands/history.js";
 import { runActivity } from "../../../src/cli/commands/activity.js";
 import { runSearch } from "../../../src/cli/commands/search.js";
 import { runEval } from "../../../src/cli/commands/eval.js";
 import { runAggregate } from "../../../src/cli/commands/aggregate.js";
-import { renderContextMarkdown, resolveContextOutputFormat, runContext } from "../../../src/cli/commands/context.js";
-import { renderNextMarkdown, resolveNextOutputFormat, runNext } from "../../../src/cli/commands/next.js";
+import {
+  renderContextMarkdown,
+  resolveContextOutputFormat,
+  runContext,
+} from "../../../src/cli/commands/context.js";
+import {
+  renderNextMarkdown,
+  resolveNextOutputFormat,
+  runNext,
+} from "../../../src/cli/commands/next.js";
 import { runList } from "../../../src/cli/commands/list.js";
 import { runGraph } from "../../../src/cli/commands/graph.js";
 import {
@@ -56,8 +84,17 @@ import {
   subscribeMutationEventBatches,
   subscribeMutationEvents,
 } from "../../../src/sdk/mutation-events.js";
-import { printActivityJsonStream, printError, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
-import { getActiveCommandResult, setActiveCommandResult } from "../../../src/core/extensions/index.js";
+import {
+  printActivityJsonStream,
+  printError,
+  printListJsonStream,
+  printResult,
+  writeStdout,
+} from "../../../src/cli/registration-helpers.js";
+import {
+  getActiveCommandResult,
+  setActiveCommandResult,
+} from "../../../src/core/extensions/index.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { writeSettings } from "../../../src/core/store/settings.js";
 
@@ -78,11 +115,16 @@ function buildProgram(): Command {
 }
 
 async function runProfiled(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(["--quiet", "--profile", "--path", tmpRoot, ...args], { from: "user" });
+  await buildProgram().parseAsync(
+    ["--quiet", "--profile", "--path", tmpRoot, ...args],
+    { from: "user" },
+  );
 }
 
 async function runRaw(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(["--path", tmpRoot, ...args], { from: "user" });
+  await buildProgram().parseAsync(["--path", tmpRoot, ...args], {
+    from: "user",
+  });
 }
 
 function lastCall<T>(mock: { mock: { calls: unknown[][] } }, index: number): T {
@@ -117,7 +159,10 @@ beforeEach(() => {
   vi.mocked(runContext).mockResolvedValue({ summary: {} } as never);
   vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
   vi.mocked(renderContextMarkdown).mockReturnValue("# Context" as never);
-  vi.mocked(runNext).mockResolvedValue({ summary: {}, recommended: null } as never);
+  vi.mocked(runNext).mockResolvedValue({
+    summary: {},
+    recommended: null,
+  } as never);
   vi.mocked(resolveNextOutputFormat).mockReturnValue("json" as never);
   vi.mocked(renderNextMarkdown).mockReturnValue("# Next" as never);
   vi.mocked(runGraph).mockResolvedValue({
@@ -175,6 +220,13 @@ describe("register-list-query list output formats", () => {
     await runRaw("list", "--status", "open");
     expect(vi.mocked(runList).mock.calls.at(-1)).toEqual(aliasCall);
     expect(printError).not.toHaveBeenCalled();
+
+    await runRaw("list-in-progress");
+    expect(vi.mocked(runList)).toHaveBeenLastCalledWith(
+      undefined,
+      expect.objectContaining({ lifecycleBucket: "in_progress" }),
+      expect.anything(),
+    );
   });
 
   it("routes canonical --all and blocked status through legacy-equivalent semantics", async () => {
@@ -220,15 +272,21 @@ describe("register-list-query list output formats", () => {
     expect(parseListFormat("json")).toBe("json");
     expect(parseListFormat("ndjson")).toBe("ndjson");
     expect(parseListFormat("toon")).toBe("toon");
-    expect(() => parseListFormat("yaml")).toThrow(/csv\|table\|json\|ndjson\|toon/);
-    expect(() => parseListFormat(true as never)).toThrow(/csv\|table\|json\|ndjson\|toon/);
+    expect(() => parseListFormat("yaml")).toThrow(
+      /csv\|table\|json\|ndjson\|toon/,
+    );
+    expect(() => parseListFormat(true as never)).toThrow(
+      /csv\|table\|json\|ndjson\|toon/,
+    );
   });
 
   it("renders CSV output through writeStdout and bypasses printResult", async () => {
     await runRaw("list", "--format", "csv");
     expect(vi.mocked(printResult)).not.toHaveBeenCalled();
     const written = lastCall<string>(vi.mocked(writeStdout) as never, 0);
-    expect(written).toBe("id,status,type,title\npm-1,open,Task,First\npm-2,open,Epic,Second\n");
+    expect(written).toBe(
+      "id,status,type,title\npm-1,open,Task,First\npm-2,open,Epic,Second\n",
+    );
     expect(getActiveCommandResult()).toMatchObject({ count: 2 });
   });
 
@@ -252,7 +310,10 @@ describe("register-list-query list output formats", () => {
 
   it("routes --format json through printResult with json enabled", async () => {
     await runRaw("list", "--format", "json");
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(true);
   });
 
@@ -278,12 +339,16 @@ describe("register-list-query list output formats", () => {
   });
 
   it("rejects --stream without an effective json output mode", async () => {
-    await expect(runRaw("list", "--stream")).rejects.toThrow(/--stream requires --json/);
+    await expect(runRaw("list", "--stream")).rejects.toThrow(
+      /--stream requires --json/,
+    );
     expect(vi.mocked(runList)).not.toHaveBeenCalled();
   });
 
   it("rejects combining --format csv with --stream", async () => {
-    await expect(runRaw("list", "--json", "--format", "csv", "--stream")).rejects.toThrow(
+    await expect(
+      runRaw("list", "--json", "--format", "csv", "--stream"),
+    ).rejects.toThrow(
       /--format csv\|table\|ndjson cannot be combined with --stream/,
     );
     expect(vi.mocked(runList)).not.toHaveBeenCalled();
@@ -292,31 +357,64 @@ describe("register-list-query list output formats", () => {
 
 describe("register-list-query get options", () => {
   it("passes depth, fields, historical target, and snake_case tree_depth through to runGet", async () => {
-    await runProfiled("get", "pm-1", "--depth", "deep", "--fields", "id,title", "--tree", "--tree_depth", "2", "--at", "7");
-    const projection = lastCall<Record<string, unknown>>(vi.mocked(runGet) as never, 2);
-    expect(projection).toMatchObject({ depth: "deep", fields: "id,title", tree: true, treeDepth: "2", at: "7" });
+    await runProfiled(
+      "get",
+      "pm-1",
+      "--depth",
+      "deep",
+      "--fields",
+      "id,title",
+      "--tree",
+      "--tree_depth",
+      "2",
+      "--at",
+      "7",
+    );
+    const projection = lastCall<Record<string, unknown>>(
+      vi.mocked(runGet) as never,
+      2,
+    );
+    expect(projection).toMatchObject({
+      depth: "deep",
+      fields: "id,title",
+      tree: true,
+      treeDepth: "2",
+      at: "7",
+    });
   });
 
   it("prefers the hyphenated --tree-depth value when provided", async () => {
     await runRaw("get", "pm-1", "--tree", "--tree-depth", "5");
-    const projection = lastCall<Record<string, unknown>>(vi.mocked(runGet) as never, 2);
+    const projection = lastCall<Record<string, unknown>>(
+      vi.mocked(runGet) as never,
+      2,
+    );
     expect(projection.treeDepth).toBe("5");
   });
 
   it("prints get output as json when --format json is provided", async () => {
     await runRaw("get", "pm-1", "--format", "json");
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(true);
   });
 
   it("rejects conflicting get --json and --format toon options", async () => {
-    await expect(buildProgram().parseAsync(["--path", tmpRoot, "--json", "get", "pm-1", "--format", "toon"], { from: "user" }))
-      .rejects.toThrow(/cannot combine --json with --format toon/);
+    await expect(
+      buildProgram().parseAsync(
+        ["--path", tmpRoot, "--json", "get", "pm-1", "--format", "toon"],
+        { from: "user" },
+      ),
+    ).rejects.toThrow(/cannot combine --json with --format toon/);
   });
 
   it("rejects non-string read command format values defensively", () => {
     expect(() =>
-      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", true, { quiet: false }),
+      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", true, {
+        quiet: false,
+      }),
     ).toThrow(/Get --format must be one of json\|toon/);
     expect(() =>
       _testOnlyRegisterListQuery.resolveReadCommandOutputFormat(
@@ -337,7 +435,9 @@ describe("register-list-query get options", () => {
 
   it("keeps non-json output when --format toon is provided without global json", () => {
     expect(
-      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", "toon", { quiet: false }),
+      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", "toon", {
+        quiet: false,
+      }),
     ).toEqual({ quiet: false, json: false });
   });
 });
@@ -365,19 +465,32 @@ describe("register-list-query history options", () => {
 
   it("treats --field as implying --diff and scopes to that field", async () => {
     await runProfiled("history", "pm-1", "--field", "status");
-    const options = lastCall<Record<string, unknown>>(vi.mocked(runHistory) as never, 1);
-    expect(options).toMatchObject({ field: "status", diff: true, compact: true });
+    const options = lastCall<Record<string, unknown>>(
+      vi.mocked(runHistory) as never,
+      1,
+    );
+    expect(options).toMatchObject({
+      field: "status",
+      diff: true,
+      compact: true,
+    });
   });
 
   it("disables compact projection when --full is set", async () => {
     await runRaw("history", "pm-1", "--full", "--limit", "5", "--verify");
-    const options = lastCall<Record<string, unknown>>(vi.mocked(runHistory) as never, 1);
+    const options = lastCall<Record<string, unknown>>(
+      vi.mocked(runHistory) as never,
+      1,
+    );
     expect(options).toMatchObject({ compact: false, limit: "5", verify: true });
   });
 
   it("prints history output as json when --format json is provided", async () => {
     await runRaw("history", "pm-1", "--format", "json");
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(true);
   });
 });
@@ -385,12 +498,17 @@ describe("register-list-query history options", () => {
 describe("register-list-query search options", () => {
   it("prints search output as json when --format json is provided", async () => {
     await runRaw("search", "token", "--format", "json");
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(true);
   });
 
   it("rejects unsupported read command formats", async () => {
-    await expect(runRaw("search", "token", "--format", "markdown")).rejects.toThrow(/Search --format must be one of json\|ndjson\|toon/);
+    await expect(
+      runRaw("search", "token", "--format", "markdown"),
+    ).rejects.toThrow(/Search --format must be one of json\|ndjson\|toon/);
   });
 
   it("renders search NDJSON rows and suppresses quiet or empty streams", async () => {
@@ -451,16 +569,37 @@ describe("register-list-query eval command (pm-u8n5)", () => {
       "--format",
       "json",
     );
-    const evalOptions = lastCall<Record<string, unknown>>(vi.mocked(runEval) as never, 0);
-    expect(evalOptions).toEqual({ mode: "hybrid", k: "5", failUnder: "0.5", queries: "custom/eval.json", format: "json" });
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const evalOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(runEval) as never,
+      0,
+    );
+    expect(evalOptions).toEqual({
+      mode: "hybrid",
+      k: "5",
+      failUnder: "0.5",
+      queries: "custom/eval.json",
+      format: "json",
+    });
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(true);
   });
 
   it("passes undefined for omitted eval flags and runs without profile output", async () => {
     await runRaw("eval");
-    const evalOptions = lastCall<Record<string, unknown>>(vi.mocked(runEval) as never, 0);
-    expect(evalOptions).toEqual({ mode: undefined, k: undefined, failUnder: undefined, queries: undefined, format: undefined });
+    const evalOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(runEval) as never,
+      0,
+    );
+    expect(evalOptions).toEqual({
+      mode: undefined,
+      k: undefined,
+      failUnder: undefined,
+      queries: undefined,
+      format: undefined,
+    });
   });
 
   it("throws when the relevance gate fails", async () => {
@@ -472,7 +611,9 @@ describe("register-list-query eval command (pm-u8n5)", () => {
       fail_under: 0.5,
       passed: false,
     } as never);
-    await expect(runRaw("eval", "--fail-under", "0.5")).rejects.toThrow(/Eval gate failed/);
+    await expect(runRaw("eval", "--fail-under", "0.5")).rejects.toThrow(
+      /Eval gate failed/,
+    );
   });
 });
 
@@ -502,7 +643,10 @@ describe("register-list-query next command (pm-nj90)", () => {
       "2",
       "--ready_only",
     );
-    const nextOptions = lastCall<Record<string, unknown>>(vi.mocked(runNext) as never, 0);
+    const nextOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(runNext) as never,
+      0,
+    );
     expect(nextOptions).toMatchObject({
       type: "Task",
       tag: "area:cli",
@@ -516,14 +660,24 @@ describe("register-list-query next command (pm-nj90)", () => {
       blockedLimit: "2",
       readyOnly: true,
     });
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(true);
   });
 
   it("forwards the canonical --ready-only flag and leaves omitted flags undefined", async () => {
     await runRaw("next", "--ready-only");
-    const nextOptions = lastCall<Record<string, unknown>>(vi.mocked(runNext) as never, 0);
-    expect(nextOptions).toMatchObject({ readyOnly: true, type: undefined, blockedLimit: undefined });
+    const nextOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(runNext) as never,
+      0,
+    );
+    expect(nextOptions).toMatchObject({
+      readyOnly: true,
+      type: undefined,
+      blockedLimit: undefined,
+    });
   });
 
   it("writes markdown output through writeStdout when not quiet", async () => {
@@ -542,14 +696,19 @@ describe("register-list-query next command (pm-nj90)", () => {
   it("routes toon output through printResult without json", async () => {
     vi.mocked(resolveNextOutputFormat).mockReturnValue("toon" as never);
     await runRaw("next");
-    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    const outputOptions = lastCall<Record<string, unknown>>(
+      vi.mocked(printResult) as never,
+      1,
+    );
     expect(outputOptions.json).toBe(false);
   });
 });
 
 describe("register-list-query activity streaming", () => {
   it("rejects --stream without --json", async () => {
-    await expect(runRaw("activity", "--stream")).rejects.toThrow(/--stream requires --json/);
+    await expect(runRaw("activity", "--stream")).rejects.toThrow(
+      /--stream requires --json/,
+    );
   });
 
   it("prints non-stream activity output through printResult", async () => {
