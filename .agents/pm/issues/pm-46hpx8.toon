@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-30T14:39:02.916Z"
-updated_at: "2026-08-30T15:28:05.892Z"
+updated_at: "2026-08-30T15:39:47.301Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#115e5d2bde0a0f29c20d9e3c"
 author: "harness:codex"
@@ -21,9 +21,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,incident_from,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
   pm-j668gl,recurs_from,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
   pm-xrjy8o,verifies,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-30T14:39:02.916Z","harness:codex","Duplicate-check evidence: complete all-status searches for run 33304991848 and the exact Nightly Validation Windows Node 24 wording found no item for GH-1158. Historical pm-gh1075, pm-lt6n, pm-zno2iu, pm-v3umtp, pm-wr8utz, and pm-j668gl own distinct prior Windows failures; this item records the new drive-qualified npm-receipt fixture mismatch."
   "2026-08-30T15:28:05.892Z","harness:codex","Local evidence: tests/unit/regressions/context-integrity-recovery.spec.ts passes in the focused suite and the complete 8,144-test coverage run at exact 100/100/100/100. The expected beta tarball now derives from the same path.resolve pack root as the production input. Item remains in progress until the PR's hosted Windows Node 24 job is terminal green."
+  "2026-08-30T15:39:47.301Z","harness:codex","Delivery review: commit b031cd694 and PR https://github.com/unbraind/pm-cli/pull/1160 carry the portable path fixture. This item remains in progress pending the PR Windows Node 24 hosted result."
 files[1]{path,scope,note}:
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,drive-qualified npm receipt expectation
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:

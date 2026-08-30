@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:ci",denominator,governance,production-defect,recurrence
 created_at: "2026-08-30T11:02:16.382Z"
-updated_at: "2026-08-30T15:32:14.168Z"
+updated_at: "2026-08-30T15:39:46.760Z"
 closed_at: "2026-08-30T15:28:06.544Z"
 completed_at: "2026-08-30T15:28:06.544Z"
 author: "harness:claude-code"
@@ -21,10 +21,11 @@ actual_result: "Arbitrary harness, NODE_OPTIONS, and sentinel variables no longe
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-o0sqz5,implements,"2026-08-30T11:02:16.382Z","harness:claude-code","cli:create:dep",detected
   pm-t7wn04,recurs_from,"2026-08-30T11:02:16.382Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-30T11:02:26.273Z","harness:claude-code","Partial remediation landed with this report: the gate's size verdicts now carry a bounded excerpt of the observed output, so the failure text names the rows that grew instead of only the number that grew. That is what turned this from an unexplained red gate into a diagnosis in one run, and it is the fourth acceptance criterion. The excerpt is held in memory on the measurement record only; budgetForMeasurement selects named fields, so nothing is persisted into scripts/release/token-budgets.json.\n\nThe remaining criteria are untouched and are the substance of this item: closing the fixture environment by allowlist, and actually running the workstation-versus-runner equivalence control that pm-t7wn04 specified and did not deliver.\n\nDeliberately not done: regenerating the baseline with --update. On this workstation that would write harness-dependent rows into the committed manifest and turn hosted CI red, which is the exact inversion of the current failure and would make the gate agree with the workstation instead of making it independent of both."
   "2026-08-30T12:35:27.802Z","harness:claude-code","Second instance of this item's own failure mode, observed while landing the change that filed it.\n\npnpm quality:static passed locally at exit 0 and Gates (static) failed hosted, this time on ESLint. The cause is a different divergence from the ambient-state one this item describes: the local script pnpm quality:static does not include pnpm lint:eslint, while the hosted Gates (static) job runs both. So the command the contributing guide points at as the local equivalent of a hosted gate is a strict subset of it, and three lint errors reached main.\n\nThat belongs to this item's fourth and second acceptance criteria rather than to a new one: local and hosted invocations of every quality gate must be proven equivalent, or the divergence declared per gate with a reason. Today there is no such proof and no such declaration, so the divergence is discoverable only by pushing.\n\nRecording both instances here so the remediation is scoped to the general property. The ambient-environment leak and the subset-command mismatch are two mechanisms for the same defect: a maintainer cannot learn from a local run what hosted CI will say."
   "2026-08-30T15:28:02.700Z","harness:codex","Evidence: pnpm quality:static passed end to end, including ESLint, zero-duplication scans, build/contracts, repository assurance negative controls, token budgets, graph composition, and record integrity. The exact coverage runner passed 586 files and 8,144 tests at 100/100/100/100. pnpm security:scan found no tracked credential-like secrets, pnpm audit found no known vulnerabilities, and the package artifact gate passed with 1,544 files and no forbidden source maps."
+  "2026-08-30T15:39:46.760Z","harness:codex","Delivery review: commit b031cd694 and PR https://github.com/unbraind/pm-cli/pull/1160 close fixture environment inheritance and align the canonical local and hosted static quality gate."
 learnings[1]{created_at,author,text}:
   "2026-08-30T15:28:03.237Z","harness:codex",Host-invariant fixtures require an allowlist; subtractive environment cleanup encodes only yesterday's leak. A local gate and its hosted counterpart must share one script contract so new checks cannot diverge silently.
 files[6]{path,scope,note}:
