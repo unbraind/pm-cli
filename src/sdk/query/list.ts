@@ -148,6 +148,8 @@ export interface ListOptions extends SharedItemFilterOptions {
    * lifecycle-status filter.
    */
   dependencyBlocked?: boolean;
+  /** Select a role-derived active lifecycle bucket instead of one literal status id. */
+  lifecycleBucket?: "open" | "in_progress";
   /** Value that configures or reports filter ac missing for this contract. */
   filterAcMissing?: boolean;
   /** Value that configures or reports filter estimates missing for this contract. */
@@ -1774,22 +1776,37 @@ function resolveListStatusSelection(
     options.status as ItemStatus | undefined,
     statusRegistry,
   );
+  let lifecycleStatus: ItemStatus[] | undefined;
+  if (options.lifecycleBucket === "in_progress") {
+    lifecycleStatus = [statusRegistry.in_progress_status];
+  } else if (options.lifecycleBucket === "open") {
+    lifecycleStatus = [...statusRegistry.active_statuses]
+      .filter((entry) => entry !== statusRegistry.in_progress_status)
+      .sort((left, right) => left.localeCompare(right));
+  }
   const resolvedStatus =
-    explicitStatus ?? resolveStatusFilter(status, statusRegistry);
+    explicitStatus ??
+    lifecycleStatus ??
+    resolveStatusFilter(status, statusRegistry);
   const explicitAllStatuses = isStatusAllFilterInput(options.status);
   const effectiveOptions =
     explicitStatus || explicitAllStatuses
       ? { ...options, excludeTerminal: false }
       : options;
-  const filtersStatus = explicitAllStatuses
-    ? "all"
-    : resolvedStatus === undefined
-      ? effectiveOptions.excludeTerminal === true
-        ? null
-        : "all"
-      : resolvedStatus.length === 1
-        ? resolvedStatus[0]
-        : resolvedStatus;
+  let filtersStatus: ItemStatus | ItemStatus[] | "all" | null = "all";
+  if (explicitAllStatuses) {
+    filtersStatus = "all";
+  } else if (explicitStatus !== undefined) {
+    filtersStatus =
+      explicitStatus.length === 1 ? explicitStatus[0] : explicitStatus;
+  } else if (options.lifecycleBucket !== undefined) {
+    filtersStatus = options.lifecycleBucket;
+  } else if (resolvedStatus !== undefined) {
+    filtersStatus =
+      resolvedStatus.length === 1 ? resolvedStatus[0] : resolvedStatus;
+  } else if (effectiveOptions.excludeTerminal === true) {
+    filtersStatus = null;
+  }
   return {
     resolvedStatus,
     explicitAllStatuses,
@@ -1873,6 +1890,7 @@ async function tryLoadIndexedListPage(params: {
     "includeBody",
     "excludeTerminal",
     "dependencyBlocked",
+    "lifecycleBucket",
     "noTruncate",
     "projectionCommand",
     "truncate",

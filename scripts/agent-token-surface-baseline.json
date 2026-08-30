@@ -4,13 +4,13 @@
   "headroom": 1.1,
   "surfaces": {
     "root_help": 3692,
-    "per_command_total": 247705,
-    "full_help_surface": 251397,
+    "per_command_total": 247565,
+    "full_help_surface": 251257,
     "contracts": {
-      "summary_toon": 15585,
-      "summary_json": 19399,
-      "json": 19260,
-      "full": 1330969,
+      "summary_toon": 15630,
+      "summary_json": 19432,
+      "json": 19293,
+      "full": 1323656,
       "bounded_full": 614
     },
     "mcp_tools_list": 48783,
@@ -55,6 +55,7 @@
       "search",
       "update",
       "validate",
+      "workspace position",
       "workspace snapshot create",
       "workspace snapshot delete",
       "workspace snapshot inspect",
@@ -79,8 +80,8 @@
       "plan decision": 10181,
       "plan approve": 10179,
       "plan resume": 10177,
-      "update": 9997,
-      "create": 9411,
+      "update": 9981,
+      "create": 9394,
       "list": 9204,
       "search": 8261,
       "validate": 4870,
@@ -101,12 +102,13 @@
       "assurance verdicts": 1102,
       "assurance list": 1095,
       "assurance presets": 1092,
-      "workspace snapshot restore": 987,
-      "workspace snapshot create": 963,
-      "workspace snapshot inspect": 939,
-      "workspace snapshot list": 937,
-      "workspace snapshot delete": 937,
-      "release": 537
+      "workspace snapshot restore": 939,
+      "workspace snapshot create": 915,
+      "workspace snapshot inspect": 890,
+      "workspace snapshot list": 888,
+      "workspace snapshot delete": 888,
+      "release": 537,
+      "workspace position": 136
     }
   }
 }

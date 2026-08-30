@@ -783,15 +783,12 @@ function statusRank(
   statusRegistry: RuntimeStatusRegistry,
 ): number {
   const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
-  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
-  const openStatus = normalizeStatusInput("open", statusRegistry);
   const blockedStatus = normalizeStatusInput("blocked", statusRegistry);
   const draftStatus = normalizeStatusInput("draft", statusRegistry);
-  if (inProgressStatus && normalizedStatus === inProgressStatus) return 0;
-  if (openStatus && normalizedStatus === openStatus) return 1;
+  if (normalizedStatus === statusRegistry.in_progress_status) return 0;
+  if (statusRegistry.active_statuses.has(normalizedStatus)) return 1;
   if (blockedStatus && normalizedStatus === blockedStatus) return 2;
   if (draftStatus && normalizedStatus === draftStatus) return 3;
-  if (statusRegistry.active_statuses.has(normalizedStatus)) return 4;
   if (statusRegistry.blocked_statuses.has(normalizedStatus)) return 5;
   if (statusRegistry.terminal_statuses.has(normalizedStatus)) return 7;
   return 6;
@@ -809,9 +806,9 @@ function isInProgressStatus(
   status: ItemStatus,
   statusRegistry: RuntimeStatusRegistry,
 ): boolean {
-  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
   return (
-    normalizeStatusForRegistry(status, statusRegistry) === inProgressStatus
+    normalizeStatusForRegistry(status, statusRegistry) ===
+    statusRegistry.in_progress_status
   );
 }
 
@@ -819,8 +816,11 @@ function isOpenStatus(
   status: ItemStatus,
   statusRegistry: RuntimeStatusRegistry,
 ): boolean {
-  const openStatus = normalizeStatusInput("open", statusRegistry);
-  return normalizeStatusForRegistry(status, statusRegistry) === openStatus;
+  const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
+  return (
+    normalizedStatus !== statusRegistry.in_progress_status &&
+    statusRegistry.active_statuses.has(normalizedStatus)
+  );
 }
 
 function isBlockedStatus(
@@ -2778,14 +2778,10 @@ export async function runContext(
   );
   const inProgressCount = countContextStatus(
     focusGroups.activeItems,
-    normalizeStatusInput("in_progress", runtime.statusRegistry),
+    runtime.statusRegistry.in_progress_status,
     runtime.statusRegistry,
   );
-  const openCount = countContextStatus(
-    focusGroups.activeItems,
-    normalizeStatusInput("open", runtime.statusRegistry),
-    runtime.statusRegistry,
-  );
+  const openCount = focusGroups.activeItems.length - inProgressCount;
   const sections = await buildOptionalContextSections({
     runtime,
     allItems: corpus.allItems,

@@ -1000,6 +1000,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "status_lifecycle_role_required",
+    meaning: "Status lifecycle role required condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/schema.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "status_lifecycle_role_required",
+    aliases: [],
+  },
+  {
     code: "stdin_json_invalid",
     meaning: "Stdin json invalid condition.",
     stability: "stable",

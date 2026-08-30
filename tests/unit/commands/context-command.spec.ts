@@ -191,13 +191,21 @@ describe("context command module", () => {
       blocked_statuses: new Set([...statusRegistry.blocked_statuses, "waiting"]),
       terminal_statuses: new Set([...statusRegistry.terminal_statuses, "archived"]),
     };
-    expect(contextInternals.statusRank("qa_ready" as never, customStatusRegistry)).toBe(4);
+    expect(contextInternals.statusRank("qa_ready" as never, customStatusRegistry)).toBe(1);
     expect(contextInternals.statusRank("waiting" as never, customStatusRegistry)).toBe(5);
     expect(contextInternals.statusRank("archived" as never, customStatusRegistry)).toBe(7);
     expect(contextInternals.statusRank("custom" as never, customStatusRegistry)).toBe(6);
     expect(contextInternals.isClosedStatus("closed", statusRegistry)).toBe(true);
     expect(contextInternals.isInProgressStatus("in_progress", statusRegistry)).toBe(true);
     expect(contextInternals.isOpenStatus("open", statusRegistry)).toBe(true);
+    expect(contextInternals.isOpenStatus("qa_ready" as never, customStatusRegistry)).toBe(true);
+    const customInProgressRegistry = {
+      ...customStatusRegistry,
+      in_progress_status: "qa_ready",
+    };
+    expect(contextInternals.statusRank("qa_ready" as never, customInProgressRegistry)).toBe(0);
+    expect(contextInternals.isInProgressStatus("qa_ready" as never, customInProgressRegistry)).toBe(true);
+    expect(contextInternals.isOpenStatus("qa_ready" as never, customInProgressRegistry)).toBe(false);
     expect(contextInternals.isBlockedStatus("blocked", statusRegistry)).toBe(true);
     expect(
       contextInternals.filterTerminalCalendarEvents(
@@ -377,6 +385,28 @@ describe("context command module", () => {
       blocked: 1,
       completion_pct: 25,
     });
+    const roleDerivedRegistry = {
+      ...statusRegistry,
+      active_statuses: new Set([...statusRegistry.active_statuses, "qa_ready"]),
+      in_progress_status: "qa_ready",
+    };
+    const customInProgressFeature = {
+      ...feature,
+      status: "qa_ready",
+      assignee: "reviewer",
+    };
+    const roleDerivedItems = [epic, customInProgressFeature, openTask] as never;
+    expect(contextInternals.buildHierarchy(roleDerivedItems, roleDerivedItems, roleDerivedRegistry, 5).find((entry) => entry.id === "pm-epic")).toMatchObject({
+      children_in_progress: 1,
+      children_open: 1,
+    });
+    expect(contextInternals.buildProgress(roleDerivedItems, roleDerivedItems, new Set(), roleDerivedRegistry, 5).find((entry) => entry.id === "pm-epic")).toMatchObject({
+      in_progress: 1,
+      open: 1,
+    });
+    expect(contextInternals.buildWorkload(roleDerivedItems, roleDerivedRegistry, 5)).toContainEqual(
+      expect.objectContaining({ assignee: "reviewer", in_progress: 1 }),
+    );
     expect(contextInternals.buildBlockers([blockedTask] as never, [openTask] as never, statusRegistry, 5)).toEqual([
       {
         id: "pm-blocked",

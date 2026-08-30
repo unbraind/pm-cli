@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1811,
+    "covered_symbols": 1820,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1812
+    "required_symbols": 1821
   },
   "breaking_acknowledgements": [
     {
@@ -1413,6 +1413,39 @@
       ],
       "package_version": "2026.8.30",
       "reason": "pm-edywqn: the legacy accept list widens to the full initialize-era set (2025-11-25 plus 2025-06-18) so every current MCP host can complete a handshake; the tuple literal type changes because the declared set is the contract, and no runtime behaviour is removed"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ListOptions",
+        "signature ./sdk:PmPositionalActionContract",
+        "signature ./sdk:RuntimeStatusRegistry",
+        "signature ./sdk/contracts:PmPositionalActionContract",
+        "signature ./sdk/core:ListOptions",
+        "signature ./sdk/query:ListOptions",
+        "signature ./sdk/runtime:ListOptions"
+      ],
+      "package_version": "2026.8.30",
+      "reason": "Add lifecycle-aware list selection, explicit workflow anchors, and workspace position contracts for SDK consumers."
+    },
+    {
+      "changes": [
+        "signature ./sdk:_testOnlyWorkspacePosition",
+        "signature ./sdk/governance:_testOnlyWorkspacePosition"
+      ],
+      "package_version": "2026.8.30",
+      "reason": "Add lifecycle-aware list selection, explicit workflow anchors, and workspace position contracts for SDK consumers."
+    },
+    {
+      "changes": [
+        "signature ./sdk:StatusRoleDiagnostics",
+        "signature ./sdk:WorkspacePositionResult",
+        "signature ./sdk:WorkspacePositionState",
+        "signature ./sdk/governance:StatusRoleDiagnostics",
+        "signature ./sdk/governance:WorkspacePositionResult",
+        "signature ./sdk/governance:WorkspacePositionState"
+      ],
+      "package_version": "2026.8.30",
+      "reason": "Fail closed on malformed history evidence and expose complete bounded lifecycle-role diagnostics"
     }
   ],
   "entrypoints": {
@@ -1520,6 +1553,12 @@
           "kind": "value",
           "name": "_testOnlyValidateCommand",
           "signature": "{ applyValidateFix: typeof applyValidateFix; applyValidateFixes: typeof applyValidateFixes; attachValidateFixHints: typeof attachValidateFixHints; buildCommandReferencesCheck: typeof buildCommandReferencesCheck; buildDependencyReferencesCheck: typeof buildDependencyReferencesCheck; buildCloseReasonBackfillRows: typeof buildCloseReasonBackfillRows; buildFilesCheck: typeof buildFilesCheck; buildLifecycleCheck: typeof buildLifecycleCheck; buildLifecycleDependencyGraph: typeof buildLifecycleDependencyGraph; buildLifecycleParentGraph: typeof buildLifecycleParentGraph; buildEstimateBackfillRows: typeof buildEstimateBackfillRows; buildMetadataCounts: typeof buildMetadataCounts; buildMissingFieldOccurrences: typeof buildMissingFieldOccurrences; buildOrphanedPathRows: typeof buildOrphanedPathRows; classifyOrphanedPath: typeof classifyOrphanedPath; collectDefaultProjectFileCandidates: typeof collectDefaultProjectFileCandidates; collectTrackedGitFileCandidates: typeof collectTrackedGitFileCandidates; detectLifecycleDependencyCycles: typeof detectLifecycleDependencyCycles; detectLifecycleParentCycles: typeof detectLifecycleParentCycles; escapeRegExp: typeof escapeRegExp; extractItemIds: typeof extractItemIds; findLifecycleDependencyCycleComponents: typeof findLifecycleDependencyCycleComponents; isMetadataFieldMissing: typeof isMetadataFieldMissing; linkedArtifactPathExceedsFilesystemLimits: typeof linkedArtifactPathExceedsFilesystemLimits; listFilesRecursive: typeof listFilesRecursive; resolveDependencyCycleSeverity: typeof resolveDependencyCycleSeverity; resolveParentCycleSeverity: typeof resolveParentCycleSeverity; resolveFileScanMode: typeof resolveFileScanMode; resolveLifecycleDependencyCycleSamplePath: typeof resolveLifecycleDependencyCycleSamplePath; resolveRequestedChecks: typeof resolveRequestedChecks; resolveValidateMetadataProfile: typeof resolveValidateMetadataProfile; resolveWorkspaceRoot: typeof resolveWorkspaceRoot; sharedDirectoryPrefixLength: typeof sharedDirectoryPrefixLength; summarizeOrphanedPathRows: typeof summarizeOrphanedPathRows; summarizeDuplicateIssueCodes: typeof summarizeDuplicateIssueCodes; toMeaningfulString: typeof toMeaningfulString; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyWorkspacePosition",
+          "signature": "{ commandForWorkspacePositionState: typeof commandForWorkspacePositionState; normalizeWorkspaceHistoryDrift: typeof normalizeWorkspaceHistoryDrift; selectWorkspacePositionState: typeof selectWorkspacePositionState; }"
         },
         {
           "classification": "supported",
@@ -3188,6 +3227,12 @@
           "kind": "function",
           "name": "buildSemanticCorpusInput",
           "signature": "(document: ItemDocument, options?: SemanticCorpusInputOptions) => string | calls: (document: ItemDocument, options?: SemanticCorpusInputOptions) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildStatusRoleWarnings",
+          "signature": "(diagnostics: StatusRoleDiagnostics) => string[] | calls: (diagnostics: StatusRoleDiagnostics) => string[]"
         },
         {
           "classification": "advanced_export",
@@ -6904,6 +6949,12 @@
           "signature": "(staleCount: number, recovery: VectorIndexRecovery) => string[] | calls: (staleCount: number, recovery: VectorIndexRecovery) => string[]"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "formatWorkspacePositionHuman",
+          "signature": "(result: WorkspacePositionResult) => string | calls: (result: WorkspacePositionResult) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "gc",
@@ -8056,6 +8107,12 @@
           "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "inspectStatusRoleAssignments",
+          "signature": "(statusRegistry: RuntimeStatusRegistry, items: readonly ItemMetadata[], itemLimit?: number) => StatusRoleDiagnostics | calls: (statusRegistry: RuntimeStatusRegistry, items: readonly ItemMetadata[], itemLimit?: number) => StatusRoleDiagnostics"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "inspectWorkspaceHistoryState",
@@ -8803,7 +8860,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; lifecycleBucket?: \"open\" | \"in_progress\"; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -12001,7 +12058,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmPositionalActionContract",
-          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\" | \"workspace snapshot\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
+          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\" | \"workspace\" | \"workspace snapshot\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
         },
         {
           "classification": "contract_data",
@@ -13178,6 +13235,12 @@
           "kind": "function",
           "name": "readWorkspaceMemory",
           "signature": "(items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult> | calls: (items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkspacePosition",
+          "signature": "(global: GlobalOptions) => Promise<WorkspacePositionResult> | calls: (global: GlobalOptions) => Promise<WorkspacePositionResult>"
         },
         {
           "classification": "supported",
@@ -15817,7 +15880,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "RuntimeStatusRegistry",
-          "signature": "export interface RuntimeStatusRegistry { definitions: RuntimeStatusDefinitionResolved[]; by_id: Map<string, RuntimeStatusDefinitionResolved>; alias_to_id: Map<string, string>; terminal_statuses: Set<string>; terminal_done_statuses: Set<string>; terminal_canceled_statuses: Set<string>; active_statuses: Set<string>; blocked_statuses: Set<string>; draft_statuses: Set<string>; open_status: string; close_status: string; canceled_status: string; }"
+          "signature": "export interface RuntimeStatusRegistry { definitions: RuntimeStatusDefinitionResolved[]; by_id: Map<string, RuntimeStatusDefinitionResolved>; alias_to_id: Map<string, string>; terminal_statuses: Set<string>; terminal_done_statuses: Set<string>; terminal_canceled_statuses: Set<string>; active_statuses: Set<string>; blocked_statuses: Set<string>; draft_statuses: Set<string>; open_status: string; in_progress_status: string; blocked_status: string; close_status: string; canceled_status: string; }"
         },
         {
           "classification": "advanced_export",
@@ -17012,6 +17075,12 @@
           "kind": "function",
           "name": "statusIsTerminal",
           "signature": "(status: string, registry: RuntimeStatusRegistry) => boolean | calls: (status: string, registry: RuntimeStatusRegistry) => boolean"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "StatusRoleDiagnostics",
+          "signature": "export interface StatusRoleDiagnostics { roleless_status_count: number; roleless_statuses: string[]; roleless_statuses_truncated: boolean; affected_item_count: number; affected_item_ids: string[]; affected_item_ids_truncated: boolean; }"
         },
         {
           "classification": "supported",
@@ -18326,6 +18395,24 @@
           "kind": "interface",
           "name": "WorkspaceMemorySnapshot",
           "signature": "export interface WorkspaceMemorySnapshot { format_version: number; source_cursor: string; source_item_count: number; generated_at: string; completion_time_sources?: Record<CompletionTimestampSource, number>; rollups: WorkspaceMemoryRollup[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkspacePositionNextAction",
+          "signature": "export interface WorkspacePositionNextAction { command: string | null; reason: WorkspacePositionState; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkspacePositionResult",
+          "signature": "export interface WorkspacePositionResult { ok: boolean; state: WorkspacePositionState; merge_fence: { committed: MergeFenceAuditResult; clone_local_drivers: MergeDriverConfigurationAuditResult | null; }; merge_receipts: { pending_decision_count: number; pending_item_ids: string[]; pending_item_ids_truncated: boolean; lossless_count: number; invalid_evidence_count: number; }; history_drift: { evidence_valid: boolean; drifted_item_count: number; drifted_item_ids: string[]; drifted_item_ids_truncated: boolean; counts: Record<string, unknown>; }; next_action: WorkspacePositionNextAction; warnings: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkspacePositionState",
+          "signature": "export type WorkspacePositionState = \"ready\" | \"merge_evidence_invalid\" | \"history_evidence_invalid\" | \"merge_reconciliation_required\" | \"history_repair_required\" | \"merge_fence_unprepared\";"
         },
         {
           "classification": "advanced_export",
@@ -21469,7 +21556,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmPositionalActionContract",
-          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\" | \"workspace snapshot\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
+          "signature": "export interface PmPositionalActionContract extends PmCommandPositionalContract { parent: \"assurance\" | \"plan\" | \"workspace\" | \"workspace snapshot\"; action: string; accepted_flags: readonly string[]; description: string; example: string; }"
         },
         {
           "classification": "contract_data",
@@ -22927,7 +23014,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; lifecycleBucket?: \"open\" | \"in_progress\"; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -23525,6 +23612,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyWorkspacePosition",
+          "signature": "{ commandForWorkspacePositionState: typeof commandForWorkspacePositionState; normalizeWorkspaceHistoryDrift: typeof normalizeWorkspaceHistoryDrift; selectWorkspacePositionState: typeof selectWorkspacePositionState; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "acceptAssuranceProposals",
           "signature": "(pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
@@ -24005,6 +24098,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "buildStatusRoleWarnings",
+          "signature": "(diagnostics: StatusRoleDiagnostics) => string[] | calls: (diagnostics: StatusRoleDiagnostics) => string[]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "CapturedBoundaryRecord",
           "signature": "export interface CapturedBoundaryRecord { id: string; producer: string; consumer: string; format: string; fixture_path: string; }"
@@ -24263,6 +24362,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "formatWorkspacePositionHuman",
+          "signature": "(result: WorkspacePositionResult) => string | calls: (result: WorkspacePositionResult) => string"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "GcCheckpointsSummary",
           "signature": "export interface GcCheckpointsSummary { scanned: number; removed: number; retained: number; retention_days: number; }"
@@ -24356,6 +24461,12 @@
           "kind": "interface",
           "name": "InspectStaleInProgressOptions",
           "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "inspectStatusRoleAssignments",
+          "signature": "(statusRegistry: RuntimeStatusRegistry, items: readonly ItemMetadata[], itemLimit?: number) => StatusRoleDiagnostics | calls: (statusRegistry: RuntimeStatusRegistry, items: readonly ItemMetadata[], itemLimit?: number) => StatusRoleDiagnostics"
         },
         {
           "classification": "supported",
@@ -24542,6 +24653,12 @@
           "kind": "function",
           "name": "putAssuranceDeclarationBundle",
           "signature": "(pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkspacePosition",
+          "signature": "(global: GlobalOptions) => Promise<WorkspacePositionResult> | calls: (global: GlobalOptions) => Promise<WorkspacePositionResult>"
         },
         {
           "classification": "supported",
@@ -24738,6 +24855,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "StatusRoleDiagnostics",
+          "signature": "export interface StatusRoleDiagnostics { roleless_status_count: number; roleless_statuses: string[]; roleless_statuses_truncated: boolean; affected_item_count: number; affected_item_ids: string[]; affected_item_ids_truncated: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "StorageIntegrityItemParseOptions",
           "signature": "export interface StorageIntegrityItemParseOptions { schema?: ItemDocumentFormatOptions[\"schema\"]; extensionFieldNames?: readonly string[]; }"
         },
@@ -24896,6 +25019,24 @@
           "kind": "interface",
           "name": "WaivedBoundaryRecord",
           "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkspacePositionNextAction",
+          "signature": "export interface WorkspacePositionNextAction { command: string | null; reason: WorkspacePositionState; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkspacePositionResult",
+          "signature": "export interface WorkspacePositionResult { ok: boolean; state: WorkspacePositionState; merge_fence: { committed: MergeFenceAuditResult; clone_local_drivers: MergeDriverConfigurationAuditResult | null; }; merge_receipts: { pending_decision_count: number; pending_item_ids: string[]; pending_item_ids_truncated: boolean; lossless_count: number; invalid_evidence_count: number; }; history_drift: { evidence_valid: boolean; drifted_item_count: number; drifted_item_ids: string[]; drifted_item_ids_truncated: boolean; counts: Record<string, unknown>; }; next_action: WorkspacePositionNextAction; warnings: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkspacePositionState",
+          "signature": "export type WorkspacePositionState = \"ready\" | \"merge_evidence_invalid\" | \"history_evidence_invalid\" | \"merge_reconciliation_required\" | \"history_repair_required\" | \"merge_fence_unprepared\";"
         }
       ],
       "types": "dist/sdk/governance.d.ts"
@@ -27421,7 +27562,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; lifecycleBucket?: \"open\" | \"in_progress\"; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -29287,7 +29428,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; lifecycleBucket?: \"open\" | \"in_progress\"; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -31892,6 +32033,7 @@
     "stale_observed_signature",
     "status_duplicate",
     "status_invalid",
+    "status_lifecycle_role_required",
     "stdin_json_invalid",
     "stdin_json_unknown_key",
     "structured_event_immutable",

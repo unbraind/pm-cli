@@ -1443,7 +1443,7 @@ describe("schema add-status / remove-status commands", () => {
 
       const added = await schema.runSchemaAddStatus(
         "blank_author_status",
-        { author: "  " },
+        { author: "  ", role: ["active"] },
         { path: context.pmPath },
       );
 
@@ -1517,6 +1517,8 @@ describe("schema add-status / remove-status commands", () => {
           "schema",
           "add-status",
           "review",
+          "--role",
+          "active",
           "--alias",
           "in_review",
         ]).code,
@@ -1526,6 +1528,8 @@ describe("schema add-status / remove-status commands", () => {
         "schema",
         "add-status",
         "triage",
+        "--role",
+        "active",
         "--alias",
         "in_review",
       ]);
@@ -1569,7 +1573,11 @@ describe("schema add-status / remove-status commands", () => {
         await expect(
           schema.runSchemaAddStatus(
             "triage",
-            { alias: ["in_review"], author: "schema-test" },
+            {
+              alias: ["in_review"],
+              author: "schema-test",
+              role: ["active"],
+            },
             { path: context.pmPath },
           ),
         ).rejects.toMatchObject({
@@ -1636,12 +1644,18 @@ describe("schema add-status / remove-status commands", () => {
     });
   });
 
-  it("formats add-status output for metadata-free register and metadata update paths", async () => {
+  it("formats add-status output for role-safe register and metadata update paths", async () => {
     await withTempPmPath(async (context) => {
-      const add = context.runCli(["schema", "add-status", "review"]);
+      const add = context.runCli([
+        "schema",
+        "add-status",
+        "review",
+        "--role",
+        "active",
+      ]);
       expect(add.code).toBe(0);
       expect(add.stdout).toContain('Registered status "review"');
-      expect(add.stdout).not.toContain("roles:");
+      expect(add.stdout).toContain("roles: active");
       expect(add.stdout).not.toContain("aliases:");
 
       const update = context.runCli([
@@ -1810,9 +1824,12 @@ describe("schema add-status / remove-status commands", () => {
   it("warns when removing a status still referenced by workflow defaults", async () => {
     await withTempPmPath(async (context) => {
       expect(
-        context.runCli(["schema", "add-status", "review", "--json"], {
-          expectJson: true,
-        }).code,
+        context.runCli(
+          ["schema", "add-status", "review", "--role", "active", "--json"],
+          {
+            expectJson: true,
+          },
+        ).code,
       ).toBe(0);
       await writeFile(
         workflowsPath(context),
@@ -1920,7 +1937,13 @@ describe("schema add-status / remove-status commands", () => {
     await withTempPmPath(async (context) => {
       await writeFile(statusesPath(context), '{"statuses": [', "utf8");
 
-      const add = context.runCli(["schema", "add-status", "review"]);
+      const add = context.runCli([
+        "schema",
+        "add-status",
+        "review",
+        "--role",
+        "active",
+      ]);
       expect(add.code).not.toBe(0);
       expect(add.stderr).toContain(
         "schema/statuses.json contains invalid JSON",

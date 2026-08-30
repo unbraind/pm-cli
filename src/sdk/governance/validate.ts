@@ -118,6 +118,15 @@ import {
   detectLifecycleParentCycles,
   resolveLifecycleDependencyCycleSamplePath,
 } from "./hierarchy-validation.js";
+import {
+  buildStatusRoleWarnings,
+  inspectStatusRoleAssignments,
+} from "./status-role-diagnostics.js";
+import {
+  normalizeRelativeDirectoryPath,
+  normalizeRelativePath,
+  toMeaningfulString,
+} from "./validate-normalization.js";
 
 type ValidateCheckName =
   | "metadata"
@@ -472,35 +481,6 @@ export function projectValidateCounts(
         }
       : {}),
   };
-}
-
-function normalizeRelativePath(value: string): string {
-  return value
-    .replaceAll("\\", "/")
-    .replace(/^\.\/+/, "")
-    .replace(/^\/+/, "");
-}
-
-function normalizeRelativeDirectoryPath(value: string): string {
-  const normalized = normalizeRelativePath(value);
-  return normalized.replace(/\/+$/, "");
-}
-
-function toMeaningfulString(value: unknown): string | undefined {
-  const normalized = toNonEmptyStringOrUndefined(value);
-  if (!normalized) {
-    return undefined;
-  }
-  const lowered = normalized.toLowerCase();
-  if (
-    lowered === "none" ||
-    lowered === "null" ||
-    lowered === "n/a" ||
-    lowered === "na"
-  ) {
-    return undefined;
-  }
-  return normalized;
 }
 
 /* c8 ignore start -- runtime-status alias normalization is covered by status-registry integration tests */
@@ -2489,25 +2469,35 @@ function buildLifecycleCheck(
     items,
     statusRegistry,
   );
-  const warnings = buildLifecycleWarnings(
-    rows,
-    includeStaleBlockers,
-    dependencyCycleSeverity,
-    parentCycleSeverity,
-    {
-      dependencyCycles: dependencyCycleDiagnostics.cycle_count,
-      activeHierarchyCycles: parentCycleDiagnostics.active_cycle_count,
-      activeHierarchyCardinality:
-        parentCycleDiagnostics.active_cardinality_violation_count,
-      activeHierarchyDivergence:
-        parentCycleDiagnostics.active_parent_divergence_count,
-      legacyHierarchyCycles: parentCycleDiagnostics.legacy_cycle_count,
-      legacyHierarchyCardinality:
-        parentCycleDiagnostics.legacy_cardinality_violation_count,
-      legacyHierarchyDivergence:
-        parentCycleDiagnostics.legacy_parent_divergence_count,
-    },
+  const statusRoleDiagnostics = inspectStatusRoleAssignments(
+    statusRegistry,
+    items,
+    verboseDiagnostics
+      ? Number.POSITIVE_INFINITY
+      : DIAGNOSTIC_LIST_SUMMARY_LIMIT,
   );
+  const warnings = [
+    ...buildLifecycleWarnings(
+      rows,
+      includeStaleBlockers,
+      dependencyCycleSeverity,
+      parentCycleSeverity,
+      {
+        dependencyCycles: dependencyCycleDiagnostics.cycle_count,
+        activeHierarchyCycles: parentCycleDiagnostics.active_cycle_count,
+        activeHierarchyCardinality:
+          parentCycleDiagnostics.active_cardinality_violation_count,
+        activeHierarchyDivergence:
+          parentCycleDiagnostics.active_parent_divergence_count,
+        legacyHierarchyCycles: parentCycleDiagnostics.legacy_cycle_count,
+        legacyHierarchyCardinality:
+          parentCycleDiagnostics.legacy_cardinality_violation_count,
+        legacyHierarchyDivergence:
+          parentCycleDiagnostics.legacy_parent_divergence_count,
+      },
+    ),
+    ...buildStatusRoleWarnings(statusRoleDiagnostics),
+  ];
 
   const diagnosticLimit = verboseDiagnostics
     ? Number.POSITIVE_INFINITY
@@ -2572,6 +2562,7 @@ function buildLifecycleCheck(
       ok: !hasErrorSeverityCycle && warnings.length === 0,
       details: {
         checked_active_items: rows.activeItems.length,
+        lifecycle_status_roles: statusRoleDiagnostics,
         active_closure_like_metadata_items: rows.closureLikeRows.length,
         active_closure_like_metadata_rows: summarizedClosureLikeRows.values,
         active_closure_like_metadata_rows_truncated:

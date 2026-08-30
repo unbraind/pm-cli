@@ -20,10 +20,7 @@ import {
 import { EVAL_QUERY_SET_SCHEMA_ID } from "../sdk/eval.js";
 import { applyContextIntentProjection } from "../sdk/context-intent-contracts.js";
 import { renderPmClosedDomainHelp } from "../sdk/agent/closed-domain-contracts.js";
-import {
-  serializeNdjsonRows,
-  serializeNdjsonStream,
-} from "../sdk/output.js";
+import { serializeNdjsonRows, serializeNdjsonStream } from "../sdk/output.js";
 import {
   listMutationEvents,
   subscribeMutationEventBatches,
@@ -325,28 +322,13 @@ async function runRegisteredListCommand(params: {
   }
   const intentOptions = applyContextIntentProjection("list", params.options);
   const listOptions = normalizeListOptions(intentOptions);
-  let effectiveName = params.name;
-  let effectiveStatus = params.status;
-  let effectiveDependencyBlocked = params.dependencyBlocked === true;
-  let effectiveExcludeTerminal = params.excludeTerminal === true;
-  const requestedStatus = listOptions.status?.trim().toLowerCase();
-  const requestedVariant =
-    params.name === "list" && requestedStatus !== undefined
-      ? CANONICAL_LIST_STATUS_VARIANTS[requestedStatus as ItemStatus]
-      : undefined;
-  if (params.name === "list") {
-    if (params.options.all === true || requestedStatus === "all") {
-      effectiveName = "list-all";
-      effectiveExcludeTerminal = false;
-      listOptions.status = undefined;
-    } else if (requestedStatus !== undefined && requestedVariant !== undefined) {
-      effectiveName = requestedVariant.name;
-      effectiveStatus = requestedStatus as ItemStatus;
-      effectiveDependencyBlocked = requestedVariant.dependencyBlocked;
-      effectiveExcludeTerminal = false;
-      listOptions.status = undefined;
-    }
-  }
+  const selection = resolveRegisteredListSelection(params, listOptions);
+  const {
+    effectiveName,
+    effectiveStatus,
+    effectiveDependencyBlocked,
+    effectiveExcludeTerminal,
+  } = selection;
   applyDefaultListProjection(listOptions, effectiveName);
   Object.assign(listOptions, { projectionCommand: effectiveName });
   if (effectiveExcludeTerminal) listOptions.excludeTerminal = true;
@@ -364,6 +346,60 @@ async function runRegisteredListCommand(params: {
   if (globalOptions.profile) {
     printError(`profile:command=list took_ms=${Date.now() - startedAt}`);
   }
+}
+
+/** Resolve aliases and lifecycle buckets into one SDK list selection. */
+function resolveRegisteredListSelection(
+  params: {
+    name: ListCommandName;
+    status?: ItemStatus;
+    excludeTerminal?: boolean;
+    dependencyBlocked?: boolean;
+    options: Record<string, unknown>;
+  },
+  listOptions: ReturnType<typeof normalizeListOptions>,
+): {
+  effectiveName: ListCommandName;
+  effectiveStatus: ItemStatus | undefined;
+  effectiveDependencyBlocked: boolean;
+  effectiveExcludeTerminal: boolean;
+} {
+  let effectiveName = params.name;
+  let effectiveStatus = params.status;
+  let effectiveDependencyBlocked = params.dependencyBlocked === true;
+  let effectiveExcludeTerminal = params.excludeTerminal === true;
+  const requestedStatus = listOptions.status?.trim().toLowerCase();
+  const requestedVariant =
+    params.name === "list" && requestedStatus !== undefined
+      ? CANONICAL_LIST_STATUS_VARIANTS[requestedStatus as ItemStatus]
+      : undefined;
+  if (params.name === "list") {
+    if (params.options.all === true || requestedStatus === "all") {
+      effectiveName = "list-all";
+      effectiveExcludeTerminal = false;
+      listOptions.status = undefined;
+    } else if (
+      requestedStatus !== undefined &&
+      requestedVariant !== undefined
+    ) {
+      effectiveName = requestedVariant.name;
+      effectiveStatus = requestedStatus as ItemStatus;
+      effectiveDependencyBlocked = requestedVariant.dependencyBlocked;
+      effectiveExcludeTerminal = false;
+      listOptions.status = undefined;
+    }
+  }
+  if (effectiveName === "list-open" || effectiveName === "list-in-progress") {
+    listOptions.lifecycleBucket =
+      effectiveName === "list-open" ? "open" : "in_progress";
+    effectiveStatus = undefined;
+  }
+  return {
+    effectiveName,
+    effectiveStatus,
+    effectiveDependencyBlocked,
+    effectiveExcludeTerminal,
+  };
 }
 
 interface ListCommandDescriptor {
@@ -785,10 +821,7 @@ async function runHistoryAction(
       provenanceSummary: options.provenanceSummary === true,
       harness: readRepeatableStringOption(options, "harness"),
       agentInstance: readRepeatableStringOption(options, "agentInstance"),
-      provenanceFilter: readRepeatableStringOption(
-        options,
-        "provenanceFilter",
-      ),
+      provenanceFilter: readRepeatableStringOption(options, "provenanceFilter"),
       diff: Boolean(options.diff) || field !== undefined,
       field,
       verify: Boolean(options.verify),
@@ -848,12 +881,11 @@ function buildMutationEventOptions(
     type: readRepeatableStringOption(options, "type"),
     author: readRepeatableStringOption(options, "author"),
     item: readRepeatableStringOption(options, "item"),
-    limit: typeof options.limit === "string" ? Number(options.limit) : undefined,
+    limit:
+      typeof options.limit === "string" ? Number(options.limit) : undefined,
     full: options.full === true,
     ...(options.provenance === true ? { provenance: true } : {}),
-    ...(options.provenanceSummary === true
-      ? { provenanceSummary: true }
-      : {}),
+    ...(options.provenanceSummary === true ? { provenanceSummary: true } : {}),
     ...(harness === undefined ? {} : { harness }),
     ...(agentInstance === undefined ? {} : { agentInstance }),
     ...(provenanceFilter === undefined ? {} : { provenanceFilter }),

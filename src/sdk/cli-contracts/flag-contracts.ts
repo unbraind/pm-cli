@@ -1704,6 +1704,9 @@ export const WORKSPACE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
 ];
 
+/** Flagless bounded workspace position read. */
+export const WORKSPACE_POSITION_FLAG_CONTRACTS: CliFlagContract[] = [];
+
 /** Public contract for next flag contracts, shared by SDK and presentation-layer consumers. */
 export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--for", value_name: "intent" },
@@ -1884,6 +1887,7 @@ const ASSURANCE_FLAG_CONTRACT_INDEX = indexCliFlagContracts(
 const POSITIONAL_ACTION_FLAG_INDEX_BY_PARENT = new Map([
   ["assurance", ASSURANCE_FLAG_CONTRACT_INDEX],
   ["plan", PLAN_FLAG_CONTRACT_INDEX],
+  ["workspace", indexCliFlagContracts(WORKSPACE_POSITION_FLAG_CONTRACTS)],
   ["workspace snapshot", indexCliFlagContracts(WORKSPACE_FLAG_CONTRACTS)],
 ]);
 
@@ -1958,6 +1962,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["next", NEXT_FLAG_CONTRACTS],
     ["eval", EVAL_FLAG_CONTRACTS],
     ["workspace", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace position", WORKSPACE_POSITION_FLAG_CONTRACTS],
     ["workspace snapshot", WORKSPACE_FLAG_CONTRACTS],
     ["workspace snapshot create", WORKSPACE_FLAG_CONTRACTS],
     ["workspace snapshot list", WORKSPACE_FLAG_CONTRACTS],

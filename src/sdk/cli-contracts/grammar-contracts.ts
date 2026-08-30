@@ -120,7 +120,7 @@ export interface PmCommandPositionalContract {
 /** Discoverable positional action projected through help, contracts, and completion. */
 export interface PmPositionalActionContract extends PmCommandPositionalContract {
   /** Commander command that dispatches the action positionally. */
-  parent: "assurance" | "plan" | "workspace snapshot";
+  parent: "assurance" | "plan" | "workspace" | "workspace snapshot";
   /** Literal action token accepted in the parent's first positional slot. */
   action: string;
   /** Canonical flags applicable to this action-specific view. */
@@ -409,6 +409,16 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       description:
         "Analyze bounded defect-recurrence risk for a proposed change.",
       example: 'pm assurance risk --definition \'{"change":{"files":[]}}\'',
+    },
+    {
+      command: "workspace position",
+      parent: "workspace",
+      action: "position",
+      slots: [],
+      accepted_flags: [],
+      description:
+        "Read bounded merge-fence, receipt, history-drift, and next-action readiness.",
+      example: "pm workspace position",
     },
     {
       command: "workspace snapshot create",
@@ -796,6 +806,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ),
     ...destinationRows("workspace", "workspace", "target_noun", "pm-pbyu", [
       "workspace",
+      "workspace position",
       "workspace snapshot",
       "workspace snapshot create",
       "workspace snapshot delete",

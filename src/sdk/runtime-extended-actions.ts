@@ -6,9 +6,7 @@
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import {
-  transferMutationStdinTokenPolicy,
-} from "./runtime-primitives.js";
+import { transferMutationStdinTokenPolicy } from "./runtime-primitives.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { runEval, type EvalOptions } from "./eval.js";
@@ -37,6 +35,7 @@ import {
   planWorkspaceSnapshotRestore,
   restoreWorkspaceSnapshotWithRecovery,
 } from "./workspace-snapshot.js";
+import { readWorkspacePosition } from "./governance/workspace-position.js";
 
 /** Minimal dispatch context shared with the generic runtime action registry. */
 export interface RuntimeExtendedActionContext {
@@ -179,12 +178,15 @@ export function runRuntimeWorkspaceAction(
 ): Promise<unknown> {
   const input = mergedInput(context);
   const subcommand = requiredString(input, "subcommand");
+  if (subcommand === "position") {
+    return readWorkspacePosition(context.global);
+  }
   if (subcommand !== "snapshot") {
     throw createUnknownSubcommandError({
-    command_path: "workspace",
-    token: subcommand,
-    allowed: ["snapshot"],
-    display_name: "workspace",
+      command_path: "workspace",
+      token: subcommand,
+      allowed: ["position", "snapshot"],
+      display_name: "workspace",
     });
   }
   const snapshotAction =

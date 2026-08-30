@@ -76,7 +76,7 @@ import {
   getActiveExtensionRegistrations,
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import {
   readSettings,
   resolveGovernanceKnobs,
@@ -1159,6 +1159,20 @@ export async function runSchemaAddStatus(
   const baseDefinition = toExistingStatusDefinition(
     statusRegistry.by_id.get(normalized.id),
   );
+  const effectiveRoles = normalized.roles ?? baseDefinition?.roles ?? [];
+  if (effectiveRoles.length === 0) {
+    throw new PmCliError(
+      `Status "${normalized.id}" requires at least one lifecycle role. Re-run with --role active, --role blocked, --role draft, or an appropriate terminal/default role.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "status_lifecycle_role_required",
+        examples: [
+          `pm schema add-status "${escapeForDoubleQuotes(normalized.id)}" --role active`,
+          `pm schema add-status "${escapeForDoubleQuotes(normalized.id)}" --role blocked`,
+        ],
+      },
+    );
+  }
 
   const warnings: string[] = [];
   const author = resolveAuthor(options.author, settings.author_default);

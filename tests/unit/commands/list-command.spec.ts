@@ -23,7 +23,7 @@ function createItem(
   context: TempPmContext,
   params: {
     title: string;
-    status: "open" | "triage" | "blocked" | "closed";
+    status: "open" | "in_progress" | "review" | "triage" | "blocked" | "closed";
     priority: string;
     tags: string;
     deadline: string;
@@ -94,6 +94,58 @@ function createItem(
 }
 
 describe("runList", () => {
+  it("selects configured open and in-progress lifecycle buckets through the public SDK", async () => {
+    await withTempPmPath(async (context) => {
+      expect(
+        context.runCli([
+          "schema",
+          "add-status",
+          "review",
+          "--role",
+          "active",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      const openId = createItem(context, {
+        title: "Built-in open work",
+        status: "open",
+        priority: "1",
+        tags: "lifecycle-bucket",
+        deadline: "+1d",
+      });
+      const reviewId = createItem(context, {
+        title: "Custom active review work",
+        status: "review",
+        priority: "1",
+        tags: "lifecycle-bucket",
+        deadline: "+1d",
+      });
+      const inProgressId = createItem(context, {
+        title: "Built-in in-progress work",
+        status: "in_progress",
+        priority: "1",
+        tags: "lifecycle-bucket",
+        deadline: "+1d",
+      });
+      const open = await runList(
+        undefined,
+        { lifecycleBucket: "open" },
+        { path: context.pmPath },
+      );
+      expect(open.filters).toMatchObject({ status: "open" });
+      expect(open.items.map((entry) => entry.id).sort()).toEqual(
+        [openId, reviewId].sort(),
+      );
+      const inProgress = await runList(
+        undefined,
+        { lifecycleBucket: "in_progress" },
+        { path: context.pmPath },
+      );
+      expect(inProgress.filters).toMatchObject({ status: "in_progress" });
+      expect(inProgress.items.map((entry) => entry.id)).toEqual([inProgressId]);
+    });
+  });
+
   it("selects lifecycle and dependency-edge blocked rows through one public filter", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createItem(context, {
@@ -381,9 +433,7 @@ describe("runList", () => {
     ]);
     expect(
       listInternals.orderItemsAsTree(
-        [
-          { ...openItem, id: "Orphan-ID", parent: "Missing-Root" },
-        ] as never,
+        [{ ...openItem, id: "Orphan-ID", parent: "Missing-Root" }] as never,
         "missing-root",
         undefined,
       )[0]?.tree_parent,
@@ -1460,6 +1510,25 @@ describe("runList", () => {
       );
       expect(closedViaStatusOption.count).toBe(1);
       expect(closedViaStatusOption.items[0].status).toBe("closed");
+
+      const closedWithLifecycleBucket = await runList(
+        undefined,
+        { status: "closed", lifecycleBucket: "open" },
+        { path: context.pmPath },
+      );
+      expect(closedWithLifecycleBucket.count).toBe(1);
+      expect(closedWithLifecycleBucket.filters.status).toBe("closed");
+
+      const multiplePositionalStatuses = await runList(
+        "open,closed",
+        {},
+        { path: context.pmPath },
+      );
+      expect(multiplePositionalStatuses.count).toBe(2);
+      expect(multiplePositionalStatuses.filters.status).toEqual([
+        "open",
+        "closed",
+      ]);
 
       // --status all is also explicit: keep every lifecycle bucket while echoing
       // the caller intent instead of falling back to the active-only default.

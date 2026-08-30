@@ -126,6 +126,10 @@ export interface RuntimeStatusRegistry {
   draft_statuses: Set<string>;
   /** Configured status id representing the open lifecycle state. */
   open_status: string;
+  /** Configured status id representing the in-progress lifecycle state. */
+  in_progress_status: string;
+  /** Configured status id representing the blocked lifecycle state. */
+  blocked_status: string;
   /** Configured status id representing the closed lifecycle state. */
   close_status: string;
   /** Configured status id representing the canceled lifecycle state. */
@@ -196,8 +200,7 @@ const RUNTIME_FIELD_VALUE_SCHEMA_SHAPE_VALIDATORS: ReadonlyArray<
       schema.enum.every((entry) => isStructuredJsonValue(entry))),
   (schema) =>
     schema.min_length === undefined ||
-    (Number.isInteger(schema.min_length) &&
-      (schema.min_length as number) >= 0),
+    (Number.isInteger(schema.min_length) && (schema.min_length as number) >= 0),
   (schema) =>
     schema.min_items === undefined ||
     (Number.isInteger(schema.min_items) && (schema.min_items as number) >= 0),
@@ -212,8 +215,7 @@ const RUNTIME_FIELD_VALUE_SCHEMA_SHAPE_VALIDATORS: ReadonlyArray<
     schema.additional_properties === undefined ||
     typeof schema.additional_properties === "boolean",
   (schema) =>
-    schema.properties === undefined ||
-    isPlainObject(schema.properties),
+    schema.properties === undefined || isPlainObject(schema.properties),
   (schema) =>
     schema.one_of === undefined ||
     (Array.isArray(schema.one_of) && schema.one_of.length > 0),
@@ -267,7 +269,9 @@ function normalizeRuntimeFieldValueSchema(
   const minItems = schema.min_items;
   const format = schema.format;
   const additionalProperties = schema.additional_properties;
-  if (!RUNTIME_FIELD_VALUE_SCHEMA_SHAPE_VALIDATORS.every((check) => check(schema))) {
+  if (
+    !RUNTIME_FIELD_VALUE_SCHEMA_SHAPE_VALIDATORS.every((check) => check(schema))
+  ) {
     ancestors.delete(value);
     return undefined;
   }
@@ -275,10 +279,12 @@ function normalizeRuntimeFieldValueSchema(
     properties === undefined
       ? undefined
       : Object.fromEntries(
-          Object.entries(properties as Record<string, unknown>).map(([key, entry]) => [
-            key,
-            normalizeRuntimeFieldValueSchema(entry, depth + 1, ancestors),
-          ]),
+          Object.entries(properties as Record<string, unknown>).map(
+            ([key, entry]) => [
+              key,
+              normalizeRuntimeFieldValueSchema(entry, depth + 1, ancestors),
+            ],
+          ),
         );
   const normalizedItems =
     items === undefined
@@ -310,9 +316,7 @@ function normalizeRuntimeFieldValueSchema(
       format: format as RuntimeFieldValueSchema["format"],
       properties: normalizedProperties,
       required:
-        required === undefined
-          ? undefined
-          : [...new Set(required as string[])],
+        required === undefined ? undefined : [...new Set(required as string[])],
       additional_properties: additionalProperties as boolean | undefined,
       items: normalizedItems,
       one_of: normalizedOneOf,
@@ -559,9 +563,10 @@ function normalizeRuntimeFieldDefinition(
       description && description.length > 0 ? description : undefined,
     type,
     commands,
-    repeatable: [definition.repeatable === true, type === "string_array"].includes(
-      true,
-    ),
+    repeatable: [
+      definition.repeatable === true,
+      type === "string_array",
+    ].includes(true),
     required: definition.required === true,
     required_on_create: definition.required_on_create === true,
     required_types: requiredTypes,
@@ -1042,22 +1047,91 @@ function preferredStatusForRole(
   definitions: RuntimeStatusDefinitionResolved[],
   role: RuntimeStatusRole,
   fallbackValues: string[],
+  fallbackFirst = false,
 ): string | undefined {
-  const withRole = definitions.filter((definition) =>
-    definition.roles.includes(role),
-  );
-  if (withRole.length > 0) {
-    return withRole[0].id;
-  }
   const normalizedFallbacks = fallbackValues
     .map((value) => normalizeStatusId(value))
     .filter((value): value is string => typeof value === "string");
-  for (const normalized of normalizedFallbacks) {
-    if (definitions.some((definition) => definition.id === normalized)) {
-      return normalized;
+  const fallbackMatch = normalizedFallbacks.find((normalized) =>
+    definitions.some((definition) => definition.id === normalized),
+  );
+  if (fallbackFirst && fallbackMatch !== undefined) {
+    return fallbackMatch;
+  }
+  const withRole = definitions.find((definition) =>
+    definition.roles.includes(role),
+  );
+  if (withRole !== undefined) {
+    return withRole.id;
+  }
+  return fallbackMatch ?? definitions[0]?.id;
+}
+
+interface RuntimeStatusIndexes {
+  aliasToId: Map<string, string>;
+  byId: Map<string, RuntimeStatusDefinitionResolved>;
+}
+
+/** Build normalized identifier and alias indexes for runtime status lookup. */
+function buildRuntimeStatusIndexes(
+  definitions: RuntimeStatusDefinitionResolved[],
+): RuntimeStatusIndexes {
+  const aliasToId = new Map<string, string>();
+  const byId = new Map<string, RuntimeStatusDefinitionResolved>();
+  for (const definition of definitions) {
+    byId.set(definition.id, definition);
+    aliasToId.set(definition.id, definition.id);
+    aliasToId.set(definition.id.replaceAll("_", "-"), definition.id);
+    aliasToId.set(definition.id.replaceAll("_", " "), definition.id);
+    for (const alias of definition.aliases) {
+      aliasToId.set(alias, definition.id);
+      aliasToId.set(alias.replaceAll("_", "-"), definition.id);
+      aliasToId.set(alias.replaceAll("_", " "), definition.id);
     }
   }
-  return definitions[0]?.id;
+  return { aliasToId, byId };
+}
+
+interface RuntimeStatusRoleSets {
+  activeStatuses: Set<string>;
+  blockedStatuses: Set<string>;
+  draftStatuses: Set<string>;
+  terminalCanceledStatuses: Set<string>;
+  terminalDoneStatuses: Set<string>;
+  terminalStatuses: Set<string>;
+}
+
+/** Classify runtime statuses into lifecycle role sets used by all consumers. */
+function buildRuntimeStatusRoleSets(
+  definitions: RuntimeStatusDefinitionResolved[],
+): RuntimeStatusRoleSets {
+  const result: RuntimeStatusRoleSets = {
+    activeStatuses: new Set<string>(),
+    blockedStatuses: new Set<string>(),
+    draftStatuses: new Set<string>(),
+    terminalCanceledStatuses: new Set<string>(),
+    terminalDoneStatuses: new Set<string>(),
+    terminalStatuses: new Set<string>(),
+  };
+  for (const definition of definitions) {
+    const roles = new Set(definition.roles);
+    if (
+      roles.has("terminal") ||
+      roles.has("terminal_done") ||
+      roles.has("terminal_canceled")
+    ) {
+      result.terminalStatuses.add(definition.id);
+    }
+    if (roles.has("terminal_done"))
+      result.terminalDoneStatuses.add(definition.id);
+    if (roles.has("terminal_canceled")) {
+      result.terminalCanceledStatuses.add(definition.id);
+    }
+    if (roles.has("active")) result.activeStatuses.add(definition.id);
+    if (roles.has("blocked")) result.blockedStatuses.add(definition.id);
+    if (roles.has("draft")) result.draftStatuses.add(definition.id);
+  }
+  return result;
 }
 
 /** Implements resolve runtime status registry for the public runtime surface of this module. */
@@ -1073,58 +1147,33 @@ export function resolveRuntimeStatusRegistry(
       (definition): definition is RuntimeStatusDefinitionResolved =>
         definition !== null,
     );
-  const aliasToId = new Map<string, string>();
-  const byId = new Map<string, RuntimeStatusDefinitionResolved>();
-  for (const definition of definitions) {
-    byId.set(definition.id, definition);
-    aliasToId.set(definition.id, definition.id);
-    aliasToId.set(definition.id.replaceAll("_", "-"), definition.id);
-    aliasToId.set(definition.id.replaceAll("_", " "), definition.id);
-    for (const alias of definition.aliases) {
-      aliasToId.set(alias, definition.id);
-      aliasToId.set(alias.replaceAll("_", "-"), definition.id);
-      aliasToId.set(alias.replaceAll("_", " "), definition.id);
-    }
-  }
-  const terminalStatuses = new Set<string>();
-  const terminalDoneStatuses = new Set<string>();
-  const terminalCanceledStatuses = new Set<string>();
-  const activeStatuses = new Set<string>();
-  const blockedStatuses = new Set<string>();
-  const draftStatuses = new Set<string>();
-  for (const definition of definitions) {
-    const roles = new Set(definition.roles);
-    if (
-      roles.has("terminal") ||
-      roles.has("terminal_done") ||
-      roles.has("terminal_canceled")
-    ) {
-      terminalStatuses.add(definition.id);
-    }
-    if (roles.has("terminal_done")) {
-      terminalDoneStatuses.add(definition.id);
-    }
-    if (roles.has("terminal_canceled")) {
-      terminalCanceledStatuses.add(definition.id);
-    }
-    if (roles.has("active")) {
-      activeStatuses.add(definition.id);
-    }
-    if (roles.has("blocked")) {
-      blockedStatuses.add(definition.id);
-    }
-    if (roles.has("draft")) {
-      draftStatuses.add(definition.id);
-    }
-  }
+  const { aliasToId, byId } = buildRuntimeStatusIndexes(definitions);
+  const {
+    activeStatuses,
+    blockedStatuses,
+    draftStatuses,
+    terminalCanceledStatuses,
+    terminalDoneStatuses,
+    terminalStatuses,
+  } = buildRuntimeStatusRoleSets(definitions);
   const workflow = normalizedSchema.workflow;
-  const openStatus =
-    normalizeStatusId(workflow.open_status) ??
+  const openStatus = (normalizeStatusId(workflow.open_status) ??
     preferredStatusForRole(definitions, "default_open", [
       "open",
       "in_progress",
       STATUS_VALUES[0],
-    ]);
+    ])) as string;
+  const inProgressStatus =
+    normalizeStatusId(workflow.in_progress_status) ??
+    preferredStatusForRole(
+      definitions,
+      "active",
+      ["in_progress", "in-progress", openStatus],
+      true,
+    );
+  const blockedStatus =
+    normalizeStatusId(workflow.blocked_status) ??
+    preferredStatusForRole(definitions, "blocked", ["blocked"]);
   const closeStatus =
     normalizeStatusId(workflow.close_status) ??
     preferredStatusForRole(definitions, "default_close", [
@@ -1149,7 +1198,9 @@ export function resolveRuntimeStatusRegistry(
     active_statuses: activeStatuses,
     blocked_statuses: blockedStatuses,
     draft_statuses: draftStatuses,
-    open_status: openStatus as string,
+    open_status: openStatus,
+    in_progress_status: inProgressStatus as string,
+    blocked_status: blockedStatus as string,
     close_status: closeStatus as string,
     canceled_status: canceledStatus as string,
   };

@@ -676,8 +676,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       ],
     },
     workspace: {
-      required: ["subcommand", "snapshotAction"],
+      required: ["subcommand"],
       optional: [
+        "snapshotAction",
         "name",
         "target",
         "dryRun",
@@ -686,6 +687,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "message",
         "lockTtlSeconds",
         "lockWaitMs",
+      ],
+      conditionalRequired: [
+        {
+          property: "subcommand",
+          value: "snapshot",
+          required: ["snapshotAction"],
+        },
       ],
     },
     meet: SCHEDULING_ACTION_SCHEMA_CONTRACT,

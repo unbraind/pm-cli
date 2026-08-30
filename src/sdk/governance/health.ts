@@ -120,6 +120,11 @@ import {
   analyzeHierarchyIntegrity,
   type HierarchyIntegrityAnalysis,
 } from "../graph/hierarchy-integrity.js";
+import {
+  buildStatusRoleWarnings,
+  inspectStatusRoleAssignments,
+  type StatusRoleDiagnostics,
+} from "./status-role-diagnostics.js";
 
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -2852,12 +2857,18 @@ function buildDirectoriesHealthCheck(
 
 function buildSettingsValuesHealthCheck(
   settingWarnings: string[],
+  statusRoleDiagnostics: StatusRoleDiagnostics,
 ): HealthCheck {
   return {
     name: "settings_values",
     status: settingWarnings.length === 0 ? "ok" : "warn",
     ok: settingWarnings.length === 0,
-    details: { warnings: settingWarnings },
+    details: {
+      warnings: settingWarnings,
+      ...(statusRoleDiagnostics.roleless_status_count > 0
+        ? { lifecycle_status_roles: statusRoleDiagnostics }
+        : {}),
+    },
   };
 }
 
@@ -3292,7 +3303,7 @@ export async function runHealth(
     typeRegistry,
     strictDirectories,
   );
-  const settingWarnings = validateSettingsValues(settings);
+  const settingsValueWarnings = validateSettingsValues(settings);
   const telemetryCheck = await buildTelemetryCheck(settings, {
     checkTelemetry: options.checkTelemetry === true,
   });
@@ -3311,6 +3322,14 @@ export async function runHealth(
     itemReadWarnings,
   });
   const itemsWithBody = items as Array<ItemMetadata & { body: string }>;
+  const statusRoleDiagnostics = inspectStatusRoleAssignments(
+    resolveRuntimeStatusRegistry(settings.schema),
+    items,
+  );
+  const settingWarnings = [
+    ...settingsValueWarnings,
+    ...buildStatusRoleWarnings(statusRoleDiagnostics),
+  ];
   const historyPolicy = skipPolicy.skipDrift
     ? { warnings: [] }
     : await enforceHistoryStreamPolicyForItems({
@@ -3397,7 +3416,7 @@ export async function runHealth(
       normalizedSettingsReadWarnings,
     ),
     buildDirectoriesHealthCheck(directoryState, strictDirectories),
-    buildSettingsValuesHealthCheck(settingWarnings),
+    buildSettingsValuesHealthCheck(settingWarnings, statusRoleDiagnostics),
     telemetryCheck.check,
     extensionCheck.check,
     buildStorageHealthCheck(
