@@ -142,6 +142,7 @@ describe("scripts/release/utils: runCommand", () => {
     const spawnSync = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const utils = await loadUtils("utilsRunClosedEnvironment");
+    const previousSentinel = process.env.PM_UTILS_AMBIENT_SENTINEL;
     process.env.PM_UTILS_AMBIENT_SENTINEL = "must-not-leak";
 
     try {
@@ -160,7 +161,11 @@ describe("scripts/release/utils: runCommand", () => {
         }),
       );
     } finally {
-      delete process.env.PM_UTILS_AMBIENT_SENTINEL;
+      if (previousSentinel === undefined) {
+        delete process.env.PM_UTILS_AMBIENT_SENTINEL;
+      } else {
+        process.env.PM_UTILS_AMBIENT_SENTINEL = previousSentinel;
+      }
     }
   });
 

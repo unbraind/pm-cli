@@ -1679,12 +1679,14 @@ describe("runTest", () => {
       );
       expect(acceptedDirectRunners.count).toBe(directRunnerCommands.length);
       expect(
-        acceptedDirectRunners.tests.every((entry) =>
-          directRunnerCommands.some((candidate) =>
-            candidate.includes(`command=${entry.command},`),
-          ),
-        ),
-      ).toBe(true);
+        acceptedDirectRunners.tests.map((entry) => entry.command).sort(),
+      ).toEqual(
+        directRunnerCommands
+          .map((candidate) =>
+            candidate.slice("command=".length, candidate.indexOf(",scope=")),
+          )
+          .sort(),
+      );
 
       const id = createTask(context, "sandbox-aware-test-runners");
 

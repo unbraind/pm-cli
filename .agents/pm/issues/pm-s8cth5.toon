@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:test-command",regression,sandbox-safety,trust
 created_at: "2026-08-29T15:17:13.352Z"
-updated_at: "2026-08-30T15:52:02.109Z"
+updated_at: "2026-08-30T16:17:26.354Z"
 closed_at: "2026-08-30T15:28:07.959Z"
 completed_at: "2026-08-30T15:28:07.959Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ environment: pm 2026.8.28 and 2026.8.21 on Linux/Node 24; linked-test mutation p
 repro_steps: "Run pm test ITEM --add-json with node --test x.ts and observe refusal; then add sh -c wrapping, an equals-spelled Node flag, node test/x.test.ts, or pytest -k and observe acceptance."
 resolution: "Replaced the shape-based intake refusal with a public SDK capability classifier, retained runtime tracker isolation and provenance enforcement, and documented the contract in CLI help and operator guidance."
 expected_result: "Commands with equivalent execution capability are classified consistently, the policy's security boundary is explicit, and help reveals all content constraints before mutation."
-actual_result: Direct node --test x.ts is refused while multiple equivalent or broader command forms are stored; the help contract does not mention command-content validation.
+actual_result: "Direct node --test, Vitest, shell-wrapped, and npm/pnpm/Yarn/Bun test entrypoints are accepted and classified consistently; pm test help and docs state that runtime-injected tracker isolation plus provenance enforcement form the trust boundary."
 affected_version: 2026.8.28
 component: sdk/test-trust-and-cli-test-intake
 regression: true
@@ -37,11 +37,12 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-vwuidf,discovered_from,"2026-08-29T15:17:13.352Z","harness:codex","cli:create:dep",detected
   pm-mlc3,incident_from,"2026-08-29T15:42:41.718Z","harness:codex","cli:update:dep",detected
   pm-ed28wi,verifies,"2026-08-30T14:50:11.636Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-29T15:17:13.352Z","harness:codex","Duplicate-check evidence: complete all-status keyword searches found closed pm-q813 for package-manager run-script wrappers, pm-mlc3 for package-manager flag prefixes, and pm-ed28wi for merge-time command provenance/trust. None owns capability-equivalent command normalization or missing pm test help disclosure. This issue recurs from pm-q813, is an incident in the broader trust boundary, and was discovered during pm-vwuidf exact-head closeout."
   "2026-08-30T15:28:04.347Z","harness:codex","Evidence: TDD first proved direct Node, shell-wrapped, Vitest, and package-manager forms diverged. The final tests cover 16 equivalent direct-runner spellings, sandbox-runner forms, non-runner forms, JSON intake, runtime isolation, and provenance. Manual acceptance in a temporary initialized workspace stored and ran a direct node --test command while proving injected PM_PATH and PM_GLOBAL_PATH, then imported the built SDK classifier. The workspace was removed afterward. Full coverage passed 8,144 tests at exact 100/100/100/100; pm test help is three estimated tokens below its ratcheted baseline."
   "2026-08-30T15:39:46.314Z","harness:codex","Delivery review: commit b031cd694 and PR https://github.com/unbraind/pm-cli/pull/1160 expose the SDK safety classifier, preserve runtime tracker isolation and provenance, and carry the complete local verification evidence."
   "2026-08-30T15:52:02.109Z","harness:codex","Review evidence: Greptile P2 correctly found inconsistent advisory classification for package test scripts. npm, pnpm, Yarn, and Bun test/test:* entrypoints now share direct-runner guidance with npx/bunx forms, with cross-runtime unit coverage."
+  "2026-08-30T16:17:26.354Z","harness:codex","CodeRabbit review evidence: refreshed the closed item's actual_result through pm so it describes resolved direct-command acceptance and help disclosure, and strengthened the CLI acceptance test to compare the complete command multiset rather than count plus membership."
 notes[1]{created_at,author,text}:
   "2026-08-29T15:17:13.352Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1154. Keep this item open and unclaimed until implementation is actively scheduled; PR #1149 only performs durable intake."
 learnings[2]{created_at,author,text}:
