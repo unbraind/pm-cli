@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1158: Windows Node 24 nightly receipt fixture derives a root-relative expectation from a drive-qualified path ([pm-46hpx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-46hpx8.toon))
 - GH-1154: linked-test sandbox guard is command-shape inconsistent and undocumented ([pm-s8cth5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8cth5.toon))
 - The local preflight token-budget gate is red on a workstation and green in hosted CI for the same commit again, because the earlier remediation closed the one ambient channel that had bitten instead of closing the fixture's environment ([pm-4o7tlx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4o7tlx.toon))
 - The bounded legacy MCP compatibility set stops one revision short of the spec's own legacy boundary, so every current host is refused at initialize and the dual-era guarantee is unmet ([pm-edywqn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-edywqn.toon))

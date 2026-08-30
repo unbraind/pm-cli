@@ -2,32 +2,45 @@ id: pm-46hpx8
 title: "GH-1158: Windows Node 24 nightly receipt fixture derives a root-relative expectation from a drive-qualified path"
 description: "Nightly Validation run 33304991848 failed only on windows-latest / Node 24 because the npm 12 keyed-receipt regression fixture compares the production drive-qualified tarball path against path.join('/tmp/pack', 'beta.tgz'), which is root-relative on Windows. The product selection behavior succeeded; the supposedly cross-platform acceptance test encoded a POSIX root and made the nightly release signal red."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-30T14:39:02.916Z"
-updated_at: "2026-08-30T15:39:47.301Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#115e5d2bde0a0f29c20d9e3c"
+updated_at: "2026-08-30T16:32:31.361Z"
+closed_at: "2026-08-30T16:32:30.751Z"
+completed_at: "2026-08-30T16:32:30.751Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: The fixture derives expected package tarballs from the same explicit temporary root on every platform without weakening the production assertion; A focused regression passes locally and the hosted Windows Node 24 matrix is green; GitHub issue 1158 links this canonical item and the release-health lineage records the terminal result
 parent: pm-u9d0
 risk: high
 confidence: high
+resolution: Replaced the POSIX-rooted receipt expectation with one derived from the same path.resolve pack root as the production tarball inputs; exact-head hosted Windows Node 24 CI now passes.
 expected_result: The keyed npm receipt fixture derives all expected tarball paths from one platform-qualified temporary root and the Windows Node 24 matrix passes.
-actual_result: The fixture now uses path.resolve for the shared pack root; focused and full Linux runs pass without weakening the keyed selection assertion. Hosted Windows confirmation remains pending on the PR.
+actual_result: "Focused and full exact-coverage suites pass locally, and PR #1160 exact head 7238f87ac passed CI Windows regression (Node 24) job 99286005978 in run 33322150088."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,incident_from,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
   pm-j668gl,recurs_from,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
   pm-xrjy8o,verifies,"2026-08-30T14:39:02.916Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-30T14:39:02.916Z","harness:codex","Duplicate-check evidence: complete all-status searches for run 33304991848 and the exact Nightly Validation Windows Node 24 wording found no item for GH-1158. Historical pm-gh1075, pm-lt6n, pm-zno2iu, pm-v3umtp, pm-wr8utz, and pm-j668gl own distinct prior Windows failures; this item records the new drive-qualified npm-receipt fixture mismatch."
   "2026-08-30T15:28:05.892Z","harness:codex","Local evidence: tests/unit/regressions/context-integrity-recovery.spec.ts passes in the focused suite and the complete 8,144-test coverage run at exact 100/100/100/100. The expected beta tarball now derives from the same path.resolve pack root as the production input. Item remains in progress until the PR's hosted Windows Node 24 job is terminal green."
   "2026-08-30T15:39:47.301Z","harness:codex","Delivery review: commit b031cd694 and PR https://github.com/unbraind/pm-cli/pull/1160 carry the portable path fixture. This item remains in progress pending the PR Windows Node 24 hosted result."
+  "2026-08-30T16:32:29.499Z","harness:codex","Hosted acceptance: PR #1160 exact head 7238f87ac passed every terminal check. Windows regression (Node 24) succeeded in CI run 33322150088, job 99286005978: https://github.com/unbraind/pm-cli/actions/runs/33322150088/job/99286005978. Greptile reported 5/5 and no blocking failure; CodeRabbit was retriggered but its provider quota prevented a fresh full review within the bounded window, which is recorded as a limitation rather than approval."
+learnings[1]{created_at,author,text}:
+  "2026-08-30T16:32:30.085Z","harness:codex",Cross-platform receipt fixtures must derive expectations from the same platform-qualified root used to build inputs; absolute-looking POSIX literals become drive-relative or root-relative on Windows and can invalidate release health without exercising a product defect.
 files[1]{path,scope,note}:
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,drive-qualified npm receipt expectation
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-30T14:50:14.774Z",local_mutation,feat/sdk-execution-boundary-reliability,portable receipt regression
   node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-08-30T15:27:28.063Z",local_mutation,feat/sdk-execution-boundary-reliability,exact repository coverage gate
+close_reason: Portable path-root derivation is locally covered at exact 100/100/100/100 and confirmed by PR #1160 Windows Node 24 job 99286005978.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-46hpx8
+  gate_id: cross-platform-keyed-receipt-fixture
+  negative_control: tests/unit/regressions/context-integrity-recovery.spec.ts derives the expected beta tarball from path.resolve and would reproduce the former drive-qualified mismatch
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: PR #1160 CI / Windows regression (Node 24) job 99286005978,PR #1160 CI run 33322150088
 body: ""
