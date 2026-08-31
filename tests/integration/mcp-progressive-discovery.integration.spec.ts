@@ -22,12 +22,12 @@ function modernParams(
       [PM_MCP_META_KEYS.protocolVersion]: PM_MCP_PROTOCOL_VERSION,
       [PM_MCP_META_KEYS.clientCapabilities]: negotiated
         ? {
-          extensions: {
-            [PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION]:
-              PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
-            ...(tasks ? { [PM_MCP_TASKS_EXTENSION]: {} } : {}),
-          },
-        }
+            extensions: {
+              [PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION]:
+                PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
+              ...(tasks ? { [PM_MCP_TASKS_EXTENSION]: {} } : {}),
+            },
+          }
         : tasks
           ? { extensions: { [PM_MCP_TASKS_EXTENSION]: {} } }
           : {},
@@ -146,9 +146,11 @@ describe("MCP progressive discovery negotiation", () => {
         arguments: { query: "close", limit: 1, outputBudget: "unbounded" },
       }),
     });
-    expect((compatible?.content as Array<{ text: string }>)[0]?.text).toContain(
-      '"result_type": "pm_tool_discovery"',
-    );
+    expect(compatible?.content).toEqual([
+      expect.objectContaining({
+        text: expect.stringContaining('"result_type": "pm_tool_discovery"'),
+      }),
+    ]);
   });
 
   it("adapts every discovery option and canonicalizes negotiated refusals", async () => {

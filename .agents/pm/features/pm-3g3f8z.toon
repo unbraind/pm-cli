@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-08-31T18:09:25.802Z"
+updated_at: "2026-08-31T18:27:57.793Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-08-31T18:09:25.220Z"
-completed_at: "2026-08-31T18:09:25.220Z"
+closed_at: "2026-08-31T18:27:57.138Z"
+completed_at: "2026-08-31T18:27:57.138Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Shipped the public SDK discovery engine and negotiated MCP progressive capability with signed cursors, page-correct caching, runtime domain and own-property validation, exact linear budgets, unique measured orientation protocols, and compatibility preservation."
-expected_result: "SDK consumers can build permission-safe progressively disclosed tool catalogs, and agents can rely on unique measured orientation alternatives, live ownership checks, one canonical result representation, and page-correct cache semantics."
-actual_result: "The public SDK provides deterministic permission-safe discovery with HMAC-bound cursors, runtime-validated public filters, prototype-safe tool lookup, page-scoped private cache identities, exact linear token-budget selection, and 10,000-tool scale coverage. Generated agent guidance includes both open and in-progress checks before mutation, and the token gate refuses duplicate orientation task identities."
+resolution: "Shipped the public SDK discovery engine and negotiated MCP progressive capability with signed cursors, page-correct caching, runtime domain and own-property validation, exact linear budgets, unique measured orientation protocols, compatibility preservation, and lint-safe integration proof."
+expected_result: "SDK consumers can build permission-safe progressively disclosed tool catalogs, and agents can rely on unique measured orientation alternatives, live ownership checks, one canonical result representation, page-correct cache semantics, and analyzer-clean tests."
+actual_result: "The public SDK provides deterministic permission-safe discovery with HMAC-bound cursors, runtime-validated public filters, prototype-safe tool lookup, page-scoped private cache identities, exact linear token-budget selection, and 10,000-tool scale coverage. Generated guidance and orientation gates enforce live ownership and unique alternatives; all integration assertions are analyzer-safe."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-28T20:22:27.057Z","harness:codex","Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
   "2026-08-31T12:54:38.703Z","harness:codex","Implementation start: public SDK owns deterministic progressive tool discovery, explicit ranking/budget/omission/cache contracts, and canonical results; MCP and CLI remain adapters. Compatibility is opt-in under a namespaced experimental capability, preserving unnegotiated clients."
   "2026-08-31T13:24:40.554Z","harness:codex","Implementation progress: the public SDK now owns a deterministic discovery contract with six visible signal components, permission filtering, tier/family filters, opaque request-bound cursors, token ceilings, omission recovery, and cache invalidation. Modern opt-in MCP clients receive five entry tools and canonical structured results; compatibility clients retain the full catalog and prior result text."
@@ -35,6 +35,7 @@ comments[8]{created_at,author,text}:
   "2026-08-31T16:11:23.688Z","harness:codex","Review round 1 remediation: accepted both Greptile findings. Detached task failures now retain negotiated canonical structured errors. Discovery cursors now carry an HMAC integrity tag under the private process cache, so modifying even an in-range offset fails closed; malformed, unsigned, stale, and out-of-range negative controls are covered. DeepScan's two nullable-access findings were removed with runtime-checked tool parsing. The Claude compatibility smoke and docs now lock all 32 tools including pm_discover. The live complexity provider reports zero violations, focused suites/typecheck/plugin smoke pass, and the full repository suite passes 8,185 tests at exact 100/100/100/100."
   "2026-08-31T17:25:34.245Z","harness:codex","Review round 2 evidence: CodeRabbit findings were verified against the current source. Runtime-invalid tier/family inputs now fail closed; cache keys are page-scoped across fingerprint, limit, offset, and budget while cursor binding remains request-scoped; the canonical README path is one measured orientation call; optional guide setup is separated from read-only pre-mutation checks; and budget selection serializes each schema-bearing row once while retaining exact envelope accounting. Linked suites passed 28 and 34 tests. The full repository gate passed 8,188 tests across 593 files at exact 100% statements 60,555/60,555, branches 45,740/45,740, functions 12,602/12,602, and lines 58,304/58,304. The live and aggregate static gates report zero complexity/docstring/duplication/boundary violations; secret scan and dependency audit are clean."
   "2026-08-31T18:09:23.548Z","harness:codex","Review round 3 evidence: accepted four CodeRabbit edge cases. The orientation token gate now rejects duplicate protocol task IDs; generated guidance includes live in-progress ownership checks before item mutation; SDK discovery treats Object.prototype names as unregistered help-backed candidates; and runtime tier validation rejects internal plus malformed values. Linked suites pass 29, 35, and 33 tests. Full coverage passes 8,189 tests across 593 files at exact 100% statements 60,558/60,558, branches 45,741/45,741, functions 12,603/12,603, and lines 58,307/58,307. Full static quality, live provider, secret scan, and dependency audit pass."
+  "2026-08-31T18:27:56.027Z","harness:codex","Release preflight remediation: CodeFactor annotation 99591861337 identified an unsafe optional-chain cast/index assertion in mcp-progressive-discovery.integration.spec.ts. The assertion now matches the complete optional content array with a stringContaining matcher, eliminating the possible undefined dereference. Focused integration test and file-scoped ESLint pass. Production source is unchanged from the 8,189-test exact 100/100/100/100 and full static run."
 learnings[3]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -145,5 +146,5 @@ docs[10]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Delivered and revalidated all third-round contract edge cases across discovery, measured orientation, generated guidance, and ownership safety; linked and repository-wide gates pass."
+close_reason: Cleared the final hosted CodeFactor annotation with a safe integration assertion; focused test and ESLint pass while the exact production-source coverage and static evidence remain unchanged.
 body: ""
