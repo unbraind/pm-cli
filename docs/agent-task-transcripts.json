@@ -1,6 +1,114 @@
 {
   "version": 2,
+  "orientation": {
+    "canonical_task_id": "orientation-context-intent",
+    "required_capabilities": [
+      "workspace_state",
+      "active_ownership",
+      "actionable_work"
+    ],
+    "protocols": [
+      {
+        "task_id": "orientation-context-intent",
+        "capabilities": [
+          "workspace_state",
+          "active_ownership",
+          "actionable_work"
+        ]
+      },
+      {
+        "task_id": "orientation-contracts-next",
+        "capabilities": [
+          "workspace_state",
+          "active_ownership",
+          "actionable_work"
+        ]
+      },
+      {
+        "task_id": "orientation-operating-rules",
+        "capabilities": [
+          "workspace_state",
+          "active_ownership",
+          "actionable_work"
+        ]
+      }
+    ]
+  },
   "tasks": [
+    {
+      "id": "orientation-context-intent",
+      "description": "Build sufficient cold-start workspace, ownership, and actionable-work context with the bounded orientation intent.",
+      "steps": [
+        {
+          "id": "context",
+          "args": ["context", "--for", "orient", "--limit", "10"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["summary.active_items", "hierarchy", "activity"]
+        }
+      ]
+    },
+    {
+      "id": "orientation-contracts-next",
+      "description": "Compare the proposed contracts-summary plus next cold-start protocol on the same fixed workspace.",
+      "steps": [
+        {
+          "id": "contracts",
+          "args": ["contracts", "--summary"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "collection",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["commands"]
+        },
+        {
+          "id": "next",
+          "args": ["next", "--for", "execute", "--ready-only", "--limit", "3"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["summary", "recommended"]
+        }
+      ]
+    },
+    {
+      "id": "orientation-operating-rules",
+      "description": "Compare the historical context, search, open-list, and in-progress-list orientation sequence.",
+      "steps": [
+        {
+          "id": "context",
+          "args": ["context", "--for", "orient", "--limit", "10"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["summary.active_items", "hierarchy", "activity"]
+        },
+        {
+          "id": "search",
+          "args": ["search", "agent task", "--status", "all", "--limit", "10"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "collection",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["items"]
+        },
+        {
+          "id": "open",
+          "args": ["list", "--status", "open", "--limit", "20"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "collection",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["items"]
+        },
+        {
+          "id": "in-progress",
+          "args": ["list", "--status", "in_progress", "--limit", "20"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "collection",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["items"]
+        }
+      ]
+    },
     {
       "id": "context-bootstrap",
       "description": "Orient in a scaled workspace and inspect the canonical focus item.",

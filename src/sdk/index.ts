@@ -1330,6 +1330,7 @@ export {
 } from "../core/profile/profile-lint.js";
 export * from "./authoring.js";
 export * from "./governance.js";
+export * from "./mcp/discovery.js";
 export * from "./query.js";
 export * from "./testing.js";
 

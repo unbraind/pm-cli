@@ -2,10 +2,20 @@
 
 ## Unreleased
 
+### Added
+
+- Progressive MCP discovery and canonical tool results: reveal the minimum relevant catalog and deliver one unambiguous model-facing output contract ([pm-3g3f8z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3g3f8z.toon))
+
 ### Fixed
 
+- GH-1166: root help hides the --all discovery option that reveals the full command surface ([pm-7f9zkh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7f9zkh.toon))
+- The two-call agent cold start proposed as canonical costs more tokens than the four-call protocol it replaces, and no gate measures either ([pm-jjqyzd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jjqyzd.toon))
 - GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
 - GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
+
+### Other
+
+- Document the measured canonical agent cold-start across docs and generated guidance ([pm-ka6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ka6d.toon))
 
 ## 2026.8.31 - 2026-08-31
 

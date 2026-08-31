@@ -27,6 +27,8 @@ import { NARROW_TOOL_ACTIONS, TOOLS } from "../../dist/mcp/tool-definitions.js";
 import { repoRoot } from "./utils.mjs";
 
 const COMPOSITE_MCP_TOOL_WAIVERS = {
+  pm_discover:
+    "SDK-owned capability discovery over the authorized tool catalog rather than one CLI action.",
   pm_mutate:
     "Structured mutation dispatcher spanning multiple canonical mutation actions.",
 };
@@ -132,10 +134,7 @@ function recordRuntimeActions(
     } catch {
       continue;
     }
-    positionals.set(
-      command,
-      normalizeLiveHelpArguments(help),
-    );
+    positionals.set(command, normalizeLiveHelpArguments(help));
   }
 }
 
@@ -264,7 +263,9 @@ function collectLiveCliCommandSurface(
   const coreTopLevelCommands = new Set(
     registeredCommandSeeds.length > 0
       ? registeredCommandSeeds.filter((command) => !command.includes(" "))
-      : normalizeLiveHelpSubcommands(loadHelp([], true)).map(({ name }) => name),
+      : normalizeLiveHelpSubcommands(loadHelp([], true)).map(
+          ({ name }) => name,
+        ),
   );
   const { registered, parents, aliases, positionals } =
     collectRegisteredCliCommands(loadHelp, registeredCommandSeeds);

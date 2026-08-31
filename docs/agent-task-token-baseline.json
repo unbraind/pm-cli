@@ -1,11 +1,105 @@
 {
-  "version": 3,
+  "version": 4,
   "transcript_version": 2,
-  "transcript_digest": "sha256:2bf91406426d2a9e5de1da10ba67f7b8e9d4a4baa09eb488fe89ae3925c78f3f",
+  "transcript_digest": "sha256:374aea7a2cabd24b8fb631448b1572666f60c5c409a64003c311f49f8343382b",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
+  "orientation": {
+    "canonical_task_id": "orientation-context-intent",
+    "required_capabilities": [
+      "actionable_work",
+      "active_ownership",
+      "workspace_state"
+    ],
+    "measured_winner_tokens": 1055,
+    "protocols": [
+      {
+        "task_id": "orientation-context-intent",
+        "command_count": 1,
+        "estimated_tokens": 1055,
+        "capabilities": [
+          "actionable_work",
+          "active_ownership",
+          "workspace_state"
+        ]
+      },
+      {
+        "task_id": "orientation-operating-rules",
+        "command_count": 4,
+        "estimated_tokens": 2293,
+        "capabilities": [
+          "actionable_work",
+          "active_ownership",
+          "workspace_state"
+        ]
+      },
+      {
+        "task_id": "orientation-contracts-next",
+        "command_count": 2,
+        "estimated_tokens": 4798,
+        "capabilities": [
+          "actionable_work",
+          "active_ownership",
+          "workspace_state"
+        ]
+      }
+    ]
+  },
   "tasks": [
+    {
+      "id": "orientation-context-intent",
+      "max_estimated_tokens": 1055,
+      "steps": [
+        {
+          "id": "context",
+          "max_estimated_tokens": 1055,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
+    {
+      "id": "orientation-contracts-next",
+      "max_estimated_tokens": 4798,
+      "steps": [
+        {
+          "id": "contracts",
+          "max_estimated_tokens": 4111,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "next",
+          "max_estimated_tokens": 687,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
+    {
+      "id": "orientation-operating-rules",
+      "max_estimated_tokens": 2293,
+      "steps": [
+        {
+          "id": "context",
+          "max_estimated_tokens": 1055,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "search",
+          "max_estimated_tokens": 164,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "open",
+          "max_estimated_tokens": 878,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "in-progress",
+          "max_estimated_tokens": 196,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
     {
       "id": "context-bootstrap",
       "max_estimated_tokens": 1978,
@@ -107,5 +201,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 4331
+  "composite_max_estimated_tokens": 12477
 }

@@ -6,6 +6,7 @@ import {
   assertAdvertisedAgentTaskRecovery,
   assertMatchingAgentTaskFixtureAnchors,
   compareAgentTaskTokenBaseline,
+  evaluateOrientationProtocolSelection,
   evaluateAgentTaskTokenReport,
   finalizeAgentTaskTokenReport,
   main,
@@ -33,7 +34,7 @@ describe("agent-task transcript token gate", () => {
     tasks: [{ id: "context", estimated_tokens: 30, steps }],
   };
   const baseline = {
-    version: 3,
+    version: 4,
     transcript_digest: "sha256:test",
     composite_max_estimated_tokens: 30,
     tasks: [
@@ -55,6 +56,84 @@ describe("agent-task transcript token gate", () => {
       },
     ],
   };
+
+  it("selects the lowest-token equivalent orientation protocol", () => {
+    const orientationReport = {
+      tasks: [
+        {
+          id: "orientation-context-intent",
+          step_count: 1,
+          estimated_tokens: 300,
+        },
+        {
+          id: "orientation-contracts-next",
+          step_count: 2,
+          estimated_tokens: 800,
+        },
+      ],
+    };
+    const orientation = {
+      canonical_task_id: "orientation-context-intent",
+      required_capabilities: ["state", "ownership"],
+      protocols: [
+        {
+          task_id: "orientation-context-intent",
+          capabilities: ["ownership", "state"],
+        },
+        {
+          task_id: "orientation-contracts-next",
+          capabilities: ["state", "ownership"],
+        },
+      ],
+    };
+    expect(
+      evaluateOrientationProtocolSelection(orientationReport, orientation),
+    ).toMatchObject({
+      canonical_task_id: "orientation-context-intent",
+      measured_winner_tokens: 300,
+      protocols: [
+        { task_id: "orientation-context-intent", command_count: 1 },
+        { task_id: "orientation-contracts-next", command_count: 2 },
+      ],
+    });
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        canonical_task_id: "orientation-contracts-next",
+      }),
+    ).toThrow();
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        canonical_task_id: "orientation-context-intent",
+        required_capabilities: undefined,
+        protocols: undefined,
+      }),
+    ).toThrow();
+
+    expect(
+      evaluateOrientationProtocolSelection(
+        {
+          tasks: orientationReport.tasks.map((task) => ({
+            ...task,
+            estimated_tokens: 300,
+          })),
+        },
+        orientation,
+      ).protocols.map(({ task_id }) => task_id),
+    ).toEqual(["orientation-context-intent", "orientation-contracts-next"]);
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            task_id: "orientation-contracts-next",
+            capabilities: ["state"],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
 
   it("accepts an exact per-task baseline and detects a seeded regression", () => {
     expect(compareAgentTaskTokenBaseline(report, baseline)).toEqual([]);
@@ -141,6 +220,21 @@ describe("agent-task transcript token gate", () => {
       "task:context:step:inspect:missing_baseline",
       "task:context:step_count:2!=0",
     ]);
+    expect(
+      compareAgentTaskTokenBaseline(
+        {
+          ...report,
+          orientation: { canonical_task_id: "new", measured_winner_tokens: 31 },
+        },
+        {
+          ...baseline,
+          orientation: {
+            canonical_task_id: "old",
+            measured_winner_tokens: 30,
+          },
+        },
+      ),
+    ).toContain("orientation:canonical_or_token_ceiling_drift");
     expect(() =>
       evaluateAgentTaskTokenReport(report, { ...baseline, version: 1 }),
     ).toThrow();
@@ -568,9 +662,9 @@ describe("agent-task transcript token gate", () => {
 
     const updated = await main(["--update", "--baseline", baselinePath]);
     expect(updated).toMatchObject({
-      task_count: 5,
-      completed_task_count: 5,
-      step_count: 14,
+      task_count: 8,
+      completed_task_count: 8,
+      step_count: 21,
       retry_count: 2,
     });
     const updatedBaseline = JSON.parse(

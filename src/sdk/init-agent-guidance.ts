@@ -197,7 +197,7 @@ function buildAgentGuidanceBlock(
     AGENT_GUIDANCE_START_MARKER,
     "## pm Workflow (Agent Quickstart)",
     "",
-    '- Orient before mutate: `pm context --limit 10`, `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`.',
+    '- Cold start with the measured canonical orientation: `pm context --limit 10 --for orient`; before mutate, also run `pm search "<keywords>" --limit 10` and `pm list --status open --limit 20`.',
     "- Claim and execute: `pm claim <id>` then `pm update <id> --status in_progress`.",
     `- Link evidence while coding: \`pm files <id> --add ...\`, \`pm docs <id> --add ...\`, \`pm test <id> --add command="${projectTestCommand}"\`.`,
     '- Verify and close: `pm test <id> --run --progress`, `pm close <id> "<evidence>" --validate-close warn`, `pm release <id>`.',

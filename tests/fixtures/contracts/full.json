@@ -27482,6 +27482,92 @@
       ]
     },
     {
+      "description": "Discover the smallest relevant authorized pm tool catalog under an explicit token budget. Ranking is deterministic and returns public lexical, semantic, graph, permission, freshness, and usage signal explanations. Continue with next_cursor; set includeSchema=true only when complete input schemas are needed.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Opaque next_cursor from an equivalent discovery request.",
+            "maxLength": 4096,
+            "minLength": 1,
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "family": {
+            "description": "Optional stable capability-family filter.",
+            "enum": [
+              "workspace",
+              "intake",
+              "context",
+              "lifecycle",
+              "evidence",
+              "graph",
+              "quality",
+              "automation",
+              "extensions",
+              "internal"
+            ],
+            "type": "string"
+          },
+          "includeSchema": {
+            "description": "Include complete tool input schemas; false by default.",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Maximum result rows; defaults to 10.",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputBudget": {
+            "anyOf": [
+              {
+                "minimum": 128,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Estimated-token ceiling; defaults to 1200."
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "query": {
+            "description": "Free-text capability intent. Empty text lists by stable policy order.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "tier": {
+            "description": "Maximum command visibility tier included in results.",
+            "enum": [
+              "core",
+              "standard",
+              "full"
+            ],
+            "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_discover",
+      "required": []
+    },
+    {
       "description": "List, add, or remove linked docs for a pm item.",
       "input_schema": {
         "additionalProperties": true,

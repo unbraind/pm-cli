@@ -5521,6 +5521,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "discoverPmTools",
+          "signature": "(candidates: readonly PmToolDiscoveryCandidate[], options?: PmToolDiscoveryOptions) => PmToolDiscoveryResult | calls: (candidates: readonly PmToolDiscoveryCandidate[], options?: PmToolDiscoveryOptions) => PmToolDiscoveryResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "discoverProjectRuntimeVersionPins",
           "signature": "(projectRoot: string) => ProjectRuntimeVersionPin[] | calls: (projectRoot: string) => ProjectRuntimeVersionPin[]"
         },
@@ -10789,6 +10795,12 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_MCP_ENTRY_TOOL_NAMES",
+          "signature": "readonly string[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_MCP_ERROR_CODES",
           "signature": "{ readonly headerMismatch: -32020; readonly missingRequiredClientCapability: -32021; readonly unsupportedProtocolVersion: -32022; readonly invalidParams: -32602; }"
         },
@@ -10815,6 +10827,18 @@
           "kind": "value",
           "name": "PM_MCP_META_KEYS",
           "signature": "{ readonly clientCapabilities: \"io.modelcontextprotocol/clientCapabilities\"; readonly clientInfo: \"io.modelcontextprotocol/clientInfo\"; readonly protocolVersion: \"io.modelcontextprotocol/protocolVersion\"; readonly serverInfo: \"io.modelcontextprotocol/serverInfo\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION",
+          "signature": "\"dev.unbrained.pm/progressive-tool-discovery\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY",
+          "signature": "Readonly<{ version: 1; discoveryTool: \"pm_discover\"; canonicalResult: \"structuredContent.result\"; compatibilityText: \"pointer\"; }>"
         },
         {
           "classification": "advanced_export",
@@ -12411,6 +12435,54 @@
           "kind": "interface",
           "name": "PmToolCustomFieldCollision",
           "signature": "export interface PmToolCustomFieldCollision { field: string; property: string; owner: \"mcp_tool_input\"; nested_path: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoveryAppliedSignal",
+          "signature": "export interface PmToolDiscoveryAppliedSignal { value: number; weight: number; available: boolean; source: \"computed\" | \"host\" | \"authorization\" | \"unavailable\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoveryCandidate",
+          "signature": "export interface PmToolDiscoveryCandidate { name: string; description: string; inputSchema: Record<string, unknown>; authorized?: boolean; signals?: PmToolDiscoverySignalInput; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoveryOmissionReceipt",
+          "signature": "export interface PmToolDiscoveryOmissionReceipt { has_omissions: boolean; omitted: Array<{ name: \"input_schema\" | \"tools\"; reason: \"compact_projection\" | \"limit\" | \"token_budget\"; restore_with: string; }>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoveryOptions",
+          "signature": "export interface PmToolDiscoveryOptions { query?: string; family?: PmCommandCapabilityFamily; tier?: Exclude<PmCommandVisibilityTier, \"internal\">; limit?: number; cursor?: string; includeSchema?: boolean; outputBudget?: number | \"unbounded\"; profile?: PmMcpToolProfile; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoveryResult",
+          "signature": "export interface PmToolDiscoveryResult { result_type: \"pm_tool_discovery\"; contract_version: 1; query: string; profile: PmMcpToolProfile; tools: PmToolDiscoveryResultRow[]; total: number; returned: number; has_more: boolean; next_cursor?: string; token_cost: { estimated_tokens: number; budget: number | \"unbounded\"; within_budget: boolean; }; ranking_policy: { version: 1; formula: \"weighted_sum_then_name\"; weights: Readonly<Record<PmToolDiscoverySignalName, number>>; }; cache: { key: string; ttl_ms: number; scope: \"private\"; invalidates_on: readonly string[]; }; omission_receipt: PmToolDiscoveryOmissionReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoveryResultRow",
+          "signature": "export interface PmToolDiscoveryResultRow { name: string; description: string; command: string; tier: PmCommandVisibilityTier; family: PmCommandCapabilityFamily; score: number; signals: Readonly<Record<PmToolDiscoverySignalName, PmToolDiscoveryAppliedSignal>>; input_schema?: Record<string, unknown>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmToolDiscoverySignalInput",
+          "signature": "export interface PmToolDiscoverySignalInput { semantic?: number; graph?: number; freshness?: number; usage?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmToolDiscoverySignalName",
+          "signature": "export type PmToolDiscoverySignalName = \"lexical\" | \"semantic\" | \"graph\" | \"permission\" | \"freshness\" | \"usage\";"
         },
         {
           "classification": "contract_data",

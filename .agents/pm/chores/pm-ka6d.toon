@@ -1,19 +1,24 @@
 id: pm-ka6d
-title: Document the two-call agent cold-start (contracts --summary + next) as the canonical orientation in docs and plugin templates
-description: Standardize the two-call contracts-summary plus next cold start across agent docs and plugin templates with measured token evidence.
+title: Document the measured canonical agent cold-start across docs and generated guidance
+description: "Standardize the lowest-token equivalent cold-start protocol across agent docs and generated guidance, with a completed-task replay gate that rejects a more expensive canonical choice."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:docs",simplification
 created_at: "2026-07-11T16:23:07.560Z"
-updated_at: "2026-08-07T11:19:59.291Z"
+updated_at: "2026-08-31T15:13:55.440Z"
+closed_at: "2026-08-31T15:13:33.250Z"
+completed_at: "2026-08-31T15:13:33.250Z"
 author: maintainer-agent
 estimated_minutes: 90
-acceptance_criteria: Agent-facing docs describe the two-call cold-start as the canonical orientation path; plugin instruction templates teach the same sequence; no new top-level commands introduced; before/after token numbers cited from the a22j baseline script
+acceptance_criteria: Agent-facing docs name the measured canonical cold-start; generated AGENTS and CLAUDE guidance teaches the same sequence; no new top-level CLI commands are introduced; the fixed 101-item replay reports every compared protocol and fails when the documented canonical protocol is not the lowest-token equivalent choice
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[8]:
+resolution: Standardized context --for orient across agent docs and generated guidance with drift-gated measurement
+expected_result: All human and generated agent guidance names the measured lowest-token equivalent orientation protocol
+actual_result: "Measured context --for orient is canonical at 1,055 estimated tokens versus 2,293 for the historical four-read sequence and 4,798 for contracts plus next; AGENTS.md, README, Agent Guide, generated init guidance, and the replay gate now agree."
+dependencies[10]:
   - id: pm-8pnj
     kind: related
     created_at: "2026-07-14T17:05:08.739Z"
@@ -41,4 +46,44 @@ dependencies[8]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-8pnj
+    kind: verifies
+    created_at: "2026-08-31T13:58:29.272Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-j82fd3
+    kind: implements
+    created_at: "2026-08-31T13:58:29.272Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
+  "2026-08-31T12:54:39.821Z","harness:codex","Implementation start: blocker pm-jjqyzd is being actively resolved in this same connected tranche; documentation and generated guidance will consume the measured winner with no new top-level CLI command."
+  "2026-08-31T13:24:40.016Z","harness:codex","Documentation evidence: AGENTS.md, README, Agent Guide, generated init guidance, and output-accounting docs now teach the measured one-call context intent and link the published 1,055/2,293/4,798 replay evidence. The obsolete two-call premise remains preserved in item history and is explicitly corrected by blocker pm-jjqyzd."
+  "2026-08-31T15:13:30.507Z","harness:codex","Terminal evidence: linked init-guidance and replay-gate suite passed 47 tests. AGENTS.md, README, Agent Guide, generated init guidance, and output-token accounting now share the measured one-call orientation. Exact 100% repository coverage, docs/skills verification, generated-surface checks, command grammar, and static-quality assurance passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-31T15:07:56.067Z","harness:codex","Generated guidance and human docs need one measured source of truth plus a drift gate, otherwise an obsolete cheaper-looking protocol propagates across every agent surface."
+files[3]{path,scope,note}:
+  AGENTS.md,project,Repository agent workflow quickstart
+  README.md,project,User-facing canonical orientation
+  src/sdk/init-agent-guidance.ts,project,Generated canonical agent workflow
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-31T13:57:44.848Z",local_mutation,feat/progressive-capability-discovery
+test_runs[1]:
+  - run_id: test-local-mthdjjtu-37arco
+    kind: test
+    status: passed
+    started_at: "2026-08-31T15:08:55.610Z"
+    finished_at: "2026-08-31T15:09:30.018Z"
+    recorded_at: "2026-08-31T15:09:30.018Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Detailed measured orientation protocol
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Release-gated orientation evidence
+close_reason: "Published the measured canonical orientation across human and generated guidance with drift-gated replay evidence; linked tests, documentation gates, and exact repository coverage pass."
 body: "Promoted from the pm-mpbb DX ledger (candidate lever d) on 2026-07-11, when the pm-a22j baseline gate opened.\n\nThe numbers make the case: pm contracts --summary = 2,867 B TOON (~0.7k tok) vs contracts --full = 506,091 B (176x) vs the MCP tools/list payload = 32,979 B (~8.2k tok, paid on every MCP session bootstrap). The cheap two-call cold-start already exists — `pm contracts --summary` (what exists) then `pm next` (what to do) — but no doc or plugin template teaches it as THE orientation path, so agents default to expensive discovery (--help walks, contracts --full, or full MCP attachment).\n\nScope: docs (agents guide + README agent section) describe the two-call cold-start as the canonical orientation; plugin instruction templates (Claude/Codex/ChatGPT alignment, see plan commit ba09b155) teach the same sequence; cite the baseline script scripts/measure-agent-token-surface.mjs for before/after numbers.\n\nConstraint (ledger fence): no new top-level commands — this is documentation and template work only."

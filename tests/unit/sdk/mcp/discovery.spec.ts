@@ -1,0 +1,231 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  PM_MCP_ENTRY_TOOL_NAMES,
+  discoverPmTools,
+  type PmToolDiscoveryCandidate,
+} from "../../../../src/sdk/mcp/discovery.js";
+
+function candidate(
+  name: string,
+  description = `Operate ${name}`,
+): PmToolDiscoveryCandidate {
+  return {
+    name,
+    description,
+    inputSchema: { type: "object", properties: { id: { type: "string" } } },
+  };
+}
+
+describe("progressive MCP tool discovery", () => {
+  it("composes every declared signal and exposes the ranking policy", () => {
+    const result = discoverPmTools(
+      [
+        {
+          ...candidate("pm_close", "Close completed work with evidence"),
+          signals: { semantic: 1, graph: 1, freshness: 1, usage: 1 },
+        },
+        candidate("pm_get", "Inspect one work item"),
+      ],
+      { query: "close completed evidence", outputBudget: "unbounded" },
+    );
+
+    expect(result.tools[0]).toMatchObject({
+      name: "pm_close",
+      command: "close",
+      family: "lifecycle",
+      signals: {
+        lexical: { available: true, source: "computed" },
+        semantic: { value: 1, available: true, source: "host" },
+        graph: { value: 1, available: true, source: "host" },
+        permission: { value: 1, source: "authorization" },
+        freshness: { value: 1, available: true, source: "host" },
+        usage: { value: 1, available: true, source: "host" },
+      },
+    });
+    expect(Object.keys(result.ranking_policy.weights).sort()).toEqual([
+      "freshness",
+      "graph",
+      "lexical",
+      "permission",
+      "semantic",
+      "usage",
+    ]);
+    expect(result.tools[1]?.signals).toMatchObject({
+      semantic: { available: true, source: "computed" },
+      graph: { available: true, source: "computed" },
+      freshness: { available: true, source: "computed" },
+      usage: { available: true, source: "computed" },
+    });
+
+    const malformedHostSignal = discoverPmTools(
+      [{ ...candidate("pm_get"), signals: { semantic: Number.NaN } }],
+      { outputBudget: "unbounded" },
+    );
+    expect(malformedHostSignal.tools[0]?.signals.semantic).toMatchObject({
+      value: 0,
+      available: true,
+      source: "host",
+    });
+  });
+
+  it("filters unauthorized and tier-incompatible tools before ranking", () => {
+    const result = discoverPmTools(
+      [
+        { ...candidate("pm_close"), authorized: false },
+        candidate("pm_context"),
+        candidate("pm_health"),
+      ],
+      { tier: "core", outputBudget: "unbounded" },
+    );
+    expect(result.tools.map(({ name }) => name)).toEqual(["pm_context"]);
+  });
+
+  it("applies the default budget and an exact capability-family filter", () => {
+    const result = discoverPmTools(
+      [candidate("pm_close"), candidate("pm_get")],
+      { family: "lifecycle" },
+    );
+    expect(result.tools.map(({ name }) => name)).toEqual(["pm_close"]);
+    expect(result.token_cost.budget).toBe(1_200);
+  });
+
+  it("pages without duplicates and rejects stale or mismatched cursors", () => {
+    const candidates = Array.from({ length: 137 }, (_, index) =>
+      candidate(`pm_synthetic_${String(index).padStart(3, "0")}`),
+    );
+    const names: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = discoverPmTools(candidates, {
+        query: "synthetic",
+        limit: 17,
+        cursor,
+        outputBudget: "unbounded",
+      });
+      names.push(...page.tools.map(({ name }) => name));
+      cursor = page.next_cursor;
+    } while (cursor !== undefined);
+    expect(names).toHaveLength(137);
+    expect(new Set(names).size).toBe(137);
+
+    const first = discoverPmTools(candidates, {
+      query: "synthetic",
+      limit: 5,
+      outputBudget: "unbounded",
+    });
+    expect(() =>
+      discoverPmTools(candidates, {
+        query: "different",
+        cursor: first.next_cursor,
+        outputBudget: "unbounded",
+      }),
+    ).toThrow(/Invalid or stale/u);
+
+    const decoded = JSON.parse(
+      Buffer.from(first.next_cursor ?? "", "base64url").toString("utf8"),
+    ) as { offset: number };
+    const pastEndCursor = Buffer.from(
+      JSON.stringify({ ...decoded, offset: candidates.length + 1 }),
+      "utf8",
+    ).toString("base64url");
+    expect(() =>
+      discoverPmTools(candidates, {
+        query: "synthetic",
+        limit: 5,
+        cursor: pastEndCursor,
+        outputBudget: "unbounded",
+      }),
+    ).toThrow(/Invalid or stale/u);
+  });
+
+  it("reports schema and token-budget omissions with recoverable cursors", () => {
+    const candidates = PM_MCP_ENTRY_TOOL_NAMES.map((name) => candidate(name));
+    const compact = discoverPmTools(candidates, {
+      limit: 2,
+      outputBudget: "unbounded",
+    });
+    expect(compact.omission_receipt.omitted).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "input_schema" }),
+        expect.objectContaining({ name: "tools", reason: "limit" }),
+      ]),
+    );
+    expect(compact.tools[0]?.input_schema).toBeUndefined();
+
+    const expanded = discoverPmTools(candidates, {
+      includeSchema: true,
+      outputBudget: "unbounded",
+    });
+    expect(expanded.tools[0]?.input_schema).toBeDefined();
+    expect(expanded.token_cost.within_budget).toBe(true);
+
+    const budgeted = discoverPmTools(candidates, { outputBudget: 1_200 });
+    expect(budgeted.token_cost.estimated_tokens).toBeLessThanOrEqual(1_200);
+    expect(
+      Math.ceil(Buffer.byteLength(JSON.stringify(budgeted), "utf8") / 4),
+    ).toBe(budgeted.token_cost.estimated_tokens);
+    expect(() => discoverPmTools(candidates, { outputBudget: 128 })).toThrow(
+      /too small/u,
+    );
+
+    let rowBudgetRefusal: Error | undefined;
+    for (let budget = 128; budget < 1_200; budget += 1) {
+      try {
+        discoverPmTools([candidate("pm_context")], { outputBudget: budget });
+      } catch (error: unknown) {
+        if (
+          error instanceof Error &&
+          /too small to return a tool/u.test(error.message)
+        ) {
+          rowBudgetRefusal = error;
+          break;
+        }
+      }
+    }
+    expect(rowBudgetRefusal?.message).toMatch(/increase it to at least/u);
+  });
+
+  it("stays deterministic and bounded at one hundred, one thousand, and ten thousand tools", () => {
+    for (const size of [100, 1_000, 10_000]) {
+      const candidates = Array.from({ length: size }, (_, index) =>
+        candidate(
+          `pm_catalog_${String(index).padStart(5, "0")}`,
+          index === size - 1
+            ? "Unique deploy release verification capability"
+            : `Catalog capability ${index}`,
+        ),
+      );
+      const started = performance.now();
+      const first = discoverPmTools(candidates, {
+        query: "unique deploy release verification",
+        limit: 10,
+        outputBudget: 1_200,
+      });
+      const second = discoverPmTools([...candidates].reverse(), {
+        query: "unique deploy release verification",
+        limit: 10,
+        outputBudget: 1_200,
+      });
+      expect(first).toEqual(second);
+      expect(first.tools[0]?.name).toBe(
+        `pm_catalog_${String(size - 1).padStart(5, "0")}`,
+      );
+      expect(first.token_cost.within_budget).toBe(true);
+      expect(performance.now() - started).toBeLessThan(2_000);
+    }
+  });
+
+  it("fails closed on invalid limits and budgets", () => {
+    expect(() => discoverPmTools([], { limit: 0 })).toThrow(/limit/u);
+    expect(() => discoverPmTools([], { outputBudget: 127 })).toThrow(
+      /outputBudget/u,
+    );
+    expect(() => discoverPmTools([], { query: "x".repeat(4_097) })).toThrow(
+      /query/u,
+    );
+    expect(() => discoverPmTools([], { cursor: "x".repeat(4_097) })).toThrow(
+      /cursor/u,
+    );
+  });
+});

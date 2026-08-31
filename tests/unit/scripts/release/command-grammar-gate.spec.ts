@@ -342,6 +342,24 @@ describe("command grammar gate", () => {
     );
   });
 
+  it("accepts SDK-owned composite MCP primitives without action bindings", async () => {
+    const { module } = await runGrammarGate(liveCommandSummaries);
+    expect(
+      module.verifyMcpGrammar(
+        [],
+        [
+          {
+            name: "pm_run",
+            inputSchema: { properties: { action: { enum: [] } } },
+          },
+          { name: "pm_discover", inputSchema: {} },
+          { name: "pm_mutate", inputSchema: {} },
+        ],
+        {},
+      ),
+    ).toMatchObject({ ok: true, findings: [] });
+  });
+
   it("fails closed when the contracts response omits its summary array", async () => {
     const result = await runGrammarGate(undefined);
     expect(result.report.ok).toBe(false);

@@ -1,6 +1,6 @@
 # Output Token Accounting
 
-Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon), [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon), [pm-8pnj](../.agents/pm/features/pm-8pnj.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
+Tracker references: [pm-t5dt4z](../.agents/pm/tasks/pm-t5dt4z.toon), [pm-g3n00m](../.agents/pm/stories/pm-g3n00m.toon), [pm-8pnj](../.agents/pm/features/pm-8pnj.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), [pm-srns](../.agents/pm/issues/pm-srns.toon), and [pm-jjqyzd](../.agents/pm/issues/pm-jjqyzd.toon).
 
 ## Agent Quick Context
 
@@ -39,7 +39,9 @@ The command still exits with its normal non-zero status; the receipt is additive
 
 ## Release-Level Task Entitlement
 
-[`agent-task-transcripts.json`](agent-task-transcripts.json) is the SDK-validated, versioned golden corpus. [`agent-task-token-baseline.json`](agent-task-token-baseline.json) is its externally shipped release ratchet. The gate executes the built CLI against independent, identically seeded accounting-on and accounting-off workspaces. Its five complete workflows cover:
+[`agent-task-transcripts.json`](agent-task-transcripts.json) is the SDK-validated, versioned golden corpus. [`agent-task-token-baseline.json`](agent-task-token-baseline.json) is its externally shipped release ratchet. The gate executes the built CLI against independent, identically seeded accounting-on and accounting-off workspaces. Its eight complete workflows cover:
+
+- three equivalent cold-start protocols and a fail-closed rule that the documented canonical protocol must remain the measured winner: `context --for orient` at 1,055 estimated tokens, the historical four-read sequence at 2,293, and `contracts --summary` plus `next` at 4,798 on the fixed 101-item corpus;
 
 - bounded triage, scaled-workspace orientation, and returning-agent inspection;
 - a closed-domain refusal followed by the exact advertised shell-free retry;
@@ -49,7 +51,7 @@ The command still exits with its normal non-zero status; the receipt is additive
 
 Every step verifies its public SDK output family, canonical successful or refusal exit status, required own-property paths, declared `expected_field_values`, and refusal identity where applicable. Recovery steps must declare a successful output family instead of chaining one refusal to another, every refusal in a completed task must have a later successful `recovery_for` step, and every completed task must terminate with successful output. Successful steps cannot carry refusal-only metadata. Dot-separated `required_fields` and `expected_field_values` paths are traversed structurally from the output root, so incidental prose or nested key names cannot satisfy completeness or terminal-state assertions. The report publishes bytes and estimated tokens for each step and completed task, retry counts, corpus digest, and composite cost. Accounting-on application payloads must be byte-equivalent to their independently captured accounting-off payloads after removing only the receipt. Receipt byte and token fields are independently measured rather than trusted. Runtime refusals verify that their self-reported `total_bytes` matches the independent transport and that `total_estimated_tokens` equals `ceil(total_bytes / 4)`; Commander usage refusals that happen before accounting attachment are measured directly from the captured transport and labeled `independent_transport`.
 
-The baseline fails closed on corpus digest, task identity, step identity, missing or non-finite per-step and per-task ceilings, and missing or non-finite composite cost ceilings. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
+The baseline fails closed on corpus digest, task identity, step identity, the canonical orientation winner and its ceiling, missing or non-finite per-step and per-task ceilings, and missing or non-finite composite cost ceilings. A seeded million-token completed-task regression proves the ratchet fails. Run it with:
 
 ```bash
 pnpm quality:agent-task-token

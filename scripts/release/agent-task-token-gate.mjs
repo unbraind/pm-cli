@@ -30,7 +30,7 @@ const TRANSCRIPT_PATH = path.join(
   "agent-task-transcripts.json",
 );
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
-const BASELINE_VERSION = 3;
+const BASELINE_VERSION = 4;
 const REPLAY_CLOCK = "2026-08-28T00:00:00.000Z";
 const REPLAY_SEED = "agent-task-token-gate";
 
@@ -345,6 +345,65 @@ function measureTask(baselineRoot, accountedRoot, task) {
   };
 }
 
+function sortedUniqueStrings(value) {
+  return Array.isArray(value)
+    ? [...new Set(value.filter((entry) => typeof entry === "string"))].sort()
+    : [];
+}
+
+/** Select the cheapest equivalent orientation transcript and fail on undeclared or stale policy. */
+export function evaluateOrientationProtocolSelection(report, orientation) {
+  const requiredCapabilities = sortedUniqueStrings(
+    orientation?.required_capabilities,
+  );
+  const declaredProtocols = Array.isArray(orientation?.protocols)
+    ? orientation.protocols
+    : [];
+  if (
+    typeof orientation?.canonical_task_id !== "string" ||
+    requiredCapabilities.length === 0 ||
+    declaredProtocols.length < 2
+  ) {
+    fail("Agent-task orientation protocol contract is incomplete");
+  }
+  const tasksById = new Map(report.tasks.map((task) => [task.id, task]));
+  const protocols = declaredProtocols.map((protocol) => {
+    const task = tasksById.get(protocol?.task_id);
+    const capabilities = sortedUniqueStrings(protocol?.capabilities);
+    if (
+      task === undefined ||
+      JSON.stringify(capabilities) !== JSON.stringify(requiredCapabilities)
+    ) {
+      fail(
+        `Agent-task orientation protocol ${String(protocol?.task_id)} does not prove the required equivalent capabilities`,
+      );
+    }
+    return {
+      task_id: task.id,
+      command_count: task.step_count,
+      estimated_tokens: task.estimated_tokens,
+      capabilities,
+    };
+  });
+  protocols.sort(
+    (left, right) =>
+      left.estimated_tokens - right.estimated_tokens ||
+      left.task_id.localeCompare(right.task_id),
+  );
+  const winner = protocols[0];
+  if (orientation.canonical_task_id !== winner.task_id) {
+    fail(
+      `Agent-task canonical orientation ${orientation.canonical_task_id} is not the measured winner ${winner.task_id}`,
+    );
+  }
+  return {
+    canonical_task_id: winner.task_id,
+    required_capabilities: requiredCapabilities,
+    measured_winner_tokens: winner.estimated_tokens,
+    protocols,
+  };
+}
+
 async function seedWorkspace(workspaceRoot) {
   const pmRoot = path.join(workspaceRoot, ".agents", "pm");
   const client = new PmClient({
@@ -426,6 +485,14 @@ export function compareAgentTaskTokenBaseline(report, baseline) {
     failures.push(`baseline_version:${baseline.version}`);
   if (baseline.transcript_digest !== report.transcript_digest)
     failures.push("transcript_digest:mismatch");
+  if (
+    baseline.orientation?.canonical_task_id !==
+      report.orientation?.canonical_task_id ||
+    baseline.orientation?.measured_winner_tokens <
+      report.orientation?.measured_winner_tokens
+  ) {
+    failures.push("orientation:canonical_or_token_ceiling_drift");
+  }
   const taskLimits = new Map(
     (baseline.tasks ?? []).map((task) => [task.id, task]),
   );
@@ -466,6 +533,7 @@ function buildBaseline(report) {
     estimator: "ceil(utf8_bytes / 4)",
     measurement_scope: "output_before_token_accounting",
     published_with_release: true,
+    orientation: report.orientation,
     tasks: report.tasks.map((task) => ({
       id: task.id,
       max_estimated_tokens: task.estimated_tokens,
@@ -545,7 +613,8 @@ export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
   const baselinePath = resolveAgentTaskTokenBaselinePath(flags.get("baseline"));
   const transcriptSource = readFileSync(TRANSCRIPT_PATH, "utf8");
-  const corpus = parsePmAgentTaskTranscriptCorpus(JSON.parse(transcriptSource));
+  const transcriptDocument = JSON.parse(transcriptSource);
+  const corpus = parsePmAgentTaskTranscriptCorpus(transcriptDocument);
   const baselineWorkspace = mkdtempSync(
     path.join(tmpdir(), "pm-agent-task-baseline-"),
   );
@@ -595,6 +664,10 @@ export async function main(argv = process.argv.slice(2)) {
       ),
       tasks: measured,
     };
+    report.orientation = evaluateOrientationProtocolSelection(
+      report,
+      transcriptDocument.orientation,
+    );
     return finalizeAgentTaskTokenReport(report, flags, baselinePath);
   } finally {
     rmSync(baselineWorkspace, { recursive: true, force: true });

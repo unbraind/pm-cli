@@ -4,15 +4,15 @@ This file is the low-context entrypoint for agents working in this repository. R
 
 ## Progressive Disclosure
 
-| Need | Read |
-|------|------|
-| Agent workflow and ownership | [Agent Guide](docs/AGENT_GUIDE.md) |
-| Exact command families and examples | [Command Reference](docs/COMMANDS.md) |
-| Sandbox-safe verification | [Testing](docs/TESTING.md) |
-| Settings, output, and environment | [Configuration](docs/CONFIGURATION.md) |
-| Package or extension work | [Packages and Extensions](docs/EXTENSIONS.md), [SDK](docs/SDK.md) |
-| Release work | [Releasing](docs/RELEASING.md) |
-| Full docs map | [Documentation Index](docs/README.md) |
+| Need                                | Read                                                              |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| Agent workflow and ownership        | [Agent Guide](docs/AGENT_GUIDE.md)                                |
+| Exact command families and examples | [Command Reference](docs/COMMANDS.md)                             |
+| Sandbox-safe verification           | [Testing](docs/TESTING.md)                                        |
+| Settings, output, and environment   | [Configuration](docs/CONFIGURATION.md)                            |
+| Package or extension work           | [Packages and Extensions](docs/EXTENSIONS.md), [SDK](docs/SDK.md) |
+| Release work                        | [Releasing](docs/RELEASING.md)                                    |
+| Full docs map                       | [Documentation Index](docs/README.md)                             |
 
 Use runtime contracts for exact flags because packages and settings can change the active surface:
 
@@ -58,10 +58,11 @@ On a fresh clone or worktree, also run `pm merge install` once: the committed `.
 For real repository tracking, do not override `PM_PATH`. If a script must target a tracker explicitly, prefer `--pm-path <repo>/.agents/pm`; `--path` is only a backward-compatible tracker-root alias, not a workspace/cwd flag. For tests and dogfood runs, use sandboxed `PM_PATH` and `PM_GLOBAL_PATH`; prefer `node scripts/run-tests.mjs ...` because it sets them automatically.
 
 <!-- pm-cli:agent-guidance:start:v1 -->
+
 ## pm Workflow Quickstart
 
 ```bash
-pm context --limit 10
+pm context --limit 10 --for orient
 pm search "<request keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
@@ -78,11 +79,12 @@ pm release <id>
 ```
 
 Author identity is automatic; use `--author` only for an explicit override.
+
 <!-- pm-cli:agent-guidance:end -->
 
 ## Working Rules
 
-- **Orient:** run `pm context`, `pm search`, `pm list --status open`, and `pm list --status in_progress` before `pm create`. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
+- **Orient:** start with the measured canonical cold-start, `pm context --limit 10 --for orient`. Before `pm create`, also run request-specific `pm search`, `pm list --status open`, and `pm list --status in_progress` so duplicate and ownership checks use live state. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
 - **Verify before you claim:** the verification recipe for the Non-Negotiable above. A `closed` item whose `resolution`/`close_reason` describes the fix represents completed, shipped work — never describe it as outstanding. Confirm release/CI/infra status against the live system, e.g. `pm get pm-9gxi`, `npm view @unbrained/pm-cli version`, `gh release list`, `gh run list --workflow=auto-release.yml`.
 - **Implement:** keep edits scoped to the claimed item. Link changed files with `pm files`, docs with `pm docs`, and runnable verification with `pm test`.
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.

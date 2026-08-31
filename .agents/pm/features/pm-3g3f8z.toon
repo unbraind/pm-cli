@@ -2,18 +2,23 @@ id: pm-3g3f8z
 title: "Progressive MCP discovery and canonical tool results: reveal the minimum relevant catalog and deliver one unambiguous model-facing output contract"
 description: Reduce tool-selection cost and ambiguity at large MCP surface sizes by offering a bounded entry catalog that expands with intent and by standardizing which tool result representation reaches the model. Reuse pm relevance scoring and token-budget primitives through public SDK contracts.
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-08-28T20:58:32.488Z"
+updated_at: "2026-08-31T15:27:57.474Z"
 deadline: "2027-03-31T00:00:00.000Z"
+closed_at: "2026-08-31T15:13:34.542Z"
+completed_at: "2026-08-31T15:13:34.542Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
+resolution: Shipped the public SDK discovery engine and opt-in MCP progressive capability/result contract without breaking compatibility clients
+expected_result: SDK consumers can build permission-safe progressively disclosed tool catalogs and MCP clients can negotiate a small entry surface with one canonical result representation
+actual_result: "The public SDK now provides deterministic six-signal progressive discovery with permission and tier filtering, request-bound cursors, exact serialized token accounting, omission recovery, cache policy, and scale coverage through 10,000 tools. Negotiated MCP clients receive five entry tools and canonical structuredContent.result envelopes while compatibility clients retain the complete catalog and legacy text."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -21,6 +26,47 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-28T20:22:27.057Z","harness:codex","Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
+  "2026-08-31T12:54:38.703Z","harness:codex","Implementation start: public SDK owns deterministic progressive tool discovery, explicit ranking/budget/omission/cache contracts, and canonical results; MCP and CLI remain adapters. Compatibility is opt-in under a namespaced experimental capability, preserving unnegotiated clients."
+  "2026-08-31T13:24:40.554Z","harness:codex","Implementation progress: the public SDK now owns a deterministic discovery contract with six visible signal components, permission filtering, tier/family filters, opaque request-bound cursors, token ceilings, omission recovery, and cache invalidation. Modern opt-in MCP clients receive five entry tools and canonical structured results; compatibility clients retain the full catalog and prior result text."
+  "2026-08-31T15:13:29.334Z","harness:codex","Terminal evidence: linked discovery/MCP/grammar suite passed 24 tests across 3 files. The repository-wide coverage gate passed 8,184 tests across 593 files at exact 100% statements (60,524/60,524), branches (45,719/45,719), functions (12,594/12,594), and lines (58,275/58,275). Typecheck, ESLint, zero-clone jscpd, generated contracts, SDK surface, package boundary/parity, docs/skills, security scan, npm audit, graph composition, record integrity, npx/bunx packed smoke, and a packed npm+Bun isolated lifecycle acceptance all passed. Discovery scale and cursor tests cover 100, 1,000, and 10,000 tools. Standard repository scan 631f1b20-2985-441d-8e88-bc932d167be7 and frozen-diff scan d9fc6148-a705-4c27-8e89-1ba38a270671 found no security findings."
+  "2026-08-31T15:27:57.474Z","harness:codex","Final branch evidence: the complete quality:static pipeline passed after closure, including defect-evidence classification, repository assurance negative controls, token/context calibration, generated surfaces, package and SDK parity, MCP deprecation inventory, transport floor, graph composition, and record integrity. Security secret scan and dependency audit also passed with 0 vulnerabilities across all severities."
+learnings[1]{created_at,author,text}:
+  "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
+files[12]{path,scope,note}:
+  scripts/release/command-grammar-gate.mjs,project,Composite discovery grammar classification
+  sdk/public-surface.json,project,Generated public SDK surface
+  src/mcp/server.ts,project,MCP negotiation and canonical result adapter
+  src/mcp/tool-definitions.ts,project,Progressive discovery tool schema
+  src/sdk/agent-capability-contracts.ts,project,Discovery command and help capability contracts
+  src/sdk/index.ts,project,Published SDK discovery export
+  src/sdk/mcp/discovery.ts,project,SDK-owned deterministic progressive discovery contract
+  tests/fixtures/contracts/full.json,project,Generated full contract snapshot
+  tests/integration/mcp-handshake.spec.ts,project,Locks the expanded compatibility MCP tool census after progressive discovery was added
+  tests/integration/mcp-progressive-discovery.integration.spec.ts,project,Negotiated MCP compatibility integration tests
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Composite discovery grammar gate coverage
+  tests/unit/sdk/mcp/discovery.spec.ts,project,Ranking pagination budget and scale tests
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,240,"harness:codex","2026-08-31T13:57:37.628Z",local_mutation,feat/progressive-capability-discovery
+test_runs[1]:
+  - run_id: test-local-mthdi3cv-v38sr6
+    kind: test
+    status: passed
+    started_at: "2026-08-31T15:08:05.085Z"
+    finished_at: "2026-08-31T15:08:22.015Z"
+    recorded_at: "2026-08-31T15:08:22.015Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+docs[6]{path,scope,note}:
+  CHANGELOG.md,project,Generated reviewed-delivery changelog
+  docs/ARCHITECTURE.md,project,SDK-first architecture boundary
+  docs/MCP_2026_07_28.md,project,MCP protocol revision guidance
+  docs/MCP_CAPABILITY_SURFACES.md,project,Negotiated MCP capability surface
+  docs/PROGRESSIVE_TOOL_DISCOVERY.md,project,Public SDK and MCP discovery contract
+  docs/README.md,project,Documentation index
+close_reason: "Delivered SDK-owned progressive discovery and canonical MCP result contracts with compatibility negotiation, permission-safe deterministic pagination, exact budgets, omission recovery, scale coverage, and packed npm/Bun acceptance; all linked and repository-wide gates pass."
 body: ""

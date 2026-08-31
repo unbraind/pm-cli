@@ -4,10 +4,10 @@ This guide is optimized for coding agents that need to understand and mutate rep
 
 ## Agent Quick Context
 
-Run this before heavy work:
+Run this before heavy work. The first call is the canonical cold start; the remaining reads are request-specific duplicate and ownership checks before mutation:
 
 ```bash
-pm context --limit 10
+pm context --limit 10 --for orient
 pm search "<request keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
@@ -15,6 +15,8 @@ pm init --agent-guidance status
 pm package install guide-shell --project
 pm guide workflows
 ```
+
+The completed-task replay gate selects that one-call protocol from equivalent fixed-corpus candidates: 1,055 estimated tokens versus 2,293 for the historical four-read sequence and 4,798 for `contracts --summary` plus `next`. The reviewed numbers and per-step receipts live in [the published token baseline](agent-task-token-baseline.json).
 
 If a relevant item exists, reuse it. If not, create a parent lineage, then create and claim the child implementation item.
 When AGENTS/CLAUDE guidance is missing, use `pm init --agent-guidance add` to inject compact workflow guardrails, or `pm init --agent-guidance skip` to persist an explicit decline.
@@ -26,7 +28,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 1. **Orient**
 
 ```bash
-pm context --limit 10
+pm context --limit 10 --for orient
 pm search "<keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
@@ -108,6 +110,7 @@ pm release <item-id>
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The single next action + why         | `pm next` (concrete ready leaves first; completed-container closeout rows surface only when no leaf work is ready; `--ready-only` for the tightest output) |
 | Next ready work in one epic          | `pm next --parent <id>`                                                                                                                                    |
+| Canonical cold-start orientation     | `pm context --limit 10 --for orient` (1,055 estimated tokens on the fixed 101-item replay corpus)                                                          |
 | Next work and agenda                 | `pm context --limit 10`                                                                                                                                    |
 | Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap)                                                                                          |
 | Status of one epic/subtree           | `pm context --parent <id> --depth deep`                                                                                                                    |

@@ -56,9 +56,12 @@ src/
     shared/
   mcp/
     server.ts
+    tool-definitions.ts
   sdk/
     cli-contracts.ts
     index.ts
+    mcp/
+      discovery.ts
   types/
 tests/
   unit/
@@ -286,6 +289,8 @@ allowance file:
 
 Do not add new CLI/MCP behavior by deep-importing `src/core`. Add or extend an
 SDK primitive first, then consume that SDK surface from the presentation layer.
+
+Progressive tool discovery follows this boundary directly: `src/sdk/mcp/discovery.ts` owns ranking, authorization filtering, budgets, cursors, omissions, cache identity, and the canonical result contract. `src/mcp/server.ts` only negotiates the extension, selects the entry catalog, and adapts compatibility text. See [Progressive Tool Discovery](PROGRESSIVE_TOOL_DISCOVERY.md).
 
 ## Telemetry Schema Negotiation
 

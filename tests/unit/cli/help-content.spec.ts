@@ -133,6 +133,7 @@ describe("help-content rendering helpers", () => {
   it("keeps root help to the core contract while preserving nested help", () => {
     const program = new Command("pm");
     program.description("Project management");
+    program.option("--all", "Reveal every public command");
     program.command("context").description("Orient to current work");
     const graph = program
       .command("graph")
@@ -157,6 +158,7 @@ describe("help-content rendering helpers", () => {
     program.configureOutput({ writeOut: (text) => (rootHelp += text) });
     program.outputHelp();
     expect(rootHelp).toContain("context");
+    expect(rootHelp).toContain("--all");
     expect(rootHelp).not.toContain("health");
     expect(rootHelp).not.toContain("graph");
     expect(rootHelp).toContain("extension-core");
