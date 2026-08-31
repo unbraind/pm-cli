@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-08-31T20:47:13.162Z"
+updated_at: "2026-08-31T21:09:48.990Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-08-31T20:47:09.275Z"
-completed_at: "2026-08-31T20:47:09.275Z"
+closed_at: "2026-08-31T21:09:39.135Z"
+completed_at: "2026-08-31T21:09:39.135Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Delivered SDK-owned progressive discovery with deterministic ranking, token-bounded paging, integrity-protected cursors, host-supplied deployment keys, canonical MCP results, compatibility adapters, generated surfaces, and scale gates."
-expected_result: "SDK, CLI, and MCP expose one customizable progressive discovery contract with stable pagination, bounded context cost, canonical model-facing output, and deployment-safe continuation."
-actual_result: "Public SDK and MCP adapters now pass deterministic 100/1,000/large-catalog tests, shared-key continuation and rotation refusal, exact token ceilings, compatibility negotiation, 8,196-test exact coverage, and full static gates."
+resolution: Delivered SDK-owned progressive discovery and resolved the hosted DeepScan unsafe-dereference recurrence with explicit result validation.
+expected_result: "SDK, CLI, and MCP expose one bounded deterministic discovery contract whose tests and hosted analyzers fail closed without unsafe result access."
+actual_result: "Public SDK and MCP adapters pass deterministic scale tests, shared-key continuation and rotation refusal, exact token ceilings, compatibility negotiation, DeepScan-safe result validation, 8,196-test exact coverage, and full static gates."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-08-28T20:22:27.057Z","harness:codex","Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
   "2026-08-31T12:54:38.703Z","harness:codex","Implementation start: public SDK owns deterministic progressive tool discovery, explicit ranking/budget/omission/cache contracts, and canonical results; MCP and CLI remain adapters. Compatibility is opt-in under a namespaced experimental capability, preserving unnegotiated clients."
   "2026-08-31T13:24:40.554Z","harness:codex","Implementation progress: the public SDK now owns a deterministic discovery contract with six visible signal components, permission filtering, tier/family filters, opaque request-bound cursors, token ceilings, omission recovery, and cache invalidation. Modern opt-in MCP clients receive five entry tools and canonical structured results; compatibility clients retain the full catalog and prior result text."
@@ -43,6 +43,7 @@ comments[16]{created_at,author,text}:
   "2026-08-31T20:23:36.455Z","harness:codex","Review round 5 implementation: public discovery options accept a validated host-owned 32-byte HMAC key; MCP reads PM_MCP_DISCOVERY_CURSOR_KEY outside tool input; shared-key continuation succeeds, key rotation and weak keys fail closed, and process-local fallback affinity is documented. Equal-score names use locale-independent code-unit ordering. Focused 34-test cohort, ESLint, and Prettier pass; SDK surface snapshot records the optional host contract."
   "2026-08-31T20:30:33.987Z","harness:codex","Exact coverage negative control: first full run passed 8,196 tests but correctly failed at 99.99% branches (45,762/45,763), isolating the equal-name comparator path at discovery.ts:573. Added a duplicate-name deterministic ordering assertion to exercise the zero tie-break result without excluding or ignoring source."
   "2026-08-31T20:46:23.474Z","harness:codex","Review round 5 terminal evidence: the linked malformed-capability, deterministic-order, shared-key and MCP deployment-key cohort passed 34 tests across 3 files. Full repository coverage passed 8,196 tests across 593 files at exact 100% statements (60,576/60,576), branches (45,763/45,763), functions (12,604/12,604), and lines (58,323/58,323), with the preceding 99.99% branch result retained as the equal-comparator negative-control receipt. CI-mode quality:static passed ESLint, zero jscpd clones, typecheck/build, generated contracts, SDK/package/surface parity, token and refusal gates, six-operation CLI transport floor, graph composition, and record integrity. Review findings 3897964615 and 3897964622 were accepted, implemented, replied to inline, and resolved."
+  "2026-08-31T21:09:37.948Z","harness:codex","Hosted-analysis remediation: DeepScan PR issue 233694044 (NULL_POINTER, tests/integration/mcp-progressive-discovery.integration.spec.ts:259) was inspected in the authenticated Chrome dashboard because GitHub exposed only the status summary. The finding was valid. The test now validates that the canonical result is a non-null object with a string next_cursor before dereference, eliminating the unsafe optional-chain cast. Focused integration passed 6 tests with ESLint and Prettier; full coverage passed 8,196 tests across 593 files at exact 100/100/100/100."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -197,5 +198,5 @@ docs[11]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Delivered and verified the broad SDK-first progressive discovery, canonical MCP result, compatibility, token, cursor-security, and scale contract; 34 linked tests, 8,196-test exact 100/100/100/100 coverage, and CI-mode static gates pass."
+close_reason: "Resolved DeepScan issue 233694044 with explicit result validation; focused integration, lint, formatting, and 8,196-test exact 100/100/100/100 coverage pass."
 body: ""

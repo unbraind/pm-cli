@@ -255,9 +255,16 @@ describe("MCP progressive discovery negotiation", () => {
           arguments: { limit: 1, outputBudget: "unbounded" },
         }),
       });
-      const cursor = (
-        first?.structuredContent?.result as { next_cursor?: string }
-      ).next_cursor;
+      const firstResult = first?.structuredContent?.result;
+      if (
+        typeof firstResult !== "object" ||
+        firstResult === null ||
+        !("next_cursor" in firstResult) ||
+        typeof firstResult.next_cursor !== "string"
+      ) {
+        throw new TypeError("Expected discovery to return a next cursor.");
+      }
+      const cursor = firstResult.next_cursor;
       const continued = await handleRequest({
         jsonrpc: "2.0",
         id: 92,
