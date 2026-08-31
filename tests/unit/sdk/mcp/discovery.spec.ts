@@ -373,6 +373,13 @@ describe("progressive MCP tool discovery", () => {
   });
 
   it("fails closed on invalid limits and budgets", () => {
+    const maximumUnicodeQuery = "🚀".repeat(4_096);
+    expect(
+      discoverPmTools([], {
+        query: maximumUnicodeQuery,
+        outputBudget: "unbounded",
+      }).query,
+    ).toBe(maximumUnicodeQuery);
     expect(() => discoverPmTools([], { limit: 0 })).toThrow(/limit/u);
     expect(() => discoverPmTools([], { outputBudget: 127 })).toThrow(
       /outputBudget/u,
@@ -380,7 +387,14 @@ describe("progressive MCP tool discovery", () => {
     expect(() => discoverPmTools([], { query: "x".repeat(4_097) })).toThrow(
       /query/u,
     );
+    expect(() => discoverPmTools([], { query: "🚀".repeat(4_097) })).toThrow(
+      /query/u,
+    );
+    expect(() => discoverPmTools([], { query: 42 as never })).toThrow(/query/u);
     expect(() => discoverPmTools([], { cursor: "x".repeat(4_097) })).toThrow(
+      /cursor/u,
+    );
+    expect(() => discoverPmTools([], { cursor: 42 as never })).toThrow(
       /cursor/u,
     );
     for (const cursorIntegrityKey of [new Uint8Array(31), "not-bytes"]) {

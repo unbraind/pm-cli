@@ -232,6 +232,31 @@ interface PmToolDiscoveryCursor {
 
 const PROCESS_CURSOR_INTEGRITY_KEY = randomBytes(32);
 
+/** Validate a discovery string with the Unicode code-point semantics used by JSON Schema. */
+function boundedDiscoveryString(
+  value: unknown,
+  field: "query" | "cursor",
+): string {
+  if (typeof value !== "string") {
+    throw new PmCliError(
+      `pm tool discovery ${field} must be a string of at most 4096 Unicode characters.`,
+      64,
+    );
+  }
+  const iterator = value[Symbol.iterator]();
+  let count = 0;
+  for (let next = iterator.next(); !next.done; next = iterator.next()) {
+    count += 1;
+    if (count > 4_096) {
+      throw new PmCliError(
+        `pm tool discovery ${field} must be a string of at most 4096 Unicode characters.`,
+        64,
+      );
+    }
+  }
+  return value;
+}
+
 function normalizedUnitInterval(value: number | undefined): number {
   if (value === undefined || !Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));
@@ -466,22 +491,9 @@ function validateDiscoveryFilters(options: PmToolDiscoveryOptions): void {
 function resolveDiscoveryRequest(
   options: PmToolDiscoveryOptions,
 ): ResolvedPmToolDiscoveryRequest {
-  const query = options.query?.trim().replace(/\s+/gu, " ") ?? "";
-  if (Buffer.byteLength(query, "utf8") > 4_096) {
-    throw new PmCliError(
-      "pm tool discovery query must not exceed 4096 UTF-8 bytes.",
-      64,
-    );
-  }
-  if (
-    options.cursor !== undefined &&
-    Buffer.byteLength(options.cursor, "utf8") > 4_096
-  ) {
-    throw new PmCliError(
-      "pm tool discovery cursor must not exceed 4096 UTF-8 bytes.",
-      64,
-    );
-  }
+  const rawQuery = boundedDiscoveryString(options.query ?? "", "query");
+  const query = rawQuery.trim().replace(/\s+/gu, " ");
+  boundedDiscoveryString(options.cursor ?? "", "cursor");
   const limit = options.limit ?? 10;
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
     throw new PmCliError(
