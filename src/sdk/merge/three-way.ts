@@ -190,10 +190,11 @@ export function mergeHistoryStreams(
       historyEntryIdentity(right),
     );
   });
-  const reanchored = reanchorHistoryEntries([
-    ...ours.slice(0, shared),
-    ...mergedSuffix,
-  ]);
+  const reanchored = reanchorHistoryEntries(
+    [...ours.slice(0, shared), ...mergedSuffix],
+    undefined,
+    { continuousHashSurface: true },
+  );
   return {
     merged: historyEntriesToRaw(reanchored.entries),
     strategy: "union_reanchor",

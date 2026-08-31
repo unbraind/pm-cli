@@ -6,7 +6,9 @@ import {
   cloneEmptyReplayDocument,
   reanchorHistoryEntries,
   replayHash,
+  replayHashVerificationCandidates,
   resolveHistoryRepairItemHashVersion,
+  tryApplyReplayPatch,
   verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../../../src/core/history/replay.js";
@@ -96,6 +98,79 @@ describe("history repair hash epoch contract", () => {
     expect(verifyHistoryChainWithVersion(repaired.entries)).toMatchObject({
       ok: true,
       item_hash_version: 1,
+    });
+  });
+
+  it("does not reconcile an on-disk item that matches the legacy epoch-2 candidate", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Legacy candidate repair",
+          "--description",
+          "Candidate-aware reconciliation fixture",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
+      expect(
+        context.runCli([
+          "test",
+          id,
+          "--add",
+          "command=echo candidate,scope=project",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const entries = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as HistoryEntry);
+      let replay = cloneEmptyReplayDocument();
+      for (const entry of entries) {
+        const applied = tryApplyReplayPatch(replay, entry.patch);
+        expect(applied.ok).toBe(true);
+        if (!applied.ok) {
+          throw new Error("fixture history patch did not apply");
+        }
+        const beforeCandidates = replayHashVerificationCandidates(replay, 2);
+        const afterCandidates = replayHashVerificationCandidates(
+          applied.document,
+          2,
+        );
+        entry.before_hash = beforeCandidates[1];
+        entry.after_hash = afterCandidates[1];
+        entry.item_hash_version = 2;
+        replay = applied.document;
+      }
+      expect(replayHashVerificationCandidates(replay, 2)[0]).not.toBe(
+        replayHashVerificationCandidates(replay, 2)[1],
+      );
+      await writeFile(
+        historyPath,
+        `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        "utf8",
+      );
+
+      const repaired = await runHistoryRepair(
+        id,
+        { dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(repaired.changed).toBe(false);
+      expect(repaired.history).toMatchObject({
+        entries_rehashed: 0,
+        reconciled_with_item: false,
+      });
     });
   });
 

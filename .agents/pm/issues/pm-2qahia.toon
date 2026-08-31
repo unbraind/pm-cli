@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-31T08:24:45.132Z"
+updated_at: "2026-08-31T09:13:24.959Z"
 closed_at: "2026-08-31T08:13:04.333Z"
 completed_at: "2026-08-31T08:13:04.333Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ customer_impact: "Ordinary cross-version mutations make CI report corruption, tr
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[26]{created_at,author,text}:
+comments[28]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
@@ -53,12 +53,14 @@ comments[26]{created_at,author,text}:
   "2026-08-31T06:12:16.918Z","harness:codex","Recurrence evidence: GitHub #1162 measures five false corruption reports across four clean public repositories after upgrading to 2026.8.30. The same stored history head survives while replay or current-document hashes vary by reader version. This cycle will preserve writer-capability evidence in diagnostics, test real legacy fixtures, and keep repair guidance fail-closed."
   "2026-08-31T08:13:02.608Z","harness:codex","Delivery evidence 2026-08-31: history verification now recognizes both immutable writer surfaces historically emitted under item_hash_version=2 while requiring each entry's before/after pair to use one consistent surface. Public hashDocumentForVersion v2 behavior stays compatible; current-item drift checks select the matching verified candidate; history-repair preserves the evidenced variant and appends compatible audit hashes. Live repository health and strict validate pass across 2,609 items without history repair or rewrite. Five external repository streams (10, 17, 30, 45, and 9 entries) verify current_matches_latest=true. Linked PM tests, strict static quality, 590 files / 8,166 tests, and exact 100/100/100/100 coverage pass."
   "2026-08-31T08:24:45.132Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1165 — the reviewed branch preserves both evidenced v2 history semantics across replay, drift detection, validation, and repair."
+  "2026-08-31T08:44:35.665Z","harness:codex","PR #1165 review findings validated: Greptile P1 was valid at the union re-anchor boundary, where per-entry epoch-2 variant preservation could synthesize non-identical adjacent endpoints; CodeRabbit also correctly identified candidate-0-only repair reconciliation. The fix preserves historical per-event verification while forcing one surface only for newly synthesized union streams and compares corresponding candidates for repair. Focused regression suite: 41/41 passed."
+  "2026-08-31T09:13:24.959Z","harness:codex","Review remediation verification: final full coverage passed 590/590 files and 8168/8168 tests at exact 100% statements, branches, functions, and lines with zero uncovered counts. Final quality:static passed ESLint, zero jscpd clones, 100% source/exported/member docstrings, CodeFactor complexity <=16, package/SDK parity, token/context gates, graph composition, and append-only integrity."
 learnings[4]{created_at,author,text}:
   "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
   "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
   "2026-08-29T06:28:53.527Z","harness:codex","Persisted caches are untrusted inputs: validate every required scalar type before reusing a cached integrity verdict, even when version and fingerprint fields match."
   "2026-08-29T07:43:02.818Z","harness:codex","A newer history hash capability is a runtime compatibility boundary, not repairable corruption; every health and validation projection must route to upgrade guidance rather than history-repair."
-files[20]{path,scope,note}:
+files[22]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census reflects canonical version-skew alias
   scripts/error-code-stability.json,project,Canonical stability and alias policy for version-skew diagnostics
   sdk/public-surface.json,project,Public SDK surface advertises history version-skew remediation codes
@@ -72,6 +74,7 @@ files[20]{path,scope,note}:
   src/sdk/governance/validate-history-drift.ts,project,validation projection
   src/sdk/history-read.ts,project,Current-document verification uses the stream resolved hash epoch
   src/sdk/history-repair.ts,project,preserves the verified legacy-v2 semantic variant during repair and audit events
+  src/sdk/merge/three-way.ts,project,Union merge boundary now synthesizes one continuous epoch-2 hash surface
   tests/fixtures/contracts/full.json,project,Generated contract snapshot for version-skew remediation entries
   tests/integration/remediation-registry.spec.ts,project,Registry regression for health and validate version-skew warnings
   tests/unit/commands/health-command.spec.ts,project,Bulk remediation preserves non-repairable version-skew upgrade guidance
@@ -79,11 +82,44 @@ files[20]{path,scope,note}:
   tests/unit/core/history/history-hash-version.spec.ts,project,History hash epoch compatibility coverage
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
   tests/unit/sdk/history-repair-version-contract.spec.ts,project,Cross-version repair receipt coverage
-tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:01.231Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
-  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,project,240,"harness:codex","2026-08-28T21:54:08.534Z",local_mutation,feat/sdk-context-integrity-recovery,history capability and version skew coverage
-  node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,project,240,"harness:codex","2026-08-29T07:17:30.556Z",local_mutation,feat/sdk-context-integrity-recovery,Version-skew remediation registry regression
-test_runs[11]:
+  tests/unit/sdk/merge-safety.spec.ts,project,Regression proves mixed-writer suffixes produce exact adjacent hash continuity
+tests[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T21:54:01.231Z"
+      source_kind: local_mutation
+      source_ref: feat/sdk-context-integrity-recovery
+    note: connected context integrity regression suite
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-28T21:54:08.534Z"
+      source_kind: local_mutation
+      source_ref: feat/sdk-context-integrity-recovery
+    note: history capability and version skew coverage
+  - command: node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-29T07:17:30.556Z"
+      source_kind: local_mutation
+      source_ref: feat/sdk-context-integrity-recovery
+    note: Version-skew remediation registry regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/core/history/history-hash-version.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-31T08:44:35.132Z"
+      source_kind: local_mutation
+      source_ref: feat/sdk-history-receipt-evidence-contracts
+test_runs[12]:
   - run_id: test-local-mtdkxs90-zu56nw
     kind: test
     status: passed
@@ -231,6 +267,20 @@ test_runs[11]:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-mtgzu3tp-ftszbz
+    kind: test
+    status: passed
+    started_at: "2026-08-31T08:45:02.258Z"
+    finished_at: "2026-08-31T08:45:47.869Z"
+    recorded_at: "2026-08-31T08:45:47.869Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/core/history/history-hash-version.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for history integrity and version-skew recovery
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract

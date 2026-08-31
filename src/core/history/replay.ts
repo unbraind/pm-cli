@@ -486,6 +486,12 @@ export interface ReanchorResult {
   explicitItemHashVersion: boolean;
 }
 
+/** Controls whether re-anchoring preserves historical writer transitions or emits one exact hash surface. */
+export interface ReanchorHistoryOptions {
+  /** Keep one semantic hash candidate for the complete rewritten stream so adjacent stored endpoints are identical. */
+  continuousHashSurface?: boolean;
+}
+
 /**
  * Resolve the hash epoch a repair must retain.
  *
@@ -515,6 +521,7 @@ export function resolveHistoryRepairItemHashVersion(
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
   itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
+  options: ReanchorHistoryOptions = {},
 ): ReanchorResult {
   const unsupportedIndex = entries.findIndex((entry) =>
     isUnsupportedExplicitHistoryItemHashVersion(entry.item_hash_version),
@@ -531,7 +538,7 @@ export function reanchorHistoryEntries(
   let entriesPatchRepaired = 0;
   let convertedReplaceToAdd = 0;
   let skippedOps = 0;
-  let semanticIndex = 0;
+  let semanticIndex: number | undefined;
   const explicitItemHashVersion =
     itemHashVersion !== 1 ||
     entries.some((entry) => entry.item_hash_version !== undefined);
@@ -567,12 +574,19 @@ export function reanchorHistoryEntries(
       itemHashVersion,
       entry,
     );
-    semanticIndex = [
-      hashMatch.pairIndex,
-      hashMatch.beforeIndex,
-      hashMatch.afterIndex,
-      Math.min(semanticIndex, hashMatch.beforeHashes.length - 1),
-    ].find((candidate) => candidate >= 0)!;
+    if (semanticIndex === undefined || options.continuousHashSurface !== true) {
+      semanticIndex = [
+        hashMatch.pairIndex,
+        hashMatch.beforeIndex,
+        hashMatch.afterIndex,
+        Math.min(semanticIndex ?? 0, hashMatch.beforeHashes.length - 1),
+      ].find((candidate) => candidate >= 0)!;
+    } else {
+      semanticIndex = Math.min(
+        semanticIndex,
+        hashMatch.beforeHashes.length - 1,
+      );
+    }
     const beforeHash = hashMatch.beforeHashes[semanticIndex]!;
     const afterHash = hashMatch.afterHashes[semanticIndex]!;
     const rehashed =

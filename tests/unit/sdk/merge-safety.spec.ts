@@ -12,7 +12,10 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
-import { createHistoryEntry } from "../../../src/core/history/history.js";
+import {
+  createHistoryEntry,
+  hashDocumentVerificationCandidates,
+} from "../../../src/core/history/history.js";
 import {
   sha256Hex,
   stableStringify,
@@ -183,6 +186,75 @@ describe("public merge-safety SDK primitives", () => {
       "agent-a",
       "agent-b",
     ]);
+    expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
+  });
+
+  it("uses one epoch-2 hash surface when merged suffixes came from different writers", () => {
+    const empty = {
+      metadata: {} as ItemDocument["metadata"],
+      body: "",
+    };
+    const baseDocument = item("base", "2026-08-30T00:00:00.000Z");
+    const oursDocument = item("ours", "2026-08-30T00:01:00.000Z");
+    const theirsDocument = item("theirs", "2026-08-30T00:02:00.000Z");
+    theirsDocument.metadata.dependencies = [
+      {
+        id: "PM-LEGACY-SURFACE",
+        kind: "related",
+        created_at: "2026-08-30T00:02:00.000Z",
+      },
+    ];
+    const create = {
+      ...createHistoryEntry({
+        nowIso: "2026-08-30T00:00:00.000Z",
+        author: "seed",
+        op: "create",
+        before: empty,
+        after: baseDocument,
+      }),
+      before_hash: hashDocumentVerificationCandidates(empty, 2)[0],
+      after_hash: hashDocumentVerificationCandidates(baseDocument, 2)[0],
+      item_hash_version: 2 as const,
+    };
+    const ours = {
+      ...createHistoryEntry({
+        nowIso: "2026-08-30T00:01:00.000Z",
+        author: "expanded-writer",
+        op: "update",
+        before: baseDocument,
+        after: oursDocument,
+      }),
+      before_hash: hashDocumentVerificationCandidates(baseDocument, 2)[0],
+      after_hash: hashDocumentVerificationCandidates(oursDocument, 2)[0],
+      item_hash_version: 2 as const,
+    };
+    const theirs = {
+      ...createHistoryEntry({
+        nowIso: "2026-08-30T00:02:00.000Z",
+        author: "legacy-writer",
+        op: "update",
+        before: baseDocument,
+        after: theirsDocument,
+      }),
+      before_hash: hashDocumentVerificationCandidates(baseDocument, 2)[1],
+      after_hash: hashDocumentVerificationCandidates(theirsDocument, 2)[1],
+      item_hash_version: 2 as const,
+    };
+
+    const merged = mergeHistoryStreams(
+      historyEntriesToRaw([create]),
+      historyEntriesToRaw([create, ours]),
+      historyEntriesToRaw([create, theirs]),
+    );
+    const entries = merged.merged
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as typeof create);
+
+    expect(merged.strategy).toBe("union_reanchor");
+    expect(entries).toHaveLength(3);
+    expect(entries[0].after_hash).toBe(entries[1].before_hash);
+    expect(entries[1].after_hash).toBe(entries[2].before_hash);
     expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
   });
 

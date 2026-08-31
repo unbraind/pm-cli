@@ -17,7 +17,6 @@ import {
   historyEntriesToRaw,
   normalizeReplayPatchOps,
   reanchorHistoryEntries,
-  replayHash,
   replayHashVerificationCandidates,
   resolveHistoryRepairItemHashVersion,
   toReplayDocument,
@@ -578,11 +577,10 @@ async function loadHistoryRepairItemReplay(
   return {
     currentItemReplay,
     currentItemPath,
-    matchedChainBefore:
-      replayHashVerificationCandidates(
-        currentItemReplay,
-        itemHashVersion,
-      ).includes(lastOriginalAfterHash),
+    matchedChainBefore: replayHashVerificationCandidates(
+      currentItemReplay,
+      itemHashVersion,
+    ).includes(lastOriginalAfterHash),
     currentItemRawBeforeLock: loadedItem.raw,
     loadedItem,
   };
@@ -795,10 +793,20 @@ export async function runHistoryRepair(
   );
 
   const finalReplay = reanchor.finalDocument;
-  const reconcileNeeded =
-    itemReplayContext.currentItemReplay !== null &&
-    replayHash(finalReplay, itemHashVersion) !==
-      replayHash(itemReplayContext.currentItemReplay, itemHashVersion);
+  const finalReplayHashes = replayHashVerificationCandidates(
+    finalReplay,
+    itemHashVersion,
+  );
+  let reconcileNeeded = false;
+  if (itemReplayContext.currentItemReplay !== null) {
+    const currentItemReplayHashes = replayHashVerificationCandidates(
+      itemReplayContext.currentItemReplay,
+      itemHashVersion,
+    );
+    reconcileNeeded = !finalReplayHashes.some(
+      (hash, hashIndex) => hash === currentItemReplayHashes[hashIndex],
+    );
+  }
   // GH-603: reconciling toward the on-disk item can silently overwrite the
   // replayed effect of other authors' events (classic after a lossy merge).
   // Surface exactly what is being discarded before any write happens.

@@ -137,7 +137,7 @@ export interface MergeReceiptReport {
 export interface MergeReceiptEvidenceReport {
   /** Whether every candidate was read and validated successfully. */
   ok: boolean;
-  /** Whether the returned receipts represent every discovered JSON candidate. */
+  /** Whether every discovered JSON candidate was read and validated successfully. */
   complete: boolean;
   /** Number of valid receipts returned. */
   count: number;

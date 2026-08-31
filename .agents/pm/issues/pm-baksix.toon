@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-31T08:24:45.659Z"
+updated_at: "2026-08-31T09:13:25.500Z"
 closed_at: "2026-08-31T08:13:05.614Z"
 completed_at: "2026-08-31T08:13:05.614Z"
 author: "harness:codex"
@@ -20,7 +20,7 @@ actual_result: "Two malformed receipts produce complete=false, invalid_evidence_
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
   "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
   "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
@@ -30,6 +30,8 @@ comments[9]{created_at,author,text}:
   "2026-08-31T06:12:14.669Z","harness:codex","Recurrence evidence: GitHub #1161 shows listMergeReceipts changed from throw to default to silent drop across supported releases. This cycle will define the malformed/incomplete contract, preserve rejected evidence through a typed SDK inspection result, keep the compatibility list wrapper explicit, and prove CLI/health consumers distinguish no receipts from unusable receipts."
   "2026-08-31T08:13:03.114Z","harness:codex","Delivery evidence 2026-08-31: the public SDK now exposes inspectMergeReceiptEvidence and runMergeReceiptEvidenceReport so gates distinguish an empty store from rejected evidence without leaking malformed content; legacy list/report projections remain valid-only for compatibility. pm merge report uses the SDK contract, emits complete=false plus invalid_evidence_count, and exits 1 on incomplete evidence. A manual temporary repository with two malformed receipts returned count=0, invalid_evidence_count=2, complete=false, exit 1; packed SDK imports, CLI/runtime regressions, linked PM tests, security scans, static quality, and exact 100/100/100/100 coverage pass."
   "2026-08-31T08:24:45.659Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1165 — the reviewed branch exposes loss-aware receipt evidence in the public SDK and delegates CLI/runtime fail-closed behavior to it."
+  "2026-08-31T08:44:36.197Z","harness:codex","PR #1165 review finding validated: corrected the public complete docstring to describe validation completeness independently from includeReconciled filtering and made the CLI report mock internally consistent. Generated extension metadata finding was false: .managed-extensions.json was updated by the authoritative pm package install workflow."
+  "2026-08-31T09:13:25.500Z","harness:codex","Review remediation verification: the corrected completeness contract and report fixture are included in the final exact 100/100/100/100 coverage run and the complete quality:static gate; no public boundary or docstring violations remain."
 files[19]{path,scope,note}:
   sdk/public-surface.json,project,Generated public pending-receipt error surface
   src/cli/commands/merge.ts,project,Thin CLI compatibility adapter for SDK merge primitives

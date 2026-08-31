@@ -207,7 +207,10 @@ before the marker advanced; epoch 3 is the current form. Verification accepts
 both recorded epoch-2 forms without allowing one entry to mix them, and repair
 preserves the form evidenced by each event. Unversioned streams are verified
 against the supported legacy canonicalizations. Current-document comparison
-selects the resolved epoch candidate that matches the chain head. An unknown explicit epoch is
+selects the resolved epoch candidate that matches the chain head. A union merge
+may consume suffixes written by both epoch-2 forms, but its synthesized output
+uses one form for the complete re-anchored stream so every stored `after_hash`
+is exactly the next stored `before_hash`. An unknown explicit epoch is
 reported as `unsupported_item_hash_version` and repair refuses to guess. This
 keeps version incompatibility distinct from item corruption and is tracked by
 [pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon) and

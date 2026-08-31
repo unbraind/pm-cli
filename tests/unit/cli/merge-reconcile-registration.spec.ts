@@ -81,7 +81,7 @@ describe("merge reconcile registration", () => {
     mocks.runMergeReceiptEvidenceReport.mockResolvedValueOnce({
       ok: true,
       complete: true,
-      count: 1,
+      count: 0,
       invalid_evidence_count: 0,
       receipts: [],
       generated_at: "2026-08-31T00:00:00.000Z",
