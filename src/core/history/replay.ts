@@ -15,7 +15,7 @@ import {
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
-  hashDocumentForVersion,
+  hashDocumentVerificationCandidates,
   type HistoryItemHashVersion,
 } from "./history.js";
 import type {
@@ -57,26 +57,69 @@ export function replayHash(
   document: ReplayDocument,
   version: HistoryItemHashVersion = CURRENT_HISTORY_ITEM_HASH_VERSION,
 ): string {
+  return replayHashVerificationCandidates(document, version)[0];
+}
+
+/**
+ * Return hash candidates that preserve the semantic variant within an epoch.
+ * Duplicate values are intentional: before and after candidates use the same
+ * index when a patch introduces a field that distinguishes legacy epoch 2.
+ */
+export function replayHashVerificationCandidates(
+  document: ReplayDocument,
+  version: HistoryItemHashVersion,
+): [string, ...string[]] {
   if (
     Object.keys(document.metadata).length === 0 ||
     Array.isArray(document.metadata.tags)
   ) {
     try {
-      return hashDocumentForVersion(replayToItemDocument(document), version);
+      return hashDocumentVerificationCandidates(
+        replayToItemDocument(document),
+        version,
+      );
     } catch {
       // Fall through when another malformed legacy field cannot be canonicalized.
     }
   }
-  // Preserve the structural hashes recorded before missing tags became safe to
-  // normalize. Pre-create/legacy replay states and other malformed metadata cannot
-  // switch hash algorithms without invalidating immutable history chains.
-  return sha256Hex(
+  const fallback = sha256Hex(
     stableStringify({
       replay_fallback: true,
       metadata: document.metadata,
       body: document.body,
     }),
   );
+  return version === 2 ? [fallback, fallback] : [fallback];
+}
+
+interface ReplayHashCandidateMatch {
+  beforeHashes: [string, ...string[]];
+  afterHashes: [string, ...string[]];
+  pairIndex: number;
+  beforeIndex: number;
+  afterIndex: number;
+}
+
+/** Match one recorded entry against corresponding before/after hash variants. */
+function matchReplayHashCandidates(
+  before: ReplayDocument,
+  after: ReplayDocument,
+  version: HistoryItemHashVersion,
+  entry: HistoryEntry,
+): ReplayHashCandidateMatch {
+  const beforeHashes = replayHashVerificationCandidates(before, version);
+  const afterHashes = replayHashVerificationCandidates(after, version);
+  return {
+    beforeHashes,
+    afterHashes,
+    pairIndex: beforeHashes.findIndex(
+      (beforeHash, hashIndex) =>
+        beforeHash === entry.before_hash &&
+        afterHashes[hashIndex] === entry.after_hash,
+    ),
+    beforeIndex: beforeHashes.indexOf(entry.before_hash),
+    afterIndex: afterHashes.indexOf(entry.after_hash),
+  };
 }
 
 /** Implements replay to item document for the public runtime surface of this module. */
@@ -255,24 +298,12 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
-    if (isUnsupportedExplicitHistoryItemHashVersion(explicitVersion)) {
+    const unsupportedVersion =
+      isUnsupportedExplicitHistoryItemHashVersion(explicitVersion);
+    if (unsupportedVersion) {
       errors.push(
         `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
       );
-      const applied = tryApplyReplayPatch(replay, entry.patch);
-      if (!applied.ok) {
-        return {
-          ok: false,
-          errors: [
-            ...errors,
-            `verify_failed:patch_apply_failed:entry_${index + 1}`,
-          ],
-        };
-      }
-      replay = applied.document;
-      detectedVersion = undefined;
-      authoritativeExplicitVersion = undefined;
-      continue;
     }
     const applied = tryApplyReplayPatch(replay, entry.patch);
     if (!applied.ok) {
@@ -284,6 +315,12 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
         ],
       };
     }
+    if (unsupportedVersion) {
+      replay = applied.document;
+      detectedVersion = undefined;
+      authoritativeExplicitVersion = undefined;
+      continue;
+    }
     // Prefer legacy epoch 1 when an unversioned entry is valid under both
     // algorithms, but retain compatibility with transitional epoch-2 writers
     // that shipped before item_hash_version became explicit.
@@ -291,31 +328,31 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
       explicitVersion,
       authoritativeExplicitVersion,
     );
-    const beforeMatches = candidates.filter(
-      (version) => replayHash(replay, version) === entry.before_hash,
+    const candidateMatches = candidates.map((version) => ({
+      version,
+      match: matchReplayHashCandidates(
+        replay,
+        applied.document,
+        version,
+        entry,
+      ),
+    }));
+    const matchingVersion = candidateMatches.find(
+      ({ match }) => match.pairIndex >= 0,
     );
-    if (beforeMatches.length === 0) {
+    if (matchingVersion === undefined) {
+      const beforeMatches = candidateMatches.some(
+        ({ match }) => match.beforeIndex >= 0,
+      );
       return {
         ok: false,
         errors: [
           ...errors,
-          `verify_failed:before_hash_mismatch:entry_${index + 1}`,
+          `verify_failed:${beforeMatches ? "after" : "before"}_hash_mismatch:entry_${index + 1}`,
         ],
       };
     }
-    const version = beforeMatches.find(
-      (candidate) =>
-        replayHash(applied.document, candidate) === entry.after_hash,
-    );
-    if (version === undefined) {
-      return {
-        ok: false,
-        errors: [
-          ...errors,
-          `verify_failed:after_hash_mismatch:entry_${index + 1}`,
-        ],
-      };
-    }
+    const version = matchingVersion.version;
     replay = applied.document;
     detectedVersion = version;
     authoritativeExplicitVersion =
@@ -449,6 +486,12 @@ export interface ReanchorResult {
   explicitItemHashVersion: boolean;
 }
 
+/** Controls whether re-anchoring preserves historical writer transitions or emits one exact hash surface. */
+export interface ReanchorHistoryOptions {
+  /** Keep one semantic hash candidate for the complete rewritten stream so adjacent stored endpoints are identical. */
+  continuousHashSurface?: boolean;
+}
+
 /**
  * Resolve the hash epoch a repair must retain.
  *
@@ -478,6 +521,7 @@ export function resolveHistoryRepairItemHashVersion(
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
   itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
+  options: ReanchorHistoryOptions = {},
 ): ReanchorResult {
   const unsupportedIndex = entries.findIndex((entry) =>
     isUnsupportedExplicitHistoryItemHashVersion(entry.item_hash_version),
@@ -494,13 +538,13 @@ export function reanchorHistoryEntries(
   let entriesPatchRepaired = 0;
   let convertedReplaceToAdd = 0;
   let skippedOps = 0;
+  let semanticIndex: number | undefined;
   const explicitItemHashVersion =
     itemHashVersion !== 1 ||
     entries.some((entry) => entry.item_hash_version !== undefined);
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    const beforeHash = replayHash(replay, itemHashVersion);
     const strict = tryApplyReplayPatch(replay, entry.patch);
 
     let next: ReplayDocument;
@@ -524,7 +568,27 @@ export function reanchorHistoryEntries(
       entriesPatchRepaired += 1;
     }
 
-    const afterHash = replayHash(next, itemHashVersion);
+    const hashMatch = matchReplayHashCandidates(
+      replay,
+      next,
+      itemHashVersion,
+      entry,
+    );
+    if (semanticIndex === undefined || options.continuousHashSurface !== true) {
+      semanticIndex = [
+        hashMatch.pairIndex,
+        hashMatch.beforeIndex,
+        hashMatch.afterIndex,
+        Math.min(semanticIndex ?? 0, hashMatch.beforeHashes.length - 1),
+      ].find((candidate) => candidate >= 0)!;
+    } else {
+      semanticIndex = Math.min(
+        semanticIndex,
+        hashMatch.beforeHashes.length - 1,
+      );
+    }
+    const beforeHash = hashMatch.beforeHashes[semanticIndex]!;
+    const afterHash = hashMatch.afterHashes[semanticIndex]!;
     const rehashed =
       beforeHash !== entry.before_hash || afterHash !== entry.after_hash;
     if (rehashed) {

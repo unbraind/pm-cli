@@ -14,6 +14,7 @@ import { promisify } from "node:util";
 import {
   ensureDir,
   isFileAbsentError,
+  isFileMissingError,
   pathExists,
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
@@ -133,12 +134,32 @@ export interface MergeReceiptReport {
   generated_at: string;
 }
 
-/** Internal integrity scan result used by health without exposing malformed receipt contents. */
+/** Loss-aware merge receipt report for integrity gates and diagnostic adapters. */
+export interface MergeReceiptEvidenceReport {
+  /** Whether clone-local evidence resolved and every candidate was read and validated successfully. */
+  ok: boolean;
+  /** Whether clone-local evidence resolved and every discovered JSON candidate was read and validated successfully. */
+  complete: boolean;
+  /** Number of valid receipts returned. */
+  count: number;
+  /** Number of candidates rejected by bounded-file, schema, identity, or copy-consistency validation. */
+  invalid_evidence_count: number;
+  /** Whether the clone-local Git receipt directory was resolved successfully; always emitted by current implementations and optional for structural compatibility. */
+  clone_local_evidence_resolved?: boolean;
+  /** Receipts including recoverable values from the local clone only. */
+  receipts: MergeDecisionReceipt[];
+  /** ISO timestamp for the report. */
+  generated_at: string;
+}
+
+/** Loss-aware receipt inspection result that never exposes malformed file contents. */
 export interface MergeReceiptEvidenceScan {
   /** Valid receipts that passed bounded-file, schema, and identity validation. */
   receipts: MergeDecisionReceipt[];
   /** Number of JSON receipt candidates that could not be validated safely. */
   invalid_evidence_count: number;
+  /** Whether the clone-local Git receipt directory was resolved successfully; always emitted by current implementations and optional for structural compatibility. */
+  clone_local_evidence_resolved?: boolean;
 }
 
 async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
@@ -576,15 +597,17 @@ export async function writeMergeReceipt(params: {
 async function readReceiptsFromDirectory(
   directory: string,
   evidenceSource: "clone_local" | "durable",
-): Promise<MergeReceiptEvidenceScan> {
-  if (!(await pathExists(directory))) {
-    return { receipts: [], invalid_evidence_count: 0 };
-  }
+): Promise<
+  Pick<MergeReceiptEvidenceScan, "receipts" | "invalid_evidence_count">
+> {
   let names: string[];
   try {
     names = await readdir(directory);
-  } catch {
-    return { receipts: [], invalid_evidence_count: 1 };
+  } catch (error: unknown) {
+    return {
+      receipts: [],
+      invalid_evidence_count: isFileMissingError(error) ? 0 : 1,
+    };
   }
   const receipts: MergeDecisionReceipt[] = [];
   let invalidEvidenceCount = 0;
@@ -681,6 +704,7 @@ export async function inspectMergeReceiptEvidence(
       local.invalid_evidence_count +
       durable.invalid_evidence_count +
       divergentCopyCount,
+    clone_local_evidence_resolved: directory !== null,
   };
 }
 
@@ -803,6 +827,34 @@ export async function runMergeReceiptReport(options: {
     ok: true,
     count: receipts.length,
     receipts,
+    generated_at: nowIso(),
+  };
+}
+
+/** Inspect every receipt candidate and retain completeness diagnostics without exposing rejected file contents. */
+export async function runMergeReceiptEvidenceReport(options: {
+  /** Include receipts already represented by merge history events. */
+  includeReconciled?: boolean;
+  /** Repository directory to inspect; defaults to the process working directory. */
+  cwd?: string;
+}): Promise<MergeReceiptEvidenceReport> {
+  const evidence = await inspectMergeReceiptEvidence(
+    options.cwd ?? process.cwd(),
+    {
+      ...options,
+      includeLossless: true,
+    },
+  );
+  const complete =
+    evidence.clone_local_evidence_resolved === true &&
+    evidence.invalid_evidence_count === 0;
+  return {
+    ok: complete,
+    complete,
+    count: evidence.receipts.length,
+    invalid_evidence_count: evidence.invalid_evidence_count,
+    clone_local_evidence_resolved: evidence.clone_local_evidence_resolved,
+    receipts: evidence.receipts,
     generated_at: nowIso(),
   };
 }

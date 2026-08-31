@@ -1,0 +1,55 @@
+id: pm-k47gdd
+title: Refresh compatible GitHub Actions and tsx tooling dependencies
+description: "Adopt Dependabot PR #1164's compatible pinned GitHub Actions updates together with the registry-current tsx 4.23.13 patch, preserve workflow hardening and reproducible dependency resolution, and prove the combined SDK/CLI delivery through exact coverage, static quality, security, manual package consumption, and hosted review gates."
+type: Chore
+status: closed
+priority: 1
+tags[5]: "area:ci","area:security",dependencies,"github:1164",supply-chain
+created_at: "2026-08-31T06:12:37.195Z"
+updated_at: "2026-08-31T08:24:46.243Z"
+closed_at: "2026-08-31T08:13:06.791Z"
+completed_at: "2026-08-31T08:13:06.791Z"
+author: "harness:codex"
+acceptance_criteria: "All five action uses are pinned to reviewed immutable SHAs; workflow contract tests match the pinned versions; CI, CodeQL, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, CodSpeed, and exact coverage pass; PR #1164 is closed or merged with a PM link and no dependency PR remains open"
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: Adopted the compatible pinned action releases and tsx 4.23.13 while retaining separately governed incompatible majors.
+expected_result: "No compatible dependency update or open dependency PR remains, with immutable workflow pins and clean quality/security gates."
+actual_result: "CodeQL 4.37.9, CodSpeed 5.2.1, TruffleHog 3.97.1, and tsx 4.23.13 are adopted; audit/security inventories and exact gates are clean."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2a9n,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
+  pm-ion0bp,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
+  pm-yh6t,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
+  pm-67b84b,recurs_from,"2026-08-31T07:59:20.883Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-31T06:12:37.195Z","harness:codex","Duplicate-check evidence: complete all-status strict read covered 2,608 items; exact searches for GH-1164, the grouped GitHub Actions title, CodeQL 4.37.9, CodSpeed 5.2.1, and TruffleHog 3.97.1 found no current owner. Closed pm-2a9n, pm-ion0bp, and pm-yh6t are typed predecessors for the three action families, so this PR-specific recurrence is net-new without duplicating their shipped outcomes."
+  "2026-08-31T08:13:03.670Z","harness:codex","Delivery evidence 2026-08-31: adopted Dependabot PR #1164's pinned CodeQL 4.37.9, CodSpeed 5.2.1, and TruffleHog 3.97.1 action updates plus the only compatible package update, tsx 4.23.13. Workflow SHA contracts and linked PM tests pass. pnpm audit reports 0 vulnerabilities across 423 dependencies; credential scan, Trivy high/critical vuln+secret+misconfiguration scan, and ShellCheck are clean. The only remaining pnpm-outdated majors are separately tracked and currently incompatible: npm-package-arg 14 breaks the published Node >=22.18 floor, and TypeScript 7 is outside typescript-eslint 8.68's <6.1 peer contract. Exact coverage remains 100/100/100/100."
+  "2026-08-31T08:24:46.243Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1165 — the reviewed branch includes the compatible action and tsx refresh; incompatible TypeScript 7 and npm-package-arg 14 remain in their canonical items."
+files[8]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,records latest pm-changelog 2026.8.30 installation used for generated release history
+  .github/workflows/codeql.yml,project,CodeQL 4.37.9 immutable SHA update
+  .github/workflows/codspeed.yml,project,CodSpeed 5.2.1 immutable SHA update
+  .github/workflows/scorecard.yml,project,CodeQL 4.37.9 immutable SHA update
+  .github/workflows/security.yml,project,CodeQL 4.37.9 and TruffleHog 3.97.1 immutable SHA updates
+  package.json,project,refreshes compatible tsx tooling patch
+  pnpm-lock.yaml,project,locks the refreshed compatible toolchain graph
+  tests/integration/ci-workflow-contract.spec.ts,project,Repository-owned immutable action SHA assertions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-08-31T06:29:57.133Z",local_mutation,feat/sdk-history-receipt-evidence-contracts,GitHub Actions pinning and workflow contract regression
+test_runs[1]:
+  - run_id: test-local-mtgyaks4-39cchc
+    kind: test
+    status: passed
+    started_at: "2026-08-31T08:02:27.576Z"
+    finished_at: "2026-08-31T08:02:37.108Z"
+    recorded_at: "2026-08-31T08:02:37.108Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated dependency refresh release entry
+close_reason: "Adopted the compatible pinned GitHub Actions and tsx 4.23.13 updates with workflow contracts, zero audit/security findings, linked-test proof, and exact 100% coverage."
+body: ""

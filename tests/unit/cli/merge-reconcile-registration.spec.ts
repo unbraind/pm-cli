@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   runMergeDriver: vi.fn(),
   runMergeInstall: vi.fn(),
-  runMergeReceiptReport: vi.fn(),
+  runMergeReceiptEvidenceReport: vi.fn(),
   runMergeReconcile: vi.fn(),
 }));
 
@@ -12,7 +12,7 @@ vi.mock("../../../src/cli/commands/merge.js", () => ({
   MERGE_DRIVER_ARTIFACT_VALUES: ["history"],
   runMergeDriver: mocks.runMergeDriver,
   runMergeInstall: mocks.runMergeInstall,
-  runMergeReceiptReport: mocks.runMergeReceiptReport,
+  runMergeReceiptEvidenceReport: mocks.runMergeReceiptEvidenceReport,
   runMergeReconcile: mocks.runMergeReconcile,
 }));
 
@@ -30,7 +30,7 @@ describe("merge reconcile registration", () => {
   afterEach(() => {
     process.exitCode = undefined;
     vi.restoreAllMocks();
-    mocks.runMergeReceiptReport.mockReset();
+    mocks.runMergeReceiptEvidenceReport.mockReset();
     mocks.runMergeReconcile.mockReset();
   });
 
@@ -78,10 +78,14 @@ describe("merge reconcile registration", () => {
 
   it("reports clone-local decisions and rejects positional report arguments", async () => {
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    mocks.runMergeReceiptReport.mockResolvedValueOnce({
+    mocks.runMergeReceiptEvidenceReport.mockResolvedValueOnce({
       ok: true,
-      count: 1,
+      complete: true,
+      count: 0,
+      invalid_evidence_count: 0,
+      clone_local_evidence_resolved: true,
       receipts: [],
+      generated_at: "2026-08-31T00:00:00.000Z",
     });
 
     await createProgram().parseAsync([
@@ -92,7 +96,7 @@ describe("merge reconcile registration", () => {
       "--include-reconciled",
     ]);
 
-    expect(mocks.runMergeReceiptReport).toHaveBeenCalledWith({
+    expect(mocks.runMergeReceiptEvidenceReport).toHaveBeenCalledWith({
       includeReconciled: true,
     });
     await expect(
@@ -104,5 +108,22 @@ describe("merge reconcile registration", () => {
         "unexpected",
       ]),
     ).rejects.toThrow("merge report takes no positional arguments");
+  });
+
+  it("fails the report command when receipt evidence is incomplete", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    mocks.runMergeReceiptEvidenceReport.mockResolvedValueOnce({
+      ok: false,
+      complete: false,
+      count: 0,
+      invalid_evidence_count: 2,
+      clone_local_evidence_resolved: true,
+      receipts: [],
+      generated_at: "2026-08-31T00:00:00.000Z",
+    });
+
+    await createProgram().parseAsync(["node", "pm", "merge", "report"]);
+
+    expect(process.exitCode).toBe(1);
   });
 });

@@ -97,7 +97,20 @@ pm merge report
 pm merge report --include-reconciled
 ```
 
-The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `installMergeFence`, `findGitWorkspaceRoot`, `runMergeReconcile`, `runMergeReceiptReport`, `listMergeReceipts`, `auditMergeDriverConfiguration`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. `installMergeFence` accepts explicit tracker and workspace roots, so custom init hosts do not depend on process cwd or CLI globals.
+The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `installMergeFence`, `findGitWorkspaceRoot`, `runMergeReconcile`, `runMergeReceiptReport`, `runMergeReceiptEvidenceReport`, `inspectMergeReceiptEvidence`, `listMergeReceipts`, `auditMergeDriverConfiguration`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. `installMergeFence` accepts explicit tracker and workspace roots, so custom init hosts do not depend on process cwd or CLI globals.
+
+`listMergeReceipts` is the compatibility projection for callers that only need
+validated receipts. It cannot distinguish an empty evidence store from a store
+whose candidates were all rejected. Gates and diagnostic integrations should
+use `inspectMergeReceiptEvidence`, whose `invalid_evidence_count` preserves
+that distinction without returning malformed contents.
+`runMergeReceiptEvidenceReport` and `pm merge report --json` expose the same
+loss-aware contract through `complete`, `invalid_evidence_count`, and
+`clone_local_evidence_resolved`; the CLI
+exits nonzero when evidence is incomplete, even when the valid-receipt count is
+zero. Current SDK implementations always emit the new field, while its optional
+type preserves structural compatibility for existing typed adapters and test
+fixtures. `runMergeReceiptReport` remains the compatible valid-only report.
 
 ## Cross-branch id collision safety
 
@@ -189,7 +202,22 @@ pm merge reconcile --dry-run --json
 
 `history-repair` records the reconciliation patch and classifies its changed fields against the final item. Append-only collection unions and deterministic reordering are reported as preserved context without a data-loss warning. Fields whose replayed values are actually removed or replaced remain loud with discarded event authors/operations and recovery guidance. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
 
-History events now declare an item-hash epoch. The current epoch preserves linked-test insertion order; unversioned streams are verified against both the legacy sorted-test canonicalization and the order-preserving canonicalization. An unknown explicit epoch is reported as `unsupported_item_hash_version` and repair refuses to guess. This keeps version incompatibility distinct from item corruption and is tracked by [pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon).
+History events now declare an item-hash epoch. Epochs are immutable writer
+contracts, not aliases for the current item serializer: epoch 1 sorts linked
+tests; epoch 2 preserves their insertion order and has both an earlier
+field-frozen form and a later expanded form because the writer surface grew
+before the marker advanced; epoch 3 is the current form. Verification accepts
+both recorded epoch-2 forms without allowing one entry to mix them, and repair
+preserves the form evidenced by each event. Unversioned streams are verified
+against the supported legacy canonicalizations. Current-document comparison
+selects the resolved epoch candidate that matches the chain head. A union merge
+may consume suffixes written by both epoch-2 forms, but its synthesized output
+uses one form for the complete re-anchored stream so every stored `after_hash`
+is exactly the next stored `before_hash`. An unknown explicit epoch is
+reported as `unsupported_item_hash_version` and repair refuses to guess. This
+keeps version incompatibility distinct from item corruption and is tracked by
+[pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon) and
+[pm-2qahia](../.agents/pm/issues/pm-2qahia.toon).
 
 ## Delete versus modify policy
 

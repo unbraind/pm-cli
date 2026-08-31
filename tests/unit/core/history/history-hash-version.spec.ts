@@ -7,6 +7,7 @@ import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   createHistoryEntry,
   hashDocumentForVersion,
+  hashDocumentVerificationCandidates,
   type HistoryItemHashVersion,
 } from "../../../../src/core/history/history.js";
 import {
@@ -15,6 +16,7 @@ import {
   toReplayDocument,
   verifyHistoryChainWithVersion,
 } from "../../../../src/core/history/replay.js";
+import { verifyHistoryEntries } from "../../../../src/sdk/history-read.js";
 import type {
   HistoryEntry,
   ItemDocument,
@@ -86,6 +88,183 @@ describe("history item hash versions", () => {
     });
     expect(currentEntry.item_hash_version).toBe(
       CURRENT_HISTORY_ITEM_HASH_VERSION,
+    );
+  });
+
+  it("verifies both immutable field surfaces written under epoch 2", () => {
+    const preProvenance = document([first]);
+    const withProvenance = document([
+      {
+        ...first,
+        workspace_context_mode: "source",
+        provenance: {
+          author: "fixture",
+          created_at: "2026-08-21T00:00:00.000Z",
+          source_kind: "local_mutation",
+          source_ref: "fixture/v2-writer",
+        },
+      },
+    ]);
+
+    expect(hashDocumentForVersion(withProvenance, 2)).not.toBe(
+      hashDocumentForVersion(preProvenance, 2),
+    );
+    const [expandedHash, legacyHash] =
+      hashDocumentVerificationCandidates(withProvenance, 2);
+    expect(expandedHash).toBe(hashDocumentForVersion(withProvenance, 2));
+    expect(legacyHash).toBe(hashDocumentForVersion(preProvenance, 2));
+    expect(hashDocumentVerificationCandidates(preProvenance, 2)).toEqual([
+      hashDocumentForVersion(preProvenance, 2),
+      hashDocumentForVersion(preProvenance, 2),
+    ]);
+
+    const legacyEntry: HistoryEntry = {
+      ...unversionedEntry(withProvenance, 2),
+      after_hash: legacyHash,
+      item_hash_version: 2,
+    };
+    expect(verifyHistoryChainWithVersion([legacyEntry])).toMatchObject({
+      ok: true,
+      item_hash_version: 2,
+    });
+    expect(verifyHistoryEntries([legacyEntry], withProvenance)).toMatchObject({
+      ok: true,
+      current_matches_latest: true,
+      current_item_hash: legacyEntry.after_hash,
+    });
+    expect(reanchorHistoryEntries([legacyEntry])).toMatchObject({
+      entries: [legacyEntry],
+      entriesRehashed: 0,
+      itemHashVersion: 2,
+    });
+
+    const expandedEntry: HistoryEntry = {
+      ...unversionedEntry(withProvenance, 2),
+      item_hash_version: 2,
+    };
+    expect(verifyHistoryEntries([expandedEntry], withProvenance)).toMatchObject({
+      ok: true,
+      current_matches_latest: true,
+      current_item_hash: expandedEntry.after_hash,
+    });
+  });
+
+  it("keeps one epoch-2 semantic variant across a field-introducing patch", () => {
+    const preProvenance = document([first]);
+    const withProvenance = document([
+      {
+        ...first,
+        workspace_context_mode: "source",
+        provenance: {
+          author: "fixture",
+          created_at: "2026-08-21T00:00:00.000Z",
+          source_kind: "local_mutation",
+          source_ref: "fixture/v2-writer",
+        },
+      },
+    ]);
+    const firstEntry = {
+      ...unversionedEntry(preProvenance, 2),
+      item_hash_version: 2 as const,
+    };
+    const secondEntry: HistoryEntry = {
+      ts: "2026-08-21T00:01:00.000Z",
+      author: "fixture",
+      op: "tests_update",
+      patch: jsonPatch.compare(
+        toReplayDocument(preProvenance),
+        toReplayDocument(withProvenance),
+      ),
+      before_hash: hashDocumentForVersion(preProvenance, 2),
+      after_hash: hashDocumentForVersion(withProvenance, 2),
+      item_hash_version: 2,
+    };
+
+    expect(
+      verifyHistoryChainWithVersion([firstEntry, secondEntry]),
+    ).toMatchObject({ ok: true, item_hash_version: 2 });
+
+    const legacyTransitionEntry = {
+      ...secondEntry,
+      after_hash: hashDocumentVerificationCandidates(withProvenance, 2)[1],
+    };
+    expect(
+      verifyHistoryChainWithVersion([firstEntry, legacyTransitionEntry]),
+    ).toMatchObject({
+      ok: true,
+      item_hash_version: 2,
+    });
+
+    const afterBodyUpdate = structuredClone(withProvenance);
+    afterBodyUpdate.body = "semantic variants cannot cross";
+    const crossedVariantEntry: HistoryEntry = {
+      ts: "2026-08-21T00:02:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(withProvenance),
+        toReplayDocument(afterBodyUpdate),
+      ),
+      before_hash: hashDocumentForVersion(withProvenance, 2),
+      after_hash: hashDocumentVerificationCandidates(afterBodyUpdate, 2)[1],
+      item_hash_version: 2,
+    };
+    const expandedSetupEntry = {
+      ...unversionedEntry(withProvenance, 2),
+      item_hash_version: 2 as const,
+    };
+    expect(
+      verifyHistoryChainWithVersion([expandedSetupEntry, crossedVariantEntry]),
+    ).toMatchObject({
+      ok: false,
+      errors: ["verify_failed:after_hash_mismatch:entry_2"],
+    });
+  });
+
+  it("retains both earlier and later epoch-2 metadata field surfaces", () => {
+    const epochTwo = document([first]);
+    epochTwo.metadata.dependencies = [
+      {
+        id: "PM-MIXED-CASE",
+        kind: "related",
+        created_at: "2026-08-21T00:00:00.000Z",
+      },
+    ];
+    epochTwo.metadata.test_runs = [
+      {
+        run_id: "run-1",
+        kind: "test",
+        status: "passed",
+        started_at: "2026-08-21T00:00:00.000Z",
+        finished_at: "2026-08-21T00:00:01.000Z",
+        recorded_at: "2026-08-21T00:00:01.000Z",
+        passed: 1,
+        failed: 0,
+        skipped: 0,
+      },
+    ];
+    const current = structuredClone(epochTwo);
+    current.metadata.dependencies![0]!.id = "pm-mixed-case";
+    current.metadata.tests![0] = {
+      ...current.metadata.tests![0]!,
+      provenance_invalid: true,
+    };
+    current.metadata.test_runs![0]!.executions = [
+      {
+        command: "z-last",
+        workspace_context_mode: "snapshot",
+        trust_reason: "local_mutation",
+      },
+    ];
+
+    expect(hashDocumentForVersion(current, 2)).not.toBe(
+      hashDocumentForVersion(epochTwo, 2),
+    );
+    expect(hashDocumentVerificationCandidates(current, 2)[1]).toBe(
+      hashDocumentVerificationCandidates(epochTwo, 2)[1],
+    );
+    expect(hashDocumentForVersion(current, 3)).not.toBe(
+      hashDocumentForVersion(epochTwo, 3),
     );
   });
 

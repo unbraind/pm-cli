@@ -22,12 +22,16 @@ export {
   type RelationshipStreamMergeResult,
 } from "./three-way.js";
 export {
+  inspectMergeReceiptEvidence,
   listMergeReceipts,
   markMergeReceiptReconciled,
+  runMergeReceiptEvidenceReport,
   runMergeReceiptReport,
   summarizeMergeReceipt,
   type MergeDecisionReceipt,
   type MergeDecisionReceiptSummary,
+  type MergeReceiptEvidenceReport,
+  type MergeReceiptEvidenceScan,
   type MergeReceiptReport,
 } from "./receipts.js";
 export {

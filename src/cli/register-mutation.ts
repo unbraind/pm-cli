@@ -29,7 +29,7 @@ import {
   runMergeDriver,
   runMergeInstall,
   runMergeReconcile,
-  runMergeReceiptReport,
+  runMergeReceiptEvidenceReport,
 } from "./commands/merge.js";
 import { runAppend } from "./commands/append.js";
 import { runClose } from "./commands/close.js";
@@ -1363,12 +1363,11 @@ async function runMergeAction(
           EXIT_CODE.USAGE,
         );
       }
-      printResult(
-        await runMergeReceiptReport({
-          includeReconciled: options.includeReconciled === true,
-        }),
-        globalOptions,
-      );
+      const result = await runMergeReceiptEvidenceReport({
+        includeReconciled: options.includeReconciled === true,
+      });
+      printResult(result, globalOptions);
+      if (!result.ok) process.exitCode = EXIT_CODE.GENERIC_FAILURE;
       break;
     }
     case "driver":
