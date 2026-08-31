@@ -14,6 +14,7 @@ import { promisify } from "node:util";
 import {
   ensureDir,
   isFileAbsentError,
+  isFileMissingError,
   pathExists,
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
@@ -599,14 +600,14 @@ async function readReceiptsFromDirectory(
 ): Promise<
   Pick<MergeReceiptEvidenceScan, "receipts" | "invalid_evidence_count">
 > {
-  if (!(await pathExists(directory))) {
-    return { receipts: [], invalid_evidence_count: 0 };
-  }
   let names: string[];
   try {
     names = await readdir(directory);
-  } catch {
-    return { receipts: [], invalid_evidence_count: 1 };
+  } catch (error: unknown) {
+    return {
+      receipts: [],
+      invalid_evidence_count: isFileMissingError(error) ? 0 : 1,
+    };
   }
   const receipts: MergeDecisionReceipt[] = [];
   let invalidEvidenceCount = 0;

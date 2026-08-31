@@ -2,13 +2,13 @@ id: pm-baksix
 title: "GH-1104: health must not certify pending lossless merge receipts as reconciled"
 description: "A pending merge receipt created by a lossless comment union remains state=pending while health reports ok=true. Existing pm-lwmstb correctly distinguishes lossless provenance from lossy decisions, but GitHub #1104 demonstrates that the green gate still implies reconciliation that did not occur. Publish a non-blocking-to-data but health-visible pending-receipt finding, route remediation to pm merge reconcile, and prove history-repair cannot hide it."
 type: Issue
-status: closed
+status: in_progress
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-31T10:27:43.685Z"
-closed_at: "2026-08-31T10:27:43.088Z"
-completed_at: "2026-08-31T10:27:43.088Z"
+updated_at: "2026-08-31T10:51:43.386Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#d28e5412fa32fcac38263ad0"
 author: "harness:codex"
 acceptance_criteria: A lossless pending merge receipt makes the health gate non-green with receipt-aware remediation; history-repair cannot clear the finding; pm merge reconcile settles it; lossy decision classification remains distinct
 parent: pm-dj98
@@ -20,7 +20,7 @@ actual_result: "Two malformed receipts produce complete=false, invalid_evidence_
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
   "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
   "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
@@ -34,6 +34,7 @@ comments[13]{created_at,author,text}:
   "2026-08-31T09:13:25.500Z","harness:codex","Review remediation verification: the corrected completeness contract and report fixture are included in the final exact 100/100/100/100 coverage run and the complete quality:static gate; no public boundary or docstring violations remain."
   "2026-08-31T09:52:26.642Z","harness:codex","Exact-head review finding: resolveReceiptDirectory maps git rev-parse failure to null, causing the loss-aware report to certify completeness without locating clone-local evidence. Reopened for an explicit repository-resolution receipt, fail-closed report semantics, and resolved-empty/non-repository regressions."
   "2026-08-31T10:27:30.160Z","harness:codex","Review remediation evidence: loss-aware receipt scans and reports now emit clone_local_evidence_resolved and complete only when the clone-local receipt directory resolved plus every receipt is valid. TDD regressions distinguish outside-Git unresolved evidence from a resolved empty Git receipt store. Final verification: linked tests 3/3 passed (104 focused assertions across suites), quality:static passed, full coverage passed 590 files / 8,169 tests at exact 100/100/100/100, and manual CLI acceptance proved exit 1 + resolved=false + complete=false outside Git versus ok=true + resolved=true + complete=true in an initialized Git workspace."
+  "2026-08-31T10:51:43.385Z","harness:codex","Review triage: accepted unreadable/non-directory evidence traversal finding. Rejected SDK cwd restriction as incompatible with the documented universal multi-workspace contract: explicit cwd is the workspace selector, direct SDK/CLI callers intentionally choose it, receipt discovery remains bounded to Git/tracker receipt roots, and no path-scoped authorization root exists. The correct fix is to preserve filesystem access failures as incomplete evidence, not invent a process-cwd sandbox."
 learnings[1]{created_at,author,text}:
   "2026-08-31T10:27:30.723Z","harness:codex",An empty evidence set is trustworthy only after its clone-local source was positively resolved; directory-resolution absence must be modeled separately from zero invalid receipts and must fail loss-aware gates closed.
 files[19]{path,scope,note}:
@@ -173,7 +174,6 @@ docs[4]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Loss-aware receipt evidence contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated error-code coverage
   docs/MERGE_SAFETY.md,project,Pending lossless receipt gate semantics
-close_reason: "Delivered SDK-first loss-aware merge receipt evidence across public scan/report/runtime contracts and thin CLI projection, including explicit clone-local resolution proof so unresolved evidence cannot be mistaken for an empty valid store. Exact linked, static, manual, and 100/100/100/100 coverage evidence is recorded on the item."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

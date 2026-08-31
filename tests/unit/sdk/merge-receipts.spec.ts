@@ -419,6 +419,24 @@ describe("clone-local merge decision receipts", () => {
     });
   });
 
+  it("fails closed when a receipt directory path cannot be traversed", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const blockedTrackerRoot = path.join(workspace, "blocked-tracker-root");
+    await writeFile(blockedTrackerRoot, "not a directory\n", "utf8");
+
+    await expect(
+      inspectMergeReceiptEvidence(workspace, {
+        pmRoot: blockedTrackerRoot,
+      }),
+    ).resolves.toEqual({
+      receipts: [],
+      invalid_evidence_count: 1,
+      clone_local_evidence_resolved: true,
+    });
+  });
+
   it("carries privacy-safe decision evidence into a fresh clone", async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), "pm-receipts-source-"),
