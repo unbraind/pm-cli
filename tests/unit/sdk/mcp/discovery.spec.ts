@@ -91,7 +91,7 @@ describe("progressive MCP tool discovery", () => {
   });
 
   it("rejects unknown runtime tier and family values instead of returning empty results", () => {
-    for (const tier of ["unknown", 42]) {
+    for (const tier of ["unknown", "internal", 42]) {
       expect(() =>
         discoverPmTools([candidate("pm_get")], { tier: tier as never }),
       ).toThrow(/tier must be/u);
@@ -101,6 +101,16 @@ describe("progressive MCP tool discovery", () => {
         discoverPmTools([candidate("pm_get")], { family: family as never }),
       ).toThrow(/family must be/u);
     }
+  });
+
+  it("treats prototype-inherited candidate names as unregistered tools", () => {
+    const result = discoverPmTools(
+      [candidate("toString"), candidate("valueOf"), candidate("constructor")],
+      { outputBudget: "unbounded" },
+    );
+
+    expect(result.tools).toHaveLength(3);
+    expect(result.tools.every(({ command }) => command === "help")).toBe(true);
   });
 
   it("pages without duplicates and rejects stale or mismatched cursors", () => {

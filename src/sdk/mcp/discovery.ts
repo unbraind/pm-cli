@@ -212,6 +212,12 @@ const TIER_RANK: Readonly<Record<PmCommandVisibilityTier, number>> = {
   internal: 3,
 };
 
+const SELECTABLE_TIERS: readonly string[] = Object.freeze([
+  "core",
+  "standard",
+  "full",
+]);
+
 const CAPABILITY_FAMILIES = new Set(
   PM_COMMAND_CAPABILITY_CONTRACTS.map(({ family }) => family),
 );
@@ -361,7 +367,9 @@ function buildRankedRow(
   query: string,
   includeSchema: boolean,
 ): PmToolDiscoveryResultRow {
-  const command = PM_MCP_TOOL_COMMAND_CONTRACTS[candidate.name] ?? "help";
+  const command = Object.hasOwn(PM_MCP_TOOL_COMMAND_CONTRACTS, candidate.name)
+    ? PM_MCP_TOOL_COMMAND_CONTRACTS[candidate.name]
+    : "help";
   const family = resolvePmCommandCapabilityFamily(command);
   const searchableText = `${candidate.name} ${candidate.description} ${command} ${family}`;
   const lexical = lexicalRelevance(query, searchableText);
@@ -424,7 +432,7 @@ function validateDiscoveryFilters(options: PmToolDiscoveryOptions): void {
   if (
     options.tier !== undefined &&
     (typeof options.tier !== "string" ||
-      !Object.hasOwn(TIER_RANK, options.tier))
+      !SELECTABLE_TIERS.includes(options.tier))
   ) {
     throw new PmCliError(
       "pm tool discovery tier must be core, standard, or full.",

@@ -133,6 +133,12 @@ describe("agent-task transcript token gate", () => {
         ],
       }),
     ).toThrow();
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [orientation.protocols[0], orientation.protocols[0]],
+      }),
+    ).toThrow();
   });
 
   it("accepts an exact per-task baseline and detects a seeded regression", () => {

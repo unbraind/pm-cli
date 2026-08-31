@@ -359,10 +359,14 @@ export function evaluateOrientationProtocolSelection(report, orientation) {
   const declaredProtocols = Array.isArray(orientation?.protocols)
     ? orientation.protocols
     : [];
+  const protocolTaskIds = declaredProtocols.map(
+    (protocol) => protocol?.task_id,
+  );
   if (
     typeof orientation?.canonical_task_id !== "string" ||
     requiredCapabilities.length === 0 ||
-    declaredProtocols.length < 2
+    declaredProtocols.length < 2 ||
+    new Set(protocolTaskIds).size !== declaredProtocols.length
   ) {
     fail("Agent-task orientation protocol contract is incomplete");
   }
