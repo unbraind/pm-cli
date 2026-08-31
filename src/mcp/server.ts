@@ -48,7 +48,7 @@ import {
   PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
   PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
   discoverPmTools,
-  type PmToolDiscoveryOptions,
+  parsePmToolDiscoveryOptions,
 } from "../sdk/mcp/discovery.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
 import {
@@ -340,6 +340,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_discover: async (args) => {
     const surface = await resolveMcpToolSurface(TOOLS, args);
     const cursorIntegrityKey = resolveMcpDiscoveryCursorIntegrityKey();
+    const discoveryOptions = parsePmToolDiscoveryOptions(args);
     return discoverPmTools(
       surface.tools.map((tool) => ({
         name: tool.name,
@@ -352,22 +353,7 @@ const HANDLERS: Record<string, ToolHandler> = {
         },
       })),
       {
-        ...(typeof args.query === "string" ? { query: args.query } : {}),
-        ...(typeof args.family === "string"
-          ? {
-              family: args.family as PmToolDiscoveryOptions["family"],
-            }
-          : {}),
-        ...(typeof args.tier === "string"
-          ? { tier: args.tier as PmToolDiscoveryOptions["tier"] }
-          : {}),
-        ...(typeof args.limit === "number" ? { limit: args.limit } : {}),
-        ...(typeof args.cursor === "string" ? { cursor: args.cursor } : {}),
-        includeSchema: args.includeSchema === true,
-        ...(typeof args.outputBudget === "number" ||
-        args.outputBudget === "unbounded"
-          ? { outputBudget: args.outputBudget }
-          : {}),
+        ...discoveryOptions,
         profile: surface.profile,
         ...(cursorIntegrityKey === undefined
           ? {}

@@ -220,7 +220,7 @@ const SELECTABLE_TIERS: readonly string[] = Object.freeze([
   "full",
 ]);
 
-const CAPABILITY_FAMILIES = new Set(
+const CAPABILITY_FAMILIES: ReadonlySet<string> = new Set(
   PM_COMMAND_CAPABILITY_CONTRACTS.map(({ family }) => family),
 );
 
@@ -255,6 +255,88 @@ function boundedDiscoveryString(
     }
   }
   return value;
+}
+
+function discoveryLimit(value: unknown): number {
+  if (!Number.isInteger(value) || Number(value) < 1 || Number(value) > 100) {
+    throw new PmCliError(
+      "pm tool discovery limit must be from 1 through 100.",
+      64,
+    );
+  }
+  return Number(value);
+}
+
+function discoveryOutputBudget(value: unknown): number | "unbounded" {
+  if (
+    value !== "unbounded" &&
+    (!Number.isInteger(value) || Number(value) < 128)
+  ) {
+    throw new PmCliError(
+      "pm tool discovery outputBudget must be unbounded or an integer of at least 128.",
+      64,
+    );
+  }
+  return value === "unbounded" ? value : Number(value);
+}
+
+function discoveryIncludeSchema(value: unknown): boolean {
+  if (value !== undefined && typeof value !== "boolean") {
+    throw new PmCliError(
+      "pm tool discovery includeSchema must be a boolean.",
+      64,
+    );
+  }
+  return value === true;
+}
+
+/** Parse untrusted adapter input without discarding malformed discovery values. */
+export function parsePmToolDiscoveryOptions(
+  input: Record<string, unknown>,
+): PmToolDiscoveryOptions {
+  if (
+    input.family !== undefined &&
+    (typeof input.family !== "string" || !CAPABILITY_FAMILIES.has(input.family))
+  ) {
+    throw new PmCliError(
+      "pm tool discovery family must be a declared capability family.",
+      64,
+    );
+  }
+  if (
+    input.tier !== undefined &&
+    (typeof input.tier !== "string" || !SELECTABLE_TIERS.includes(input.tier))
+  ) {
+    throw new PmCliError(
+      "pm tool discovery tier must be core, standard, or full.",
+      64,
+    );
+  }
+  return {
+    ...(input.query !== undefined
+      ? { query: boundedDiscoveryString(input.query, "query") }
+      : {}),
+    ...(input.family !== undefined
+      ? { family: input.family as PmCommandCapabilityFamily }
+      : {}),
+    ...(input.tier !== undefined
+      ? {
+          tier: input.tier as Exclude<PmCommandVisibilityTier, "internal">,
+        }
+      : {}),
+    ...(input.limit !== undefined
+      ? { limit: discoveryLimit(input.limit) }
+      : {}),
+    ...(input.cursor !== undefined
+      ? { cursor: boundedDiscoveryString(input.cursor, "cursor") }
+      : {}),
+    ...(input.includeSchema !== undefined
+      ? { includeSchema: discoveryIncludeSchema(input.includeSchema) }
+      : {}),
+    ...(input.outputBudget !== undefined
+      ? { outputBudget: discoveryOutputBudget(input.outputBudget) }
+      : {}),
+  };
 }
 
 function normalizedUnitInterval(value: number | undefined): number {
@@ -494,24 +576,12 @@ function resolveDiscoveryRequest(
   const rawQuery = boundedDiscoveryString(options.query ?? "", "query");
   const query = rawQuery.trim().replace(/\s+/gu, " ");
   boundedDiscoveryString(options.cursor ?? "", "cursor");
-  const limit = options.limit ?? 10;
-  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-    throw new PmCliError(
-      "pm tool discovery limit must be from 1 through 100.",
-      64,
-    );
-  }
-  const budget = options.outputBudget ?? 1_200;
-  if (budget !== "unbounded" && (!Number.isInteger(budget) || budget < 128)) {
-    throw new PmCliError(
-      "pm tool discovery outputBudget must be unbounded or an integer of at least 128.",
-      64,
-    );
-  }
+  const limit = discoveryLimit(options.limit ?? 10);
+  const budget = discoveryOutputBudget(options.outputBudget ?? 1_200);
   validateDiscoveryFilters(options);
   return {
     query,
-    includeSchema: options.includeSchema === true,
+    includeSchema: discoveryIncludeSchema(options.includeSchema),
     limit,
     budget,
     maximumTier: TIER_RANK[options.tier ?? "full"],

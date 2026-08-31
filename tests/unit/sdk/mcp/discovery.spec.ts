@@ -397,6 +397,9 @@ describe("progressive MCP tool discovery", () => {
     expect(() => discoverPmTools([], { cursor: 42 as never })).toThrow(
       /cursor/u,
     );
+    expect(() => discoverPmTools([], { includeSchema: 1 as never })).toThrow(
+      /includeSchema/u,
+    );
     for (const cursorIntegrityKey of [new Uint8Array(31), "not-bytes"]) {
       expect(() =>
         discoverPmTools([], {

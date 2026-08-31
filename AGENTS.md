@@ -74,7 +74,7 @@ pm docs <id> --add path=<path>,scope=project,note="<why>"
 pm test <id> --add command="node scripts/run-tests.mjs test -- <target>",scope=project,timeout_seconds=240
 pm comments <id> "Evidence: <what changed and what passed>"
 pm test <id> --run --progress
-pm close <id> "<reason with evidence>" --validate-close warn
+pm close <id> "<reason with evidence>" --resolution "<what changed>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn
 pm release <id>
 ```
 
@@ -89,7 +89,7 @@ Author identity is automatic; use `--author` only for an explicit override.
 - **Implement:** keep edits scoped to the claimed item. Link changed files with `pm files`, docs with `pm docs`, and runnable verification with `pm test`.
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.
 - **Verify:** use sandbox-safe commands. For documentation-only work, run at least `pnpm build` and a focused link/content check. For broader work, run linked tests, coverage, validation, and release gates as appropriate.
-- **Close:** add evidence first, then `pm close <id> "<reason>" --validate-close warn`, then `pm release <id>`.
+- **Close:** add evidence first, then atomically include `--resolution`, `--expected`, and `--actual` on `pm close <id> "<reason>" --validate-close warn`, then `pm release <id>`. Structured evidence belongs in the immutable close event, not in a later backfill.
 - **Land closeout through review:** tracker evidence, item closure, and the generated changelog are part of the reviewed delivery. Never push post-merge closeout commits directly to `main`; if evidence depends on the merge SHA, carry it in a normal `main`-based follow-up PR so the new head retains analyzer provenance. See [Releasing](docs/RELEASING.md#reviewed-delivery-closeout).
 
 ## Test Safety

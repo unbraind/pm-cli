@@ -242,6 +242,31 @@ describe("MCP progressive discovery negotiation", () => {
     });
   });
 
+  it.each([
+    ["query", 42],
+    ["family", 42],
+    ["tier", 42],
+    ["limit", "5"],
+    ["cursor", 42],
+    ["includeSchema", "true"],
+    ["outputBudget", "128"],
+  ])(
+    "rejects a malformed %s argument instead of defaulting it",
+    async (field, value) => {
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 90,
+          method: "tools/call",
+          params: modernParams(true, {
+            name: "pm_discover",
+            arguments: { [field]: value },
+          }),
+        }),
+      ).rejects.toMatchObject({ exitCode: 64 });
+    },
+  );
+
   it("uses a deployment cursor key and fails closed on rotation or weak keys", async () => {
     const previousKey = process.env.PM_MCP_DISCOVERY_CURSOR_KEY;
     try {

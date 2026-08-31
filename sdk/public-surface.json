@@ -52,7 +52,9 @@
       "reason": "pm-9stazf adds bounded annotation mutation receipts with explicit fullHistory opt-in; pm-tu71 makes vector refresh explicit"
     },
     {
-      "changes": ["signature ./sdk:AnnotationOmissionReceipt"],
+      "changes": [
+        "signature ./sdk:AnnotationOmissionReceipt"
+      ],
       "package_version": "2026.8.7",
       "reason": "pm-9stazf replaces CLI-only annotation restoration guidance with transport-neutral selectors"
     },
@@ -87,7 +89,9 @@
       "reason": "Report collected all-row bulk failures as dependency_failed exit 5 instead of a successful no-effect receipt; full no-effect and partial-effect exits remain 6 and 7."
     },
     {
-      "changes": ["signature ./sdk:ProjectRuntimeCompatibilityResult"],
+      "changes": [
+        "signature ./sdk:ProjectRuntimeCompatibilityResult"
+      ],
       "package_version": "2026.8.7",
       "reason": "Extend project runtime inspection with optional stale-read diagnostics for pm-1eted6; existing result fields and behavior remain compatible."
     },
@@ -219,7 +223,9 @@
       "reason": "Refusal-verifier findings are typed report members rather than emitted CLI error codes; the finding union models executable reachability mismatches without polluting the runtime error-code catalog."
     },
     {
-      "changes": ["signature ./sdk:UnknownSubcommandErrorOptions"],
+      "changes": [
+        "signature ./sdk:UnknownSubcommandErrorOptions"
+      ],
       "package_version": "2026.8.10",
       "reason": "Intentional compatible public contract expansion adds configurable refusal display labels and preserves stable alias migration: unknown_lifecycle_action resolves canonically to unknown_subcommand while retaining its catalog identity."
     },
@@ -360,7 +366,9 @@
       "reason": "pm-py7qv2 pm-33mjrw pm-q6n8sj pm-h97qxd pm-rncuf7 pm-m0b7h8: explicit truthful context and evidence contract tranche"
     },
     {
-      "changes": ["signature ./sdk:TestResult"],
+      "changes": [
+        "signature ./sdk:TestResult"
+      ],
       "package_version": "2026.8.11",
       "reason": "pm-m0b7h8: removed count is present only for successful linked-test removals"
     },
@@ -623,7 +631,9 @@
       "reason": "Require source-bound history author preview fingerprints and typed recovery semantics while adding reusable coverage assurance"
     },
     {
-      "changes": ["signature ./sdk:PmCliErrorContext"],
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
       "package_version": "2026.8.15",
       "reason": "Expand PmCliErrorContext with optional verification_errors for typed integrity diagnostics; existing consumers remain source compatible."
     },
@@ -652,7 +662,9 @@
       "reason": "Publish only runPmCli from ./cli and add truthful context-budget and recurrence contracts"
     },
     {
-      "changes": ["signature ./sdk:PmCliErrorContext"],
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
       "package_version": "2026.8.16",
       "reason": "Expose structured temporal relationship endpoint evidence on PmCliErrorContext and publish dependency_temporal_order_invalid for source-after-target enforcement"
     },
@@ -678,7 +690,9 @@
       "reason": "Expand defect evidence finding and recovery producer contracts for fail-closed timestamps and complete structured recovery coverage"
     },
     {
-      "changes": ["signature ./sdk:RuntimeFieldValueSchema"],
+      "changes": [
+        "signature ./sdk:RuntimeFieldValueSchema"
+      ],
       "package_version": "2026.8.16",
       "reason": "Expand defect evidence and recovery contracts while exposing semantic runtime field schemas without unreachable null coercion"
     },
@@ -727,7 +741,9 @@
       "reason": "Close exporter artifact ownership and NDJSON trailer input invariants after exact-head review; stdout render opt-in was newly introduced only on this unmerged branch."
     },
     {
-      "changes": ["signature ./sdk:MutationEventPage"],
+      "changes": [
+        "signature ./sdk:MutationEventPage"
+      ],
       "package_version": "2026.8.17",
       "reason": "Add truthful authoritative_history source receipt for Bun event fallback while preserving derived_index on Node."
     },
@@ -748,7 +764,9 @@
       "reason": "Add fail-closed complete-list APIs and package-catalog universal read-output typing; existing invocation shapes remain runtime-compatible."
     },
     {
-      "changes": ["error code invalid_envelope removed"],
+      "changes": [
+        "error code invalid_envelope removed"
+      ],
       "package_version": "2026.8.17",
       "reason": "Remove a complete-list finding mistakenly classified as a top-level SDK error code; the typed receipt finding remains unchanged."
     },
@@ -792,7 +810,9 @@
       "reason": "Widen positional-action parent union for governed workspace snapshot actions; existing values and behavior remain compatible"
     },
     {
-      "changes": ["signature ./sdk:ReadRowContract"],
+      "changes": [
+        "signature ./sdk:ReadRowContract"
+      ],
       "package_version": "2026.8.18",
       "reason": "ReadRowContract adds an optional continuation_row_keys field; existing consumers remain source-compatible while nested resumability becomes explicit."
     },
@@ -869,7 +889,9 @@
       "reason": "Add noun-first recurrence lifecycle and executable recovery contracts across CLI, SDK, and MCP"
     },
     {
-      "changes": ["error code reopen_receipt_missing removed"],
+      "changes": [
+        "error code reopen_receipt_missing removed"
+      ],
       "package_version": "2026.8.19",
       "reason": "Add noun-first recurrence lifecycle and executable recovery contracts across CLI, SDK, and MCP"
     },
@@ -1105,7 +1127,9 @@
       "reason": "Require tier and family metadata on projected workspace extension command contracts so every consumer receives explicit visibility and capability routing."
     },
     {
-      "changes": ["signature ./sdk:PmCommandCapabilityFamily"],
+      "changes": [
+        "signature ./sdk:PmCommandCapabilityFamily"
+      ],
       "package_version": "2026.8.23",
       "reason": "Capability-family literals are unchanged; the public alias now derives from the canonical extension metadata contract to prevent type drift."
     },
@@ -1152,7 +1176,9 @@
       "reason": "Expand bulk ID contracts to finite numeric array members and fail closed on unsupported explicit selectors"
     },
     {
-      "changes": ["signature ./sdk:HistoryCompactBulkCommandOptions"],
+      "changes": [
+        "signature ./sdk:HistoryCompactBulkCommandOptions"
+      ],
       "package_version": "2026.8.23",
       "reason": "Align history-compaction SDK ID inputs with bulk transport contracts and fail closed on invalid explicit selectors"
     },
@@ -1203,17 +1229,23 @@
       "reason": "Add fail-closed clone-local receipt proof metadata and apply-boundary validation to the unreleased merge-reconciliation contract."
     },
     {
-      "changes": ["signature ./sdk:HistoryRepairAllStreamResult"],
+      "changes": [
+        "signature ./sdk:HistoryRepairAllStreamResult"
+      ],
       "package_version": "2026.8.24",
       "reason": "Expose receipt-scoped merge reconciliation proof in history repair stream contracts"
     },
     {
-      "changes": ["signature ./sdk:HistoryRepairCommandOptions"],
+      "changes": [
+        "signature ./sdk:HistoryRepairCommandOptions"
+      ],
       "package_version": "2026.8.24",
       "reason": "Expose bounded per-item receipt proof indexing and receipt-scoped reconciliation results"
     },
     {
-      "changes": ["signature ./sdk:MergeReceiptProofResult"],
+      "changes": [
+        "signature ./sdk:MergeReceiptProofResult"
+      ],
       "package_version": "2026.8.24",
       "reason": "Expose exact receipt-id sets for bounded multi-receipt reconciliation proof"
     },
@@ -1226,7 +1258,9 @@
       "reason": "Add strict requireExisting settlement mode while preserving default idempotency"
     },
     {
-      "changes": ["signature ./sdk:validateMcpAuthorizationServerMetadata"],
+      "changes": [
+        "signature ./sdk:validateMcpAuthorizationServerMetadata"
+      ],
       "package_version": "2026.8.25",
       "reason": "Covariant return refinement: existing metadata interface remains source-compatible while the validator now exposes endpoints it already requires at runtime"
     },
@@ -1242,7 +1276,9 @@
       "reason": "Align the new unshipped MCP Skills draft contracts with the exact SEP-2640 digest, directory-read, and resource-limit schema before first publication."
     },
     {
-      "changes": ["signature ./sdk:ReadPmMcpSkillDirectoryResult"],
+      "changes": [
+        "signature ./sdk:ReadPmMcpSkillDirectoryResult"
+      ],
       "package_version": "2026.8.26",
       "reason": "Complete the unmerged Skills directory pagination contract with required hasMore metadata"
     },
@@ -1372,7 +1408,9 @@
       "reason": "Broaden resolveItemBlockers input to accept optional id and updated_at context already consumed by blocker projection"
     },
     {
-      "changes": ["signature ./sdk:PM_MCP_LEGACY_PROTOCOL_VERSIONS"],
+      "changes": [
+        "signature ./sdk:PM_MCP_LEGACY_PROTOCOL_VERSIONS"
+      ],
       "package_version": "2026.8.30",
       "reason": "pm-edywqn: the legacy accept list widens to the full initialize-era set (2025-11-25 plus 2025-06-18) so every current MCP host can complete a handshake; the tuple literal type changes because the declared set is the contract, and no runtime behaviour is removed"
     },
@@ -1420,7 +1458,9 @@
       "reason": "Add optional clone-local resolution evidence to loss-aware receipt scans and reports so gates fail closed while existing structural consumers remain compatible."
     },
     {
-      "changes": ["signature ./sdk:PmToolDiscoveryOptions"],
+      "changes": [
+        "signature ./sdk:PmToolDiscoveryOptions"
+      ],
       "package_version": "2026.8.31",
       "reason": "Add optional host-owned cursor integrity key for deployment-stable pagination; existing callers and process-local fallback remain compatible."
     }
@@ -10176,6 +10216,12 @@
           "kind": "function",
           "name": "parsePmAgentTaskTranscriptCorpus",
           "signature": "(value: unknown) => PmAgentTaskTranscriptCorpus | calls: (value: unknown) => PmAgentTaskTranscriptCorpus"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "parsePmToolDiscoveryOptions",
+          "signature": "(input: Record<string, unknown>) => PmToolDiscoveryOptions | calls: (input: Record<string, unknown>) => PmToolDiscoveryOptions"
         },
         {
           "classification": "supported",
