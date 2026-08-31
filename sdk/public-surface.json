@@ -1446,6 +1446,16 @@
       ],
       "package_version": "2026.8.30",
       "reason": "Fail closed on malformed history evidence and expose complete bounded lifecycle-role diagnostics"
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeReceiptEvidenceReport",
+        "signature ./sdk:MergeReceiptEvidenceScan",
+        "signature ./sdk/merge:MergeReceiptEvidenceReport",
+        "signature ./sdk/merge:MergeReceiptEvidenceScan"
+      ],
+      "package_version": "2026.8.30",
+      "reason": "Add optional clone-local resolution evidence to loss-aware receipt scans and reports so gates fail closed while existing structural consumers remain compatible."
     }
   ],
   "entrypoints": {
@@ -9268,13 +9278,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceReport",
-          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; receipts: MergeDecisionReceipt[]; generated_at: string; }"
+          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; receipts: MergeDecisionReceipt[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -26638,13 +26648,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceReport",
-          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; receipts: MergeDecisionReceipt[]; generated_at: string; }"
+          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; receipts: MergeDecisionReceipt[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "supported",

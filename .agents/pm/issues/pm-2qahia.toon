@@ -6,9 +6,9 @@ status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-31T09:13:24.959Z"
-closed_at: "2026-08-31T08:13:04.333Z"
-completed_at: "2026-08-31T08:13:04.333Z"
+updated_at: "2026-08-31T10:27:42.488Z"
+closed_at: "2026-08-31T10:27:41.941Z"
+completed_at: "2026-08-31T10:27:41.941Z"
 author: "harness:codex"
 acceptance_criteria: A released-version fixture proves whether identical epoch-2 content can hash differently; every hash-input or algorithm change advances a format capability or preserves the previous comparator; drift diagnostics distinguish unsupported writer/version skew from same-version corruption; history events expose sufficient writer capability provenance for deterministic diagnosis; repair changed receipts match actual byte writes; SDK CLI health validate and repair contracts carry the distinction; focused cross-version packed-consumer and exact repository coverage gates pass
 parent: pm-o2kc
@@ -26,7 +26,7 @@ customer_impact: "Ordinary cross-version mutations make CI report corruption, tr
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[28]{created_at,author,text}:
+comments[30]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
@@ -55,11 +55,14 @@ comments[28]{created_at,author,text}:
   "2026-08-31T08:24:45.132Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1165 — the reviewed branch preserves both evidenced v2 history semantics across replay, drift detection, validation, and repair."
   "2026-08-31T08:44:35.665Z","harness:codex","PR #1165 review findings validated: Greptile P1 was valid at the union re-anchor boundary, where per-entry epoch-2 variant preservation could synthesize non-identical adjacent endpoints; CodeRabbit also correctly identified candidate-0-only repair reconciliation. The fix preserves historical per-event verification while forcing one surface only for newly synthesized union streams and compares corresponding candidates for repair. Focused regression suite: 41/41 passed."
   "2026-08-31T09:13:24.959Z","harness:codex","Review remediation verification: final full coverage passed 590/590 files and 8168/8168 tests at exact 100% statements, branches, functions, and lines with zero uncovered counts. Final quality:static passed ESLint, zero jscpd clones, 100% source/exported/member docstrings, CodeFactor complexity <=16, package/SDK parity, token/context gates, graph composition, and append-only integrity."
-learnings[4]{created_at,author,text}:
+  "2026-08-31T09:52:25.108Z","harness:codex","Exact-head review finding: union reanchor currently exposes skippedOps but mergeHistoryStreams discards that receipt, so a divergent suffix with an unapplicable operation can lose an effect while returning a valid chain. Reopened to make union merge fail closed and prove the negative control."
+  "2026-08-31T10:27:29.154Z","harness:codex","Review remediation evidence: history union now refuses when deterministic suffix replay skips any patch operation, preventing a hash-valid stream from silently omitting effects. TDD regression failed before the fix and now passes. Final verification: linked tests 4/4 passed (119 focused assertions across suites), repository-wide quality:static passed, and full coverage passed 590 files / 8,169 tests with statements 60,391/60,391, branches 45,571/45,571, functions 12,563/12,563, lines 58,150/58,150."
+learnings[5]{created_at,author,text}:
   "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
   "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
   "2026-08-29T06:28:53.527Z","harness:codex","Persisted caches are untrusted inputs: validate every required scalar type before reusing a cached integrity verdict, even when version and fingerprint fields match."
   "2026-08-29T07:43:02.818Z","harness:codex","A newer history hash capability is a runtime compatibility boundary, not repairable corruption; every health and validation projection must route to upgrade guidance rather than history-repair."
+  "2026-08-31T10:27:29.656Z","harness:codex","A deterministic union order is insufficient evidence of losslessness: reanchoring must surface skipped JSON patch operations and the merge boundary must fail closed whenever the count is nonzero."
 files[22]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census reflects canonical version-skew alias
   scripts/error-code-stability.json,project,Canonical stability and alias policy for version-skew diagnostics
@@ -119,7 +122,7 @@ tests[4]:
       created_at: "2026-08-31T08:44:35.132Z"
       source_kind: local_mutation
       source_ref: feat/sdk-history-receipt-evidence-contracts
-test_runs[12]:
+test_runs[13]:
   - run_id: test-local-mtdkxs90-zu56nw
     kind: test
     status: passed
@@ -281,12 +284,26 @@ test_runs[12]:
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/core/history/history-hash-version.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mth3f1q6-ifnfyy
+    kind: test
+    status: passed
+    started_at: "2026-08-31T10:25:22.379Z"
+    finished_at: "2026-08-31T10:26:03.774Z"
+    recorded_at: "2026-08-31T10:26:03.774Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/core/history/history-hash-version.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for history integrity and version-skew recovery
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal/remediation census includes history version-skew guidance
   docs/MERGE_SAFETY.md,project,Frozen history hash epoch contract and cross-version recovery
-close_reason: "Resolved the GH-1162 recurrence with dual immutable-v2 verification, matching current-document drift checks, repair preservation, clean 2,609-item live validation, five external fleet proofs, and exact 100% coverage."
+close_reason: "Delivered SDK-first dual history-v2 recovery and review hardening: deterministic union now preserves every applicable effect or refuses on skipped patch operations; CLI remains a thin adapter. Exact linked, static, manual, and 100/100/100/100 coverage evidence is recorded on the item."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

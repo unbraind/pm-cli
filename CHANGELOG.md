@@ -2,14 +2,19 @@
 
 ## Unreleased
 
+### Fixed
+
+- GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
+- GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
+
+## 2026.8.31 - 2026-08-31
+
 ### Added
 
 - Workspace position read: one bounded answer to where this workspace stands in the branch-and-merge workflow and what to run next, replacing a protocol the agent must remember ([pm-bq0ii8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bq0ii8.toon))
 
 ### Fixed
 
-- GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
-- GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
 - Custom statuses registered without a lifecycle role are silently orphaned from every work-selection surface ([pm-0mhspz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mhspz.toon))
 - GH-1158: Windows Node 24 nightly receipt fixture derives a root-relative expectation from a drive-qualified path ([pm-46hpx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-46hpx8.toon))
 - GH-1154: linked-test sandbox guard is command-shape inconsistent and undocumented ([pm-s8cth5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8cth5.toon))

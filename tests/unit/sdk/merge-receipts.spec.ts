@@ -233,6 +233,19 @@ describe("clone-local merge decision receipts", () => {
       }),
     ).toBeNull();
     expect(await listMergeReceipts(workspace)).toEqual([]);
+    expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
+      receipts: [],
+      invalid_evidence_count: 0,
+      clone_local_evidence_resolved: false,
+    });
+    expect(
+      await runMergeReceiptEvidenceReport({ cwd: workspace }),
+    ).toMatchObject({
+      ok: false,
+      complete: false,
+      invalid_evidence_count: 0,
+      clone_local_evidence_resolved: false,
+    });
     await markMergeReceiptReconciled(workspace, {
       version: 1,
       id: "missing",
@@ -392,6 +405,7 @@ describe("clone-local merge decision receipts", () => {
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
       invalid_evidence_count: 2,
+      clone_local_evidence_resolved: true,
     });
     expect(
       await runMergeReceiptEvidenceReport({ cwd: workspace }),
@@ -400,6 +414,7 @@ describe("clone-local merge decision receipts", () => {
       complete: false,
       count: 0,
       invalid_evidence_count: 2,
+      clone_local_evidence_resolved: true,
       receipts: [],
     });
   });
@@ -508,7 +523,11 @@ describe("clone-local merge decision receipts", () => {
 
     await expect(
       inspectMergeReceiptEvidence(workspace, { pmRoot }),
-    ).resolves.toEqual({ receipts: [], invalid_evidence_count: 1 });
+    ).resolves.toEqual({
+      receipts: [],
+      invalid_evidence_count: 1,
+      clone_local_evidence_resolved: true,
+    });
   });
 
   it("enforces the bounded no-follow receipt file boundary", async () => {

@@ -125,7 +125,9 @@ function commonHistoryPrefixLength(
  * hash re-anchored so the resulting chain verifies again. No side's events are
  * ever discarded: content divergence is preserved for the post-merge
  * reconciliation pass (`pm validate` + `pm history-repair`) instead of being
- * silently resolved by last-writer-wins.
+ * silently resolved by last-writer-wins. If either suffix cannot apply after
+ * deterministic ordering, the merge fails closed instead of publishing a
+ * hash-valid stream that omitted a branch effect.
  */
 export function mergeHistoryStreams(
   baseRaw: string,
@@ -195,6 +197,12 @@ export function mergeHistoryStreams(
     undefined,
     { continuousHashSurface: true },
   );
+  if (reanchored.skippedOps > 0) {
+    throw new PmCliError(
+      `History union cannot preserve ${reanchored.skippedOps} patch operation(s) after deterministic suffix ordering; leave the file unresolved for manual recovery.`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
   return {
     merged: historyEntriesToRaw(reanchored.entries),
     strategy: "union_reanchor",

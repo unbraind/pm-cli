@@ -105,9 +105,12 @@ whose candidates were all rejected. Gates and diagnostic integrations should
 use `inspectMergeReceiptEvidence`, whose `invalid_evidence_count` preserves
 that distinction without returning malformed contents.
 `runMergeReceiptEvidenceReport` and `pm merge report --json` expose the same
-loss-aware contract through `complete` and `invalid_evidence_count`; the CLI
+loss-aware contract through `complete`, `invalid_evidence_count`, and
+`clone_local_evidence_resolved`; the CLI
 exits nonzero when evidence is incomplete, even when the valid-receipt count is
-zero. `runMergeReceiptReport` remains the compatible valid-only report.
+zero. Current SDK implementations always emit the new field, while its optional
+type preserves structural compatibility for existing typed adapters and test
+fixtures. `runMergeReceiptReport` remains the compatible valid-only report.
 
 ## Cross-branch id collision safety
 

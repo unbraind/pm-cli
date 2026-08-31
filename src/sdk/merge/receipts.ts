@@ -143,6 +143,8 @@ export interface MergeReceiptEvidenceReport {
   count: number;
   /** Number of candidates rejected by bounded-file, schema, identity, or copy-consistency validation. */
   invalid_evidence_count: number;
+  /** Whether the clone-local Git receipt directory was resolved successfully; always emitted by current implementations and optional for structural compatibility. */
+  clone_local_evidence_resolved?: boolean;
   /** Receipts including recoverable values from the local clone only. */
   receipts: MergeDecisionReceipt[];
   /** ISO timestamp for the report. */
@@ -155,6 +157,8 @@ export interface MergeReceiptEvidenceScan {
   receipts: MergeDecisionReceipt[];
   /** Number of JSON receipt candidates that could not be validated safely. */
   invalid_evidence_count: number;
+  /** Whether the clone-local Git receipt directory was resolved successfully; always emitted by current implementations and optional for structural compatibility. */
+  clone_local_evidence_resolved?: boolean;
 }
 
 async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
@@ -592,7 +596,9 @@ export async function writeMergeReceipt(params: {
 async function readReceiptsFromDirectory(
   directory: string,
   evidenceSource: "clone_local" | "durable",
-): Promise<MergeReceiptEvidenceScan> {
+): Promise<
+  Pick<MergeReceiptEvidenceScan, "receipts" | "invalid_evidence_count">
+> {
   if (!(await pathExists(directory))) {
     return { receipts: [], invalid_evidence_count: 0 };
   }
@@ -697,6 +703,7 @@ export async function inspectMergeReceiptEvidence(
       local.invalid_evidence_count +
       durable.invalid_evidence_count +
       divergentCopyCount,
+    clone_local_evidence_resolved: directory !== null,
   };
 }
 
@@ -837,12 +844,15 @@ export async function runMergeReceiptEvidenceReport(options: {
       includeLossless: true,
     },
   );
-  const complete = evidence.invalid_evidence_count === 0;
+  const complete =
+    evidence.clone_local_evidence_resolved === true &&
+    evidence.invalid_evidence_count === 0;
   return {
     ok: complete,
     complete,
     count: evidence.receipts.length,
     invalid_evidence_count: evidence.invalid_evidence_count,
+    clone_local_evidence_resolved: evidence.clone_local_evidence_resolved,
     receipts: evidence.receipts,
     generated_at: nowIso(),
   };

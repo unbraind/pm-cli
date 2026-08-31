@@ -258,6 +258,56 @@ describe("public merge-safety SDK primitives", () => {
     expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
   });
 
+  it("refuses a history union when reanchoring would skip a branch patch effect", () => {
+    const empty: ItemDocument = {
+      metadata: {} as ItemDocument["metadata"],
+      body: "",
+    };
+    const baseDocument = item("base", "2026-08-30T00:00:00.000Z");
+    const baseMetadata = baseDocument.metadata as unknown as Record<
+      string,
+      unknown
+    >;
+    baseMetadata.review = { stable: "base" };
+    const oursDocument = structuredClone(baseDocument);
+    delete (oursDocument.metadata as unknown as Record<string, unknown>).review;
+    oursDocument.metadata.updated_at = "2026-08-30T00:01:00.000Z";
+    const theirsDocument = structuredClone(baseDocument);
+    (
+      theirsDocument.metadata as unknown as Record<string, unknown>
+    ).review = { stable: "base", detail: "theirs" };
+    theirsDocument.metadata.updated_at = "2026-08-30T00:02:00.000Z";
+    const create = createHistoryEntry({
+      nowIso: "2026-08-30T00:00:00.000Z",
+      author: "seed",
+      op: "create",
+      before: empty,
+      after: baseDocument,
+    });
+    const ours = createHistoryEntry({
+      nowIso: "2026-08-30T00:01:00.000Z",
+      author: "ours",
+      op: "update",
+      before: baseDocument,
+      after: oursDocument,
+    });
+    const theirs = createHistoryEntry({
+      nowIso: "2026-08-30T00:02:00.000Z",
+      author: "theirs",
+      op: "update",
+      before: baseDocument,
+      after: theirsDocument,
+    });
+
+    expect(() =>
+      mergeHistoryStreams(
+        historyEntriesToRaw([create]),
+        historyEntriesToRaw([create, ours]),
+        historyEntriesToRaw([create, theirs]),
+      ),
+    ).toThrow(/cannot preserve 1 patch operation/i);
+  });
+
   it("covers identical and one-sided history merges plus malformed inputs", () => {
     const empty: ItemDocument = {
       metadata: {} as ItemDocument["metadata"],
