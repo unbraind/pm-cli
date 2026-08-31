@@ -4,7 +4,7 @@
  * Provides the deterministic, token-bounded progressive tool discovery
  * contract shared by MCP servers, embedded hosts, and agent integrations.
  */
-import { createHash } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 import {
   PM_MCP_TOOL_COMMAND_CONTRACTS,
@@ -208,9 +208,11 @@ const TIER_RANK: Readonly<Record<PmCommandVisibilityTier, number>> = {
 
 interface PmToolDiscoveryCursor {
   version: 1;
-  fingerprint: string;
   offset: number;
+  signature: string;
 }
+
+const PROCESS_CURSOR_INTEGRITY_KEY = randomBytes(32);
 
 function normalizedUnitInterval(value: number | undefined): number {
   if (value === undefined || !Number.isFinite(value)) return 0;
@@ -259,7 +261,26 @@ function estimateTokens(value: unknown): number {
   return Math.ceil(Buffer.byteLength(JSON.stringify(value), "utf8") / 4);
 }
 
-function encodeDiscoveryCursor(cursor: PmToolDiscoveryCursor): string {
+function cursorSignature(
+  fingerprint: string,
+  offset: number,
+  integrityKey: Uint8Array,
+): string {
+  return createHmac("sha256", integrityKey)
+    .update(JSON.stringify({ version: 1, fingerprint, offset }))
+    .digest("base64url");
+}
+
+function encodeDiscoveryCursor(
+  fingerprint: string,
+  offset: number,
+  integrityKey: Uint8Array,
+): string {
+  const cursor: PmToolDiscoveryCursor = {
+    version: 1,
+    offset,
+    signature: cursorSignature(fingerprint, offset, integrityKey),
+  };
   return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
 }
 
@@ -267,6 +288,7 @@ function decodeDiscoveryCursor(
   value: string | undefined,
   fingerprint: string,
   total: number,
+  integrityKey: Uint8Array,
 ): number {
   if (value === undefined) return 0;
   try {
@@ -275,12 +297,23 @@ function decodeDiscoveryCursor(
     ) as Partial<PmToolDiscoveryCursor>;
     if (
       decoded.version !== 1 ||
-      decoded.fingerprint !== fingerprint ||
       !Number.isInteger(decoded.offset) ||
       (decoded.offset ?? -1) < 0 ||
-      Number(decoded.offset) > total
+      Number(decoded.offset) > total ||
+      typeof decoded.signature !== "string"
     ) {
       throw new Error("cursor fields do not match the request");
+    }
+    const expectedSignature = Buffer.from(
+      cursorSignature(fingerprint, decoded.offset as number, integrityKey),
+      "base64url",
+    );
+    const suppliedSignature = Buffer.from(decoded.signature, "base64url");
+    if (
+      suppliedSignature.length !== expectedSignature.length ||
+      !timingSafeEqual(suppliedSignature, expectedSignature)
+    ) {
+      throw new Error("cursor signature does not match the request");
     }
     return decoded.offset as number;
   } catch (error: unknown) {
@@ -423,19 +456,12 @@ function resolveDiscoveryRequest(
   };
 }
 
-/**
- * Rank and page an authorized MCP tool catalog under an explicit token budget.
- *
- * Cursors fail closed when the query, filters, schemas, authorization-filtered
- * catalog, or ranking inputs change. Host signals override documented local
- * fallbacks without changing the public formula or hiding signal provenance.
- */
-export function discoverPmTools(
+function rankedDiscoveryRows(
   candidates: readonly PmToolDiscoveryCandidate[],
-  options: PmToolDiscoveryOptions = {},
-): PmToolDiscoveryResult {
-  const request = resolveDiscoveryRequest(options);
-  const ranked = candidates
+  options: PmToolDiscoveryOptions,
+  request: ResolvedPmToolDiscoveryRequest,
+): PmToolDiscoveryResultRow[] {
+  return candidates
     .filter((candidate) => candidate.authorized !== false)
     .map((candidate) =>
       buildRankedRow(candidate, request.query, request.includeSchema),
@@ -450,6 +476,42 @@ export function discoverPmTools(
       (left, right) =>
         right.score - left.score || left.name.localeCompare(right.name),
     );
+}
+
+function rowsWithinDiscoveryBudget(
+  candidates: readonly PmToolDiscoveryResultRow[],
+  budget: number | "unbounded",
+  buildResult: (
+    selected: readonly PmToolDiscoveryResultRow[],
+  ) => PmToolDiscoveryResult,
+): PmToolDiscoveryResultRow[] {
+  const selected: PmToolDiscoveryResultRow[] = [];
+  for (const row of candidates) {
+    const candidateRows = [...selected, row];
+    if (
+      budget !== "unbounded" &&
+      buildResult(candidateRows).token_cost.estimated_tokens > budget
+    ) {
+      break;
+    }
+    selected.push(row);
+  }
+  return selected;
+}
+
+/**
+ * Rank and page an authorized MCP tool catalog under an explicit token budget.
+ *
+ * Cursors fail closed when the query, filters, schemas, authorization-filtered
+ * catalog, or ranking inputs change. Host signals override documented local
+ * fallbacks without changing the public formula or hiding signal provenance.
+ */
+export function discoverPmTools(
+  candidates: readonly PmToolDiscoveryCandidate[],
+  options: PmToolDiscoveryOptions = {},
+): PmToolDiscoveryResult {
+  const request = resolveDiscoveryRequest(options);
+  const ranked = rankedDiscoveryRows(candidates, options, request);
   const fingerprint = hashDiscoveryValue({
     query: request.query,
     family: options.family ?? null,
@@ -462,6 +524,7 @@ export function discoverPmTools(
     options.cursor,
     fingerprint,
     ranked.length,
+    PROCESS_CURSOR_INTEGRITY_KEY,
   );
   const pageCandidates = ranked.slice(offset, offset + request.limit);
   const omitted: PmToolDiscoveryOmissionReceipt["omitted"] = [];
@@ -517,11 +580,11 @@ export function discoverPmTools(
       has_more: hasMore,
       ...(hasMore
         ? {
-            next_cursor: encodeDiscoveryCursor({
-              version: 1,
+            next_cursor: encodeDiscoveryCursor(
               fingerprint,
-              offset: endOffset,
-            }),
+              endOffset,
+              PROCESS_CURSOR_INTEGRITY_KEY,
+            ),
           }
         : {}),
       omission_receipt: {
@@ -552,17 +615,11 @@ export function discoverPmTools(
       },
     };
   };
-  const selected: PmToolDiscoveryResultRow[] = [];
-  for (const row of pageCandidates) {
-    const candidateRows = [...selected, row];
-    if (
-      request.budget !== "unbounded" &&
-      buildResult(candidateRows).token_cost.estimated_tokens > request.budget
-    ) {
-      break;
-    }
-    selected.push(row);
-  }
+  const selected = rowsWithinDiscoveryBudget(
+    pageCandidates,
+    request.budget,
+    buildResult,
+  );
   const result = buildResult(selected);
   if (
     request.budget !== "unbounded" &&

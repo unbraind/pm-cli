@@ -55,7 +55,7 @@ This clones the repo, reads `.claude-plugin/marketplace.json` at the root, insta
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-Gives you the 31 MCP tools without skills or slash commands.
+Gives you the 32 MCP tools without skills or slash commands.
 
 ### 3. Direct project `.mcp.json` (project-scoped MCP only)
 
@@ -117,7 +117,7 @@ pnpm smoke:claude-plugin
 ```
 
 Verifies: plugin file structure, manifest name consistency, stateless MCP
-discovery for `2026-07-28`, 31 tools present, full workflow (init → create →
+discovery for `2026-07-28`, 32 tools present, full workflow (init → create →
 claim → update → link files/docs/tests → get → context → search → validate →
 health), and session-start hook.
 

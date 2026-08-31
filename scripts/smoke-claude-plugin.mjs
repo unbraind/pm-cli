@@ -6,7 +6,7 @@
  * 1. Plugin file structure (marketplace + plugin manifests, skills, commands, agents, hooks)
  * 2. MCP server launcher resolves the repo build
  * 3. MCP server discovers the current stateless protocol with instructions
- * 4. All 31 required tools are listed
+ * 4. All 32 required tools are listed
  * 5. pm_run(init), pm_create, pm_claim, pm_update, pm_comments, pm_files, pm_docs, pm_test,
  *    pm_get, pm_context, pm_search, pm_events, pm_validate, pm_health all succeed
  * 6. Session-start hook script runs without errors
@@ -136,7 +136,7 @@ try {
   const tools = await request("tools/list");
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
   const required = [
-    "pm_run", "pm_context", "pm_next", "pm_search", "pm_list", "pm_get",
+    "pm_run", "pm_discover", "pm_context", "pm_next", "pm_search", "pm_list", "pm_get",
     "pm_create", "pm_mutate", "pm_copy", "pm_focus", "pm_update", "pm_append", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings",
     "pm_deps", "pm_graph", "pm_test",

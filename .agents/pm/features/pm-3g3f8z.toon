@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-08-31T15:27:57.474Z"
+updated_at: "2026-08-31T16:11:49.839Z"
 deadline: "2027-03-31T00:00:00.000Z"
 closed_at: "2026-08-31T15:13:34.542Z"
 completed_at: "2026-08-31T15:13:34.542Z"
@@ -26,16 +26,18 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-28T20:22:27.057Z","harness:codex","Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
   "2026-08-31T12:54:38.703Z","harness:codex","Implementation start: public SDK owns deterministic progressive tool discovery, explicit ranking/budget/omission/cache contracts, and canonical results; MCP and CLI remain adapters. Compatibility is opt-in under a namespaced experimental capability, preserving unnegotiated clients."
   "2026-08-31T13:24:40.554Z","harness:codex","Implementation progress: the public SDK now owns a deterministic discovery contract with six visible signal components, permission filtering, tier/family filters, opaque request-bound cursors, token ceilings, omission recovery, and cache invalidation. Modern opt-in MCP clients receive five entry tools and canonical structured results; compatibility clients retain the full catalog and prior result text."
   "2026-08-31T15:13:29.334Z","harness:codex","Terminal evidence: linked discovery/MCP/grammar suite passed 24 tests across 3 files. The repository-wide coverage gate passed 8,184 tests across 593 files at exact 100% statements (60,524/60,524), branches (45,719/45,719), functions (12,594/12,594), and lines (58,275/58,275). Typecheck, ESLint, zero-clone jscpd, generated contracts, SDK surface, package boundary/parity, docs/skills, security scan, npm audit, graph composition, record integrity, npx/bunx packed smoke, and a packed npm+Bun isolated lifecycle acceptance all passed. Discovery scale and cursor tests cover 100, 1,000, and 10,000 tools. Standard repository scan 631f1b20-2985-441d-8e88-bc932d167be7 and frozen-diff scan d9fc6148-a705-4c27-8e89-1ba38a270671 found no security findings."
   "2026-08-31T15:27:57.474Z","harness:codex","Final branch evidence: the complete quality:static pipeline passed after closure, including defect-evidence classification, repository assurance negative controls, token/context calibration, generated surfaces, package and SDK parity, MCP deprecation inventory, transport floor, graph composition, and record integrity. Security secret scan and dependency audit also passed with 0 vulnerabilities across all severities."
+  "2026-08-31T16:11:23.688Z","harness:codex","Review round 1 remediation: accepted both Greptile findings. Detached task failures now retain negotiated canonical structured errors. Discovery cursors now carry an HMAC integrity tag under the private process cache, so modifying even an in-range offset fails closed; malformed, unsigned, stale, and out-of-range negative controls are covered. DeepScan's two nullable-access findings were removed with runtime-checked tool parsing. The Claude compatibility smoke and docs now lock all 32 tools including pm_discover. The live complexity provider reports zero violations, focused suites/typecheck/plugin smoke pass, and the full repository suite passes 8,185 tests at exact 100/100/100/100."
 learnings[1]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
-files[12]{path,scope,note}:
+files[14]{path,scope,note}:
   scripts/release/command-grammar-gate.mjs,project,Composite discovery grammar classification
+  scripts/smoke-claude-plugin.mjs,project,Compatibility catalog smoke census
   sdk/public-surface.json,project,Generated public SDK surface
   src/mcp/server.ts,project,MCP negotiation and canonical result adapter
   src/mcp/tool-definitions.ts,project,Progressive discovery tool schema
@@ -46,10 +48,27 @@ files[12]{path,scope,note}:
   tests/integration/mcp-handshake.spec.ts,project,Locks the expanded compatibility MCP tool census after progressive discovery was added
   tests/integration/mcp-progressive-discovery.integration.spec.ts,project,Negotiated MCP compatibility integration tests
   tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Composite discovery grammar gate coverage
+  tests/unit/scripts/smoke-claude-plugin.spec.ts,project,Plugin smoke census negative controls
   tests/unit/sdk/mcp/discovery.spec.ts,project,Ranking pagination budget and scale tests
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,240,"harness:codex","2026-08-31T13:57:37.628Z",local_mutation,feat/progressive-capability-discovery
-test_runs[1]:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-31T13:57:37.628Z"
+      source_kind: local_mutation
+      source_ref: feat/progressive-capability-discovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-31T16:11:23.017Z"
+      source_kind: local_mutation
+      source_ref: feat/progressive-capability-discovery
+    note: Review remediation for cursor integrity canonical task errors DeepScan and smoke census
+test_runs[2]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -61,12 +80,26 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
-docs[6]{path,scope,note}:
+  - run_id: test-local-mthfrphk-l5rz50
+    kind: test
+    status: passed
+    started_at: "2026-08-31T16:11:24.847Z"
+    finished_at: "2026-08-31T16:11:49.831Z"
+    recorded_at: "2026-08-31T16:11:49.831Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+docs[8]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/ARCHITECTURE.md,project,SDK-first architecture boundary
+  docs/CLAUDE_CODE_PLUGIN.md,project,Claude plugin smoke contract
   docs/MCP_2026_07_28.md,project,MCP protocol revision guidance
   docs/MCP_CAPABILITY_SURFACES.md,project,Negotiated MCP capability surface
   docs/PROGRESSIVE_TOOL_DISCOVERY.md,project,Public SDK and MCP discovery contract
   docs/README.md,project,Documentation index
+  plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
 close_reason: "Delivered SDK-owned progressive discovery and canonical MCP result contracts with compatibility negotiation, permission-safe deterministic pagination, exact budgets, omission recovery, scale coverage, and packed npm/Bun acceptance; all linked and repository-wide gates pass."
 body: ""

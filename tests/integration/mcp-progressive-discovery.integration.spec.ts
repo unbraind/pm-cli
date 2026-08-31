@@ -8,11 +8,13 @@ import {
   PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
   PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
   PM_MCP_PROTOCOL_VERSION,
+  PM_MCP_TASKS_EXTENSION,
 } from "../../src/sdk/index.js";
 
 function modernParams(
   negotiated: boolean,
   params: Record<string, unknown> = {},
+  tasks = false,
 ): Record<string, unknown> {
   return {
     ...params,
@@ -20,12 +22,15 @@ function modernParams(
       [PM_MCP_META_KEYS.protocolVersion]: PM_MCP_PROTOCOL_VERSION,
       [PM_MCP_META_KEYS.clientCapabilities]: negotiated
         ? {
-            extensions: {
-              [PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION]:
-                PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
-            },
-          }
-        : {},
+          extensions: {
+            [PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION]:
+              PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
+            ...(tasks ? { [PM_MCP_TASKS_EXTENSION]: {} } : {}),
+          },
+        }
+        : tasks
+          ? { extensions: { [PM_MCP_TASKS_EXTENSION]: {} } }
+          : {},
       [PM_MCP_META_KEYS.clientInfo]: {
         name: "progressive-discovery-test",
         version: "1.0.0",
@@ -61,12 +66,22 @@ describe("MCP progressive discovery negotiation", () => {
       method: "tools/list",
       params: modernParams(true),
     });
-    const legacyNames = (legacyShape?.tools as Array<{ name: string }>).map(
-      ({ name }) => name,
-    );
-    const progressiveNames = (
-      progressive?.tools as Array<{ name: string }>
-    ).map(({ name }) => name);
+    const namesOf = (value: unknown): string[] => {
+      if (!Array.isArray(value)) throw new TypeError("Expected a tool array.");
+      return value.map((tool: unknown) => {
+        if (
+          typeof tool !== "object" ||
+          tool === null ||
+          !("name" in tool) ||
+          typeof tool.name !== "string"
+        ) {
+          throw new TypeError("Expected every listed tool to have a name.");
+        }
+        return tool.name;
+      });
+    };
+    const legacyNames = namesOf(legacyShape?.tools);
+    const progressiveNames = namesOf(progressive?.tools);
     expect(legacyNames.length).toBeGreaterThan(progressiveNames.length);
     expect(progressiveNames).toEqual([...PM_MCP_ENTRY_TOOL_NAMES].sort());
   });
@@ -221,6 +236,39 @@ describe("MCP progressive discovery negotiation", () => {
         isError: true,
         content: [{ type: "text", text: "Canonical error: structuredContent" }],
         structuredContent: { result: null, code: 64 },
+      },
+    });
+  });
+
+  it("preserves canonical error results for negotiated detached tasks", async () => {
+    const params = modernParams(
+      true,
+      { name: "pm_validate", arguments: { path: "\0" } },
+      true,
+    );
+    const created = await handleRequest({
+      jsonrpc: "2.0",
+      id: 10,
+      method: "tools/call",
+      params,
+    });
+    const taskId = String(created?.taskId);
+    let completed: Record<string, unknown> | undefined;
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      completed = await handleRequest({
+        jsonrpc: "2.0",
+        id: 11 + attempt,
+        method: "tasks/get",
+        params: modernParams(true, { taskId }, true),
+      });
+      if (completed?.status !== "working") break;
+      await new Promise<void>((resolve) => setTimeout(resolve, 5));
+    }
+    expect(completed).toMatchObject({
+      status: "completed",
+      result: {
+        content: [{ type: "text", text: "Canonical error: structuredContent" }],
+        structuredContent: { result: null, code: 1 },
       },
     });
   });

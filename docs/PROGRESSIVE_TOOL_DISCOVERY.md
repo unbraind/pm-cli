@@ -20,7 +20,7 @@ Clients that do not negotiate the extension receive the complete profile-selecte
 
 - deterministic score-then-name ordering;
 - lexical, semantic, graph, permission, freshness, and usage scores with public weights and source provenance;
-- a cursor bound to query, filters, schemas, authorization-filtered catalog, and ranking inputs;
+- a tamper-evident cursor bound to query, filters, schemas, authorization-filtered catalog, ranking inputs, and the private discovery-cache process;
 - exact estimated token cost and a fail-closed `within_budget` verdict;
 - explicit schema, row-limit, and token-budget omission receipts with recovery;
 - a private cache key, 30-second TTL, and named invalidation events.
@@ -37,4 +37,4 @@ Unnegotiated and legacy clients retain the prior duplicated JSON text plus struc
 
 The discovery quality gate exercises selection, deterministic pagination, stale-cursor refusal, permission filtering, schema recovery, and token ceilings at 100, 1,000, and 10,000 candidate tools. Contract snapshots cover the tool schema, and modern MCP integration tests prove both negotiated and compatibility modes.
 
-Any tool-definition, workspace-extension, profile, authorization, or ranking-signal change invalidates prior cursors and cache entries. Clients restart discovery without a cursor after that explicit stale-cursor refusal.
+Any tool-definition, workspace-extension, profile, authorization, ranking-signal, or private discovery-cache process change invalidates prior cursors and cache entries. Clients restart discovery without a cursor after an explicit stale-cursor refusal.

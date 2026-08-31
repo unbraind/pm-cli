@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",github-intake,regression
 created_at: "2026-08-31T12:54:11.011Z"
-updated_at: "2026-08-31T15:20:19.338Z"
+updated_at: "2026-08-31T16:11:24.301Z"
 closed_at: "2026-08-31T15:13:35.998Z"
 completed_at: "2026-08-31T15:13:35.998Z"
 author: "harness:codex"
@@ -28,10 +28,11 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-31T12:54:11.011Z","harness:codex","cli:create:dep",detected
   pm-j82fd3,verifies,"2026-08-31T13:58:30.032Z","harness:codex","cli:update:dep",detected
   pm-3g3f8z,verifies,"2026-08-31T13:59:34.739Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-31T12:54:11.011Z","harness:codex","Duplicate-check evidence: complete all-status strict-read census covered 2,609 items with no unreadable rows, no omissions, no truncation, and no continuation. Exact GH-1166 and root-help --all searches found only closed predecessor pm-e2bq plus umbrella pm-n7rr; this recurrence needs a new issue rather than reopening completed shipped work. GitHub: https://github.com/unbraind/pm-cli/issues/1166"
   "2026-08-31T12:54:40.370Z","harness:codex","TDD start: add failing structured and process-level assertions that compact root help advertises --all while retaining the compact command tier and full discovery behavior."
   "2026-08-31T15:13:31.095Z","harness:codex","Terminal evidence: linked compact-help and process-level discovery suite passed 8 tests. Compact text and JSON root help advertise --all, the compact tier remains bounded, and pm --all retains the complete public catalog. Exact 100% repository coverage, typecheck, contract generation, command grammar, npx/bunx packed smoke, and isolated npm+Bun acceptance passed. GitHub issue #1166 is linked to this canonical item."
+  "2026-08-31T16:11:24.301Z","harness:codex","Hosted review evidence: the compatibility Claude plugin smoke now locks the expanded 32-tool catalog and its user-facing docs, closing the hosted smokes failure caused by the newly added pm_discover tool. DeepScan nullable-access findings in progressive tools/list coverage were fixed with explicit runtime shape validation."
 learnings[1]{created_at,author,text}:
   "2026-08-31T15:07:56.770Z","harness:codex",A compact discovery surface must advertise its own expansion control; an implemented --all flag is effectively hidden when compact help omits it.
 files[4]{path,scope,note}:

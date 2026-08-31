@@ -124,7 +124,44 @@ describe("progressive MCP tool discovery", () => {
 
     const decoded = JSON.parse(
       Buffer.from(first.next_cursor ?? "", "base64url").toString("utf8"),
-    ) as { offset: number };
+    ) as { offset: number; signature: string };
+    const forgedCursor = Buffer.from(
+      JSON.stringify({ ...decoded, offset: decoded.offset + 1 }),
+      "utf8",
+    ).toString("base64url");
+    const malformedCursors = [
+      forgedCursor,
+      "not-json",
+      Buffer.from(JSON.stringify({ ...decoded, version: 2 }), "utf8").toString(
+        "base64url",
+      ),
+      Buffer.from(
+        JSON.stringify({ ...decoded, offset: 1.5 }),
+        "utf8",
+      ).toString("base64url"),
+      Buffer.from(
+        JSON.stringify({ ...decoded, offset: -1 }),
+        "utf8",
+      ).toString("base64url"),
+      Buffer.from(
+        JSON.stringify({ version: 1, offset: decoded.offset }),
+        "utf8",
+      ).toString("base64url"),
+      Buffer.from(
+        JSON.stringify({ ...decoded, signature: "" }),
+        "utf8",
+      ).toString("base64url"),
+    ];
+    for (const cursorValue of malformedCursors) {
+      expect(() =>
+        discoverPmTools(candidates, {
+          query: "synthetic",
+          limit: 5,
+          cursor: cursorValue,
+          outputBudget: "unbounded",
+        }),
+      ).toThrow(/Invalid or stale/u);
+    }
     const pastEndCursor = Buffer.from(
       JSON.stringify({ ...decoded, offset: candidates.length + 1 }),
       "utf8",
@@ -137,6 +174,7 @@ describe("progressive MCP tool discovery", () => {
         outputBudget: "unbounded",
       }),
     ).toThrow(/Invalid or stale/u);
+
   });
 
   it("reports schema and token-budget omissions with recoverable cursors", () => {

@@ -1046,7 +1046,16 @@ async function executeMcpTask(
       await execution.store.complete(
         execution.taskId,
         execution.principal,
-        buildMcpCompleteResult(errorContent(error), PM_MCP_SERVER_INFO),
+        buildMcpCompleteResult(
+          errorContent(
+            error,
+            hasMcpClientExtension(
+              execution.context,
+              PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+            ),
+          ),
+          PM_MCP_SERVER_INFO,
+        ),
       );
     }
     PENDING_MCP_TASKS.delete(execution.taskId);
