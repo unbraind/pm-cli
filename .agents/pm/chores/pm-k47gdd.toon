@@ -1,0 +1,23 @@
+id: pm-k47gdd
+title: Adopt GitHub Actions integrity and benchmark updates from PR #1164
+description: "Absorb the current grouped Dependabot update for CodeQL 4.37.9, CodSpeed 5.2.1, and TruffleHog 3.97.1; update repository-owned workflow assertions; prove immutable SHA pinning, security analysis, deterministic benchmark simulation, and all mandatory gates."
+type: Chore
+status: in_progress
+priority: 1
+tags[5]: "area:ci","area:security",dependencies,"github:1164",supply-chain
+created_at: "2026-08-31T06:12:37.195Z"
+updated_at: "2026-08-31T06:12:54.438Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#d28e5412fa32fcac38263ad0"
+author: "harness:codex"
+acceptance_criteria: "All five action uses are pinned to reviewed immutable SHAs; workflow contract tests match the pinned versions; CI, CodeQL, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, CodSpeed, and exact coverage pass; PR #1164 is closed or merged with a PM link and no dependency PR remains open"
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2a9n,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
+  pm-ion0bp,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
+  pm-yh6t,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-31T06:12:37.195Z","harness:codex","Duplicate-check evidence: complete all-status strict read covered 2,608 items; exact searches for GH-1164, the grouped GitHub Actions title, CodeQL 4.37.9, CodSpeed 5.2.1, and TruffleHog 3.97.1 found no current owner. Closed pm-2a9n, pm-ion0bp, and pm-yh6t are typed predecessors for the three action families, so this PR-specific recurrence is net-new without duplicating their shipped outcomes."
+body: ""
