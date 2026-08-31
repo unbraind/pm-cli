@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:security",dependencies,"github:1164",supply-chain
 created_at: "2026-08-31T06:12:37.195Z"
-updated_at: "2026-08-31T08:14:21.622Z"
+updated_at: "2026-08-31T08:24:46.243Z"
 closed_at: "2026-08-31T08:13:06.791Z"
 completed_at: "2026-08-31T08:13:06.791Z"
 author: "harness:codex"
@@ -22,9 +22,10 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ion0bp,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
   pm-yh6t,recurs_from,"2026-08-31T06:12:37.195Z","harness:codex","cli:create:dep",detected
   pm-67b84b,recurs_from,"2026-08-31T07:59:20.883Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-31T06:12:37.195Z","harness:codex","Duplicate-check evidence: complete all-status strict read covered 2,608 items; exact searches for GH-1164, the grouped GitHub Actions title, CodeQL 4.37.9, CodSpeed 5.2.1, and TruffleHog 3.97.1 found no current owner. Closed pm-2a9n, pm-ion0bp, and pm-yh6t are typed predecessors for the three action families, so this PR-specific recurrence is net-new without duplicating their shipped outcomes."
   "2026-08-31T08:13:03.670Z","harness:codex","Delivery evidence 2026-08-31: adopted Dependabot PR #1164's pinned CodeQL 4.37.9, CodSpeed 5.2.1, and TruffleHog 3.97.1 action updates plus the only compatible package update, tsx 4.23.13. Workflow SHA contracts and linked PM tests pass. pnpm audit reports 0 vulnerabilities across 423 dependencies; credential scan, Trivy high/critical vuln+secret+misconfiguration scan, and ShellCheck are clean. The only remaining pnpm-outdated majors are separately tracked and currently incompatible: npm-package-arg 14 breaks the published Node >=22.18 floor, and TypeScript 7 is outside typescript-eslint 8.68's <6.1 peer contract. Exact coverage remains 100/100/100/100."
+  "2026-08-31T08:24:46.243Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1165 — the reviewed branch includes the compatible action and tsx refresh; incompatible TypeScript 7 and npm-package-arg 14 remain in their canonical items."
 files[8]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,records latest pm-changelog 2026.8.30 installation used for generated release history
   .github/workflows/codeql.yml,project,CodeQL 4.37.9 immutable SHA update

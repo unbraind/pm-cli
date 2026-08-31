@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-31T08:13:26.147Z"
+updated_at: "2026-08-31T08:24:45.132Z"
 closed_at: "2026-08-31T08:13:04.333Z"
 completed_at: "2026-08-31T08:13:04.333Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ customer_impact: "Ordinary cross-version mutations make CI report corruption, tr
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[25]{created_at,author,text}:
+comments[26]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
@@ -52,6 +52,7 @@ comments[25]{created_at,author,text}:
   "2026-08-29T13:27:09.329Z","harness:codex","Final local evidence: exact coverage passed 586 files and 8,122 tests at 60,166/60,166 statements, 45,396/45,396 branches, 12,513/12,513 functions, and 57,936/57,936 lines. pnpm quality:static passed the complete assurance stack. Linked acceptance passed 3/3 with no skips or failures."
   "2026-08-31T06:12:16.918Z","harness:codex","Recurrence evidence: GitHub #1162 measures five false corruption reports across four clean public repositories after upgrading to 2026.8.30. The same stored history head survives while replay or current-document hashes vary by reader version. This cycle will preserve writer-capability evidence in diagnostics, test real legacy fixtures, and keep repair guidance fail-closed."
   "2026-08-31T08:13:02.608Z","harness:codex","Delivery evidence 2026-08-31: history verification now recognizes both immutable writer surfaces historically emitted under item_hash_version=2 while requiring each entry's before/after pair to use one consistent surface. Public hashDocumentForVersion v2 behavior stays compatible; current-item drift checks select the matching verified candidate; history-repair preserves the evidenced variant and appends compatible audit hashes. Live repository health and strict validate pass across 2,609 items without history repair or rewrite. Five external repository streams (10, 17, 30, 45, and 9 entries) verify current_matches_latest=true. Linked PM tests, strict static quality, 590 files / 8,166 tests, and exact 100/100/100/100 coverage pass."
+  "2026-08-31T08:24:45.132Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1165 — the reviewed branch preserves both evidenced v2 history semantics across replay, drift detection, validation, and repair."
 learnings[4]{created_at,author,text}:
   "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
   "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
