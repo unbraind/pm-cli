@@ -489,11 +489,13 @@ export function compareAgentTaskTokenBaseline(report, baseline) {
     failures.push(`baseline_version:${baseline.version}`);
   if (baseline.transcript_digest !== report.transcript_digest)
     failures.push("transcript_digest:mismatch");
+  const baselineWinnerTokens = baseline.orientation?.measured_winner_tokens;
+  const reportWinnerTokens = report.orientation?.measured_winner_tokens;
   if (
     baseline.orientation?.canonical_task_id !==
       report.orientation?.canonical_task_id ||
-    baseline.orientation?.measured_winner_tokens <
-      report.orientation?.measured_winner_tokens
+    ![baselineWinnerTokens, reportWinnerTokens].every(Number.isFinite) ||
+    baselineWinnerTokens < reportWinnerTokens
   ) {
     failures.push("orientation:canonical_or_token_ceiling_drift");
   }

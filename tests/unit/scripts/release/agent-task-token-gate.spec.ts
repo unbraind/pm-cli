@@ -31,12 +31,20 @@ describe("agent-task transcript token gate", () => {
   const report = {
     transcript_digest: "sha256:test",
     composite_estimated_tokens: 30,
+    orientation: {
+      canonical_task_id: "orientation-context-intent",
+      measured_winner_tokens: 30,
+    },
     tasks: [{ id: "context", estimated_tokens: 30, steps }],
   };
   const baseline = {
     version: 4,
     transcript_digest: "sha256:test",
     composite_max_estimated_tokens: 30,
+    orientation: {
+      canonical_task_id: "orientation-context-intent",
+      measured_winner_tokens: 30,
+    },
     tasks: [
       {
         id: "context",
@@ -320,6 +328,41 @@ describe("agent-task transcript token gate", () => {
         "task:context:missing_baseline_limit",
         "composite:missing_baseline_limit",
       ]);
+    },
+  );
+
+  it.each([
+    [undefined, 30],
+    ["30", 30],
+    [30, undefined],
+    [30, "30"],
+  ])(
+    "fails closed on invalid orientation ceilings (%s, %s)",
+    (baselineWinnerTokens, reportWinnerTokens) => {
+      expect(
+        compareAgentTaskTokenBaseline(
+          {
+            ...report,
+            orientation:
+              reportWinnerTokens === undefined
+                ? { canonical_task_id: report.orientation.canonical_task_id }
+                : {
+                    ...report.orientation,
+                    measured_winner_tokens: reportWinnerTokens,
+                  },
+          },
+          {
+            ...baseline,
+            orientation:
+              baselineWinnerTokens === undefined
+                ? { canonical_task_id: baseline.orientation.canonical_task_id }
+                : {
+                    ...baseline.orientation,
+                    measured_winner_tokens: baselineWinnerTokens,
+                  },
+          },
+        ),
+      ).toContain("orientation:canonical_or_token_ceiling_drift");
     },
   );
 

@@ -23,6 +23,12 @@ describe("root help discovery", () => {
       expect(compactPayload.options).toContainEqual(
         expect.objectContaining({ long: "--all" }),
       );
+      expect(compactPayload.subcommands).not.toContainEqual(
+        expect.objectContaining({ name: "graph" }),
+      );
+      expect(compactPayload.subcommands).not.toContainEqual(
+        expect.objectContaining({ name: "history" }),
+      );
       expect(expandedPayload.subcommands.length).toBeGreaterThan(
         compactPayload.subcommands.length,
       );

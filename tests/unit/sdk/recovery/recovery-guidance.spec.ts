@@ -28,8 +28,9 @@ describe("executable recovery guidance", () => {
       expect(await resolveProjectTestCommand(projectRoot)).toBe("pnpm test");
       const guidance = agentGuidance.buildAgentGuidanceBlock("\n", "pnpm test");
       expect(guidance).toContain('pm test <id> --add command="pnpm test"');
-      expect(guidance).toContain("before item mutation");
-      expect(guidance).toContain("pm list --status in_progress --limit 20");
+      expect(guidance).toMatch(
+        /pm context --limit 10 --for orient.*before item mutation.*pm list --status in_progress --limit 20/,
+      );
     } finally {
       await rm(projectRoot, { recursive: true, force: true });
     }
