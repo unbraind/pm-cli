@@ -90,6 +90,19 @@ describe("progressive MCP tool discovery", () => {
     expect(result.token_cost.budget).toBe(1_200);
   });
 
+  it("rejects unknown runtime tier and family values instead of returning empty results", () => {
+    for (const tier of ["unknown", 42]) {
+      expect(() =>
+        discoverPmTools([candidate("pm_get")], { tier: tier as never }),
+      ).toThrow(/tier must be/u);
+    }
+    for (const family of ["unknown", 42]) {
+      expect(() =>
+        discoverPmTools([candidate("pm_get")], { family: family as never }),
+      ).toThrow(/family must be/u);
+    }
+  });
+
   it("pages without duplicates and rejects stale or mismatched cursors", () => {
     const candidates = Array.from({ length: 137 }, (_, index) =>
       candidate(`pm_synthetic_${String(index).padStart(3, "0")}`),
@@ -135,14 +148,12 @@ describe("progressive MCP tool discovery", () => {
       Buffer.from(JSON.stringify({ ...decoded, version: 2 }), "utf8").toString(
         "base64url",
       ),
-      Buffer.from(
-        JSON.stringify({ ...decoded, offset: 1.5 }),
-        "utf8",
-      ).toString("base64url"),
-      Buffer.from(
-        JSON.stringify({ ...decoded, offset: -1 }),
-        "utf8",
-      ).toString("base64url"),
+      Buffer.from(JSON.stringify({ ...decoded, offset: 1.5 }), "utf8").toString(
+        "base64url",
+      ),
+      Buffer.from(JSON.stringify({ ...decoded, offset: -1 }), "utf8").toString(
+        "base64url",
+      ),
       Buffer.from(
         JSON.stringify({ version: 1, offset: decoded.offset }),
         "utf8",
@@ -174,7 +185,36 @@ describe("progressive MCP tool discovery", () => {
         outputBudget: "unbounded",
       }),
     ).toThrow(/Invalid or stale/u);
+  });
 
+  it("scopes private cache identities to the exact discovery page inputs", () => {
+    const candidates = PM_MCP_ENTRY_TOOL_NAMES.map((name) => candidate(name));
+    const first = discoverPmTools(candidates, {
+      limit: 2,
+      outputBudget: "unbounded",
+    });
+    const second = discoverPmTools(candidates, {
+      limit: 2,
+      cursor: first.next_cursor,
+      outputBudget: "unbounded",
+    });
+    const differentLimit = discoverPmTools(candidates, {
+      limit: 3,
+      outputBudget: "unbounded",
+    });
+    const differentBudget = discoverPmTools(candidates, {
+      limit: 2,
+      outputBudget: 2_000,
+    });
+
+    expect(
+      new Set([
+        first.cache.key,
+        second.cache.key,
+        differentLimit.cache.key,
+        differentBudget.cache.key,
+      ]),
+    ).toHaveProperty("size", 4);
   });
 
   it("reports schema and token-budget omissions with recoverable cursors", () => {
@@ -252,6 +292,34 @@ describe("progressive MCP tool discovery", () => {
       expect(first.token_cost.within_budget).toBe(true);
       expect(performance.now() - started).toBeLessThan(2_000);
     }
+  });
+
+  it("keeps exact bounded accounting linear across one hundred schema-bearing rows", () => {
+    const candidates = Array.from({ length: 100 }, (_, index) => ({
+      ...candidate(`pm_schema_${String(index).padStart(3, "0")}`),
+      inputSchema: {
+        type: "object",
+        description: "x".repeat(4_096),
+        properties: { id: { type: "string" } },
+      },
+    }));
+    const unbounded = discoverPmTools(candidates, {
+      includeSchema: true,
+      limit: 100,
+      outputBudget: "unbounded",
+    });
+    const started = performance.now();
+    const bounded = discoverPmTools(candidates, {
+      includeSchema: true,
+      limit: 100,
+      outputBudget: unbounded.token_cost.estimated_tokens,
+    });
+
+    expect(bounded.returned).toBe(100);
+    expect(
+      Math.ceil(Buffer.byteLength(JSON.stringify(bounded), "utf8") / 4),
+    ).toBe(bounded.token_cost.estimated_tokens);
+    expect(performance.now() - started).toBeLessThan(500);
   });
 
   it("fails closed on invalid limits and budgets", () => {

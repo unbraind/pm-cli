@@ -4,9 +4,15 @@
  * Provides the deterministic, token-bounded progressive tool discovery
  * contract shared by MCP servers, embedded hosts, and agent integrations.
  */
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 
 import {
+  PM_COMMAND_CAPABILITY_CONTRACTS,
   PM_MCP_TOOL_COMMAND_CONTRACTS,
   resolvePmCommandCapabilityFamily,
   resolvePmCommandVisibilityTier,
@@ -206,6 +212,10 @@ const TIER_RANK: Readonly<Record<PmCommandVisibilityTier, number>> = {
   internal: 3,
 };
 
+const CAPABILITY_FAMILIES = new Set(
+  PM_COMMAND_CAPABILITY_CONTRACTS.map(({ family }) => family),
+);
+
 interface PmToolDiscoveryCursor {
   version: 1;
   offset: number;
@@ -255,10 +265,6 @@ function hashDiscoveryValue(value: unknown): string {
     .update(JSON.stringify(value))
     .digest("hex")
     .slice(0, 24);
-}
-
-function estimateTokens(value: unknown): number {
-  return Math.ceil(Buffer.byteLength(JSON.stringify(value), "utf8") / 4);
 }
 
 function cursorSignature(
@@ -413,6 +419,30 @@ interface ResolvedPmToolDiscoveryRequest {
   profile: PmMcpToolProfile;
 }
 
+/** Reject runtime filter values that bypass the public TypeScript unions. */
+function validateDiscoveryFilters(options: PmToolDiscoveryOptions): void {
+  if (
+    options.tier !== undefined &&
+    (typeof options.tier !== "string" ||
+      !Object.hasOwn(TIER_RANK, options.tier))
+  ) {
+    throw new PmCliError(
+      "pm tool discovery tier must be core, standard, or full.",
+      64,
+    );
+  }
+  if (
+    options.family !== undefined &&
+    (typeof options.family !== "string" ||
+      !CAPABILITY_FAMILIES.has(options.family))
+  ) {
+    throw new PmCliError(
+      "pm tool discovery family must be a declared capability family.",
+      64,
+    );
+  }
+}
+
 function resolveDiscoveryRequest(
   options: PmToolDiscoveryOptions,
 ): ResolvedPmToolDiscoveryRequest {
@@ -446,6 +476,7 @@ function resolveDiscoveryRequest(
       64,
     );
   }
+  validateDiscoveryFilters(options);
   return {
     query,
     includeSchema: options.includeSchema === true,
@@ -454,6 +485,50 @@ function resolveDiscoveryRequest(
     maximumTier: TIER_RANK[options.tier ?? "full"],
     profile: options.profile ?? "core",
   };
+}
+
+type PmToolDiscoveryResultWithoutCost = Omit<
+  PmToolDiscoveryResult,
+  "token_cost"
+>;
+
+/**
+ * Measure one result exactly while allowing callers to supply pre-serialized
+ * array contents, so budget selection stays linear in the returned row bytes.
+ */
+function estimateDiscoveryResultTokens(
+  resultWithoutCost: PmToolDiscoveryResultWithoutCost,
+  budget: number | "unbounded",
+  serializedToolRowsBytes?: number,
+): number {
+  const toolRowsBytes =
+    serializedToolRowsBytes ??
+    resultWithoutCost.tools.reduce(
+      (total, row, index) =>
+        total +
+        (index === 0 ? 0 : 1) +
+        Buffer.byteLength(JSON.stringify(row) as string, "utf8"),
+      0,
+    );
+  const emptyToolsResult = { ...resultWithoutCost, tools: [] };
+  let estimatedTokens = 0;
+  for (let iteration = 0; iteration < 4; iteration += 1) {
+    const envelopeBytes = Buffer.byteLength(
+      JSON.stringify({
+        ...emptyToolsResult,
+        token_cost: {
+          estimated_tokens: estimatedTokens,
+          budget,
+          within_budget: true,
+        },
+      }),
+      "utf8",
+    );
+    const nextEstimate = Math.ceil((envelopeBytes + toolRowsBytes) / 4);
+    if (nextEstimate === estimatedTokens) break;
+    estimatedTokens = nextEstimate;
+  }
+  return estimatedTokens;
 }
 
 function rankedDiscoveryRows(
@@ -481,20 +556,26 @@ function rankedDiscoveryRows(
 function rowsWithinDiscoveryBudget(
   candidates: readonly PmToolDiscoveryResultRow[],
   budget: number | "unbounded",
-  buildResult: (
-    selected: readonly PmToolDiscoveryResultRow[],
-  ) => PmToolDiscoveryResult,
+  buildResultWithoutCost: (
+    selectedCount: number,
+  ) => PmToolDiscoveryResultWithoutCost,
 ): PmToolDiscoveryResultRow[] {
+  if (budget === "unbounded") return [...candidates];
   const selected: PmToolDiscoveryResultRow[] = [];
-  for (const row of candidates) {
-    const candidateRows = [...selected, row];
-    if (
-      budget !== "unbounded" &&
-      buildResult(candidateRows).token_cost.estimated_tokens > budget
-    ) {
-      break;
-    }
+  let serializedToolRowsBytes = 0;
+  for (const [index, row] of candidates.entries()) {
+    const candidateRowsBytes =
+      serializedToolRowsBytes +
+      (index === 0 ? 0 : 1) +
+      Buffer.byteLength(JSON.stringify(row) as string, "utf8");
+    const estimatedTokens = estimateDiscoveryResultTokens(
+      buildResultWithoutCost(index + 1),
+      budget,
+      candidateRowsBytes,
+    );
+    if (estimatedTokens > budget) break;
     selected.push(row);
+    serializedToolRowsBytes = candidateRowsBytes;
   }
   return selected;
 }
@@ -554,19 +635,25 @@ export function discoverPmTools(
       weights: DISCOVERY_WEIGHTS,
     },
     cache: {
-      key: fingerprint,
+      key: hashDiscoveryValue({
+        fingerprint,
+        limit: request.limit,
+        offset,
+        budget: request.budget,
+      }),
       ttl_ms: 30_000,
       scope: "private" as const,
       invalidates_on: DISCOVERY_CACHE_INVALIDATIONS,
     },
   };
-  const buildResult = (
+  const buildResultWithoutCost = (
     selected: readonly PmToolDiscoveryResultRow[],
-  ): PmToolDiscoveryResult => {
-    const endOffset = offset + selected.length;
+    selectedCount = selected.length,
+  ): PmToolDiscoveryResultWithoutCost => {
+    const endOffset = offset + selectedCount;
     const hasMore = endOffset < ranked.length;
     const resultOmissions = [...omitted];
-    if (selected.length < pageCandidates.length) {
+    if (selectedCount < pageCandidates.length) {
       resultOmissions.push({
         name: "tools",
         reason: "token_budget",
@@ -576,7 +663,7 @@ export function discoverPmTools(
     const resultWithoutCost = {
       ...base,
       tools: [...selected],
-      returned: selected.length,
+      returned: selectedCount,
       has_more: hasMore,
       ...(hasMore
         ? {
@@ -592,19 +679,16 @@ export function discoverPmTools(
         omitted: resultOmissions,
       },
     };
-    let estimatedTokens = 0;
-    for (let iteration = 0; iteration < 4; iteration += 1) {
-      const nextEstimate = estimateTokens({
-        ...resultWithoutCost,
-        token_cost: {
-          estimated_tokens: estimatedTokens,
-          budget: request.budget,
-          within_budget: true,
-        },
-      });
-      if (nextEstimate === estimatedTokens) break;
-      estimatedTokens = nextEstimate;
-    }
+    return resultWithoutCost;
+  };
+  const buildResult = (
+    selected: readonly PmToolDiscoveryResultRow[],
+  ): PmToolDiscoveryResult => {
+    const resultWithoutCost = buildResultWithoutCost(selected);
+    const estimatedTokens = estimateDiscoveryResultTokens(
+      resultWithoutCost,
+      request.budget,
+    );
     return {
       ...resultWithoutCost,
       token_cost: {
@@ -618,7 +702,7 @@ export function discoverPmTools(
   const selected = rowsWithinDiscoveryBudget(
     pageCandidates,
     request.budget,
-    buildResult,
+    (selectedCount) => buildResultWithoutCost([], selectedCount),
   );
   const result = buildResult(selected);
   if (

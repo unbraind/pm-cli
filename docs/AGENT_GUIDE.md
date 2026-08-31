@@ -4,13 +4,18 @@ This guide is optimized for coding agents that need to understand and mutate rep
 
 ## Agent Quick Context
 
-Run this before heavy work. The first call is the canonical cold start; the remaining reads are request-specific duplicate and ownership checks before mutation:
+Run this before heavy work. The first call is the canonical cold start. Then run the request-specific duplicate and ownership checks before item mutation:
 
 ```bash
 pm context --limit 10 --for orient
 pm search "<request keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
+```
+
+Run the optional guidance setup commands only when needed:
+
+```bash
 pm init --agent-guidance status
 pm package install guide-shell --project
 pm guide workflows
