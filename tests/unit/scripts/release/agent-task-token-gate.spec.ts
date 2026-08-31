@@ -129,6 +129,23 @@ describe("agent-task transcript token gate", () => {
         orientation,
       ).protocols.map(({ task_id }) => task_id),
     ).toEqual(["orientation-context-intent", "orientation-contracts-next"]);
+    const mixedCaseTasks = [
+      { id: "a-orientation", step_count: 1, estimated_tokens: 300 },
+      { id: "Z-orientation", step_count: 1, estimated_tokens: 300 },
+    ];
+    expect(
+      evaluateOrientationProtocolSelection(
+        { tasks: mixedCaseTasks },
+        {
+          canonical_task_id: "Z-orientation",
+          required_capabilities: ["state"],
+          protocols: mixedCaseTasks.map((task) => ({
+            task_id: task.id,
+            capabilities: ["state"],
+          })),
+        },
+      ).protocols.map(({ task_id }) => task_id),
+    ).toEqual(["Z-orientation", "a-orientation"]);
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,

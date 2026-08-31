@@ -657,6 +657,9 @@ async function handleToolCall(
         params.inputResponses === undefined
           ? undefined
           : parseMcpInputResponses(params.inputResponses);
+      if (params.arguments !== undefined && !isMcpRecord(params.arguments)) {
+        throw new PmCliError("pm MCP tool arguments must be an object.", 64);
+      }
       const requestedArgs = {
         ...decodeHtmlEntitiesInOptions(asRecordClone(params.arguments)),
         ...(inputResponses ? { inputResponses } : {}),

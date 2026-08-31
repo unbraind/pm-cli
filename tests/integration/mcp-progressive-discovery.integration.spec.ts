@@ -267,6 +267,23 @@ describe("MCP progressive discovery negotiation", () => {
     },
   );
 
+  it.each([null, [], "invalid", 42, true])(
+    "rejects a malformed arguments container (%j)",
+    async (argumentsValue) => {
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 91,
+          method: "tools/call",
+          params: modernParams(true, {
+            name: "pm_discover",
+            arguments: argumentsValue,
+          }),
+        }),
+      ).rejects.toMatchObject({ exitCode: 64 });
+    },
+  );
+
   it("uses a deployment cursor key and fails closed on rotation or weak keys", async () => {
     const previousKey = process.env.PM_MCP_DISCOVERY_CURSOR_KEY;
     try {

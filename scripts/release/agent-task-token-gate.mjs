@@ -399,7 +399,7 @@ export function evaluateOrientationProtocolSelection(report, orientation) {
   protocols.sort(
     (left, right) =>
       left.estimated_tokens - right.estimated_tokens ||
-      left.task_id.localeCompare(right.task_id),
+      (left.task_id < right.task_id ? -1 : 1),
   );
   const winner = protocols[0];
   if (orientation.canonical_task_id !== winner.task_id) {
