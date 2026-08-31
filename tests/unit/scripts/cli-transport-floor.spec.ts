@@ -98,7 +98,7 @@ describe("CLI transport-floor benchmark", () => {
         estimated_tokens: 3,
       }),
     });
-    expect(defaultIterations.iterations).toBe(3);
+    expect(defaultIterations.iterations).toBe(10);
   });
 
   it("runs the default measurement and committed-budget path", async () => {
@@ -239,6 +239,7 @@ describe("CLI transport-floor benchmark", () => {
     const markdown = renderCliTransportFloorMarkdown(report());
     expect(markdown).toContain("| `get` | 250 ms | 270 ms | 300 ms |");
     expect(markdown).toContain("exactly one item");
+    expect(markdown).toMatch(/3 post-warmup fresh\s+processes/);
     expect(markdown).toContain("512 KiB noise margin");
     expect(markdown).toContain("CLI-minus-SDK delta");
   });
