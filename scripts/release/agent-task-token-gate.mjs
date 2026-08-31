@@ -345,10 +345,17 @@ function measureTask(baselineRoot, accountedRoot, task) {
   };
 }
 
+/** Validate and canonicalize orientation capability identifiers. */
 function sortedUniqueStrings(value) {
-  return Array.isArray(value)
-    ? [...new Set(value.filter((entry) => typeof entry === "string"))].sort()
-    : [];
+  if (!Array.isArray(value)) return [];
+  if (
+    value.some(
+      (entry) => typeof entry !== "string" || entry.trim().length === 0,
+    )
+  ) {
+    fail("Agent-task orientation capability entries must be non-blank strings");
+  }
+  return [...new Set(value)].sort();
 }
 
 /** Select the cheapest equivalent orientation transcript and fail on undeclared or stale policy. */

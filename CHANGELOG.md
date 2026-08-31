@@ -8,8 +8,8 @@
 
 ### Fixed
 
-- GH-1166: root help hides the --all discovery option that reveals the full command surface ([pm-7f9zkh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7f9zkh.toon))
 - The two-call agent cold start proposed as canonical costs more tokens than the four-call protocol it replaces, and no gate measures either ([pm-jjqyzd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jjqyzd.toon))
+- GH-1166: root help hides the --all discovery option that reveals the full command surface ([pm-7f9zkh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7f9zkh.toon))
 - GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
 - GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
 

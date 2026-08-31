@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-08-31T19:06:05.409Z"
+updated_at: "2026-08-31T20:47:13.162Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-08-31T19:06:04.557Z"
-completed_at: "2026-08-31T19:06:04.557Z"
+closed_at: "2026-08-31T20:47:09.275Z"
+completed_at: "2026-08-31T20:47:09.275Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Shipped progressive SDK/MCP discovery with signed cursors, exact linear budgets, canonical results, runtime input hardening, and fail-closed measured orientation ceilings, with analyzer-clean and boundary-complete integration proof."
-expected_result: "SDK consumers receive permission-safe progressive discovery and agents receive unique, ordered, measured orientation guidance whose release ceilings cannot be omitted or made non-numeric."
-actual_result: "The SDK and MCP surfaces are complete; orientation comparison rejects absent and non-finite ceilings, compact help excludes expanded-only commands, generated guidance ordering is locked, and 8,193 tests pass at exact 100/100/100/100 with full static assurance."
+resolution: "Delivered SDK-owned progressive discovery with deterministic ranking, token-bounded paging, integrity-protected cursors, host-supplied deployment keys, canonical MCP results, compatibility adapters, generated surfaces, and scale gates."
+expected_result: "SDK, CLI, and MCP expose one customizable progressive discovery contract with stable pagination, bounded context cost, canonical model-facing output, and deployment-safe continuation."
+actual_result: "Public SDK and MCP adapters now pass deterministic 100/1,000/large-catalog tests, shared-key continuation and rotation refusal, exact token ceilings, compatibility negotiation, 8,196-test exact coverage, and full static gates."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-08-28T20:22:27.057Z","harness:codex","Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
   "2026-08-31T12:54:38.703Z","harness:codex","Implementation start: public SDK owns deterministic progressive tool discovery, explicit ranking/budget/omission/cache contracts, and canonical results; MCP and CLI remain adapters. Compatibility is opt-in under a namespaced experimental capability, preserving unnegotiated clients."
   "2026-08-31T13:24:40.554Z","harness:codex","Implementation progress: the public SDK now owns a deterministic discovery contract with six visible signal components, permission filtering, tier/family filters, opaque request-bound cursors, token ceilings, omission recovery, and cache invalidation. Modern opt-in MCP clients receive five entry tools and canonical structured results; compatibility clients retain the full catalog and prior result text."
@@ -38,11 +38,17 @@ comments[11]{created_at,author,text}:
   "2026-08-31T18:27:56.027Z","harness:codex","Release preflight remediation: CodeFactor annotation 99591861337 identified an unsafe optional-chain cast/index assertion in mcp-progressive-discovery.integration.spec.ts. The assertion now matches the complete optional content array with a stringContaining matcher, eliminating the possible undefined dereference. Focused integration test and file-scoped ESLint pass. Production source is unchanged from the 8,189-test exact 100/100/100/100 and full static run."
   "2026-08-31T18:51:03.637Z","harness:codex","Review round 4 implementation: orientation baselines now require finite numeric winner-token ceilings on both report and baseline; compact root help explicitly excludes graph/history; generated guidance locks canonical orientation before mutation checks. Focused 27-test suite and file-scoped ESLint pass after a complexity-neutral finite-domain check."
   "2026-08-31T19:06:02.616Z","harness:codex","Review round 4 terminal evidence: linked 27-test contract passed through pm test. Repository coverage passed 8,193 tests across 593 files at exact 100% statements 60,560/60,560, branches 45,742/45,742, functions 12,603/12,603, and lines 58,309/58,309. Full quality:static passed ESLint, zero-clone duplication, build/generated surfaces, package/SDK parity, orientation token gate, refusal closure, graph composition, record integrity, and all assurance negative controls."
-learnings[4]{created_at,author,text}:
+  "2026-08-31T20:14:34.395Z","harness:codex","Review round 5 recurrence: CodeRabbit comments 3897964615 and 3897964622 are valid. Add an SDK host-supplied cursor integrity key plus MCP deployment-key adapter while preserving process-local secure fallback, and replace default-locale tie-breaking with code-unit ordering. TDD will cover key continuity/key rotation, malformed deployment keys, and collation-sensitive equal-score names."
+  "2026-08-31T20:19:18.410Z","harness:codex","TDD red: focused discovery tests proved default-locale sorting returned a_tool before Z_tool instead of code-unit order; changing the supplied cursor key did not invalidate the cursor; and the MCP deployment key was ignored, so rotation and weak-key cases did not fail. Three new behavior tests failed before implementation."
+  "2026-08-31T20:23:36.455Z","harness:codex","Review round 5 implementation: public discovery options accept a validated host-owned 32-byte HMAC key; MCP reads PM_MCP_DISCOVERY_CURSOR_KEY outside tool input; shared-key continuation succeeds, key rotation and weak keys fail closed, and process-local fallback affinity is documented. Equal-score names use locale-independent code-unit ordering. Focused 34-test cohort, ESLint, and Prettier pass; SDK surface snapshot records the optional host contract."
+  "2026-08-31T20:30:33.987Z","harness:codex","Exact coverage negative control: first full run passed 8,196 tests but correctly failed at 99.99% branches (45,762/45,763), isolating the equal-name comparator path at discovery.ts:573. Added a duplicate-name deterministic ordering assertion to exercise the zero tie-break result without excluding or ignoring source."
+  "2026-08-31T20:46:23.474Z","harness:codex","Review round 5 terminal evidence: the linked malformed-capability, deterministic-order, shared-key and MCP deployment-key cohort passed 34 tests across 3 files. Full repository coverage passed 8,196 tests across 593 files at exact 100% statements (60,576/60,576), branches (45,763/45,763), functions (12,604/12,604), and lines (58,323/58,323), with the preceding 99.99% branch result retained as the equal-comparator negative-control receipt. CI-mode quality:static passed ESLint, zero jscpd clones, typecheck/build, generated contracts, SDK/package/surface parity, token and refusal gates, six-operation CLI transport floor, graph composition, and record integrity. Review findings 3897964615 and 3897964622 were accepted, implemented, replied to inline, and resolved."
+learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
   "2026-08-31T18:09:24.045Z","harness:codex","Runtime SDK inputs must validate the public domain rather than a broader internal lookup table, and string-keyed public registries must use own-property checks because prototype names are valid untrusted input. Measured protocol alternatives also need unique identities, not only a minimum row count."
   "2026-08-31T19:06:03.205Z","harness:codex",Numeric release baselines must validate the domain of both stored ceilings and live measurements before comparison; JavaScript relational comparisons with undefined or non-numeric values fail open through false/NaN semantics.
+  "2026-08-31T20:23:37.024Z","harness:codex","Tamper-evident pagination has two legitimate scopes: a random process key securely enforces affinity, while multi-worker or restart-continuous transports require an explicit shared host secret. Make the scope operationally visible in documentation and never accept that secret through model-facing tool input."
 files[19]{path,scope,note}:
   scripts/release/agent-task-token-gate.mjs,project,Unique measured orientation protocol identity gate
   scripts/release/command-grammar-gate.mjs,project,Composite discovery grammar classification
@@ -63,7 +69,7 @@ files[19]{path,scope,note}:
   tests/unit/scripts/smoke-claude-plugin.spec.ts,project,Plugin smoke census negative controls
   tests/unit/sdk/mcp/discovery.spec.ts,project,Ranking pagination budget and scale tests
   tests/unit/sdk/recovery/recovery-guidance.spec.ts,project,Generated in-progress ownership guidance assertion
-tests[4]:
+tests[5]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts
     scope: project
     timeout_seconds: 240
@@ -99,7 +105,16 @@ tests[4]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Fourth review finite ceiling and rendered-discovery contract hardening
-test_runs[5]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-31T20:44:55.515Z"
+      source_kind: local_mutation
+      source_ref: feat/progressive-capability-discovery
+    note: Fifth review malformed-contract deterministic-order and deployment-key hardening
+test_runs[6]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -159,16 +174,28 @@ test_runs[5]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/root-help-discovery.integration.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
-docs[10]{path,scope,note}:
+  - run_id: test-local-mthpjpv2-v5bvbq
+    kind: test
+    status: passed
+    started_at: "2026-08-31T20:45:00.094Z"
+    finished_at: "2026-08-31T20:45:33.230Z"
+    recorded_at: "2026-08-31T20:45:33.230Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[11]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
   docs/ARCHITECTURE.md,project,SDK-first architecture boundary
   docs/CLAUDE_CODE_PLUGIN.md,project,Claude plugin smoke contract
   docs/MCP_2026_07_28.md,project,MCP protocol revision guidance
   docs/MCP_CAPABILITY_SURFACES.md,project,Negotiated MCP capability surface
+  docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project,Shared cursor HMAC key and process-affinity security contract
   docs/PROGRESSIVE_TOOL_DISCOVERY.md,project,Public SDK and MCP discovery contract
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Resolved all fresh exact-head review findings with fail-closed orientation ceilings and explicit compact-help/guidance ordering contracts; linked, coverage, and full static gates pass."
+close_reason: "Delivered and verified the broad SDK-first progressive discovery, canonical MCP result, compatibility, token, cursor-security, and scale contract; 34 linked tests, 8,196-test exact 100/100/100/100 coverage, and CI-mode static gates pass."
 body: ""

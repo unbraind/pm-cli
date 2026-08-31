@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:docs",measurement,token-efficiency
 created_at: "2026-08-07T11:17:30.747Z"
-updated_at: "2026-08-31T15:20:19.908Z"
-closed_at: "2026-08-31T15:13:31.843Z"
-completed_at: "2026-08-31T15:13:31.843Z"
+updated_at: "2026-08-31T20:46:52.388Z"
+closed_at: "2026-08-31T20:46:36.936Z"
+completed_at: "2026-08-31T20:46:36.936Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A fixed orientation corpus exists and reports token cost per documented protocol, including the composed alternatives, on a stable workspace snapshot; The canonical orientation protocol is selected from that measurement and the number is recorded on the item that documents it; Orientation cost is a case in the tokens-per-completed-task replay gate rather than a separate mechanism, and a regression fails CI; Docs, agent guidance blocks, and generated plugin templates all name the measured winner, and a conformance check fails when they disagree"
@@ -20,9 +20,9 @@ parent: pm-mpbb
 risk: low
 confidence: high
 severity: medium
-resolution: Replaced prose-selected cold start with a measured capability-equivalent replay selector and regression gate
-expected_result: "The orientation protocol named canonical is the one with the lowest measured token cost for the state it returns, the measurement is recorded, and a regression fails a gate"
-actual_result: "The fixed 101-item completed-task replay measures context --for orient at 1,055 estimated tokens, the historical four-read sequence at 2,293, and contracts --summary plus next at 4,798. The gate selects context intent and fails if configured canonical work is not the measured winner."
+resolution: Implemented a measured fixed-corpus orientation selector and fail-closed capability validation in the existing token replay gate.
+expected_result: Canonical orientation is selected by measured token cost among capability-equivalent protocols and malformed contracts fail CI.
+actual_result: "context --for orient is the measured 1,055-token winner; mixed-type and blank capability arrays fail closed; all linked and repository gates pass."
 dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-0k19l7,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
   pm-1kxs,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
@@ -41,10 +41,14 @@ dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-31T13:58:28.574Z","harness:codex","cli:update:dep",detected
   pm-8pnj,verifies,"2026-08-31T13:58:28.574Z","harness:codex","cli:update:dep",detected
   pm-e2bq,discovered_from,"2026-08-31T13:58:28.574Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-31T12:54:39.297Z","harness:codex","Implementation start: replace prose-only orientation choices with a fixed-corpus measured replay case and conformance gate, then select the canonical protocol from equivalent-state measurements rather than call count."
   "2026-08-31T13:24:39.475Z","harness:codex","Measurement evidence: the existing tokens-per-completed-task corpus now contains three capability-equivalent orientation protocols on independently seeded 101-item workspaces. Results: context --for orient = 1,055 tokens; historical context/search/open/in-progress sequence = 2,293; contracts --summary + next = 4,798. The gate fails on protocol capability drift, a non-winning canonical id, corpus drift, or token ceiling regression."
   "2026-08-31T15:13:29.898Z","harness:codex","Terminal evidence: linked replay-gate suite passed 11 tests. Fixed 101-item workspaces measure capability-equivalent orientation protocols at 1,055 tokens for context --for orient, 2,293 for the historical four-read sequence, and 4,798 for contracts plus next. The exact 100% repository coverage gate, typecheck, static-quality assurance, token-accounting gates, and docs/skills verification passed. The six-operation transport floor also passed with 20 iterations; the default three-sample local run was host-load-sensitive, so the higher-sample result is the governing local performance evidence and CI remains the clean-host merge gate."
+  "2026-08-31T20:14:32.128Z","harness:codex","Review recurrence: CodeRabbit comment 3897964611 correctly identified that sortedUniqueStrings silently removes non-string capability entries and retains blanks, allowing malformed transcript contracts to normalize into apparently equivalent sets. Add mixed-type and blank negative controls before implementation."
+  "2026-08-31T20:19:17.959Z","harness:codex","TDD red: the orientation selector accepted capability arrays containing a numeric entry or a blank string when every protocol repeated the same malformed value. The focused three-suite run failed the new fail-closed expectations before implementation."
+  "2026-08-31T20:23:35.933Z","harness:codex","Review round 5 implementation: orientation capability arrays now reject non-string and blank entries before deduplication/sorting, so malformed required and per-protocol sets cannot normalize into false equivalence. The focused 34-test cohort passes."
+  "2026-08-31T20:46:31.192Z","harness:codex","Review round 5 terminal evidence: the linked orientation replay suite passed all 15 tests, including fail-closed mixed-type and blank capability arrays. Full repository coverage passed 8,196 tests across 593 files at exact 100/100/100/100 with zero uncovered counts, and CI-mode quality:static passed the measured orientation selector, generated guidance parity, SDK/package surfaces, token budgets, CLI transport floor, graph composition, and record integrity. CodeRabbit finding 3897964611 was accepted, implemented, replied to inline, and resolved."
 learnings[1]{created_at,author,text}:
   "2026-08-31T15:07:55.348Z","harness:codex",Canonical agent protocols must be selected from capability-equivalent measured outputs; call count is not a proxy for context cost.
 files[4]{path,scope,note}:
@@ -54,7 +58,7 @@ files[4]{path,scope,note}:
   tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Orientation selection and drift negative controls
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-31T13:57:41.622Z",local_mutation,feat/progressive-capability-discovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mthdisx6-vpb92i
     kind: test
     status: passed
@@ -66,10 +70,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mthpkhy5-g7tahm
+    kind: test
+    status: passed
+    started_at: "2026-08-31T20:45:37.467Z"
+    finished_at: "2026-08-31T20:46:09.629Z"
+    recorded_at: "2026-08-31T20:46:09.629Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Orientation measurement and release gate contract
   README.md,project,Measured canonical orientation guidance
-close_reason: "Measured all capability-equivalent orientation protocols, selected the 1,055-token context intent, and enforced the winner and corpus equivalence in the completed-task replay gate; linked tests and repository-wide exact coverage pass."
+close_reason: "Delivered and verified measured canonical orientation with fail-closed capability contracts; 15 linked tests, 8,196-test exact 100/100/100/100 coverage, and CI-mode static gates pass."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_added

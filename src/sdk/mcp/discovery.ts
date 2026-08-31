@@ -96,6 +96,8 @@ export interface PmToolDiscoveryOptions {
   outputBudget?: number | "unbounded";
   /** MCP profile that produced the authorized candidate catalog. */
   profile?: PmMcpToolProfile;
+  /** Host-owned HMAC key of at least 32 bytes for restart-stable cursors. */
+  cursorIntegrityKey?: Uint8Array;
 }
 
 /** Applied score for one signal with explicit provenance. */
@@ -430,6 +432,16 @@ interface ResolvedPmToolDiscoveryRequest {
 /** Reject runtime filter values that bypass the public TypeScript unions. */
 function validateDiscoveryFilters(options: PmToolDiscoveryOptions): void {
   if (
+    options.cursorIntegrityKey !== undefined &&
+    (!(options.cursorIntegrityKey instanceof Uint8Array) ||
+      options.cursorIntegrityKey.byteLength < 32)
+  ) {
+    throw new PmCliError(
+      "pm tool discovery cursorIntegrityKey must contain at least 32 bytes.",
+      64,
+    );
+  }
+  if (
     options.tier !== undefined &&
     (typeof options.tier !== "string" ||
       !SELECTABLE_TIERS.includes(options.tier))
@@ -557,7 +569,8 @@ function rankedDiscoveryRows(
     )
     .sort(
       (left, right) =>
-        right.score - left.score || left.name.localeCompare(right.name),
+        right.score - left.score ||
+        (left.name < right.name ? -1 : left.name > right.name ? 1 : 0),
     );
 }
 
@@ -600,6 +613,8 @@ export function discoverPmTools(
   options: PmToolDiscoveryOptions = {},
 ): PmToolDiscoveryResult {
   const request = resolveDiscoveryRequest(options);
+  const cursorIntegrityKey =
+    options.cursorIntegrityKey ?? PROCESS_CURSOR_INTEGRITY_KEY;
   const ranked = rankedDiscoveryRows(candidates, options, request);
   const fingerprint = hashDiscoveryValue({
     query: request.query,
@@ -613,7 +628,7 @@ export function discoverPmTools(
     options.cursor,
     fingerprint,
     ranked.length,
-    PROCESS_CURSOR_INTEGRITY_KEY,
+    cursorIntegrityKey,
   );
   const pageCandidates = ranked.slice(offset, offset + request.limit);
   const omitted: PmToolDiscoveryOmissionReceipt["omitted"] = [];
@@ -678,7 +693,7 @@ export function discoverPmTools(
             next_cursor: encodeDiscoveryCursor(
               fingerprint,
               endOffset,
-              PROCESS_CURSOR_INTEGRITY_KEY,
+              cursorIntegrityKey,
             ),
           }
         : {}),

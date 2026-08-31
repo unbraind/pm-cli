@@ -113,6 +113,19 @@ describe("progressive MCP tool discovery", () => {
     expect(result.tools.every(({ command }) => command === "help")).toBe(true);
   });
 
+  it("uses locale-independent code-unit ordering for equal-score names", () => {
+    const result = discoverPmTools([candidate("a_tool"), candidate("Z_tool")], {
+      outputBudget: "unbounded",
+    });
+
+    expect(result.tools.map(({ name }) => name)).toEqual(["Z_tool", "a_tool"]);
+    expect(
+      discoverPmTools([candidate("same"), candidate("same")], {
+        outputBudget: "unbounded",
+      }).tools.map(({ name }) => name),
+    ).toEqual(["same", "same"]);
+  });
+
   it("pages without duplicates and rejects stale or mismatched cursors", () => {
     const candidates = Array.from({ length: 137 }, (_, index) =>
       candidate(`pm_synthetic_${String(index).padStart(3, "0")}`),
@@ -225,6 +238,33 @@ describe("progressive MCP tool discovery", () => {
         differentBudget.cache.key,
       ]),
     ).toHaveProperty("size", 4);
+  });
+
+  it("continues cursors with a shared integrity key and rejects key rotation", () => {
+    const candidates = PM_MCP_ENTRY_TOOL_NAMES.map((name) => candidate(name));
+    const firstKey = new Uint8Array(32).fill(1);
+    const secondKey = new Uint8Array(32).fill(2);
+    const first = discoverPmTools(candidates, {
+      cursorIntegrityKey: firstKey,
+      limit: 2,
+      outputBudget: "unbounded",
+    });
+    const second = discoverPmTools(candidates, {
+      cursor: first.next_cursor,
+      cursorIntegrityKey: firstKey,
+      limit: 2,
+      outputBudget: "unbounded",
+    });
+
+    expect(second.returned).toBe(2);
+    expect(() =>
+      discoverPmTools(candidates, {
+        cursor: first.next_cursor,
+        cursorIntegrityKey: secondKey,
+        limit: 2,
+        outputBudget: "unbounded",
+      }),
+    ).toThrow(/Invalid or stale/u);
   });
 
   it("reports schema and token-budget omissions with recoverable cursors", () => {
@@ -343,5 +383,12 @@ describe("progressive MCP tool discovery", () => {
     expect(() => discoverPmTools([], { cursor: "x".repeat(4_097) })).toThrow(
       /cursor/u,
     );
+    for (const cursorIntegrityKey of [new Uint8Array(31), "not-bytes"]) {
+      expect(() =>
+        discoverPmTools([], {
+          cursorIntegrityKey: cursorIntegrityKey as never,
+        }),
+      ).toThrow(/cursorIntegrityKey/u);
+    }
   });
 });

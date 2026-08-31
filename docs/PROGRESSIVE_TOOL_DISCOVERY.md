@@ -16,16 +16,18 @@ Clients that do not negotiate the extension receive the complete profile-selecte
 
 ## Public SDK contract
 
-`discoverPmTools()` accepts an authorization-filtered candidate catalog plus query, family, tier, limit, cursor, schema projection, profile, and output-budget options. It returns:
+`discoverPmTools()` accepts an authorization-filtered candidate catalog plus query, family, tier, limit, cursor, schema projection, profile, output-budget, and optional host-owned cursor-integrity-key options. It returns:
 
 - deterministic score-then-name ordering;
 - lexical, semantic, graph, permission, freshness, and usage scores with public weights and source provenance;
-- a tamper-evident cursor bound to query, filters, schemas, authorization-filtered catalog, ranking inputs, and the private discovery-cache process;
+- a tamper-evident cursor bound to query, filters, schemas, authorization-filtered catalog, ranking inputs, and either the private discovery process or an explicit shared host key;
 - exact estimated token cost and a fail-closed `within_budget` verdict;
 - explicit schema, row-limit, and token-budget omission receipts with recovery;
 - a private cache key, 30-second TTL, and named invalidation events.
 
 Hosts may supply normalized semantic, graph, freshness, and usage signals. Missing host values use documented deterministic fallbacks, and the result identifies every signal source; the formula never changes implicitly.
+
+SDK hosts that route pages across processes or restarts must pass the same random, secret `cursorIntegrityKey` of at least 32 bytes on every call. Omitting it deliberately selects a random process-local key: that securely enforces process affinity, and a cursor reaching another process fails closed as stale. The bundled MCP adapter reads the shared key from `PM_MCP_DISCOVERY_CURSOR_KEY`; local stdio needs no override, while multi-worker or restart-continuous HTTP deployments must configure one shared high-entropy value.
 
 ## Canonical tool results
 
@@ -37,4 +39,4 @@ Unnegotiated and legacy clients retain the prior duplicated JSON text plus struc
 
 The discovery quality gate exercises selection, deterministic pagination, stale-cursor refusal, permission filtering, schema recovery, and token ceilings at 100, 1,000, and 10,000 candidate tools. Contract snapshots cover the tool schema, and modern MCP integration tests prove both negotiated and compatibility modes.
 
-Any tool-definition, workspace-extension, profile, authorization, ranking-signal, or private discovery-cache process change invalidates prior cursors and cache entries. Clients restart discovery without a cursor after an explicit stale-cursor refusal.
+Any tool-definition, workspace-extension, profile, authorization, ranking-signal, or cursor-key change invalidates prior cursors and cache entries. Process-local cursors also expire when that process exits. Clients restart discovery without a cursor after an explicit stale-cursor refusal.

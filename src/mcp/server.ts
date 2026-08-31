@@ -290,6 +290,20 @@ function nearestDeclaredKey(
 const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
 const MCP_RETRY_ARGUMENT_KEYS = new Set(["inputResponses", "requestState"]);
 
+/** Resolve the optional shared cursor key without exposing it to tool input. */
+function resolveMcpDiscoveryCursorIntegrityKey(): Uint8Array | undefined {
+  const configuredKey = process.env.PM_MCP_DISCOVERY_CURSOR_KEY;
+  if (configuredKey === undefined) return undefined;
+  const key = Buffer.from(configuredKey, "utf8");
+  if (key.byteLength < 32) {
+    throw new PmCliError(
+      "PM_MCP_DISCOVERY_CURSOR_KEY must contain at least 32 UTF-8 bytes.",
+      64,
+    );
+  }
+  return key;
+}
+
 function detectUnexpectedTopLevelKeys(
   toolName: string,
   args: Record<string, unknown>,
@@ -325,6 +339,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runMcpAction(args as PmActionInput),
   pm_discover: async (args) => {
     const surface = await resolveMcpToolSurface(TOOLS, args);
+    const cursorIntegrityKey = resolveMcpDiscoveryCursorIntegrityKey();
     return discoverPmTools(
       surface.tools.map((tool) => ({
         name: tool.name,
@@ -354,6 +369,11 @@ const HANDLERS: Record<string, ToolHandler> = {
           ? { outputBudget: args.outputBudget }
           : {}),
         profile: surface.profile,
+        ...(cursorIntegrityKey === undefined
+          ? {}
+          : {
+              cursorIntegrityKey,
+            }),
       },
     );
   },

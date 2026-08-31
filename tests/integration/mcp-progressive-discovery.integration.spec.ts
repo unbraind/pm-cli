@@ -242,6 +242,69 @@ describe("MCP progressive discovery negotiation", () => {
     });
   });
 
+  it("uses a deployment cursor key and fails closed on rotation or weak keys", async () => {
+    const previousKey = process.env.PM_MCP_DISCOVERY_CURSOR_KEY;
+    try {
+      process.env.PM_MCP_DISCOVERY_CURSOR_KEY = "a".repeat(32);
+      const first = await handleRequest({
+        jsonrpc: "2.0",
+        id: 91,
+        method: "tools/call",
+        params: modernParams(true, {
+          name: "pm_discover",
+          arguments: { limit: 1, outputBudget: "unbounded" },
+        }),
+      });
+      const cursor = (
+        first?.structuredContent?.result as { next_cursor?: string }
+      ).next_cursor;
+      const continued = await handleRequest({
+        jsonrpc: "2.0",
+        id: 92,
+        method: "tools/call",
+        params: modernParams(true, {
+          name: "pm_discover",
+          arguments: { cursor, limit: 1, outputBudget: "unbounded" },
+        }),
+      });
+      expect(continued?.structuredContent?.result).toMatchObject({
+        result_type: "pm_tool_discovery",
+      });
+
+      process.env.PM_MCP_DISCOVERY_CURSOR_KEY = "b".repeat(32);
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 93,
+          method: "tools/call",
+          params: modernParams(true, {
+            name: "pm_discover",
+            arguments: { cursor, limit: 1, outputBudget: "unbounded" },
+          }),
+        }),
+      ).rejects.toMatchObject({ exitCode: 64 });
+
+      process.env.PM_MCP_DISCOVERY_CURSOR_KEY = "weak";
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 94,
+          method: "tools/call",
+          params: modernParams(true, {
+            name: "pm_discover",
+            arguments: { limit: 1, outputBudget: "unbounded" },
+          }),
+        }),
+      ).rejects.toMatchObject({ exitCode: 64 });
+    } finally {
+      if (previousKey === undefined) {
+        delete process.env.PM_MCP_DISCOVERY_CURSOR_KEY;
+      } else {
+        process.env.PM_MCP_DISCOVERY_CURSOR_KEY = previousKey;
+      }
+    }
+  });
+
   it("preserves canonical error results for negotiated detached tasks", async () => {
     const params = modernParams(
       true,
