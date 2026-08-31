@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1820,
+    "covered_symbols": 1824,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1821
+    "required_symbols": 1825
   },
   "breaking_acknowledgements": [
     {
@@ -8089,6 +8089,12 @@
           "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "inspectMergeReceiptEvidence",
+          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeReceiptEvidenceScan> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeReceiptEvidenceScan>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "inspectProjectRuntimeCompatibility",
@@ -9257,6 +9263,18 @@
           "kind": "type",
           "name": "MergePreferredSide",
           "signature": "export type MergePreferredSide = \"ours\" | \"theirs\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MergeReceiptEvidenceReport",
+          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; receipts: MergeDecisionReceipt[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MergeReceiptEvidenceScan",
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; }"
         },
         {
           "classification": "advanced_export",
@@ -15527,6 +15545,12 @@
           "kind": "function",
           "name": "runMergeInstall",
           "signature": "(options: MergeInstallOptions, global: GlobalOptions) => Promise<MergeInstallResult> | calls: (options: MergeInstallOptions, global: GlobalOptions) => Promise<MergeInstallResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runMergeReceiptEvidenceReport",
+          "signature": "(options: { includeReconciled?: boolean; cwd?: string; }) => Promise<MergeReceiptEvidenceReport> | calls: (options: { includeReconciled?: boolean; cwd?: string; }) => Promise<MergeReceiptEvidenceReport>"
         },
         {
           "classification": "supported",
@@ -26463,6 +26487,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "inspectMergeReceiptEvidence",
+          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeReceiptEvidenceScan> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeReceiptEvidenceScan>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "installMergeFence",
           "signature": "(options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; }) => Promise<MergeInstallResult> | calls: (options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; }) => Promise<MergeInstallResult>"
         },
@@ -26607,6 +26637,18 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "MergeReceiptEvidenceReport",
+          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; receipts: MergeDecisionReceipt[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MergeReceiptEvidenceScan",
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "MergeReceiptReport",
           "signature": "export interface MergeReceiptReport { ok: true; count: number; receipts: MergeDecisionReceipt[]; generated_at: string; }"
         },
@@ -26687,6 +26729,12 @@
           "kind": "function",
           "name": "runMergeInstall",
           "signature": "(options: MergeInstallOptions, global: GlobalOptions) => Promise<MergeInstallResult> | calls: (options: MergeInstallOptions, global: GlobalOptions) => Promise<MergeInstallResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runMergeReceiptEvidenceReport",
+          "signature": "(options: { includeReconciled?: boolean; cwd?: string; }) => Promise<MergeReceiptEvidenceReport> | calls: (options: { includeReconciled?: boolean; cwd?: string; }) => Promise<MergeReceiptEvidenceReport>"
         },
         {
           "classification": "supported",

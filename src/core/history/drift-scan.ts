@@ -12,7 +12,7 @@ import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
-  hashDocumentForVersion,
+  hashDocumentVerificationCandidates,
   type HistoryItemHashVersion,
 } from "./history.js";
 import { verifyHistoryChainWithVersion } from "./replay.js";
@@ -45,7 +45,7 @@ export interface DriftScanResult {
   workspaceStateUnreadable: string[];
 }
 
-const DRIFT_CACHE_VERSION = 7;
+const DRIFT_CACHE_VERSION = 9;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
@@ -395,11 +395,11 @@ async function scanItemHistory(
   };
   const { body, ...itemMetadata } = item;
   if (!resolved.verification.latestHashComparable) return resolved.cacheDirty;
-  const currentHash = hashDocumentForVersion(
+  const currentHashes = hashDocumentVerificationCandidates(
     { metadata: itemMetadata as ItemMetadata, body },
     resolved.verification.itemHashVersion,
   );
-  if (currentHash !== resolved.verification.latestAfterHash)
+  if (!currentHashes.includes(resolved.verification.latestAfterHash))
     accumulator.hashMismatches.push(item.id);
   return resolved.cacheDirty;
 }

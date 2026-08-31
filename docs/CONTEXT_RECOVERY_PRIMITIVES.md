@@ -46,11 +46,20 @@ When multiple entries exist, the SDK selects the requested package by key or `na
 
 ## History and merge recovery
 
-History hash capability 3 distinguishes the current canonical writer surface from older epoch-2 writers while retaining readers for epochs 1 and 2. An unsupported epoch is version skew, not permission to reinterpret or silently normalize history.
+History hash capability 3 distinguishes the current canonical writer surface
+from older writers while retaining frozen readers for epochs 1 and 2. Two
+writer surfaces were historically emitted under epoch 2: its earlier form
+excluded linked-test workspace/provenance fields and test-run execution
+receipts while normalizing dependency ids; its later form included those
+fields. Verification recognizes both immutable forms and requires each entry's
+before/after hashes to use one consistent form. Current-document verification
+selects the candidate that matches the verified chain head. An unsupported
+epoch is version skew, not permission to reinterpret or silently normalize
+history.
 
-Health keeps the metadata-only cache path for clean history streams. A cached hash mismatch, chain mismatch, or writer-version skew is only a candidate: health rereads canonical item sources and verifies stream content hashes before reporting corruption. The `history_drift` details expose `cache_confirmation` candidate, confirmed, and resolved-false-positive item sets, while `cache_hit_verification: metadata_then_content_hash` identifies the authoritative fallback. Drift-cache envelopes also carry the current item-hash capability, so a runtime with incompatible hash semantics rebuilds the cache instead of trusting it.
+Health keeps the metadata-only cache path for clean history streams. A cached hash mismatch, chain mismatch, or writer-version skew is only a candidate: health rereads canonical item sources and verifies stream content hashes before reporting corruption. The `history_drift` details expose `cache_confirmation` candidate, confirmed, and resolved-false-positive item sets, while `cache_hit_verification: metadata_then_content_hash` identifies the authoritative fallback. Drift-cache envelopes carry both their schema version and the current item-hash capability, so changing legacy canonicalization invalidates prior verdicts and a runtime with incompatible hash semantics rebuilds the cache instead of trusting it.
 
-Merge reconciliation may consume a durable hash-only receipt without `--force` only when its canonical item path, complete declared-field set, and every merged-value hash exactly match the current item snapshot. Raw discarded values remain clone-local. Any incomplete or mismatched proof fails closed.
+Merge reconciliation may consume a durable hash-only receipt without `--force` only when its canonical item path, complete declared-field set, and every merged-value hash exactly match the current item snapshot. Raw discarded values remain clone-local. Any incomplete or mismatched proof fails closed. SDK gates use `inspectMergeReceiptEvidence` or `runMergeReceiptEvidenceReport` to retain the distinction between no evidence and rejected evidence; the list-only and legacy report compatibility projections intentionally return valid receipts only.
 
 ## Strict-create recovery
 

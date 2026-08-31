@@ -2,22 +2,25 @@ id: pm-baksix
 title: "GH-1104: health must not certify pending lossless merge receipts as reconciled"
 description: "A pending merge receipt created by a lossless comment union remains state=pending while health reports ok=true. Existing pm-lwmstb correctly distinguishes lossless provenance from lossy decisions, but GitHub #1104 demonstrates that the green gate still implies reconciliation that did not occur. Publish a non-blocking-to-data but health-visible pending-receipt finding, route remediation to pm merge reconcile, and prove history-repair cannot hide it."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-31T06:12:14.669Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#d28e5412fa32fcac38263ad0"
+updated_at: "2026-08-31T08:14:20.954Z"
+closed_at: "2026-08-31T08:13:05.614Z"
+completed_at: "2026-08-31T08:13:05.614Z"
 author: "harness:codex"
 acceptance_criteria: A lossless pending merge receipt makes the health gate non-green with receipt-aware remediation; history-repair cannot clear the finding; pm merge reconcile settles it; lossy decision classification remains distinct
 parent: pm-dj98
 risk: medium
 confidence: high
+resolution: Added loss-aware receipt inspection/report SDK contracts and routed CLI/runtime reporting through them while retaining valid-only compatibility projections.
+expected_result: "Consumers distinguish absent evidence from malformed rejected evidence without receiving unsafe contents, and CLI gates fail closed on incomplete evidence."
+actual_result: "Two malformed receipts produce complete=false, invalid_evidence_count=2, count=0, and exit 1; SDK, runtime, linked, coverage, and security gates pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
   "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
   "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
@@ -25,24 +28,54 @@ comments[7]{created_at,author,text}:
   "2026-08-24T18:01:22.625Z","harness:codex","Hosted review recurrence: Sourcery correctly observed that GH-1104 requires receipt-attributable history_drift remediation itself to point at pm merge reconcile. Scope: correlate pending receipt item ids with drifted item ids, prioritize reconcile only on intersection, preserve history-repair for unrelated drift, and add a mixed-state negative control."
   "2026-08-24T21:59:30.143Z","harness:codex","Final implementation evidence 2026-08-24: linked tests passed 26/26 and 58/58 with trusted local_source_ref provenance; global exact coverage passed 572 files / 7,902 tests at 100% statements, branches, functions, and lines with zero uncovered counts. Static quality direct report is clean (100% docstrings, no complexity/duplicate/orphan/SDK-boundary findings); repository assurance, package boundaries, SDK parity, surface replication, grammar/flags, 117 refusal probes, tracker context, graph composition, defect evidence, lint, zero-duplicate scan, and package artifact gates passed. The full wrapper reached only the CLI timing floor under host renderer contention; detached unchanged main reproduced the same get miss at 382ms, so the budget was preserved for hosted CI. Bugbot found no bugs and Security Review found no actionable findings on the exact final workspace. Negative controls prove malformed or divergent same-ID receipt evidence refuses before history mutation, and same-provenance partial settlement remains pending until both copies reconcile."
   "2026-08-31T06:12:14.669Z","harness:codex","Recurrence evidence: GitHub #1161 shows listMergeReceipts changed from throw to default to silent drop across supported releases. This cycle will define the malformed/incomplete contract, preserve rejected evidence through a typed SDK inspection result, keep the compatibility list wrapper explicit, and prove CLI/health consumers distinguish no receipts from unusable receipts."
-files[13]{path,scope,note}:
+  "2026-08-31T08:13:03.114Z","harness:codex","Delivery evidence 2026-08-31: the public SDK now exposes inspectMergeReceiptEvidence and runMergeReceiptEvidenceReport so gates distinguish an empty store from rejected evidence without leaking malformed content; legacy list/report projections remain valid-only for compatibility. pm merge report uses the SDK contract, emits complete=false plus invalid_evidence_count, and exits 1 on incomplete evidence. A manual temporary repository with two malformed receipts returned count=0, invalid_evidence_count=2, complete=false, exit 1; packed SDK imports, CLI/runtime regressions, linked PM tests, security scans, static quality, and exact 100/100/100/100 coverage pass."
+files[19]{path,scope,note}:
   sdk/public-surface.json,project,Generated public pending-receipt error surface
+  src/cli/commands/merge.ts,project,Thin CLI compatibility adapter for SDK merge primitives
+  src/cli/register-mutation.ts,project,Fail-closed merge report exit semantics
   src/core/diagnostics/remediation.ts,project,Receipt-aware remediation
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public error-code contract
   src/sdk/governance/health.ts,project,Lossless pending receipt health finding
   src/sdk/history-repair.ts,project,Exact receipt proof for history drift attribution
+  src/sdk/merge/index.ts,project,Public loss-aware receipt inspection and report exports
   src/sdk/merge/receipt-file-boundary.ts,project,Bounded no-follow receipt file boundary
   src/sdk/merge/receipts.ts,project,Strict receipt validation inspection and settlement
   src/sdk/merge/reconcile.ts,project,Receipt-aware reconciliation settlement
+  src/sdk/runtime-extended-actions.ts,project,Runtime action delegates to loss-aware SDK receipt report
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,History-repair and reconcile end-to-end controls
   tests/integration/remediation-registry.spec.ts,project,Executable remediation contract
+  tests/unit/cli/merge-reconcile-registration.spec.ts,project,CLI incomplete-evidence exit regression
   tests/unit/sdk/merge-receipts.spec.ts,project,File-boundary and settlement negative controls
   tests/unit/sdk/merge-reconcile.spec.ts,project,Reconciliation concurrency and refusal controls
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,project,300,"harness:codex","2026-08-24T15:28:37.602Z",local_mutation,codex/read-output-projection-snapshots
-  node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,360,"harness:codex","2026-08-24T20:35:16.403Z",local_mutation,codex/read-output-projection-snapshots
-test_runs[4]:
+  tests/unit/sdk/runtime-extended-actions.spec.ts,project,Runtime delegation regression
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-24T15:28:37.602Z"
+      source_kind: local_mutation
+      source_ref: codex/read-output-projection-snapshots
+  - command: node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-24T20:35:16.403Z"
+      source_kind: local_mutation
+      source_ref: codex/read-output-projection-snapshots
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-08-31T06:29:53.607Z"
+      source_kind: local_mutation
+      source_ref: feat/sdk-history-receipt-evidence-contracts
+    note: SDK CLI and runtime loss-aware receipt regressions
+test_runs[6]:
   - run_id: test-local-mt7g64h9-seists
     kind: test
     status: passed
@@ -89,9 +122,38 @@ test_runs[4]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
-docs[2]{path,scope,note}:
+  - run_id: test-local-mtgy8msr-0pl4jl
+    kind: test
+    status: failed
+    started_at: "2026-08-31T08:00:56.020Z"
+    finished_at: "2026-08-31T08:01:06.411Z"
+    recorded_at: "2026-08-31T08:01:06.411Z"
+    passed: 1
+    failed: 2
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtgyad1b-8xetiu
+    kind: test
+    status: passed
+    started_at: "2026-08-31T08:01:19.648Z"
+    finished_at: "2026-08-31T08:02:27.071Z"
+    recorded_at: "2026-08-31T08:02:27.071Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,generated loss-aware receipt release entry
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Loss-aware receipt evidence contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated error-code coverage
   docs/MERGE_SAFETY.md,project,Pending lossless receipt gate semantics
+close_reason: "Resolved GH-1161 with additive loss-aware receipt evidence SDK/report contracts, a fail-closed CLI exit, compatibility projections, malformed-evidence acceptance proof, and exact 100% coverage."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

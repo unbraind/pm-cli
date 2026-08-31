@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   runMeet: vi.fn(),
   runMergeDriver: vi.fn(),
   runMergeInstall: vi.fn(),
-  runMergeReceiptReport: vi.fn(),
+  runMergeReceiptEvidenceReport: vi.fn(),
   runMergeReconcile: vi.fn(),
   runRemind: vi.fn(),
 }));
@@ -34,7 +34,7 @@ vi.mock("../../../src/sdk/merge/reconcile.js", () => ({
   runMergeReconcile: mocks.runMergeReconcile,
 }));
 vi.mock("../../../src/sdk/merge/receipts.js", () => ({
-  runMergeReceiptReport: mocks.runMergeReceiptReport,
+  runMergeReceiptEvidenceReport: mocks.runMergeReceiptEvidenceReport,
 }));
 vi.mock("../../../src/sdk/scheduling-shortcuts.js", () => ({
   runEvent: mocks.runEvent,
@@ -166,7 +166,7 @@ describe("runtime extended action adapters", () => {
         },
       ),
     );
-    expect(mocks.runMergeReceiptReport).toHaveBeenCalledWith({
+    expect(mocks.runMergeReceiptEvidenceReport).toHaveBeenCalledWith({
       includeReconciled: true,
       cwd: "/tmp/project",
     });

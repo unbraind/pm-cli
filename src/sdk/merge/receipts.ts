@@ -133,7 +133,23 @@ export interface MergeReceiptReport {
   generated_at: string;
 }
 
-/** Internal integrity scan result used by health without exposing malformed receipt contents. */
+/** Loss-aware merge receipt report for integrity gates and diagnostic adapters. */
+export interface MergeReceiptEvidenceReport {
+  /** Whether every candidate was read and validated successfully. */
+  ok: boolean;
+  /** Whether the returned receipts represent every discovered JSON candidate. */
+  complete: boolean;
+  /** Number of valid receipts returned. */
+  count: number;
+  /** Number of candidates rejected by bounded-file, schema, identity, or copy-consistency validation. */
+  invalid_evidence_count: number;
+  /** Receipts including recoverable values from the local clone only. */
+  receipts: MergeDecisionReceipt[];
+  /** ISO timestamp for the report. */
+  generated_at: string;
+}
+
+/** Loss-aware receipt inspection result that never exposes malformed file contents. */
 export interface MergeReceiptEvidenceScan {
   /** Valid receipts that passed bounded-file, schema, and identity validation. */
   receipts: MergeDecisionReceipt[];
@@ -803,6 +819,31 @@ export async function runMergeReceiptReport(options: {
     ok: true,
     count: receipts.length,
     receipts,
+    generated_at: nowIso(),
+  };
+}
+
+/** Inspect every receipt candidate and retain completeness diagnostics without exposing rejected file contents. */
+export async function runMergeReceiptEvidenceReport(options: {
+  /** Include receipts already represented by merge history events. */
+  includeReconciled?: boolean;
+  /** Repository directory to inspect; defaults to the process working directory. */
+  cwd?: string;
+}): Promise<MergeReceiptEvidenceReport> {
+  const evidence = await inspectMergeReceiptEvidence(
+    options.cwd ?? process.cwd(),
+    {
+      ...options,
+      includeLossless: true,
+    },
+  );
+  const complete = evidence.invalid_evidence_count === 0;
+  return {
+    ok: complete,
+    complete,
+    count: evidence.receipts.length,
+    invalid_evidence_count: evidence.invalid_evidence_count,
+    receipts: evidence.receipts,
     generated_at: nowIso(),
   };
 }

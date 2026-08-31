@@ -21,6 +21,7 @@ import {
   inspectMergeReceiptEvidence,
   listMergeReceipts,
   markMergeReceiptReconciled,
+  runMergeReceiptEvidenceReport,
   runMergeReceiptReport,
   summarizeMergeReceipt,
   writeMergeReceipt,
@@ -356,6 +357,50 @@ describe("clone-local merge decision receipts", () => {
     expect(await runMergeReceiptReport({})).toMatchObject({
       ok: true,
       count: expect.any(Number),
+    });
+    expect(await runMergeReceiptEvidenceReport({})).toMatchObject({
+      ok: true,
+      complete: true,
+      invalid_evidence_count: 0,
+    });
+  });
+
+  it("distinguishes absent receipts from rejected incomplete evidence", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const receiptDirectory = execFileSync(
+      "git",
+      [
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "pm-merge-receipts",
+      ],
+      { cwd: workspace, encoding: "utf8" },
+    ).trim();
+    await mkdir(receiptDirectory, { recursive: true });
+    for (const name of ["aaaa-corrupt.json", "bbbb-corrupt.json"]) {
+      await writeFile(
+        path.join(receiptDirectory, name),
+        `${JSON.stringify({ version: 1, state: "pending" })}\n`,
+        "utf8",
+      );
+    }
+
+    expect(await listMergeReceipts(workspace)).toEqual([]);
+    expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
+      receipts: [],
+      invalid_evidence_count: 2,
+    });
+    expect(
+      await runMergeReceiptEvidenceReport({ cwd: workspace }),
+    ).toMatchObject({
+      ok: false,
+      complete: false,
+      count: 0,
+      invalid_evidence_count: 2,
+      receipts: [],
     });
   });
 

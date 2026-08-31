@@ -2,13 +2,13 @@ id: pm-2qahia
 title: "GH-1135: item_hash_version 2 still masks writer hash divergence as corruption"
 description: "GitHub #1135 reproduces supported pm writers computing different history hashes while stamping the same item_hash_version=2, so pinned readers classify version skew as hash/chain corruption and history-repair can truthfully report changed=false while rewriting bytes."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-31T06:12:16.918Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#d28e5412fa32fcac38263ad0"
+updated_at: "2026-08-31T08:13:26.147Z"
+closed_at: "2026-08-31T08:13:04.333Z"
+completed_at: "2026-08-31T08:13:04.333Z"
 author: "harness:codex"
 acceptance_criteria: A released-version fixture proves whether identical epoch-2 content can hash differently; every hash-input or algorithm change advances a format capability or preserves the previous comparator; drift diagnostics distinguish unsupported writer/version skew from same-version corruption; history events expose sufficient writer capability provenance for deterministic diagnosis; repair changed receipts match actual byte writes; SDK CLI health validate and repair contracts carry the distinction; focused cross-version packed-consumer and exact repository coverage gates pass
 parent: pm-o2kc
@@ -17,13 +17,16 @@ confidence: high
 severity: critical
 environment: Global pm 2026.8.23 writes trackers read by repository-pinned 2026.8.20 and 2026.8.21 binaries
 repro_steps: "Create and mutate an item with pm 2026.8.23, run pinned health --strict-exit, compare item_hash_version and hashes, run pinned history-repair, then compare changed receipt, bytes, and both readers' verdicts."
+resolution: Added dual immutable-v2 hash candidate verification and repair preservation without changing the established public v2 hash return.
+expected_result: "All supported historical v2 streams verify without rewrites, genuine mixed-entry corruption still fails, and current-item drift remains detectable."
+actual_result: "The 2,609-item repository and five external project streams verify clean; negative controls reject mixed variants; exact coverage and static/security gates pass."
 component: "history hashing, drift diagnostics, and repair receipts"
 regression: true
 customer_impact: "Ordinary cross-version mutations make CI report corruption, train operators to normalize real integrity alarms away, and hide evidence-rewriting repairs behind a false no-change receipt."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-0wfdim,recurs_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
   pm-igdvfq,discovered_from,"2026-08-28T08:13:08.155Z","harness:codex","cli:create:dep",detected
-comments[24]{created_at,author,text}:
+comments[25]{created_at,author,text}:
   "2026-08-28T08:13:08.155Z","harness:codex","Duplicate-check evidence: searched all statuses for GH-1135, GH-1040, GH-1004, GH-976, item_hash_version, writer-version repair loops, and changed=false byte rewrites; fully read closed pm-0wfdim, pm-igdvfq, and pm-2htk4p. Those owners implemented epoch-aware verification and repair, while #1135 is a fresh post-fix three-repository reproduction that names same-version-marker hash divergence and a false repair receipt. This open unclaimed recurrence is canonical for GitHub #1135."
   "2026-08-28T08:13:51.701Z","harness:codex","GitHub linkage evidence: #1135 comment https://github.com/unbraind/pm-cli/issues/1135#issuecomment-5450113598 points to this canonical PM item and its merge-stable main-branch .toon path."
   "2026-08-28T23:24:18.291Z","harness:codex","Verification evidence: focused history and recovery suites passed; live pm validate checked 2,596 items with zero history drift and zero version skew in the current workspace; full repository coverage passed 8,099 tests at exact 100/100/100/100."
@@ -48,12 +51,13 @@ comments[24]{created_at,author,text}:
   "2026-08-29T13:12:31.447Z","harness:codex","Review follow-up: hosted static analysis identified cognitive complexity 17 in verifyHistoryChainWithVersion. Reused an explicit-version support predicate across verification and repair to restore the mandatory threshold without changing behavior; focused lint and 60-test history/recovery/merge suite pass."
   "2026-08-29T13:27:09.329Z","harness:codex","Final local evidence: exact coverage passed 586 files and 8,122 tests at 60,166/60,166 statements, 45,396/45,396 branches, 12,513/12,513 functions, and 57,936/57,936 lines. pnpm quality:static passed the complete assurance stack. Linked acceptance passed 3/3 with no skips or failures."
   "2026-08-31T06:12:16.918Z","harness:codex","Recurrence evidence: GitHub #1162 measures five false corruption reports across four clean public repositories after upgrading to 2026.8.30. The same stored history head survives while replay or current-document hashes vary by reader version. This cycle will preserve writer-capability evidence in diagnostics, test real legacy fixtures, and keep repair guidance fail-closed."
+  "2026-08-31T08:13:02.608Z","harness:codex","Delivery evidence 2026-08-31: history verification now recognizes both immutable writer surfaces historically emitted under item_hash_version=2 while requiring each entry's before/after pair to use one consistent surface. Public hashDocumentForVersion v2 behavior stays compatible; current-item drift checks select the matching verified candidate; history-repair preserves the evidenced variant and appends compatible audit hashes. Live repository health and strict validate pass across 2,609 items without history repair or rewrite. Five external repository streams (10, 17, 30, 45, and 9 entries) verify current_matches_latest=true. Linked PM tests, strict static quality, 590 files / 8,166 tests, and exact 100/100/100/100 coverage pass."
 learnings[4]{created_at,author,text}:
   "2026-08-28T23:24:36.998Z","harness:codex","Persisted hash algorithms are format capabilities, not implementation details. Any hash-input change must advance the writer epoch so readers can classify skew separately from corruption."
   "2026-08-29T05:25:24.557Z","harness:codex","History capability skew and current-item divergence are independent evidence: an unsupported earlier event must not erase a safely comparable final supported after_hash."
   "2026-08-29T06:28:53.527Z","harness:codex","Persisted caches are untrusted inputs: validate every required scalar type before reusing a cached integrity verdict, even when version and fingerprint fields match."
   "2026-08-29T07:43:02.818Z","harness:codex","A newer history hash capability is a runtime compatibility boundary, not repairable corruption; every health and validation projection must route to upgrade guidance rather than history-repair."
-files[18]{path,scope,note}:
+files[20]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census reflects canonical version-skew alias
   scripts/error-code-stability.json,project,Canonical stability and alias policy for version-skew diagnostics
   sdk/public-surface.json,project,Public SDK surface advertises history version-skew remediation codes
@@ -65,6 +69,8 @@ files[18]{path,scope,note}:
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated public catalog includes validation version-skew remediation code
   src/sdk/governance/health.ts,project,health projection
   src/sdk/governance/validate-history-drift.ts,project,validation projection
+  src/sdk/history-read.ts,project,Current-document verification uses the stream resolved hash epoch
+  src/sdk/history-repair.ts,project,preserves the verified legacy-v2 semantic variant during repair and audit events
   tests/fixtures/contracts/full.json,project,Generated contract snapshot for version-skew remediation entries
   tests/integration/remediation-registry.spec.ts,project,Registry regression for health and validate version-skew warnings
   tests/unit/commands/health-command.spec.ts,project,Bulk remediation preserves non-repairable version-skew upgrade guidance
@@ -76,7 +82,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:01.231Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,project,240,"harness:codex","2026-08-28T21:54:08.534Z",local_mutation,feat/sdk-context-integrity-recovery,history capability and version skew coverage
   node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,project,240,"harness:codex","2026-08-29T07:17:30.556Z",local_mutation,feat/sdk-context-integrity-recovery,Version-skew remediation registry regression
-test_runs[9]:
+test_runs[11]:
   - run_id: test-local-mtdkxs90-zu56nw
     kind: test
     status: passed
@@ -198,10 +204,38 @@ test_runs[9]:
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
-docs[3]{path,scope,note}:
+  - run_id: test-local-mtgy7dvr-5kvl07
+    kind: test
+    status: failed
+    started_at: "2026-08-31T08:00:08.109Z"
+    finished_at: "2026-08-31T08:00:08.199Z"
+    recorded_at: "2026-08-31T08:00:08.199Z"
+    passed: 0
+    failed: 3
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mtgy8efq-6cr28h
+    kind: test
+    status: passed
+    started_at: "2026-08-31T08:00:30.368Z"
+    finished_at: "2026-08-31T08:00:55.574Z"
+    recorded_at: "2026-08-31T08:00:55.574Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/core/history/history-hash-version.spec.ts tests/unit/sdk/history-repair-version-contract.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
+docs[4]{path,scope,note}:
   CHANGELOG.md,project,Generated release note for history integrity and version-skew recovery
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal/remediation census includes history version-skew guidance
+  docs/MERGE_SAFETY.md,project,Frozen history hash epoch contract and cross-version recovery
+close_reason: "Resolved the GH-1162 recurrence with dual immutable-v2 verification, matching current-document drift checks, repair preservation, clean 2,609-item live validation, five external fleet proofs, and exact 100% coverage."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

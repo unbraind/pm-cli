@@ -18,6 +18,7 @@ import {
   normalizeReplayPatchOps,
   reanchorHistoryEntries,
   replayHash,
+  replayHashVerificationCandidates,
   resolveHistoryRepairItemHashVersion,
   toReplayDocument,
   verifyHistoryChain,
@@ -573,12 +574,15 @@ async function loadHistoryRepairItemReplay(
   }
   const currentItemReplay = toReplayDocument(loadedItem.document);
   const lastOriginalAfterHash =
-    historyEntries[historyEntries.length - 1]?.after_hash;
+    historyEntries[historyEntries.length - 1]!.after_hash;
   return {
     currentItemReplay,
     currentItemPath,
     matchedChainBefore:
-      replayHash(currentItemReplay, itemHashVersion) === lastOriginalAfterHash,
+      replayHashVerificationCandidates(
+        currentItemReplay,
+        itemHashVersion,
+      ).includes(lastOriginalAfterHash),
     currentItemRawBeforeLock: loadedItem.raw,
     loadedItem,
   };
@@ -623,6 +627,17 @@ function buildHistoryRepairEntries(params: {
     params.reconcileNeeded && params.currentItemReplay
       ? params.currentItemReplay
       : params.finalReplay;
+  const beforeHashes = replayHashVerificationCandidates(
+    params.finalReplay,
+    params.itemHashVersion,
+  );
+  const previousAfterHash =
+    params.reanchorEntries[params.reanchorEntries.length - 1]!.after_hash;
+  const semanticIndex = beforeHashes.indexOf(previousAfterHash);
+  const afterHashes = replayHashVerificationCandidates(
+    afterReplay,
+    params.itemHashVersion,
+  );
   rewrittenEntries.push({
     ts: nowIso(),
     author: params.author,
@@ -634,8 +649,8 @@ function buildHistoryRepairEntries(params: {
             params.currentItemReplay,
           ) as HistoryPatchOp[])
         : [],
-    before_hash: replayHash(params.finalReplay, params.itemHashVersion),
-    after_hash: replayHash(afterReplay, params.itemHashVersion),
+    before_hash: beforeHashes[semanticIndex]!,
+    after_hash: afterHashes[semanticIndex]!,
     message: params.message,
     ...(params.explicitItemHashVersion
       ? { item_hash_version: params.itemHashVersion }

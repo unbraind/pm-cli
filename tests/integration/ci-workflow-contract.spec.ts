@@ -166,7 +166,7 @@ describe("GitHub workflow contract", () => {
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
     expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
     expect(codSpeedStep?.uses).toBe(
-      "CodSpeedHQ/action@4296e51e7041e24dadb86d1d6e8b9320d223dbe8",
+      "CodSpeedHQ/action@373d6868929f444bc08d901fd0eb0ad52a8875ea",
     );
     expect(codSpeedOptions).toMatchObject({
       mode: "simulation",

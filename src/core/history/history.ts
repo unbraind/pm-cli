@@ -170,6 +170,7 @@ function normalizeHistoryPatchOps(
 function canonicalHashDocument(
   document: ItemDocument,
   version: HistoryItemHashVersion,
+  legacyV2Fields = false,
 ): {
   front_matter: Record<string, unknown>;
   body: string;
@@ -183,13 +184,53 @@ function canonicalHashDocument(
     };
   }
   const canonical = canonicalDocument(document);
-  const metadata =
-    version === 1 && canonical.metadata.tests
+  // Epoch 1 and the earliest epoch-2 writer predate linked-test provenance,
+  // workspace isolation, per-execution receipts, and case-preserving
+  // dependency ids. Later epoch-2 writers included those fields without
+  // advancing the marker, so verification must retain both immutable forms.
+  const usesLegacyFields = version === 1 || (version === 2 && legacyV2Fields);
+  const epochMetadata =
+    usesLegacyFields
       ? {
           ...canonical.metadata,
-          tests: [...canonical.metadata.tests].sort(compareLegacyLinkedTests),
+          ...(canonical.metadata.dependencies === undefined
+            ? {}
+            : {
+                dependencies: canonical.metadata.dependencies.map(
+                  (dependency) => ({
+                    ...dependency,
+                    id: dependency.id.toLowerCase(),
+                  }),
+                ),
+              }),
+          ...(canonical.metadata.tests === undefined
+            ? {}
+            : {
+                tests: canonical.metadata.tests.map(
+                  ({
+                    workspace_context_mode: _workspaceContextMode,
+                    provenance: _provenance,
+                    provenance_invalid: _provenanceInvalid,
+                    ...test
+                  }) => test,
+                ),
+              }),
+          ...(canonical.metadata.test_runs === undefined
+            ? {}
+            : {
+                test_runs: canonical.metadata.test_runs.map(
+                  ({ executions: _executions, ...testRun }) => testRun,
+                ),
+              }),
         }
       : canonical.metadata;
+  const metadata =
+    version === 1 && epochMetadata.tests
+      ? {
+          ...epochMetadata,
+          tests: [...epochMetadata.tests].sort(compareLegacyLinkedTests),
+        }
+      : epochMetadata;
   const orderedMetadata = orderObject(
     toItemRecord(metadata),
     ITEM_METADATA_KEY_ORDER,
@@ -241,6 +282,26 @@ export function hashDocumentForVersion(
     throw new TypeError(`unsupported_item_hash_version:${String(version)}`);
   }
   return sha256Hex(stableStringify(canonicalHashDocument(document, version)));
+}
+
+/**
+ * Return the ordered hash candidates accepted when verifying one immutable
+ * history epoch. Epoch 2 has both its established expanded hash first and the
+ * earlier field-frozen writer hash second; the other epochs have one form.
+ */
+export function hashDocumentVerificationCandidates(
+  document: ItemDocument,
+  version: HistoryItemHashVersion,
+): [string, ...string[]] {
+  const canonicalHash = hashDocumentForVersion(document, version);
+  return version === 2
+    ? [
+        canonicalHash,
+        sha256Hex(
+          stableStringify(canonicalHashDocument(document, version, true)),
+        ),
+      ]
+    : [canonicalHash];
 }
 
 /** Implements hash empty document for the public runtime surface of this module. */

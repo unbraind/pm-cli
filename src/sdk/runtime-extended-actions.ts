@@ -13,7 +13,7 @@ import { runEval, type EvalOptions } from "./eval.js";
 import { runMergeDriver } from "./merge/driver.js";
 import { runMergeInstall } from "./merge/install.js";
 import { runMergeReconcile } from "./merge/reconcile.js";
-import { runMergeReceiptReport } from "./merge/receipts.js";
+import { runMergeReceiptEvidenceReport } from "./merge/receipts.js";
 import { listMutationEvents } from "./mutation-events.js";
 import {
   parseRuntimeInteger,
@@ -143,7 +143,7 @@ export function runRuntimeMergeAction(
     );
   }
   if (subcommand === "report") {
-    return runMergeReceiptReport({
+    return runMergeReceiptEvidenceReport({
       includeReconciled: input.includeReconciled === true,
       cwd: readRuntimeString(input, "cwd"),
     });

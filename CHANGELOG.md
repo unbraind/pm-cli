@@ -8,11 +8,17 @@
 
 ### Fixed
 
+- GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
+- GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
 - Custom statuses registered without a lifecycle role are silently orphaned from every work-selection surface ([pm-0mhspz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mhspz.toon))
 - GH-1158: Windows Node 24 nightly receipt fixture derives a root-relative expectation from a drive-qualified path ([pm-46hpx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-46hpx8.toon))
 - GH-1154: linked-test sandbox guard is command-shape inconsistent and undocumented ([pm-s8cth5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8cth5.toon))
 - The local preflight token-budget gate is red on a workstation and green in hosted CI for the same commit again, because the earlier remediation closed the one ambient channel that had bitten instead of closing the fixture's environment ([pm-4o7tlx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4o7tlx.toon))
 - The bounded legacy MCP compatibility set stops one revision short of the spec's own legacy boundary, so every current host is refused at initialize and the dual-era guarantee is unmet ([pm-edywqn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-edywqn.toon))
+
+### Security
+
+- Refresh compatible GitHub Actions and tsx tooling dependencies ([pm-k47gdd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k47gdd.toon))
 
 ### Deprecated
 
@@ -34,7 +40,6 @@
 - GH-1148: cached drift mismatch can falsely report tracker corruption ([pm-sxg7wl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sxg7wl.toon))
 - GH-1138: linked test name filters can pass after executing zero tests ([pm-ntnv4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ntnv4k.toon))
 - GH-1136: npm 12 object-form npm pack receipts break registry package installs ([pm-xrjy8o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xrjy8o.toon))
-- GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
 - The annotation key=value grammar has three divergent comma behaviours, two of which silently corrupt the evidence text before it is made immutable ([pm-hu92i3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hu92i3.toon))
 - GH-1150: health remediation for pending merge receipts must perform the repair ([pm-r0p3at](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r0p3at.toon))
 - GH-1134: required collection recovery omits truthful --clear-\* intent ([pm-t7wl00](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t7wl00.toon))
@@ -132,7 +137,6 @@
 
 ### Fixed
 
-- GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
 - Dynamic-read continuation cursors are born stale: pm health emits a cursor that its next invocation rejects ([pm-oahhyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oahhyc.toon))
 - GH-1105: contracts must declare each command projection vocabulary before invocation ([pm-q4isdq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q4isdq.toon))
 - The outcome-milestone ladder is a sibling set rather than a layer: 1,024 terminal items reach the roadmap apex through 154 typed roots without traversing any outcome milestone ([pm-h6b73t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h6b73t.toon))

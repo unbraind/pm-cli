@@ -19,11 +19,12 @@ import {
 import { readHistoryEntries } from "../core/history/read.js";
 import {
   hashDocument,
+  hashDocumentVerificationCandidates,
   hashEmptyDocument,
 } from "../core/history/history.js";
 import {
   replayToCanonicalItemDocument,
-  verifyHistoryChain,
+  verifyHistoryChainWithVersion,
 } from "../core/history/replay.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
@@ -92,13 +93,27 @@ export function verifyHistoryEntries(
   history: HistoryEntry[],
   currentDocument?: ItemDocument,
 ): HistoryVerificationResult {
-  const verification = verifyHistoryChain(history);
+  const verification = verifyHistoryChainWithVersion(history);
   const latestAfterHash =
     history.length > 0
       ? history[history.length - 1].after_hash
       : hashEmptyDocument();
+  const currentItemHashCandidates =
+    currentDocument === undefined ||
+    verification.item_hash_version === undefined
+      ? undefined
+      : hashDocumentVerificationCandidates(
+          currentDocument,
+          verification.item_hash_version,
+        );
   const currentItemHash =
-    currentDocument === undefined ? undefined : hashDocument(currentDocument);
+    currentDocument === undefined
+      ? undefined
+      : currentItemHashCandidates === undefined
+        ? hashDocument(currentDocument)
+        : currentItemHashCandidates[
+            Math.max(0, currentItemHashCandidates.indexOf(latestAfterHash))
+          ];
   const currentMatchesLatest =
     currentItemHash === undefined
       ? undefined
