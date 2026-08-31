@@ -83,6 +83,7 @@ describe("merge reconcile registration", () => {
       complete: true,
       count: 0,
       invalid_evidence_count: 0,
+      clone_local_evidence_resolved: true,
       receipts: [],
       generated_at: "2026-08-31T00:00:00.000Z",
     });
@@ -116,6 +117,7 @@ describe("merge reconcile registration", () => {
       complete: false,
       count: 0,
       invalid_evidence_count: 2,
+      clone_local_evidence_resolved: true,
       receipts: [],
       generated_at: "2026-08-31T00:00:00.000Z",
     });

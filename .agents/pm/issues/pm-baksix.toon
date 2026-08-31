@@ -6,21 +6,21 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-31T11:10:48.832Z"
-closed_at: "2026-08-31T11:10:48.196Z"
-completed_at: "2026-08-31T11:10:48.196Z"
+updated_at: "2026-08-31T12:05:38.066Z"
+closed_at: "2026-08-31T12:05:10.269Z"
+completed_at: "2026-08-31T12:05:10.269Z"
 author: "harness:codex"
 acceptance_criteria: A lossless pending merge receipt makes the health gate non-green with receipt-aware remediation; history-repair cannot clear the finding; pm merge reconcile settles it; lossy decision classification remains distinct
 parent: pm-dj98
 risk: medium
 confidence: high
-resolution: Added loss-aware receipt inspection/report SDK contracts and routed CLI/runtime reporting through them while retaining valid-only compatibility projections.
-expected_result: "Consumers distinguish absent evidence from malformed rejected evidence without receiving unsafe contents, and CLI gates fail closed on incomplete evidence."
-actual_result: "Two malformed receipts produce complete=false, invalid_evidence_count=2, count=0, and exit 1; SDK, runtime, linked, coverage, and security gates pass."
+resolution: Added loss-aware receipt inspection/report SDK contracts with explicit clone-local resolution and complete adapter fixture parity while retaining valid-only compatibility projections.
+expected_result: "Consumers and adapters distinguish unresolved clone-local evidence, absent evidence, and malformed rejected evidence without unsafe contents, and fail closed on incomplete reports."
+actual_result: "Loss-aware SDK reports document and emit clone_local_evidence_resolved consistently; CLI fixtures match the public contract; focused, linked, static, and 8,170-test exact coverage gates pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,discovered_from,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-24T15:23:02.991Z","harness:codex","cli:create:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-08-24T15:23:02.991Z","harness:codex","Duplicate check: complete all-status PM read found pm-lwmstb as the shipped canonical predecessor, whose deliberate lossless/non-blocking policy is the behavior challenged by GH-1104. This is a post-fix follow-on under the same merge-safety lineage, not a duplicate."
   "2026-08-24T16:39:19.732Z","harness:codex","Evidence 2026-08-24: linked temporary-repository integration and remediation tests passed 23/23 with trusted local-source provenance. The test creates an actual git merge receipt, proves health is non-green, proves history-repair does not clear it, proves reconcile clears the lossless receipt, and proves lossy decisions retain their distinct code. Full 7,893-test suite, exact 100% coverage, generated error catalog/refusal census, static quality, lint, package and external-consumer gates all passed."
   "2026-08-24T17:57:09.370Z","harness:codex","Final evidence: pnpm quality:static passed, the corrected integration gate evidence paths are recognized, Bugbot final review reported no bugs, and Security Review reported no actionable findings. Lossless pending receipts remain classified as merge_receipts_pending with reconcile remediation; lossy decisions retain merge_decisions_unreviewed."
@@ -36,9 +36,11 @@ comments[15]{created_at,author,text}:
   "2026-08-31T10:27:30.160Z","harness:codex","Review remediation evidence: loss-aware receipt scans and reports now emit clone_local_evidence_resolved and complete only when the clone-local receipt directory resolved plus every receipt is valid. TDD regressions distinguish outside-Git unresolved evidence from a resolved empty Git receipt store. Final verification: linked tests 3/3 passed (104 focused assertions across suites), quality:static passed, full coverage passed 590 files / 8,169 tests at exact 100/100/100/100, and manual CLI acceptance proved exit 1 + resolved=false + complete=false outside Git versus ok=true + resolved=true + complete=true in an initialized Git workspace."
   "2026-08-31T10:51:43.385Z","harness:codex","Review triage: accepted unreadable/non-directory evidence traversal finding. Rejected SDK cwd restriction as incompatible with the documented universal multi-workspace contract: explicit cwd is the workspace selector, direct SDK/CLI callers intentionally choose it, receipt discovery remains bounded to Git/tracker receipt roots, and no path-scoped authorization root exists. The correct fix is to preserve filesystem access failures as incomplete evidence, not invent a process-cwd sandbox."
   "2026-08-31T11:10:46.933Z","harness:codex","Exact-head review closure: a new negative control reproduced durable receipt traversal through a non-directory tracker root as invalid_evidence_count=0. Directory inspection now enumerates directly, treats only exact ENOENT as absent, and counts ENOTDIR, EACCES, and other read failures as invalid evidence. After merging current main, pm-changelog 2026.8.31 generation/check passed; full quality:static passed; linked acceptance passed 3/3 (106 assertions across selected suites); and repository coverage passed 590 files / 8,170 tests at exact 60,389/60,389 statements, 45,571/45,571 branches, 12,563/12,563 functions, and 58,148/58,148 lines."
-learnings[2]{created_at,author,text}:
+  "2026-08-31T12:03:50.533Z","harness:codex","Exact-head CodeRabbit remediation: clarified that ok/complete require successful clone-local evidence resolution as well as valid candidates, and made both CLI evidence-report fixtures structurally faithful by emitting clone_local_evidence_resolved. Focused SDK/CLI/runtime tests pass 15/15; quality:static passed including 100% docstrings and zero duplicates; full coverage passed 590 files / 8,170 tests at exact 60,389/60,389 statements, 45,571/45,571 branches, 12,563/12,563 functions, and 58,148/58,148 lines."
+learnings[3]{created_at,author,text}:
   "2026-08-31T10:27:30.723Z","harness:codex",An empty evidence set is trustworthy only after its clone-local source was positively resolved; directory-resolution absence must be modeled separately from zero invalid receipts and must fail loss-aware gates closed.
   "2026-08-31T11:10:47.467Z","harness:codex","Existence probes are not sufficient evidence of readable directory contents. Loss-aware readers should enumerate once, treat only exact ENOENT as absence, and classify every other traversal or I/O failure as incomplete evidence."
+  "2026-08-31T12:03:51.098Z","harness:codex",Public contract fixtures must include newly always-emitted compatibility fields even when test assertions do not inspect them; structural fidelity prevents adapters from silently drifting from SDK output.
 files[19]{path,scope,note}:
   sdk/public-surface.json,project,Generated public pending-receipt error surface
   src/cli/commands/merge.ts,project,Thin CLI compatibility adapter for SDK merge primitives
@@ -85,7 +87,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/sdk-history-receipt-evidence-contracts
     note: SDK CLI and runtime loss-aware receipt regressions
-test_runs[8]:
+test_runs[9]:
   - run_id: test-local-mt7g64h9-seists
     kind: test
     status: passed
@@ -184,12 +186,25 @@ test_runs[8]:
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mth6y4hu-ph2lra
+    kind: test
+    status: passed
+    started_at: "2026-08-31T12:03:51.571Z"
+    finished_at: "2026-08-31T12:04:52.674Z"
+    recorded_at: "2026-08-31T12:04:52.674Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,generated loss-aware receipt release entry
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Loss-aware receipt evidence contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated error-code coverage
   docs/MERGE_SAFETY.md,project,Pending lossless receipt gate semantics
-close_reason: "Delivered complete loss-aware receipt evidence including positive Git-directory resolution and fail-closed directory enumeration: only exact missing stores are empty, while malformed, divergent, non-directory, permission, and I/O failures remain incomplete. Exact static, linked, manual, and 100/100/100/100 coverage evidence is recorded."
+close_reason: "Closed after implementing both final CodeRabbit findings: report completeness documentation now includes clone-local resolution, both CLI fixtures emit the required field, linked tests pass 3/3 (106 assertions), quality:static passes, and full coverage is exact 100/100/100/100 across 8,170 tests."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -136,9 +136,9 @@ export interface MergeReceiptReport {
 
 /** Loss-aware merge receipt report for integrity gates and diagnostic adapters. */
 export interface MergeReceiptEvidenceReport {
-  /** Whether every candidate was read and validated successfully. */
+  /** Whether clone-local evidence resolved and every candidate was read and validated successfully. */
   ok: boolean;
-  /** Whether every discovered JSON candidate was read and validated successfully. */
+  /** Whether clone-local evidence resolved and every discovered JSON candidate was read and validated successfully. */
   complete: boolean;
   /** Number of valid receipts returned. */
   count: number;
