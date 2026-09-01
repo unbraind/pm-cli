@@ -6,29 +6,31 @@ status: closed
 priority: 2
 tags[2]: context-management,data-quality
 created_at: "2026-07-30T17:02:34.169Z"
-updated_at: "2026-09-01T18:52:51.936Z"
-closed_at: "2026-09-01T18:52:51.359Z"
-completed_at: "2026-09-01T18:52:51.359Z"
+updated_at: "2026-09-01T22:27:20.180Z"
+closed_at: "2026-09-01T22:27:19.678Z"
+completed_at: "2026-09-01T22:27:19.678Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A response that omits its result records no serve, or records one whose rows are all marked not included and whose entry states that the response was omitted; The ledger entry carries the egress decision, so a consumer can separate a delivered assembly from a suppressed one without re-deriving the budget; Inclusion is recorded from what the response actually emitted rather than from the packing decision that preceded enforcement, proved by a test that asserts recorded inclusions equal emitted rows for both a served and an omitted response; Any existing phantom serves are either identifiable by a recorded marker or the affinity reader documents that entries written before the fix cannot be trusted for inclusion; A negative control proves the assertion fails when inclusion is taken from the pre-enforcement packing set"
 parent: pm-4k6b
 risk: medium
 confidence: high
-resolution: "Every built-in, service, renderer, quiet, and suppressed output path now either preserves a structured serving receipt or emits an explicit receipt-bearing omitted carrier."
-expected_result: Usage affinity learns only from rows actually delivered after all output ownership and projection boundaries.
-actual_result: "Primitive and array service overrides finalize as omitted while object results preserve structure; focused, integration, exact coverage, and static gates pass."
+resolution: "Serve and delivery receipts remain correlated after final egress, omitted results contribute no delivered IDs, finalization is idempotent by serve_id under the ledger lock, and affinity preserves the first correlated delivery when reading legacy duplicate entries."
+expected_result: Usage affinity learns only from content actually delivered to the caller and retries cannot double-count or overwrite prior delivery feedback.
+actual_result: "Repeated manual SDK finalization persisted one delivery, exact repository coverage passed 100/100/100/100, the complete static-quality chain passed, and delivery/affinity negative controls passed."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
   pm-uwfs,discovered_from,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
   pm-bab3gb,related,"2026-07-30T17:18:11.070Z","harness:claude-code","cli:update:dep",detected
   pm-4k6b,implements,"2026-09-01T13:03:30.154Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-31T23:07:57.955Z","harness:codex","Scope disposition 2026-08-01: this tranche is implementing the upstream budget reachability, cursor-chain amortization, and egress receipt semantics first. The usage-ledger correction requires the SDK-owned context/next extraction still open on pm-z5pmf8 so it can consume the exact post-egress delivered rows without adding a second projection pass inside CLI commands. Leaving this distinct data-quality item open and unclaimed; no source edit is being made for it in this PR."
   "2026-09-01T15:48:15.172Z","harness:codex","Delivery evidence 2026-09-01: context and next now attach an internal serving receipt, defer ledger finalization until the actual CLI/SDK/MCP projection is known, and write schema-v2 serve plus delivery records correlated by serve_id. Included rows are the exact IDs emitted after final egress; suppressed payloads record omitted=true and an empty delivered_item_ids set. Affinity consumes only correlated delivered IDs and excludes legacy/pre-delivery phantom inclusions. The final-output boundary is set before hooks and telemetry, and feedback persistence degrades to explicit warnings without replacing a successful read. Temporary-project acceptance produced 22 ledger events including 8 delivery records, all correlated, with a deliberately one-token omitted next response recording no delivered IDs. Exact coverage passed 596 files / 8260 tests at 100/100/100/100; strict static, SDK surface, package, npx/bunx, and installed npm/Bun acceptance all passed."
   "2026-09-01T17:16:29.412Z","harness:codex","Review round evidence: affinity now requires a correlated v2 delivery and never trusts pre-egress delivered_item_ids; serving IDs normalize once; serve rows retain packed_item_ids only; quiet, host-suppressed, service-rendered, and custom-rendered output produce explicit zero-delivery omission receipts; object service projections retain the symbol receipt; delivery-write failure no longer prevents authoritative touches; evaluation fixtures now model serve-delivery-touch. Linked focused suite passed 72/72 and exact repo coverage passed 100/100/100/100."
   "2026-09-01T18:28:29.996Z","harness:codex","Late-review hardening evidence: handled output_format services that return primitives or arrays now preserve the serving receipt on an explicit result_omitted carrier. Object service results retain their structured receipt path; strings, quiet mode, and custom renderers remain explicit omissions. Focused output suite passed 39/39."
+  "2026-09-01T21:41:04.913Z","harness:codex","Exact-head review implementation: delivery finalization now deduplicates serve_id under the ledger lock and the affinity fold preserves the first correlated delivery in legacy ledgers; repeated empty finalization cannot erase a prior positive delivery."
+  "2026-09-01T22:27:17.924Z","harness:codex","Terminal exact-head evidence: repeated SDK delivery finalization in a fresh temporary acceptance root persisted exactly one delivery for the served item. The repo-wide coverage gate passed at 100/100/100/100 (61,007 statements and 46,099 branches), and pnpm quality:static passed in full. Delivery append deduplicates serve_id while holding the ledger lock, and affinity retains the first correlated delivery for legacy duplicate ledgers so a retry cannot erase earlier positive feedback."
 learnings[1]{created_at,author,text}:
   "2026-09-01T15:48:17.781Z","harness:codex","Usage feedback is valid only at final egress: preserve the pre-egress serve for correlation, but train affinity exclusively from the post-projection delivered ID set and represent omission explicitly."
 files[17]{path,scope,note}:
@@ -68,7 +70,7 @@ docs[3]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,Exact emitted-row usage feedback contract
   docs/READ_OUTPUT_CONTRACTS.md,project,Exact emitted-row usage feedback contract
   docs/SDK_CONTEXT.md,project,Exact emitted-row usage feedback contract
-close_reason: Exact final-egress context usage delivery is complete
+close_reason: Delivered exact post-egress usage feedback with retry-safe delivery finalization and legacy-ledger affinity semantics.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

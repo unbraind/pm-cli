@@ -12,6 +12,7 @@ import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { HistoryEntry } from "../../types/index.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
+import { PmCliError } from "../shared/errors.js";
 import { readHistoryEntries } from "./read.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 
@@ -457,64 +458,71 @@ export async function appendHistoryEntryWithEventIndex(
     await append();
     return;
   }
-  await withHistoryEventIndexLock(pmRoot, async () => {
-    const targetPath = eventIndexPath(pmRoot);
-    try {
-      await fs.access(targetPath);
-    } catch {
-      await append();
-      return;
-    }
-    let database: DatabaseSync | undefined;
-    try {
-      database = new Database(targetPath);
-      const version = database
-        .prepare("SELECT value FROM metadata WHERE key = 'version'")
-        .get() as { value?: unknown } | undefined;
-      if (version?.value !== EVENT_INDEX_VERSION) {
-        throw new TypeError("Unsupported history event index version");
+  try {
+    await withHistoryEventIndexLock(pmRoot, async () => {
+      const targetPath = eventIndexPath(pmRoot);
+      try {
+        await fs.access(targetPath);
+      } catch {
+        await append();
+        return;
       }
-    } catch {
-      database?.close();
-      await fs.rm(targetPath, { force: true });
-      await append();
-      return;
-    }
-    try {
-      database.exec("PRAGMA busy_timeout = 5000");
-      database.exec("BEGIN IMMEDIATE");
-    } catch (error: unknown) {
-      database.close();
+      let database: DatabaseSync | undefined;
+      try {
+        database = new Database(targetPath);
+        const version = database
+          .prepare("SELECT value FROM metadata WHERE key = 'version'")
+          .get() as { value?: unknown } | undefined;
+        if (version?.value !== EVENT_INDEX_VERSION) {
+          throw new TypeError("Unsupported history event index version");
+        }
+      } catch {
+        database?.close();
+        await fs.rm(targetPath, { force: true });
+        await append();
+        return;
+      }
+      try {
+        database.exec("PRAGMA busy_timeout = 5000");
+        database.exec("BEGIN IMMEDIATE");
+      } catch (error: unknown) {
+        database.close();
+        throw error;
+      }
+      let appended = false;
+      try {
+        await append();
+        appended = true;
+        const streamId = path.basename(historyPath, ".jsonl");
+        const offset = database
+          .prepare(
+            "SELECT COALESCE(MAX(stream_offset), -1) + 1 AS value FROM events WHERE stream_id = ?",
+          )
+          .get(streamId) as { value: number };
+        insertEvent(database, {
+          stream_id: streamId,
+          stream_offset: Number(offset.value),
+          entry,
+        });
+        upsertStreamByteSize(
+          database,
+          streamId,
+          (await fs.stat(historyPath)).size,
+        );
+        database.exec("COMMIT");
+        database.close();
+      } catch (error: unknown) {
+        database?.close();
+        if (!appended) throw error;
+        await fs.rm(targetPath, { force: true });
+      }
+    });
+  } catch (error: unknown) {
+    if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
       throw error;
     }
-    let appended = false;
-    try {
-      await append();
-      appended = true;
-      const streamId = path.basename(historyPath, ".jsonl");
-      const offset = database
-        .prepare(
-          "SELECT COALESCE(MAX(stream_offset), -1) + 1 AS value FROM events WHERE stream_id = ?",
-        )
-        .get(streamId) as { value: number };
-      insertEvent(database, {
-        stream_id: streamId,
-        stream_offset: Number(offset.value),
-        entry,
-      });
-      upsertStreamByteSize(
-        database,
-        streamId,
-        (await fs.stat(historyPath)).size,
-      );
-      database.exec("COMMIT");
-      database.close();
-    } catch (error: unknown) {
-      database?.close();
-      if (!appended) throw error;
-      await fs.rm(targetPath, { force: true });
-    }
-  });
+    await append();
+  }
 }
 
 /** Invalidate the optional event projection after a non-append rewrite. */

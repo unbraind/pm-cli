@@ -192,6 +192,29 @@ describe("context signal feature store", () => {
     expect(
       parseContextSignalSnapshot(structuredClone(substantive)),
     ).not.toBeNull();
+    const legacySubstantive = buildContextSignalSnapshot([item("pm-a")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+      recencyEvidence: {
+        "pm-a": {
+          source: "substantive_history",
+          coordinate: now,
+          history_op: "comment_add",
+        },
+      },
+    });
+    expect(
+      parseContextSignalSnapshot(structuredClone(legacySubstantive)),
+    ).not.toBeNull();
+    const sparseItems = new Array<unknown>(1);
+    expect(
+      parseContextSignalSnapshot({
+        ...structuredClone(valid),
+        items: sparseItems,
+      }),
+    ).toBeNull();
     const invalidValues: unknown[] = [
       null,
       { ...valid, format_version: 99 },

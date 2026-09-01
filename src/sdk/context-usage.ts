@@ -270,6 +270,7 @@ async function readEvents(
 async function appendEvents(
   options: ContextUsageLedgerOptions,
   events: readonly ContextUsageEvent[],
+  deliveryServeId?: string,
 ): Promise<void> {
   const maxEvents = options.maxEvents ?? DEFAULT_MAX_EVENTS;
   const retentionDays = options.retentionDays ?? DEFAULT_RETENTION_DAYS;
@@ -296,6 +297,15 @@ async function appendEvents(
   );
   try {
     await mkdir(runtimeDirectory, { recursive: true });
+    if (
+      deliveryServeId !== undefined &&
+      (await readEvents(options)).some(
+        (event) =>
+          event.kind === "delivery" && event.serve_id === deliveryServeId,
+      )
+    ) {
+      return;
+    }
     await appendFile(
       target,
       events.map((event) => `${JSON.stringify(event)}\n`).join(""),
@@ -415,7 +425,7 @@ export async function recordContextUsageDelivery(
       "Context usage delivery requires emitted ranked ids and zero ids for an omitted result",
     );
   }
-  await appendEvent(options, {
+  const delivery: ContextUsageEvent = {
     kind: "delivery",
     schema_version: 2,
     serve_id: options.receipt.serve_id,
@@ -424,7 +434,8 @@ export async function recordContextUsageDelivery(
     surface: options.receipt.surface,
     result_omitted: options.resultOmitted,
     delivered_item_ids: deliveredItemIds,
-  });
+  };
+  await appendEvents(options, [delivery], delivery.serve_id);
 }
 
 /** Records one subsequent item read or mutation outcome. */
@@ -528,6 +539,27 @@ function findTouchTimeInHorizon(
   )?.time;
 }
 
+function firstDeliveriesByServeId(
+  events: readonly ContextUsageEvent[],
+  author: string,
+): Map<string, Extract<ContextUsageEvent, { kind: "delivery" }>> {
+  const deliveries = new Map<
+    string,
+    Extract<ContextUsageEvent, { kind: "delivery" }>
+  >();
+  for (const event of events) {
+    if (
+      event.kind === "delivery" &&
+      event.schema_version === 2 &&
+      event.author === author &&
+      !deliveries.has(event.serve_id)
+    ) {
+      deliveries.set(event.serve_id, event);
+    }
+  }
+  return deliveries;
+}
+
 /**
  * Derives decayed served-then-touched affinity. A small exploration floor keeps
  * ignored and unseen items eligible, preventing a popularity feedback lock-in.
@@ -567,16 +599,7 @@ export async function readContextUsageAffinity(
   let servingEvents = 0;
   let untrustedServingEvents = 0;
   let positiveJudgments = 0;
-  const deliveries = new Map(
-    events
-      .filter(
-        (event): event is Extract<ContextUsageEvent, { kind: "delivery" }> =>
-          event.kind === "delivery",
-      )
-      .filter((event) => event.schema_version === 2)
-      .filter((event) => event.author === author)
-      .map((event) => [event.serve_id, event]),
-  );
+  const deliveries = firstDeliveriesByServeId(events, author);
   events
     .filter(
       (event): event is Extract<ContextUsageEvent, { kind: "serve" }> =>

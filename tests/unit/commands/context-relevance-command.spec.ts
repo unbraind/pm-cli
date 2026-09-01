@@ -298,6 +298,7 @@ describe("context relevance command integration", () => {
       expect(explainedContext.ranking?.items.map((entry) => entry.id)).toEqual(
         contextRowIds,
       );
+      expect(explainedContext.ranking!.items.length).toBeGreaterThan(0);
       expect(
         explainedContext.ranking?.items.every(
           (entry) =>

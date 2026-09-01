@@ -12,6 +12,7 @@ import {
 } from "../../../../src/core/history/event-index.js";
 import type { HistoryEntry } from "../../../../src/types/index.js";
 import { appendHistoryEntry } from "../../../../src/core/history/history.js";
+import { acquireLock } from "../../../../src/core/lock/lock.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const INDEX_FILENAME = "history-event-index.sqlite";
@@ -902,6 +903,53 @@ describe("history mutation event index", () => {
       ).resolves.toMatchObject({
         events: [{ stream_offset: 0, entry: { op: "create" } }],
       });
+    });
+  });
+
+  it("preserves authoritative history when the optional index lock is contended", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-lock-contention.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const release = await acquireLock(
+        context.pmPath,
+        "history-event-index",
+        300,
+        "contending-index-operation",
+        false,
+        false,
+        0,
+      );
+      try {
+        const previousWait = process.env.PM_LOCK_WAIT_MS;
+        process.env.PM_LOCK_WAIT_MS = "0";
+        try {
+          await expect(
+            appendHistoryEntry(historyPath, second),
+          ).resolves.toBeUndefined();
+        } finally {
+          if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
+          else process.env.PM_LOCK_WAIT_MS = previousWait;
+        }
+      } finally {
+        await release();
+      }
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(2);
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
     });
   });
 

@@ -80,16 +80,36 @@ function compareLegacyLinkedTests(left: LinkedTest, right: LinkedTest): number {
     compareOptionalStrings(left.command, right.command),
     compareOptionalNumbers(left.timeout_seconds, right.timeout_seconds),
     compareOptionalStrings(left.pm_context_mode, right.pm_context_mode),
-    Number(Boolean(left.shared_host_safe)) - Number(Boolean(right.shared_host_safe)),
+    Number(Boolean(left.shared_host_safe)) -
+      Number(Boolean(right.shared_host_safe)),
     compareJsonValues(left.env_clear, right.env_clear, []),
     compareJsonValues(left.env_set, right.env_set, {}),
-    compareJsonValues(left.assert_stdout_contains, right.assert_stdout_contains, []),
+    compareJsonValues(
+      left.assert_stdout_contains,
+      right.assert_stdout_contains,
+      [],
+    ),
     compareJsonValues(left.assert_stdout_regex, right.assert_stdout_regex, []),
-    compareJsonValues(left.assert_stderr_contains, right.assert_stderr_contains, []),
+    compareJsonValues(
+      left.assert_stderr_contains,
+      right.assert_stderr_contains,
+      [],
+    ),
     compareJsonValues(left.assert_stderr_regex, right.assert_stderr_regex, []),
-    compareOptionalNumbers(left.assert_stdout_min_lines, right.assert_stdout_min_lines),
-    compareJsonValues(left.assert_json_field_equals, right.assert_json_field_equals, {}),
-    compareJsonValues(left.assert_json_field_gte, right.assert_json_field_gte, {}),
+    compareOptionalNumbers(
+      left.assert_stdout_min_lines,
+      right.assert_stdout_min_lines,
+    ),
+    compareJsonValues(
+      left.assert_json_field_equals,
+      right.assert_json_field_equals,
+      {},
+    ),
+    compareJsonValues(
+      left.assert_json_field_gte,
+      right.assert_json_field_gte,
+      {},
+    ),
     compareOptionalStrings(left.note, right.note),
   ];
   return comparisons.find((comparison) => comparison !== 0) ?? 0;
@@ -190,41 +210,40 @@ function canonicalHashDocument(
   // dependency ids. Later epoch-2 writers included those fields without
   // advancing the marker, so verification must retain both immutable forms.
   const usesLegacyFields = version === 1 || (version === 2 && legacyV2Fields);
-  const epochMetadata =
-    usesLegacyFields
-      ? {
-          ...canonical.metadata,
-          ...(canonical.metadata.dependencies === undefined
-            ? {}
-            : {
-                dependencies: canonical.metadata.dependencies.map(
-                  (dependency) => ({
-                    ...dependency,
-                    id: dependency.id.toLowerCase(),
-                  }),
-                ),
-              }),
-          ...(canonical.metadata.tests === undefined
-            ? {}
-            : {
-                tests: canonical.metadata.tests.map(
-                  ({
-                    workspace_context_mode: _workspaceContextMode,
-                    provenance: _provenance,
-                    provenance_invalid: _provenanceInvalid,
-                    ...test
-                  }) => test,
-                ),
-              }),
-          ...(canonical.metadata.test_runs === undefined
-            ? {}
-            : {
-                test_runs: canonical.metadata.test_runs.map(
-                  ({ executions: _executions, ...testRun }) => testRun,
-                ),
-              }),
-        }
-      : canonical.metadata;
+  const epochMetadata = usesLegacyFields
+    ? {
+        ...canonical.metadata,
+        ...(canonical.metadata.dependencies === undefined
+          ? {}
+          : {
+              dependencies: canonical.metadata.dependencies.map(
+                (dependency) => ({
+                  ...dependency,
+                  id: dependency.id.toLowerCase(),
+                }),
+              ),
+            }),
+        ...(canonical.metadata.tests === undefined
+          ? {}
+          : {
+              tests: canonical.metadata.tests.map(
+                ({
+                  workspace_context_mode: _workspaceContextMode,
+                  provenance: _provenance,
+                  provenance_invalid: _provenanceInvalid,
+                  ...test
+                }) => test,
+              ),
+            }),
+        ...(canonical.metadata.test_runs === undefined
+          ? {}
+          : {
+              test_runs: canonical.metadata.test_runs.map(
+                ({ executions: _executions, ...testRun }) => testRun,
+              ),
+            }),
+      }
+    : canonical.metadata;
   const metadata =
     version === 1 && epochMetadata.tests
       ? {
@@ -346,7 +365,8 @@ export function createHistoryEntry(params: {
       )
     : undefined;
   const context =
-    provenanceOutcomes === undefined || Object.keys(provenanceOutcomes).length === 0
+    provenanceOutcomes === undefined ||
+    Object.keys(provenanceOutcomes).length === 0
       ? params.context
       : {
           ...params.context,
@@ -369,9 +389,7 @@ export function createHistoryEntry(params: {
     ...(agentIdentity.provenance
       ? { agent_provenance: agentIdentity.provenance }
       : {}),
-    ...(agentIdentity.episode
-      ? { agent_episode: agentIdentity.episode }
-      : {}),
+    ...(agentIdentity.episode ? { agent_episode: agentIdentity.episode } : {}),
     op: params.op,
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
@@ -481,8 +499,8 @@ export async function appendHistoryEntry(
   }
   await appendHistoryEntryWithEventIndex(historyPath, entry, async () => {
     await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
-    await invalidateHistoryDriftCacheForPath(historyPath);
   });
+  await invalidateHistoryDriftCacheForPath(historyPath);
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

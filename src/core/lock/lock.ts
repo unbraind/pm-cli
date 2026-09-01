@@ -22,6 +22,7 @@ interface LockInfo {
   id: string;
   pid: number;
   owner: string;
+  token?: string;
   created_at: string;
   ttl_seconds: number;
 }
@@ -64,6 +65,7 @@ function parseLockInfo(raw: string): LockReadResult {
   const id = candidate.id;
   const pid = candidate.pid;
   const owner = candidate.owner;
+  const token = candidate.token;
   const createdAt = candidate.created_at;
   const ttlSeconds = candidate.ttl_seconds;
   if (
@@ -71,6 +73,8 @@ function parseLockInfo(raw: string): LockReadResult {
     typeof pid !== "number" ||
     !Number.isFinite(pid) ||
     typeof owner !== "string" ||
+    (token !== undefined &&
+      (typeof token !== "string" || token.trim().length === 0)) ||
     typeof createdAt !== "string" ||
     typeof ttlSeconds !== "number" ||
     !Number.isFinite(ttlSeconds)
@@ -85,6 +89,7 @@ function parseLockInfo(raw: string): LockReadResult {
       id,
       pid,
       owner,
+      ...(typeof token === "string" ? { token } : {}),
       created_at: createdAt,
       ttl_seconds: ttlSeconds,
     },
@@ -92,13 +97,18 @@ function parseLockInfo(raw: string): LockReadResult {
   };
 }
 
-async function readLockInfo(lockPath: string): Promise<LockReadResult> {
+async function readLockInfo(
+  lockPath: string,
+  emitReadHook = true,
+): Promise<LockReadResult> {
   try {
     const raw = await fs.readFile(lockPath, "utf8");
-    await runActiveOnReadHooks({
-      path: lockPath,
-      scope: "project",
-    });
+    if (emitReadHook) {
+      await runActiveOnReadHooks({
+        path: lockPath,
+        scope: "project",
+      });
+    }
     return parseLockInfo(raw);
   } catch (error: unknown) {
     if (isFileMissingError(error)) {
@@ -138,11 +148,13 @@ function buildLockPayload(
   id: string,
   owner: string,
   ttlSeconds: number,
+  token: string = randomUUID(),
 ): LockInfo {
   return {
     id,
     pid: process.pid,
     owner,
+    token,
     created_at: nowIso(),
     ttl_seconds: ttlSeconds,
   };
@@ -153,12 +165,13 @@ async function createLockFile(
   id: string,
   owner: string,
   ttlSeconds: number,
+  token: string,
 ): Promise<void> {
   await fs.mkdir(path.dirname(lockPath), { recursive: true });
   const handle = await fs.open(lockPath, "wx");
   try {
     await handle.writeFile(
-      `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds), null, 2)}\n`,
+      `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
       "utf8",
     );
   } finally {
@@ -179,6 +192,24 @@ async function unlinkLockWithHook(
     // Lock cleanup is best-effort.
     return false;
   }
+}
+
+async function releaseOwnedLock(
+  lockPath: string,
+  id: string,
+  owner: string,
+  token: string,
+): Promise<void> {
+  const current = await readLockInfo(lockPath, false);
+  if (
+    current.info?.id !== id ||
+    current.info.pid !== process.pid ||
+    current.info.owner !== owner ||
+    current.info.token !== token
+  ) {
+    return;
+  }
+  await unlinkLockWithHook(lockPath, "lock:release");
 }
 
 function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {
@@ -554,12 +585,13 @@ export async function acquireLock(
   const startedAtMs = Date.now();
   let staleRemovals = 0;
   let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
+  const token = randomUUID();
 
   for (;;) {
     try {
-      await createLockFile(lockPath, id, owner, ttlSeconds);
+      await createLockFile(lockPath, id, owner, ttlSeconds, token);
       return async () => {
-        await unlinkLockWithHook(lockPath, "lock:release");
+        await releaseOwnedLock(lockPath, id, owner, token);
         await runActiveServiceOverride("lock_release", {
           pm_root: pmRoot,
           id,

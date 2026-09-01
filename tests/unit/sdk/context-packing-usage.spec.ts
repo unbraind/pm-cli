@@ -471,15 +471,73 @@ describe("context usage feedback", () => {
         delivered_item_ids: [],
         result_omitted: true,
       }),
-      expect.objectContaining({
-        delivered_item_ids: ["pm-next"],
-        result_omitted: false,
-      }),
-      expect.objectContaining({
-        delivered_item_ids: [],
-        result_omitted: false,
-      }),
     ]);
+  });
+
+  it("keeps delivery finalization idempotent and preserves the first legacy duplicate", async () => {
+    const pmRoot = await tempPmRoot();
+    const receipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "context",
+      profile: "orient",
+      rows: [{ id: "pm-delivered", rank: 1, included: true }],
+      now: "2026-07-01T00:00:00.000Z",
+    });
+    await recordContextUsageDelivery({
+      pmRoot,
+      receipt,
+      deliveredItemIds: ["pm-delivered"],
+      resultOmitted: false,
+      now: "2026-07-01T00:00:01.000Z",
+    });
+    await recordContextUsageDelivery({
+      pmRoot,
+      receipt,
+      deliveredItemIds: [],
+      resultOmitted: true,
+      now: "2026-07-01T00:00:02.000Z",
+    });
+    const ledgerPath = path.join(pmRoot, "runtime", "context-usage.jsonl");
+    expect(
+      (await readFile(ledgerPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line))
+        .filter(({ kind }) => kind === "delivery"),
+    ).toHaveLength(1);
+
+    await writeFile(
+      ledgerPath,
+      `${JSON.stringify({
+        kind: "delivery",
+        schema_version: 2,
+        serve_id: receipt?.serve_id,
+        at: "2026-07-01T00:00:03.000Z",
+        author: "agent",
+        surface: "context",
+        result_omitted: true,
+        delivered_item_ids: [],
+      })}\n`,
+      { flag: "a" },
+    );
+    await recordContextUsageTouch({
+      pmRoot,
+      author: "agent",
+      itemId: "pm-delivered",
+      intent: "get",
+      now: "2026-07-01T00:01:00.000Z",
+    });
+    await expect(
+      readContextUsageAffinity({
+        pmRoot,
+        author: "agent",
+        now: "2026-07-01T01:00:00.000Z",
+      }),
+    ).resolves.toMatchObject({
+      affinity: { "pm-delivered": 1 },
+      positive_judgments: 1,
+    });
   });
 
   it("rejects invalid delivery claims and honors every disable boundary", async () => {

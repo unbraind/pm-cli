@@ -311,7 +311,8 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
         recency.event_class as string | undefined,
       ),
       recency.source === "substantive_history"
-        ? recency.event_class === "substantive"
+        ? recency.event_class === undefined ||
+          recency.event_class === "substantive"
         : recency.history_op === undefined && recency.event_class === undefined,
     ].every(Boolean)
   ) {
@@ -341,7 +342,7 @@ function parseSnapshotItems(
   values: readonly unknown[],
   expectedRecencyEvidenceFingerprint: string,
 ): ContextSignalSnapshotItem[] | null {
-  const items = values.map(parseSnapshotItem);
+  const items = Array.from(values, parseSnapshotItem);
   if (items.some((item) => item === null)) return null;
   const validItems = items as ContextSignalSnapshotItem[];
   if (
