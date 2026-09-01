@@ -243,9 +243,15 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "merge_receipt_evidence_invalid",
-    command: "pm health --check-only --full",
+    command: "pm merge report --include-reconciled --json",
     summary:
-      "One or more receipt files failed bounded-file, schema, or identity validation; use the full health count to inspect the clone-local and durable receipt directories, then repair or remove only confirmed invalid evidence.",
+      "One or more receipt candidates failed bounded-file, schema, identity, or copy-consistency validation; inspect the report's privacy-safe source, receipt id, and reason before repairing only the named evidence.",
+  },
+  {
+    code: "merge_receipt_history_reference_missing",
+    command: "pm health --check-only --full --json",
+    summary:
+      "One or more append-only history coordinates reference receipt evidence that is no longer present; inspect the bounded item, line, and privacy-safe receipt locator, then recover the named evidence from an authoritative clone or backup without rewriting history.",
   },
   {
     code: "validate_merge_decisions_unreviewed",

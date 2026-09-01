@@ -131,8 +131,17 @@ describe("merge receipt health classification", () => {
           lossless_merge_receipts: 0,
           invalid_merge_receipt_evidence: 1,
         },
+        invalid_merge_receipt_evidence_details: [
+          {
+            evidence_source: "clone_local",
+            reason: "candidate_invalid_json",
+            receipt_id: "malformed",
+          },
+        ],
+        invalid_merge_receipt_evidence_details_truncated: false,
         remediation_map: {
-          merge_receipt_evidence_invalid: "pm health --check-only --full",
+          merge_receipt_evidence_invalid:
+            "pm merge report --include-reconciled --json",
         },
       });
       const sdkHealth = await runHealth(
@@ -155,7 +164,17 @@ describe("merge receipt health classification", () => {
           validation.json as DiagnosticEnvelope,
           "storage_integrity",
         ),
-      ).toMatchObject({ invalid_merge_receipt_evidence_count: 1 });
+      ).toMatchObject({
+        invalid_merge_receipt_evidence_count: 1,
+        invalid_merge_receipt_evidence_details: [
+          {
+            evidence_source: "clone_local",
+            reason: "candidate_invalid_json",
+            receipt_id: "malformed",
+          },
+        ],
+        invalid_merge_receipt_evidence_details_truncated: false,
+      });
       expect(
         (validation.json as DiagnosticEnvelope).checks.find(
           (check) => check.name === "storage_integrity",
@@ -169,6 +188,176 @@ describe("merge receipt health classification", () => {
       expect(`${reconcile.stdout}\n${reconcile.stderr}`).toContain(
         "merge_receipt_evidence_invalid",
       );
+    });
+  });
+
+  it("reports missing history-referenced receipts without exposing unsafe identifiers", async () => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "--quiet"], { cwd: context.tempRoot });
+      expect(
+        context.runCli(
+          [
+            "create",
+            "--json",
+            "--id",
+            "pm-history-receipt-reference",
+            "--title",
+            "History receipt reference",
+            "--description",
+            "Diagnose missing evidence without rewriting append-only history",
+            "--type",
+            "Task",
+          ],
+          { cwd: context.tempRoot },
+        ).code,
+      ).toBe(0);
+      const itemPath = await locateItemPath(
+        context.tempRoot,
+        "pm-history-receipt-reference",
+      );
+      const availableReceipt = await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: path
+          .relative(context.tempRoot, itemPath)
+          .replaceAll(path.sep, "/"),
+        preferred: "ours",
+        fieldsFromTheirs: [],
+        unionFields: [],
+        decisions: [],
+      });
+      expect(availableReceipt).not.toBeNull();
+      const historyPath = path.join(
+        context.tempRoot,
+        ".agents",
+        "pm",
+        "history",
+        "pm-history-receipt-reference.jsonl",
+      );
+      const historyLines = (await fs.readFile(historyPath, "utf8"))
+        .trimEnd()
+        .split(/\r?\n/u);
+      const lastEntry = JSON.parse(historyLines.at(-1) ?? "null") as Record<
+        string,
+        unknown
+      >;
+      lastEntry.context = {
+        merge: {
+          receipts: [
+            null,
+            { receipt_id: "" },
+            { receipt_id: availableReceipt?.id },
+            { receipt_id: "missing-history-receipt" },
+            { receipt_id: "unsafe receipt identity" },
+            ...Array.from({ length: 99 }, (_, index) => ({
+              receipt_id: `missing-history-${String(index).padStart(3, "0")}`,
+            })),
+          ],
+        },
+      };
+      historyLines[historyLines.length - 1] = JSON.stringify(lastEntry);
+      await fs.writeFile(historyPath, `${historyLines.join("\n")}\n`, "utf8");
+
+      const health = context.runCli(
+        ["health", "--check-only", "--full", "--json"],
+        { cwd: context.tempRoot, expectJson: true },
+      );
+      expect(health.code).toBe(0);
+      const result = health.json as DiagnosticEnvelope;
+      expect(result.warnings).toContain(
+        "merge_receipt_history_reference_missing:101",
+      );
+      const integrityDetails = checkDetails(result, "integrity");
+      expect(integrityDetails).toMatchObject({
+        counts: { missing_merge_receipt_history_references: 101 },
+        missing_merge_receipt_history_reference_details_truncated: true,
+        remediation_map: {
+          merge_receipt_history_reference_missing:
+            "pm health --check-only --full --json",
+        },
+      });
+      expect(
+        integrityDetails.missing_merge_receipt_history_reference_details,
+      ).toHaveLength(100);
+      expect(
+        integrityDetails.missing_merge_receipt_history_reference_details,
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            item_id: "pm-history-receipt-reference",
+            history_line: historyLines.length,
+            receipt_id: "missing-history-receipt",
+          },
+          {
+            item_id: "pm-history-receipt-reference",
+            history_line: historyLines.length,
+            receipt_reference_hash: sha256Hex("unsafe receipt identity"),
+          },
+        ]),
+      );
+      const sdkHealth = await runHealth(
+        { path: path.join(context.tempRoot, ".agents", "pm") },
+        { full: true },
+      );
+      expect(sdkHealth.warnings).toContain(
+        "merge_receipt_history_reference_missing:101",
+      );
+      expect(
+        sdkHealth.checks.find((check) => check.name === "integrity")?.details,
+      ).toMatchObject({
+        counts: { missing_merge_receipt_history_references: 101 },
+        missing_merge_receipt_history_reference_details_truncated: true,
+      });
+    });
+  });
+
+  it("ignores parseable non-receipt history shapes during reference discovery", async () => {
+    await withTempPmPath(async (context) => {
+      expect(
+        context.runCli(
+          [
+            "create",
+            "--json",
+            "--id",
+            "pm-non-receipt-history",
+            "--title",
+            "Non-receipt history",
+            "--description",
+            "Keep defensive history context shapes out of receipt diagnostics",
+            "--type",
+            "Task",
+          ],
+          { cwd: context.tempRoot },
+        ).code,
+      ).toBe(0);
+      await fs.writeFile(
+        path.join(
+          context.tempRoot,
+          ".agents",
+          "pm",
+          "history",
+          "pm-non-receipt-history.jsonl",
+        ),
+        [
+          "null",
+          '{"context":null}',
+          '{"context":{}}',
+          '{"context":{"merge":null}}',
+          '{"context":{"merge":{"receipts":null}}}',
+          '{"context":{"merge":{"receipts":[[],{}, {"receipt_id":0}]}}}',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const health = await runHealth(
+        { path: path.join(context.tempRoot, ".agents", "pm") },
+        { full: true },
+      );
+      expect(
+        health.warnings.some((warning) =>
+          warning.startsWith("merge_receipt_history_reference_missing:"),
+        ),
+      ).toBe(false);
     });
   });
 
@@ -668,11 +857,7 @@ describe("merge receipt health classification", () => {
         const { evidence_source: _evidenceSource, ...persistedReceipt } =
           receipt;
         await fs.writeFile(
-          path.join(
-            sdkGlobal.path,
-            "merge-receipts",
-            `${receipt.id}.json`,
-          ),
+          path.join(sdkGlobal.path, "merge-receipts", `${receipt.id}.json`),
           `${JSON.stringify(persistedReceipt, null, 2)}\n`,
           "utf8",
         );

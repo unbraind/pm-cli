@@ -8,7 +8,8 @@
  */
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readdir } from "node:fs/promises";
+import type { Stats } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
@@ -33,6 +34,7 @@ const RECEIPT_FIELD_MAX = 2_048;
 const RECEIPT_FILE_MAX_BYTES = 16 * 1024 * 1024;
 const RECEIPT_VALUE_MAX_DEPTH = 64;
 const RECEIPT_VALUE_MAX_NODES = 100_000;
+const RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT = 100;
 const RECEIPT_KEYS = new Set([
   "version",
   "id",
@@ -144,6 +146,10 @@ export interface MergeReceiptEvidenceReport {
   count: number;
   /** Number of candidates rejected by bounded-file, schema, identity, or copy-consistency validation. */
   invalid_evidence_count: number;
+  /** Bounded privacy-safe identities and reason codes for rejected evidence. */
+  invalid_evidence: MergeReceiptInvalidEvidence[];
+  /** Whether additional rejected evidence was omitted from the bounded detail list. */
+  invalid_evidence_truncated: boolean;
   /** Whether the clone-local Git receipt directory was resolved successfully; always emitted by current implementations and optional for structural compatibility. */
   clone_local_evidence_resolved?: boolean;
   /** Receipts including recoverable values from the local clone only. */
@@ -158,8 +164,30 @@ export interface MergeReceiptEvidenceScan {
   receipts: MergeDecisionReceipt[];
   /** Number of JSON receipt candidates that could not be validated safely. */
   invalid_evidence_count: number;
+  /** Bounded privacy-safe identities and reason codes for rejected evidence. */
+  invalid_evidence: MergeReceiptInvalidEvidence[];
+  /** Whether additional rejected evidence was omitted from the bounded detail list. */
+  invalid_evidence_truncated: boolean;
   /** Whether the clone-local Git receipt directory was resolved successfully; always emitted by current implementations and optional for structural compatibility. */
   clone_local_evidence_resolved?: boolean;
+}
+
+/** Stable privacy-safe classification for one rejected receipt candidate or source. */
+export interface MergeReceiptInvalidEvidence {
+  /** Evidence store that produced the rejected candidate. */
+  evidence_source: "clone_local" | "durable" | "clone_local_and_durable";
+  /** Stable failure class suitable for remediation routing and graph analytics. */
+  reason:
+    | "directory_unreadable"
+    | "candidate_not_bounded_regular_file"
+    | "candidate_unreadable"
+    | "candidate_invalid_json"
+    | "schema_or_identity_invalid"
+    | "copy_provenance_mismatch";
+  /** Receipt identity when the bounded filename itself is a valid receipt id. */
+  receipt_id?: string;
+  /** SHA-256 locator for an unsafe or malformed candidate filename. */
+  candidate_name_hash?: string;
 }
 
 async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
@@ -598,54 +626,129 @@ async function readReceiptsFromDirectory(
   directory: string,
   evidenceSource: "clone_local" | "durable",
 ): Promise<
-  Pick<MergeReceiptEvidenceScan, "receipts" | "invalid_evidence_count">
+  Pick<
+    MergeReceiptEvidenceScan,
+    | "receipts"
+    | "invalid_evidence_count"
+    | "invalid_evidence"
+    | "invalid_evidence_truncated"
+  >
 > {
   let names: string[];
   try {
     names = await readdir(directory);
   } catch (error: unknown) {
+    const absent = await receiptDirectoryFailureMeansAbsent(directory, error);
     return {
       receipts: [],
-      invalid_evidence_count: isFileMissingError(error) ? 0 : 1,
+      invalid_evidence_count: absent ? 0 : 1,
+      invalid_evidence: absent
+        ? []
+        : [{ evidence_source: evidenceSource, reason: "directory_unreadable" }],
+      invalid_evidence_truncated: false,
     };
   }
   const receipts: MergeDecisionReceipt[] = [];
   let invalidEvidenceCount = 0;
+  const invalidEvidence: MergeReceiptInvalidEvidence[] = [];
+  const recordInvalidEvidence = (
+    name: string,
+    reason: MergeReceiptInvalidEvidence["reason"],
+  ): void => {
+    invalidEvidenceCount += 1;
+    if (invalidEvidence.length >= RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT) return;
+    const receiptId = name.slice(0, -".json".length);
+    invalidEvidence.push({
+      evidence_source: evidenceSource,
+      reason,
+      ...(RECEIPT_ID_PATTERN.test(receiptId)
+        ? { receipt_id: receiptId }
+        : { candidate_name_hash: sha256Hex(name) }),
+    });
+  };
   for (const name of names.sort((left, right) => left.localeCompare(right))) {
     if (!name.endsWith(".json")) continue;
-    try {
-      const receiptPath = path.join(directory, name);
-      const raw = await readBoundedRegularReceiptFile(receiptPath);
-      if (raw === null) {
-        invalidEvidenceCount += 1;
-        continue;
-      }
-      const parsed = JSON.parse(raw) as unknown;
-      if (
-        !isMergeDecisionReceipt(parsed, evidenceSource) ||
-        name !== receiptFileName(parsed.id)
-      ) {
-        invalidEvidenceCount += 1;
-        continue;
-      }
-      const {
-        preferred: legacyPreference,
-        evidence_source: _serializedEvidenceSource,
-        ...receiptWithoutRuntimeKeys
-      } = parsed;
-      const normalizedReceipt: MergeDecisionReceipt = {
-        ...receiptWithoutRuntimeKeys,
-        requested_preference:
-          parsed.requested_preference ?? legacyPreference ?? "ours",
-        conflict_resolution: parsed.conflict_resolution ?? "preferred_side",
-        evidence_source: evidenceSource,
-      };
-      receipts.push(normalizedReceipt);
-    } catch {
-      invalidEvidenceCount += 1;
+    const candidate = await inspectReceiptCandidate(
+      directory,
+      name,
+      evidenceSource,
+    );
+    if (candidate.receipt !== undefined) {
+      receipts.push(candidate.receipt);
+    } else {
+      recordInvalidEvidence(name, candidate.reason);
     }
   }
-  return { receipts, invalid_evidence_count: invalidEvidenceCount };
+  return {
+    receipts,
+    invalid_evidence_count: invalidEvidenceCount,
+    invalid_evidence: invalidEvidence,
+    invalid_evidence_truncated: invalidEvidenceCount > invalidEvidence.length,
+  };
+}
+
+async function receiptDirectoryFailureMeansAbsent(
+  directory: string,
+  error: unknown,
+  inspectAncestor: (
+    ancestor: string,
+  ) => Promise<Pick<Stats, "isDirectory">> = stat,
+): Promise<boolean> {
+  if (!isFileMissingError(error)) return false;
+  let ancestor = path.dirname(directory);
+  while (true) {
+    try {
+      return (await inspectAncestor(ancestor)).isDirectory();
+    } catch (ancestorError: unknown) {
+      if (!isFileMissingError(ancestorError)) return false;
+      const parent = path.dirname(ancestor);
+      if (parent === ancestor) return true;
+      ancestor = parent;
+    }
+  }
+}
+
+async function inspectReceiptCandidate(
+  directory: string,
+  name: string,
+  evidenceSource: "clone_local" | "durable",
+): Promise<
+  | { receipt: MergeDecisionReceipt; reason?: never }
+  | { receipt?: never; reason: MergeReceiptInvalidEvidence["reason"] }
+> {
+  let raw: string | null;
+  try {
+    raw = await readBoundedRegularReceiptFile(path.join(directory, name));
+  } catch {
+    return { reason: "candidate_unreadable" };
+  }
+  if (raw === null) return { reason: "candidate_not_bounded_regular_file" };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return { reason: "candidate_invalid_json" };
+  }
+  if (
+    !isMergeDecisionReceipt(parsed, evidenceSource) ||
+    name !== receiptFileName(parsed.id)
+  ) {
+    return { reason: "schema_or_identity_invalid" };
+  }
+  const {
+    preferred: legacyPreference,
+    evidence_source: _serializedEvidenceSource,
+    ...receiptWithoutRuntimeKeys
+  } = parsed;
+  return {
+    receipt: {
+      ...receiptWithoutRuntimeKeys,
+      requested_preference:
+        parsed.requested_preference ?? legacyPreference ?? "ours",
+      conflict_resolution: parsed.conflict_resolution ?? "preferred_side",
+      evidence_source: evidenceSource,
+    },
+  };
 }
 
 /** Inspect valid receipts and count invalid evidence without returning untrusted file contents. */
@@ -663,7 +766,12 @@ export async function inspectMergeReceiptEvidence(
   const directory = await resolveReceiptDirectory(cwd);
   const local =
     directory === null
-      ? { receipts: [], invalid_evidence_count: 0 }
+      ? {
+          receipts: [],
+          invalid_evidence_count: 0,
+          invalid_evidence: [],
+          invalid_evidence_truncated: false,
+        }
       : await readReceiptsFromDirectory(directory, "clone_local");
   const trackerRoot = options.pmRoot ?? path.join(cwd, ".agents", "pm");
   const durable = await readReceiptsFromDirectory(
@@ -674,6 +782,7 @@ export async function inspectMergeReceiptEvidence(
     durable.receipts.map((receipt) => [receipt.id, receipt]),
   );
   let divergentCopyCount = 0;
+  const divergentCopyEvidence: MergeReceiptInvalidEvidence[] = [];
   for (const receipt of local.receipts) {
     const durableCopy = receipts.get(receipt.id);
     if (
@@ -683,6 +792,18 @@ export async function inspectMergeReceiptEvidence(
     ) {
       receipts.delete(receipt.id);
       divergentCopyCount += 1;
+      if (
+        local.invalid_evidence.length +
+          durable.invalid_evidence.length +
+          divergentCopyEvidence.length <
+        RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT
+      ) {
+        divergentCopyEvidence.push({
+          evidence_source: "clone_local_and_durable",
+          reason: "copy_provenance_mismatch",
+          receipt_id: receipt.id,
+        });
+      }
       continue;
     }
     receipts.set(
@@ -704,6 +825,18 @@ export async function inspectMergeReceiptEvidence(
       local.invalid_evidence_count +
       durable.invalid_evidence_count +
       divergentCopyCount,
+    invalid_evidence: [
+      ...local.invalid_evidence,
+      ...durable.invalid_evidence,
+      ...divergentCopyEvidence,
+    ].slice(0, RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT),
+    invalid_evidence_truncated:
+      local.invalid_evidence_truncated ||
+      durable.invalid_evidence_truncated ||
+      local.invalid_evidence_count +
+        durable.invalid_evidence_count +
+        divergentCopyCount >
+        RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT,
     clone_local_evidence_resolved: directory !== null,
   };
 }
@@ -853,6 +986,8 @@ export async function runMergeReceiptEvidenceReport(options: {
     complete,
     count: evidence.receipts.length,
     invalid_evidence_count: evidence.invalid_evidence_count,
+    invalid_evidence: evidence.invalid_evidence,
+    invalid_evidence_truncated: evidence.invalid_evidence_truncated,
     clone_local_evidence_resolved: evidence.clone_local_evidence_resolved,
     receipts: evidence.receipts,
     generated_at: nowIso(),
@@ -860,4 +995,7 @@ export async function runMergeReceiptEvidenceReport(options: {
 }
 
 /** Test-only seams for deterministic receipt-boundary fault coverage. */
-export const _testOnlyMergeReceipts = { prepareReceiptSettlement };
+export const _testOnlyMergeReceipts = {
+  prepareReceiptSettlement,
+  receiptDirectoryFailureMeansAbsent,
+};

@@ -1,0 +1,68 @@
+id: pm-dn8rwl
+title: "GH-1173: make merge-receipt evidence diagnostics source-stable and record-addressable"
+description: "Loss-aware health currently reports only an invalid evidence count, can differ between a long-lived clone and a pristine worktree of the same commit, and recommends a command that repeats the same opaque count. Extend the public SDK report with privacy-safe record identities, source/reason classifications, clone-local provenance, actionable remediation, and dangling history-reference detection without exposing malformed content."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: "area:merge","area:sdk",diagnostics,"github:1173","security:evidence"
+created_at: "2026-09-01T10:07:41.769Z"
+updated_at: "2026-09-01T11:27:01.089Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#0d9569ee6e9be8244d1d8836"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: "Public SDK contracts expose bounded invalid-evidence detail with stable reason codes and source provenance; CLI merge report and health surface the same complete detail without malformed contents; identical tracked inputs cannot be silently reclassified by unrelated caches; dangling history receipt references are visible with safe remediation; tests cover malformed, unreadable, missing, clone-local, clean-worktree, and output-budget boundaries."
+goal: project management = context management
+objective: Make durable merge evidence self-explaining and safe to repair
+value: Agents can preserve project history instead of deleting evidence to silence opaque gates
+impact: Prevents destructive false remediation and makes merge-integrity failures graph- and record-addressable
+why_now: GH-1173 documents actual deletion of receipts and history after an opaque gate failure.
+parent: pm-dj98
+risk: high
+confidence: high
+severity: high
+environment: "Long-lived Git clones with clone-local receipt evidence, runtime caches, and generated search state"
+repro_steps: Compare pm health --strict-exit and pm health --check-only --full in a long-lived clone versus a pristine worktree at the same commit; inspect merge_receipt_evidence_invalid and its remediation.
+expected_result: Every invalid record is identified by a privacy-safe locator and reason; tracked versus clone-local evidence is explicit; remediation enumerates or repairs the exact source; missing history-referenced receipts are diagnosed without destructive advice.
+actual_result: "Health emits only merge_receipt_evidence_invalid:<count>; the documented remediation repeats the count; the verdict can vary by clone-local state and does not name missing or invalid evidence."
+component: SDK merge-receipt evidence and health governance
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-baksix,discovered_from,"2026-09-01T10:07:41.769Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-01T10:07:41.769Z","harness:codex","Duplicate check: exact GH-1173 search across all statuses returned zero. Canonical predecessors pm-baksix and pm-z1z96w shipped loss-aware receipt reporting but do not provide record-level reasons, cache/source provenance, or dangling-reference diagnostics; this is a post-delivery recurrence and extension, not a duplicate."
+  "2026-09-01T10:14:39.100Z","harness:codex","TDD evidence: focused SDK, health, validate, and remediation suite first failed on the missing detail contract, then passed 35/35 after implementation. Malformed contents remain absent from output; safe receipt ids or SHA-256 filename locators identify candidates; detail is capped at 100 with exact full count and truncation receipt."
+  "2026-09-01T11:14:27.887Z","harness:codex","Implementation evidence: public SDK reports exact invalid_evidence_count plus bounded invalid_evidence identities, source and stable reason codes, and truncation; CLI merge report, health, and validate preserve the same privacy boundary. Health additionally resolves durable history context.merge.receipts references against pending and reconciled evidence and reports exact item/history-line coordinates or SHA-256 locators with non-destructive recovery guidance."
+  "2026-09-01T11:14:29.746Z","harness:codex","Verification evidence: linked focused suite passed 39/39; repository suite passed 594/594 files and 8,243/8,243 tests with exact 100% statements (60,696/60,696), branches (45,895/45,895), functions (12,629/12,629), and lines (58,437/58,437). Temporary-repository CLI acceptance proved two record-level invalid candidates, one missing history reference, bounded privacy-safe output, and executable remediation. Static quality source gate is green with 100% source/export/member docstrings and zero file-length, complexity, duplication, boundary, or pragma-budget violations."
+  "2026-09-01T11:27:01.088Z","harness:codex","Final local gate correction: after replacing coverage pragmas with real injected filesystem negative controls, the repository suite passed 594/594 files and 8,244/8,244 tests at exact 100% statements (60,700/60,700), branches (45,900/45,900), functions (12,629/12,629), and lines (58,439/58,439). Full pnpm quality:static also passed, including ESLint, zero jscpd clones, contract and SDK snapshots, package boundaries, grammar/parity, refusal closure, token budgets, tracker graph quality, and record integrity."
+learnings[1]{created_at,author,text}:
+  "2026-09-01T11:14:28.374Z","harness:codex","Durable history references must be checked against reconciled as well as pending receipts; filtering to pending before the cross-check creates false missing-evidence findings after correct settlement. Enumerate evidence before proposing remediation, and never rewrite append-only history to silence a clone-local diagnostic."
+files[11]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal and remediation coverage census
+  sdk/public-surface.json,project,Governed public SDK signature and error vocabulary snapshot
+  src/core/diagnostics/remediation.ts,project,Executable record-level merge report remediation
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated stable missing-history-reference diagnostic code
+  src/sdk/governance/health.ts,project,Health record-level receipt evidence diagnostics
+  src/sdk/governance/validate.ts,project,Storage-integrity receipt evidence diagnostic parity
+  src/sdk/merge/receipts.ts,project,Public bounded invalid-evidence identities reasons provenance and portable directory classification
+  tests/fixtures/contracts/full.json,project,Generated full CLI and SDK contract snapshot
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Health CLI SDK reference and privacy boundary acceptance
+  tests/integration/remediation-registry.spec.ts,project,Executable safe remediation registry coverage
+  tests/unit/sdk/merge-receipts.spec.ts,project,Receipt evidence filesystem and token-boundary unit coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,project,300,"harness:codex","2026-09-01T10:14:37.328Z",local_mutation,fix/merge-receipt-evidence-diagnostics-windows
+test_runs[1]:
+  - run_id: test-local-mtikkhbs-98cgw6
+    kind: test
+    status: passed
+    started_at: "2026-09-01T11:13:33.643Z"
+    finished_at: "2026-09-01T11:13:56.919Z"
+    recorded_at: "2026-09-01T11:13:56.919Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Token-bounded evidence recovery primitive
+  docs/MERGE_SAFETY.md,project,Loss-aware detail and cross-platform absence contract
+body: ""

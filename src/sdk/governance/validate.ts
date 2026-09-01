@@ -3339,6 +3339,10 @@ async function buildStorageIntegrityCheck(
         lossless_merge_receipt_count: losslessMergeReceipts.length,
         invalid_merge_receipt_evidence_count:
           mergeReceiptEvidence.invalid_evidence_count,
+        invalid_merge_receipt_evidence_details:
+          mergeReceiptEvidence.invalid_evidence,
+        invalid_merge_receipt_evidence_details_truncated:
+          mergeReceiptEvidence.invalid_evidence_truncated,
         lossless_merge_receipt_items: [
           ...new Set(losslessMergeReceipts.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),

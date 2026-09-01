@@ -141,10 +141,14 @@ describe("shared remediation registry", () => {
       );
     });
 
-    it("routes invalid merge receipt evidence to the full health diagnostic", () => {
+    it("routes invalid merge receipt evidence to the record-level report", () => {
       expect(
         resolveRemediation("merge_receipt_evidence_invalid:1")?.command,
-      ).toBe("pm health --check-only --full");
+      ).toBe("pm merge report --include-reconciled --json");
+      expect(
+        resolveRemediation("merge_receipt_history_reference_missing:1")
+          ?.command,
+      ).toBe("pm health --check-only --full --json");
     });
 
     it("resolves item format-version warnings to migration and upgrade guidance", () => {

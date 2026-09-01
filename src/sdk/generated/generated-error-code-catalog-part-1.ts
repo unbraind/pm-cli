@@ -2253,6 +2253,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "merge_receipt_history_reference_missing",
+    meaning: "Merge receipt history reference missing condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_receipt_history_reference_missing",
+    aliases: [],
+  },
+  {
     code: "merge_receipts_pending",
     meaning: "Merge receipts pending condition.",
     stability: "provisional",

@@ -1463,6 +1463,16 @@
       ],
       "package_version": "2026.8.31",
       "reason": "Add optional host-owned cursor integrity key for deployment-stable pagination; existing callers and process-local fallback remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeReceiptEvidenceReport",
+        "signature ./sdk:MergeReceiptEvidenceScan",
+        "signature ./sdk/merge:MergeReceiptEvidenceReport",
+        "signature ./sdk/merge:MergeReceiptEvidenceScan"
+      ],
+      "package_version": "2026.9.1",
+      "reason": "Expose loss-aware receipt evidence details as required runtime fields so SDK gates cannot silently discard invalid candidates."
     }
   ],
   "entrypoints": {
@@ -9291,13 +9301,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceReport",
-          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; receipts: MergeDecisionReceipt[]; generated_at: string; }"
+          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; receipts: MergeDecisionReceipt[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -26733,13 +26743,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceReport",
-          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; receipts: MergeDecisionReceipt[]; generated_at: string; }"
+          "signature": "export interface MergeReceiptEvidenceReport { ok: boolean; complete: boolean; count: number; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; receipts: MergeDecisionReceipt[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; clone_local_evidence_resolved?: boolean; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "supported",
@@ -32095,6 +32105,7 @@
     "merge_decisions_unreviewed",
     "merge_git_config_unwritable",
     "merge_receipt_evidence_invalid",
+    "merge_receipt_history_reference_missing",
     "merge_receipts_pending",
     "merge_reconcile_receipt_evidence_untrusted",
     "merge_root_not_found",

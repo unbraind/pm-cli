@@ -105,8 +105,22 @@ whose candidates were all rejected. Gates and diagnostic integrations should
 use `inspectMergeReceiptEvidence`, whose `invalid_evidence_count` preserves
 that distinction without returning malformed contents.
 `runMergeReceiptEvidenceReport` and `pm merge report --json` expose the same
-loss-aware contract through `complete`, `invalid_evidence_count`, and
-`clone_local_evidence_resolved`; the CLI
+loss-aware contract through `complete`, `invalid_evidence_count`, bounded
+`invalid_evidence[]`, `invalid_evidence_truncated`, and
+`clone_local_evidence_resolved`. Each rejected candidate reports a stable
+reason plus its `clone_local`, `durable`, or copy-consistency source. A safe
+receipt filename is returned as `receipt_id`; unsafe candidate names are
+represented only by `candidate_name_hash`, and malformed contents are never
+returned. The detail list is capped at 100 rows while the count remains exact,
+so automated gates stay token-bounded. Directory traversal distinguishes a
+truly absent store from a non-directory or unreadable ancestor on Windows and
+POSIX instead of treating platform-specific `ENOENT`/`ENOTDIR` spellings as
+equivalent. Full health also cross-checks the privacy-safe receipt summaries in
+append-only history against valid pending and reconciled evidence. Missing
+evidence emits `merge_receipt_history_reference_missing:<n>` with bounded item,
+history-line, and receipt-id-or-hash coordinates. Its remediation enumerates
+the exact references and directs recovery from an authoritative clone or
+backup; it never recommends deleting receipts or rewriting history. The CLI
 exits nonzero when evidence is incomplete, even when the valid-receipt count is
 zero. Current SDK implementations always emit the new field, while its optional
 type preserves structural compatibility for existing typed adapters and test

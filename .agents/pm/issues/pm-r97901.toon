@@ -1,0 +1,61 @@
+id: pm-r97901
+title: "GH-1174: Windows Node 24 receipt traversal negative control must fail closed portably"
+description: "The nightly Windows gate exposes a platform-dependent receipt traversal fixture: replacing the tracker directory with a file produces invalid_evidence_count=0 on Windows while POSIX reports 1. Replace the host-sensitive setup with a deterministic cross-platform inaccessible/non-directory boundary, align SDK classification across operating systems, and retain a genuine negative control."
+type: Issue
+status: in_progress
+priority: 1
+tags[6]: "area:merge","area:test",ci,"github:1174","platform:windows",regression
+created_at: "2026-09-01T10:08:01.615Z"
+updated_at: "2026-09-01T11:27:01.546Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#0d9569ee6e9be8244d1d8836"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: A deterministic cross-platform fixture reproduces an exact filesystem boundary error; the public SDK returns the same typed invalid reason and count on Windows and POSIX; focused Linux tests and a hosted Windows Node 24 run pass; the negative control still proves a known-bad path fails closed rather than weakening the assertion.
+goal: project management = context management
+objective: Restore portable fail-closed evidence verification
+value: Nightly portability again detects product regressions instead of harness variance
+impact: Restores the mandatory Windows gate and protects the SDK evidence contract across hosts
+why_now: "The sole failure in 8,239 nightly tests is this receipt boundary regression."
+parent: pm-dj98
+risk: medium
+confidence: high
+severity: high
+environment: "GitHub Actions windows-latest, Node 24, Vitest full nightly suite"
+repro_steps: Run tests/unit/sdk/merge-receipts.spec.ts on windows-latest Node 24 at dd505d4; fails closed when a receipt directory path cannot be traversed expects invalid_evidence_count 1 and receives 0.
+expected_result: "The same non-directory or unreadable receipt root produces one invalid evidence detail and a non-complete report on Linux, macOS, and Windows."
+actual_result: "The negative control passes on Linux but reports invalid_evidence_count=0 on Windows, leaving Nightly Validation red."
+component: SDK merge-receipt file boundary and Windows test harness
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-baksix,discovered_from,"2026-09-01T10:08:01.615Z","harness:codex","cli:create:dep",detected
+  pm-dn8rwl,implements,"2026-09-01T10:08:01.615Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-01T10:08:01.615Z","harness:codex","Duplicate check: exact GH-1174 search across all statuses returned zero. Historical Windows receipt items pm-v3umtp and pm-46hpx8 cover different path-shape defects; this failure is the newly shipped non-directory evidence control and therefore a distinct recurrence under the shared merge-evidence delivery."
+  "2026-09-01T10:14:39.621Z","harness:codex","Root cause and fix: Windows reports an inner path below a file ancestor as ENOENT where POSIX reports ENOTDIR. Receipt discovery now walks to the nearest existing ancestor: a directory means a genuinely absent store, while a file or inaccessible ancestor is invalid evidence. The real filesystem negative control remains fail-closed and focused tests pass."
+  "2026-09-01T11:14:28.813Z","harness:codex","Cross-platform evidence: receipt directory classification now walks to the nearest existing ancestor after a missing-path error. An existing directory proves an absent store; a file, permission failure, I/O failure, or other non-directory boundary remains invalid evidence. Real and dependency-injected filesystem tests cover POSIX ENOTDIR, Windows-style ENOENT, permission faults, filesystem-root termination, unreadable candidates, and bounded detail overflow."
+  "2026-09-01T11:27:01.546Z","harness:codex","Local closure evidence is complete, including dependency-injected Windows-style ENOENT traversal and real POSIX filesystem cases. Item remains in progress only until the hosted Windows Node 24 job proves the original GH-1174 recurrence at the PR head; no other PM item is claimed or marked in progress for this delivery."
+learnings[1]{created_at,author,text}:
+  "2026-09-01T11:14:29.313Z","harness:codex",Windows can surface a missing descendant below a file ancestor as ENOENT where POSIX commonly reports ENOTDIR. Error-code equality is therefore insufficient; classify the nearest existing ancestor and fail closed unless it is a directory.
+files[4]{path,scope,note}:
+  src/sdk/governance/health.ts,project,Cross-platform health consumer and pending receipt filtering
+  src/sdk/merge/receipts.ts,project,Nearest-existing-ancestor classification for Windows and POSIX
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,CLI and SDK cross-platform classification acceptance
+  tests/unit/sdk/merge-receipts.spec.ts,project,Cross-platform non-directory and bounded-detail negative controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts,project,180,"harness:codex","2026-09-01T10:14:38.493Z",local_mutation,fix/merge-receipt-evidence-diagnostics-windows
+test_runs[1]:
+  - run_id: test-local-mtikkm47-adcykz
+    kind: test
+    status: passed
+    started_at: "2026-09-01T11:13:57.332Z"
+    finished_at: "2026-09-01T11:14:03.127Z"
+    recorded_at: "2026-09-01T11:14:03.127Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,Portable bounded receipt recovery primitive
+  docs/MERGE_SAFETY.md,project,Windows POSIX absence and history evidence safety contract
+body: ""
