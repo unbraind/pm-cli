@@ -104,12 +104,49 @@ describe("agent-task transcript token gate", () => {
         { task_id: "orientation-contracts-next", command_count: 2 },
       ],
     });
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
         canonical_task_id: "orientation-contracts-next",
       }),
     ).toThrow();
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        required_capabilities: "state",
+      }),
+    ).toThrow();
+    expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
+      "Agent-task orientation required_capabilities must be an array of non-blank strings",
+    );
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capabilities: "state",
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
+      "Agent-task orientation protocol capabilities must be an array of non-blank strings",
+    );
+    expect(
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        required_capabilities: [" state ", "ownership", "state"],
+        protocols: orientation.protocols.map((protocol) => ({
+          ...protocol,
+          capabilities: [" ownership", "state ", "state"],
+        })),
+      }).required_capabilities,
+    ).toEqual(["ownership", "state"]);
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         canonical_task_id: "orientation-context-intent",

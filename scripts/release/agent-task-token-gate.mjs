@@ -346,22 +346,29 @@ function measureTask(baselineRoot, accountedRoot, task) {
 }
 
 /** Validate and canonicalize orientation capability identifiers. */
-function sortedUniqueStrings(value) {
-  if (!Array.isArray(value)) return [];
+function sortedUniqueStrings(value, field) {
+  if (!Array.isArray(value)) {
+    fail(
+      `Agent-task orientation ${field} must be an array of non-blank strings`,
+    );
+  }
   if (
     value.some(
       (entry) => typeof entry !== "string" || entry.trim().length === 0,
     )
   ) {
-    fail("Agent-task orientation capability entries must be non-blank strings");
+    fail(
+      `Agent-task orientation ${field} must be an array of non-blank strings`,
+    );
   }
-  return [...new Set(value)].sort();
+  return [...new Set(value.map((entry) => entry.trim()))].sort();
 }
 
 /** Select the cheapest equivalent orientation transcript and fail on undeclared or stale policy. */
 export function evaluateOrientationProtocolSelection(report, orientation) {
   const requiredCapabilities = sortedUniqueStrings(
     orientation?.required_capabilities,
+    "required_capabilities",
   );
   const declaredProtocols = Array.isArray(orientation?.protocols)
     ? orientation.protocols
@@ -380,7 +387,10 @@ export function evaluateOrientationProtocolSelection(report, orientation) {
   const tasksById = new Map(report.tasks.map((task) => [task.id, task]));
   const protocols = declaredProtocols.map((protocol) => {
     const task = tasksById.get(protocol?.task_id);
-    const capabilities = sortedUniqueStrings(protocol?.capabilities);
+    const capabilities = sortedUniqueStrings(
+      protocol?.capabilities,
+      "protocol capabilities",
+    );
     if (
       task === undefined ||
       JSON.stringify(capabilities) !== JSON.stringify(requiredCapabilities)

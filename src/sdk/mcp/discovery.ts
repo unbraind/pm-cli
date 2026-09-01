@@ -205,6 +205,7 @@ const DISCOVERY_CACHE_INVALIDATIONS = Object.freeze([
   "workspace_extension_changed",
   "authorization_changed",
   "ranking_signal_changed",
+  "cursor_integrity_key_rotated",
 ]);
 
 const TIER_RANK: Readonly<Record<PmCommandVisibilityTier, number>> = {
@@ -218,6 +219,13 @@ const SELECTABLE_TIERS: readonly string[] = Object.freeze([
   "core",
   "standard",
   "full",
+]);
+
+const MCP_TOOL_PROFILES: ReadonlySet<string> = new Set([
+  "core",
+  "standard",
+  "full",
+  "custom",
 ]);
 
 const CAPABILITY_FAMILIES: ReadonlySet<string> = new Set(
@@ -568,16 +576,36 @@ function validateDiscoveryFilters(options: PmToolDiscoveryOptions): void {
       64,
     );
   }
+  if (
+    options.profile !== undefined &&
+    (typeof options.profile !== "string" ||
+      !MCP_TOOL_PROFILES.has(options.profile))
+  ) {
+    throw new PmCliError(
+      "pm tool discovery profile must be core, standard, full, or custom.",
+      64,
+    );
+  }
 }
 
 function resolveDiscoveryRequest(
   options: PmToolDiscoveryOptions,
 ): ResolvedPmToolDiscoveryRequest {
-  const rawQuery = boundedDiscoveryString(options.query ?? "", "query");
+  const rawQuery = boundedDiscoveryString(
+    options.query === undefined ? "" : options.query,
+    "query",
+  );
   const query = rawQuery.trim().replace(/\s+/gu, " ");
-  boundedDiscoveryString(options.cursor ?? "", "cursor");
-  const limit = discoveryLimit(options.limit ?? 10);
-  const budget = discoveryOutputBudget(options.outputBudget ?? 1_200);
+  boundedDiscoveryString(
+    options.cursor === undefined ? "" : options.cursor,
+    "cursor",
+  );
+  const limit = discoveryLimit(
+    options.limit === undefined ? 10 : options.limit,
+  );
+  const budget = discoveryOutputBudget(
+    options.outputBudget === undefined ? 1_200 : options.outputBudget,
+  );
   validateDiscoveryFilters(options);
   return {
     query,
@@ -585,7 +613,7 @@ function resolveDiscoveryRequest(
     limit,
     budget,
     maximumTier: TIER_RANK[options.tier ?? "full"],
-    profile: options.profile ?? "core",
+    profile: options.profile === undefined ? "core" : options.profile,
   };
 }
 
@@ -742,6 +770,9 @@ export function discoverPmTools(
     cache: {
       key: hashDiscoveryValue({
         fingerprint,
+        cursorIntegrityKey: createHash("sha256")
+          .update(cursorIntegrityKey)
+          .digest("hex"),
         limit: request.limit,
         offset,
         budget: request.budget,

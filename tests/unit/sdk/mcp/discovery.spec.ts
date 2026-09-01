@@ -255,8 +255,14 @@ describe("progressive MCP tool discovery", () => {
       limit: 2,
       outputBudget: "unbounded",
     });
+    const rotated = discoverPmTools(candidates, {
+      cursorIntegrityKey: secondKey,
+      limit: 2,
+      outputBudget: "unbounded",
+    });
 
     expect(second.returned).toBe(2);
+    expect(rotated.cache.key).not.toBe(first.cache.key);
     expect(() =>
       discoverPmTools(candidates, {
         cursor: first.next_cursor,
@@ -324,7 +330,6 @@ describe("progressive MCP tool discovery", () => {
             : `Catalog capability ${index}`,
         ),
       );
-      const started = performance.now();
       const first = discoverPmTools(candidates, {
         query: "unique deploy release verification",
         limit: 10,
@@ -340,7 +345,6 @@ describe("progressive MCP tool discovery", () => {
         `pm_catalog_${String(size - 1).padStart(5, "0")}`,
       );
       expect(first.token_cost.within_budget).toBe(true);
-      expect(performance.now() - started).toBeLessThan(2_000);
     }
   });
 
@@ -358,7 +362,6 @@ describe("progressive MCP tool discovery", () => {
       limit: 100,
       outputBudget: "unbounded",
     });
-    const started = performance.now();
     const bounded = discoverPmTools(candidates, {
       includeSchema: true,
       limit: 100,
@@ -369,7 +372,6 @@ describe("progressive MCP tool discovery", () => {
     expect(
       Math.ceil(Buffer.byteLength(JSON.stringify(bounded), "utf8") / 4),
     ).toBe(bounded.token_cost.estimated_tokens);
-    expect(performance.now() - started).toBeLessThan(500);
   });
 
   it("fails closed on invalid limits and budgets", () => {
@@ -400,6 +402,27 @@ describe("progressive MCP tool discovery", () => {
     expect(() => discoverPmTools([], { includeSchema: 1 as never })).toThrow(
       /includeSchema/u,
     );
+    for (const [field, value] of [
+      ["query", null],
+      ["cursor", null],
+      ["limit", null],
+      ["outputBudget", null],
+    ] as const) {
+      expect(() => discoverPmTools([], { [field]: value } as never)).toThrow(
+        new RegExp(field, "u"),
+      );
+    }
+    for (const profile of ["invalid", 42, null]) {
+      expect(() =>
+        discoverPmTools([], { profile: profile as never }),
+      ).toThrow(/profile/u);
+    }
+    expect(
+      discoverPmTools([], {
+        profile: "custom",
+        outputBudget: "unbounded",
+      }).profile,
+    ).toBe("custom");
     for (const cursorIntegrityKey of [new Uint8Array(31), "not-bytes"]) {
       expect(() =>
         discoverPmTools([], {

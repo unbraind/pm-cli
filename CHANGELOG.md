@@ -15,8 +15,8 @@
 
 ### Other
 
-- Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require ([pm-wenq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wenq.toon))
 - Document the measured canonical agent cold-start across docs and generated guidance ([pm-ka6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ka6d.toon))
+- Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require ([pm-wenq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wenq.toon))
 
 ## 2026.8.31 - 2026-08-31
 

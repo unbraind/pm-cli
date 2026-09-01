@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:docs",simplification
 created_at: "2026-07-11T16:23:07.560Z"
-updated_at: "2026-08-31T23:05:56.483Z"
-closed_at: "2026-08-31T23:05:55.916Z"
-completed_at: "2026-08-31T23:05:55.916Z"
+updated_at: "2026-09-01T01:02:29.000Z"
+closed_at: "2026-09-01T01:02:28.331Z"
+completed_at: "2026-09-01T01:02:28.331Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Agent-facing docs name the measured canonical cold-start; generated AGENTS and CLAUDE guidance teaches the same sequence; no new top-level CLI commands are introduced; the fixed 101-item replay reports every compared protocol and fails when the documented canonical protocol is not the lowest-token equivalent choice
 parent: pm-mpbb
 risk: low
 confidence: high
-resolution: Corrected the live item contract to pm context --for orient and retained the superseded proposal in append-only history.
+resolution: "Aligned live metadata, human docs, generated guidance, and the measured replay gate on pm context --limit 10 --for orient while preserving the superseded proposal in append-only history."
 expected_result: "Persistent metadata, human docs, generated guidance, and the replay gate name the same lowest-token orientation protocol."
-actual_result: The live body and generated workflow are aligned; the linked 51-test guidance/replay cohort and repository gates pass.
+actual_result: The exact measured command and canonical capability arrays are enforced; the linked 51-test guidance/replay cohort and all repository quality gates pass.
 dependencies[10]:
   - id: pm-8pnj
     kind: related
@@ -58,21 +58,26 @@ dependencies[10]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-31T12:54:39.821Z","harness:codex","Implementation start: blocker pm-jjqyzd is being actively resolved in this same connected tranche; documentation and generated guidance will consume the measured winner with no new top-level CLI command."
   "2026-08-31T13:24:40.016Z","harness:codex","Documentation evidence: AGENTS.md, README, Agent Guide, generated init guidance, and output-accounting docs now teach the measured one-call context intent and link the published 1,055/2,293/4,798 replay evidence. The obsolete two-call premise remains preserved in item history and is explicitly corrected by blocker pm-jjqyzd."
   "2026-08-31T15:13:30.507Z","harness:codex","Terminal evidence: linked init-guidance and replay-gate suite passed 47 tests. AGENTS.md, README, Agent Guide, generated init guidance, and output-token accounting now share the measured one-call orientation. Exact 100% repository coverage, docs/skills verification, generated-surface checks, command grammar, and static-quality assurance passed."
   "2026-08-31T22:36:29.834Z","harness:codex","Review round 7 recurrence: CodeRabbit comment 3899001129 is valid. The item comments and terminal fields record context --for orient as the measured winner, but the persistent body still calls contracts --summary plus next canonical. Update the body through pm so historical events remain immutable while current metadata becomes unambiguous."
   "2026-08-31T23:05:42.235Z","harness:codex","Terminal evidence for review round 7: live item body now records the measured one-call context --for orient contract while immutable history preserves the superseded proposal. Its linked generated-guidance and 101-item replay gate passed 51 tests; repository-wide exact coverage and static quality passed."
+  "2026-09-01T00:42:54.669Z","harness:codex","Review round 10: Cubic findings on the exact measured command spelling and capability normalization are valid. Align the live body to pm context --limit 10 --for orient and make the replay gate reject non-arrays while trimming canonical capability identifiers."
+  "2026-09-01T00:45:57.047Z","harness:codex","TDD red evidence for exact-head review round 10: the orientation gate test expected a field-specific refusal for non-array required_capabilities but received the prior generic process-exit failure. Added coverage also requires trimmed, deduplicated capability identifiers and protocol-specific non-array refusal."
+  "2026-09-01T01:02:25.867Z","harness:codex","Review round 10 terminal evidence: live metadata now names the exact pm context --limit 10 --for orient command. The replay gate rejects non-array required or protocol capabilities with field-specific diagnostics and trims/deduplicates valid identifiers. Its linked 51-test cohort, exact repository coverage, all static/security gates, and temporary-workspace orientation acceptance passed."
 learnings[1]{created_at,author,text}:
   "2026-08-31T15:07:56.067Z","harness:codex","Generated guidance and human docs need one measured source of truth plus a drift gate, otherwise an obsolete cheaper-looking protocol propagates across every agent surface."
-files[3]{path,scope,note}:
+files[5]{path,scope,note}:
   AGENTS.md,project,Repository agent workflow quickstart
   README.md,project,User-facing canonical orientation
+  scripts/release/agent-task-token-gate.mjs,project,Measured orientation capability normalization and refusal contract
   src/sdk/init-agent-guidance.ts,project,Generated canonical agent workflow
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Orientation capability container and canonicalization coverage
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-31T13:57:44.848Z",local_mutation,feat/progressive-capability-discovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mthdjjtu-37arco
     kind: test
     status: passed
@@ -95,8 +100,19 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mthyphyo-jcq7sv
+    kind: test
+    status: passed
+    started_at: "2026-09-01T01:01:24.471Z"
+    finished_at: "2026-09-01T01:01:59.472Z"
+    recorded_at: "2026-09-01T01:01:59.472Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Detailed measured orientation protocol
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Release-gated orientation evidence
-close_reason: "Canonical orientation metadata and generated guidance now agree with the measured one-call protocol, with immutable history and replay evidence preserved."
-body: "## Historical premise (superseded)\nThis item was promoted from the pm-mpbb DX ledger on 2026-07-11, when the pm-a22j baseline gate opened. Its original proposal treated `pm contracts --summary` followed by `pm next` as the cheapest complete cold start. That proposal is retained in immutable history, but later replay measurement disproved it as the canonical workflow.\n\n## Current measured contract\nThe canonical read-only orientation is one intent-routed call: `pm context --for orient`. The fixed 101-item replay measured it at 1,055 estimated tokens, versus 2,293 for the historical four-read sequence and 4,798 for contracts plus next. Human docs and generated guidance must name the measured winner and the release gate must fail if a more expensive protocol becomes canonical.\n\n## Scope\nDocumentation and instruction templates only: AGENTS.md, the README agent section, the Agent Guide, and generated Claude/Codex/ChatGPT-aligned guidance consume the same measured protocol. Cite the agent-task replay baseline as evidence.\n\n## Constraint\nNo new top-level commands. Preserve the original premise in append-only history while keeping live item metadata aligned with the measured contract."
+close_reason: "Completed measured cold-start alignment and strict capability normalization with linked, repository-wide, and manual evidence."
+body: "## Historical premise (superseded)\nThis item was promoted from the pm-mpbb DX ledger on 2026-07-11, when the pm-a22j baseline gate opened. Its original proposal treated `pm contracts --summary` followed by `pm next` as the cheapest complete cold start. That proposal is retained in immutable history, but later replay measurement disproved it as the canonical workflow.\n\n## Current measured contract\nThe canonical read-only orientation is one intent-routed call: `pm context --limit 10 --for orient`. The fixed 101-item replay measured it at 1,055 estimated tokens, versus 2,293 for the historical four-read sequence and 4,798 for contracts plus next. Human docs and generated guidance must name the measured winner and the release gate must fail if a more expensive protocol becomes canonical.\n\n## Scope\nDocumentation and instruction templates only: AGENTS.md, the README agent section, the Agent Guide, and generated Claude/Codex/ChatGPT-aligned guidance consume the same measured protocol. Cite the agent-task replay baseline as evidence.\n\n## Constraint\nNo new top-level commands. Preserve the original premise in append-only history while keeping live item metadata aligned with the measured contract."

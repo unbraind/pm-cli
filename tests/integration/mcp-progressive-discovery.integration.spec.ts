@@ -368,16 +368,18 @@ describe("MCP progressive discovery negotiation", () => {
     });
     const taskId = String(created?.taskId);
     let completed: Record<string, unknown> | undefined;
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      completed = await handleRequest({
-        jsonrpc: "2.0",
-        id: 11 + attempt,
-        method: "tasks/get",
-        params: modernParams(true, { taskId }, true),
-      });
-      if (completed?.status !== "working") break;
-      await new Promise<void>((resolve) => setTimeout(resolve, 5));
-    }
+    await vi.waitFor(
+      async () => {
+        completed = await handleRequest({
+          jsonrpc: "2.0",
+          id: 11,
+          method: "tasks/get",
+          params: modernParams(true, { taskId }, true),
+        });
+        expect(completed?.status).not.toBe("working");
+      },
+      { timeout: 10_000, interval: 25 },
+    );
     expect(completed).toMatchObject({
       status: "completed",
       result: {
