@@ -50,13 +50,14 @@ export async function recordAfterCommandContextUsage(
   options: AfterCommandContextUsageOptions,
 ): Promise<void> {
   if (process.env.PM_CONTEXT_USAGE_DISABLED === "1") return;
+  let deliveryError: unknown;
   try {
     await finalizeContextUsageDelivery({
       pmRoot: options.pmRoot,
       result: getActiveCommandResult(),
     });
-  } catch {
-    // Derived delivery feedback must not suppress authoritative item touches.
+  } catch (error: unknown) {
+    deliveryError = error;
   }
   const settings = await readSettings(options.pmRoot);
   await recordContextUsageTouches({
@@ -65,4 +66,7 @@ export async function recordAfterCommandContextUsage(
     itemIds: options.itemIds,
     intent: options.intent,
   });
+  if (deliveryError !== undefined) {
+    throw deliveryError;
+  }
 }

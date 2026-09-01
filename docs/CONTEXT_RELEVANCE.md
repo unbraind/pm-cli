@@ -88,7 +88,10 @@ bare `updated_at`, so release attribution, relationship enrichment,
 normalization, linked-artifact updates, and history maintenance cannot promote
 otherwise unchanged work. The rebuildable v4 history-event index stores the
 declared class and retrieves one latest substantive row per requested stream;
-individual immutable streams remain the authoritative fallback.
+individual immutable streams remain the authoritative fallback. Rebuilds,
+indexed validation reads, and compliant history appends share one cross-process
+coordination lock, while each append also commits its projection row and stream
+size in one SQLite transaction.
 
 Explained ranking includes `recency.source`, `coordinate`, and, for history,
 `history_op` plus `event_class` on every served scorer row. Signal snapshots

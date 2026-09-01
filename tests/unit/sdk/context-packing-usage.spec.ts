@@ -273,6 +273,25 @@ describe("context usage feedback", () => {
     );
   });
 
+  it("rejects serving rows whose identities collide after normalization", async () => {
+    const pmRoot = await tempPmRoot();
+    await expect(
+      recordContextUsageServing({
+        pmRoot,
+        author: "agent",
+        surface: "context",
+        profile: "orient",
+        rows: [
+          { id: "pm-duplicate", rank: 1, included: true },
+          { id: " pm-duplicate ", rank: 2, included: true },
+        ],
+      }),
+    ).rejects.toThrow("unique normalized row ids");
+    await expect(
+      readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"),
+    ).rejects.toThrow();
+  });
+
   it("records final egress delivery and excludes phantom or legacy inclusions", async () => {
     const pmRoot = await tempPmRoot();
     const receipt = await recordContextUsageServing({

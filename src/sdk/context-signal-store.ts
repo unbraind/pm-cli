@@ -254,7 +254,10 @@ function stableSnapshotOptions(
 }
 
 function recencyEvidenceFingerprint(
-  candidates: readonly ItemContextRelevanceCandidate[],
+  candidates: readonly Pick<
+    ItemContextRelevanceCandidate,
+    "id" | "signal_provenance"
+  >[],
 ): string {
   const hash = createHash("sha256");
   for (const {
@@ -334,6 +337,24 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
   };
 }
 
+function parseSnapshotItems(
+  values: readonly unknown[],
+  expectedRecencyEvidenceFingerprint: string,
+): ContextSignalSnapshotItem[] | null {
+  const items = values.map(parseSnapshotItem);
+  if (items.some((item) => item === null)) return null;
+  const validItems = items as ContextSignalSnapshotItem[];
+  if (
+    new Set(validItems.map((item) => item.id)).size !== validItems.length ||
+    validItems.some((item) => item.id.trim().length === 0) ||
+    expectedRecencyEvidenceFingerprint !==
+      recencyEvidenceFingerprint(validItems)
+  ) {
+    return null;
+  }
+  return validItems.sort((left, right) => left.id.localeCompare(right.id));
+}
+
 /** Validate an untrusted serialized snapshot without accepting partial envelopes. */
 export function parseContextSignalSnapshot(
   value: unknown,
@@ -353,17 +374,11 @@ export function parseContextSignalSnapshot(
   ) {
     return null;
   }
-  const items = value.items.map(parseSnapshotItem);
-  if (items.some((item) => item === null)) {
-    return null;
-  }
-  const validItems = items as ContextSignalSnapshotItem[];
-  if (
-    new Set(validItems.map((item) => item.id)).size !== validItems.length ||
-    validItems.some((item) => item.id.trim().length === 0)
-  ) {
-    return null;
-  }
+  const items = parseSnapshotItems(
+    value.items,
+    value.recency_evidence_fingerprint,
+  );
+  if (items === null) return null;
   return {
     format_version: CONTEXT_SIGNAL_STORE_FORMAT_VERSION,
     signal_set_version: CONTEXT_SIGNAL_SET_VERSION,
@@ -371,7 +386,7 @@ export function parseContextSignalSnapshot(
     recency_evidence_fingerprint: value.recency_evidence_fingerprint,
     generated_at: value.generated_at,
     source: value.source,
-    items: validItems.sort((left, right) => left.id.localeCompare(right.id)),
+    items,
   };
 }
 

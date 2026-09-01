@@ -250,6 +250,16 @@ describe("history mutation event index", () => {
         `${JSON.stringify(historyEntry("2026-07-24T10:00:00.000Z", "agent", "comment_add"))}\n`,
       );
 
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          stream_ids: ["pm-stale"],
+          limit: 10,
+        }),
+      ).resolves.toBeNull();
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+
       const latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
         "pm-stale",
         "constructor",
@@ -384,6 +394,112 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("serializes rebuild replacement with concurrent compliant appends", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-rebuild-concurrent.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      const originalStat = fs.stat.bind(fs);
+      let concurrentAppend: Promise<void> | undefined;
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          const stats = await originalStat(...args);
+          if (
+            concurrentAppend === undefined &&
+            String(args[0]) === historyPath
+          ) {
+            concurrentAppend = appendHistoryEntry(historyPath, second);
+          }
+          return stats;
+        });
+      try {
+        await rebuildHistoryEventIndex(context.pmPath);
+        await concurrentAppend;
+      } finally {
+        statSpy.mockRestore();
+      }
+
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          stream_ids: ["pm-rebuild-concurrent"],
+          limit: 10,
+        }),
+      ).resolves.toMatchObject({
+        events: [
+          { stream_offset: 0, entry: { op: "create" } },
+          { stream_offset: 1, entry: { op: "update" } },
+        ],
+      });
+    });
+  });
+
+  it("serializes indexed validation and reads before concurrent compliant appends", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-read-concurrent.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const originalStat = fs.stat.bind(fs);
+      let concurrentAppend: Promise<void> | undefined;
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          const stats = await originalStat(...args);
+          if (
+            concurrentAppend === undefined &&
+            String(args[0]) === historyPath
+          ) {
+            concurrentAppend = appendHistoryEntry(historyPath, second);
+          }
+          return stats;
+        });
+      let beforeAppend;
+      try {
+        beforeAppend = await queryHistoryEventIndex(context.pmPath, {
+          stream_ids: ["pm-read-concurrent"],
+          limit: 10,
+        });
+        await concurrentAppend;
+      } finally {
+        statSpy.mockRestore();
+      }
+
+      expect(beforeAppend).toMatchObject({
+        events: [{ stream_offset: 0, entry: { op: "create" } }],
+      });
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          stream_ids: ["pm-read-concurrent"],
+          limit: 10,
+        }),
+      ).resolves.toMatchObject({
+        events: [
+          { stream_offset: 0, entry: { op: "create" } },
+          { stream_offset: 1, entry: { op: "update" } },
+        ],
+      });
+    });
+  });
+
   it("rebuilds incompatible recency indexes and preserves authoritative read errors", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");
@@ -417,14 +533,21 @@ describe("history mutation event index", () => {
 
   it("preserves non-missing stream stat failures during indexed recency reads", async () => {
     await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
       await rebuildHistoryEventIndex(context.pmPath);
       await fs.symlink(
         "pm-loop.jsonl",
-        path.join(context.pmPath, "history", "pm-loop.jsonl"),
+        path.join(historyRoot, "pm-loop.jsonl"),
       );
       await expect(
         readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-loop"]),
       ).rejects.toMatchObject({ code: "ELOOP" });
+
+      await fs.rm(historyRoot, { recursive: true, force: true });
+      await fs.symlink("history", historyRoot);
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
     });
   });
 

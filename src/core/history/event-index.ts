@@ -11,12 +11,16 @@ import { createRequire } from "node:module";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { HistoryEntry } from "../../types/index.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
+import { acquireLock } from "../lock/lock.js";
 import { readHistoryEntries } from "./read.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "4";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
+const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
+const HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS = 300;
+const HISTORY_EVENT_INDEX_LOCK_WAIT_MS = 30_000;
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 interface AuthoritativeHistoryStreamCache {
@@ -93,6 +97,26 @@ export type LatestSubstantiveHistoryEvents = Readonly<
 
 function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
+}
+
+async function withHistoryEventIndexLock<T>(
+  pmRoot: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const release = await acquireLock(
+    pmRoot,
+    HISTORY_EVENT_INDEX_LOCK_ID,
+    HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS,
+    `history-event-index:${process.pid}`,
+    false,
+    false,
+    HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
+  );
+  try {
+    return await operation();
+  } finally {
+    await release();
+  }
 }
 
 async function readAuthoritativeHistorySnapshot(
@@ -295,32 +319,34 @@ export async function rebuildHistoryEventIndex(
 ): Promise<boolean> {
   const Database = resolveDatabaseSync();
   if (!Database) return false;
-  const targetPath = eventIndexPath(pmRoot);
-  await fs.mkdir(path.dirname(targetPath), { recursive: true });
-  const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
-  let database: DatabaseSync | undefined;
-  try {
-    database = new Database(temporaryPath);
-    createSchema(database);
-    database.exec("BEGIN IMMEDIATE");
-    const authoritative = await readAuthoritativeHistorySnapshot(pmRoot);
-    for (const event of authoritative.events) {
-      insertEvent(database, event);
+  return withHistoryEventIndexLock(pmRoot, async () => {
+    const targetPath = eventIndexPath(pmRoot);
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
+    let database: DatabaseSync | undefined;
+    try {
+      database = new Database(temporaryPath);
+      createSchema(database);
+      database.exec("BEGIN IMMEDIATE");
+      const authoritative = await readAuthoritativeHistorySnapshot(pmRoot);
+      for (const event of authoritative.events) {
+        insertEvent(database, event);
+      }
+      for (const [streamId, byteSize] of authoritative.stream_byte_sizes) {
+        upsertStreamByteSize(database, streamId, byteSize);
+      }
+      database.exec("COMMIT");
+      database.close();
+      database = undefined;
+      await fs.rm(targetPath, { force: true });
+      await fs.rename(temporaryPath, targetPath);
+      return true;
+    } catch (error: unknown) {
+      database?.close();
+      await fs.rm(temporaryPath, { force: true });
+      throw error;
     }
-    for (const [streamId, byteSize] of authoritative.stream_byte_sizes) {
-      upsertStreamByteSize(database, streamId, byteSize);
-    }
-    database.exec("COMMIT");
-    database.close();
-    database = undefined;
-    await fs.rm(targetPath, { force: true });
-    await fs.rename(temporaryPath, targetPath);
-    return true;
-  } catch (error: unknown) {
-    database?.close();
-    await fs.rm(temporaryPath, { force: true });
-    throw error;
-  }
+  });
 }
 
 function matchesSet(
@@ -426,63 +452,69 @@ export async function appendHistoryEntryWithEventIndex(
   append: () => Promise<void>,
 ): Promise<void> {
   const pmRoot = path.dirname(path.dirname(historyPath));
-  const targetPath = eventIndexPath(pmRoot);
-  try {
-    await fs.access(targetPath);
-  } catch {
-    await append();
-    return;
-  }
   const Database = resolveDatabaseSync();
   if (!Database) {
     await append();
     return;
   }
-  let database: DatabaseSync | undefined;
-  try {
-    database = new Database(targetPath);
-    const version = database
-      .prepare("SELECT value FROM metadata WHERE key = 'version'")
-      .get() as { value?: unknown } | undefined;
-    if (version?.value !== EVENT_INDEX_VERSION) {
-      throw new TypeError("Unsupported history event index version");
+  await withHistoryEventIndexLock(pmRoot, async () => {
+    const targetPath = eventIndexPath(pmRoot);
+    try {
+      await fs.access(targetPath);
+    } catch {
+      await append();
+      return;
     }
-  } catch {
-    database?.close();
-    await fs.rm(targetPath, { force: true });
-    await append();
-    return;
-  }
-  try {
-    database.exec("PRAGMA busy_timeout = 5000");
-    database.exec("BEGIN IMMEDIATE");
-  } catch (error: unknown) {
-    database.close();
-    throw error;
-  }
-  let appended = false;
-  try {
-    await append();
-    appended = true;
-    const streamId = path.basename(historyPath, ".jsonl");
-    const offset = database
-      .prepare(
-        "SELECT COALESCE(MAX(stream_offset), -1) + 1 AS value FROM events WHERE stream_id = ?",
-      )
-      .get(streamId) as { value: number };
-    insertEvent(database, {
-      stream_id: streamId,
-      stream_offset: Number(offset.value),
-      entry,
-    });
-    upsertStreamByteSize(database, streamId, (await fs.stat(historyPath)).size);
-    database.exec("COMMIT");
-    database.close();
-  } catch (error: unknown) {
-    database?.close();
-    if (!appended) throw error;
-    await fs.rm(targetPath, { force: true });
-  }
+    let database: DatabaseSync | undefined;
+    try {
+      database = new Database(targetPath);
+      const version = database
+        .prepare("SELECT value FROM metadata WHERE key = 'version'")
+        .get() as { value?: unknown } | undefined;
+      if (version?.value !== EVENT_INDEX_VERSION) {
+        throw new TypeError("Unsupported history event index version");
+      }
+    } catch {
+      database?.close();
+      await fs.rm(targetPath, { force: true });
+      await append();
+      return;
+    }
+    try {
+      database.exec("PRAGMA busy_timeout = 5000");
+      database.exec("BEGIN IMMEDIATE");
+    } catch (error: unknown) {
+      database.close();
+      throw error;
+    }
+    let appended = false;
+    try {
+      await append();
+      appended = true;
+      const streamId = path.basename(historyPath, ".jsonl");
+      const offset = database
+        .prepare(
+          "SELECT COALESCE(MAX(stream_offset), -1) + 1 AS value FROM events WHERE stream_id = ?",
+        )
+        .get(streamId) as { value: number };
+      insertEvent(database, {
+        stream_id: streamId,
+        stream_offset: Number(offset.value),
+        entry,
+      });
+      upsertStreamByteSize(
+        database,
+        streamId,
+        (await fs.stat(historyPath)).size,
+      );
+      database.exec("COMMIT");
+      database.close();
+    } catch (error: unknown) {
+      database?.close();
+      if (!appended) throw error;
+      await fs.rm(targetPath, { force: true });
+    }
+  });
 }
 
 /** Invalidate the optional event projection after a non-append rewrite. */
@@ -578,30 +610,46 @@ export async function queryHistoryEventIndex(
   const where = clauses.length === 0 ? "" : ` WHERE ${clauses.join(" AND ")}`;
   let database: DatabaseSync | undefined;
   try {
-    database = new Database(eventIndexPath(pmRoot), { readOnly: true });
-    const version = database
-      .prepare("SELECT value FROM metadata WHERE key = 'version'")
-      .get() as { value?: unknown } | undefined;
-    if (version?.value !== EVENT_INDEX_VERSION) {
+    return await withHistoryEventIndexLock(pmRoot, async () => {
+      database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+      const version = database
+        .prepare("SELECT value FROM metadata WHERE key = 'version'")
+        .get() as { value?: unknown } | undefined;
+      const validationStreamIds = await historyIndexValidationStreamIds(
+        database,
+        pmRoot,
+        query.stream_ids,
+      );
+      if (
+        version?.value !== EVENT_INDEX_VERSION ||
+        !(await historyIndexMatchesStreamSizes(
+          database,
+          pmRoot,
+          validationStreamIds,
+        ))
+      ) {
+        database.close();
+        database = undefined;
+        return null;
+      }
+      const rows = database
+        .prepare(
+          `SELECT stream_id, stream_offset, entry_json
+           FROM events${where}
+           ORDER BY ts, stream_id, stream_offset
+           LIMIT ?`,
+        )
+        .all(...parameters, Math.max(0, Math.floor(query.limit)) + 1);
+      const hasMore = rows.length > query.limit;
+      const events = rows.slice(0, query.limit).map((row) => ({
+        stream_id: String(row.stream_id),
+        stream_offset: Number(row.stream_offset),
+        entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
+      }));
       database.close();
-      return null;
-    }
-    const rows = database
-      .prepare(
-        `SELECT stream_id, stream_offset, entry_json
-         FROM events${where}
-         ORDER BY ts, stream_id, stream_offset
-         LIMIT ?`,
-      )
-      .all(...parameters, Math.max(0, Math.floor(query.limit)) + 1);
-    const hasMore = rows.length > query.limit;
-    const events = rows.slice(0, query.limit).map((row) => ({
-      stream_id: String(row.stream_id),
-      stream_offset: Number(row.stream_offset),
-      entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
-    }));
-    database.close();
-    return { events, has_more: hasMore };
+      database = undefined;
+      return { events, has_more: hasMore };
+    });
   } catch {
     database?.close();
     return null;
@@ -671,6 +719,36 @@ async function historyIndexMatchesStreamSizes(
   return true;
 }
 
+async function historyIndexValidationStreamIds(
+  database: DatabaseSync,
+  pmRoot: string,
+  requestedStreamIds: readonly string[] | undefined,
+): Promise<string[]> {
+  if (requestedStreamIds && requestedStreamIds.length > 0) {
+    return [
+      ...new Set(
+        requestedStreamIds.filter((streamId) => streamId.trim().length > 0),
+      ),
+    ];
+  }
+  const indexed = database
+    .prepare("SELECT stream_id FROM streams")
+    .all()
+    .map((row) => String(row.stream_id));
+  const authoritative = await fs
+    .readdir(path.join(pmRoot, "history"), { withFileTypes: true })
+    .then((entries) =>
+      entries
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
+        .map((entry) => entry.name.slice(0, -".jsonl".length)),
+    )
+    .catch((error: unknown) => {
+      if (isFileMissingError(error)) return [];
+      throw error;
+    });
+  return [...new Set([...indexed, ...authoritative])];
+}
+
 async function readIndexedLatestSubstantiveEvents(
   Database: DatabaseSyncConstructor | null,
   pmRoot: string,
@@ -680,46 +758,50 @@ async function readIndexedLatestSubstantiveEvents(
   if (!Database) return null;
   let database: DatabaseSync | undefined;
   try {
-    database = new Database(eventIndexPath(pmRoot), { readOnly: true });
-    const version = database
-      .prepare("SELECT value FROM metadata WHERE key = 'version'")
-      .get() as { value?: unknown } | undefined;
-    if (
-      version?.value !== EVENT_INDEX_VERSION ||
-      !(await historyIndexMatchesStreamSizes(database, pmRoot, streamIds))
-    ) {
+    return await withHistoryEventIndexLock(pmRoot, async () => {
+      database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+      const version = database
+        .prepare("SELECT value FROM metadata WHERE key = 'version'")
+        .get() as { value?: unknown } | undefined;
+      if (
+        version?.value !== EVENT_INDEX_VERSION ||
+        !(await historyIndexMatchesStreamSizes(database, pmRoot, streamIds))
+      ) {
+        database.close();
+        database = undefined;
+        return null;
+      }
+      const indexed: IndexedHistoryEvent[] = [];
+      for (let start = 0; start < streamIds.length; start += 500) {
+        const chunk = streamIds.slice(start, start + 500);
+        const rows = database
+          .prepare(
+            `SELECT stream_id, stream_offset, entry_json
+             FROM (
+               SELECT stream_id, stream_offset, entry_json,
+                      ROW_NUMBER() OVER (
+                        PARTITION BY stream_id
+                        ORDER BY ts DESC, stream_offset DESC
+                      ) AS recency_rank
+               FROM events
+               WHERE event_class = 'substantive'
+                 AND stream_id IN (${chunk.map(() => "?").join(", ")})
+             )
+             WHERE recency_rank = 1`,
+          )
+          .all(...chunk);
+        indexed.push(
+          ...rows.map((row) => ({
+            stream_id: String(row.stream_id),
+            stream_offset: Number(row.stream_offset),
+            entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
+          })),
+        );
+      }
       database.close();
-      return null;
-    }
-    const indexed: IndexedHistoryEvent[] = [];
-    for (let start = 0; start < streamIds.length; start += 500) {
-      const chunk = streamIds.slice(start, start + 500);
-      const rows = database
-        .prepare(
-          `SELECT stream_id, stream_offset, entry_json
-           FROM (
-             SELECT stream_id, stream_offset, entry_json,
-                    ROW_NUMBER() OVER (
-                      PARTITION BY stream_id
-                      ORDER BY ts DESC, stream_offset DESC
-                    ) AS recency_rank
-             FROM events
-             WHERE event_class = 'substantive'
-               AND stream_id IN (${chunk.map(() => "?").join(", ")})
-           )
-           WHERE recency_rank = 1`,
-        )
-        .all(...chunk);
-      indexed.push(
-        ...rows.map((row) => ({
-          stream_id: String(row.stream_id),
-          stream_offset: Number(row.stream_offset),
-          entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
-        })),
-      );
-    }
-    database.close();
-    return collectLatestSubstantiveEvents(indexed, requested);
+      database = undefined;
+      return collectLatestSubstantiveEvents(indexed, requested);
+    });
   } catch {
     database?.close();
     return null;

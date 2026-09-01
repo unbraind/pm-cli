@@ -163,40 +163,34 @@ describe("context signal feature store", () => {
       source: "scan_fallback",
       sourceCursor: "cursor",
     });
+    const sortable = buildContextSignalSnapshot([item("pm-a"), item("pm-b")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+    });
     expect(
       parseContextSignalSnapshot({
-        ...structuredClone(valid),
-        items: [
-          {
-            id: "pm-b",
-            signals: {},
-            signal_provenance: valid.items[0]?.signal_provenance,
-          },
-          {
-            id: "pm-a",
-            signals: {},
-            signal_provenance: valid.items[0]?.signal_provenance,
-          },
-        ],
+        ...structuredClone(sortable),
+        items: structuredClone(sortable.items).reverse(),
       })?.items.map(({ id }) => id),
     ).toEqual(["pm-a", "pm-b"]);
+    const substantive = buildContextSignalSnapshot([item("pm-a")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+      recencyEvidence: {
+        "pm-a": {
+          source: "substantive_history",
+          coordinate: now,
+          history_op: "comment_add",
+          event_class: "substantive",
+        },
+      },
+    });
     expect(
-      parseContextSignalSnapshot({
-        ...structuredClone(valid),
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: {
-                source: "substantive_history",
-                coordinate: now,
-                history_op: "comment_add",
-                event_class: "substantive",
-              },
-            },
-          },
-        ],
-      }),
+      parseContextSignalSnapshot(structuredClone(substantive)),
     ).not.toBeNull();
     const invalidValues: unknown[] = [
       null,
@@ -379,6 +373,39 @@ describe("context signal feature store", () => {
                 source: "release_cohort",
                 coordinate: "2026-07-21T00:00:00.000Z",
               },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("rebuilds when persisted rows do not match their recency fingerprint", async () => {
+    const adapter = new MemoryAdapter();
+    const store = new ContextSignalStore(adapter);
+    const options = {
+      statusRegistry,
+      now,
+      source: "scan_fallback" as const,
+      sourceCursor: "stable-cursor",
+    };
+    const initial = await store.readOrRebuild([item("pm-a")], options);
+    const persisted = structuredClone(initial.snapshot);
+    const first = persisted.items[0];
+    if (first === undefined) throw new Error("expected persisted row");
+    first.signal_provenance.recency.coordinate = "2026-07-01T00:00:00.000Z";
+    adapter.value = persisted;
+
+    await expect(
+      store.readOrRebuild([item("pm-a")], options),
+    ).resolves.toMatchObject({
+      cache_status: "rebuilt",
+      warnings: ["context_signal_store_invalid"],
+      snapshot: {
+        items: [
+          {
+            signal_provenance: {
+              recency: { coordinate: "2026-07-20T00:00:00.000Z" },
             },
           },
         ],

@@ -1,20 +1,42 @@
-import { chmod, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdtemp,
+  readFile,
+  rm,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import jsonPatch from "fast-json-patch";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { _testOnlyRestoreCommand, runRestore } from "../../../src/cli/commands/restore.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
+import {
+  _testOnlyRestoreCommand,
+  runRestore,
+} from "../../../src/cli/commands/restore.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+} from "../../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../../src/core/extensions/loader.js";
 import { createHistoryEntry } from "../../../src/core/history/history.js";
 import * as lockModule from "../../../src/core/lock/lock.js";
-import { stableStringify, sha256Hex } from "../../../src/core/shared/serialization.js";
+import {
+  stableStringify,
+  sha256Hex,
+} from "../../../src/core/shared/serialization.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import type { HistoryEntry, ItemMetadata } from "../../../src/types.js";
 import { readJsonFixture } from "../../helpers/fixtures.js";
-import { createTestItemId, type TestItemStatus } from "../../helpers/itemFactory.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  createTestItemId,
+  type TestItemStatus,
+} from "../../helpers/itemFactory.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 interface RestoreCreateSeedFixture {
   status: string;
@@ -36,7 +58,10 @@ interface RestoreCreateSeedFixture {
   doc: string;
 }
 
-const restoreCreateSeedFixture = readJsonFixture<RestoreCreateSeedFixture>("restore", "create-seed.json");
+const restoreCreateSeedFixture = readJsonFixture<RestoreCreateSeedFixture>(
+  "restore",
+  "create-seed.json",
+);
 
 function createRestoreFixture(context: TempPmContext, title: string): string {
   const id = createTestItemId(context, {
@@ -97,10 +122,24 @@ function createRestoreFixture(context: TempPmContext, title: string): string {
   return id;
 }
 
-function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
-  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
-    expectJson: true,
-  });
+function setGovernancePreset(
+  context: TempPmContext,
+  preset: "minimal" | "default" | "strict",
+): void {
+  const result = context.runCli(
+    [
+      "config",
+      "project",
+      "set",
+      "governance-preset",
+      "--policy",
+      preset,
+      "--json",
+    ],
+    {
+      expectJson: true,
+    },
+  );
   expect(result.code).toBe(0);
 }
 
@@ -110,9 +149,13 @@ describe("runRestore", () => {
   });
 
   it("fails when tracker is not initialized", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-restore-not-init-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-restore-not-init-"),
+    );
     try {
-      await expect(runRestore("pm-missing", "1", {}, { path: tempDir })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore("pm-missing", "1", {}, { path: tempDir }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     } finally {
@@ -121,8 +164,15 @@ describe("runRestore", () => {
   });
 
   it("extracts patch failure context from non-object errors and fallback patch metadata", () => {
-    const patch = [{ op: "move", path: "/metadata/title", from: "/metadata/goal" }] as HistoryEntry["patch"];
-    expect(_testOnlyRestoreCommand.extractPatchFailureContext(patch, "plain-string-error")).toEqual({});
+    const patch = [
+      { op: "move", path: "/metadata/title", from: "/metadata/goal" },
+    ] as HistoryEntry["patch"];
+    expect(
+      _testOnlyRestoreCommand.extractPatchFailureContext(
+        patch,
+        "plain-string-error",
+      ),
+    ).toEqual({});
     expect(
       _testOnlyRestoreCommand.extractPatchFailureContext(patch, {
         index: -1,
@@ -172,7 +222,9 @@ describe("runRestore", () => {
       expect(getJson.item.status).toBe(restoreCreateSeedFixture.status);
       expect(getJson.item.body).toBe(restoreCreateSeedFixture.body);
 
-      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("restore");
@@ -192,7 +244,9 @@ describe("runRestore", () => {
             layer: "project",
             name: "restore-write-hook",
             run: (hookContext) => {
-              events.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+              events.push(
+                `${hookContext.op}:${path.basename(hookContext.path)}`,
+              );
               if (hookContext.op === "restore:history") {
                 throw new Error("restore history hook failure");
               }
@@ -216,24 +270,35 @@ describe("runRestore", () => {
       expect(restored.item.id).toBe(id);
       expect(events).toEqual([
         `lock:create:${id}.lock`,
+        "lock:create:history-event-index.lock",
+        "lock:release:history-event-index.lock",
         `restore:${id}.toon`,
         `restore:history:${id}.jsonl`,
         `lock:release:${id}.lock`,
       ]);
-      expect(restored.warnings).toEqual(["extension_hook_failed:project:restore-write-hook:onWrite"]);
+      expect(restored.warnings).toEqual([
+        "extension_hook_failed:project:restore-write-hook:onWrite",
+      ]);
     });
   });
 
   it("restores by timestamp to the latest matching entry", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Timestamp Restore Item");
-      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ ts: string }> };
       const targetTimestamp = historyJson.history[1]?.ts;
       expect(typeof targetTimestamp).toBe("string");
 
-      const restored = await runRestore(id, targetTimestamp ?? "", { author: "test-author" }, { path: context.pmPath });
+      const restored = await runRestore(
+        id,
+        targetTimestamp ?? "",
+        { author: "test-author" },
+        { path: context.pmPath },
+      );
       expect(restored.restored_from.kind).toBe("timestamp");
       expect(restored.restored_from.target).toBe(targetTimestamp);
       expect(restored.restored_from.history_index).toBe(2);
@@ -249,20 +314,31 @@ describe("runRestore", () => {
   it("validates restore targets", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Invalid Restore Target Item");
-      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
       expect(history.code).toBe(0);
-      const firstTs = (history.json as { history: Array<{ ts: string }> }).history[0].ts;
-      const beforeCreate = new Date(new Date(firstTs).getTime() - 10_000).toISOString();
+      const firstTs = (history.json as { history: Array<{ ts: string }> })
+        .history[0].ts;
+      const beforeCreate = new Date(
+        new Date(firstTs).getTime() - 10_000,
+      ).toISOString();
 
-      await expect(runRestore(id, "not-a-target", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "not-a-target", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
 
-      await expect(runRestore(id, "999", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "999", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
 
-      await expect(runRestore(id, beforeCreate, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, beforeCreate, {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -279,7 +355,9 @@ describe("runRestore", () => {
       lines[0] = JSON.stringify(first);
       await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
 
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
     });
@@ -291,7 +369,9 @@ describe("runRestore", () => {
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await unlink(historyPath);
 
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     });
@@ -303,14 +383,18 @@ describe("runRestore", () => {
       const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
       const originalAcquireLock = lockModule.acquireLock;
       let mutated = false;
-      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
-        if (!mutated) {
-          mutated = true;
-          const raw = await readFile(historyFile, "utf8");
-          await writeFile(historyFile, `${raw}\n`, "utf8");
-        }
-        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
-      });
+      const lockSpy = vi
+        .spyOn(lockModule, "acquireLock")
+        .mockImplementation(async (...args) => {
+          if (!mutated) {
+            mutated = true;
+            const raw = await readFile(historyFile, "utf8");
+            await writeFile(historyFile, `${raw}\n`, "utf8");
+          }
+          return originalAcquireLock(
+            ...(args as Parameters<typeof lockModule.acquireLock>),
+          );
+        });
 
       try {
         await expect(
@@ -322,7 +406,9 @@ describe("runRestore", () => {
           ),
         ).rejects.toMatchObject<PmCliError>({
           exitCode: EXIT_CODE.CONFLICT,
-          message: expect.stringContaining(`History for ${id} changed while waiting for lock; retry restore.`),
+          message: expect.stringContaining(
+            `History for ${id} changed while waiting for lock; retry restore.`,
+          ),
         });
       } finally {
         lockSpy.mockRestore();
@@ -338,14 +424,25 @@ describe("runRestore", () => {
       const historyRawBefore = await readFile(historyFile, "utf8");
       const originalAcquireLock = lockModule.acquireLock;
       let mutated = false;
-      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
-        if (!mutated) {
-          mutated = true;
-          const raw = await readFile(itemFile, "utf8");
-          await writeFile(itemFile, raw.replace("second body section", "second body section changed-before-lock"), "utf8");
-        }
-        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
-      });
+      const lockSpy = vi
+        .spyOn(lockModule, "acquireLock")
+        .mockImplementation(async (...args) => {
+          if (!mutated) {
+            mutated = true;
+            const raw = await readFile(itemFile, "utf8");
+            await writeFile(
+              itemFile,
+              raw.replace(
+                "second body section",
+                "second body section changed-before-lock",
+              ),
+              "utf8",
+            );
+          }
+          return originalAcquireLock(
+            ...(args as Parameters<typeof lockModule.acquireLock>),
+          );
+        });
 
       try {
         await expect(
@@ -357,7 +454,9 @@ describe("runRestore", () => {
           ),
         ).rejects.toMatchObject<PmCliError>({
           exitCode: EXIT_CODE.CONFLICT,
-          message: expect.stringContaining(`Item ${id} changed while waiting for lock; retry restore.`),
+          message: expect.stringContaining(
+            `Item ${id} changed while waiting for lock; retry restore.`,
+          ),
         });
         expect(await readFile(historyFile, "utf8")).toBe(historyRawBefore);
       } finally {
@@ -370,7 +469,15 @@ describe("runRestore", () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Strict Missing History Item");
       const strictSet = context.runCli(
-        ["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"],
+        [
+          "config",
+          "project",
+          "set",
+          "history-missing-stream-policy",
+          "--policy",
+          "strict_error",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(strictSet.code).toBe(0);
@@ -378,7 +485,9 @@ describe("runRestore", () => {
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await unlink(historyPath);
 
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
       await expect(readFile(historyPath, "utf8")).rejects.toBeDefined();
@@ -392,7 +501,12 @@ describe("runRestore", () => {
       await unlink(itemPath);
       await expect(readFile(itemPath, "utf8")).rejects.toBeDefined();
 
-      const restored = await runRestore(id, "1", { author: "test-author" }, { path: context.pmPath });
+      const restored = await runRestore(
+        id,
+        "1",
+        { author: "test-author" },
+        { path: context.pmPath },
+      );
       expect(restored.item.id).toBe(id);
       expect(restored.restored_from.history_index).toBe(1);
 
@@ -408,7 +522,15 @@ describe("runRestore", () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Deleted Item Restore");
       const deleted = context.runCli(
-        ["delete", id, "--json", "--author", "test-author", "--message", "delete before restore recovery"],
+        [
+          "delete",
+          id,
+          "--json",
+          "--author",
+          "test-author",
+          "--message",
+          "delete before restore recovery",
+        ],
         { expectJson: true },
       );
       expect(deleted.code).toBe(0);
@@ -416,7 +538,10 @@ describe("runRestore", () => {
       const restored = await runRestore(
         id,
         "3",
-        { author: "test-author", message: "restore deleted item from history stream" },
+        {
+          author: "test-author",
+          message: "restore deleted item from history stream",
+        },
         { path: context.pmPath },
       );
       expect(restored.item.id).toBe(id);
@@ -428,7 +553,9 @@ describe("runRestore", () => {
       expect(getJson.item.status).toBe("in_progress");
       expect(getJson.item.body).toContain("second body section");
 
-      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("restore");
@@ -463,7 +590,9 @@ describe("runRestore", () => {
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await writeFile(historyPath, `${JSON.stringify(entry)}\n`, "utf8");
 
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
     });
@@ -474,12 +603,24 @@ describe("runRestore", () => {
       setGovernancePreset(context, "strict");
       const id = createRestoreFixture(context, "Assigned Author Item");
       const assign = context.runCli(
-        ["update", id, "--json", "--assignee", "other-author", "--author", "test-author", "--message", "assign other"],
+        [
+          "update",
+          id,
+          "--json",
+          "--assignee",
+          "other-author",
+          "--author",
+          "test-author",
+          "--message",
+          "assign other",
+        ],
         { expectJson: true },
       );
       expect(assign.code).toBe(0);
 
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.CONFLICT,
       });
     });
@@ -488,51 +629,98 @@ describe("runRestore", () => {
   it("emits ownership warnings (without blocking) when enforcement is warn", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "minimal");
-      const enforcement = context.runCli(["config", "set", "governance_ownership_enforcement", "warn", "--json"], {
-        expectJson: true,
-      });
+      const enforcement = context.runCli(
+        ["config", "set", "governance_ownership_enforcement", "warn", "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(enforcement.code).toBe(0);
 
       const id = createRestoreFixture(context, "Assigned Author Warning Item");
       const assign = context.runCli(
-        ["update", id, "--json", "--assignee", "other-author", "--author", "test-author", "--message", "assign other"],
+        [
+          "update",
+          id,
+          "--json",
+          "--assignee",
+          "other-author",
+          "--author",
+          "test-author",
+          "--message",
+          "assign other",
+        ],
         { expectJson: true },
       );
       expect(assign.code).toBe(0);
 
       const restored = await runRestore(id, "1", {}, { path: context.pmPath });
-      expect(restored.warnings).toEqual(expect.arrayContaining([expect.stringContaining("ownership_warning:assignee_conflict")]));
+      expect(restored.warnings).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("ownership_warning:assignee_conflict"),
+        ]),
+      );
     });
   });
 
   it("restores an assignee-conflicting item without warnings when enforcement is none", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "minimal");
-      const enforcement = context.runCli(["config", "set", "governance_ownership_enforcement", "none", "--json"], {
-        expectJson: true,
-      });
+      const enforcement = context.runCli(
+        ["config", "set", "governance_ownership_enforcement", "none", "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(enforcement.code).toBe(0);
 
       const id = createRestoreFixture(context, "Assigned Author None Item");
       const assign = context.runCli(
-        ["update", id, "--json", "--assignee", "other-author", "--author", "test-author", "--message", "assign other"],
+        [
+          "update",
+          id,
+          "--json",
+          "--assignee",
+          "other-author",
+          "--author",
+          "test-author",
+          "--message",
+          "assign other",
+        ],
         { expectJson: true },
       );
       expect(assign.code).toBe(0);
 
       // enforcement=none takes neither the strict (throw) nor warn (push) arm: restore succeeds silently.
       const restored = await runRestore(id, "1", {}, { path: context.pmPath });
-      expect(restored.warnings.some((warning) => warning.startsWith("ownership_warning:assignee_conflict"))).toBe(false);
+      expect(
+        restored.warnings.some((warning) =>
+          warning.startsWith("ownership_warning:assignee_conflict"),
+        ),
+      ).toBe(false);
     });
   });
 
   it("restores across type-folder moves and rolls back both paths when history append fails", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Restore Type Move Rollback");
-      const addType = context.runCli(["schema", "add-type", "Spike", "--folder", "spikes", "--json"], { expectJson: true });
+      const addType = context.runCli(
+        ["schema", "add-type", "Spike", "--folder", "spikes", "--json"],
+        { expectJson: true },
+      );
       expect(addType.code).toBe(0);
       const typeUpdate = context.runCli(
-        ["update", id, "--json", "--type", "Spike", "--author", "test-author", "--message", "move to spike"],
+        [
+          "update",
+          id,
+          "--json",
+          "--type",
+          "Spike",
+          "--author",
+          "test-author",
+          "--message",
+          "move to spike",
+        ],
         { expectJson: true },
       );
       expect(typeUpdate.code).toBe(0);
@@ -546,7 +734,9 @@ describe("runRestore", () => {
       // Pin the induced history-append failure (EACCES on POSIX, EPERM on
       // Windows, from opening the read-only stream) so an unrelated early
       // rejection cannot pass.
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         code: expect.stringMatching(/^(EACCES|EPERM)$/),
       });
 
@@ -566,7 +756,9 @@ describe("runRestore", () => {
       // Pin the induced history-append failure (EACCES on POSIX, EPERM on
       // Windows, from opening the read-only stream) so an unrelated early
       // rejection cannot pass.
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         code: expect.stringMatching(/^(EACCES|EPERM)$/),
       });
       await expect(readFile(itemPath, "utf8")).rejects.toThrow();
@@ -576,9 +768,13 @@ describe("runRestore", () => {
   it("rolls back item contents when restore history append fails", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Rollback Restore Item");
-      const before = context.runCli(["get", id, "--json"], { expectJson: true });
+      const before = context.runCli(["get", id, "--json"], {
+        expectJson: true,
+      });
       expect(before.code).toBe(0);
-      const beforeJson = before.json as { item: { status: string; body: string } };
+      const beforeJson = before.json as {
+        item: { status: string; body: string };
+      };
 
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await chmod(historyPath, 0o444);
@@ -586,13 +782,17 @@ describe("runRestore", () => {
       // Pin the induced history-append failure (EACCES on POSIX, EPERM on
       // Windows, from opening the read-only stream) so an unrelated early
       // rejection cannot pass.
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         code: expect.stringMatching(/^(EACCES|EPERM)$/),
       });
 
       const after = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(after.code).toBe(0);
-      const afterJson = after.json as { item: { status: string; body: string } };
+      const afterJson = after.json as {
+        item: { status: string; body: string };
+      };
       expect(afterJson.item.status).toBe(beforeJson.item.status);
       expect(afterJson.item.body).toBe(beforeJson.item.body);
     });
@@ -610,7 +810,12 @@ describe("runRestore", () => {
       await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
 
       await expect(
-        runRestore(id, new Date(Date.now() + 60_000).toISOString(), {}, { path: context.pmPath }),
+        runRestore(
+          id,
+          new Date(Date.now() + 60_000).toISOString(),
+          {},
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
@@ -636,8 +841,14 @@ describe("runRestore", () => {
         before_hash: sha256Hex(stableStringify({ front_matter: {}, body: "" })),
         after_hash: "unused-after-hash",
       };
-      await writeFile(historyPath, `${JSON.stringify(invalidShapeEntry)}\n`, "utf8");
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await writeFile(
+        historyPath,
+        `${JSON.stringify(invalidShapeEntry)}\n`,
+        "utf8",
+      );
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
 
@@ -655,12 +866,20 @@ describe("runRestore", () => {
         before_hash: sha256Hex(stableStringify({ front_matter: {}, body: "" })),
         after_hash: "unused-after-hash",
       };
-      await writeFile(historyPath, `${JSON.stringify(invalidPatchEntry)}\n`, "utf8");
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await writeFile(
+        historyPath,
+        `${JSON.stringify(invalidPatchEntry)}\n`,
+        "utf8",
+      );
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
         message: expect.stringContaining("op=replace"),
       });
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         message: expect.stringContaining("path=/metadata/missing"),
       });
 
@@ -678,7 +897,10 @@ describe("runRestore", () => {
         },
         body: "",
       };
-      const validPatch = jsonPatch.compare({ front_matter: {}, body: "" }, validTarget);
+      const validPatch = jsonPatch.compare(
+        { front_matter: {}, body: "" },
+        validTarget,
+      );
       const afterHashMismatchEntry: HistoryEntry = {
         ts: new Date().toISOString(),
         author: "test-author",
@@ -687,8 +909,14 @@ describe("runRestore", () => {
         before_hash: sha256Hex(stableStringify({ front_matter: {}, body: "" })),
         after_hash: "wrong-after-hash",
       };
-      await writeFile(historyPath, `${JSON.stringify(afterHashMismatchEntry)}\n`, "utf8");
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await writeFile(
+        historyPath,
+        `${JSON.stringify(afterHashMismatchEntry)}\n`,
+        "utf8",
+      );
+      await expect(
+        runRestore(id, "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
     });
@@ -698,7 +926,17 @@ describe("runRestore", () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Force Restore Item");
       const assign = context.runCli(
-        ["update", id, "--json", "--assignee", "other-author", "--author", "test-author", "--message", "assign other"],
+        [
+          "update",
+          id,
+          "--json",
+          "--assignee",
+          "other-author",
+          "--author",
+          "test-author",
+          "--message",
+          "assign other",
+        ],
         { expectJson: true },
       );
       expect(assign.code).toBe(0);
@@ -714,10 +952,16 @@ describe("runRestore", () => {
       );
       expect(restored.item.id).toBe(id);
 
-      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
       expect(history.code).toBe(0);
-      const historyJson = history.json as { history: Array<{ op: string; author: string }> };
-      const restoreEntries = historyJson.history.filter((entry) => entry.op === "restore");
+      const historyJson = history.json as {
+        history: Array<{ op: string; author: string }>;
+      };
+      const restoreEntries = historyJson.history.filter(
+        (entry) => entry.op === "restore",
+      );
       expect(restoreEntries.length).toBeGreaterThan(0);
       expect(restoreEntries.at(-1)?.author).toBe("unknown");
     });
@@ -727,10 +971,14 @@ describe("runRestore", () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Validation Restore Item");
 
-      await expect(runRestore(id, "   ", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore(id, "   ", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runRestore("pm-does-not-exist", "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runRestore("pm-does-not-exist", "1", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     });
@@ -742,7 +990,12 @@ describe("runRestore", () => {
       const previous = process.env.PM_AUTHOR;
       delete process.env.PM_AUTHOR;
       try {
-        const restored = await runRestore(id, "1", {}, { path: context.pmPath });
+        const restored = await runRestore(
+          id,
+          "1",
+          {},
+          { path: context.pmPath },
+        );
         expect(restored.item.id).toBe(id);
       } finally {
         if (previous === undefined) {

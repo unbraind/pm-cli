@@ -594,6 +594,27 @@ describe("surface replication gate", () => {
     ) as Record<string, unknown>;
     config.waivers = [];
 
+    const databaseSeamSet = (
+      config.sets as Array<{
+        id: string;
+        triggers: Array<{
+          path?: string;
+          changed_lines_contain_any?: string[];
+        }>;
+      }>
+    ).find((entry) => entry.id === "database-sync-test-seam");
+    const eventIndexTrigger = databaseSeamSet?.triggers.find(
+      (entry) => entry.path === "src/core/history/event-index.ts",
+    );
+    expect(eventIndexTrigger?.changed_lines_contain_any).toEqual(
+      expect.arrayContaining([
+        "RuntimeDatabaseSync = loadStableDatabaseSync(",
+        "RuntimeDatabaseSync = databaseSync",
+        "RuntimeDatabaseSync = previous",
+        "let RuntimeDatabaseSync:",
+      ]),
+    );
+
     const unrelated = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: ["src/core/history/event-index.ts"],
@@ -612,35 +633,17 @@ describe("surface replication gate", () => {
       ]),
     );
 
-    for (const changedLine of [
-      "RuntimeDatabaseSync = loadStableDatabaseSync(",
-      "RuntimeDatabaseSync = databaseSync;",
-      "RuntimeDatabaseSync = previous;",
-    ]) {
-      const relevant = await validateSurfaceReplication(config, {
-        repoRoot: path.resolve("."),
-        changedFiles: ["src/core/history/event-index.ts"],
-        changedLines: {
-          "src/core/history/event-index.ts": [changedLine],
-        },
-        today: "2026-08-17",
-      });
-      expect(relevant.violations).toContain(
-        "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
-      );
-    }
-
-    const declaration = await validateSurfaceReplication(config, {
+    const relevant = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
-          "let RuntimeDatabaseSync: DatabaseSyncConstructor | null | undefined;",
+          "RuntimeDatabaseSync = loadStableDatabaseSync(",
         ],
       },
       today: "2026-08-17",
     });
-    expect(declaration.violations).toContain(
+    expect(relevant.violations).toContain(
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
   }, 120_000);

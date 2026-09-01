@@ -47,7 +47,7 @@ describe("CLI recovery and derived usage helpers", () => {
           intent: "update",
           author: "agent",
         }),
-      ).resolves.toBeUndefined();
+      ).rejects.toThrow("emitted ranked ids");
       const events = (
         await readFile(
           path.join(context.pmPath, "runtime", "context-usage.jsonl"),

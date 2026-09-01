@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: context,relevance,scale
 created_at: "2026-07-06T23:18:52.486Z"
-updated_at: "2026-09-01T15:48:44.747Z"
+updated_at: "2026-09-01T21:12:25.744Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: SDK exposes a documented pluggable context-scoring interface with the built-in multi-signal scorer as default; pm context/pm next accept a token-budget bound and pack results by score with graceful projection degradation; json output can include a per-signal score breakdown; ranking is deterministic for a fixed workspace state; hot path stays index-backed (no full scan) and meets pm-9rxu latency targets on the 100k and 1M benchmark workspaces; on small workspaces default ordering remains stable (golden tests); extension can replace the scorer end-to-end (exemplar test)
@@ -114,7 +114,7 @@ dependencies[24]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[20]{created_at,author,text}:
+comments[22]{created_at,author,text}:
   "2026-07-06T23:51:07.660Z",codex-agent,"Planning evidence 2026-07-07: all-status duplicate checks showed pm-4k6b is the canonical adaptive context engine parent; no focused child existed for signal extraction, scorer contract, or token-budget packing. Added non-duplicate implementation slices: pm-3hps (derived signal feature store), pm-h3no (pluggable SDK scorer contract), and pm-55ra (diversity-aware token-budget packer). Algorithm sketch: build an index-backed candidate set from focus/claim/query/dependency windows; compute normalized signal vectors for recency, activity density, graph proximity, priority/risk/deadline pressure, semantic similarity, knowledge density, author affinity, and continuity deltas; combine them through a deterministic default scorer with extension override; pack by marginal utility per token while preserving required anchors and degrading projection depth before dropping items; expose score breakdowns for explainability and pm-atfm evaluation.\n"
   "2026-07-09T18:58:16.013Z",codex-root-20260709,"Implementation bundle: activating the canonical parent because pm-h3no, pm-atfm, pm-lixy, and pm-xmp5 deliver the first SDK-first adaptive relevance tranche across scorer contracts, context/next integration, golden judgments, and regression evaluation. Blocked index-backed signal store pm-3hps and token packer pm-55ra remain dependency-gated and are not falsely claimed."
   "2026-07-09T19:10:26.630Z",codex-root-20260709,"Progress evidence: wave-one adaptive relevance delivers the public scorer contract, deterministic weighted default, extension replacement path, context/next integration, explanations, and quality harness while preserving dependency gates for index-backed signals and token packing."
@@ -135,6 +135,8 @@ comments[20]{created_at,author,text}:
   "2026-08-25T05:19:25.286Z","harness:codex","Roadmap integration: pm-rz9gep and pm-pznhee extend this canonical context programme with MRTR input_required recovery and MCP Apps. They must preserve ranked bounded context, cache scope, provenance, and compact graph/context/assurance/task views rather than bypassing SDK context policy."
   "2026-08-28T20:39:15.308Z","harness:codex","Advanced context-selection architecture: first enforce access, project, state, and intent eligibility; then generate candidates from exact ID and phrase indexes, BM25, qwen dense retrieval, metadata facets, changed-since windows, and bounded graph neighborhoods. Rank with lexical and dense relevance, personalized graph walk or PageRank, dependency criticality, blocker impact, risk, deadline, event-time recency distinct from governance updated_at, provenance confidence, and observed utility. Select a diverse evidence set with MMR or submodular knapsack under a caller-carried token budget, degrade projections before dropping items, and emit omission and recovery receipts. Small corpora may score exhaustively; 100k-scale uses inverted and ANN indexes plus incremental graph summaries; million-scale uses sharding, LSM-style deltas, resumable cursors, sketches, and cacheable summaries. Evaluate nDCG, recall, task success, tokens, latency, staleness, and negative controls; feedback is valid only for rows actually delivered to the caller."
   "2026-09-01T15:48:16.699Z","harness:codex","Broad delivery checkpoint 2026-09-01: this tranche completes two data-integrity gaps in the adaptive context loop together: maintenance-invariant substantive-history recency with public provenance, and post-egress serve/delivery correlation so feedback learns only from context actually received. It also hardens the DatabaseSync replication trigger, refreshes supported-runtime scale evidence, updates context/output/performance SDK documentation and public surface snapshots, adopts compatible jscpd 5.1.1, and validates a clean distributable through CLI, PmClient, npx, bunx, npm, and Bun. Exact coverage is 100/100/100/100 across 596 files and 8260 tests; strict static/graph/record-integrity, package, security, and Node 24 scale gates pass. The parent remains open after the delivered children because million-item incremental cost and other roadmap children remain outstanding."
+  "2026-09-01T20:11:23.435Z","harness:codex","Exact-head Cubic review findings accepted: serve rows now reject duplicate identities after normalization, and CLI delivery-finalization failures are rethrown only after authoritative touches persist so the existing after-command warning surface records the failure. Focused negative controls pass."
+  "2026-09-01T21:12:24.096Z","harness:codex","Review tranche complete: normalized serve identities reject collisions, delivery finalization failures surface after authoritative touch persistence, persisted signal rows are fingerprint-validated, and the history projection now linearizes compliant rebuild/append/read operations while detecting out-of-band size drift. Final exact coverage is 100/100/100/100, quality:static and five-run scale acceptance pass, and manual isolated context serving rebuilt then reused a fresh derived-index snapshot. The umbrella remains open for its remaining roadmap children."
 notes[77]:
   - created_at: "2026-07-07T15:12:12.161Z"
     author: maintainer-agent
@@ -370,7 +372,8 @@ notes[77]:
     text: "Two measured constraints on the selection algorithm, taken 2026-08-30 against the live 2,602-item workspace rather than a fixture. Both contradict an assumption the design above currently makes.\n\nThe cost model is two-term, not one-term, and the fixed term dominates at this scale. Measured wall time on one workstation: pm --version 0.26s, pm list --limit 1 1.07s, pm context --limit 5 1.74s, pm next 1.80s, keyword search 1.89-1.96s, semantic search 2.96-3.97s after model warm-up, and a cold first semantic call 16.0s that is entirely ollama model load. Against those numbers, pm list --all --no-truncate with thirteen projected fields over every one of the 2,602 items completed in 0.59s. Projecting the entire corpus is cheaper than reading one item through the default path. So retrieval cost is approximately a fixed per-invocation constant of roughly one second plus a marginal encoding cost that is near zero up to full-corpus width.\n\nThe selection design above prices candidates by marginal expected task utility per marginal encoded token, which is a one-term model in which fetching less is always cheaper. That is the wrong objective in the measured regime. When the fixed term dominates, the optimal policy is not to fetch fewer items but to fetch once, project widely, and amortize the assembly across the session, which is exactly what the caller-carried output session and the fleet-amortized assembly propose and which a per-item marginal cost model cannot express. The correction is to make the cost model explicitly two-term, to measure the crossover per workspace rather than assume it, and to let the greedy step spend the fixed cost once and then treat additional rows as nearly free until the encoding budget, not the retrieval budget, binds. The regime flips at large scale, which is why the crossover has to be measured rather than fixed: the constant is a property of the invocation path and the marginal term is a property of the corpus.\n\nTyped path distance must be per-family with declared coverage, never one blended number. Counting each node once if it carries any edge of a family in either direction: 2,600 of 2,602 nodes carry a semantic edge and only 474 carry an ordering edge, so semantic coverage is 99.92 percent and sequence coverage is 18.2 percent. Longest chains over the same corpus: parent 6, blocked_by 10, discovered_from 16, implements 8, supersedes 13, all semantic families combined 31, and every typed non-related kind combined 83. A distance signal computed over the union therefore reaches 83 hops and is dominated end to end by the saturated association and semantic families, while the one family that carries time tops out at 10 and is absent for four items in five.\n\nThe consequence for ranking is specific. Any signal of the form graph distance to the focus node will, on this corpus, be answering how associatively related two items are and will almost never be answering what had to happen before what, yet those are the two questions context and next respectively need. A blended distance cannot be decomposed after the fact, so the signal must be emitted per family with its own coverage fraction attached, and any consumer that mixes families must declare the mixture. The same coverage fraction is what lets a scheduling signal degrade honestly: an ordering-derived score computed over an 18.2 percent population must say so rather than presenting itself as a workspace-wide judgement."
 learnings[1]{created_at,author,text}:
   "2026-07-21T15:56:04.292Z",codex-tracker-governance,"Graph-aware context needs separate meanings for an actionable active isolate and a historical knowledge orphan. The 2026-07-21 graph had zero active isolates but many historical components or orphans; ranking should surface the former as governance risk while using the latter only when relevance, analogy, or diversity justifies their token cost."
-files[14]{path,scope,note}:
+files[18]{path,scope,note}:
+  src/cli/after-command-context-usage.ts,project,Observable post-egress feedback failure
   src/cli/commands/context.ts,project,Adaptive scorer integration in context assembly
   src/cli/commands/next.ts,project,Adaptive scorer integration in next-work assembly
   src/cli/register-list-query.ts,project,public context and next flags
@@ -381,11 +384,14 @@ files[14]{path,scope,note}:
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP explain parameter schema
   src/sdk/cli-contracts/tool-schema.ts,project,MCP next schema
   src/sdk/context-relevance.ts,project,Wave-one adaptive relevance contract and deterministic default model
+  src/sdk/context-usage.ts,project,Normalized serve identity integrity
   tests/fixtures/contracts/full.json,project,generated public contract snapshot
+  tests/unit/cli/recovery-context-usage.spec.ts,project,Observable feedback failure with preserved touches
   tests/unit/commands/context-relevance-command.spec.ts,project,context and next integration coverage
   tests/unit/commands/register-commands.spec.ts,project,CLI option forwarding coverage
+  tests/unit/sdk/context-packing-usage.spec.ts,project,Normalized serve identity negative control
   tests/unit/sdk/context-relevance.spec.ts,project,Regression coverage for unknown runtime keys and canonical metrics
-tests[3]:
+tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/register-commands.spec.ts
     scope: project
     timeout_seconds: 300
@@ -396,8 +402,40 @@ tests[3]:
   - command: "pnpm quality:context-eval"
     scope: project
     timeout_seconds: 240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
-  test-all-local-mreilef6-55k1ab,test-all,passed,"2026-07-10T05:48:11.158Z","2026-07-10T05:49:59.382Z","2026-07-10T05:49:59.382Z",2,0,0,1,2
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/cli/recovery-context-usage.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-01T20:11:22.802Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+test_runs[2]:
+  - run_id: test-all-local-mreilef6-55k1ab
+    kind: test-all
+    status: passed
+    started_at: "2026-07-10T05:48:11.158Z"
+    finished_at: "2026-07-10T05:49:59.382Z"
+    recorded_at: "2026-07-10T05:49:59.382Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+  - run_id: test-local-mtj3uc7s-cnhtv8
+    kind: test
+    status: passed
+    started_at: "2026-09-01T20:11:30.462Z"
+    finished_at: "2026-09-01T20:13:29.560Z"
+    recorded_at: "2026-09-01T20:13:29.560Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/register-commands.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts,schema,schema,source,legacy
+      "pnpm quality:context-eval",schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/cli/recovery-context-usage.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,shared relevance pipeline and token-budget contract
   docs/PERFORMANCE.md,project,derived signal performance semantics

@@ -351,11 +351,22 @@ export async function recordContextUsageServing(
       "Context usage serving requires an author and valid ranked rows",
     );
   }
+  const normalizedRows = options.rows.map((row) => ({
+    ...row,
+    id: row.id.trim(),
+  }));
+  if (
+    new Set(normalizedRows.map((row) => row.id)).size !== normalizedRows.length
+  ) {
+    throw new ContextUsageValidationError(
+      "Context usage serving requires unique normalized row ids",
+    );
+  }
   const receipt: ContextUsageServingReceipt = {
     serve_id: randomUUID(),
     author: options.author.trim(),
     surface: options.surface,
-    rows: options.rows.map((row) => ({ ...row, id: row.id.trim() })),
+    rows: normalizedRows,
   };
   await appendEvent(options, {
     kind: "serve",
