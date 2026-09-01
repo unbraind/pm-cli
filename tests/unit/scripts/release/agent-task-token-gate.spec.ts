@@ -125,6 +125,15 @@ describe("agent-task transcript token gate", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
+        protocols: undefined,
+      }),
+    ).toThrow();
+    expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
+      "Agent-task orientation protocol contract is incomplete",
+    );
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
         protocols: [
           orientation.protocols[0],
           {
