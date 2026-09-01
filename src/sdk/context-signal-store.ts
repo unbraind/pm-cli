@@ -15,6 +15,7 @@ import {
   type ContextRelevanceCandidate,
   type ContextRelevanceSignalName,
   type ContextRelevanceSignals,
+  type ContextSignalProvenance,
   type ItemContextRelevanceCandidate,
 } from "./context-relevance.js";
 import type { ItemMetadata } from "../types/index.js";
@@ -43,12 +44,6 @@ const CONTEXT_RECENCY_SOURCES = new Set([
   "release_cohort",
   "created_at",
 ]);
-const OPTIONAL_CONTEXT_EVENT_CLASSES = new Set([
-  undefined,
-  "substantive",
-  "maintenance",
-]);
-
 /** Authoritative substrate used to derive one snapshot. */
 export type ContextSignalSnapshotSource = "derived_index" | "scan_fallback";
 
@@ -59,7 +54,7 @@ export interface ContextSignalSnapshotItem {
   /** Canonical normalized signal vector. */
   signals: ContextRelevanceSignals;
   /** Authoritative temporal source retained for explained ranking. */
-  signal_provenance: ContextRelevanceCandidate<ItemMetadata>["signal_provenance"];
+  signal_provenance: ContextSignalProvenance;
 }
 
 /** Rebuildable, deterministic context-signal snapshot. */
@@ -309,7 +304,12 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
       CONTEXT_RECENCY_SOURCES.has(String(recency.source)),
       typeof recency.coordinate === "string",
       ["undefined", "string"].includes(typeof recency.history_op),
-      OPTIONAL_CONTEXT_EVENT_CLASSES.has(recency.event_class as string),
+      [undefined, "substantive", "maintenance"].includes(
+        recency.event_class as string | undefined,
+      ),
+      recency.source === "substantive_history"
+        ? recency.event_class === "substantive"
+        : recency.history_op === undefined && recency.event_class === undefined,
     ].every(Boolean)
   ) {
     return null;

@@ -28,8 +28,8 @@ import type {
   LinkedTest,
 } from "../../types/index.js";
 import {
+  appendHistoryEntryWithEventIndex,
   removeHistoryEventIndexForHistoryPath,
-  updateHistoryEventIndexAfterAppend,
 } from "./event-index.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
@@ -479,9 +479,10 @@ export async function appendHistoryEntry(
       return;
     }
   }
-  await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
-  await invalidateHistoryDriftCacheForPath(historyPath);
-  await updateHistoryEventIndexAfterAppend(historyPath, entry);
+  await appendHistoryEntryWithEventIndex(historyPath, entry, async () => {
+    await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
+    await invalidateHistoryDriftCacheForPath(historyPath);
+  });
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

@@ -1513,6 +1513,14 @@
       ],
       "package_version": "2026.9.1",
       "reason": "Tighten context signal freshness and final-egress feedback contracts before release"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContextSignalSnapshotItem",
+        "signature ./sdk/query:ContextSignalSnapshotItem"
+      ],
+      "package_version": "2026.9.1",
+      "reason": "Align ContextSignalSnapshotItem signal provenance with the parser-enforced required persisted contract"
     }
   ],
   "entrypoints": {
@@ -4505,7 +4513,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextSignalSnapshotItem",
-          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; signal_provenance: ContextRelevanceCandidate<ItemMetadata>[\"signal_provenance\"]; }"
+          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -27527,7 +27535,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextSignalSnapshotItem",
-          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; signal_provenance: ContextRelevanceCandidate<ItemMetadata>[\"signal_provenance\"]; }"
+          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",

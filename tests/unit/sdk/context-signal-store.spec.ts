@@ -190,7 +190,8 @@ describe("context signal feature store", () => {
               recency: {
                 source: "substantive_history",
                 coordinate: now,
-                event_class: "maintenance",
+                history_op: "comment_add",
+                event_class: "substantive",
               },
             },
           },
@@ -235,6 +236,51 @@ describe("context signal feature store", () => {
           {
             ...structuredClone(valid.items[0]),
             signal_provenance: { recency: null },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: {
+                source: "substantive_history",
+                coordinate: now,
+                event_class: "maintenance",
+              },
+            },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: {
+                source: "release_cohort",
+                coordinate: now,
+                history_op: "close",
+              },
+            },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: {
+                source: "created_at",
+                coordinate: now,
+                event_class: "substantive",
+              },
+            },
           },
         ],
       },

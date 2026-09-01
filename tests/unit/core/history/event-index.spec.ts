@@ -9,9 +9,9 @@ import {
   readLatestSubstantiveHistoryEvents,
   rebuildHistoryEventIndex,
   removeHistoryEventIndexForHistoryPath,
-  updateHistoryEventIndexAfterAppend,
 } from "../../../../src/core/history/event-index.js";
 import type { HistoryEntry } from "../../../../src/types/index.js";
+import { appendHistoryEntry } from "../../../../src/core/history/history.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const INDEX_FILENAME = "history-event-index.sqlite";
@@ -156,10 +156,8 @@ describe("history mutation event index", () => {
       );
       await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
 
-      await updateHistoryEventIndexAfterAppend(historyPath, first);
       await rebuildHistoryEventIndex(context.pmPath);
-      await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
-      await updateHistoryEventIndexAfterAppend(historyPath, second);
+      await appendHistoryEntry(historyPath, second);
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toMatchObject({
@@ -325,6 +323,67 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("serializes appends through incremental size capture", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-incremental-concurrent.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      const third = historyEntry(
+        "2026-07-24T11:00:00.000Z",
+        "agent",
+        "comment_add",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const originalStat = fs.stat.bind(fs);
+      let concurrentAppend: Promise<void> | undefined;
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          const stats = await originalStat(...args);
+          if (
+            concurrentAppend === undefined &&
+            String(args[0]) === historyPath
+          ) {
+            concurrentAppend = appendHistoryEntry(historyPath, third);
+          }
+          return stats;
+        });
+      try {
+        await appendHistoryEntry(historyPath, second);
+        await concurrentAppend;
+      } finally {
+        statSpy.mockRestore();
+      }
+
+      const database = new DatabaseSync(
+        path.join(context.pmPath, "runtime", INDEX_FILENAME),
+      );
+      const indexedStream = database
+        .prepare("SELECT byte_size FROM streams WHERE stream_id = ?")
+        .get("pm-incremental-concurrent") as { byte_size: number };
+      database.close();
+      expect(indexedStream.byte_size).toBe((await fs.stat(historyPath)).size);
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        events: [
+          { stream_offset: 0, entry: { op: "create" } },
+          { stream_offset: 1, entry: { op: "update" } },
+          { stream_offset: 2, entry: { op: "comment_add" } },
+        ],
+      });
+    });
+  });
+
   it("rebuilds incompatible recency indexes and preserves authoritative read errors", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");
@@ -425,7 +484,7 @@ describe("history mutation event index", () => {
         queryHistoryEventStreams(context.pmPath, { limit: 10 }),
       ).resolves.toEqual({ events: [], has_more: false });
       await expect(
-        updateHistoryEventIndexAfterAppend(
+        appendHistoryEntry(
           path.join(context.pmPath, "history", "pm-a.jsonl"),
           historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
         ),
@@ -612,15 +671,114 @@ describe("history mutation event index", () => {
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
-      await updateHistoryEventIndexAfterAppend(historyPath, entry);
+      await appendHistoryEntry(historyPath, entry);
       await expect(fs.access(indexPath)).rejects.toThrow();
 
       await fs.writeFile(indexPath, "not sqlite");
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
-      await updateHistoryEventIndexAfterAppend(historyPath, entry);
+      await appendHistoryEntry(historyPath, entry);
       await expect(fs.access(indexPath)).rejects.toThrow();
+    });
+  });
+
+  it("preserves append failures and invalidates projections after post-append failures", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      const indexPath = path.join(context.pmPath, "runtime", INDEX_FILENAME);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const failedAppendPath = path.join(historyRoot, "pm-append-fail.jsonl");
+      await fs.mkdir(failedAppendPath);
+      await expect(
+        appendHistoryEntry(
+          failedAppendPath,
+          historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
+        ),
+      ).rejects.toThrow();
+      await expect(fs.access(indexPath)).resolves.toBeUndefined();
+
+      await fs.rm(failedAppendPath, { recursive: true });
+      const historyPath = path.join(historyRoot, "pm-index-fail.jsonl");
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const originalStat = fs.stat.bind(fs);
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === historyPath) throw new Error("stat failed");
+          return originalStat(...args);
+        });
+      try {
+        await expect(
+          appendHistoryEntry(historyPath, second),
+        ).resolves.toBeUndefined();
+      } finally {
+        statSpy.mockRestore();
+      }
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(2);
+      await expect(fs.access(indexPath)).rejects.toThrow();
+    });
+  });
+
+  it("refuses an append when the index write lock cannot be acquired", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-lock-fail.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      const firstLine = `${JSON.stringify(first)}\n`;
+      await fs.writeFile(historyPath, firstLine);
+      await rebuildHistoryEventIndex(context.pmPath);
+      class BeginFailureDatabase {
+        readonly database: DatabaseSync;
+
+        constructor(...args: ConstructorParameters<typeof DatabaseSync>) {
+          this.database = new DatabaseSync(...args);
+        }
+
+        prepare(...args: Parameters<DatabaseSync["prepare"]>) {
+          return this.database.prepare(...args);
+        }
+
+        exec(sql: string) {
+          if (sql === "BEGIN IMMEDIATE") throw new Error("database is locked");
+          return this.database.exec(sql);
+        }
+
+        close() {
+          return this.database.close();
+        }
+      }
+      restoreDatabaseSync?.();
+      restoreDatabaseSync = _testOnly.setDatabaseSync(
+        BeginFailureDatabase as never,
+      );
+
+      await expect(appendHistoryEntry(historyPath, second)).rejects.toThrow(
+        "database is locked",
+      );
+      expect(await fs.readFile(historyPath, "utf8")).toBe(firstLine);
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        events: [{ stream_offset: 0, entry: { op: "create" } }],
+      });
     });
   });
 

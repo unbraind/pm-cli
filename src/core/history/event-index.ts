@@ -416,22 +416,28 @@ export async function queryHistoryEventStreams(
 }
 
 /**
- * Update an already-built event projection after one authoritative append.
- * Absence is a cheap no-op; corrupt projections are removed for lazy rebuild.
+ * Serialize an authoritative append with its optional SQLite projection.
+ * The database write lock spans the file append and size capture, so compliant
+ * cross-process writers cannot certify a newer stream size with older rows.
  */
-export async function updateHistoryEventIndexAfterAppend(
+export async function appendHistoryEntryWithEventIndex(
   historyPath: string,
   entry: HistoryEntry,
+  append: () => Promise<void>,
 ): Promise<void> {
   const pmRoot = path.dirname(path.dirname(historyPath));
   const targetPath = eventIndexPath(pmRoot);
   try {
     await fs.access(targetPath);
   } catch {
+    await append();
     return;
   }
   const Database = resolveDatabaseSync();
-  if (!Database) return;
+  if (!Database) {
+    await append();
+    return;
+  }
   let database: DatabaseSync | undefined;
   try {
     database = new Database(targetPath);
@@ -441,6 +447,23 @@ export async function updateHistoryEventIndexAfterAppend(
     if (version?.value !== EVENT_INDEX_VERSION) {
       throw new TypeError("Unsupported history event index version");
     }
+  } catch {
+    database?.close();
+    await fs.rm(targetPath, { force: true });
+    await append();
+    return;
+  }
+  try {
+    database.exec("PRAGMA busy_timeout = 5000");
+    database.exec("BEGIN IMMEDIATE");
+  } catch (error: unknown) {
+    database.close();
+    throw error;
+  }
+  let appended = false;
+  try {
+    await append();
+    appended = true;
     const streamId = path.basename(historyPath, ".jsonl");
     const offset = database
       .prepare(
@@ -453,9 +476,11 @@ export async function updateHistoryEventIndexAfterAppend(
       entry,
     });
     upsertStreamByteSize(database, streamId, (await fs.stat(historyPath)).size);
+    database.exec("COMMIT");
     database.close();
-  } catch {
+  } catch (error: unknown) {
     database?.close();
+    if (!appended) throw error;
     await fs.rm(targetPath, { force: true });
   }
 }
