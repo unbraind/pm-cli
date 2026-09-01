@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   PM_MCP_ENTRY_TOOL_NAMES,
   discoverPmTools,
+  parsePmToolDiscoveryOptions,
   type PmToolDiscoveryCandidate,
 } from "../../../../src/sdk/mcp/discovery.js";
 import { PmCliError } from "../../../../src/sdk/runtime-primitives.js";
@@ -300,8 +301,24 @@ describe("progressive MCP tool discovery", () => {
     expect(
       Math.ceil(Buffer.byteLength(JSON.stringify(budgeted), "utf8") / 4),
     ).toBe(budgeted.token_cost.estimated_tokens);
-    expect(() => discoverPmTools(candidates, { outputBudget: 128 })).toThrow(
-      /too small/u,
+    let minimumBudgetRefusal: unknown;
+    try {
+      discoverPmTools([candidate("pm_context")], { outputBudget: 128 });
+    } catch (error: unknown) {
+      minimumBudgetRefusal = error;
+    }
+    if (!(minimumBudgetRefusal instanceof PmCliError)) {
+      throw new Error("expected a minimum discovery budget refusal");
+    }
+    const requiredBudget = Number(minimumBudgetRefusal.context.required);
+    expect(minimumBudgetRefusal.message).toMatch(/too small to return a tool/u);
+    expect(
+      discoverPmTools([candidate("pm_context")], {
+        outputBudget: requiredBudget,
+      }).returned,
+    ).toBe(1);
+    expect(() => discoverPmTools([], { outputBudget: 128 })).toThrow(
+      /at least .* estimated tokens are required for this page/u,
     );
 
     let rowBudgetRefusal: Error | undefined;
@@ -435,17 +452,25 @@ describe("progressive MCP tool discovery", () => {
 
   it("rejects malformed public options containers with a canonical usage error", () => {
     for (const options of [null, [], "invalid", 42, false]) {
-      let refusal: unknown;
-      try {
-        discoverPmTools([], options as never);
-      } catch (error: unknown) {
-        refusal = error;
+      for (const invoke of [
+        () => parsePmToolDiscoveryOptions(options as never),
+        () => discoverPmTools([], options as never),
+      ]) {
+        let refusal: unknown;
+        try {
+          invoke();
+        } catch (error: unknown) {
+          refusal = error;
+        }
+        expect(refusal).toBeInstanceOf(PmCliError);
+        expect(refusal).toMatchObject({
+          exitCode: 64,
+          message: "pm tool discovery options must be an object.",
+        });
       }
-      expect(refusal).toBeInstanceOf(PmCliError);
-      expect(refusal).toMatchObject({
-        exitCode: 64,
-        message: "pm tool discovery options must be an object.",
-      });
     }
+    expect(() => parsePmToolDiscoveryOptions(undefined as never)).toThrow(
+      /options must be an object/u,
+    );
   });
 });

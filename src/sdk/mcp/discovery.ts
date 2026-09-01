@@ -298,10 +298,19 @@ function discoveryIncludeSchema(value: unknown): boolean {
   return value === true;
 }
 
+function validateDiscoveryOptionsContainer<Value>(
+  value: Value,
+): asserts value is Value & object {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new PmCliError("pm tool discovery options must be an object.", 64);
+  }
+}
+
 /** Parse untrusted adapter input without discarding malformed discovery values. */
 export function parsePmToolDiscoveryOptions(
   input: Record<string, unknown>,
 ): PmToolDiscoveryOptions {
+  validateDiscoveryOptionsContainer(input);
   if (
     input.family !== undefined &&
     (typeof input.family !== "string" || !CAPABILITY_FAMILIES.has(input.family))
@@ -722,13 +731,7 @@ export function discoverPmTools(
   candidates: readonly PmToolDiscoveryCandidate[],
   options: PmToolDiscoveryOptions = {},
 ): PmToolDiscoveryResult {
-  if (
-    options === null ||
-    typeof options !== "object" ||
-    Array.isArray(options)
-  ) {
-    throw new PmCliError("pm tool discovery options must be an object.", 64);
-  }
+  validateDiscoveryOptionsContainer(options);
   const request = resolveDiscoveryRequest(options);
   const cursorIntegrityKey =
     options.cursorIntegrityKey ?? PROCESS_CURSOR_INTEGRITY_KEY;
@@ -848,6 +851,15 @@ export function discoverPmTools(
     (selectedCount) => buildResultWithoutCost([], selectedCount),
   );
   const result = buildResult(selected);
+  if (pageCandidates.length > 0 && selected.length === 0) {
+    const oneRowCost = buildResult([pageCandidates[0]]).token_cost
+      .estimated_tokens;
+    throw new PmCliError(
+      `pm tool discovery outputBudget is too small to return a tool; increase it to at least ${oneRowCost}.`,
+      64,
+      { required: String(oneRowCost) },
+    );
+  }
   if (
     request.budget !== "unbounded" &&
     result.token_cost.estimated_tokens > request.budget
@@ -856,15 +868,6 @@ export function discoverPmTools(
       `pm tool discovery outputBudget is too small; at least ${result.token_cost.estimated_tokens} estimated tokens are required for this page.`,
       64,
       { required: String(result.token_cost.estimated_tokens) },
-    );
-  }
-  if (pageCandidates.length > 0 && selected.length === 0) {
-    const oneRowCost = buildResult([pageCandidates[0]]).token_cost
-      .estimated_tokens;
-    throw new PmCliError(
-      `pm tool discovery outputBudget is too small to return a tool; increase it to at least ${oneRowCost}.`,
-      64,
-      { required: String(oneRowCost) },
     );
   }
   return result;

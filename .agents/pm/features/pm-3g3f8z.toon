@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-09-01T02:02:56.661Z"
+updated_at: "2026-09-01T02:40:43.825Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-09-01T02:02:56.081Z"
-completed_at: "2026-09-01T02:02:56.081Z"
+closed_at: "2026-09-01T02:40:43.221Z"
+completed_at: "2026-09-01T02:40:43.221Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Delivered progressive MCP discovery, canonical result contracts, deterministic keyed pagination and key-scoped caches, token-efficient SDK/CLI/MCP capability surfaces, and fail-closed validation at every public and adapter runtime container boundary."
-expected_result: "Agents receive a bounded, deterministic, customizable project-management discovery surface whose malformed requests cannot be silently defaulted, dereferenced natively, or accepted as tasks."
-actual_result: "The broad SDK/CLI/MCP delivery and eleven review-hardening rounds pass 8,212 tests at exact 100/100/100/100 coverage plus all static, security, dependency, graph, token, refusal, documentation, package, benchmark, linked-test, and temporary-workspace acceptance gates."
+resolution: "Delivered progressive MCP discovery, canonical result contracts, deterministic keyed pagination and key-scoped caches, token-efficient SDK/CLI/MCP capability surfaces, fail-closed validation at every public and adapter runtime container boundary, and one-step actionable budget recovery."
+expected_result: "Agents receive a bounded, deterministic, customizable project-management discovery surface whose malformed requests cannot be silently defaulted or dereferenced and whose recovery guidance succeeds on the next call."
+actual_result: "The broad SDK/CLI/MCP delivery and twelve review-hardening rounds pass 8,212 tests at exact 100/100/100/100 coverage plus all static, security, dependency, graph, token, refusal, documentation, package, benchmark, linked-test, and temporary-workspace acceptance gates."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[38]:
+comments[42]:
   - created_at: "2026-08-28T20:22:27.057Z"
     author: "harness:codex"
     text: "Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
@@ -142,6 +142,18 @@ comments[38]:
   - created_at: "2026-09-01T02:00:04.761Z"
     author: "harness:codex"
     text: "Review round 11 implementation: discoverPmTools now validates the defined top-level options value as a non-array object before any property access. Direct JavaScript callers passing null, arrays, strings, numbers, or booleans receive the canonical PmCliError exit 64 with a stable options-contract message; omitted options retain the default object. Focused discovery passes 14 tests. Full coverage passes 594 files and 8,212 tests at exact 60,605/60,605 statements, 45,795/45,795 branches, 12,611/12,611 functions, and 58,351/58,351 lines. CI static quality, zero-clone, build, generated-surface, token/refusal/graph/record gates, secret scan, vulnerability scan, and dependency audit pass."
+  - created_at: "2026-09-01T02:15:33.976Z"
+    author: "harness:codex"
+    text: "Review round 12 recurrence: CodeRabbit inline comments 3900091423 and 3900091428 are valid. parsePmToolDiscoveryOptions still dereferences malformed public JavaScript inputs, and low budgets can report the smaller empty-envelope requirement before the one-row requirement, forcing a second failed retry. Add TDD negative controls for parser containers and prove the advertised required budget succeeds with one tool."
+  - created_at: "2026-09-01T02:16:12.672Z"
+    author: "harness:codex"
+    text: "TDD red for review round 12: focused discovery produced exactly two failures. parsePmToolDiscoveryOptions(null) emitted a native TypeError, and outputBudget 128 reported a 252-token empty-envelope requirement rather than the actionable one-row requirement. The new test also retries with context.required and requires one returned tool."
+  - created_at: "2026-09-01T02:23:42.926Z"
+    author: "harness:codex"
+    text: "Exact coverage negative control for review round 12: all 8,212 tests passed, while the mandatory gate failed at 99.99% statements, branches, and lines. Reordering budget refusals left the distinct empty-catalog undersized-envelope branch at discovery.ts:867 uncovered; add a genuine empty-catalog low-budget refusal case because no one-row recovery exists for that state."
+  - created_at: "2026-09-01T02:37:49.163Z"
+    author: "harness:codex"
+    text: "Review round 12 implementation and terminal evidence: one shared SDK runtime assertion now rejects malformed containers at both parsePmToolDiscoveryOptions and discoverPmTools. Low-budget non-empty catalogs report the exact one-row cost and a direct retry with context.required returns one tool; empty catalogs retain the distinct envelope-cost refusal. Focused discovery passes 14 tests. After a recorded 99.99% negative control, full coverage passes 594 files and 8,212 tests at exact 60,607/60,607 statements, 45,795/45,795 branches, 12,612/12,612 functions, and 58,353/58,353 lines. Full static, build, documentation, duplication, generated surface, package, token, refusal, graph, record, secret, vulnerability, and dependency gates pass."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -231,7 +243,7 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Review round 8 container and code-unit ordering contract
-test_runs[13]:
+test_runs[14]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -385,6 +397,23 @@ test_runs[13]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mti288t5-eh5bmd
+    kind: test
+    status: passed
+    started_at: "2026-09-01T02:37:49.665Z"
+    finished_at: "2026-09-01T02:40:32.921Z"
+    recorded_at: "2026-09-01T02:40:32.921Z"
+    passed: 7
+    failed: 0
+    skipped: 0
+    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/root-help-discovery.integration.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[11]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
@@ -397,5 +426,5 @@ docs[11]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Completed broad progressive discovery and canonical MCP result delivery with eleven review rounds, exact coverage, full gates, and manual acceptance evidence."
+close_reason: "Completed broad progressive discovery and canonical MCP result delivery with twelve review rounds, exact coverage, actionable recovery, full gates, and manual acceptance evidence."
 body: ""
