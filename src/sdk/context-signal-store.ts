@@ -391,11 +391,9 @@ export function parseContextSignalSnapshot(
   };
 }
 
-/** Fold authoritative items into a deterministic, immutable signal snapshot. */
-export function buildContextSignalSnapshot(
-  items: readonly ItemMetadata[],
+function validateSnapshotOptions(
   options: BuildContextSignalSnapshotOptions,
-): ContextSignalSnapshot {
+): void {
   if (
     typeof options.sourceCursor !== "string" ||
     options.sourceCursor.trim().length === 0
@@ -415,10 +413,12 @@ export function buildContextSignalSnapshot(
       "Context signal snapshot source must be derived_index or scan_fallback",
     );
   }
-  const candidates = buildItemContextRelevanceCandidates(
-    items,
-    stableSnapshotOptions(items, options),
-  );
+}
+
+function snapshotFromCandidates(
+  candidates: readonly ItemContextRelevanceCandidate[],
+  options: BuildContextSignalSnapshotOptions,
+): ContextSignalSnapshot {
   const rows = candidates
     .map(({ id, signals, signal_provenance }) => ({
       id,
@@ -435,6 +435,21 @@ export function buildContextSignalSnapshot(
     source: options.source,
     items: Object.freeze(rows.map((row) => Object.freeze(row))),
   });
+}
+
+/** Fold authoritative items into a deterministic, immutable signal snapshot. */
+export function buildContextSignalSnapshot(
+  items: readonly ItemMetadata[],
+  options: BuildContextSignalSnapshotOptions,
+): ContextSignalSnapshot {
+  validateSnapshotOptions(options);
+  return snapshotFromCandidates(
+    buildItemContextRelevanceCandidates(
+      items,
+      stableSnapshotOptions(items, options),
+    ),
+    options,
+  );
 }
 
 /** Filesystem adapter using same-directory atomic replacement. */
@@ -499,6 +514,7 @@ export class ContextSignalStore {
     items: readonly ItemMetadata[],
     options: BuildContextSignalSnapshotOptions,
   ): Promise<ContextSignalStoreReadResult> {
+    validateSnapshotOptions(options);
     const warnings: string[] = [];
     let snapshot: ContextSignalSnapshot | null = null;
     try {
@@ -533,7 +549,10 @@ export class ContextSignalStore {
       if (snapshot !== null) {
         warnings.push("context_signal_store_stale");
       }
-      resolvedSnapshot = buildContextSignalSnapshot(items, options);
+      resolvedSnapshot = snapshotFromCandidates(
+        authoritativeCandidates,
+        options,
+      );
       try {
         await this.adapter.write(resolvedSnapshot);
       } catch {
@@ -543,13 +562,9 @@ export class ContextSignalStore {
     const snapshotItemsById = new Map(
       resolvedSnapshot.items.map((item) => [item.id, item]),
     );
-    const dynamicCandidates = buildItemContextRelevanceCandidates(
-      items,
-      options,
-    );
     return {
       snapshot: resolvedSnapshot,
-      candidates: dynamicCandidates.map((candidate) => ({
+      candidates: authoritativeCandidates.map((candidate) => ({
         ...candidate,
         signals: {
           ...candidate.signals,

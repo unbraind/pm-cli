@@ -360,7 +360,7 @@ describe("context usage feedback", () => {
     const preEgressIncluded = receipt.rows
       .filter((row) => row.included)
       .map((row) => row.id);
-    expect(preEgressIncluded).not.toEqual(["pm-emitted"]);
+    expect(preEgressIncluded).toEqual(["pm-packed"]);
   });
 
   it("records omitted results with zero delivered rows", async () => {

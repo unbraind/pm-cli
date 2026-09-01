@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnly,
+  appendHistoryEntryWithEventIndex,
   queryHistoryEventIndex,
   queryHistoryEventStreams,
   readLatestSubstantiveHistoryEvents,
@@ -906,7 +907,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("preserves authoritative history when the optional index lock is contended", async () => {
+  it("preserves authoritative history and invalidates the index when its lock is contended", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -937,6 +938,9 @@ describe("history mutation event index", () => {
           await expect(
             appendHistoryEntry(historyPath, second),
           ).resolves.toBeUndefined();
+          await expect(
+            fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
+          ).rejects.toThrow();
         } finally {
           if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
           else process.env.PM_LOCK_WAIT_MS = previousWait;
@@ -950,6 +954,75 @@ describe("history mutation event index", () => {
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
+    });
+  });
+
+  it("cannot publish a size-certified incomplete index after an unlocked fallback append", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-lock-race.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      const third = historyEntry(
+        "2026-07-24T11:00:00.000Z",
+        "agent",
+        "comment_add",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      let signalFirstAppend!: () => void;
+      let allowFirstProjection!: () => void;
+      const firstAppended = new Promise<void>((resolve) => {
+        signalFirstAppend = resolve;
+      });
+      const projectionMayContinue = new Promise<void>((resolve) => {
+        allowFirstProjection = resolve;
+      });
+      const indexedAppend = appendHistoryEntryWithEventIndex(
+        historyPath,
+        second,
+        async () => {
+          await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
+          signalFirstAppend();
+          await projectionMayContinue;
+        },
+      );
+      await firstAppended;
+      const previousWait = process.env.PM_LOCK_WAIT_MS;
+      process.env.PM_LOCK_WAIT_MS = "0";
+      try {
+        await appendHistoryEntryWithEventIndex(historyPath, third, async () => {
+          await fs.appendFile(historyPath, `${JSON.stringify(third)}\n`);
+        });
+      } finally {
+        if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
+        else process.env.PM_LOCK_WAIT_MS = previousWait;
+      }
+      allowFirstProjection();
+      await indexedAppend;
+
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(3);
+      await expect(
+        fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
+      ).rejects.toThrow();
+      await expect(
+        queryHistoryEventStreams(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        events: [
+          { stream_offset: 0, entry: { op: "create" } },
+          { stream_offset: 1, entry: { op: "update" } },
+          { stream_offset: 2, entry: { op: "comment_add" } },
+        ],
+      });
     });
   });
 

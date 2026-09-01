@@ -522,6 +522,7 @@ export async function appendHistoryEntryWithEventIndex(
       throw error;
     }
     await append();
+    await fs.rm(eventIndexPath(pmRoot), { force: true });
   }
 }
 

@@ -6,28 +6,29 @@ status: closed
 priority: 2
 tags[3]: dependencies,quality,tooling
 created_at: "2026-09-01T15:21:58.266Z"
-updated_at: "2026-09-01T17:16:46.626Z"
-closed_at: "2026-09-01T17:16:46.055Z"
-completed_at: "2026-09-01T17:16:46.055Z"
+updated_at: "2026-09-01T23:25:35.143Z"
+closed_at: "2026-09-01T23:25:30.837Z"
+completed_at: "2026-09-01T23:25:30.837Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "package.json and pnpm-lock.yaml resolve jscpd 5.1.1 exactly; zero-duplication, strict static quality, exact coverage, packed npx/bunx acceptance, npm/Bun installed sessions, and security inventories pass; pnpm outdated contains only the two evidence-backed incompatible majors pm-ksr40d and pm-do5b."
 parent: pm-u9d0
 risk: low
 confidence: high
-resolution: "Retained jscpd 5.1.1, verified both strict duplicate configurations, and repaired recurs_from to canonical prior jscpd owner pm-87hmdw."
-expected_result: Latest compatible duplication tooling reports zero clones and its historical graph points to the correct prior refresh.
-actual_result: Dual scan passed with zero clones across full and source corpora; full static and exact coverage gates passed.
+resolution: "Pinned jscpd 5.1.1 with its resolved lock graph and release-age policy exception; retained the evidence-backed incompatible npm-package-arg 14 and TypeScript 7 deferrals; recorded passing zero-duplication, exact coverage, and full static-quality executions."
+expected_result: "The compatible duplicate-analysis upgrade is reproducible, all mandatory quality gates pass, and only canonical incompatible-major deferrals remain."
+actual_result: "jscpd 5.1.1 is resolved; jscpd reports zero clones; coverage is exactly 100% for statements, branches, functions, and lines; the tracker-seeded full static gate passed all repository, SDK, replication, graph, and history-integrity checks."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,discovered_from,"2026-09-01T15:21:58.266Z","harness:codex","cli:create:dep",detected
   pm-ksr40d,discovered_from,"2026-09-01T15:21:58.266Z","harness:codex","cli:create:dep",detected
   pm-87hmdw,recurs_from,"2026-09-01T16:36:05.674Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-01T15:21:58.266Z","harness:codex","Duplicate-check evidence: complete all-status searches for jscpd 5.1.0 and the live outdated set found closed compatible refresh pm-vwuidf plus canonical open incompatible-major owners pm-ksr40d and pm-do5b, but no owner for jscpd 5.1.0. Registry metadata declares Node >=18, compatible with pm-cli >=22.18.0; live GitHub alert inventories and pnpm audit are zero."
   "2026-09-01T15:22:46.007Z","harness:codex","Live registry correction: jscpd 5.1.1 became current after the initial 5.1.0 resolution. It retains Node >=18 compatibility and adds a Windows ARM64 optional artifact; the package manager recorded every platform artifact in the strict minimum-release-age exception list. The active item now owns 5.1.1, and pnpm outdated contains only pm-ksr40d/npm-package-arg 14 and pm-do5b/TypeScript 7."
   "2026-09-01T15:48:16.167Z","harness:codex","Delivery evidence 2026-09-01: package.json and pnpm-lock.yaml resolve jscpd 5.1.1, including the new Windows ARM64 optional artifact in the strict minimum-release-age exception set. Both repository and source duplicate scans report zero clones. Full static quality passed; exact coverage passed 596 files / 8260 tests at 100/100/100/100; the packed artifact passed at 19,484,451 bytes and 1,411 files with no source maps; packed npx and bunx smoke passed across 13 packages; previously completed clean installed npm and Bun sessions passed 11 steps each. pnpm audit reports zero vulnerabilities across 424 dependencies, and live Dependabot, code-scanning, and secret-scanning inventories are each zero. pnpm outdated now contains only npm-package-arg 14 owned by pm-ksr40d and TypeScript 7 owned by pm-do5b, both incompatible-major deferrals verified from current registry peer/runtime contracts."
   "2026-09-01T16:36:06.360Z","harness:codex","Review correction: Cubic identified that recurs_from targeted pm-vwuidf, whose full live record owns Greptile, @types/node, and Sentry refreshes but not jscpd. Full live verification identified pm-87hmdw as the canonical prior jscpd 5.0.15 tooling refresh. Replaced the edge with pm-87hmdw,recurs_from; no duplicate item was created."
   "2026-09-01T17:16:30.396Z","harness:codex","Review round evidence: corrected recurs_from from unrelated pm-vwuidf to canonical prior jscpd owner pm-87hmdw after full live record verification. Latest jscpd 5.1.1 remains installed; linked dual-config duplicate scan passed with 0 clones across 1,157 total files and 456 source files. Full static quality and exact coverage also passed after the review fixes."
+  "2026-09-01T23:25:22.795Z","harness:codex","Terminal evidence: linked coverage passed with exact 100/100/100/100 totals (61,009 statements, 46,099 branches, 12,701 functions, 58,725 lines). Linked pnpm quality:static passed in a tracker-seeded sandbox in 430.507s, including ESLint, jscpd zero clones, build and generated-contract checks, repository assurance, SDK/package parity, surface replication (2/2 members, density 1), grammar/refusal/token gates, MCP deprecations, graph composition, and record integrity. Earlier schema-context static attempts correctly failed because an empty synthetic tracker cannot satisfy repository defect-evidence assurance; the first tracker-context retry then exposed the incomplete replication set and led to the paired metadata-index fix before this terminal pass. No real tracker data was exposed to tests."
 files[3]{path,scope,note}:
   package.json,project,Compatible tooling dependency declaration
   pnpm-lock.yaml,project,Resolved compatible dependency graph
@@ -36,7 +37,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   "pnpm lint:duplicates",project,300,"harness:codex","2026-09-01T15:22:10.850Z",local_mutation,feat/substantive-context-signals-delivery-receipts
   node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-09-01T15:22:10.850Z",local_mutation,feat/substantive-context-signals-delivery-receipts
   "pnpm quality:static",project,1200,"harness:codex","2026-09-01T15:22:10.850Z",local_mutation,feat/substantive-context-signals-delivery-receipts
-test_runs[1]:
+test_runs[6]:
   - run_id: test-local-mtixi0ue-rabnqg
     kind: test
     status: passed
@@ -48,5 +49,60 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm lint:duplicates",schema,schema,source,local_source_ref
-close_reason: Latest duplicate tooling refresh and canonical recurrence lineage are complete
+  - run_id: test-local-mtj9vm34-q16aln
+    kind: test
+    status: passed
+    started_at: "2026-09-01T22:56:20.493Z"
+    finished_at: "2026-09-01T23:02:26.704Z"
+    recorded_at: "2026-09-01T23:02:26.704Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtj9ycip-94l6x0
+    kind: test
+    status: failed
+    started_at: "2026-09-01T23:02:32.007Z"
+    finished_at: "2026-09-01T23:04:34.273Z"
+    recorded_at: "2026-09-01T23:04:34.273Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",schema,schema,source,local_source_ref
+  - run_id: test-local-mtja1s80-8z7isw
+    kind: test
+    status: failed
+    started_at: "2026-09-01T23:05:11.870Z"
+    finished_at: "2026-09-01T23:07:14.592Z"
+    recorded_at: "2026-09-01T23:07:14.592Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",schema,schema,source,local_source_ref
+  - run_id: test-local-mtja5edq-5xc0cn
+    kind: test
+    status: failed
+    started_at: "2026-09-01T23:07:47.410Z"
+    finished_at: "2026-09-01T23:10:03.278Z"
+    recorded_at: "2026-09-01T23:10:03.278Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtjaoqdb-vmr146
+    kind: test
+    status: passed
+    started_at: "2026-09-01T23:17:53.515Z"
+    finished_at: "2026-09-01T23:25:05.279Z"
+    recorded_at: "2026-09-01T23:25:05.279Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+close_reason: Compatible jscpd 5.1.1 tooling refresh and repository-wide quality evidence are complete
 body: ""

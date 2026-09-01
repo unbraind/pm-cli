@@ -506,7 +506,8 @@ describe("core/lock/lock additional branch coverage", () => {
         `${JSON.stringify({
           id,
           pid: process.pid,
-          owner: "replacement-owner",
+          owner: "original-owner",
+          token: "replacement-token",
           created_at: new Date().toISOString(),
           ttl_seconds: 60,
         })}\n`,
@@ -515,7 +516,7 @@ describe("core/lock/lock additional branch coverage", () => {
       await release();
 
       await expect(fs.readFile(lockPath, "utf8")).resolves.toContain(
-        "replacement-owner",
+        "replacement-token",
       );
       await fs.rm(lockPath, { force: true });
     });

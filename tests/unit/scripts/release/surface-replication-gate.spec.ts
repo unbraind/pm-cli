@@ -612,6 +612,7 @@ describe("surface replication gate", () => {
         "RuntimeDatabaseSync = databaseSync",
         "RuntimeDatabaseSync = previous",
         "let RuntimeDatabaseSync:",
+        "const Database = resolveDatabaseSync();",
       ]),
     );
 
@@ -622,7 +623,7 @@ describe("surface replication gate", () => {
         "src/core/history/event-index.ts": [
           "queryHistoryEventStreams",
           "readAuthoritativeHistoryEvents",
-          "const Database = resolveDatabaseSync();",
+          "compareHistoryEventPosition",
         ],
       },
       today: "2026-08-17",
@@ -638,7 +639,7 @@ describe("surface replication gate", () => {
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
-          "RuntimeDatabaseSync = loadStableDatabaseSync(",
+          "const Database = resolveDatabaseSync();",
         ],
       },
       today: "2026-08-17",
