@@ -99,7 +99,7 @@ pm release <item-id>
 
 ## Agent Loop
 
-Use the measured one-call context intent for cold-start orientation. It costs 1,055 estimated tokens on the fixed 101-item replay corpus, versus 2,293 for the historical four-call sequence and 4,798 for `contracts --summary` plus `next`. Use `pm next` as an alternative when you only need the single highest-priority ready item, then search all statuses before creating anything ([ratcheted evidence](docs/agent-task-token-baseline.json)):
+Use the measured one-call context intent for cold-start orientation. Use `pm next` as an alternative when you only need the single highest-priority ready item, then search all statuses before creating anything. Measurement methodology and ratcheted evidence live in the [Agent Guide](docs/AGENT_GUIDE.md#agent-quick-context).
 
 ```bash
 pm context --limit 10 --for orient              # canonical cold start: state, ownership, actionable work

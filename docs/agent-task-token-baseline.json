@@ -1,7 +1,7 @@
 {
   "version": 4,
   "transcript_version": 2,
-  "transcript_digest": "sha256:374aea7a2cabd24b8fb631448b1572666f60c5c409a64003c311f49f8343382b",
+  "transcript_digest": "sha256:4f9e96bb6ce12bbbeb2514e4bd5958d201c4e62e95083bcbebd749d1e48cc82d",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
@@ -22,7 +22,27 @@
           "actionable_work",
           "active_ownership",
           "workspace_state"
-        ]
+        ],
+        "capability_evidence": {
+          "actionable_work": [
+            {
+              "step_id": "context",
+              "field_path": "hierarchy"
+            }
+          ],
+          "active_ownership": [
+            {
+              "step_id": "context",
+              "field_path": "activity"
+            }
+          ],
+          "workspace_state": [
+            {
+              "step_id": "context",
+              "field_path": "summary.active_items"
+            }
+          ]
+        }
       },
       {
         "task_id": "orientation-operating-rules",
@@ -32,7 +52,27 @@
           "actionable_work",
           "active_ownership",
           "workspace_state"
-        ]
+        ],
+        "capability_evidence": {
+          "actionable_work": [
+            {
+              "step_id": "open",
+              "field_path": "items"
+            }
+          ],
+          "active_ownership": [
+            {
+              "step_id": "in-progress",
+              "field_path": "items"
+            }
+          ],
+          "workspace_state": [
+            {
+              "step_id": "context",
+              "field_path": "summary.active_items"
+            }
+          ]
+        }
       },
       {
         "task_id": "orientation-contracts-next",
@@ -42,7 +82,27 @@
           "actionable_work",
           "active_ownership",
           "workspace_state"
-        ]
+        ],
+        "capability_evidence": {
+          "actionable_work": [
+            {
+              "step_id": "next",
+              "field_path": "recommended.id"
+            }
+          ],
+          "active_ownership": [
+            {
+              "step_id": "next",
+              "field_path": "held_by_others"
+            }
+          ],
+          "workspace_state": [
+            {
+              "step_id": "next",
+              "field_path": "summary.in_progress"
+            }
+          ]
+        }
       }
     ]
   },

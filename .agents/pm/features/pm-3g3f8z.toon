@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-09-01T02:40:43.825Z"
+updated_at: "2026-09-01T03:17:08.834Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-09-01T02:40:43.221Z"
-completed_at: "2026-09-01T02:40:43.221Z"
+closed_at: "2026-09-01T03:17:08.213Z"
+completed_at: "2026-09-01T03:17:08.213Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Delivered progressive MCP discovery, canonical result contracts, deterministic keyed pagination and key-scoped caches, token-efficient SDK/CLI/MCP capability surfaces, fail-closed validation at every public and adapter runtime container boundary, and one-step actionable budget recovery."
-expected_result: "Agents receive a bounded, deterministic, customizable project-management discovery surface whose malformed requests cannot be silently defaulted or dereferenced and whose recovery guidance succeeds on the next call."
-actual_result: "The broad SDK/CLI/MCP delivery and twelve review-hardening rounds pass 8,212 tests at exact 100/100/100/100 coverage plus all static, security, dependency, graph, token, refusal, documentation, package, benchmark, linked-test, and temporary-workspace acceptance gates."
+resolution: "Delivered progressive MCP discovery and canonical results with evidence-bound measured orientation, validated public/adaptor containers, keyed pagination, actionable budget recovery, and compact agent documentation."
+expected_result: Agents receive a bounded SDK-owned discovery surface and the canonical orientation protocol is selected only when replay-verified fields prove every required capability.
+actual_result: "Thirteen review rounds culminate in 8,212 tests at exact 100/100/100/100 coverage, seven linked cohorts, full static/security/dependency gates, and direct capability-to-output evidence bindings."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[42]:
+comments[45]:
   - created_at: "2026-08-28T20:22:27.057Z"
     author: "harness:codex"
     text: "Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
@@ -154,6 +154,15 @@ comments[42]:
   - created_at: "2026-09-01T02:37:49.163Z"
     author: "harness:codex"
     text: "Review round 12 implementation and terminal evidence: one shared SDK runtime assertion now rejects malformed containers at both parsePmToolDiscoveryOptions and discoverPmTools. Low-budget non-empty catalogs report the exact one-row cost and a direct retry with context.required returns one tool; empty catalogs retain the distinct envelope-cost refusal. Focused discovery passes 14 tests. After a recorded 99.99% negative control, full coverage passes 594 files and 8,212 tests at exact 60,607/60,607 statements, 45,795/45,795 branches, 12,612/12,612 functions, and 58,353/58,353 lines. Full static, build, documentation, duplication, generated surface, package, token, refusal, graph, record, secret, vulnerability, and dependency gates pass."
+  - created_at: "2026-09-01T02:55:12.108Z"
+    author: "harness:codex"
+    text: "Review round 13 recurrence: CodeRabbit comment 3900091411 is valid because protocol capability arrays can agree without any verified task field proving each capability. Add explicit per-capability evidence bindings, validate them against fields that replay actually asserted, and add declaration-preserving negative controls. Comment 3900091413 is also valid: keep README orientation concise and retain measurement detail in docs/AGENT_GUIDE.md."
+  - created_at: "2026-09-01T02:56:22.119Z"
+    author: "harness:codex"
+    text: "TDD red for review round 13: keeping every capability declaration unchanged while removing its evidence array remained accepted; a protocol could also cite a field never asserted by its replay task. The focused gate failed the new negative control before implementation."
+  - created_at: "2026-09-01T03:17:07.593Z"
+    author: "harness:codex"
+    text: "Review round 13 terminal evidence: declared orientation capabilities are now bound to exact replay-verified output paths; missing, malformed, unknown-step, and unverified-field bindings fail closed. The focused TDD gate passes 15 tests, all seven linked discovery/orientation cohorts pass, and full coverage passes 594 files and 8,212 tests at exact 60,625/60,625 statements, 45,817/45,817 branches, 12,616/12,616 functions, and 58,370/58,370 lines. CI-mode static quality, zero-clone, docstring, package/SDK, token, graph, record-integrity, secret, vulnerability, and dependency gates pass."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -243,7 +252,7 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Review round 8 container and code-unit ordering contract
-test_runs[14]:
+test_runs[15]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -414,9 +423,28 @@ test_runs[14]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
-docs[11]{path,scope,note}:
+  - run_id: test-local-mti3iyje-0w68c6
+    kind: test
+    status: passed
+    started_at: "2026-09-01T03:14:11.092Z"
+    finished_at: "2026-09-01T03:16:52.442Z"
+    recorded_at: "2026-09-01T03:16:52.442Z"
+    passed: 7
+    failed: 0
+    skipped: 0
+    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/root-help-discovery.integration.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[13]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
+  docs/agent-task-token-baseline.json,project,Published verified capability evidence
+  docs/agent-task-transcripts.json,project,Evidence-bound replay corpus
   docs/ARCHITECTURE.md,project,SDK-first architecture boundary
   docs/CLAUDE_CODE_PLUGIN.md,project,Claude plugin smoke contract
   docs/MCP_2026_07_28.md,project,MCP protocol revision guidance
@@ -426,5 +454,5 @@ docs[11]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Completed broad progressive discovery and canonical MCP result delivery with twelve review rounds, exact coverage, actionable recovery, full gates, and manual acceptance evidence."
+close_reason: "Completed evidence-bound orientation selection, compact README remediation, and thirteen review-hardening rounds with exact coverage and full gates."
 body: ""

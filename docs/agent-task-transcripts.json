@@ -14,7 +14,18 @@
           "workspace_state",
           "active_ownership",
           "actionable_work"
-        ]
+        ],
+        "capability_evidence": {
+          "workspace_state": [
+            { "step_id": "context", "field_path": "summary.active_items" }
+          ],
+          "active_ownership": [
+            { "step_id": "context", "field_path": "activity" }
+          ],
+          "actionable_work": [
+            { "step_id": "context", "field_path": "hierarchy" }
+          ]
+        }
       },
       {
         "task_id": "orientation-contracts-next",
@@ -22,7 +33,18 @@
           "workspace_state",
           "active_ownership",
           "actionable_work"
-        ]
+        ],
+        "capability_evidence": {
+          "workspace_state": [
+            { "step_id": "next", "field_path": "summary.in_progress" }
+          ],
+          "active_ownership": [
+            { "step_id": "next", "field_path": "held_by_others" }
+          ],
+          "actionable_work": [
+            { "step_id": "next", "field_path": "recommended.id" }
+          ]
+        }
       },
       {
         "task_id": "orientation-operating-rules",
@@ -30,7 +52,16 @@
           "workspace_state",
           "active_ownership",
           "actionable_work"
-        ]
+        ],
+        "capability_evidence": {
+          "workspace_state": [
+            { "step_id": "context", "field_path": "summary.active_items" }
+          ],
+          "active_ownership": [
+            { "step_id": "in-progress", "field_path": "items" }
+          ],
+          "actionable_work": [{ "step_id": "open", "field_path": "items" }]
+        }
       }
     ]
   },
@@ -67,7 +98,11 @@
           "expected_exit_code": 0,
           "expected_output_kind": "diagnostic",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["summary", "recommended"]
+          "required_fields": [
+            "summary.in_progress",
+            "held_by_others",
+            "recommended.id"
+          ]
         }
       ]
     },

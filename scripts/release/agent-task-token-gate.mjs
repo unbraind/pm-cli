@@ -324,7 +324,15 @@ function measureTask(baselineRoot, accountedRoot, task) {
     }
     payloads.set(step.id, measured.payload);
     const { payload: _payload, ...stepReport } = measured;
-    measuredSteps.push(stepReport);
+    measuredSteps.push({
+      ...stepReport,
+      verified_fields: [
+        ...new Set([
+          ...step.required_fields,
+          ...Object.keys(step.expected_field_values ?? {}),
+        ]),
+      ].sort(),
+    });
   }
   return {
     id: task.id,
@@ -364,6 +372,53 @@ function sortedUniqueStrings(value, field) {
   return [...new Set(value.map((entry) => entry.trim()))].sort();
 }
 
+/** Bind every declared capability to output fields proven by its measured task. */
+function resolveCapabilityEvidence(protocol, task, capabilities) {
+  const evidence = protocol?.capability_evidence;
+  if (
+    typeof evidence !== "object" ||
+    evidence === null ||
+    Array.isArray(evidence) ||
+    JSON.stringify(
+      sortedUniqueStrings(Object.keys(evidence), "capability evidence keys"),
+    ) !== JSON.stringify(capabilities)
+  ) {
+    fail(
+      `Agent-task orientation protocol ${String(protocol?.task_id)} capability evidence is incomplete`,
+    );
+  }
+  const steps = new Map((task.steps ?? []).map((step) => [step.id, step]));
+  return Object.fromEntries(
+    capabilities.map((capability) => {
+      const references = evidence[capability];
+      if (!Array.isArray(references) || references.length === 0) {
+        fail(
+          `Agent-task orientation protocol ${String(protocol?.task_id)} capability ${capability} lacks verified evidence`,
+        );
+      }
+      const normalized = references.map((reference) => {
+        const stepId = reference?.step_id;
+        const fieldPath = reference?.field_path;
+        const step = steps.get(stepId);
+        if (
+          typeof stepId !== "string" ||
+          stepId.trim().length === 0 ||
+          typeof fieldPath !== "string" ||
+          fieldPath.trim().length === 0 ||
+          !Array.isArray(step?.verified_fields) ||
+          !step.verified_fields.includes(fieldPath)
+        ) {
+          fail(
+            `Agent-task orientation protocol ${String(protocol?.task_id)} capability ${capability} cites unverified evidence`,
+          );
+        }
+        return { step_id: stepId, field_path: fieldPath };
+      });
+      return [capability, normalized];
+    }),
+  );
+}
+
 /** Select the cheapest equivalent orientation transcript and fail on undeclared or stale policy. */
 export function evaluateOrientationProtocolSelection(report, orientation) {
   const requiredCapabilities = sortedUniqueStrings(
@@ -399,11 +454,17 @@ export function evaluateOrientationProtocolSelection(report, orientation) {
         `Agent-task orientation protocol ${String(protocol?.task_id)} does not prove the required equivalent capabilities`,
       );
     }
+    const capabilityEvidence = resolveCapabilityEvidence(
+      protocol,
+      task,
+      capabilities,
+    );
     return {
       task_id: task.id,
       command_count: task.step_count,
       estimated_tokens: task.estimated_tokens,
       capabilities,
+      capability_evidence: capabilityEvidence,
     };
   });
   protocols.sort(

@@ -72,11 +72,24 @@ describe("agent-task transcript token gate", () => {
           id: "orientation-context-intent",
           step_count: 1,
           estimated_tokens: 300,
+          steps: [
+            {
+              id: "context",
+              verified_fields: ["summary.active_items", "activity"],
+            },
+          ],
         },
         {
           id: "orientation-contracts-next",
           step_count: 2,
           estimated_tokens: 800,
+          steps: [
+            { id: "contracts", verified_fields: ["commands"] },
+            {
+              id: "next",
+              verified_fields: ["summary.in_progress", "recommended.id"],
+            },
+          ],
         },
       ],
     };
@@ -87,10 +100,18 @@ describe("agent-task transcript token gate", () => {
         {
           task_id: "orientation-context-intent",
           capabilities: ["ownership", "state"],
+          capability_evidence: {
+            ownership: [{ step_id: "context", field_path: "activity" }],
+            state: [{ step_id: "context", field_path: "summary.active_items" }],
+          },
         },
         {
           task_id: "orientation-contracts-next",
           capabilities: ["state", "ownership"],
+          capability_evidence: {
+            ownership: [{ step_id: "next", field_path: "summary.in_progress" }],
+            state: [{ step_id: "next", field_path: "recommended.id" }],
+          },
         },
       ],
     };
@@ -111,6 +132,91 @@ describe("agent-task transcript token gate", () => {
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
         canonical_task_id: "orientation-contracts-next",
+      }),
+    ).toThrow();
+    for (const capabilityEvidence of [
+      undefined,
+      null,
+      [],
+      {
+        state: [{ step_id: "next", field_path: "recommended.id" }],
+      },
+    ]) {
+      expect(() =>
+        evaluateOrientationProtocolSelection(orientationReport, {
+          ...orientation,
+          protocols: [
+            orientation.protocols[0],
+            {
+              ...orientation.protocols[1],
+              capability_evidence: capabilityEvidence,
+            },
+          ],
+        }),
+      ).toThrow();
+    }
+    for (const invalidReference of [
+      null,
+      { step_id: " ", field_path: "recommended.id" },
+      { step_id: "next", field_path: 42 },
+      { step_id: "next", field_path: " " },
+      { step_id: "missing", field_path: "recommended.id" },
+    ]) {
+      expect(() =>
+        evaluateOrientationProtocolSelection(orientationReport, {
+          ...orientation,
+          protocols: [
+            orientation.protocols[0],
+            {
+              ...orientation.protocols[1],
+              capability_evidence: {
+                ...orientation.protocols[1].capability_evidence,
+                state: [invalidReference],
+              },
+            },
+          ],
+        }),
+      ).toThrow();
+    }
+    expect(() =>
+      evaluateOrientationProtocolSelection(
+        {
+          tasks: orientationReport.tasks.map((task) =>
+            task.id === "orientation-contracts-next"
+              ? { ...task, steps: undefined }
+              : task,
+          ),
+        },
+        orientation,
+      ),
+    ).toThrow();
+    for (const capability of orientation.required_capabilities) {
+      expect(() =>
+        evaluateOrientationProtocolSelection(orientationReport, {
+          ...orientation,
+          protocols: orientation.protocols.map((protocol) => ({
+            ...protocol,
+            capability_evidence: {
+              ...protocol.capability_evidence,
+              [capability]: [],
+            },
+          })),
+        }),
+      ).toThrow();
+    }
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capability_evidence: {
+              ...orientation.protocols[1].capability_evidence,
+              state: [{ step_id: "next", field_path: "missing" }],
+            },
+          },
+        ],
       }),
     ).toThrow();
     expect(() =>
@@ -175,10 +281,12 @@ describe("agent-task transcript token gate", () => {
         orientation,
       ).protocols.map(({ task_id }) => task_id),
     ).toEqual(["orientation-context-intent", "orientation-contracts-next"]);
-    const mixedCaseTasks = [
-      { id: "a-orientation", step_count: 1, estimated_tokens: 300 },
-      { id: "Z-orientation", step_count: 1, estimated_tokens: 300 },
-    ];
+    const mixedCaseTasks = ["a-orientation", "Z-orientation"].map((id) => ({
+      id,
+      step_count: 1,
+      estimated_tokens: 300,
+      steps: [{ id: "context", verified_fields: ["state"] }],
+    }));
     expect(
       evaluateOrientationProtocolSelection(
         { tasks: mixedCaseTasks },
@@ -188,6 +296,9 @@ describe("agent-task transcript token gate", () => {
           protocols: mixedCaseTasks.map((task) => ({
             task_id: task.id,
             capabilities: ["state"],
+            capability_evidence: {
+              state: [{ step_id: "context", field_path: "state" }],
+            },
           })),
         },
       ).protocols.map(({ task_id }) => task_id),
