@@ -448,7 +448,7 @@ describe("clone-local merge decision receipts", () => {
     });
   });
 
-  it.runIf(process.platform !== "win32")(
+  it.runIf(process.platform !== "win32" && process.getuid?.() !== 0)(
     "classifies an unreadable receipt candidate without exposing its contents",
     async () => {
       const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));

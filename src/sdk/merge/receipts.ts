@@ -53,6 +53,11 @@ const RECEIPT_KEYS = new Set([
   "value_availability",
   "evidence_source",
 ]);
+
+/** Return whether a receipt id is safe to expose in cleartext diagnostics. */
+export function isSafeReceiptId(value: string): boolean {
+  return RECEIPT_ID_PATTERN.test(value);
+}
 const RECEIPT_DECISION_KEYS = new Set([
   "field",
   "base",
@@ -338,7 +343,7 @@ function hasValidReceiptIdentity(value: Record<string, unknown>): boolean {
   return !hasOnlyKeys(value, RECEIPT_KEYS) || value.version !== 1
     ? false
     : typeof value.id === "string" &&
-        RECEIPT_ID_PATTERN.test(value.id) &&
+        isSafeReceiptId(value.id) &&
         typeof value.item_id === "string" &&
         RECEIPT_ITEM_ID_PATTERN.test(value.item_id) &&
         isSafeReceiptItemPath(value.item_path, value.item_id);
@@ -661,7 +666,7 @@ async function readReceiptsFromDirectory(
     invalidEvidence.push({
       evidence_source: evidenceSource,
       reason,
-      ...(RECEIPT_ID_PATTERN.test(receiptId)
+      ...(isSafeReceiptId(receiptId)
         ? { receipt_id: receiptId }
         : { candidate_name_hash: sha256Hex(name) }),
     });

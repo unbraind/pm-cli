@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:merge","area:sdk",diagnostics,"github:1173","security:evidence"
 created_at: "2026-09-01T10:07:41.769Z"
-updated_at: "2026-09-01T11:59:53.553Z"
+updated_at: "2026-09-01T12:14:44.339Z"
 closed_at: "2026-09-01T11:41:54.086Z"
 completed_at: "2026-09-01T11:41:54.086Z"
 author: "harness:codex"
@@ -27,9 +27,10 @@ resolution: "Added exact and bounded invalid-evidence counts/details with source
 expected_result: Every invalid record is identified without exposing malformed content; clone-local versus durable source is explicit; missing history references are visible; remediation enumerates evidence and preserves append-only history.
 actual_result: "PR #1175 first head passed all hosted gates including Windows Node 24. Local 8,244-test exact-coverage suite and full static gates passed; temporary CLI acceptance proved record reasons, bounded output, missing-reference coordinates, and remediation. Both Cubic P2 findings were fixed in the reviewed closeout tree."
 component: SDK merge-receipt evidence and health governance
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-09-01T10:07:41.769Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+  pm-z1z96w,recurs_from,"2026-09-01T12:14:43.450Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-09-01T10:07:41.769Z","harness:codex","Duplicate check: exact GH-1173 search across all statuses returned zero. Canonical predecessors pm-baksix and pm-z1z96w shipped loss-aware receipt reporting but do not provide record-level reasons, cache/source provenance, or dangling-reference diagnostics; this is a post-delivery recurrence and extension, not a duplicate."
   "2026-09-01T10:14:39.100Z","harness:codex","TDD evidence: focused SDK, health, validate, and remediation suite first failed on the missing detail contract, then passed 35/35 after implementation. Malformed contents remain absent from output; safe receipt ids or SHA-256 filename locators identify candidates; detail is capped at 100 with exact full count and truncation receipt."
   "2026-09-01T11:14:27.887Z","harness:codex","Implementation evidence: public SDK reports exact invalid_evidence_count plus bounded invalid_evidence identities, source and stable reason codes, and truncation; CLI merge report, health, and validate preserve the same privacy boundary. Health additionally resolves durable history context.merge.receipts references against pending and reconciled evidence and reports exact item/history-line coordinates or SHA-256 locators with non-destructive recovery guidance."
@@ -37,6 +38,7 @@ comments[7]{created_at,author,text}:
   "2026-09-01T11:27:01.088Z","harness:codex","Final local gate correction: after replacing coverage pragmas with real injected filesystem negative controls, the repository suite passed 594/594 files and 8,244/8,244 tests at exact 100% statements (60,700/60,700), branches (45,900/45,900), functions (12,629/12,629), and lines (58,439/58,439). Full pnpm quality:static also passed, including ESLint, zero jscpd clones, contract and SDK snapshots, package boundaries, grammar/parity, refusal closure, token budgets, tracker graph quality, and record integrity."
   "2026-09-01T11:41:53.107Z","harness:codex","Hosted and review evidence: PR #1175 head 1484629 passed the complete GitHub matrix, including Windows regression Node 24 in 3m31s, all four coverage shards and exact coverage gate, static/smoke/type/compat gates, CodeQL, Semgrep, Trivy, DeepScan, CodeFactor, Codecov, CodSpeed, and Cubic. Cubic identified two valid P2 gaps; both are fixed in the closeout tree: MergeReceiptInvalidEvidence is exported from the merge and aggregate SDK barrels, and the ancestor classifier now inspects the exact requested path before walking upward."
   "2026-09-01T11:59:53.553Z","harness:codex","Exact closeout evidence: final repository coverage passed 594/594 files and 8,244/8,244 tests at exact 100% statements (60,700/60,700), branches (45,900/45,900), functions (12,629/12,629), and lines (58,439/58,439). Full quality:static passed after its defect-evidence ratchet correctly required and then accepted production_defect plus structured gate_strengthened evidence. pm-changelog 2026.9.1 generated and check-verified CHANGELOG.md."
+  "2026-09-01T12:14:44.338Z","harness:codex","Exact-head CodeRabbit review found three valid closeout improvements: centralize the cleartext receipt-id privacy predicate, make the real chmod unreadable-file test skip uid 0 while retained injected negative controls cover the branch, and restore pm-z1z96w as the typed recurs_from predecessor. All are incorporated through source/test edits and an append-only pm mutation."
 learnings[1]{created_at,author,text}:
   "2026-09-01T11:14:28.374Z","harness:codex","Durable history references must be checked against reconciled as well as pending receipts; filtering to pending before the cross-check creates false missing-evidence findings after correct settlement. Enumerate evidence before proposing remediation, and never rewrite append-only history to silence a clone-local diagnostic."
 files[14]{path,scope,note}:

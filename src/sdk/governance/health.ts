@@ -112,6 +112,7 @@ import {
 } from "../merge/install.js";
 import {
   inspectMergeReceiptEvidence,
+  isSafeReceiptId,
   partitionMergeReceipts,
   type MergeDecisionReceipt,
 } from "../merge/receipts.js";
@@ -287,7 +288,6 @@ type ItemWithBody = Awaited<
 const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
 const BRIEF_HEALTH_DETAIL_LIMIT = 8;
 const HEALTH_WARNING_LIMIT = 100;
-const HISTORY_RECEIPT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u;
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
   "runtime",
   "telemetry",
@@ -800,7 +800,7 @@ async function buildIntegrityCheck(
     .map((reference) => ({
       item_id: reference.itemId,
       history_line: reference.line,
-      ...(HISTORY_RECEIPT_ID_PATTERN.test(reference.receiptId)
+      ...(isSafeReceiptId(reference.receiptId)
         ? { receipt_id: reference.receiptId }
         : { receipt_reference_hash: sha256Hex(reference.receiptId) }),
     }));
