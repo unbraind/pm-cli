@@ -18,12 +18,13 @@ import {
 } from "./context-relevance.js";
 import type { ItemMetadata } from "../types/index.js";
 import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
+import { readLatestSubstantiveHistoryEvents } from "../core/history/event-index.js";
 
 /** Current serialized feature-store envelope version. */
-export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 1;
+export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 2;
 
 /** Current canonical signal-vector version. */
-export const CONTEXT_SIGNAL_SET_VERSION = 1;
+export const CONTEXT_SIGNAL_SET_VERSION = 2;
 
 const STORED_CONTEXT_SIGNAL_NAMES = [
   "recency",
@@ -32,7 +33,20 @@ const STORED_CONTEXT_SIGNAL_NAMES = [
   "priority_pressure",
   "risk_pressure",
   "knowledge_density",
-] as const satisfies readonly Exclude<ContextRelevanceSignalName, "structural">[];
+] as const satisfies readonly Exclude<
+  ContextRelevanceSignalName,
+  "structural"
+>[];
+const CONTEXT_RECENCY_SOURCES = new Set([
+  "substantive_history",
+  "release_cohort",
+  "created_at",
+]);
+const OPTIONAL_CONTEXT_EVENT_CLASSES = new Set([
+  undefined,
+  "substantive",
+  "maintenance",
+]);
 
 /** Authoritative substrate used to derive one snapshot. */
 export type ContextSignalSnapshotSource = "derived_index" | "scan_fallback";
@@ -43,6 +57,8 @@ export interface ContextSignalSnapshotItem {
   id: string;
   /** Canonical normalized signal vector. */
   signals: ContextRelevanceSignals;
+  /** Authoritative temporal source retained for explained ranking. */
+  signal_provenance: ContextRelevanceCandidate<ItemMetadata>["signal_provenance"];
 }
 
 /** Rebuildable, deterministic context-signal snapshot. */
@@ -70,8 +86,7 @@ export interface ContextSignalStoreAdapter {
 }
 
 /** Options required to fold authoritative items into a snapshot. */
-export interface BuildContextSignalSnapshotOptions
-  extends BuildItemContextRelevanceCandidatesOptions {
+export interface BuildContextSignalSnapshotOptions extends BuildItemContextRelevanceCandidatesOptions {
   /** Authoritative history or derived-index cursor. */
   sourceCursor: string;
   /** Substrate used to load the authoritative items. */
@@ -134,12 +149,14 @@ export const CONTEXT_SIGNAL_STORE_WARNING_DETAILS = {
       "Retry the derived snapshot write and confirm the warning clears after storage access is restored.",
   },
 } as const satisfies Readonly<
-  Record<ContextSignalStoreWarningDetail["code"], ContextSignalStoreWarningDetail>
+  Record<
+    ContextSignalStoreWarningDetail["code"],
+    ContextSignalStoreWarningDetail
+  >
 >;
 
 /** Workspace-bound feature-store options used by CLI, MCP, and SDK readers. */
-export interface ReadWorkspaceContextSignalsOptions
-  extends BuildItemContextRelevanceCandidatesOptions {
+export interface ReadWorkspaceContextSignalsOptions extends BuildItemContextRelevanceCandidatesOptions {
   /** Tracker root containing rebuildable runtime state. */
   pmRoot: string;
   /** Explicit cursor for custom SDK hosts; the stock host reads the metadata index. */
@@ -155,16 +172,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isNormalizedSignal(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 1
+  );
 }
 
-function compactSignals(signals: ContextRelevanceSignals): ContextRelevanceSignals {
+function compactSignals(
+  signals: ContextRelevanceSignals,
+): ContextRelevanceSignals {
   const compact: ContextRelevanceSignals = {};
   for (const name of STORED_CONTEXT_SIGNAL_NAMES) {
     const value = signals[name];
     if (value === undefined) continue;
     if (!isNormalizedSignal(value)) {
-      throw new TypeError(`Context relevance signal ${name} must be a finite number from 0 to 1`);
+      throw new TypeError(
+        `Context relevance signal ${name} must be a finite number from 0 to 1`,
+      );
     }
     compact[name] = value;
   }
@@ -182,7 +208,9 @@ function normalizedCountsById(
   );
 }
 
-function deriveGraphProximity(items: readonly ItemMetadata[]): Record<string, number> {
+function deriveGraphProximity(
+  items: readonly ItemMetadata[],
+): Record<string, number> {
   const degree = new Map(items.map((item) => [item.id, 0]));
   const increment = (id: string): void => {
     degree.set(id, (degree.get(id) ?? 0) + 1);
@@ -200,7 +228,10 @@ function deriveGraphProximity(items: readonly ItemMetadata[]): Record<string, nu
   }
   const maximum = Math.max(0, ...degree.values());
   return Object.fromEntries(
-    items.map((item) => [item.id, maximum === 0 ? 0 : (degree.get(item.id) as number) / maximum]),
+    items.map((item) => [
+      item.id,
+      maximum === 0 ? 0 : (degree.get(item.id) as number) / maximum,
+    ]),
   );
 }
 
@@ -225,22 +256,64 @@ function stableSnapshotOptions(
 }
 
 function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
-  if (!isRecord(value) || typeof value.id !== "string" || !isRecord(value.signals)) {
+  if (!isRecord(value)) return null;
+  const signalProvenance = value.signal_provenance;
+  if (
+    ![
+      typeof value.id === "string",
+      isRecord(value.signals),
+      isRecord(signalProvenance),
+    ].every(Boolean)
+  )
+    return null;
+  const recency = (signalProvenance as Record<string, unknown>).recency;
+  if (!isRecord(recency)) return null;
+  const supportedSignals = new Set<string>(STORED_CONTEXT_SIGNAL_NAMES);
+  const signalEntries = Object.entries(
+    value.signals as Record<string, unknown>,
+  );
+  if (
+    !signalEntries.every(
+      ([name, signal]) =>
+        supportedSignals.has(name) && isNormalizedSignal(signal),
+    )
+  ) {
     return null;
   }
-  const signals: Record<string, number> = {};
-  const supportedSignals = new Set<string>(STORED_CONTEXT_SIGNAL_NAMES);
-  for (const [name, signal] of Object.entries(value.signals)) {
-    if (!supportedSignals.has(name) || !isNormalizedSignal(signal)) {
-      return null;
-    }
-    signals[name] = signal;
+  if (
+    ![
+      CONTEXT_RECENCY_SOURCES.has(String(recency.source)),
+      typeof recency.coordinate === "string",
+      ["undefined", "string"].includes(typeof recency.history_op),
+      OPTIONAL_CONTEXT_EVENT_CLASSES.has(recency.event_class as string),
+    ].every(Boolean)
+  ) {
+    return null;
   }
-  return { id: value.id, signals: signals as ContextRelevanceSignals };
+  return {
+    id: value.id as string,
+    signals: Object.fromEntries(signalEntries) as ContextRelevanceSignals,
+    signal_provenance: {
+      recency: {
+        source: recency.source as
+          | "substantive_history"
+          | "release_cohort"
+          | "created_at",
+        coordinate: recency.coordinate as string,
+        history_op: recency.history_op as string | undefined,
+        event_class: recency.event_class as
+          | "substantive"
+          | "maintenance"
+          | undefined,
+      },
+    },
+  };
 }
 
 /** Validate an untrusted serialized snapshot without accepting partial envelopes. */
-export function parseContextSignalSnapshot(value: unknown): ContextSignalSnapshot | null {
+export function parseContextSignalSnapshot(
+  value: unknown,
+): ContextSignalSnapshot | null {
   if (
     !isRecord(value) ||
     value.format_version !== CONTEXT_SIGNAL_STORE_FORMAT_VERSION ||
@@ -280,19 +353,33 @@ export function buildContextSignalSnapshot(
   items: readonly ItemMetadata[],
   options: BuildContextSignalSnapshotOptions,
 ): ContextSignalSnapshot {
-  if (typeof options.sourceCursor !== "string" || options.sourceCursor.trim().length === 0) {
+  if (
+    typeof options.sourceCursor !== "string" ||
+    options.sourceCursor.trim().length === 0
+  ) {
     throw new TypeError("Context signal source cursor must be non-empty");
   }
   if (!Number.isFinite(Date.parse(options.now))) {
-    throw new TypeError("Context signal snapshot clock must be a valid timestamp");
+    throw new TypeError(
+      "Context signal snapshot clock must be a valid timestamp",
+    );
   }
-  if (options.source !== "derived_index" && options.source !== "scan_fallback") {
-    throw new TypeError("Context signal snapshot source must be derived_index or scan_fallback");
+  if (
+    options.source !== "derived_index" &&
+    options.source !== "scan_fallback"
+  ) {
+    throw new TypeError(
+      "Context signal snapshot source must be derived_index or scan_fallback",
+    );
   }
-  const rows = buildItemContextRelevanceCandidates(items, stableSnapshotOptions(items, options))
-    .map(({ id, signals }) => ({
+  const rows = buildItemContextRelevanceCandidates(
+    items,
+    stableSnapshotOptions(items, options),
+  )
+    .map(({ id, signals, signal_provenance }) => ({
       id,
       signals: compactSignals(signals),
+      signal_provenance,
     }))
     .sort((left, right) => left.id.localeCompare(right.id));
   return Object.freeze({
@@ -333,9 +420,15 @@ export class JsonFileContextSignalStoreAdapter implements ContextSignalStoreAdap
   async write(snapshot: ContextSignalSnapshot): Promise<void> {
     const directory = path.dirname(this.filePath);
     await fs.mkdir(directory, { recursive: true });
-    const temporaryPath = path.join(directory, `.${path.basename(this.filePath)}.${randomUUID()}.tmp`);
+    const temporaryPath = path.join(
+      directory,
+      `.${path.basename(this.filePath)}.${randomUUID()}.tmp`,
+    );
     try {
-      await fs.writeFile(temporaryPath, `${JSON.stringify(snapshot)}\n`, { encoding: "utf8", flag: "wx" });
+      await fs.writeFile(temporaryPath, `${JSON.stringify(snapshot)}\n`, {
+        encoding: "utf8",
+        flag: "wx",
+      });
       await fs.rename(temporaryPath, this.filePath);
     } finally {
       try {
@@ -372,7 +465,9 @@ export class ContextSignalStore {
     } catch {
       warnings.push("context_signal_store_invalid");
     }
-    const authoritativeIds = items.map((item) => item.id).sort((left, right) => left.localeCompare(right));
+    const authoritativeIds = items
+      .map((item) => item.id)
+      .sort((left, right) => left.localeCompare(right));
     const snapshotIds = snapshot?.items.map((item) => item.id) ?? [];
     const fresh =
       snapshot !== null &&
@@ -394,13 +489,24 @@ export class ContextSignalStore {
         warnings.push("context_signal_store_write_failed");
       }
     }
-    const signalsById = new Map(resolvedSnapshot.items.map((item) => [item.id, item.signals]));
-    const dynamicCandidates = buildItemContextRelevanceCandidates(items, options);
+    const snapshotItemsById = new Map(
+      resolvedSnapshot.items.map((item) => [item.id, item]),
+    );
+    const dynamicCandidates = buildItemContextRelevanceCandidates(
+      items,
+      options,
+    );
     return {
       snapshot: resolvedSnapshot,
       candidates: dynamicCandidates.map((candidate) => ({
         ...candidate,
-        signals: { ...candidate.signals, ...signalsById.get(candidate.id) },
+        signals: {
+          ...candidate.signals,
+          ...snapshotItemsById.get(candidate.id)?.signals,
+        },
+        signal_provenance: (
+          snapshotItemsById.get(candidate.id) as ContextSignalSnapshotItem
+        ).signal_provenance,
       })),
       cache_status: fresh ? "fresh" : "rebuilt",
       warnings,
@@ -416,20 +522,24 @@ export class ContextSignalStore {
 
 function fallbackWorkspaceCursor(items: readonly ItemMetadata[]): string {
   const hash = createHash("sha256");
-  for (const item of [...items].sort((left, right) => left.id.localeCompare(right.id))) {
-    hash.update(JSON.stringify([
-      item.id,
-      item.updated_at,
-      item.status,
-      item.parent ?? null,
-      item.priority ?? null,
-      item.risk ?? null,
-      (item.dependencies ?? []).map((dependency) => dependency.id).sort(),
-      item.comments?.length ?? 0,
-      item.notes?.length ?? 0,
-      item.learnings?.length ?? 0,
-      item.test_runs?.length ?? 0,
-    ]));
+  for (const item of [...items].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  )) {
+    hash.update(
+      JSON.stringify([
+        item.id,
+        item.updated_at,
+        item.status,
+        item.parent ?? null,
+        item.priority ?? null,
+        item.risk ?? null,
+        (item.dependencies ?? []).map((dependency) => dependency.id).sort(),
+        item.comments?.length ?? 0,
+        item.notes?.length ?? 0,
+        item.learnings?.length ?? 0,
+        item.test_runs?.length ?? 0,
+      ]),
+    );
   }
   return `scan:${hash.digest("hex")}`;
 }
@@ -442,29 +552,60 @@ export async function readWorkspaceContextSignals(
   const hasSourceCursor = options.sourceCursor !== undefined;
   const hasSource = options.source !== undefined;
   if (hasSourceCursor !== hasSource) {
-    throw new TypeError("Context signal source and source cursor must be provided together");
+    throw new TypeError(
+      "Context signal source and source cursor must be provided together",
+    );
   }
   if (
     options.storeKey !== undefined &&
     !/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/u.test(options.storeKey)
   ) {
-    throw new TypeError("Context signal store key must be a filesystem-safe identifier");
+    throw new TypeError(
+      "Context signal store key must be a filesystem-safe identifier",
+    );
   }
   const indexState = hasSourceCursor
     ? null
     : await readItemMetadataDerivedIndexState(options.pmRoot);
-  const sourceCursor = options.sourceCursor ?? indexState?.source_cursor ?? fallbackWorkspaceCursor(items);
+  const sourceCursor =
+    options.sourceCursor ??
+    indexState?.source_cursor ??
+    fallbackWorkspaceCursor(items);
   const source =
-    options.source ??
-    (indexState === null ? "scan_fallback" : "derived_index");
+    options.source ?? (indexState === null ? "scan_fallback" : "derived_index");
   const store = new ContextSignalStore(
     new JsonFileContextSignalStoreAdapter(
       path.join(
         options.pmRoot,
         "runtime",
-        options.storeKey ? `context-signals-${options.storeKey}.json` : "context-signals.json",
+        options.storeKey
+          ? `context-signals-${options.storeKey}.json`
+          : "context-signals.json",
       ),
     ),
   );
-  return store.readOrRebuild(items, { ...options, sourceCursor, source });
+  const recencyEvidence =
+    options.recencyEvidence ??
+    Object.fromEntries(
+      Object.entries(
+        await readLatestSubstantiveHistoryEvents(
+          options.pmRoot,
+          items.map((item) => item.id),
+        ),
+      ).map(([id, event]) => [
+        id,
+        {
+          source: "substantive_history" as const,
+          coordinate: event.entry.ts,
+          history_op: event.entry.op,
+          event_class: "substantive" as const,
+        },
+      ]),
+    );
+  return store.readOrRebuild(items, {
+    ...options,
+    recencyEvidence,
+    sourceCursor,
+    source,
+  });
 }

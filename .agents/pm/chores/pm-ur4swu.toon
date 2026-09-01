@@ -1,0 +1,38 @@
+id: pm-ur4swu
+title: Refresh compatible 2026-09-01 jscpd 5.1.1 tooling
+description: Adopt registry-current jscpd 5.1.1 while preserving the canonical npm-package-arg 14 runtime-floor and TypeScript 7 parser/compiler-API deferrals.
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,quality,tooling
+created_at: "2026-09-01T15:21:58.266Z"
+updated_at: "2026-09-01T15:48:43.566Z"
+closed_at: "2026-09-01T15:48:43.070Z"
+completed_at: "2026-09-01T15:48:43.070Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve jscpd 5.1.1 exactly; zero-duplication, strict static quality, exact coverage, packed npx/bunx acceptance, npm/Bun installed sessions, and security inventories pass; pnpm outdated contains only the two evidence-backed incompatible majors pm-ksr40d and pm-do5b."
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "Updated dependency declaration, lock graph, and release-age platform exceptions while retaining evidence-backed incompatible-major deferrals."
+expected_result: "jscpd 5.1.1 is resolved and every mandatory quality, package, installed-consumer, and security gate remains green."
+actual_result: "Zero clones, exact 100% coverage, strict static, packed npx/bunx, npm/Bun installed sessions, zero audit/alert findings, and only two canonical incompatible majors remain."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,discovered_from,"2026-09-01T15:21:58.266Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-01T15:21:58.266Z","harness:codex","cli:create:dep",detected
+  pm-vwuidf,recurs_from,"2026-09-01T15:21:58.266Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-01T15:21:58.266Z","harness:codex","Duplicate-check evidence: complete all-status searches for jscpd 5.1.0 and the live outdated set found closed compatible refresh pm-vwuidf plus canonical open incompatible-major owners pm-ksr40d and pm-do5b, but no owner for jscpd 5.1.0. Registry metadata declares Node >=18, compatible with pm-cli >=22.18.0; live GitHub alert inventories and pnpm audit are zero."
+  "2026-09-01T15:22:46.007Z","harness:codex","Live registry correction: jscpd 5.1.1 became current after the initial 5.1.0 resolution. It retains Node >=18 compatibility and adds a Windows ARM64 optional artifact; the package manager recorded every platform artifact in the strict minimum-release-age exception list. The active item now owns 5.1.1, and pnpm outdated contains only pm-ksr40d/npm-package-arg 14 and pm-do5b/TypeScript 7."
+  "2026-09-01T15:48:16.167Z","harness:codex","Delivery evidence 2026-09-01: package.json and pnpm-lock.yaml resolve jscpd 5.1.1, including the new Windows ARM64 optional artifact in the strict minimum-release-age exception set. Both repository and source duplicate scans report zero clones. Full static quality passed; exact coverage passed 596 files / 8260 tests at 100/100/100/100; the packed artifact passed at 19,484,451 bytes and 1,411 files with no source maps; packed npx and bunx smoke passed across 13 packages; previously completed clean installed npm and Bun sessions passed 11 steps each. pnpm audit reports zero vulnerabilities across 424 dependencies, and live Dependabot, code-scanning, and secret-scanning inventories are each zero. pnpm outdated now contains only npm-package-arg 14 owned by pm-ksr40d and TypeScript 7 owned by pm-do5b, both incompatible-major deferrals verified from current registry peer/runtime contracts."
+files[3]{path,scope,note}:
+  package.json,project,Compatible tooling dependency declaration
+  pnpm-lock.yaml,project,Resolved compatible dependency graph
+  pnpm-workspace.yaml,project,Supply-chain release-age exception for jscpd 5.1.1 platform artifacts
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm lint:duplicates",project,300,"harness:codex","2026-09-01T15:22:10.850Z",local_mutation,feat/substantive-context-signals-delivery-receipts
+  node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-09-01T15:22:10.850Z",local_mutation,feat/substantive-context-signals-delivery-receipts
+  "pnpm quality:static",project,1200,"harness:codex","2026-09-01T15:22:10.850Z",local_mutation,feat/substantive-context-signals-delivery-receipts
+close_reason: Updated compatible duplicate-detection tooling to registry-current jscpd 5.1.1
+body: ""

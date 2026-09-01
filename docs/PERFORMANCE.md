@@ -12,7 +12,7 @@ Every measured CLI and SDK operation targets:
 - default output at or below 5,000 estimated tokens;
 - no feature, flag, output, history, or validation loss.
 
-The committed regression budgets in [`scripts/bench/scale-budgets.json`](../scripts/bench/scale-budgets.json) protect the current baseline while the product targets stay fixed. Short local checks use the best observed latency as a regression floor; statistically meaningful runs of 20 or more use p95. Both receive 25% baseline headroom plus a 25 ms scheduler/filesystem noise margin. Reports always retain min/p50/p95, and product-target status always uses p95. This lets a busy workstation detect deterministic code slowdowns without pretending that three samples produce a meaningful p95 or hiding the real tail-latency target.
+The committed regression budgets in [`scripts/bench/scale-budgets.json`](../scripts/bench/scale-budgets.json) protect the current baseline while the product targets stay fixed. Baseline refreshes use the Node major pinned by release and primary CI workflows (currently Node 24); newer supported runtimes remain compatibility targets, but their startup and memory characteristics must not silently rewrite the release baseline. Short local checks use the best observed latency as a regression floor; statistically meaningful runs of 20 or more use p95. Both receive 25% baseline headroom plus a 25 ms scheduler/filesystem noise margin. Reports always retain min/p50/p95, and product-target status always uses p95. This lets a busy workstation detect deterministic code slowdowns without pretending that three samples produce a meaningful p95 or hiding the real tail-latency target.
 
 ## Reproducible fixtures
 
@@ -92,7 +92,10 @@ probe off and performs no query on the create path; advisory/strict modes reuse
 one dependency-light SDK scorer with the package-owned dedupe audit. Mutation
 history events use a separate rebuildable ordered SQLite projection so
 `pm events --since <cursor>` catch-up cost follows new history rows instead of
-workspace size. See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
+workspace size. Its v3 schema also indexes the declared substantive-versus-
+maintenance event class, allowing context recency to fetch only the latest
+substantive row per requested stream instead of folding complete histories on
+each read. See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
 
 SDK hosts that commit authoritative item documents outside the stock mutation
 commands use `acquireItemMetadataDerivedIndexLock` and
@@ -127,7 +130,7 @@ To refresh a baseline after an intentional, measured improvement:
 pnpm benchmark:scale --items ci --iterations 5 --transport both --update --headroom 1.25
 ```
 
-Review the report and budget diff together. Never update a budget merely to silence a regression.
+Review the report and budget diff together. Before a refresh, compare the delivery head with its exact base commit using the same runtime, fixture shape, and transport set; retain that evidence on the owning PM item. Never update a budget merely to silence a regression.
 
 ## Startup and observability
 

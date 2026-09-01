@@ -3,13 +3,18 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  attachContextUsageServingReceipt,
   ContextUsageValidationError,
+  finalizeContextUsageDelivery,
   packContextCandidates,
+  propagateContextUsageServingReceipt,
   readContextUsageAffinity,
   recordContextUsageServing,
+  recordContextUsageDelivery,
   recordContextUsageTouch,
   recordContextUsageTouches,
 } from "../../../src/sdk/index.js";
+import { finalizeContextUsageEgress } from "../../../src/sdk/context/usage-egress.js";
 
 const roots: string[] = [];
 
@@ -193,9 +198,29 @@ describe("context packing", () => {
 });
 
 describe("context usage feedback", () => {
+  it("preserves typed warnings when post-egress usage feedback fails", async () => {
+    const finalize = async (): Promise<boolean> => {
+      throw new Error("derived ledger unavailable");
+    };
+    const withWarnings = { warnings: ["existing_warning", 42] };
+    await finalizeContextUsageEgress("/unused", withWarnings, finalize);
+    expect(withWarnings.warnings).toEqual([
+      "context_usage_feedback_write_failed",
+      "existing_warning",
+    ]);
+    const withoutWarnings: { warnings?: string[] } = {};
+    await finalizeContextUsageEgress("/unused", withoutWarnings, finalize);
+    expect(withoutWarnings.warnings).toEqual([
+      "context_usage_feedback_write_failed",
+    ]);
+    await expect(
+      finalizeContextUsageEgress("/unused", [], finalize),
+    ).resolves.toBeUndefined();
+  });
+
   it("records propensity rows and derives decayed served-then-touched affinity", async () => {
     const pmRoot = await tempPmRoot();
-    await recordContextUsageServing({
+    const serving = await recordContextUsageServing({
       pmRoot,
       author: "agent",
       surface: "context",
@@ -206,6 +231,13 @@ describe("context usage feedback", () => {
         { id: "pm-ignored", rank: 2, included: true },
         { id: "pm-omitted", rank: 3, included: false },
       ],
+    });
+    await recordContextUsageDelivery({
+      pmRoot,
+      receipt: serving,
+      deliveredItemIds: ["pm-used"],
+      resultOmitted: false,
+      now: "2026-07-01T00:00:01.000Z",
     });
     await recordContextUsageTouches({
       pmRoot,
@@ -224,6 +256,7 @@ describe("context usage feedback", () => {
       affinity: { "pm-used": 1 },
       positive_judgments: 1,
       serving_events: 1,
+      untrusted_serving_events: 0,
     });
     const ledger = await readFile(
       path.join(pmRoot, "runtime", "context-usage.jsonl"),
@@ -231,8 +264,290 @@ describe("context usage feedback", () => {
     );
     expect(ledger).not.toContain("pm-ignored description");
     expect(await readContextUsageAffinity({ pmRoot, author: "other" })).toEqual(
-      { affinity: {}, positive_judgments: 0, serving_events: 0 },
+      {
+        affinity: {},
+        positive_judgments: 0,
+        serving_events: 0,
+        untrusted_serving_events: 0,
+      },
     );
+  });
+
+  it("records final egress delivery and excludes phantom or legacy inclusions", async () => {
+    const pmRoot = await tempPmRoot();
+    const receipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "next",
+      profile: "next",
+      rows: [
+        { id: "pm-packed", rank: 1, included: true },
+        { id: "pm-emitted", rank: 2, included: false },
+      ],
+      now: "2026-07-01T00:00:00.000Z",
+    });
+    expect(receipt).toMatchObject({ surface: "next" });
+    await recordContextUsageDelivery({
+      pmRoot,
+      receipt,
+      deliveredItemIds: ["pm-emitted"],
+      resultOmitted: false,
+      now: "2026-07-01T00:00:01.000Z",
+    });
+    await recordContextUsageTouch({
+      pmRoot,
+      author: "agent",
+      itemId: "pm-packed",
+      intent: "get",
+      now: "2026-07-01T00:01:00.000Z",
+    });
+    await recordContextUsageTouch({
+      pmRoot,
+      author: "agent",
+      itemId: "pm-emitted",
+      intent: "get",
+      now: "2026-07-01T00:02:00.000Z",
+    });
+    await writeFile(
+      path.join(pmRoot, "runtime", "context-usage.jsonl"),
+      `${JSON.stringify({
+        kind: "serve",
+        at: "2026-07-01T00:03:00.000Z",
+        author: "agent",
+        surface: "next",
+        profile: "next",
+        rows: [{ id: "pm-legacy", rank: 1, included: true }],
+      })}\n`,
+      { flag: "a" },
+    );
+
+    await expect(
+      readContextUsageAffinity({
+        pmRoot,
+        author: "agent",
+        now: "2026-07-02T00:00:00.000Z",
+      }),
+    ).resolves.toEqual({
+      affinity: { "pm-emitted": 1 },
+      positive_judgments: 1,
+      serving_events: 1,
+      untrusted_serving_events: 1,
+    });
+
+    const preEgressIncluded = receipt.rows
+      .filter((row) => row.included)
+      .map((row) => row.id);
+    expect(preEgressIncluded).not.toEqual(["pm-emitted"]);
+  });
+
+  it("records omitted results with zero delivered rows", async () => {
+    const pmRoot = await tempPmRoot();
+    const receipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "context",
+      profile: "orient",
+      rows: [{ id: "pm-packed", rank: 1, included: true }],
+    });
+    await recordContextUsageDelivery({
+      pmRoot,
+      receipt,
+      deliveredItemIds: [],
+      resultOmitted: true,
+    });
+    const events = (
+      await readFile(
+        path.join(pmRoot, "runtime", "context-usage.jsonl"),
+        "utf8",
+      )
+    )
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(events.at(-1)).toMatchObject({
+      kind: "delivery",
+      result_omitted: true,
+      delivered_item_ids: [],
+    });
+  });
+
+  it("finalizes receipts from projected context and next result shapes", async () => {
+    const pmRoot = await tempPmRoot();
+    const contextReceipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "context",
+      profile: "orient",
+      rows: [
+        { id: "pm-high", rank: 1, included: true },
+        { id: "pm-invalid-row", rank: 2, included: false },
+      ],
+    });
+    const source = {};
+    attachContextUsageServingReceipt(source, contextReceipt);
+    attachContextUsageServingReceipt([], contextReceipt);
+    attachContextUsageServingReceipt({}, null);
+    const contextResult = {
+      high_level: [{ id: " pm-high " }],
+      blocked_fallback: [{ id: 1 }],
+      read_output: { result_omitted: false },
+    };
+    propagateContextUsageServingReceipt(source, contextResult);
+    await expect(
+      finalizeContextUsageDelivery({ pmRoot, result: contextResult }),
+    ).resolves.toBe(true);
+
+    const nextReceipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "next",
+      profile: "next",
+      rows: [{ id: "pm-next", rank: 1, included: true }],
+    });
+    const nextResult = {
+      recommended: null,
+      ready: null,
+      context_intent: { result_omitted: true },
+    };
+    attachContextUsageServingReceipt(nextResult, nextReceipt);
+    await expect(
+      finalizeContextUsageDelivery({ pmRoot, result: nextResult }),
+    ).resolves.toBe(true);
+    const emittedNextResult = {
+      recommended: { id: "pm-next" },
+      ready: [{ id: "pm-next" }],
+    };
+    attachContextUsageServingReceipt(emittedNextResult, nextReceipt);
+    await expect(
+      finalizeContextUsageDelivery({ pmRoot, result: emittedNextResult }),
+    ).resolves.toBe(true);
+    const emptyNextResult = { recommended: null, ready: null };
+    attachContextUsageServingReceipt(emptyNextResult, nextReceipt);
+    await expect(
+      finalizeContextUsageDelivery({ pmRoot, result: emptyNextResult }),
+    ).resolves.toBe(true);
+    await expect(
+      finalizeContextUsageDelivery({ pmRoot, result: [] }),
+    ).resolves.toBe(false);
+
+    const events = (
+      await readFile(
+        path.join(pmRoot, "runtime", "context-usage.jsonl"),
+        "utf8",
+      )
+    )
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(events.filter(({ kind }) => kind === "delivery")).toEqual([
+      expect.objectContaining({
+        delivered_item_ids: ["pm-high"],
+        result_omitted: false,
+      }),
+      expect.objectContaining({
+        delivered_item_ids: [],
+        result_omitted: true,
+      }),
+      expect.objectContaining({
+        delivered_item_ids: ["pm-next"],
+        result_omitted: false,
+      }),
+      expect.objectContaining({
+        delivered_item_ids: [],
+        result_omitted: false,
+      }),
+    ]);
+  });
+
+  it("rejects invalid delivery claims and honors every disable boundary", async () => {
+    const pmRoot = await tempPmRoot();
+    const receipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "next",
+      profile: "next",
+      rows: [{ id: "pm-ranked", rank: 1, included: true }],
+    });
+    await expect(
+      recordContextUsageDelivery({
+        pmRoot,
+        receipt,
+        deliveredItemIds: ["pm-unknown"],
+        resultOmitted: false,
+      }),
+    ).rejects.toThrow(ContextUsageValidationError);
+    await expect(
+      recordContextUsageDelivery({
+        pmRoot,
+        receipt,
+        deliveredItemIds: ["pm-ranked"],
+        resultOmitted: true,
+      }),
+    ).rejects.toThrow(ContextUsageValidationError);
+    await expect(
+      recordContextUsageDelivery({
+        pmRoot,
+        receipt: null,
+        deliveredItemIds: [],
+        resultOmitted: false,
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      recordContextUsageDelivery({
+        pmRoot,
+        receipt,
+        deliveredItemIds: [],
+        resultOmitted: false,
+        enabled: false,
+      }),
+    ).resolves.toBeUndefined();
+    process.env.PM_CONTEXT_USAGE_DISABLED = "1";
+    await expect(
+      recordContextUsageDelivery({
+        pmRoot,
+        receipt,
+        deliveredItemIds: [],
+        resultOmitted: false,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("treats an uncorrelated versioned serve without egress evidence as delivered nowhere", async () => {
+    const pmRoot = await tempPmRoot();
+    await mkdir(path.join(pmRoot, "runtime"), { recursive: true });
+    await writeFile(
+      path.join(pmRoot, "runtime", "context-usage.jsonl"),
+      `${JSON.stringify({
+        kind: "serve",
+        schema_version: 2,
+        serve_id: "serve-without-egress",
+        at: "2026-07-01T00:00:00.000Z",
+        author: "agent",
+        surface: "context",
+        profile: "orient",
+        rows: [{ id: "pm-row", rank: 1, included: true }],
+        result_omitted: false,
+      })}\n`,
+    );
+    await recordContextUsageTouch({
+      pmRoot,
+      author: "agent",
+      itemId: "pm-row",
+      intent: "get",
+      now: "2026-07-01T00:01:00.000Z",
+    });
+    await expect(
+      readContextUsageAffinity({
+        pmRoot,
+        author: "agent",
+        now: "2026-07-02T00:00:00.000Z",
+      }),
+    ).resolves.toEqual({
+      affinity: {},
+      positive_judgments: 0,
+      serving_events: 1,
+      untrusted_serving_events: 0,
+    });
   });
 
   it("deduplicates normalized touch ids and rejects non-string ids", async () => {
@@ -407,6 +722,7 @@ describe("context usage feedback", () => {
       affinity: {},
       positive_judgments: 0,
       serving_events: 0,
+      untrusted_serving_events: 0,
     });
     await expect(
       readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"),
@@ -440,6 +756,7 @@ describe("context usage feedback", () => {
       affinity: {},
       positive_judgments: 0,
       serving_events: 0,
+      untrusted_serving_events: 0,
     });
     await expect(
       recordContextUsageTouches({

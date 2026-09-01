@@ -1,6 +1,6 @@
 # Context relevance and packing
 
-Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon), [pm-3hps](../.agents/pm/tasks/pm-3hps.toon), and [pm-801d](../.agents/pm/features/pm-801d.toon).
+Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon), [pm-07pt16](../.agents/pm/issues/pm-07pt16.toon), [pm-wv47pf](../.agents/pm/issues/pm-wv47pf.toon), [pm-3hps](../.agents/pm/tasks/pm-3hps.toon), and [pm-801d](../.agents/pm/features/pm-801d.toon).
 
 `pm context` and `pm next` share one public SDK relevance pipeline. The built-in
 commands assemble authoritative item metadata, load rebuildable signal rows,
@@ -72,6 +72,43 @@ The stock activity density normalizes comments, notes, learnings, and test runs.
 Graph proximity normalizes parent and dependency degree. SDK hosts can supply
 their own pre-normalized signal maps when their project model has richer
 activity, graph, semantic, or usage data.
+
+### Substantive recency
+
+Recency is a property of what happened, not of the last file write. Every new
+history entry declares `event_class: substantive|maintenance` through the
+versioned `classifyHistoryEvent()` SDK contract. Legacy entries are classified
+by the same declared operation and patch-field policy; unknown operations fail
+closed as substantive. Package and extension scorers can therefore reuse the
+core vocabulary instead of maintaining private operation lists.
+
+The signal selects the most recent substantive history event, then a stamped
+calendar release cohort such as `v2026.7.20`, then `created_at`. It never ranks
+bare `updated_at`, so release attribution, relationship enrichment,
+normalization, linked-artifact updates, and history maintenance cannot promote
+otherwise unchanged work. The rebuildable v3 history-event index stores the
+declared class and retrieves one latest substantive row per requested stream;
+individual immutable streams remain the authoritative fallback.
+
+Explained ranking includes `recency.source`, `coordinate`, and, for history,
+`history_op` plus `event_class` on every served scorer row. Signal snapshots
+persist that evidence alongside the normalized value so a fresh snapshot keeps
+the same explanation as the ranking it serves.
+
+### Delivered usage feedback
+
+Usage affinity learns from post-egress delivery rather than pre-budget packing.
+A versioned serve event records the full propensity rows and a correlation id;
+CLI and `PmClient` egress append a delivery event containing the final
+`result_omitted` decision and exact emitted item ids. A whole-result omission
+therefore delivers zero items even when the packer selected rows earlier.
+
+Direct `runContext` and `runNext` calls remain valid delivery boundaries and
+record their assembled rows on the serve event. A later CLI or client
+projection supersedes that initial decision with its correlated delivery.
+Legacy serve events have no correlation marker, so the affinity reader ignores
+their inclusion flags and reports them as `untrusted_serving_events` instead of
+training on unverifiable phantom serves.
 
 For corpora of at least 10,000 items, `context` automatically allocates a
 bounded fraction of its token budget to recent calendar-epoch and epic-lineage

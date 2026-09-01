@@ -78,6 +78,7 @@ import {
   applyContextIntentProjection,
   attachReadOutputContracts,
 } from "./context-intent-contracts.js";
+import { finalizeContextUsageEgress } from "./context/usage-egress.js";
 import {
   runWithDiscoveredContextIntentContracts,
   type PmContextIntentPackageModule,
@@ -372,6 +373,7 @@ export {
   appendHistoryEntry,
   createHistoryEntry,
 } from "../core/history/history.js";
+export { classifyHistoryEvent, HISTORY_EVENT_CLASSIFICATION_VERSION, MAINTENANCE_HISTORY_OPERATIONS, SUBSTANTIVE_HISTORY_OPERATIONS, type HistoryEventClass } from "../core/history/event-classification.js";
 export {
   generateItemId,
   normalizeItemId,
@@ -3846,7 +3848,9 @@ async function dispatchAction(
         activeExtensions,
       );
   options.resolvedOutputFormat = "json";
-  return attachReadOutputContracts(action, options, result);
+  const projected = attachReadOutputContracts(action, options, result);
+  await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
+  return projected;
 }
 
 const actionRunnerTestHooks = {

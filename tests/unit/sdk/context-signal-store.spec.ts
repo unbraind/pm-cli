@@ -167,11 +167,36 @@ describe("context signal feature store", () => {
       parseContextSignalSnapshot({
         ...structuredClone(valid),
         items: [
-          { id: "pm-b", signals: {} },
-          { id: "pm-a", signals: {} },
+          {
+            id: "pm-b",
+            signals: {},
+            signal_provenance: valid.items[0]?.signal_provenance,
+          },
+          {
+            id: "pm-a",
+            signals: {},
+            signal_provenance: valid.items[0]?.signal_provenance,
+          },
         ],
       })?.items.map(({ id }) => id),
     ).toEqual(["pm-a", "pm-b"]);
+    expect(
+      parseContextSignalSnapshot({
+        ...structuredClone(valid),
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: {
+                source: "substantive_history",
+                coordinate: now,
+                event_class: "maintenance",
+              },
+            },
+          },
+        ],
+      }),
+    ).not.toBeNull();
     const invalidValues: unknown[] = [
       null,
       { ...valid, format_version: 99 },
@@ -181,11 +206,63 @@ describe("context signal feature store", () => {
       { ...valid, generated_at: "invalid" },
       { ...valid, source: "unknown" },
       { ...valid, items: {} },
-      { ...valid, items: [{ id: "", signals: {} }] },
-      { ...valid, items: [{ id: " ", signals: {} }] },
+      { ...valid, items: [null] },
+      {
+        ...valid,
+        items: [{ ...structuredClone(valid.items[0]), id: "" }],
+      },
+      {
+        ...valid,
+        items: [{ ...structuredClone(valid.items[0]), id: " " }],
+      },
       { ...valid, items: [{ id: "pm-a", signals: [] }] },
       { ...valid, items: [{ id: "pm-a", signals: { recency: 2 } }] },
       { ...valid, items: [{ id: "pm-a", signals: { unknown: 0.5 } }] },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signals: { unknown: 0.5 },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: { recency: null },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: {
+                source: "substantive_history",
+                coordinate: now,
+                event_class: "unknown",
+              },
+            },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            id: "pm-a",
+            signals: {},
+            signal_provenance: {
+              recency: { source: "unknown", coordinate: now },
+            },
+          },
+        ],
+      },
       {
         ...valid,
         items: [
@@ -352,6 +429,58 @@ describe("context signal feature store", () => {
     expect(
       second.snapshot.items.find(({ id }) => id === "pm-child")?.signals,
     ).not.toHaveProperty("author_affinity");
+  });
+
+  it("persists the latest substantive history event instead of later maintenance", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-context-history-signals-"),
+    );
+    tempRoots.push(root);
+    await fs.mkdir(path.join(root, "history"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "history", "pm-history.jsonl"),
+      [
+        {
+          ts: "2026-07-20T00:00:00.000Z",
+          author: "agent",
+          op: "comment_add",
+          event_class: "substantive",
+          patch: [],
+          before_hash: "before",
+          after_hash: "after",
+        },
+        {
+          ts: "2026-07-21T00:00:00.000Z",
+          author: "agent",
+          op: "release",
+          event_class: "maintenance",
+          patch: [],
+          before_hash: "before",
+          after_hash: "after",
+        },
+      ]
+        .map((entry) => JSON.stringify(entry))
+        .join("\n") + "\n",
+      "utf8",
+    );
+
+    const result = await readWorkspaceContextSignals([item("pm-history")], {
+      pmRoot: root,
+      statusRegistry,
+      now,
+      sourceCursor: "history-cursor",
+      source: "scan_fallback",
+    });
+
+    expect(result.snapshot.items[0]?.signal_provenance?.recency).toEqual({
+      source: "substantive_history",
+      coordinate: "2026-07-20T00:00:00.000Z",
+      history_op: "comment_add",
+      event_class: "substantive",
+    });
+    expect(result.candidates[0]?.signal_provenance.recency).toEqual(
+      result.snapshot.items[0]?.signal_provenance?.recency,
+    );
   });
 
   it("selects automatic derived-index provenance and deterministic scan fallback", async () => {

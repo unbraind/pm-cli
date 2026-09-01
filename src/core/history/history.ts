@@ -31,6 +31,7 @@ import {
   removeHistoryEventIndexForHistoryPath,
   updateHistoryEventIndexAfterAppend,
 } from "./event-index.js";
+import { classifyHistoryEvent } from "./event-classification.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
@@ -352,7 +353,7 @@ export function createHistoryEntry(params: {
           agent_provenance_outcomes: provenanceOutcomes,
         };
 
-  return {
+  const entry: HistoryEntry = {
     ts: params.nowIso,
     author: params.author,
     author_source:
@@ -379,6 +380,7 @@ export function createHistoryEntry(params: {
     message: params.message === undefined ? undefined : params.message,
     ...(context === undefined ? {} : { context }),
   };
+  return { ...entry, event_class: classifyHistoryEvent(entry) };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

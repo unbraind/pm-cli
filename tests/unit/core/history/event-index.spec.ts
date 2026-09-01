@@ -6,6 +6,7 @@ import {
   _testOnly,
   queryHistoryEventIndex,
   queryHistoryEventStreams,
+  readLatestSubstantiveHistoryEvents,
   rebuildHistoryEventIndex,
   removeHistoryEventIndexForHistoryPath,
   updateHistoryEventIndexAfterAppend,
@@ -174,6 +175,124 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("selects latest substantive events from indexed and authoritative history", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      await fs.writeFile(
+        path.join(historyRoot, "pm-recency.jsonl"),
+        [
+          {
+            ...historyEntry("2026-07-24T09:00:00.000Z", "agent", "create"),
+            event_class: "substantive",
+          },
+          {
+            ...historyEntry("2026-07-24T10:00:00.000Z", "agent", "release"),
+            event_class: "maintenance",
+          },
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join("\n") + "\n",
+      );
+      await rebuildHistoryEventIndex(context.pmPath);
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, [
+          "pm-recency",
+          "pm-missing",
+          "../unsafe",
+          "",
+        ]),
+      ).resolves.toMatchObject({
+        "pm-recency": {
+          stream_offset: 0,
+          entry: { op: "create", event_class: "substantive" },
+        },
+      });
+
+      await removeHistoryEventIndexForHistoryPath(
+        path.join(historyRoot, "pm-recency.jsonl"),
+      );
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-recency"]),
+      ).resolves.toMatchObject({
+        "pm-recency": { stream_offset: 0, entry: { op: "create" } },
+      });
+
+      restoreDatabaseSync?.();
+      restoreDatabaseSync = _testOnly.setDatabaseSync(null);
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, [
+          "pm-recency",
+          "pm-missing",
+          "../unsafe",
+        ]),
+      ).resolves.toMatchObject({
+        "pm-recency": { stream_offset: 0, entry: { op: "create" } },
+      });
+    });
+  });
+
+  it("rebuilds incompatible recency indexes and preserves authoritative read errors", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      const historyPath = path.join(historyRoot, "pm-recency.jsonl");
+      await fs.writeFile(
+        historyPath,
+        `${JSON.stringify(historyEntry("2026-07-24T09:00:00.000Z", "agent", "create"))}\n`,
+      );
+      await rebuildHistoryEventIndex(context.pmPath);
+      const database = new DatabaseSync(
+        path.join(context.pmPath, "runtime", INDEX_FILENAME),
+      );
+      database
+        .prepare("UPDATE metadata SET value = 'old' WHERE key = 'version'")
+        .run();
+      database.close();
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-recency"]),
+      ).resolves.toMatchObject({
+        "pm-recency": { stream_offset: 0, entry: { op: "create" } },
+      });
+
+      restoreDatabaseSync?.();
+      restoreDatabaseSync = _testOnly.setDatabaseSync(null);
+      await fs.mkdir(path.join(historyRoot, "pm-directory.jsonl"));
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-directory"]),
+      ).rejects.toThrow();
+    });
+  });
+
+  it("falls back when a rebuilt projection cannot be reopened", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-fallback.jsonl",
+      );
+      await fs.writeFile(
+        historyPath,
+        `${JSON.stringify(historyEntry("2026-07-24T09:00:00.000Z", "agent", "create"))}\n`,
+      );
+      let opens = 0;
+      class ReopenFailureDatabase {
+        constructor(...args: ConstructorParameters<typeof DatabaseSync>) {
+          opens += 1;
+          if (opens === 3) throw new Error("reopen failed");
+          return new DatabaseSync(...args);
+        }
+      }
+      restoreDatabaseSync?.();
+      restoreDatabaseSync = _testOnly.setDatabaseSync(
+        ReopenFailureDatabase as never,
+      );
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-fallback"]),
+      ).resolves.toMatchObject({
+        "pm-fallback": { stream_offset: 0, entry: { op: "create" } },
+      });
+    });
+  });
+
   it("supports an empty tracker and reports unavailable SQLite runtimes", async () => {
     await withTempPmPath(async (context) => {
       await fs.rm(path.join(context.pmPath, "history"), {
@@ -281,11 +400,7 @@ describe("history mutation event index", () => {
         "alpha",
         "create",
       );
-      const firstB = historyEntry(
-        "2026-07-24T10:00:00.000Z",
-        "beta",
-        "update",
-      );
+      const firstB = historyEntry("2026-07-24T10:00:00.000Z", "beta", "update");
       await fs.writeFile(
         path.join(historyRoot, "pm-a.jsonl"),
         `${JSON.stringify(firstA)}\n`,

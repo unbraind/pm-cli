@@ -573,6 +573,7 @@ function formatEffectiveOutput(
     options.tokenAccounting === true
       ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
       : intentOutputResult;
+  setActiveCommandResult(accountedOutputResult);
   return renderResolvedOutput(accountedOutputResult);
 }
 

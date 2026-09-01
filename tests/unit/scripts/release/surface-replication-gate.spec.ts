@@ -601,6 +601,7 @@ describe("surface replication gate", () => {
         "src/core/history/event-index.ts": [
           "queryHistoryEventStreams",
           "readAuthoritativeHistoryEvents",
+          "const Database = resolveDatabaseSync();",
         ],
       },
       today: "2026-08-17",

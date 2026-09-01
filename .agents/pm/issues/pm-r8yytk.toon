@@ -1,0 +1,38 @@
+id: pm-r8yytk
+title: Shape-qualified scale baselines drifted from current CLI/SDK output contracts and supported runtime
+description: "The committed scratch 10k scale budget still uses the legacy unqualified tier key and July output/startup observations. Exact-main and feature-branch runs now deterministically emit richer list/get payloads and exceed Node 24/26 cold mutation ceilings while all measured outputs remain below the 5k product target. Refreshing the baseline requires explicit cross-head evidence, the existing 25 percent methodology, and preservation of product ceilings."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:cli","area:performance","area:sdk",benchmark,regression
+created_at: "2026-09-01T14:41:40.376Z"
+updated_at: "2026-09-01T15:48:42.444Z"
+closed_at: "2026-09-01T15:48:41.851Z"
+completed_at: "2026-09-01T15:48:41.851Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: The scratch 10k budget is shape-qualified; exact-main and delivery-head results are compared on the supported Node 24 workflow baseline; a five-iteration delivery-head run establishes measured budgets with 25 percent headroom; the unmodified scale check passes; every command remains below the published 1000 ms p95 and 5000-token product targets; Node 26 variance is recorded without being misreported as a delivery regression.
+parent: pm-9rxu
+risk: high
+confidence: high
+severity: high
+resolution: "Shape-qualified the scratch 10k tier, refreshed observations with five-run 25% headroom evidence, and documented supported-runtime baseline refresh requirements."
+expected_result: The ordinary scale gate passes while retaining published 1000ms latency and 5000-token product ceilings.
+actual_result: Exact-main and head outputs matched with no product failures; the final unmodified three-run Node 24 scale check passed.
+component: performance
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+  pm-hcrmye,recurs_from,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+  pm-mi2x,verifies,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+  pm-yse5dt,verifies,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-01T14:41:40.376Z","harness:codex","Duplicate-check evidence: all-status searches for scale budget, Node 26, shape-qualified tiers, stale baselines, and list/get token drift found the original harness pm-mi2x, fixed-runtime regression pm-hcrmye, transport ratchet pm-yse5dt, and output-budget roadmap pm-5t33or, but no item owns the combined legacy-key and current-contract baseline drift. Exact-main at ba9680239 and this branch produce identical list/get bytes and comparable startup/RSS, so this is not introduced by the active context implementation."
+  "2026-09-01T15:48:15.679Z","harness:codex","Delivery evidence 2026-09-01: the legacy scratch tier is now shape-qualified as scratch:10000. Clean exact-main ba9680239 and delivery-head Node 24 five-iteration reports produced identical payload contracts and no product failures. The committed observations use the documented 25% headroom methodology. Head-minus-main minimum latency deltas were CLI list -8ms, get +7ms, next +62ms, context +47ms, search -2ms, create +4ms, claim +13ms; SDK list +2ms, get +17ms, next +62ms, context +91ms, search +56ms, create +4ms, claim +6ms. Every measurement remains below the published 1000ms p95 and 5000-token product ceilings. The unmodified three-iteration Node 24 check passed and wrote .cache/scale-node24-final-report.json. Node 26 variance was treated as non-baseline diagnostic evidence, not a feature regression."
+files[1]{path,scope,note}:
+  scripts/bench/scale-budgets.json,project,Shape-qualified supported-runtime regression baseline
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-node24-final-report.json,project,900,"harness:codex","2026-09-01T14:42:28.875Z",local_mutation,feat/substantive-context-signals-delivery-receipts
+docs[1]{path,scope,note}:
+  docs/PERFORMANCE.md,project,Runtime and baseline-refresh evidence contract
+close_reason: Requalified scale budgets against exact main and delivery head on supported Node 24
+body: ""

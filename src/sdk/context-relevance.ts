@@ -13,6 +13,7 @@ import {
 import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { compareTimestampStrings, resolveIsoOrRelative } from "../core/shared/time.js";
 import type { ItemMetadata } from "../types/index.js";
+import type { HistoryEventClass } from "../core/history/event-classification.js";
 
 /** Canonical signal keys understood by the built-in relevance model. */
 export const CONTEXT_RELEVANCE_SIGNAL_NAMES = [
@@ -39,6 +40,24 @@ export type ContextRelevanceSignals = Partial<
   Record<Exclude<ContextRelevanceSignalName, "structural">, number>
 >;
 
+/** Authoritative coordinate and fallback that produced an item's recency. */
+export interface ContextRecencyEvidence {
+  /** Source selected by the canonical fallback ladder. */
+  source: "substantive_history" | "release_cohort" | "created_at";
+  /** ISO coordinate used for deterministic recency ordering. */
+  coordinate: string;
+  /** Immutable operation selected from history when source is substantive_history. */
+  history_op?: string;
+  /** Declared class selected from history when source is substantive_history. */
+  event_class?: HistoryEventClass;
+}
+
+/** Per-signal provenance exposed by explained relevance results. */
+export interface ContextSignalProvenance {
+  /** Evidence for the canonical temporal component. */
+  recency: ContextRecencyEvidence;
+}
+
 const NO_CONTEXT_AUTHOR = Symbol("no-context-author");
 const NO_ITEM_ASSIGNEE = Symbol("no-item-assignee");
 
@@ -56,6 +75,8 @@ export interface ContextRelevanceCandidate<TItem> {
   item: TItem;
   /** Value that configures or reports signals for this contract. */
   signals?: ContextRelevanceSignals;
+  /** Authoritative source details for explainable derived signals. */
+  signal_provenance?: ContextSignalProvenance;
 }
 
 /** Item candidate whose built-in metadata derivation always supplies signals. */
@@ -63,6 +84,8 @@ export interface ItemContextRelevanceCandidate
   extends ContextRelevanceCandidate<ItemMetadata> {
   /** Complete built-in derivation result, with unavailable signals omitted by value. */
   signals: ContextRelevanceSignals;
+  /** Built-in recency derivation always discloses its source. */
+  signal_provenance: ContextSignalProvenance;
 }
 
 /** Inputs that make item-signal derivation deterministic and host-configurable. */
@@ -87,6 +110,33 @@ export interface BuildItemContextRelevanceCandidatesOptions {
   knowledgeDensity?: Readonly<Record<string, number>>;
   /** Optional history-derived author affinity by item id. */
   authorAffinity?: Readonly<Record<string, number>>;
+  /** Latest substantive history evidence keyed by item id. */
+  recencyEvidence?: Readonly<Record<string, ContextRecencyEvidence>>;
+}
+
+function releaseCohortCoordinate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = /^v?(\d{4})\.(\d{1,2})\.(\d{1,2})(?:$|[-+])/u.exec(
+    value.trim(),
+  );
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? date.toISOString()
+    : undefined;
+}
+
+function fallbackRecencyEvidence(item: ItemMetadata): ContextRecencyEvidence {
+  const releaseCoordinate = releaseCohortCoordinate(item.release);
+  if (releaseCoordinate !== undefined) {
+    return { source: "release_cohort", coordinate: releaseCoordinate };
+  }
+  return { source: "created_at", coordinate: item.created_at };
 }
 
 function normalizedPressure(value: unknown, maximum: number): number {
@@ -128,14 +178,20 @@ export function buildItemContextRelevanceCandidates(
   const sortableTimestamp = (value: unknown): string => {
     if (typeof value !== "string") return "";
     try {
-      return resolveIsoOrRelative(value, new Date(Number.NaN), "updated_at");
+      return resolveIsoOrRelative(value, new Date(Number.NaN), "recency");
     } catch {
       return "";
     }
   };
+  const recencyEvidence = new Map(
+    items.map((item) => [
+      item.id,
+      options.recencyEvidence?.[item.id] ?? fallbackRecencyEvidence(item),
+    ]),
+  );
   const recencyOrder = [...items].sort((left, right) => {
-    const leftTime = sortableTimestamp(left.updated_at);
-    const rightTime = sortableTimestamp(right.updated_at);
+    const leftTime = sortableTimestamp(recencyEvidence.get(left.id)?.coordinate);
+    const rightTime = sortableTimestamp(recencyEvidence.get(right.id)?.coordinate);
     return compareTimestampStrings(rightTime, leftTime) || left.id.localeCompare(right.id);
   });
   const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
@@ -149,6 +205,9 @@ export function buildItemContextRelevanceCandidates(
     return {
       id: item.id,
       item,
+      signal_provenance: {
+        recency: recencyEvidence.get(item.id) as ContextRecencyEvidence,
+      },
       signals: {
         recency: items.length === 1 ? 1 : 1 - (recencyRank.get(item.id) as number) / denominator,
         activity_density: options.activityDensity?.[item.id],

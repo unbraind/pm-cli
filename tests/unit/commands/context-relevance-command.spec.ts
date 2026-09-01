@@ -297,6 +297,13 @@ describe("context relevance command integration", () => {
       expect(explainedContext.ranking?.items.map((entry) => entry.id)).toEqual(
         contextRowIds,
       );
+      expect(
+        explainedContext.ranking?.items.every(
+          (entry) =>
+            entry.recency?.source === "substantive_history" &&
+            entry.recency.event_class === "substantive",
+        ),
+      ).toBe(true);
       expect(explainedContext.ranking?.candidate_count).toBeGreaterThanOrEqual(
         contextRowIds.length,
       );

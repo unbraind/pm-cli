@@ -2,11 +2,13 @@ id: pm-07pt16
 title: "Context recency is computed from updated_at, so every governance write the project mandates erases the freshness signal it ranks on"
 description: "computeContextRelevance derives the recency signal by rank-ordering items on updated_at alone (src/sdk/context-relevance.ts:136-153), and recency carries weight 0.35 — tied for the largest single weight in the default vector, behind only claim_focus and ahead of semantic_similarity. updated_at is the timestamp of the last write of any kind, so it cannot distinguish an item that a human or agent actually advanced from an item a sweep touched. Every maintenance operation this project requires — resolution backfill, close-reason backfill, relationship enrichment, release attribution stamping, normalization, duplicate renames — writes updated_at on terminal items and thereby promotes long-finished work to maximal freshness. This is not hypothetical: the release attribution backfill and terminal graph backfill in this same lane rewrote updated_at on 1782 and 1713 items respectively, so the entire terminal corpus now presents as newer than every genuinely active item. The narrow twin of this defect was already fixed once (pm-d9g9 rejected empty appends precisely so they could not fake freshness), which establishes that write-time is not freshness; the general class was never addressed. A maintenance-invariant temporal coordinate now exists in the data: every terminal item carries a stamped release identifier, and the immutable history stream distinguishes substantive operations (create, close, cancel, status transition, claim, comment) from maintenance operations (dependency add, metadata backfill, normalization, redaction, repair)."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-07-26T17:05:19.088Z"
+updated_at: "2026-09-01T15:48:39.964Z"
+closed_at: "2026-09-01T15:48:39.452Z"
+completed_at: "2026-09-01T15:48:39.452Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -19,15 +21,50 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-3hps,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z",null,null
-  pm-4k6b,implements,"2026-07-26T17:05:19.088Z",null,null
-  pm-9yfo,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-d9g9,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-klo8,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-lnrk,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z",null,null
-  pm-pcys9n,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-uwfs,related,"2026-07-26T17:05:19.088Z",null,null
+resolution: "Added public versioned event classification, substantive event indexing, stable fallback provenance, versioned signal persistence, explainable context/next output, documentation, and full tests."
+expected_result: Maintenance-only writes do not change temporal relevance; packages can reuse the public classification; explanations identify the source event.
+actual_result: "Temporary CLI and PmClient acceptance preserved the substantive coordinate across dependency maintenance; static, scale, and exact 100% coverage gates passed."
+dependencies[10]{id,kind,created_at}:
+  pm-3hps,related,"2026-07-26T17:05:19.088Z"
+  pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
+  pm-4k6b,implements,"2026-07-26T17:05:19.088Z"
+  pm-9yfo,related,"2026-07-26T17:05:19.088Z"
+  pm-d9g9,related,"2026-07-26T17:05:19.088Z"
+  pm-klo8,related,"2026-07-26T17:05:19.088Z"
+  pm-lnrk,related,"2026-07-26T17:05:19.088Z"
+  pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z"
+  pm-pcys9n,related,"2026-07-26T17:05:19.088Z"
+  pm-uwfs,related,"2026-07-26T17:05:19.088Z"
+comments[1]{created_at,author,text}:
+  "2026-09-01T15:48:14.615Z","harness:codex","Delivery evidence 2026-09-01: history writes now carry public event_class=v1 classification; explicit classifications win, update patch fields are classified by declared policy, and unknown operations fail closed as substantive. The v3 event index supports latest-substantive reads with authoritative fallback. Context relevance and persisted signal snapshots derive recency from the latest substantive history event, then release cohort, then created_at, and never bare updated_at; explained context/next expose source, coordinate, history operation, and event class. A temporary-project acceptance proved a dependency-only maintenance write left the substantive recency coordinate byte-for-byte unchanged while CLI and PmClient returned the expected items. Static quality passed with public-surface and replication gates; exact coverage passed 596 files / 8260 tests at 60874 statements, 46011 branches, 12674 functions, and 58599 lines, all 100%. Supported Node 24 scale check remained within product bounds."
+learnings[1]{created_at,author,text}:
+  "2026-09-01T15:48:17.264Z","harness:codex","Freshness is semantic event provenance, not file-write time: maintenance operations must be explicitly classified and excluded from temporal ranking, while unknown operations fail closed as substantive."
+files[19]{path,scope,note}:
+  sdk/public-surface.json,project,Substantive history classification and recency provenance delivery
+  src/core/history/event-classification.ts,project,Substantive history classification and recency provenance delivery
+  src/core/history/event-index.ts,project,Substantive history classification and recency provenance delivery
+  src/core/history/history.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/context-relevance.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/context-signal-store.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/index.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/query/context.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/query/next.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/runtime.ts,project,Substantive history classification and recency provenance delivery
+  src/types.ts,project,Substantive history classification and recency provenance delivery
+  tests/unit/core/history/event-classification.spec.ts,project,Classification policy unit and fail-closed coverage
+  tests/unit/core/history/event-index.spec.ts,project,Indexed and authoritative substantive recency coverage
+  tests/unit/sdk/context-relevance.spec.ts,project,Recency provenance and maintenance invariance coverage
+  tests/unit/sdk/context-signal-store.spec.ts,project,Versioned signal provenance snapshot coverage
+  tests/unit/commands/context-relevance-command.spec.ts,project,CLI explained recency provenance acceptance
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Immutable history event class shape coverage
+  scripts/release/surface-replication-sets.json,project,Precise DatabaseSync seam replication trigger contract
+  tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Resolver consumer false-positive regression coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-01T13:29:41.440Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Classified history recency unit and integration contract
+  node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-01T13:29:41.935Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Repo-wide exact coverage gate
+docs[3]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Substantive recency SDK and performance contract
+  docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
+  docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
+close_reason: Delivered maintenance-invariant substantive-history recency across SDK and CLI
 body: ""

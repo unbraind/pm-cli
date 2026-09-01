@@ -28,15 +28,41 @@ export interface ContextUsageServingRow {
   included: boolean;
 }
 
+/** Correlation receipt joining a pre-egress serve to its final delivery. */
+export interface ContextUsageServingReceipt {
+  /** Versioned immutable serve identifier. */
+  serve_id: string;
+  /** Caller whose feedback model owns the event. */
+  author: string;
+  /** Read surface that assembled the candidates. */
+  surface: ContextRelevanceSurface;
+  /** Propensity-complete ranked rows assembled before egress. */
+  rows: readonly ContextUsageServingRow[];
+}
+
 /** Append-only serving or subsequent-touch event. */
 export type ContextUsageEvent =
   | {
       kind: "serve";
+      schema_version?: 2;
+      serve_id?: string;
       at: string;
       author: string;
       surface: ContextRelevanceSurface;
       profile: string;
       rows: ContextUsageServingRow[];
+      result_omitted?: boolean;
+      delivered_item_ids?: string[];
+    }
+  | {
+      kind: "delivery";
+      schema_version: 2;
+      serve_id: string;
+      at: string;
+      author: string;
+      surface: ContextRelevanceSurface;
+      result_omitted: boolean;
+      delivered_item_ids: string[];
     }
   | {
       kind: "touch";
@@ -68,6 +94,8 @@ export interface ContextUsageAffinity {
   positive_judgments: number;
   /** Number of retained serving events inspected. */
   serving_events: number;
+  /** Legacy serving events ignored because their inclusion cannot be trusted. */
+  untrusted_serving_events: number;
 }
 
 const DEFAULT_MAX_EVENTS = 2_048;
@@ -75,6 +103,112 @@ const DEFAULT_RETENTION_DAYS = 30;
 const DAY_MS = 86_400_000;
 const DEFAULT_COMPACTION_BYTES = 262_144;
 const CONTEXT_USAGE_LOCK_ID = "context-usage-ledger";
+const CONTEXT_USAGE_SERVING_RECEIPT = Symbol.for(
+  "@unbrained/pm-cli/context-usage-serving-receipt",
+);
+
+type ContextUsageReceiptCarrier = {
+  [CONTEXT_USAGE_SERVING_RECEIPT]?: ContextUsageServingReceipt;
+};
+
+function asObjectRecord(value: unknown): Record<PropertyKey, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<PropertyKey, unknown>)
+    : null;
+}
+
+/** Attach a JSON-invisible serving receipt to a result for later egress. */
+export function attachContextUsageServingReceipt(
+  result: unknown,
+  receipt: ContextUsageServingReceipt | null,
+): void {
+  const record = asObjectRecord(result) as ContextUsageReceiptCarrier | null;
+  if (record !== null && receipt !== null) {
+    record[CONTEXT_USAGE_SERVING_RECEIPT] = receipt;
+  }
+}
+
+/** Copy an attached serving receipt across a result projection boundary. */
+export function propagateContextUsageServingReceipt(
+  source: unknown,
+  target: unknown,
+): void {
+  const sourceRecord = asObjectRecord(
+    source,
+  ) as ContextUsageReceiptCarrier | null;
+  const targetRecord = asObjectRecord(
+    target,
+  ) as ContextUsageReceiptCarrier | null;
+  const receipt = sourceRecord?.[CONTEXT_USAGE_SERVING_RECEIPT];
+  if (targetRecord !== null && receipt !== undefined) {
+    targetRecord[CONTEXT_USAGE_SERVING_RECEIPT] = receipt;
+  }
+}
+
+function receiptFromResult(result: unknown): ContextUsageServingReceipt | null {
+  return (
+    (asObjectRecord(result) as ContextUsageReceiptCarrier | null)?.[
+      CONTEXT_USAGE_SERVING_RECEIPT
+    ] ?? null
+  );
+}
+
+function resultReceiptSaysOmitted(result: unknown): boolean {
+  const record = asObjectRecord(result);
+  for (const key of ["read_output", "context_intent"]) {
+    const receipt = asObjectRecord(record?.[key]);
+    if (receipt?.result_omitted === true) return true;
+  }
+  return false;
+}
+
+function emittedItemIds(
+  result: unknown,
+  surface: ContextRelevanceSurface,
+): string[] {
+  const record = asObjectRecord(result);
+  if (record === null || resultReceiptSaysOmitted(result)) return [];
+  const rows =
+    surface === "context"
+      ? ["high_level", "low_level", "blocked_fallback"].flatMap((key) =>
+          Array.isArray(record[key]) ? record[key] : [],
+        )
+      : [
+          ...(asObjectRecord(record.recommended) === null
+            ? []
+            : [record.recommended]),
+          ...(Array.isArray(record.ready) ? record.ready : []),
+        ];
+  return [
+    ...new Set(
+      rows.flatMap((row) => {
+        const id = asObjectRecord(row)?.id;
+        return typeof id === "string" && id.trim().length > 0
+          ? [id.trim()]
+          : [];
+      }),
+    ),
+  ];
+}
+
+/** Resolve and append one post-egress decision carried by a context result. */
+export async function finalizeContextUsageDelivery(options: {
+  /** Tracker root owning the derived ledger. */
+  pmRoot: string;
+  /** Final projected response returned or rendered to the caller. */
+  result: unknown;
+}): Promise<boolean> {
+  const receipt = receiptFromResult(options.result);
+  if (receipt === null) return false;
+  const resultOmitted = resultReceiptSaysOmitted(options.result);
+  await recordContextUsageDelivery({
+    pmRoot: options.pmRoot,
+    receipt,
+    deliveredItemIds: emittedItemIds(options.result, receipt.surface),
+    resultOmitted,
+  });
+  return true;
+}
 
 /** Named validation failure emitted by context-usage SDK inputs. */
 export class ContextUsageValidationError extends TypeError {
@@ -197,12 +331,14 @@ export async function recordContextUsageServing(
     profile: string;
     rows: ContextUsageServingRow[];
   },
-): Promise<void> {
+): Promise<ContextUsageServingReceipt | null> {
   if (
-    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
-    options.enabled === false
+    [
+      process.env.PM_CONTEXT_USAGE_DISABLED === "1",
+      options.enabled === false,
+    ].includes(true)
   )
-    return;
+    return null;
   if (
     !options.author.trim() ||
     options.rows.some(
@@ -213,13 +349,68 @@ export async function recordContextUsageServing(
       "Context usage serving requires an author and valid ranked rows",
     );
   }
+  const receipt: ContextUsageServingReceipt = {
+    serve_id: randomUUID(),
+    author: options.author.trim(),
+    surface: options.surface,
+    rows: options.rows.map((row) => ({ ...row })),
+  };
   await appendEvent(options, {
     kind: "serve",
+    schema_version: 2,
+    serve_id: receipt.serve_id,
     at: resolveNow(options).iso,
     author: options.author.trim(),
     surface: options.surface,
     profile: options.profile.trim() || "balanced",
-    rows: options.rows,
+    rows: receipt.rows.map((row) => ({ ...row })),
+    result_omitted: false,
+    delivered_item_ids: receipt.rows
+      .filter((row) => row.included)
+      .map((row) => row.id),
+  });
+  return receipt;
+}
+
+/** Append the exact post-egress delivery decision for one serving receipt. */
+export async function recordContextUsageDelivery(
+  options: ContextUsageLedgerOptions & {
+    /** Correlation receipt returned by {@link recordContextUsageServing}. */
+    receipt: ContextUsageServingReceipt | null;
+    /** Item ids present in the final response payload. */
+    deliveredItemIds: readonly string[];
+    /** Whether the result was suppressed by the final output budget. */
+    resultOmitted: boolean;
+  },
+): Promise<void> {
+  if (
+    options.receipt === null ||
+    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
+    options.enabled === false
+  ) {
+    return;
+  }
+  const rankedIds = new Set(options.receipt.rows.map((row) => row.id));
+  const deliveredItemIds = [
+    ...new Set(options.deliveredItemIds.map((id) => id.trim())),
+  ];
+  if (
+    deliveredItemIds.some((id) => id.length === 0 || !rankedIds.has(id)) ||
+    (options.resultOmitted && deliveredItemIds.length > 0)
+  ) {
+    throw new ContextUsageValidationError(
+      "Context usage delivery requires emitted ranked ids and zero ids for an omitted result",
+    );
+  }
+  await appendEvent(options, {
+    kind: "delivery",
+    schema_version: 2,
+    serve_id: options.receipt.serve_id,
+    at: resolveNow(options).iso,
+    author: options.receipt.author,
+    surface: options.receipt.surface,
+    result_omitted: options.resultOmitted,
+    delivered_item_ids: deliveredItemIds,
   });
 }
 
@@ -338,11 +529,16 @@ export async function readContextUsageAffinity(
     process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
     options.enabled === false
   )
-    return { affinity: {}, positive_judgments: 0, serving_events: 0 };
+    return {
+      affinity: {},
+      positive_judgments: 0,
+      serving_events: 0,
+      untrusted_serving_events: 0,
+    };
   const events = await readEvents(options);
   const now = resolveNow(options).ms;
   const horizonMs = (options.horizonHours ?? 24) * 3_600_000;
-  if (!Number.isFinite(horizonMs) || horizonMs <= 0)
+  if (![Number.isFinite(horizonMs), horizonMs > 0].every(Boolean))
     throw new ContextUsageValidationError(
       "Context usage horizonHours must be positive",
     );
@@ -350,40 +546,68 @@ export async function readContextUsageAffinity(
   const touches = events
     .filter(
       (event): event is Extract<ContextUsageEvent, { kind: "touch" }> =>
-        event.kind === "touch" && event.author === author,
+        event.kind === "touch",
     )
+    .filter((event) => event.author === author)
     .map((entry) => ({ entry, time: Date.parse(entry.at) }));
   const scores = new Map<string, number>();
   let servingEvents = 0;
+  let untrustedServingEvents = 0;
   let positiveJudgments = 0;
-  for (const event of events) {
-    if (event.kind !== "serve" || event.author !== author) continue;
-    servingEvents += 1;
-    const servedAt = Date.parse(event.at);
-    for (const row of event.rows) {
-      if (!row.included) continue;
-      const touchTime = findTouchTimeInHorizon(
-        touches,
-        row.id,
-        servedAt,
-        horizonMs,
+  const deliveries = new Map(
+    events
+      .filter(
+        (event): event is Extract<ContextUsageEvent, { kind: "delivery" }> =>
+          event.kind === "delivery",
+      )
+      .filter((event) => event.schema_version === 2)
+      .filter((event) => event.author === author)
+      .map((event) => [event.serve_id, event]),
+  );
+  events
+    .filter(
+      (event): event is Extract<ContextUsageEvent, { kind: "serve" }> =>
+        event.kind === "serve",
+    )
+    .filter((event) => event.author === author)
+    .forEach((event) => {
+      if (
+        ![event.schema_version === 2, Boolean(event.serve_id)].every(Boolean)
+      ) {
+        untrustedServingEvents += 1;
+        return;
+      }
+      servingEvents += 1;
+      const servedAt = Date.parse(event.at);
+      const delivery = deliveries.get(event.serve_id as string);
+      const deliveredIds = new Set(
+        delivery?.delivered_item_ids ?? event.delivered_item_ids ?? [],
       );
-      if (touchTime === undefined) continue;
-      positiveJudgments += 1;
-      const ageDays = Math.max(0, (now - touchTime) / DAY_MS);
-      scores.set(row.id, (scores.get(row.id) ?? 0) + Math.exp(-ageDays / 14));
-    }
-  }
+      for (const row of event.rows) {
+        if (!deliveredIds.has(row.id)) continue;
+        const touchTime = findTouchTimeInHorizon(
+          touches,
+          row.id,
+          servedAt,
+          horizonMs,
+        );
+        if (touchTime === undefined) continue;
+        positiveJudgments += 1;
+        const ageDays = Math.max(0, (now - touchTime) / DAY_MS);
+        scores.set(row.id, (scores.get(row.id) ?? 0) + Math.exp(-ageDays / 14));
+      }
+    });
   const maximum = Math.max(0, ...scores.values());
   const affinity = Object.fromEntries(
     [...scores.entries()].map(([id, score]) => [
       id,
-      0.05 + 0.95 * (maximum > 0 ? score / maximum : 0),
+      maximum === 0 ? 0.05 : 0.05 + (0.95 * score) / maximum,
     ]),
   );
   return {
     affinity,
     positive_judgments: positiveJudgments,
     serving_events: servingEvents,
+    untrusted_serving_events: untrustedServingEvents,
   };
 }

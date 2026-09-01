@@ -45,6 +45,7 @@ import {
 import { runList, type ListOptions } from "./list.js";
 import { scoreContextCandidatesWithActiveExtensions } from "../context-relevance.js";
 import {
+  attachContextUsageServingReceipt,
   readContextUsageAffinity,
   recordContextUsageServing,
 } from "../context-usage.js";
@@ -517,7 +518,7 @@ async function attachNextUsageFeedback(params: {
 }): Promise<void> {
   try {
     const included = new Set(params.packing.included.map((entry) => entry.id));
-    await recordContextUsageServing({
+    const receipt = await recordContextUsageServing({
       pmRoot: params.pmRoot,
       author: params.author,
       surface: "next",
@@ -529,6 +530,7 @@ async function attachNextUsageFeedback(params: {
       })),
       enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
     });
+    attachContextUsageServingReceipt(params.result, receipt);
   } catch {
     params.result.warnings = mergeSortedWarnings(params.result.warnings, [
       "context_usage_feedback_write_failed",

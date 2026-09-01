@@ -11,9 +11,10 @@ import { createRequire } from "node:module";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { HistoryEntry } from "../../types/index.js";
 import { readHistoryEntries } from "./read.js";
+import { classifyHistoryEvent } from "./event-classification.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
-const EVENT_INDEX_VERSION = "2";
+const EVENT_INDEX_VERSION = "3";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
@@ -80,6 +81,11 @@ export interface HistoryEventIndexQueryResult {
   /** Whether another matching event exists. */
   has_more: boolean;
 }
+
+/** Latest substantive immutable event for each requested history stream. */
+export type LatestSubstantiveHistoryEvents = Readonly<
+  Record<string, IndexedHistoryEvent>
+>;
 
 function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
@@ -207,6 +213,7 @@ function createSchema(database: DatabaseSync): void {
       agent_harness TEXT,
       agent_instance TEXT,
       op TEXT NOT NULL,
+      event_class TEXT NOT NULL CHECK(event_class IN ('substantive', 'maintenance')),
       entry_json TEXT NOT NULL,
       PRIMARY KEY(stream_id, stream_offset)
     ) STRICT;
@@ -214,6 +221,8 @@ function createSchema(database: DatabaseSync): void {
       ON events(ts, stream_id, stream_offset);
     CREATE INDEX events_op_order
       ON events(op, ts, stream_id, stream_offset);
+    CREATE INDEX events_class_stream_order
+      ON events(event_class, stream_id, ts, stream_offset);
     CREATE INDEX events_author_order
       ON events(author, ts, stream_id, stream_offset);
     CREATE INDEX events_harness_order
@@ -231,8 +240,8 @@ function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
     .prepare(
       `INSERT INTO events(
         stream_id, stream_offset, ts, author, agent_harness,
-        agent_instance, op, entry_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        agent_instance, op, event_class, entry_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       event.stream_id,
@@ -242,6 +251,7 @@ function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
       event.entry.agent_harness ?? null,
       event.entry.agent_instance ?? null,
       event.entry.op,
+      classifyHistoryEvent(event.entry),
       JSON.stringify(event.entry),
     );
 }
@@ -536,6 +546,107 @@ export async function queryHistoryEventIndex(
     database?.close();
     return null;
   }
+}
+
+function collectLatestSubstantiveEvents(
+  events: readonly IndexedHistoryEvent[],
+  requested: ReadonlySet<string>,
+): Record<string, IndexedHistoryEvent> {
+  const latest: Record<string, IndexedHistoryEvent> = {};
+  for (const event of [...events].sort(compareHistoryEventPosition).reverse()) {
+    if (
+      requested.has(event.stream_id) &&
+      latest[event.stream_id] === undefined &&
+      classifyHistoryEvent(event.entry) === "substantive"
+    ) {
+      latest[event.stream_id] = event;
+    }
+  }
+  return latest;
+}
+
+/**
+ * Read one latest substantive coordinate per requested stream. The optional
+ * SQLite projection is preferred; individual authoritative streams are the
+ * fail-closed fallback and remain the source of truth.
+ */
+export async function readLatestSubstantiveHistoryEvents(
+  pmRoot: string,
+  streamIds: readonly string[],
+): Promise<LatestSubstantiveHistoryEvents> {
+  const uniqueIds = [...new Set(streamIds.filter((id) => id.trim().length > 0))];
+  if (uniqueIds.length === 0) return {};
+  const requested = new Set(uniqueIds);
+  const Database = resolveDatabaseSync();
+  const readIndexed = (): Record<string, IndexedHistoryEvent> | null => {
+    if (!Database) return null;
+    let database: DatabaseSync | undefined;
+    try {
+      database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+      const version = database
+        .prepare("SELECT value FROM metadata WHERE key = 'version'")
+        .get() as { value?: unknown } | undefined;
+      if (version?.value === EVENT_INDEX_VERSION) {
+        const indexed: IndexedHistoryEvent[] = [];
+        for (let start = 0; start < uniqueIds.length; start += 500) {
+          const chunk = uniqueIds.slice(start, start + 500);
+          const rows = database
+            .prepare(
+              `SELECT stream_id, stream_offset, entry_json
+               FROM (
+                 SELECT stream_id, stream_offset, entry_json,
+                        ROW_NUMBER() OVER (
+                          PARTITION BY stream_id
+                          ORDER BY ts DESC, stream_offset DESC
+                        ) AS recency_rank
+                 FROM events
+                 WHERE event_class = 'substantive'
+                   AND stream_id IN (${chunk.map(() => "?").join(", ")})
+               )
+               WHERE recency_rank = 1`,
+            )
+            .all(...chunk);
+          indexed.push(
+            ...rows.map((row) => ({
+              stream_id: String(row.stream_id),
+              stream_offset: Number(row.stream_offset),
+              entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
+            })),
+          );
+        }
+        database.close();
+        return collectLatestSubstantiveEvents(indexed, requested);
+      }
+      database.close();
+    } catch {
+      database?.close();
+    }
+    return null;
+  };
+  const indexed = readIndexed();
+  if (indexed !== null) return indexed;
+  if (Database) {
+    try {
+      if (await rebuildHistoryEventIndex(pmRoot)) {
+        const rebuilt = readIndexed();
+        if (rebuilt !== null) return rebuilt;
+      }
+    } catch {
+      // A corrupt unrelated stream must not prevent requested authoritative reads.
+    }
+  }
+  const authoritative: IndexedHistoryEvent[] = [];
+  await Promise.all(
+    uniqueIds.map(async (streamId) => {
+      if (path.basename(streamId) !== streamId) return;
+      const historyPath = path.join(pmRoot, "history", `${streamId}.jsonl`);
+      const entries = await readHistoryEntries(historyPath, streamId);
+      entries.forEach((entry, streamOffset) => {
+        authoritative.push({ stream_id: streamId, stream_offset: streamOffset, entry });
+      });
+    }),
+  );
+  return collectLatestSubstantiveEvents(authoritative, requested);
 }
 
 /** Test-only dependency seam for runtimes without `node:sqlite`. */

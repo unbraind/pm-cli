@@ -11,7 +11,10 @@ import {
   type ActiveTelemetryCommand,
   type TelemetryCommandOutcome,
 } from "../sdk/runtime-primitives.js";
-import { recordContextUsageTouches } from "../sdk/context-usage.js";
+import {
+  finalizeContextUsageDelivery,
+  recordContextUsageTouches,
+} from "../sdk/context-usage.js";
 
 /** Inputs required to attribute one completed command's affected items. */
 export interface AfterCommandContextUsageOptions {
@@ -47,6 +50,10 @@ export async function recordAfterCommandContextUsage(
   options: AfterCommandContextUsageOptions,
 ): Promise<void> {
   if (process.env.PM_CONTEXT_USAGE_DISABLED === "1") return;
+  await finalizeContextUsageDelivery({
+    pmRoot: options.pmRoot,
+    result: getActiveCommandResult(),
+  });
   const settings = await readSettings(options.pmRoot);
   await recordContextUsageTouches({
     pmRoot: options.pmRoot,

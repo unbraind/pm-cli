@@ -798,6 +798,7 @@ describe("agent runtime SDK primitives", () => {
       expect(history).toEqual([
         {
           op: "update",
+          event_class: "substantive",
           author: "harness:codex",
           author_source: "detected",
           agent_harness: "codex",
@@ -820,6 +821,7 @@ describe("agent runtime SDK primitives", () => {
         },
         {
           op: "close",
+          event_class: "substantive",
           author: "harness:codex",
           author_source: "detected",
           agent_harness: "codex",

@@ -31,6 +31,13 @@ stale, or unwritable snapshots return a stable warning, its meaning, an
 executable recovery command, and the expected effect. Re-running `pm context`
 confirms a successful rebuild as fresh.
 
+Recency uses the public `classifyHistoryEvent()` contract and the most recent
+substantive immutable event, with release-cohort and `created_at` fallbacks.
+Explained ranking carries the selected coordinate, operation, and class.
+`recordContextUsageServing()` plus `recordContextUsageDelivery()` expose the
+same two-phase feedback boundary used by CLI and `PmClient`, so custom hosts can
+correlate propensity rows with the exact result delivered after output budgets.
+
 See [Context relevance and packing](CONTEXT_RELEVANCE.md) for signal and token
 budgets, and [context coordination](SDK_CONTEXT_COORDINATION.md) for cursored
 events and duplicate governance.

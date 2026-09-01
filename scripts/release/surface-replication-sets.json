@@ -28,21 +28,21 @@
         {
           "path": "src/core/history/event-index.ts",
           "changed_lines_contain_any": [
-            "loadDatabaseSync",
-            "loadStableDatabaseSync",
-            "resolveDatabaseSync",
-            "RuntimeDatabaseSync",
-            "setDatabaseSync"
+            "function loadDatabaseSync(",
+            "function loadStableDatabaseSync(",
+            "function resolveDatabaseSync():",
+            "RuntimeDatabaseSync =",
+            "setDatabaseSync(databaseSync:"
           ]
         },
         {
           "path": "src/core/store/item-metadata-query-index.ts",
           "changed_lines_contain_any": [
-            "loadDatabaseSync",
-            "loadStableDatabaseSync",
-            "resolveDatabaseSync",
-            "RuntimeDatabaseSync",
-            "setDatabaseSync"
+            "function loadDatabaseSync(",
+            "function loadStableDatabaseSync(",
+            "function resolveDatabaseSync():",
+            "RuntimeDatabaseSync =",
+            "setDatabaseSync(databaseSync:"
           ]
         }
       ],
