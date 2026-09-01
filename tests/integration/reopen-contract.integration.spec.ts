@@ -124,4 +124,69 @@ describe("recurrence presentation contracts", () => {
       });
     });
   });
+
+  it("clears complete terminal evidence when generic update reopens work", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        {
+          title: "Generic update recurrence contract",
+          type: "Issue",
+          status: "closed",
+          closeReason: "The first occurrence was resolved",
+          resolution: "Deployed the original correction",
+          expectedResult: "The correction remains effective",
+          actualResult: "The correction was initially effective",
+          fixedVersion: "2026.9.1",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+
+      const reopened = context.runCli(
+        ["update", created.item.id, "--status", "open", "--json"],
+        { expectJson: true },
+      );
+      expect(reopened.code).toBe(0);
+      const reopenedItem = (reopened.json as { item: Record<string, unknown> })
+        .item;
+      expect(reopenedItem).toMatchObject({
+        id: created.item.id,
+        status: "open",
+      });
+      for (const field of [
+        "closed_at",
+        "completed_at",
+        "close_reason",
+        "resolution",
+        "expected_result",
+        "actual_result",
+        "fixed_version",
+      ]) {
+        expect(reopenedItem).not.toHaveProperty(field);
+      }
+
+      const history = context.runCli(
+        ["history", created.item.id, "--full", "--json"],
+        { expectJson: true },
+      );
+      const entries = (
+        history.json as {
+          history: Array<{ patch: Array<{ op: string; path: string }> }>;
+        }
+      ).history;
+      expect(entries.at(-1)?.patch).toEqual(
+        expect.arrayContaining(
+          [
+            "closed_at",
+            "completed_at",
+            "close_reason",
+            "resolution",
+            "expected_result",
+            "actual_result",
+            "fixed_version",
+          ].map((field) => ({ op: "remove", path: `/metadata/${field}` })),
+        ),
+      );
+    });
+  });
 });

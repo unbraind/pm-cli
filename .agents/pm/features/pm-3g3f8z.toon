@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-09-01T03:38:27.147Z"
+updated_at: "2026-09-01T04:11:11.062Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-09-01T03:38:18.012Z"
-completed_at: "2026-09-01T03:38:18.012Z"
+closed_at: "2026-09-01T04:11:10.457Z"
+completed_at: "2026-09-01T04:11:10.457Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Delivered progressive MCP discovery and canonical results with evidence-bound measured orientation, validated public/adaptor containers, keyed pagination, actionable budget recovery, and compact agent documentation."
-expected_result: Agents receive a bounded SDK-owned discovery surface and the canonical orientation protocol is selected only when replay-verified fields prove every required capability.
-actual_result: "Fourteen review rounds culminate in 8,213 tests at exact 100/100/100/100 coverage, seven linked cohorts, full static/security/dependency gates, direct capability-to-output evidence bindings, and canonical public-SDK refusals for malformed discovery catalogs."
+resolution: "Delivered progressive discovery with validated non-empty required text, canonical malformed-input refusals, evidence-bound orientation, keyed pagination, and bounded recovery."
+expected_result: Every public discovery candidate has usable required metadata and malformed JavaScript inputs fail with canonical SDK errors.
+actual_result: "Fifteen review rounds culminate in 8,214 tests at exact 100/100/100/100 coverage; all seven linked cohorts pass and blank names or descriptions fail closed."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[50]:
+comments[55]:
   - created_at: "2026-08-28T20:22:27.057Z"
     author: "harness:codex"
     text: "Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
@@ -178,6 +178,21 @@ comments[50]:
   - created_at: "2026-09-01T03:38:17.404Z"
     author: "harness:codex"
     text: "Review round 14 terminal evidence: all seven linked sandbox-safe test commands passed with no infra collisions, trust refusals, assertion failures, empty runs, timeouts, buffer failures, spawn errors, or signals. The accepted CodeRabbit finding is covered by direct public-SDK negative controls and canonical PmCliError exit 64 behavior."
+  - created_at: "2026-09-01T03:58:07.041Z"
+    author: "harness:codex"
+    text: "Review round 15 recurrence: Cubic comment 3900623827 is valid. Candidate names reject blank text while descriptions only reject non-strings, permitting unusable whitespace-only discovery metadata. Add a direct negative control and align both required textual fields on the non-empty contract."
+  - created_at: "2026-09-01T03:59:35.764Z"
+    author: "harness:codex"
+    text: "TDD red for review round 15: a whitespace-only public candidate description produced no refusal, so the focused discovery test failed 1 of 15 before implementation."
+  - created_at: "2026-09-01T04:00:32.273Z"
+    author: "harness:codex"
+    text: "TDD green for review round 15: discovery candidate names and descriptions now share a non-empty trimmed-string contract; the focused discovery suite passes 15/15."
+  - created_at: "2026-09-01T04:06:59.615Z"
+    author: "harness:codex"
+    text: "Exact coverage evidence after review round 15: 594 test files and 8,214 tests passed at 100% with 60,637/60,637 statements, 45,837/45,837 branches, 12,617/12,617 functions, and 58,382/58,382 lines."
+  - created_at: "2026-09-01T04:11:09.888Z"
+    author: "harness:codex"
+    text: "Review round 15 terminal evidence: all seven linked discovery/orientation cohorts pass; exact coverage is 8,214 tests at 100/100/100/100. Blank descriptions now fail closed under the same public-SDK string contract as blank names."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -267,7 +282,7 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Review round 8 container and code-unit ordering contract
-test_runs[16]:
+test_runs[17]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -472,6 +487,23 @@ test_runs[16]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mti5f8mi-i65lfg
+    kind: test
+    status: passed
+    started_at: "2026-09-01T04:07:00.597Z"
+    finished_at: "2026-09-01T04:09:58.122Z"
+    recorded_at: "2026-09-01T04:09:58.122Z"
+    passed: 7
+    failed: 0
+    skipped: 0
+    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/root-help-discovery.integration.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[13]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
@@ -486,5 +518,5 @@ docs[13]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Review round 14 complete: malformed public discovery catalogs now fail closed with canonical exit-64 SDK errors; focused, linked, and exact 100/100/100/100 coverage gates pass."
+close_reason: "Review round 15 complete: public discovery rejects blank descriptions and all exact coverage plus linked gates pass."
 body: ""

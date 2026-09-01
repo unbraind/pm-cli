@@ -461,6 +461,7 @@ describe("progressive MCP tool discovery", () => {
       { description: "missing name", inputSchema: {} },
       { name: " ", description: "blank name", inputSchema: {} },
       { name: "pm_get", description: 42, inputSchema: {} },
+      { name: "pm_get", description: " ", inputSchema: {} },
       { name: "pm_get", description: "missing schema" },
       { name: "pm_get", description: "null schema", inputSchema: null },
       { name: "pm_get", description: "array schema", inputSchema: [] },

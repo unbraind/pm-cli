@@ -331,9 +331,12 @@ function validateDiscoveryCandidates(candidates: unknown): void {
         64,
       );
     }
-    if (typeof candidate.description !== "string") {
+    if (
+      typeof candidate.description !== "string" ||
+      candidate.description.trim().length === 0
+    ) {
       throw new PmCliError(
-        `pm tool discovery candidate ${index} description must be a string.`,
+        `pm tool discovery candidate ${index} description must be a non-empty string.`,
         64,
       );
     }
