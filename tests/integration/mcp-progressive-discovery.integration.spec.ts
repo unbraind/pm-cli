@@ -39,6 +39,21 @@ function modernParams(
   };
 }
 
+function toolNames(value: unknown): string[] {
+  if (!Array.isArray(value)) throw new TypeError("Expected a tool array.");
+  return value.map((tool: unknown) => {
+    if (
+      typeof tool !== "object" ||
+      tool === null ||
+      !("name" in tool) ||
+      typeof tool.name !== "string"
+    ) {
+      throw new TypeError("Expected every listed tool to have a name.");
+    }
+    return tool.name;
+  });
+}
+
 describe("MCP progressive discovery negotiation", () => {
   it("advertises the extension and preserves the full unnegotiated catalog", async () => {
     const discovery = await handleRequest({
@@ -66,24 +81,46 @@ describe("MCP progressive discovery negotiation", () => {
       method: "tools/list",
       params: modernParams(true),
     });
-    const namesOf = (value: unknown): string[] => {
-      if (!Array.isArray(value)) throw new TypeError("Expected a tool array.");
-      return value.map((tool: unknown) => {
-        if (
-          typeof tool !== "object" ||
-          tool === null ||
-          !("name" in tool) ||
-          typeof tool.name !== "string"
-        ) {
-          throw new TypeError("Expected every listed tool to have a name.");
-        }
-        return tool.name;
-      });
-    };
-    const legacyNames = namesOf(legacyShape?.tools);
-    const progressiveNames = namesOf(progressive?.tools);
+    const legacyNames = toolNames(legacyShape?.tools);
+    const progressiveNames = toolNames(progressive?.tools);
     expect(legacyNames.length).toBeGreaterThan(progressiveNames.length);
     expect(progressiveNames).toEqual([...PM_MCP_ENTRY_TOOL_NAMES].sort());
+  });
+
+  it("retains discovery for negotiated custom allowlists without entry tools", async () => {
+    const previousProfile = process.env.PM_MCP_PROFILE;
+    const previousTools = process.env.PM_MCP_TOOLS;
+    try {
+      process.env.PM_MCP_PROFILE = "custom";
+      process.env.PM_MCP_TOOLS = "pm_close";
+      const listed = await handleRequest({
+        jsonrpc: "2.0",
+        id: 30,
+        method: "tools/list",
+        params: modernParams(true),
+      });
+      expect(toolNames(listed?.tools)).toEqual(["pm_discover"]);
+
+      const discovered = await handleRequest({
+        jsonrpc: "2.0",
+        id: 31,
+        method: "tools/call",
+        params: modernParams(true, {
+          name: "pm_discover",
+          arguments: { query: "close item", outputBudget: "unbounded" },
+        }),
+      });
+      expect(discovered?.structuredContent).toMatchObject({
+        result: {
+          tools: [expect.objectContaining({ name: "pm_close" })],
+        },
+      });
+    } finally {
+      if (previousProfile === undefined) delete process.env.PM_MCP_PROFILE;
+      else process.env.PM_MCP_PROFILE = previousProfile;
+      if (previousTools === undefined) delete process.env.PM_MCP_TOOLS;
+      else process.env.PM_MCP_TOOLS = previousTools;
+    }
   });
 
   it("propagates unexpected optional Apps capability access failures", async () => {

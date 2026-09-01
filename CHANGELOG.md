@@ -4,8 +4,8 @@
 
 ### Added
 
+- GH-796: duplicate recurrence now reopens the canonical terminal item instead of creating a second item ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
 - Progressive MCP discovery and canonical tool results: reveal the minimum relevant catalog and deliver one unambiguous model-facing output contract ([pm-3g3f8z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3g3f8z.toon))
-- GH-796: no reopen transition for terminal items, so recurrence is recorded as a duplicate instead of a reopening ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
 
 ### Fixed
 
@@ -16,8 +16,8 @@
 
 ### Other
 
-- Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require ([pm-wenq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wenq.toon))
 - Document the measured canonical agent cold-start across docs and generated guidance ([pm-ka6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ka6d.toon))
+- Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require ([pm-wenq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wenq.toon))
 
 ## 2026.8.31 - 2026-08-31
 

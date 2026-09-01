@@ -64,57 +64,57 @@ describe("agent-task transcript token gate", () => {
       },
     ],
   };
+  const orientationReport = {
+    tasks: [
+      {
+        id: "orientation-context-intent",
+        step_count: 1,
+        estimated_tokens: 300,
+        steps: [
+          {
+            id: "context",
+            verified_fields: ["summary.active_items", "activity"],
+          },
+        ],
+      },
+      {
+        id: "orientation-contracts-next",
+        step_count: 2,
+        estimated_tokens: 800,
+        steps: [
+          { id: "contracts", verified_fields: ["commands"] },
+          {
+            id: "next",
+            verified_fields: ["summary.in_progress", "recommended.id"],
+          },
+        ],
+      },
+    ],
+  };
+  const orientation = {
+    canonical_task_id: "orientation-context-intent",
+    required_capabilities: ["state", "ownership"],
+    protocols: [
+      {
+        task_id: "orientation-context-intent",
+        capabilities: ["ownership", "state"],
+        capability_evidence: {
+          ownership: [{ step_id: "context", field_path: "activity" }],
+          state: [{ step_id: "context", field_path: "summary.active_items" }],
+        },
+      },
+      {
+        task_id: "orientation-contracts-next",
+        capabilities: ["state", "ownership"],
+        capability_evidence: {
+          ownership: [{ step_id: "next", field_path: "summary.in_progress" }],
+          state: [{ step_id: "next", field_path: "recommended.id" }],
+        },
+      },
+    ],
+  };
 
   it("selects the lowest-token equivalent orientation protocol", () => {
-    const orientationReport = {
-      tasks: [
-        {
-          id: "orientation-context-intent",
-          step_count: 1,
-          estimated_tokens: 300,
-          steps: [
-            {
-              id: "context",
-              verified_fields: ["summary.active_items", "activity"],
-            },
-          ],
-        },
-        {
-          id: "orientation-contracts-next",
-          step_count: 2,
-          estimated_tokens: 800,
-          steps: [
-            { id: "contracts", verified_fields: ["commands"] },
-            {
-              id: "next",
-              verified_fields: ["summary.in_progress", "recommended.id"],
-            },
-          ],
-        },
-      ],
-    };
-    const orientation = {
-      canonical_task_id: "orientation-context-intent",
-      required_capabilities: ["state", "ownership"],
-      protocols: [
-        {
-          task_id: "orientation-context-intent",
-          capabilities: ["ownership", "state"],
-          capability_evidence: {
-            ownership: [{ step_id: "context", field_path: "activity" }],
-            state: [{ step_id: "context", field_path: "summary.active_items" }],
-          },
-        },
-        {
-          task_id: "orientation-contracts-next",
-          capabilities: ["state", "ownership"],
-          capability_evidence: {
-            ownership: [{ step_id: "next", field_path: "summary.in_progress" }],
-            state: [{ step_id: "next", field_path: "recommended.id" }],
-          },
-        },
-      ],
-    };
     expect(
       evaluateOrientationProtocolSelection(orientationReport, orientation),
     ).toMatchObject({
@@ -125,59 +125,62 @@ describe("agent-task transcript token gate", () => {
         { task_id: "orientation-contracts-next", command_count: 2 },
       ],
     });
-    const invalidCapabilityLog = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+  });
+
+  it("rejects a canonical orientation that is not the measured winner", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
         canonical_task_id: "orientation-contracts-next",
       }),
     ).toThrow();
-    for (const capabilityEvidence of [
-      undefined,
-      null,
-      [],
-      {
-        state: [{ step_id: "next", field_path: "recommended.id" }],
-      },
-    ]) {
-      expect(() =>
-        evaluateOrientationProtocolSelection(orientationReport, {
-          ...orientation,
-          protocols: [
-            orientation.protocols[0],
-            {
-              ...orientation.protocols[1],
-              capability_evidence: capabilityEvidence,
+  });
+
+  it.each([
+    undefined,
+    null,
+    [],
+    { state: [{ step_id: "next", field_path: "recommended.id" }] },
+  ])("rejects malformed capability evidence: %j", (capabilityEvidence) => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capability_evidence: capabilityEvidence,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it.each([
+    null,
+    { step_id: " ", field_path: "recommended.id" },
+    { step_id: "next", field_path: 42 },
+    { step_id: "next", field_path: " " },
+    { step_id: "missing", field_path: "recommended.id" },
+  ])("rejects an invalid capability evidence reference: %j", (reference) => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capability_evidence: {
+              ...orientation.protocols[1].capability_evidence,
+              state: [reference],
             },
-          ],
-        }),
-      ).toThrow();
-    }
-    for (const invalidReference of [
-      null,
-      { step_id: " ", field_path: "recommended.id" },
-      { step_id: "next", field_path: 42 },
-      { step_id: "next", field_path: " " },
-      { step_id: "missing", field_path: "recommended.id" },
-    ]) {
-      expect(() =>
-        evaluateOrientationProtocolSelection(orientationReport, {
-          ...orientation,
-          protocols: [
-            orientation.protocols[0],
-            {
-              ...orientation.protocols[1],
-              capability_evidence: {
-                ...orientation.protocols[1].capability_evidence,
-                state: [invalidReference],
-              },
-            },
-          ],
-        }),
-      ).toThrow();
-    }
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects a measured protocol without step evidence", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(
         {
@@ -190,7 +193,11 @@ describe("agent-task transcript token gate", () => {
         orientation,
       ),
     ).toThrow();
-    for (const capability of orientation.required_capabilities) {
+  });
+
+  it.each(orientation.required_capabilities)(
+    "rejects empty %s capability evidence",
+    (capability) => {
       expect(() =>
         evaluateOrientationProtocolSelection(orientationReport, {
           ...orientation,
@@ -203,7 +210,10 @@ describe("agent-task transcript token gate", () => {
           })),
         }),
       ).toThrow();
-    }
+    },
+  );
+
+  it("rejects capability evidence for an unverified field", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
@@ -219,6 +229,12 @@ describe("agent-task transcript token gate", () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it("reports malformed required capabilities", () => {
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
@@ -228,6 +244,12 @@ describe("agent-task transcript token gate", () => {
     expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
       "Agent-task orientation required_capabilities must be an array of non-blank strings",
     );
+  });
+
+  it("reports a missing orientation protocol contract", () => {
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
@@ -237,6 +259,12 @@ describe("agent-task transcript token gate", () => {
     expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
       "Agent-task orientation protocol contract is incomplete",
     );
+  });
+
+  it("reports malformed protocol capabilities", () => {
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
@@ -252,6 +280,9 @@ describe("agent-task transcript token gate", () => {
     expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
       "Agent-task orientation protocol capabilities must be an array of non-blank strings",
     );
+  });
+
+  it("normalizes and deduplicates capability names", () => {
     expect(
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
@@ -262,6 +293,9 @@ describe("agent-task transcript token gate", () => {
         })),
       }).required_capabilities,
     ).toEqual(["ownership", "state"]);
+  });
+
+  it("rejects an entirely absent orientation protocol contract", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         canonical_task_id: "orientation-context-intent",
@@ -269,7 +303,9 @@ describe("agent-task transcript token gate", () => {
         protocols: undefined,
       }),
     ).toThrow();
+  });
 
+  it("orders equal-token protocols with locale-independent identifiers", () => {
     expect(
       evaluateOrientationProtocolSelection(
         {
@@ -303,6 +339,9 @@ describe("agent-task transcript token gate", () => {
         },
       ).protocols.map(({ task_id }) => task_id),
     ).toEqual(["Z-orientation", "a-orientation"]);
+  });
+
+  it("rejects a protocol without capability evidence", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
@@ -315,27 +354,31 @@ describe("agent-task transcript token gate", () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it("rejects duplicate protocol task identifiers", () => {
     expect(() =>
       evaluateOrientationProtocolSelection(orientationReport, {
         ...orientation,
         protocols: [orientation.protocols[0], orientation.protocols[0]],
       }),
     ).toThrow();
-    for (const capabilities of [
-      ["state", "ownership", 42],
-      ["state", "ownership", " "],
-    ]) {
-      expect(() =>
-        evaluateOrientationProtocolSelection(orientationReport, {
-          ...orientation,
-          required_capabilities: capabilities,
-          protocols: orientation.protocols.map((protocol) => ({
-            ...protocol,
-            capabilities,
-          })),
-        }),
-      ).toThrow();
-    }
+  });
+
+  it.each([
+    { capabilities: ["state", "ownership", 42] },
+    { capabilities: ["state", "ownership", " "] },
+  ])("rejects invalid capability values: $capabilities", ({ capabilities }) => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        required_capabilities: capabilities,
+        protocols: orientation.protocols.map((protocol) => ({
+          ...protocol,
+          capabilities,
+        })),
+      }),
+    ).toThrow();
   });
 
   it("accepts an exact per-task baseline and detects a seeded regression", () => {
@@ -662,6 +705,9 @@ describe("agent-task transcript token gate", () => {
         step,
       ),
     ).toThrow();
+    const payloadDriftLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     expect(() =>
       validateAgentTaskTokenInvocation(
         {
@@ -672,6 +718,9 @@ describe("agent-task transcript token gate", () => {
         step,
       ),
     ).toThrow();
+    expect(payloadDriftLog).toHaveBeenLastCalledWith(
+      "Agent-task transcript step validation changed its application payload when token accounting was enabled; first_difference=replace:/items/0/id",
+    );
     expect(() =>
       validateAgentTaskTokenInvocation(
         validBaseline,

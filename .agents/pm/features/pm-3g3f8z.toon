@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-09-01T06:21:23.084Z"
+updated_at: "2026-09-01T07:04:23.702Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-09-01T04:51:52.397Z"
-completed_at: "2026-09-01T04:51:52.397Z"
+closed_at: "2026-09-01T06:56:50.239Z"
+completed_at: "2026-09-01T06:56:50.239Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Delivered progressive discovery with fail-closed public candidate and option validation, boolean-only authorization, deterministic ranking, keyed pagination, explicit budgets and omissions, canonical MCP results, and measured context-efficient orientation."
-expected_result: "Every public discovery input—including authorization metadata—obeys its declared runtime domain, unauthorized tools never surface, and malformed JavaScript values return canonical usage errors before ranking."
-actual_result: "All seven linked discovery/orientation cohorts pass; 8,214 repository tests pass with exact 60,639/60,639 statements, 45,841/45,841 branches, 12,617/12,617 functions, and 58,384/58,384 lines; malformed null, string, number, array, and object authorization values return PmCliError exit 64."
+resolution: Progressive MCP negotiation now guarantees a callable pm_discover entry for custom profiles while discovery remains bounded to the exact PM_MCP_TOOLS-authorized catalog.
+expected_result: "Every client that negotiates progressive discovery can expand its custom catalog even when the exact allowlist omits all entry tools, without gaining access to any unconfigured tool."
+actual_result: "A custom pm_close-only profile lists only pm_discover, permits its call, and expands only pm_close in focused and temporary-project acceptance; seven linked cohorts and all 8,239 repository tests pass at exact 100/100/100/100."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[60]:
+comments[65]:
   - created_at: "2026-08-28T20:22:27.057Z"
     author: "harness:codex"
     text: "Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
@@ -208,6 +208,21 @@ comments[60]:
   - created_at: "2026-09-01T06:21:23.084Z"
     author: "harness:codex"
     text: "Post-close repository gate evidence for review round 16: CI-mode quality:static passed ESLint, zero jscpd clones, build and generated contracts, package/SDK/surface parity, token/refusal/transport/graph gates, and append-only record integrity over 57,489 events. Secret scanning found no credential-like material, vulnerability scanning found no known vulnerabilities, and pnpm audit passed."
+  - created_at: "2026-09-01T06:46:34.440Z"
+    author: "harness:codex"
+    text: "Review round 17 TDD evidence: a negotiated custom profile with PM_MCP_TOOLS limited to pm_close returned no pm_discover entry and could not call the discovery handler before implementation. The new black-box test failed the listed-tool contract at the current exact head."
+  - created_at: "2026-09-01T06:46:34.892Z"
+    author: "harness:codex"
+    text: "Review round 17 focused green: negotiated custom profiles now retain pm_discover for tools/list and tools/call while discoverPmTools still receives only the custom-authorized catalog. The integration file passes 21 tests; file-scoped TypeScript build, ESLint, and Prettier pass."
+  - created_at: "2026-09-01T06:50:47.379Z"
+    author: "harness:codex"
+    text: "Manual acceptance: initialized a real temporary project at /tmp/tmp.iUP9aK7MAk, ran the built MCP server contract with PM_MCP_PROFILE=custom and PM_MCP_TOOLS=pm_close, and observed tools/list=[pm_discover], discovery expansion=[pm_close], profile=custom. The authorized catalog did not broaden."
+  - created_at: "2026-09-01T06:56:49.144Z"
+    author: "harness:codex"
+    text: "Review round 17 exact coverage: 594 files and 8,239 tests pass at 60,642/60,642 statements, 45,850/45,850 branches, 12,619/12,619 functions, and 58,387/58,387 lines. All seven linked discovery cohorts passed before the repository-wide run."
+  - created_at: "2026-09-01T07:04:23.702Z"
+    author: "harness:codex"
+    text: "Post-close repository gates: CI-mode quality:static passed ESLint, zero jscpd clones, build/generated contracts, package and SDK parity, capability/token/refusal/transport gates, graph composition, and record integrity over 57,517 append-only events. Secret scanning found no credential-like material, vulnerability scanning found no known vulnerabilities, and pnpm audit passed."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -297,7 +312,7 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Review round 8 container and code-unit ordering contract
-test_runs[18]:
+test_runs[19]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -536,6 +551,23 @@ test_runs[18]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtib4760-yz07v4
+    kind: test
+    status: passed
+    started_at: "2026-09-01T06:46:41.144Z"
+    finished_at: "2026-09-01T06:49:20.712Z"
+    recorded_at: "2026-09-01T06:49:20.712Z"
+    passed: 7
+    failed: 0
+    skipped: 0
+    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/root-help-discovery.integration.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[13]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
@@ -550,5 +582,5 @@ docs[13]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Review round 16 complete: malformed authorization inputs fail closed, all linked cohorts pass, and exact repository coverage remains 100/100/100/100."
+close_reason: "Review round 17 closes the negotiated custom-profile expansion gap with black-box, linked, manual, and exact-coverage proof."
 body: ""

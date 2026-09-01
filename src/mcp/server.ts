@@ -636,7 +636,7 @@ async function emitMcpChangeNotifications(
 async function handleToolCall(
   paramsInput: Record<string, unknown> | undefined,
   clientInfo: AgentClientInfo | undefined,
-  canonicalStructuredResult = false,
+  progressiveDiscoveryNegotiated = false,
 ): Promise<Record<string, unknown>> {
   return runWithHarnessDetectionSignals(
     {
@@ -666,7 +666,11 @@ async function handleToolCall(
           : {}),
       };
       const access = await resolveMcpToolAccess(TOOLS, name, requestedArgs);
-      if (!access.available) {
+      const requiredCustomDiscoveryEntry =
+        progressiveDiscoveryNegotiated &&
+        access.profile === "custom" &&
+        name === "pm_discover";
+      if (!access.available && !requiredCustomDiscoveryEntry) {
         throw new PmCliError(
           `pm MCP tool "${name}" is unavailable in the ${access.profile} profile.`,
           64,
@@ -710,7 +714,7 @@ async function handleToolCall(
             result,
             warnings,
             args.tokenAccounting === true,
-            canonicalStructuredResult,
+            progressiveDiscoveryNegotiated,
           );
         },
         { probesEnabled: workspaceIdentity?.probes_enabled },
@@ -1182,9 +1186,15 @@ async function dispatchModernToolMethod(
       PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
     );
     const listedTools = progressiveDiscovery
-      ? surface.tools.filter((tool) =>
-          PM_MCP_ENTRY_TOOL_NAMES.includes(tool.name),
-        )
+      ? [
+          ...surface.tools.filter((tool) =>
+            PM_MCP_ENTRY_TOOL_NAMES.includes(tool.name),
+          ),
+          ...(surface.profile === "custom" &&
+          !surface.tools.some((tool) => tool.name === "pm_discover")
+            ? TOOLS.filter((tool) => tool.name === "pm_discover")
+            : []),
+        ]
       : surface.tools;
     return buildMcpCompleteResult(
       withMcpCachePolicy(

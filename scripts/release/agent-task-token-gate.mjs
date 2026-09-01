@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import jsonPatch from "fast-json-patch";
 import {
   PmClient,
   createReproducibleProcessRunner,
@@ -206,9 +207,13 @@ function validateSelfReportedAccounting(accountedPayload, step) {
 function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
   validateExpectedOutput(baselinePayload, step);
   validateExpectedOutput(measuredPayload, step);
-  if (JSON.stringify(baselinePayload) !== JSON.stringify(measuredPayload)) {
+  const [firstDifference] = jsonPatch.compare(
+    baselinePayload,
+    measuredPayload,
+  );
+  if (firstDifference !== undefined) {
     fail(
-      `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled`,
+      `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled; first_difference=${firstDifference.op}:${firstDifference.path}`,
     );
   }
 }
