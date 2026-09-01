@@ -450,6 +450,36 @@ describe("progressive MCP tool discovery", () => {
     }
   });
 
+  it("rejects malformed public candidate catalogs with canonical usage errors", () => {
+    const malformedCatalogs = [null, {}, "invalid", 42, false];
+    const malformedRows = [
+      null,
+      [],
+      "invalid",
+      42,
+      false,
+      { description: "missing name", inputSchema: {} },
+      { name: " ", description: "blank name", inputSchema: {} },
+      { name: "pm_get", description: 42, inputSchema: {} },
+      { name: "pm_get", description: "missing schema" },
+      { name: "pm_get", description: "null schema", inputSchema: null },
+      { name: "pm_get", description: "array schema", inputSchema: [] },
+    ];
+    for (const candidates of [
+      ...malformedCatalogs,
+      ...malformedRows.map((row) => [row]),
+    ]) {
+      let refusal: unknown;
+      try {
+        discoverPmTools(candidates as never, { outputBudget: "unbounded" });
+      } catch (error: unknown) {
+        refusal = error;
+      }
+      expect(refusal).toBeInstanceOf(PmCliError);
+      expect(refusal).toMatchObject({ exitCode: 64 });
+    }
+  });
+
   it("rejects malformed public options containers with a canonical usage error", () => {
     for (const options of [null, [], "invalid", 42, false]) {
       for (const invoke of [

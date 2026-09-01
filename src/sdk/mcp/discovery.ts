@@ -306,6 +306,50 @@ function validateDiscoveryOptionsContainer<Value>(
   }
 }
 
+/** Reject malformed candidate catalogs supplied by untyped SDK consumers. */
+function validateDiscoveryCandidates(candidates: unknown): void {
+  if (!Array.isArray(candidates)) {
+    throw new PmCliError("pm tool discovery candidates must be an array.", 64);
+  }
+  for (const [index, candidate] of candidates.entries()) {
+    if (
+      candidate === null ||
+      typeof candidate !== "object" ||
+      Array.isArray(candidate)
+    ) {
+      throw new PmCliError(
+        `pm tool discovery candidate ${index} must be an object.`,
+        64,
+      );
+    }
+    if (
+      typeof candidate.name !== "string" ||
+      candidate.name.trim().length === 0
+    ) {
+      throw new PmCliError(
+        `pm tool discovery candidate ${index} name must be a non-empty string.`,
+        64,
+      );
+    }
+    if (typeof candidate.description !== "string") {
+      throw new PmCliError(
+        `pm tool discovery candidate ${index} description must be a string.`,
+        64,
+      );
+    }
+    if (
+      candidate.inputSchema === null ||
+      typeof candidate.inputSchema !== "object" ||
+      Array.isArray(candidate.inputSchema)
+    ) {
+      throw new PmCliError(
+        `pm tool discovery candidate ${index} inputSchema must be an object.`,
+        64,
+      );
+    }
+  }
+}
+
 /** Parse untrusted adapter input without discarding malformed discovery values. */
 export function parsePmToolDiscoveryOptions(
   input: Record<string, unknown>,
@@ -731,6 +775,7 @@ export function discoverPmTools(
   candidates: readonly PmToolDiscoveryCandidate[],
   options: PmToolDiscoveryOptions = {},
 ): PmToolDiscoveryResult {
+  validateDiscoveryCandidates(candidates);
   validateDiscoveryOptionsContainer(options);
   const request = resolveDiscoveryRequest(options);
   const cursorIntegrityKey =
