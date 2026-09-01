@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "pm-codex",
-      "version": "2026.8.31",
+      "version": "2026.9.1",
       "source": {
         "source": "local",
         "path": "./plugins/pm-codex"
@@ -19,7 +19,7 @@
     },
     {
       "name": "pm-claude",
-      "version": "2026.8.31",
+      "version": "2026.9.1",
       "source": {
         "source": "local",
         "path": "./plugins/pm-claude"
