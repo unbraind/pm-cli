@@ -21,12 +21,18 @@ type DatabaseSyncConstructor = typeof DatabaseSync;
 
 interface AuthoritativeHistoryStreamCache {
   signature: string;
+  byte_size: number;
   events: IndexedHistoryEvent[];
 }
 
 interface AuthoritativeHistoryCache {
   streams: Map<string, AuthoritativeHistoryStreamCache>;
   ordered_events: IndexedHistoryEvent[];
+}
+
+interface AuthoritativeHistorySnapshot {
+  events: IndexedHistoryEvent[];
+  stream_byte_sizes: ReadonlyMap<string, number>;
 }
 
 const authoritativeHistoryCaches = new Map<string, AuthoritativeHistoryCache>();
@@ -89,9 +95,9 @@ function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
 }
 
-async function readAuthoritativeHistoryEvents(
+async function readAuthoritativeHistorySnapshot(
   pmRoot: string,
-): Promise<IndexedHistoryEvent[]> {
+): Promise<AuthoritativeHistorySnapshot> {
   const historyRoot = path.join(pmRoot, "history");
   const entries = await fs
     .readdir(historyRoot, { withFileTypes: true })
@@ -130,6 +136,7 @@ async function readAuthoritativeHistoryEvents(
     const history = await readHistoryEntries(historyPath, streamId);
     cached.streams.set(streamId, {
       signature,
+      byte_size: Number(stats.size),
       events: history.map((entry, streamOffset) => ({
         stream_id: streamId,
         stream_offset: streamOffset,
@@ -155,7 +162,21 @@ async function readAuthoritativeHistoryEvents(
     const oldestRoot = authoritativeHistoryCaches.keys().next().value as string;
     authoritativeHistoryCaches.delete(oldestRoot);
   }
-  return cached.ordered_events;
+  return {
+    events: cached.ordered_events,
+    stream_byte_sizes: new Map(
+      [...cached.streams].map(([streamId, stream]) => [
+        streamId,
+        stream.byte_size,
+      ]),
+    ),
+  };
+}
+
+async function readAuthoritativeHistoryEvents(
+  pmRoot: string,
+): Promise<IndexedHistoryEvent[]> {
+  return (await readAuthoritativeHistorySnapshot(pmRoot)).events;
 }
 
 function loadDatabaseSync(
@@ -282,17 +303,12 @@ export async function rebuildHistoryEventIndex(
     database = new Database(temporaryPath);
     createSchema(database);
     database.exec("BEGIN IMMEDIATE");
-    const authoritative = await readAuthoritativeHistoryEvents(pmRoot);
-    for (const event of authoritative) {
+    const authoritative = await readAuthoritativeHistorySnapshot(pmRoot);
+    for (const event of authoritative.events) {
       insertEvent(database, event);
     }
-    for (const streamId of new Set(
-      authoritative.map((event) => event.stream_id),
-    )) {
-      const stats = await fs.stat(
-        path.join(pmRoot, "history", `${streamId}.jsonl`),
-      );
-      upsertStreamByteSize(database, streamId, stats.size);
+    for (const [streamId, byteSize] of authoritative.stream_byte_sizes) {
+      upsertStreamByteSize(database, streamId, byteSize);
     }
     database.exec("COMMIT");
     database.close();

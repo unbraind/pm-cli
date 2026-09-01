@@ -33,7 +33,9 @@
             "function resolveDatabaseSync():",
             "let RuntimeDatabaseSync:",
             "RuntimeDatabaseSync = loadStableDatabaseSync(",
-            "setDatabaseSync(databaseSync:"
+            "setDatabaseSync(databaseSync:",
+            "RuntimeDatabaseSync = databaseSync",
+            "RuntimeDatabaseSync = previous"
           ]
         },
         {
@@ -44,7 +46,9 @@
             "function resolveDatabaseSync():",
             "let RuntimeDatabaseSync:",
             "RuntimeDatabaseSync = loadStableDatabaseSync(",
-            "setDatabaseSync(databaseSync:"
+            "setDatabaseSync(databaseSync:",
+            "RuntimeDatabaseSync = databaseSync",
+            "RuntimeDatabaseSync = previous"
           ]
         }
       ],

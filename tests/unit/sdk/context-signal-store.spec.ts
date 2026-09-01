@@ -285,7 +285,7 @@ describe("context signal feature store", () => {
       source: "scan_fallback",
       sourceCursor: "cursor",
       recencyEvidence: {
-        "pm-a": { source: "created_at", coordinate: now },
+        "pm-a": { source: "substantive_history", coordinate: now },
       },
     });
     const withHistoryFields = buildContextSignalSnapshot([item("pm-a")], {
@@ -305,6 +305,39 @@ describe("context signal feature store", () => {
     expect(withoutHistoryFields.recency_evidence_fingerprint).not.toBe(
       withHistoryFields.recency_evidence_fingerprint,
     );
+  });
+
+  it("invalidates a stable cursor when fallback recency provenance changes", async () => {
+    const adapter = new MemoryAdapter();
+    const store = new ContextSignalStore(adapter);
+    const options = {
+      statusRegistry,
+      now,
+      source: "scan_fallback" as const,
+      sourceCursor: "stable-cursor",
+    };
+
+    await expect(
+      store.readOrRebuild([item("pm-a")], options),
+    ).resolves.toMatchObject({ cache_status: "rebuilt" });
+    await expect(
+      store.readOrRebuild([item("pm-a", { release: "v2026.7.21" })], options),
+    ).resolves.toMatchObject({
+      cache_status: "rebuilt",
+      warnings: ["context_signal_store_stale"],
+      snapshot: {
+        items: [
+          {
+            signal_provenance: {
+              recency: {
+                source: "release_cohort",
+                coordinate: "2026-07-21T00:00:00.000Z",
+              },
+            },
+          },
+        ],
+      },
+    });
   });
 
   it("reuses fresh rows and rebuilds absent, stale, changed-corpus, and unreadable snapshots", async () => {

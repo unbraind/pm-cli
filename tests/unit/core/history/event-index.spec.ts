@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnly,
   queryHistoryEventIndex,
@@ -267,6 +267,61 @@ describe("history mutation event index", () => {
         "toString",
       ]);
       expect(Object.getPrototypeOf(latest)).toBeNull();
+    });
+  });
+
+  it("binds rebuilt stream sizes to the same pre-read authoritative snapshot", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-concurrent.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "comment_add",
+      );
+      const firstLine = `${JSON.stringify(first)}\n`;
+      await fs.writeFile(historyPath, firstLine);
+      const originalStat = fs.stat.bind(fs);
+      let appended = false;
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          const stats = await originalStat(...args);
+          if (!appended && String(args[0]) === historyPath) {
+            appended = true;
+            await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
+          }
+          return stats;
+        });
+      try {
+        await rebuildHistoryEventIndex(context.pmPath);
+      } finally {
+        statSpy.mockRestore();
+      }
+
+      const database = new DatabaseSync(
+        path.join(context.pmPath, "runtime", INDEX_FILENAME),
+      );
+      const indexedStream = database
+        .prepare("SELECT byte_size FROM streams WHERE stream_id = ?")
+        .get("pm-concurrent") as { byte_size: number };
+      database.close();
+      expect(indexedStream.byte_size).toBe(Buffer.byteLength(firstLine));
+      expect((await fs.stat(historyPath)).size).toBeGreaterThan(
+        indexedStream.byte_size,
+      );
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-concurrent"]),
+      ).resolves.toMatchObject({
+        "pm-concurrent": {
+          stream_offset: 1,
+          entry: { op: "comment_add" },
+        },
+      });
     });
   });
 

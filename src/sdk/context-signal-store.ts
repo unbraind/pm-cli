@@ -15,6 +15,7 @@ import {
   type ContextRelevanceCandidate,
   type ContextRelevanceSignalName,
   type ContextRelevanceSignals,
+  type ItemContextRelevanceCandidate,
 } from "./context-relevance.js";
 import type { ItemMetadata } from "../types/index.js";
 import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
@@ -258,12 +259,13 @@ function stableSnapshotOptions(
 }
 
 function recencyEvidenceFingerprint(
-  options: BuildContextSignalSnapshotOptions,
+  candidates: readonly ItemContextRelevanceCandidate[],
 ): string {
   const hash = createHash("sha256");
-  for (const [id, evidence] of Object.entries(
-    options.recencyEvidence ?? {},
-  ).sort(([left], [right]) => left.localeCompare(right))) {
+  for (const {
+    id,
+    signal_provenance: { recency: evidence },
+  } of [...candidates].sort((left, right) => left.id.localeCompare(right.id))) {
     hash.update(
       JSON.stringify([
         id,
@@ -397,10 +399,11 @@ export function buildContextSignalSnapshot(
       "Context signal snapshot source must be derived_index or scan_fallback",
     );
   }
-  const rows = buildItemContextRelevanceCandidates(
+  const candidates = buildItemContextRelevanceCandidates(
     items,
     stableSnapshotOptions(items, options),
-  )
+  );
+  const rows = candidates
     .map(({ id, signals, signal_provenance }) => ({
       id,
       signals: compactSignals(signals),
@@ -411,7 +414,7 @@ export function buildContextSignalSnapshot(
     format_version: CONTEXT_SIGNAL_STORE_FORMAT_VERSION,
     signal_set_version: CONTEXT_SIGNAL_SET_VERSION,
     source_cursor: options.sourceCursor,
-    recency_evidence_fingerprint: recencyEvidenceFingerprint(options),
+    recency_evidence_fingerprint: recencyEvidenceFingerprint(candidates),
     generated_at: options.now,
     source: options.source,
     items: Object.freeze(rows.map((row) => Object.freeze(row))),
@@ -495,11 +498,15 @@ export class ContextSignalStore {
       .map((item) => item.id)
       .sort((left, right) => left.localeCompare(right));
     const snapshotIds = snapshot?.items.map((item) => item.id) ?? [];
+    const authoritativeCandidates = buildItemContextRelevanceCandidates(
+      items,
+      stableSnapshotOptions(items, options),
+    );
     const fresh =
       snapshot !== null &&
       snapshot.source_cursor === options.sourceCursor &&
       snapshot.recency_evidence_fingerprint ===
-        recencyEvidenceFingerprint(options) &&
+        recencyEvidenceFingerprint(authoritativeCandidates) &&
       snapshot.source === options.source &&
       snapshotIds.length === authoritativeIds.length &&
       snapshotIds.every((id, index) => id === authoritativeIds[index]);

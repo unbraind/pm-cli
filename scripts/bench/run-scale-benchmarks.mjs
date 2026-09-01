@@ -394,14 +394,30 @@ export function compareScaleBudgets(report, manifest) {
       const budget = tier.transports?.[transport]?.[name];
       if (!budget) {
         violations.push(`${transport}.${name}: missing budget`);
-        continue;
+      } else {
+        violations.push(
+          ...compareCommandBudget(transport, name, summary, budget),
+        );
       }
-      violations.push(
-        ...compareCommandBudget(transport, name, summary, budget),
-      );
+      violations.push(...compareProductTarget(transport, name, summary));
     }
   }
   violations.push(...compareTransportOverhead(report, tier));
+  return violations;
+}
+
+function compareProductTarget(transport, name, summary) {
+  const violations = [];
+  if (summary.p95_ms > PRODUCT_TARGET.p95_ms) {
+    violations.push(
+      `product_target.${transport}.${name}: p95 ${summary.p95_ms}ms > ${PRODUCT_TARGET.p95_ms}ms`,
+    );
+  }
+  if (summary.max_estimated_tokens > PRODUCT_TARGET.max_estimated_tokens) {
+    violations.push(
+      `product_target.${transport}.${name}: ${summary.max_estimated_tokens} tokens > ${PRODUCT_TARGET.max_estimated_tokens}`,
+    );
+  }
   return violations;
 }
 
@@ -464,10 +480,7 @@ export async function updateBudgetManifest(manifestPath, report, headroom) {
   }
   manifest.tiers[
     `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`
-  ] = buildTierBudget(
-    report,
-    headroom,
-  );
+  ] = buildTierBudget(report, headroom);
   if ((report.fixture.shape?.name ?? "scratch") === "scratch") {
     delete manifest.tiers[String(report.fixture.item_count)];
   }
@@ -567,9 +580,7 @@ export function benchmarkOptionsFromFlags(flags) {
     iterations: flags.get("iterations") ?? 3,
     seed: flags.get("seed") ?? 42,
     shape:
-      flags.get("shape") === undefined
-        ? "scratch"
-        : String(flags.get("shape")),
+      flags.get("shape") === undefined ? "scratch" : String(flags.get("shape")),
     mode:
       flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     transport: flags.get("transport") ?? "both",
@@ -633,9 +644,7 @@ export async function runScaleBenchmarkEntrypoint(options = {}) {
   const argv = options.argv ?? process.argv;
   if (!isMainModule(argv)) return false;
   try {
-    const execute =
-      options.run ??
-      ((args) => main(args, options.mainOptions));
+    const execute = options.run ?? ((args) => main(args, options.mainOptions));
     const { report, outputPath } = await execute(argv.slice(2));
     (options.write ?? ((output) => process.stdout.write(output)))(
       `${JSON.stringify(

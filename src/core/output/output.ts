@@ -87,13 +87,14 @@ function setActiveCommandResultOmitted(source: unknown): void {
 
 function setActiveCommandDeliveryResult(
   result: unknown,
+  receiptSource: unknown,
   structuredDeliveryPreserved: boolean,
 ): void {
   if (structuredDeliveryPreserved) {
     setActiveCommandResult(result);
     return;
   }
-  setActiveCommandResultOmitted(result);
+  setActiveCommandResultOmitted(receiptSource);
 }
 
 function shouldUseNativeOutput(result: unknown): boolean {
@@ -466,6 +467,7 @@ export function formatBuiltInOutput(
 interface OutputServiceResolution {
   result: unknown;
   rendered: string | null;
+  structuredDeliveryPreserved: boolean;
 }
 
 /** Resolve extension service ownership before built-in projection and rendering. */
@@ -501,11 +503,14 @@ function resolveOutputService(
       rendered: serviceOverride.result.endsWith("\n")
         ? serviceOverride.result
         : `${serviceOverride.result}\n`,
+      structuredDeliveryPreserved: false,
     };
   }
   return {
     result: serviceOverride.handled ? serviceOverride.result : effectiveResult,
     rendered: null,
+    structuredDeliveryPreserved:
+      !serviceOverride.handled || isPlainObject(serviceOverride.result),
   };
 }
 
@@ -570,7 +575,7 @@ function formatEffectiveOutput(
   if (isReadOutputBudgetExceeded(intentOutputResult)) {
     process.exitCode ||= EXIT_CODE.USAGE;
   }
-  let structuredDeliveryPreserved = true;
+  let { structuredDeliveryPreserved } = service;
   const renderResolvedOutput = (value: unknown): string => {
     if (format === "toon") {
       const markdownDefault = renderDefaultMarkdownResult(value);
@@ -600,6 +605,7 @@ function formatEffectiveOutput(
   const rendered = renderResolvedOutput(accountedOutputResult);
   setActiveCommandDeliveryResult(
     accountedOutputResult,
+    effectiveResult,
     options.quiet !== true && structuredDeliveryPreserved,
   );
   return rendered;
