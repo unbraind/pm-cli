@@ -99,11 +99,11 @@ pm release <item-id>
 
 ## Agent Loop
 
-Use `pm next` to get the single highest-priority ready item (and why), or `pm context` for the full snapshot, then search before creating anything:
+Use the measured one-call context intent for cold-start orientation. Use `pm next` as an alternative when you only need the single highest-priority ready item, then search all statuses before creating anything. Measurement methodology and ratcheted evidence live in the [Agent Guide](docs/AGENT_GUIDE.md#agent-quick-context).
 
 ```bash
-pm next                                          # the next actionable item + rationale, ready/blocked queues
-pm context --limit 10
+pm context --limit 10 --for orient              # canonical cold start: state, ownership, actionable work
+# Alternative: pm next                          # one actionable item + rationale, ready/blocked queues
 pm search "keywords for the requested work" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20

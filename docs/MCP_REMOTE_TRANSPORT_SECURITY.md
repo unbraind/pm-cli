@@ -1,6 +1,7 @@
 # MCP Remote Transport, Authorization, and Migration
 
-Tracker references: [pm-v7e337](../.agents/pm/features/pm-v7e337.toon),
+Tracker references: [pm-3g3f8z](../.agents/pm/features/pm-3g3f8z.toon),
+[pm-v7e337](../.agents/pm/features/pm-v7e337.toon),
 [pm-3zh9s4](../.agents/pm/features/pm-3zh9s4.toon), and
 [pm-vzcisw](../.agents/pm/chores/pm-vzcisw.toon).
 
@@ -36,6 +37,7 @@ Configuration is explicit and environment-only:
 | `PM_MCP_HTTP_AUTH_ISSUER`     | Exact HTTPS authorization-server issuer             | none               |
 | `PM_MCP_HTTP_RESOURCE`        | Canonical MCP resource/audience URI                 | none               |
 | `PM_MCP_HTTP_SCOPES`          | Space-separated consent scopes                      | `pm:read pm:write` |
+| `PM_MCP_DISCOVERY_CURSOR_KEY` | Shared 32-byte-or-longer secret for discovery pages | process-local key  |
 
 A non-loopback bind fails closed unless token, issuer, and resource are all
 present. Production deployments should normally call
@@ -50,8 +52,16 @@ placing a real credential in documentation:
 PM_MCP_HTTP_BEARER_TOKEN='<deployment-secret>' \
 PM_MCP_HTTP_AUTH_ISSUER='https://auth.example.test' \
 PM_MCP_HTTP_RESOURCE='http://127.0.0.1:3000/mcp' \
+PM_MCP_DISCOVERY_CURSOR_KEY='<32-byte-or-longer-random-secret>' \
 pm-mcp-http
 ```
+
+Single-process deployments may omit the discovery cursor key. That selects a
+random process-local HMAC key and deliberately makes pagination process-affine:
+a restart or another worker rejects the cursor as stale. Multi-worker or
+restart-continuous deployments must provide the same high-entropy value to
+every worker. Rotating it invalidates outstanding discovery cursors without
+exposing the key in MCP input, output, errors, traces, or cache identities.
 
 The adapter serves RFC 9728 protected-resource metadata at both
 `/.well-known/oauth-protected-resource` and the path-qualified

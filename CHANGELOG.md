@@ -2,10 +2,22 @@
 
 ## Unreleased
 
+### Added
+
+- GH-796: duplicate recurrence now reopens the canonical terminal item instead of creating a second item ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
+- Progressive MCP discovery and canonical tool results: reveal the minimum relevant catalog and deliver one unambiguous model-facing output contract ([pm-3g3f8z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3g3f8z.toon))
+
 ### Fixed
 
+- The two-call agent cold start proposed as canonical costs more tokens than the four-call protocol it replaces, and no gate measures either ([pm-jjqyzd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jjqyzd.toon))
+- GH-1166: root help hides the --all discovery option that reveals the full command surface ([pm-7f9zkh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7f9zkh.toon))
 - GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
 - GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
+
+### Other
+
+- Document the measured canonical agent cold-start across docs and generated guidance ([pm-ka6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ka6d.toon))
+- Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require ([pm-wenq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wenq.toon))
 
 ## 2026.8.31 - 2026-08-31
 
@@ -231,10 +243,6 @@
 - ADR: Ordering assurance partitions evidence-cited blocks from uncited blocks ([pm-jhpby4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-jhpby4.toon))
 
 ## 2026.8.20 - 2026-08-20
-
-### Added
-
-- GH-796: no reopen transition for terminal items, so recurrence is recorded as a duplicate instead of a reopening ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
 
 ### Fixed
 

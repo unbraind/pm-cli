@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import jsonPatch from "fast-json-patch";
 import {
   PmClient,
   createReproducibleProcessRunner,
@@ -30,7 +31,7 @@ const TRANSCRIPT_PATH = path.join(
   "agent-task-transcripts.json",
 );
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
-const BASELINE_VERSION = 3;
+const BASELINE_VERSION = 4;
 const REPLAY_CLOCK = "2026-08-28T00:00:00.000Z";
 const REPLAY_SEED = "agent-task-token-gate";
 
@@ -206,9 +207,13 @@ function validateSelfReportedAccounting(accountedPayload, step) {
 function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
   validateExpectedOutput(baselinePayload, step);
   validateExpectedOutput(measuredPayload, step);
-  if (JSON.stringify(baselinePayload) !== JSON.stringify(measuredPayload)) {
+  const [firstDifference] = jsonPatch.compare(
+    baselinePayload,
+    measuredPayload,
+  );
+  if (firstDifference !== undefined) {
     fail(
-      `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled`,
+      `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled; first_difference=${firstDifference.op}:${firstDifference.path}`,
     );
   }
 }
@@ -324,7 +329,15 @@ function measureTask(baselineRoot, accountedRoot, task) {
     }
     payloads.set(step.id, measured.payload);
     const { payload: _payload, ...stepReport } = measured;
-    measuredSteps.push(stepReport);
+    measuredSteps.push({
+      ...stepReport,
+      verified_fields: [
+        ...new Set([
+          ...step.required_fields,
+          ...Object.keys(step.expected_field_values ?? {}),
+        ]),
+      ].sort(),
+    });
   }
   return {
     id: task.id,
@@ -342,6 +355,139 @@ function measureTask(baselineRoot, accountedRoot, task) {
       0,
     ),
     steps: measuredSteps,
+  };
+}
+
+/** Validate and canonicalize orientation capability identifiers. */
+function sortedUniqueStrings(value, field) {
+  if (!Array.isArray(value)) {
+    fail(
+      `Agent-task orientation ${field} must be an array of non-blank strings`,
+    );
+  }
+  if (
+    value.some(
+      (entry) => typeof entry !== "string" || entry.trim().length === 0,
+    )
+  ) {
+    fail(
+      `Agent-task orientation ${field} must be an array of non-blank strings`,
+    );
+  }
+  return [...new Set(value.map((entry) => entry.trim()))].sort();
+}
+
+/** Bind every declared capability to output fields proven by its measured task. */
+function resolveCapabilityEvidence(protocol, task, capabilities) {
+  const evidence = protocol?.capability_evidence;
+  if (
+    typeof evidence !== "object" ||
+    evidence === null ||
+    Array.isArray(evidence) ||
+    JSON.stringify(
+      sortedUniqueStrings(Object.keys(evidence), "capability evidence keys"),
+    ) !== JSON.stringify(capabilities)
+  ) {
+    fail(
+      `Agent-task orientation protocol ${String(protocol?.task_id)} capability evidence is incomplete`,
+    );
+  }
+  const steps = new Map((task.steps ?? []).map((step) => [step.id, step]));
+  return Object.fromEntries(
+    capabilities.map((capability) => {
+      const references = evidence[capability];
+      if (!Array.isArray(references) || references.length === 0) {
+        fail(
+          `Agent-task orientation protocol ${String(protocol?.task_id)} capability ${capability} lacks verified evidence`,
+        );
+      }
+      const normalized = references.map((reference) => {
+        const stepId = reference?.step_id;
+        const fieldPath = reference?.field_path;
+        const step = steps.get(stepId);
+        if (
+          typeof stepId !== "string" ||
+          stepId.trim().length === 0 ||
+          typeof fieldPath !== "string" ||
+          fieldPath.trim().length === 0 ||
+          !Array.isArray(step?.verified_fields) ||
+          !step.verified_fields.includes(fieldPath)
+        ) {
+          fail(
+            `Agent-task orientation protocol ${String(protocol?.task_id)} capability ${capability} cites unverified evidence`,
+          );
+        }
+        return { step_id: stepId, field_path: fieldPath };
+      });
+      return [capability, normalized];
+    }),
+  );
+}
+
+/** Select the cheapest equivalent orientation transcript and fail on undeclared or stale policy. */
+export function evaluateOrientationProtocolSelection(report, orientation) {
+  const requiredCapabilities = sortedUniqueStrings(
+    orientation?.required_capabilities,
+    "required_capabilities",
+  );
+  const declaredProtocols = Array.isArray(orientation?.protocols)
+    ? orientation.protocols
+    : [];
+  const protocolTaskIds = declaredProtocols.map(
+    (protocol) => protocol?.task_id,
+  );
+  if (
+    typeof orientation?.canonical_task_id !== "string" ||
+    requiredCapabilities.length === 0 ||
+    declaredProtocols.length < 2 ||
+    new Set(protocolTaskIds).size !== declaredProtocols.length
+  ) {
+    fail("Agent-task orientation protocol contract is incomplete");
+  }
+  const tasksById = new Map(report.tasks.map((task) => [task.id, task]));
+  const protocols = declaredProtocols.map((protocol) => {
+    const task = tasksById.get(protocol?.task_id);
+    const capabilities = sortedUniqueStrings(
+      protocol?.capabilities,
+      "protocol capabilities",
+    );
+    if (
+      task === undefined ||
+      JSON.stringify(capabilities) !== JSON.stringify(requiredCapabilities)
+    ) {
+      fail(
+        `Agent-task orientation protocol ${String(protocol?.task_id)} does not prove the required equivalent capabilities`,
+      );
+    }
+    const capabilityEvidence = resolveCapabilityEvidence(
+      protocol,
+      task,
+      capabilities,
+    );
+    return {
+      task_id: task.id,
+      command_count: task.step_count,
+      estimated_tokens: task.estimated_tokens,
+      capabilities,
+      capability_evidence: capabilityEvidence,
+    };
+  });
+  protocols.sort(
+    (left, right) =>
+      left.estimated_tokens - right.estimated_tokens ||
+      (left.task_id < right.task_id ? -1 : 1),
+  );
+  const winner = protocols[0];
+  if (orientation.canonical_task_id !== winner.task_id) {
+    fail(
+      `Agent-task canonical orientation ${orientation.canonical_task_id} is not the measured winner ${winner.task_id}`,
+    );
+  }
+  return {
+    canonical_task_id: winner.task_id,
+    required_capabilities: requiredCapabilities,
+    measured_winner_tokens: winner.estimated_tokens,
+    protocols,
   };
 }
 
@@ -426,6 +572,16 @@ export function compareAgentTaskTokenBaseline(report, baseline) {
     failures.push(`baseline_version:${baseline.version}`);
   if (baseline.transcript_digest !== report.transcript_digest)
     failures.push("transcript_digest:mismatch");
+  const baselineWinnerTokens = baseline.orientation?.measured_winner_tokens;
+  const reportWinnerTokens = report.orientation?.measured_winner_tokens;
+  if (
+    baseline.orientation?.canonical_task_id !==
+      report.orientation?.canonical_task_id ||
+    ![baselineWinnerTokens, reportWinnerTokens].every(Number.isFinite) ||
+    baselineWinnerTokens < reportWinnerTokens
+  ) {
+    failures.push("orientation:canonical_or_token_ceiling_drift");
+  }
   const taskLimits = new Map(
     (baseline.tasks ?? []).map((task) => [task.id, task]),
   );
@@ -466,6 +622,7 @@ function buildBaseline(report) {
     estimator: "ceil(utf8_bytes / 4)",
     measurement_scope: "output_before_token_accounting",
     published_with_release: true,
+    orientation: report.orientation,
     tasks: report.tasks.map((task) => ({
       id: task.id,
       max_estimated_tokens: task.estimated_tokens,
@@ -545,7 +702,8 @@ export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
   const baselinePath = resolveAgentTaskTokenBaselinePath(flags.get("baseline"));
   const transcriptSource = readFileSync(TRANSCRIPT_PATH, "utf8");
-  const corpus = parsePmAgentTaskTranscriptCorpus(JSON.parse(transcriptSource));
+  const transcriptDocument = JSON.parse(transcriptSource);
+  const corpus = parsePmAgentTaskTranscriptCorpus(transcriptDocument);
   const baselineWorkspace = mkdtempSync(
     path.join(tmpdir(), "pm-agent-task-baseline-"),
   );
@@ -595,6 +753,10 @@ export async function main(argv = process.argv.slice(2)) {
       ),
       tasks: measured,
     };
+    report.orientation = evaluateOrientationProtocolSelection(
+      report,
+      transcriptDocument.orientation,
+    );
     return finalizeAgentTaskTokenReport(report, flags, baselinePath);
   } finally {
     rmSync(baselineWorkspace, { recursive: true, force: true });

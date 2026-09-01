@@ -26,9 +26,20 @@ describe("executable recovery guidance", () => {
         "utf8",
       );
       expect(await resolveProjectTestCommand(projectRoot)).toBe("pnpm test");
-      expect(
-        agentGuidance.buildAgentGuidanceBlock("\n", "pnpm test"),
-      ).toContain('pm test <id> --add command="pnpm test"');
+      const guidance = agentGuidance.buildAgentGuidanceBlock("\n", "pnpm test");
+      expect(guidance).toContain('pm test <id> --add command="pnpm test"');
+      const contextCommand = "pm context --limit 10 --for orient";
+      const mutationGuard = "before item mutation";
+      const inProgressCommand = "pm list --status in_progress --limit 20";
+      expect(guidance).toContain(contextCommand);
+      expect(guidance).toContain(mutationGuard);
+      expect(guidance).toContain(inProgressCommand);
+      expect(guidance.indexOf(contextCommand)).toBeLessThan(
+        guidance.indexOf(mutationGuard),
+      );
+      expect(guidance.indexOf(mutationGuard)).toBeLessThan(
+        guidance.indexOf(inProgressCommand),
+      );
     } finally {
       await rm(projectRoot, { recursive: true, force: true });
     }
@@ -173,11 +184,11 @@ describe("executable recovery guidance", () => {
       "vector_index_recovery:reindex --mode hybrid",
     ]);
     const warnings = formatVectorIndexRecoveryWarnings(1, {
-        command: "pm install search-advanced --project",
-        args: ["install", "search-advanced", "--project"],
-        follow_up_command: "pm reindex --mode hybrid",
-        follow_up_args: ["reindex", "--mode", "hybrid"],
-      });
+      command: "pm install search-advanced --project",
+      args: ["install", "search-advanced", "--project"],
+      follow_up_command: "pm reindex --mode hybrid",
+      follow_up_args: ["reindex", "--mode", "hybrid"],
+    });
     expect(warnings).toContain(
       "vector_index_recovery:install search-advanced --project",
     );

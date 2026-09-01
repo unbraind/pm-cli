@@ -1,0 +1,66 @@
+id: pm-7f9zkh
+title: "GH-1166: root help hides the --all discovery option that reveals the full command surface"
+description: "The shipped root --all option works, but compact pm --help omits the option itself, so agents cannot discover how to expand the 14-command core surface to the complete public catalog."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:cli","area:contracts",github-intake,regression
+created_at: "2026-08-31T12:54:11.011Z"
+updated_at: "2026-08-31T16:11:24.301Z"
+closed_at: "2026-08-31T15:13:35.998Z"
+completed_at: "2026-08-31T15:13:35.998Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: pm --help advertises --all without expanding the compact command list; pm --help --json includes --all in root options; pm --all still exposes the complete public surface; a focused regression and process-level acceptance test prevent recurrence
+parent: pm-1kxs
+risk: medium
+confidence: high
+severity: medium
+repro_steps: Run pm --help and inspect options; run pm --all and compare the expanded command catalog.
+resolution: Restored explicit full-surface discovery from compact root help
+expected_result: Compact root help remains one screen while advertising --all as the explicit path to the complete public command catalog.
+actual_result: "Compact text and JSON root help advertise --all without expanding the compact command tier; pm --all continues to expose the complete public command surface, with unit and process-level regression coverage."
+affected_version: 2026.8.31
+component: CLI help contracts
+regression: true
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e2bq,discovered_from,"2026-08-31T12:54:11.011Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-31T12:54:11.011Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,verifies,"2026-08-31T13:58:30.032Z","harness:codex","cli:update:dep",detected
+  pm-3g3f8z,verifies,"2026-08-31T13:59:34.739Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-31T12:54:11.011Z","harness:codex","Duplicate-check evidence: complete all-status strict-read census covered 2,609 items with no unreadable rows, no omissions, no truncation, and no continuation. Exact GH-1166 and root-help --all searches found only closed predecessor pm-e2bq plus umbrella pm-n7rr; this recurrence needs a new issue rather than reopening completed shipped work. GitHub: https://github.com/unbraind/pm-cli/issues/1166"
+  "2026-08-31T12:54:40.370Z","harness:codex","TDD start: add failing structured and process-level assertions that compact root help advertises --all while retaining the compact command tier and full discovery behavior."
+  "2026-08-31T15:13:31.095Z","harness:codex","Terminal evidence: linked compact-help and process-level discovery suite passed 8 tests. Compact text and JSON root help advertise --all, the compact tier remains bounded, and pm --all retains the complete public catalog. Exact 100% repository coverage, typecheck, contract generation, command grammar, npx/bunx packed smoke, and isolated npm+Bun acceptance passed. GitHub issue #1166 is linked to this canonical item."
+  "2026-08-31T16:11:24.301Z","harness:codex","Hosted review evidence: the compatibility Claude plugin smoke now locks the expanded 32-tool catalog and its user-facing docs, closing the hosted smokes failure caused by the newly added pm_discover tool. DeepScan nullable-access findings in progressive tools/list coverage were fixed with explicit runtime shape validation."
+learnings[1]{created_at,author,text}:
+  "2026-08-31T15:07:56.770Z","harness:codex",A compact discovery surface must advertise its own expansion control; an implemented --all flag is effectively hidden when compact help omits it.
+files[4]{path,scope,note}:
+  src/sdk/agent-capability-contracts.ts,project,Compact root option discovery contract
+  tests/fixtures/contracts/full.json,project,Generated help contract snapshot
+  tests/integration/root-help-discovery.integration.spec.ts,project,Process-level compact and expanded root help coverage
+  tests/unit/cli/help-content.spec.ts,project,Compact root help regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/integration/root-help-discovery.integration.spec.ts,project,240,"harness:codex","2026-08-31T13:57:47.602Z",local_mutation,feat/progressive-capability-discovery
+test_runs[1]:
+  - run_id: test-local-mthdjsit-qpe8ja
+    kind: test
+    status: passed
+    started_at: "2026-08-31T15:09:30.792Z"
+    finished_at: "2026-08-31T15:09:41.285Z"
+    recorded_at: "2026-08-31T15:09:41.285Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/integration/root-help-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+close_reason: Restored discoverability of the compact help expansion control while preserving bounded help and the complete --all surface; focused and process-level tests plus repository-wide gates pass.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-7f9zkh
+  gate_id: compact-root-help-expansion-discovery
+  negative_control: tests/unit/cli/help-content.spec.ts and tests/integration/root-help-discovery.integration.spec.ts fail when compact root help omits --all
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/integration/root-help-discovery.integration.spec.ts,"pnpm quality:static",node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

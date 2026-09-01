@@ -1,19 +1,24 @@
 id: pm-ka6d
-title: Document the two-call agent cold-start (contracts --summary + next) as the canonical orientation in docs and plugin templates
-description: Standardize the two-call contracts-summary plus next cold start across agent docs and plugin templates with measured token evidence.
+title: Document the measured canonical agent cold-start across docs and generated guidance
+description: "Standardize the lowest-token equivalent cold-start protocol across agent docs and generated guidance, with a completed-task replay gate that rejects a more expensive canonical choice."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:docs",simplification
 created_at: "2026-07-11T16:23:07.560Z"
-updated_at: "2026-08-07T11:19:59.291Z"
+updated_at: "2026-09-01T07:49:51.418Z"
+closed_at: "2026-09-01T07:49:50.929Z"
+completed_at: "2026-09-01T07:49:50.929Z"
 author: maintainer-agent
 estimated_minutes: 90
-acceptance_criteria: Agent-facing docs describe the two-call cold-start as the canonical orientation path; plugin instruction templates teach the same sequence; no new top-level commands introduced; before/after token numbers cited from the a22j baseline script
+acceptance_criteria: Agent-facing docs name the measured canonical cold-start; generated AGENTS and CLAUDE guidance teaches the same sequence; no new top-level CLI commands are introduced; the fixed 101-item replay reports every compared protocol and fails when the documented canonical protocol is not the lowest-token equivalent choice
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[8]:
+resolution: "Replaced opaque JSON-string payload drift reporting with the first RFC 6902 operation and JSON Pointer, added a TDD regression assertion, preserved exact parity semantics, and retained independently observable orientation contracts."
+expected_result: Any baseline/accounted application-payload drift fails closed with a compact field-level location; the complete release preflight remains deterministic and exact.
+actual_result: "The focused 39-test file, five repeated 21-step replays, 75-test linked cohort, and full 8,239-test preflight passed; exact coverage is 100/100/100/100 and all release gates are green."
+dependencies[10]:
   - id: pm-8pnj
     kind: related
     created_at: "2026-07-14T17:05:08.739Z"
@@ -41,4 +46,102 @@ dependencies[8]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-body: "Promoted from the pm-mpbb DX ledger (candidate lever d) on 2026-07-11, when the pm-a22j baseline gate opened.\n\nThe numbers make the case: pm contracts --summary = 2,867 B TOON (~0.7k tok) vs contracts --full = 506,091 B (176x) vs the MCP tools/list payload = 32,979 B (~8.2k tok, paid on every MCP session bootstrap). The cheap two-call cold-start already exists — `pm contracts --summary` (what exists) then `pm next` (what to do) — but no doc or plugin template teaches it as THE orientation path, so agents default to expensive discovery (--help walks, contracts --full, or full MCP attachment).\n\nScope: docs (agents guide + README agent section) describe the two-call cold-start as the canonical orientation; plugin instruction templates (Claude/Codex/ChatGPT alignment, see plan commit ba09b155) teach the same sequence; cite the baseline script scripts/measure-agent-token-surface.mjs for before/after numbers.\n\nConstraint (ledger fence): no new top-level commands — this is documentation and template work only."
+  - id: pm-8pnj
+    kind: verifies
+    created_at: "2026-08-31T13:58:29.272Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-j82fd3
+    kind: implements
+    created_at: "2026-08-31T13:58:29.272Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[15]{created_at,author,text}:
+  "2026-08-31T12:54:39.821Z","harness:codex","Implementation start: blocker pm-jjqyzd is being actively resolved in this same connected tranche; documentation and generated guidance will consume the measured winner with no new top-level CLI command."
+  "2026-08-31T13:24:40.016Z","harness:codex","Documentation evidence: AGENTS.md, README, Agent Guide, generated init guidance, and output-accounting docs now teach the measured one-call context intent and link the published 1,055/2,293/4,798 replay evidence. The obsolete two-call premise remains preserved in item history and is explicitly corrected by blocker pm-jjqyzd."
+  "2026-08-31T15:13:30.507Z","harness:codex","Terminal evidence: linked init-guidance and replay-gate suite passed 47 tests. AGENTS.md, README, Agent Guide, generated init guidance, and output-token accounting now share the measured one-call orientation. Exact 100% repository coverage, docs/skills verification, generated-surface checks, command grammar, and static-quality assurance passed."
+  "2026-08-31T22:36:29.834Z","harness:codex","Review round 7 recurrence: CodeRabbit comment 3899001129 is valid. The item comments and terminal fields record context --for orient as the measured winner, but the persistent body still calls contracts --summary plus next canonical. Update the body through pm so historical events remain immutable while current metadata becomes unambiguous."
+  "2026-08-31T23:05:42.235Z","harness:codex","Terminal evidence for review round 7: live item body now records the measured one-call context --for orient contract while immutable history preserves the superseded proposal. Its linked generated-guidance and 101-item replay gate passed 51 tests; repository-wide exact coverage and static quality passed."
+  "2026-09-01T00:42:54.669Z","harness:codex","Review round 10: Cubic findings on the exact measured command spelling and capability normalization are valid. Align the live body to pm context --limit 10 --for orient and make the replay gate reject non-arrays while trimming canonical capability identifiers."
+  "2026-09-01T00:45:57.047Z","harness:codex","TDD red evidence for exact-head review round 10: the orientation gate test expected a field-specific refusal for non-array required_capabilities but received the prior generic process-exit failure. Added coverage also requires trimmed, deduplicated capability identifiers and protocol-specific non-array refusal."
+  "2026-09-01T01:02:25.867Z","harness:codex","Review round 10 terminal evidence: live metadata now names the exact pm context --limit 10 --for orient command. The replay gate rejects non-array required or protocol capabilities with field-specific diagnostics and trims/deduplicates valid identifiers. Its linked 51-test cohort, exact repository coverage, all static/security gates, and temporary-workspace orientation acceptance passed."
+  "2026-09-01T01:16:35.046Z","harness:codex","Hosted coverage negative control at exact head 7924622a6: all 8,215 tests passed, but the mandatory gate correctly failed at 45,789/45,790 branches. The uncovered branch is the malformed orientation protocols container fallback at agent-task-token-gate.mjs:373; add a valid-required-capabilities plus undefined-protocols rejection case without exclusions."
+  "2026-09-01T01:23:56.355Z","harness:codex","Hosted coverage remediation terminal evidence: the malformed protocols-container negative control now reaches and rejects the fallback with a specific incomplete-contract diagnostic. Local repository coverage passes 594 files and 8,211 tests at exact 60,603/60,603 statements, 45,790/45,790 branches, 12,611/12,611 functions, and 58,349/58,349 lines; focused replay-gate test, Prettier, and ESLint also pass."
+  "2026-09-01T06:46:35.390Z","harness:codex","Review round 17 test-quality evidence: decomposed the oversized orientation selection case into independently named selection, malformed evidence, reference integrity, completeness, normalization, deterministic ordering, duplicate-ID, and invalid-capability contracts. No assertions or negative domains were removed; the focused file passes 39 tests."
+  "2026-09-01T06:56:49.614Z","harness:codex","Review round 17 exact coverage: the independently observable orientation contracts are included in the 594-file, 8,239-test repository pass at exact 100/100/100/100; the linked orientation/init cohort also passed 75 tests."
+  "2026-09-01T07:19:48.971Z","harness:codex","Failure evidence: pnpm verify:preflight completed static and integration stages, then exact coverage failed 1/8,239 tests because the real-transport replay reported a baseline/accounted application-payload mismatch in assertTransportPayloadParity. The same cohort passed in isolation, so this item is reopened to make the mandatory gate reproducible under full-suite execution; no other pm item is in progress."
+  "2026-09-01T07:31:49.543Z","harness:codex","TDD and reproduction evidence: added a failing contract that required payload parity refusals to identify the first JSON Patch operation and pointer; the pre-change test emitted only a generic mismatch. The implementation now retains fail-closed exact parity while reporting a compact op:path diagnostic. The focused 39-test gate and five sequential 21-step standalone replays passed. Repository coverage then passed all 594 files and 8,239 tests, including the previously intermittent real-transport replay, and exposed one honest uncovered formatting fallback; that fallback was removed rather than excluded or artificially exercised. Full preflight remains required before closure."
+  "2026-09-01T07:49:50.383Z","harness:codex","Terminal evidence: pnpm verify:preflight passed end to end after 15+ minutes. The replay completed under repository-wide concurrency; all 594 files and 8,239 tests passed at exact 60,643/60,643 statements, 45,850/45,850 branches, 12,619/12,619 functions, and 58,388/58,388 lines. ESLint, zero-duplicate gates, TypeScript surfaces, package/SDK parity, refusal/token/graph/record assurance, secret scanning, packed npx/bunx across 13 packages, 88-command package-first dogfood, and every release gate passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-31T15:07:56.067Z","harness:codex","Generated guidance and human docs need one measured source of truth plus a drift gate, otherwise an obsolete cheaper-looking protocol propagates across every agent surface."
+files[5]{path,scope,note}:
+  AGENTS.md,project,Repository agent workflow quickstart
+  README.md,project,User-facing canonical orientation
+  scripts/release/agent-task-token-gate.mjs,project,Measured orientation capability normalization and refusal contract
+  src/sdk/init-agent-guidance.ts,project,Generated canonical agent workflow
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Orientation capability container and canonicalization coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,240,"harness:codex","2026-08-31T13:57:44.848Z",local_mutation,feat/progressive-capability-discovery
+test_runs[5]:
+  - run_id: test-local-mthdjjtu-37arco
+    kind: test
+    status: passed
+    started_at: "2026-08-31T15:08:55.610Z"
+    finished_at: "2026-08-31T15:09:30.018Z"
+    recorded_at: "2026-08-31T15:09:30.018Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mthujpge-814tza
+    kind: test
+    status: passed
+    started_at: "2026-08-31T23:04:59.152Z"
+    finished_at: "2026-08-31T23:05:30.782Z"
+    recorded_at: "2026-08-31T23:05:30.782Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mthyphyo-jcq7sv
+    kind: test
+    status: passed
+    started_at: "2026-09-01T01:01:24.471Z"
+    finished_at: "2026-09-01T01:01:59.472Z"
+    recorded_at: "2026-09-01T01:01:59.472Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtib4x2f-n9qpi1
+    kind: test
+    status: passed
+    started_at: "2026-09-01T06:49:23.983Z"
+    finished_at: "2026-09-01T06:49:54.279Z"
+    recorded_at: "2026-09-01T06:49:54.279Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mticnhhq-n1rdu9
+    kind: test
+    status: passed
+    started_at: "2026-09-01T07:31:49.987Z"
+    finished_at: "2026-09-01T07:32:20.174Z"
+    recorded_at: "2026-09-01T07:32:20.174Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Detailed measured orientation protocol
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Release-gated orientation evidence
+close_reason: "The real-transport token gate now preserves strict payload parity while emitting an actionable first-difference pointer, with focused, repeated, linked, and full-preflight proof."
+body: "## Historical premise (superseded)\nThis item was promoted from the pm-mpbb DX ledger on 2026-07-11, when the pm-a22j baseline gate opened. Its original proposal treated `pm contracts --summary` followed by `pm next` as the cheapest complete cold start. That proposal is retained in immutable history, but later replay measurement disproved it as the canonical workflow.\n\n## Current measured contract\nThe canonical read-only orientation is one intent-routed call: `pm context --limit 10 --for orient`. The fixed 101-item replay measured it at 1,055 estimated tokens, versus 2,293 for the historical four-read sequence and 4,798 for contracts plus next. Human docs and generated guidance must name the measured winner and the release gate must fail if a more expensive protocol becomes canonical.\n\n## Scope\nDocumentation and instruction templates only: AGENTS.md, the README agent section, the Agent Guide, and generated Claude/Codex/ChatGPT-aligned guidance consume the same measured protocol. Cite the agent-task replay baseline as evidence.\n\n## Constraint\nNo new top-level commands. Preserve the original premise in append-only history while keeping live item metadata aligned with the measured contract."

@@ -10,6 +10,7 @@ type ClaudeModule = typeof claudePluginSmokeModule;
 
 const REQUIRED_TOOLS = [
   "pm_run",
+  "pm_discover",
   "pm_context",
   "pm_next",
   "pm_search",

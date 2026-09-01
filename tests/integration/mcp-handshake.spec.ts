@@ -37,12 +37,13 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 // pm-kl11: MCP protocol handshake coverage. These tests drive handleRequest
 // directly (the same entry point the stdio transport calls per JSON-RPC line)
-// to lock the initialize/tools-list/tools-call contract, the 25-tool surface
+// to lock the initialize/tools-list/tools-call contract, the 32-tool surface
 // (incl. the pm-hywv narrow tools and the pm-v68d/pm-7u9j workspace tools),
 // the unknown-tool error path, and the pm-qxwu typo-warning behavior.
 
 const EXPECTED_TOOL_NAMES = [
   "pm_run",
+  "pm_discover",
   "pm_context",
   "pm_next",
   "pm_search",
@@ -287,7 +288,7 @@ describe("MCP protocol handshake", () => {
     });
   });
 
-  it("tools/list returns exactly the 31 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 32 expected tools including progressive discovery", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
@@ -301,7 +302,7 @@ describe("MCP protocol handshake", () => {
     };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(31);
+    expect(tools).toHaveLength(32);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));

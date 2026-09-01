@@ -222,6 +222,7 @@ export const PM_CORE_HELP_BUDGET = Object.freeze({
 /** Root options retained in the compact progressive-disclosure help screen. */
 export const PM_CORE_HELP_OPTION_FLAGS: readonly string[] = Object.freeze([
   "-V, --version",
+  "--all",
   "--json",
   "--output-include <fields>",
   "--output-limit <count>",
@@ -374,6 +375,7 @@ export const PM_MCP_TOOL_COMMAND_CONTRACTS: Readonly<Record<string, string>> =
     pm_copy: "copy",
     pm_create: "create",
     pm_deps: "deps",
+    pm_discover: "help",
     pm_docs: "docs",
     pm_events: "history",
     pm_files: "files",

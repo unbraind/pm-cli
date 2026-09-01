@@ -6,6 +6,7 @@ import {
   assertAdvertisedAgentTaskRecovery,
   assertMatchingAgentTaskFixtureAnchors,
   compareAgentTaskTokenBaseline,
+  evaluateOrientationProtocolSelection,
   evaluateAgentTaskTokenReport,
   finalizeAgentTaskTokenReport,
   main,
@@ -30,12 +31,20 @@ describe("agent-task transcript token gate", () => {
   const report = {
     transcript_digest: "sha256:test",
     composite_estimated_tokens: 30,
+    orientation: {
+      canonical_task_id: "orientation-context-intent",
+      measured_winner_tokens: 30,
+    },
     tasks: [{ id: "context", estimated_tokens: 30, steps }],
   };
   const baseline = {
-    version: 3,
+    version: 4,
     transcript_digest: "sha256:test",
     composite_max_estimated_tokens: 30,
+    orientation: {
+      canonical_task_id: "orientation-context-intent",
+      measured_winner_tokens: 30,
+    },
     tasks: [
       {
         id: "context",
@@ -55,6 +64,322 @@ describe("agent-task transcript token gate", () => {
       },
     ],
   };
+  const orientationReport = {
+    tasks: [
+      {
+        id: "orientation-context-intent",
+        step_count: 1,
+        estimated_tokens: 300,
+        steps: [
+          {
+            id: "context",
+            verified_fields: ["summary.active_items", "activity"],
+          },
+        ],
+      },
+      {
+        id: "orientation-contracts-next",
+        step_count: 2,
+        estimated_tokens: 800,
+        steps: [
+          { id: "contracts", verified_fields: ["commands"] },
+          {
+            id: "next",
+            verified_fields: ["summary.in_progress", "recommended.id"],
+          },
+        ],
+      },
+    ],
+  };
+  const orientation = {
+    canonical_task_id: "orientation-context-intent",
+    required_capabilities: ["state", "ownership"],
+    protocols: [
+      {
+        task_id: "orientation-context-intent",
+        capabilities: ["ownership", "state"],
+        capability_evidence: {
+          ownership: [{ step_id: "context", field_path: "activity" }],
+          state: [{ step_id: "context", field_path: "summary.active_items" }],
+        },
+      },
+      {
+        task_id: "orientation-contracts-next",
+        capabilities: ["state", "ownership"],
+        capability_evidence: {
+          ownership: [{ step_id: "next", field_path: "summary.in_progress" }],
+          state: [{ step_id: "next", field_path: "recommended.id" }],
+        },
+      },
+    ],
+  };
+
+  it("selects the lowest-token equivalent orientation protocol", () => {
+    expect(
+      evaluateOrientationProtocolSelection(orientationReport, orientation),
+    ).toMatchObject({
+      canonical_task_id: "orientation-context-intent",
+      measured_winner_tokens: 300,
+      protocols: [
+        { task_id: "orientation-context-intent", command_count: 1 },
+        { task_id: "orientation-contracts-next", command_count: 2 },
+      ],
+    });
+  });
+
+  it("rejects a canonical orientation that is not the measured winner", () => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        canonical_task_id: "orientation-contracts-next",
+      }),
+    ).toThrow();
+  });
+
+  it.each([
+    undefined,
+    null,
+    [],
+    { state: [{ step_id: "next", field_path: "recommended.id" }] },
+  ])("rejects malformed capability evidence: %j", (capabilityEvidence) => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capability_evidence: capabilityEvidence,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it.each([
+    null,
+    { step_id: " ", field_path: "recommended.id" },
+    { step_id: "next", field_path: 42 },
+    { step_id: "next", field_path: " " },
+    { step_id: "missing", field_path: "recommended.id" },
+  ])("rejects an invalid capability evidence reference: %j", (reference) => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capability_evidence: {
+              ...orientation.protocols[1].capability_evidence,
+              state: [reference],
+            },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects a measured protocol without step evidence", () => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(
+        {
+          tasks: orientationReport.tasks.map((task) =>
+            task.id === "orientation-contracts-next"
+              ? { ...task, steps: undefined }
+              : task,
+          ),
+        },
+        orientation,
+      ),
+    ).toThrow();
+  });
+
+  it.each(orientation.required_capabilities)(
+    "rejects empty %s capability evidence",
+    (capability) => {
+      expect(() =>
+        evaluateOrientationProtocolSelection(orientationReport, {
+          ...orientation,
+          protocols: orientation.protocols.map((protocol) => ({
+            ...protocol,
+            capability_evidence: {
+              ...protocol.capability_evidence,
+              [capability]: [],
+            },
+          })),
+        }),
+      ).toThrow();
+    },
+  );
+
+  it("rejects capability evidence for an unverified field", () => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capability_evidence: {
+              ...orientation.protocols[1].capability_evidence,
+              state: [{ step_id: "next", field_path: "missing" }],
+            },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("reports malformed required capabilities", () => {
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        required_capabilities: "state",
+      }),
+    ).toThrow();
+    expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
+      "Agent-task orientation required_capabilities must be an array of non-blank strings",
+    );
+  });
+
+  it("reports a missing orientation protocol contract", () => {
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: undefined,
+      }),
+    ).toThrow();
+    expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
+      "Agent-task orientation protocol contract is incomplete",
+    );
+  });
+
+  it("reports malformed protocol capabilities", () => {
+    const invalidCapabilityLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            ...orientation.protocols[1],
+            capabilities: "state",
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(invalidCapabilityLog).toHaveBeenLastCalledWith(
+      "Agent-task orientation protocol capabilities must be an array of non-blank strings",
+    );
+  });
+
+  it("normalizes and deduplicates capability names", () => {
+    expect(
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        required_capabilities: [" state ", "ownership", "state"],
+        protocols: orientation.protocols.map((protocol) => ({
+          ...protocol,
+          capabilities: [" ownership", "state ", "state"],
+        })),
+      }).required_capabilities,
+    ).toEqual(["ownership", "state"]);
+  });
+
+  it("rejects an entirely absent orientation protocol contract", () => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        canonical_task_id: "orientation-context-intent",
+        required_capabilities: undefined,
+        protocols: undefined,
+      }),
+    ).toThrow();
+  });
+
+  it("orders equal-token protocols with locale-independent identifiers", () => {
+    expect(
+      evaluateOrientationProtocolSelection(
+        {
+          tasks: orientationReport.tasks.map((task) => ({
+            ...task,
+            estimated_tokens: 300,
+          })),
+        },
+        orientation,
+      ).protocols.map(({ task_id }) => task_id),
+    ).toEqual(["orientation-context-intent", "orientation-contracts-next"]);
+    const mixedCaseTasks = ["a-orientation", "Z-orientation"].map((id) => ({
+      id,
+      step_count: 1,
+      estimated_tokens: 300,
+      steps: [{ id: "context", verified_fields: ["state"] }],
+    }));
+    expect(
+      evaluateOrientationProtocolSelection(
+        { tasks: mixedCaseTasks },
+        {
+          canonical_task_id: "Z-orientation",
+          required_capabilities: ["state"],
+          protocols: mixedCaseTasks.map((task) => ({
+            task_id: task.id,
+            capabilities: ["state"],
+            capability_evidence: {
+              state: [{ step_id: "context", field_path: "state" }],
+            },
+          })),
+        },
+      ).protocols.map(({ task_id }) => task_id),
+    ).toEqual(["Z-orientation", "a-orientation"]);
+  });
+
+  it("rejects a protocol without capability evidence", () => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [
+          orientation.protocols[0],
+          {
+            task_id: "orientation-contracts-next",
+            capabilities: ["state"],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects duplicate protocol task identifiers", () => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        protocols: [orientation.protocols[0], orientation.protocols[0]],
+      }),
+    ).toThrow();
+  });
+
+  it.each([
+    { capabilities: ["state", "ownership", 42] },
+    { capabilities: ["state", "ownership", " "] },
+  ])("rejects invalid capability values: $capabilities", ({ capabilities }) => {
+    expect(() =>
+      evaluateOrientationProtocolSelection(orientationReport, {
+        ...orientation,
+        required_capabilities: capabilities,
+        protocols: orientation.protocols.map((protocol) => ({
+          ...protocol,
+          capabilities,
+        })),
+      }),
+    ).toThrow();
+  });
 
   it("accepts an exact per-task baseline and detects a seeded regression", () => {
     expect(compareAgentTaskTokenBaseline(report, baseline)).toEqual([]);
@@ -141,6 +466,21 @@ describe("agent-task transcript token gate", () => {
       "task:context:step:inspect:missing_baseline",
       "task:context:step_count:2!=0",
     ]);
+    expect(
+      compareAgentTaskTokenBaseline(
+        {
+          ...report,
+          orientation: { canonical_task_id: "new", measured_winner_tokens: 31 },
+        },
+        {
+          ...baseline,
+          orientation: {
+            canonical_task_id: "old",
+            measured_winner_tokens: 30,
+          },
+        },
+      ),
+    ).toContain("orientation:canonical_or_token_ceiling_drift");
     expect(() =>
       evaluateAgentTaskTokenReport(report, { ...baseline, version: 1 }),
     ).toThrow();
@@ -220,6 +560,41 @@ describe("agent-task transcript token gate", () => {
         "task:context:missing_baseline_limit",
         "composite:missing_baseline_limit",
       ]);
+    },
+  );
+
+  it.each([
+    [undefined, 30],
+    ["30", 30],
+    [30, undefined],
+    [30, "30"],
+  ])(
+    "fails closed on invalid orientation ceilings (%s, %s)",
+    (baselineWinnerTokens, reportWinnerTokens) => {
+      expect(
+        compareAgentTaskTokenBaseline(
+          {
+            ...report,
+            orientation:
+              reportWinnerTokens === undefined
+                ? { canonical_task_id: report.orientation.canonical_task_id }
+                : {
+                    ...report.orientation,
+                    measured_winner_tokens: reportWinnerTokens,
+                  },
+          },
+          {
+            ...baseline,
+            orientation:
+              baselineWinnerTokens === undefined
+                ? { canonical_task_id: baseline.orientation.canonical_task_id }
+                : {
+                    ...baseline.orientation,
+                    measured_winner_tokens: baselineWinnerTokens,
+                  },
+          },
+        ),
+      ).toContain("orientation:canonical_or_token_ceiling_drift");
     },
   );
 
@@ -330,6 +705,9 @@ describe("agent-task transcript token gate", () => {
         step,
       ),
     ).toThrow();
+    const payloadDriftLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     expect(() =>
       validateAgentTaskTokenInvocation(
         {
@@ -340,6 +718,9 @@ describe("agent-task transcript token gate", () => {
         step,
       ),
     ).toThrow();
+    expect(payloadDriftLog).toHaveBeenLastCalledWith(
+      "Agent-task transcript step validation changed its application payload when token accounting was enabled; first_difference=replace:/items/0/id",
+    );
     expect(() =>
       validateAgentTaskTokenInvocation(
         validBaseline,
@@ -568,9 +949,9 @@ describe("agent-task transcript token gate", () => {
 
     const updated = await main(["--update", "--baseline", baselinePath]);
     expect(updated).toMatchObject({
-      task_count: 5,
-      completed_task_count: 5,
-      step_count: 14,
+      task_count: 8,
+      completed_task_count: 8,
+      step_count: 21,
       retry_count: 2,
     });
     const updatedBaseline = JSON.parse(

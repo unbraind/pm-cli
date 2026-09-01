@@ -36,6 +36,7 @@ const documentationPath = path.join(
 );
 const LATENCY_NOISE_MARGIN_MS = 25;
 const RSS_NOISE_MARGIN_BYTES = 512 * 1024;
+const DEFAULT_ITERATIONS = 10;
 const OPERATION_NAMES = Object.freeze([
   "get",
   "list",
@@ -113,7 +114,7 @@ async function measureColdStartOperation(operation, iteration, options) {
 
 /** Measure every required command on fresh one-item workspaces. */
 export async function buildCliTransportFloorReport(options = {}) {
-  const iterations = Number(options.iterations ?? 3);
+  const iterations = Number(options.iterations ?? DEFAULT_ITERATIONS);
   if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > 20) {
     throw new Error("iterations must be an integer between 1 and 20");
   }
@@ -240,12 +241,14 @@ admission reliability owned by
 Each result starts from a fresh isolated workspace containing exactly one item.
 The command runs in a fresh Node ${report.node_version} process on
 ${report.platform}/${report.architecture}; setup and fixture generation are
-outside the timed interval. Short local gates use the best observed latency,
-while the report retains p50 and p95 evidence. RSS admission uses the measured
-median so one page-level outlier cannot false-fail the gate; the maximum remains
-in the report as diagnostic evidence. Every post-warmup RSS sample must be a
-finite measurement; an unavailable sample makes the admission median unavailable
-and fails closed when a budget exists. Admission adds a fixed 512 KiB noise margin
+outside the timed interval. This report measures ${report.iterations} post-warmup fresh
+processes per command and uses the best observed latency,
+which keeps the immutable ratchets meaningful under transient host contention;
+the report retains p50 and p95 evidence. RSS admission uses the measured median
+so one page-level outlier cannot false-fail the gate; the maximum remains in the
+report as diagnostic evidence. Every post-warmup RSS sample must be a finite
+measurement; an unavailable sample makes the admission median unavailable and
+fails closed when a budget exists. Admission adds a fixed 512 KiB noise margin
 without changing the committed budget; a majority persistent increase beyond
 that bounded margin still fails.
 
@@ -286,7 +289,10 @@ function parseArguments(argv) {
   const iterationsIndex = argv.indexOf("--iterations");
   return {
     mode: update ? "update" : "check",
-    iterations: iterationsIndex === -1 ? 3 : Number(argv[iterationsIndex + 1]),
+    iterations:
+      iterationsIndex === -1
+        ? DEFAULT_ITERATIONS
+        : Number(argv[iterationsIndex + 1]),
   };
 }
 

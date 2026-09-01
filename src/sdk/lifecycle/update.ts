@@ -2168,6 +2168,30 @@ type UpdateStatusMutationContext = Pick<
   "options" | "statusRegistry" | "clearItemMetadataKeys" | "nowIso"
 >;
 
+const TERMINAL_EVIDENCE_METADATA_KEYS = [
+  "closed_at",
+  "completed_at",
+  "close_reason",
+  "resolution",
+  "expected_result",
+  "actual_result",
+  "fixed_version",
+] as const;
+
+/** Remove stale terminal evidence when work returns to an active lifecycle. */
+function clearTerminalEvidence(
+  metadata: ItemMetadata,
+  changedFields: string[],
+): void {
+  for (const key of TERMINAL_EVIDENCE_METADATA_KEYS) {
+    if (metadata[key] === undefined) {
+      continue;
+    }
+    delete metadata[key];
+    changedFields.push(key);
+  }
+}
+
 function applyStatusMutation(
   document: ItemDocument,
   context: UpdateStatusMutationContext,
@@ -2190,15 +2214,9 @@ function applyStatusMutation(
   }
   if (
     !isTerminalStatus(status, context.statusRegistry) &&
-    isTerminalStatus(previousStatusNormalized, context.statusRegistry) &&
-    document.metadata.closed_at !== undefined
+    isTerminalStatus(previousStatusNormalized, context.statusRegistry)
   ) {
-    delete document.metadata.closed_at;
-    changedFields.push("closed_at");
-    if (document.metadata.completed_at !== undefined) {
-      delete document.metadata.completed_at;
-      changedFields.push("completed_at");
-    }
+    clearTerminalEvidence(document.metadata, changedFields);
   }
 }
 

@@ -43,6 +43,13 @@ import {
   PM_MCP_PROMPT_CONTRACTS,
   PM_MCP_RESOURCE_CONTRACTS,
 } from "../sdk/agent-capability-contracts.js";
+import {
+  PM_MCP_ENTRY_TOOL_NAMES,
+  PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+  PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
+  discoverPmTools,
+  parsePmToolDiscoveryOptions,
+} from "../sdk/mcp/discovery.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
 import {
   isRuntimeRecord,
@@ -168,6 +175,8 @@ const PM_MCP_SERVER_CAPABILITIES: PmMcpServerCapabilities = {
     [PM_MCP_TASKS_EXTENSION]: {},
     [PM_MCP_APPS_EXTENSION]: PM_MCP_APPS_SERVER_CAPABILITY,
     [PM_MCP_SKILLS_EXTENSION]: PM_MCP_SKILLS_SERVER_CAPABILITY,
+    [PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION]:
+      PM_MCP_PROGRESSIVE_DISCOVERY_SERVER_CAPABILITY,
   },
 };
 type PmMcpTransportSubscriptionKey = PmMcpSubscriptionId | symbol;
@@ -218,6 +227,7 @@ const PM_MCP_SKILL_METHODS = new Set([
 ]);
 const PM_MCP_INSTRUCTIONS =
   "You have access to native pm CLI tools for git-based project management. " +
+  "When progressive discovery is negotiated, use pm_discover to expand the small entry catalog by intent and request schemas only when needed. " +
   "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
   "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_events, pm_create, pm_mutate, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_graph, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
   "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
@@ -280,6 +290,20 @@ function nearestDeclaredKey(
 const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
 const MCP_RETRY_ARGUMENT_KEYS = new Set(["inputResponses", "requestState"]);
 
+/** Resolve the optional shared cursor key without exposing it to tool input. */
+function resolveMcpDiscoveryCursorIntegrityKey(): Uint8Array | undefined {
+  const configuredKey = process.env.PM_MCP_DISCOVERY_CURSOR_KEY;
+  if (configuredKey === undefined) return undefined;
+  const key = Buffer.from(configuredKey, "utf8");
+  if (key.byteLength < 32) {
+    throw new PmCliError(
+      "PM_MCP_DISCOVERY_CURSOR_KEY must contain at least 32 UTF-8 bytes.",
+      64,
+    );
+  }
+  return key;
+}
+
 function detectUnexpectedTopLevelKeys(
   toolName: string,
   args: Record<string, unknown>,
@@ -313,6 +337,32 @@ function detectUnexpectedTopLevelKeys(
 
 const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runMcpAction(args as PmActionInput),
+  pm_discover: async (args) => {
+    const surface = await resolveMcpToolSurface(TOOLS, args);
+    const cursorIntegrityKey = resolveMcpDiscoveryCursorIntegrityKey();
+    const discoveryOptions = parsePmToolDiscoveryOptions(args);
+    return discoverPmTools(
+      surface.tools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        authorized: true,
+        signals: {
+          freshness: 1,
+          usage: PM_MCP_ENTRY_TOOL_NAMES.includes(tool.name) ? 1 : 0,
+        },
+      })),
+      {
+        ...discoveryOptions,
+        profile: surface.profile,
+        ...(cursorIntegrityKey === undefined
+          ? {}
+          : {
+              cursorIntegrityKey,
+            }),
+      },
+    );
+  },
   pm_mutate: async (args) => {
     const transactionId = readRequiredString(args, "transactionId");
     const controls = parseAtomicMutationControls(args);
@@ -466,6 +516,7 @@ function resultContent(
   result: unknown,
   warnings?: string[],
   tokenAccounting = false,
+  canonicalStructuredResult = false,
 ): Record<string, unknown> {
   const effectiveResult = tokenAccounting
     ? attachOutputTokenAccounting(result, (value) =>
@@ -482,14 +533,19 @@ function resultContent(
     content: [
       {
         type: "text",
-        text: JSON.stringify(effectiveResult, null, 2),
+        text: canonicalStructuredResult
+          ? "Canonical result: structuredContent.result"
+          : JSON.stringify(effectiveResult, null, 2),
       },
     ],
     structuredContent,
   };
 }
 
-function errorContent(error: unknown): Record<string, unknown> {
+function errorContent(
+  error: unknown,
+  canonicalStructuredResult = false,
+): Record<string, unknown> {
   const code = error instanceof PmCliError ? error.exitCode : 1;
   const message = error instanceof Error ? error.message : String(error);
   const details = error instanceof PmCliError ? error.context : undefined;
@@ -498,7 +554,9 @@ function errorContent(error: unknown): Record<string, unknown> {
     content: [
       {
         type: "text",
-        text: JSON.stringify({ error: message, code, details }, null, 2),
+        text: canonicalStructuredResult
+          ? "Canonical error: structuredContent"
+          : JSON.stringify({ error: message, code, details }, null, 2),
       },
     ],
     // Keep `result` present on the error envelope so consumers can read
@@ -578,6 +636,7 @@ async function emitMcpChangeNotifications(
 async function handleToolCall(
   paramsInput: Record<string, unknown> | undefined,
   clientInfo: AgentClientInfo | undefined,
+  progressiveDiscoveryNegotiated = false,
 ): Promise<Record<string, unknown>> {
   return runWithHarnessDetectionSignals(
     {
@@ -598,6 +657,7 @@ async function handleToolCall(
         params.inputResponses === undefined
           ? undefined
           : parseMcpInputResponses(params.inputResponses);
+      validateMcpToolArguments(params.arguments);
       const requestedArgs = {
         ...decodeHtmlEntitiesInOptions(asRecordClone(params.arguments)),
         ...(inputResponses ? { inputResponses } : {}),
@@ -606,7 +666,11 @@ async function handleToolCall(
           : {}),
       };
       const access = await resolveMcpToolAccess(TOOLS, name, requestedArgs);
-      if (!access.available) {
+      const requiredCustomDiscoveryEntry =
+        progressiveDiscoveryNegotiated &&
+        access.profile === "custom" &&
+        name === "pm_discover";
+      if (!access.available && !requiredCustomDiscoveryEntry) {
         throw new PmCliError(
           `pm MCP tool "${name}" is unavailable in the ${access.profile} profile.`,
           64,
@@ -646,7 +710,12 @@ async function handleToolCall(
           // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
           const result = await handler(args);
           void emitMcpChangeNotifications(action);
-          return resultContent(result, warnings, args.tokenAccounting === true);
+          return resultContent(
+            result,
+            warnings,
+            args.tokenAccounting === true,
+            progressiveDiscoveryNegotiated,
+          );
         },
         { probesEnabled: workspaceIdentity?.probes_enabled },
       );
@@ -738,7 +807,14 @@ export function buildMcpToolCallErrorResult(
   if (request.method !== "tools/call" || error instanceof PmMcpProtocolError) {
     return undefined;
   }
-  const content = errorContent(error);
+  const content = errorContent(
+    error,
+    hasMcpProtocolVersionMetadata(request) &&
+      hasMcpClientExtension(
+        resolveMcpRequestContext(request.params),
+        PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+      ),
+  );
   return hasMcpProtocolVersionMetadata(request)
     ? buildMcpCompleteResult(content, PM_MCP_SERVER_INFO)
     : content;
@@ -900,6 +976,13 @@ function mcpTaskStore(): PmMcpTaskStore {
   });
 }
 
+/** Rejects malformed MCP tool argument containers before dispatch. */
+function validateMcpToolArguments(value: unknown): void {
+  if (value !== undefined && !isMcpRecord(value)) {
+    throw new PmCliError("pm MCP tool arguments must be an object.", 64);
+  }
+}
+
 function shouldCreateMcpTask(
   params: Record<string, unknown> | undefined,
   requestContext: PmMcpRequestContext,
@@ -945,7 +1028,14 @@ async function executeMcpTask(
     ...(execution.requestState ? { requestState: execution.requestState } : {}),
   };
   try {
-    const result = await handleToolCall(params, execution.context.clientInfo);
+    const result = await handleToolCall(
+      params,
+      execution.context.clientInfo,
+      hasMcpClientExtension(
+        execution.context,
+        PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+      ),
+    );
     await execution.store.complete(
       execution.taskId,
       execution.principal,
@@ -974,7 +1064,16 @@ async function executeMcpTask(
       await execution.store.complete(
         execution.taskId,
         execution.principal,
-        buildMcpCompleteResult(errorContent(error), PM_MCP_SERVER_INFO),
+        buildMcpCompleteResult(
+          errorContent(
+            error,
+            hasMcpClientExtension(
+              execution.context,
+              PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+            ),
+          ),
+          PM_MCP_SERVER_INFO,
+        ),
       );
     }
     PENDING_MCP_TASKS.delete(execution.taskId);
@@ -1082,24 +1181,47 @@ async function dispatchModernToolMethod(
       TOOLS,
       requestWorkspaceArgs(request.params),
     );
+    const progressiveDiscovery = hasMcpClientExtension(
+      requestContext,
+      PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+    );
+    const listedTools = progressiveDiscovery
+      ? [
+          ...surface.tools.filter((tool) =>
+            PM_MCP_ENTRY_TOOL_NAMES.includes(tool.name),
+          ),
+          ...(surface.profile === "custom" &&
+          !surface.tools.some((tool) => tool.name === "pm_discover")
+            ? TOOLS.filter((tool) => tool.name === "pm_discover")
+            : []),
+        ]
+      : surface.tools;
     return buildMcpCompleteResult(
       withMcpCachePolicy(
         {
           tools: hasCompatiblePmMcpAppsCapability(requestContext)
-            ? decoratePmMcpToolsWithApps(deterministicMcpTools(surface.tools))
-            : deterministicMcpTools(surface.tools),
+            ? decoratePmMcpToolsWithApps(deterministicMcpTools(listedTools))
+            : deterministicMcpTools(listedTools),
         },
         PM_MCP_CACHE_POLICIES.tools,
       ),
       PM_MCP_SERVER_INFO,
     );
   }
+  validateMcpToolArguments(request.params?.arguments);
   if (shouldCreateMcpTask(request.params, requestContext)) {
     return createMcpTaskForToolCall(request.params, requestContext);
   }
   try {
     return buildMcpCompleteResult(
-      await handleToolCall(request.params, clientInfo),
+      await handleToolCall(
+        request.params,
+        clientInfo,
+        hasMcpClientExtension(
+          requestContext,
+          PM_MCP_PROGRESSIVE_DISCOVERY_EXTENSION,
+        ),
+      ),
       PM_MCP_SERVER_INFO,
     );
   } catch (error: unknown) {

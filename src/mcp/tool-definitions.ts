@@ -202,6 +202,62 @@ const RAW_TOOLS: ToolDefinition[] = [
     ),
   },
   {
+    name: "pm_discover",
+    description:
+      "Discover the smallest relevant authorized pm tool catalog under an explicit token budget. " +
+      "Ranking is deterministic and returns public lexical, semantic, graph, permission, freshness, and usage signal explanations. " +
+      "Continue with next_cursor; set includeSchema=true only when complete input schemas are needed.",
+    inputSchema: objectSchema({
+      query: {
+        type: "string",
+        maxLength: 4096,
+        description:
+          "Free-text capability intent. Empty text lists by stable policy order.",
+      },
+      family: {
+        type: "string",
+        enum: [
+          "workspace",
+          "intake",
+          "context",
+          "lifecycle",
+          "evidence",
+          "graph",
+          "quality",
+          "automation",
+          "extensions",
+          "internal",
+        ],
+        description: "Optional stable capability-family filter.",
+      },
+      tier: {
+        type: "string",
+        enum: ["core", "standard", "full"],
+        description: "Maximum command visibility tier included in results.",
+      },
+      limit: {
+        type: "integer",
+        minimum: 1,
+        maximum: 100,
+        description: "Maximum result rows; defaults to 10.",
+      },
+      cursor: {
+        type: "string",
+        minLength: 1,
+        maxLength: 4096,
+        description: "Opaque next_cursor from an equivalent discovery request.",
+      },
+      includeSchema: {
+        type: "boolean",
+        description: "Include complete tool input schemas; false by default.",
+      },
+      outputBudget: {
+        anyOf: [{ type: "integer", minimum: 128 }, { const: "unbounded" }],
+        description: "Estimated-token ceiling; defaults to 1200.",
+      },
+    }),
+  },
+  {
     name: "pm_context",
     description:
       "Return the agent-oriented project context snapshot. " +

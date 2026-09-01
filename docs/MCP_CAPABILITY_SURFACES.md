@@ -1,6 +1,6 @@
 # Runtime capability surfaces
 
-Tracker: [pm-xwah](../.agents/pm/chores/pm-xwah.toon), [pm-kxci8x](../.agents/pm/tasks/pm-kxci8x.toon), [pm-mu8m](../.agents/pm/tasks/pm-mu8m.toon), [pm-9k90](../.agents/pm/features/pm-9k90.toon), [pm-m4ikkz](../.agents/pm/features/pm-m4ikkz.toon), [pm-yf07b7](../.agents/pm/features/pm-yf07b7.toon)
+Tracker: [pm-xwah](../.agents/pm/chores/pm-xwah.toon), [pm-kxci8x](../.agents/pm/tasks/pm-kxci8x.toon), [pm-mu8m](../.agents/pm/tasks/pm-mu8m.toon), [pm-9k90](../.agents/pm/features/pm-9k90.toon), [pm-m4ikkz](../.agents/pm/features/pm-m4ikkz.toon), [pm-yf07b7](../.agents/pm/features/pm-yf07b7.toon), and [pm-3g3f8z](../.agents/pm/features/pm-3g3f8z.toon).
 
 The SDK exports one agent capability contract for command visibility, MCP tool profiles, resources, and workflow prompts. CLI-facing generators and MCP hosts should project from these contracts instead of maintaining independent allowlists.
 
@@ -14,6 +14,12 @@ Set `PM_MCP_PROFILE` for the `pm-mcp` process:
 - `custom` exposes exactly the comma-separated tool names in `PM_MCP_TOOLS`. Unknown or empty allowlists fail with exit code 64.
 
 An activated extension command makes `pm_run` discoverable outside a custom profile. Its action is added to the live `pm_run` action enumeration. Custom profiles remain exact allowlists.
+
+## Progressive discovery
+
+Modern clients may negotiate `dev.unbrained.pm/progressive-tool-discovery`. Their initial `tools/list` response is the stable five-tool entry catalog, and `pm_discover` expands authorized tools by intent, family, and tier under explicit row and token ceilings. Unnegotiated and initialize-era clients retain the full selected profile.
+
+The SDK ranks with visible lexical, semantic, graph, permission, freshness, and usage signals, binds cursors to all ranking inputs, and emits omission recovery plus cache invalidation metadata. Negotiated tool calls make `structuredContent.result` canonical and replace duplicated JSON text with a pointer; compatibility clients retain the old representation. See [Progressive Tool Discovery](PROGRESSIVE_TOOL_DISCOVERY.md).
 
 Package authors can declare `tier: "core" | "standard" | "full" | "internal"` on `registerCommand()` definitions. The default is `standard`; `internal` commands remain callable by native dispatch but are not advertised by normal MCP profiles.
 

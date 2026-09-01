@@ -1,11 +1,165 @@
 {
-  "version": 3,
+  "version": 4,
   "transcript_version": 2,
-  "transcript_digest": "sha256:2bf91406426d2a9e5de1da10ba67f7b8e9d4a4baa09eb488fe89ae3925c78f3f",
+  "transcript_digest": "sha256:4f9e96bb6ce12bbbeb2514e4bd5958d201c4e62e95083bcbebd749d1e48cc82d",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
+  "orientation": {
+    "canonical_task_id": "orientation-context-intent",
+    "required_capabilities": [
+      "actionable_work",
+      "active_ownership",
+      "workspace_state"
+    ],
+    "measured_winner_tokens": 1055,
+    "protocols": [
+      {
+        "task_id": "orientation-context-intent",
+        "command_count": 1,
+        "estimated_tokens": 1055,
+        "capabilities": [
+          "actionable_work",
+          "active_ownership",
+          "workspace_state"
+        ],
+        "capability_evidence": {
+          "actionable_work": [
+            {
+              "step_id": "context",
+              "field_path": "hierarchy"
+            }
+          ],
+          "active_ownership": [
+            {
+              "step_id": "context",
+              "field_path": "activity"
+            }
+          ],
+          "workspace_state": [
+            {
+              "step_id": "context",
+              "field_path": "summary.active_items"
+            }
+          ]
+        }
+      },
+      {
+        "task_id": "orientation-operating-rules",
+        "command_count": 4,
+        "estimated_tokens": 2293,
+        "capabilities": [
+          "actionable_work",
+          "active_ownership",
+          "workspace_state"
+        ],
+        "capability_evidence": {
+          "actionable_work": [
+            {
+              "step_id": "open",
+              "field_path": "items"
+            }
+          ],
+          "active_ownership": [
+            {
+              "step_id": "in-progress",
+              "field_path": "items"
+            }
+          ],
+          "workspace_state": [
+            {
+              "step_id": "context",
+              "field_path": "summary.active_items"
+            }
+          ]
+        }
+      },
+      {
+        "task_id": "orientation-contracts-next",
+        "command_count": 2,
+        "estimated_tokens": 4798,
+        "capabilities": [
+          "actionable_work",
+          "active_ownership",
+          "workspace_state"
+        ],
+        "capability_evidence": {
+          "actionable_work": [
+            {
+              "step_id": "next",
+              "field_path": "recommended.id"
+            }
+          ],
+          "active_ownership": [
+            {
+              "step_id": "next",
+              "field_path": "held_by_others"
+            }
+          ],
+          "workspace_state": [
+            {
+              "step_id": "next",
+              "field_path": "summary.in_progress"
+            }
+          ]
+        }
+      }
+    ]
+  },
   "tasks": [
+    {
+      "id": "orientation-context-intent",
+      "max_estimated_tokens": 1055,
+      "steps": [
+        {
+          "id": "context",
+          "max_estimated_tokens": 1055,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
+    {
+      "id": "orientation-contracts-next",
+      "max_estimated_tokens": 4798,
+      "steps": [
+        {
+          "id": "contracts",
+          "max_estimated_tokens": 4111,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "next",
+          "max_estimated_tokens": 687,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
+    {
+      "id": "orientation-operating-rules",
+      "max_estimated_tokens": 2293,
+      "steps": [
+        {
+          "id": "context",
+          "max_estimated_tokens": 1055,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "search",
+          "max_estimated_tokens": 164,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "open",
+          "max_estimated_tokens": 878,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "in-progress",
+          "max_estimated_tokens": 196,
+          "accounting_mode": "self_reported"
+        }
+      ]
+    },
     {
       "id": "context-bootstrap",
       "max_estimated_tokens": 1978,
@@ -107,5 +261,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 4331
+  "composite_max_estimated_tokens": 12477
 }
