@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1174: Windows Node 24 receipt traversal negative control must fail closed portably ([pm-r97901](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r97901.toon))
+
+### Security
+
+- GH-1173: make merge-receipt evidence diagnostics source-stable and record-addressable ([pm-dn8rwl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dn8rwl.toon))
+
 ## 2026.9.1 - 2026-09-01
 
 ### Added

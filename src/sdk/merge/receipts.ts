@@ -695,7 +695,7 @@ async function receiptDirectoryFailureMeansAbsent(
   ) => Promise<Pick<Stats, "isDirectory">> = stat,
 ): Promise<boolean> {
   if (!isFileMissingError(error)) return false;
-  let ancestor = path.dirname(directory);
+  let ancestor = directory;
   while (true) {
     try {
       return (await inspectAncestor(ancestor)).isDirectory();

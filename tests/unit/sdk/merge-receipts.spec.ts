@@ -529,13 +529,17 @@ describe("clone-local merge decision receipts", () => {
         () => Promise.reject(missingError),
       ),
     ).resolves.toBe(true);
+    const inspectPresentFile = vi.fn(() =>
+      Promise.resolve({ isDirectory: () => false }),
+    );
     await expect(
       _testOnlyMergeReceipts.receiptDirectoryFailureMeansAbsent(
         "/present/receipt-store",
         missingError,
-        () => Promise.resolve({ isDirectory: () => false }),
+        inspectPresentFile,
       ),
     ).resolves.toBe(false);
+    expect(inspectPresentFile).toHaveBeenCalledWith("/present/receipt-store");
   });
 
   it("bounds invalid candidate details while preserving the complete count", async () => {
