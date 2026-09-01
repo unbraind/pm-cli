@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-09-01T15:48:39.964Z"
+updated_at: "2026-09-01T16:04:04.178Z"
 closed_at: "2026-09-01T15:48:39.452Z"
 completed_at: "2026-09-01T15:48:39.452Z"
 author: "harness:claude-code"
@@ -67,4 +67,12 @@ docs[3]{path,scope,note}:
   docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
   docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
 close_reason: Delivered maintenance-invariant substantive-history recency across SDK and CLI
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-07pt16
+  gate_id: substantive-history-recency-maintenance-invariance
+  negative_control: "Apply a dependency-only maintenance mutation after a substantive event and assert the recency coordinate, event class, and workspace relevance order remain unchanged."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),"CI / Run benchmarks (Ubuntu 22.04, Node 24)"
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:performance","area:sdk",benchmark,regression
 created_at: "2026-09-01T14:41:40.376Z"
-updated_at: "2026-09-01T15:48:42.444Z"
+updated_at: "2026-09-01T16:04:05.302Z"
 closed_at: "2026-09-01T15:48:41.851Z"
 completed_at: "2026-09-01T15:48:41.851Z"
 author: "harness:codex"
@@ -35,4 +35,12 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[1]{path,scope,note}:
   docs/PERFORMANCE.md,project,Runtime and baseline-refresh evidence contract
 close_reason: Requalified scale budgets against exact main and delivery head on supported Node 24
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-r8yytk
+  gate_id: supported-node24-shape-qualified-scale-budget
+  negative_control: Run the ordinary scratch 10k scale check against a legacy unqualified or stale observation set and require it to fail before accepting a five-run supported-Node baseline with preserved product ceilings.
+  local_checks[3]: mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-node24-final-report.json,node scripts/run-tests.mjs test -- tests/unit/scripts/scale-benchmark.spec.ts,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[2]: "CI / Run benchmarks (Ubuntu 22.04, Node 24)",CI / Gates (static)
 body: ""
