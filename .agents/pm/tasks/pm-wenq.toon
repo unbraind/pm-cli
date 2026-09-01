@@ -6,19 +6,19 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,governance,quality
 created_at: "2026-07-10T10:34:42.049Z"
-updated_at: "2026-09-01T04:11:12.933Z"
-closed_at: "2026-09-01T04:11:12.285Z"
-completed_at: "2026-09-01T04:11:12.285Z"
+updated_at: "2026-09-01T04:33:34.430Z"
+closed_at: "2026-09-01T04:33:33.553Z"
+completed_at: "2026-09-01T04:33:33.553Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Advisory line on close when resolution/expected/actual missing; require mode exits non-zero with recovery bundle; e2e fixture proves drift stops under warn/require; zero output change when fields provided
 parent: pm-33cw
 risk: low
 confidence: medium
-resolution: Unified terminal-to-active lifecycle cleanup in the SDK-owned update pipeline while retaining previous close evidence in immutable history and explicit recurrence receipts.
-expected_result: "No active item retains stale close timestamps, reason, structured outcome fields, or fixed-version evidence after reopening."
-actual_result: "Generic CLI update, typed item reopen, MCP recurrence, close-time governance, and immutable-history cohorts pass; the complete 8,214-test repository remains at exact 100/100/100/100 coverage."
-dependencies[4]:
+resolution: "Delivered the config-gated close-time completeness contract: default warn emits one concise advisory for missing resolution fields, require mode refuses with an executable recovery bundle, complete structured evidence is silent, and guidance records the triple atomically on close."
+expected_result: "Closing without resolution, expected, or actual is visibly warned or refused according to governance; closing with all three is unchanged and the immutable close event carries the full evidence."
+actual_result: "The linked immutable-history and guidance cohort passes 43 tests, and the focused close-command and CLI cohort passes 152 tests covering warn output, strict recovery refusal, and zero warning output when all fields are supplied."
+dependencies[5]:
   - id: pm-e9zh
     kind: related
     created_at: "2026-07-10T10:34:42.049Z"
@@ -37,7 +37,13 @@ dependencies[4]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[24]{created_at,author,text}:
+  - id: pm-83cz0o
+    kind: verifies
+    created_at: "2026-09-01T04:31:16.590Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[27]{created_at,author,text}:
   "2026-07-10T10:47:37.642Z",maintainer-agent,"Evidence 2026-07-10: validate_resolution_missing_fields drifted 269 -> 272 (+3) in one day — the 2026-07-09 closes of pm-2ldo, pm-q6gx, pm-cu1i (all closed via close -m with strong prose close_reason but no structured resolution/expected/actual). Confirms the faucet is every routine agent close, not a legacy backlog: without a close-time signal the structured fields will keep losing to close_reason. Rate data point for prioritization: ~3/day at current agent throughput."
   "2026-07-10T16:20:54.345Z",maintainer-agent,"Faucet evidence 2026-07-10 (post PR #499): validate_resolution_missing_fields 272 -> 277. The +5 are the schema-fidelity bundle closures (pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, pm-ghf1) — all closed with a substantive close_reason but no structured resolution/expected/actual triple, exactly the leak this item gates. Third consecutive pass with growth (269 -> 272 -> 277); each shipped lane adds ~5. Other buckets steady: missing_linked_paths 154, orphaned_paths 124, missing_close_reason 18 (pm-e9zh), duplicate_issue_codes 1 (pm-pivf)."
   "2026-07-10T21:27:42.513Z",maintainer-agent,"Faucet evidence 2026-07-10 (post-PR#502): resolution_missing_fields 277 -> 278 (+1). The lane closed 8 items (pm-114v/l0bu/yl6c/hfg5/ol5v/6y58/z32q/w7jq) but only +1 leaked — close reasons were set on all 8; the +1 is a partial-fields close. Rate is falling versus the ~+5/lane baseline, but the faucet is still open until the close-time completeness gate ships."
@@ -62,6 +68,9 @@ comments[24]{created_at,author,text}:
   "2026-09-01T04:00:34.385Z","harness:codex","TDD green for review round 15: the canonical update pipeline now removes the complete terminal evidence set on every terminal-to-active transition while explicit item reopen retains prior evidence in its immutable recurrence receipt. Focused discovery, CLI recurrence, and SDK recurrence suites pass 27/27."
   "2026-09-01T04:07:00.099Z","harness:codex","Exact coverage evidence after review round 15: the complete repository passes 594 files and 8,214 tests at exact 100/100/100/100 coverage, including the new generic update recurrence contract."
   "2026-09-01T04:11:11.624Z","harness:codex","Review round 15 terminal evidence: all three linked close/update/reopen cohorts pass 43, 152, and 122 tests with zero failure categories. Generic and explicit recurrence paths clear active close evidence while immutable history preserves prior terminal proof; full coverage is exact 100/100/100/100."
+  "2026-09-01T04:31:15.011Z","harness:codex","Correction to the 2026-09-01T03:58:08.610Z update message: it stated the intended lifecycle outcome, but that mutation only changed status to in_progress and updated_at; it did not itself clear close evidence. The following TDD-red entry records the observed stale fields, and the later implementation and test entries record the actual correction. Immutable history is preserved rather than rewritten."
+  "2026-09-01T04:31:15.695Z","harness:codex","Exact-head review correction: pm-wenq remains the close-time completeness owner. Its final structured resolution will again report the shipped default warn behavior, require-mode recovery refusal, complete-field silence, and atomic close-event evidence. Generic reopen cleanup is owned by canonical lifecycle item pm-83cz0o."
+  "2026-09-01T04:33:32.735Z","harness:codex","Review-correction evidence: all three linked cohorts passed again—43 atomic close/guidance tests, 152 warn/require/complete-output CLI tests, and 122 recurrence tests—with zero failure categories. The structured resolution below is scoped to this item's close-time completeness acceptance criteria; pm-83cz0o owns the recurrence extension."
 notes[4]{created_at,author,text}:
   "2026-07-17T04:44:37.677Z",maintainer-agent,"Leak evidence pass #94 (2026-07-17): PR#575 lane (codex-wide-sdk-20260716) self-closed pm-qfdd/pm-cbwg/pm-w89s ALL without the resolution triple — third lane occurrence (PR#512, PR#536, PR#573/oslr precedents); backfilled same-day by maintainer-agent. Close-time completeness gate remains the missing control. SCOPE ANOMALY (second observation): these three leaked closes did NOT bump validate's missing_resolution_items (stayed 276), while pm-oslr's identical leak in pass #93 DID bump it to 277 — the counting scope is inconsistent across closes (first observation was Chore closes not bumping the then-278). Gate design should count from close-op field presence, not whatever the current scope filter is."
   "2026-07-25T07:17:26.333Z","harness:claude-code","Faucet trend update (ecosystem review 2026-07-25): validate_resolution_missing_fields moved 278 -> 287 since the last recorded reading. The nine-row increase accumulated across the 2026-07-22 to 2026-07-25 lanes rather than in a single close, so it is ordinary faucet drift rather than one leaky PR; the close-time completeness gate this item owns remains the missing control. Recorded as a change datapoint per the drift convention — no repair performed on closed holders (changelog drag), and no new item filed."
@@ -76,7 +85,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,project,240,"harness:codex","2026-08-31T22:41:03.522Z",local_mutation,feat/progressive-capability-discovery,Atomic history and generated guidance contract
   node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/integration/cli.integration.spec.ts,project,300,"harness:codex","2026-09-01T02:59:24.915Z",local_mutation,feat/progressive-capability-discovery,Warn strict and complete-field acceptance coverage
   node scripts/run-tests.mjs test -- tests/integration/reopen-contract.integration.spec.ts tests/unit/sdk/recovery/reopen.spec.ts tests/unit/commands/update-command.spec.ts,project,300,"harness:codex","2026-09-01T04:00:33.872Z",local_mutation,feat/progressive-capability-discovery,Review round 15 terminal-evidence clearing contract
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mthui3mv-k2s2po
     kind: test
     status: passed
@@ -113,7 +122,20 @@ test_runs[3]:
       node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/reopen-contract.integration.spec.ts tests/unit/sdk/recovery/reopen.spec.ts tests/unit/commands/update-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mti68ewp-82xu6e
+    kind: test
+    status: passed
+    started_at: "2026-09-01T04:31:25.872Z"
+    finished_at: "2026-09-01T04:32:39.289Z"
+    recorded_at: "2026-09-01T04:32:39.289Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/reopen-contract.integration.spec.ts tests/unit/sdk/recovery/reopen.spec.ts tests/unit/commands/update-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   AGENTS.md,project,Repository atomic close evidence quickstart
-close_reason: "Review round 15 complete: terminal-to-active transitions now clear the full close-evidence set atomically through canonical PM history mutations."
+close_reason: "Close-time completeness acceptance is evidenced directly: warn, require recovery, complete-field silence, and atomic structured close history all pass."
 body: "## Problem\n`validate_resolution_missing_fields` keeps creeping (269 → 272 across 2026-07-09→10) even though `close_reason` is enforced: agents close items with a reason but skip the structured triple `resolution` / `expected_result` / `actual_result` (set via `pm close --resolution/--expected/--actual` or `pm update`). pm-e9zh backfills the pre-enforcement legacy set, but nothing stops NEW closes from adding to the worklist, so the backfill target moves.\n\n## Proposal\n1. Emit a completeness line in the `pm close` envelope when any of the three structured fields is absent (always on, one short line — token-cheap, mirrors the existing next_transition hint pattern).\n2. Add a governance settings key (e.g. `close.require_resolution_fields: off | warn | require`, default `warn`) so strict workspaces can hard-gate like `require_close_reason` already does.\n3. Contract + docs + completion wiring per the new-flag checklist; validate check text should point at the setting.\n\n## Acceptance criteria\n- Closing without the triple prints exactly one advisory line naming the missing fields and the flags to set them; with `require`, close exits non-zero with the same recovery bundle shape as close_reason_required.\n- `validate_resolution_missing_fields` stops growing on workspaces with warn/require enabled (verified in e2e fixture).\n- No output change when all three fields are provided.\n\n## Relation\nrelated pm-e9zh (legacy backfill) — this item is the faucet, e9zh is the mop."
