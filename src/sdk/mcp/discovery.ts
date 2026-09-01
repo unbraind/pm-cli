@@ -350,6 +350,15 @@ function validateDiscoveryCandidates(candidates: unknown): void {
         64,
       );
     }
+    if (
+      candidate.authorized !== undefined &&
+      typeof candidate.authorized !== "boolean"
+    ) {
+      throw new PmCliError(
+        `pm tool discovery candidate ${index} authorized must be a boolean.`,
+        64,
+      );
+    }
   }
 }
 

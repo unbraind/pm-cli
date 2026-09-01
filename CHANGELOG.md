@@ -4,8 +4,8 @@
 
 ### Added
 
-- GH-796: no reopen transition for terminal items, so recurrence is recorded as a duplicate instead of a reopening ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
 - Progressive MCP discovery and canonical tool results: reveal the minimum relevant catalog and deliver one unambiguous model-facing output contract ([pm-3g3f8z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3g3f8z.toon))
+- GH-796: no reopen transition for terminal items, so recurrence is recorded as a duplicate instead of a reopening ([pm-83cz0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-83cz0o.toon))
 
 ### Fixed
 

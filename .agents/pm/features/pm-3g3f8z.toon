@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-09-01T04:11:11.062Z"
+updated_at: "2026-09-01T06:21:23.084Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-09-01T04:11:10.457Z"
-completed_at: "2026-09-01T04:11:10.457Z"
+closed_at: "2026-09-01T04:51:52.397Z"
+completed_at: "2026-09-01T04:51:52.397Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Delivered progressive discovery with validated non-empty required text, canonical malformed-input refusals, evidence-bound orientation, keyed pagination, and bounded recovery."
-expected_result: Every public discovery candidate has usable required metadata and malformed JavaScript inputs fail with canonical SDK errors.
-actual_result: "Fifteen review rounds culminate in 8,214 tests at exact 100/100/100/100 coverage; all seven linked cohorts pass and blank names or descriptions fail closed."
+resolution: "Delivered progressive discovery with fail-closed public candidate and option validation, boolean-only authorization, deterministic ranking, keyed pagination, explicit budgets and omissions, canonical MCP results, and measured context-efficient orientation."
+expected_result: "Every public discovery input—including authorization metadata—obeys its declared runtime domain, unauthorized tools never surface, and malformed JavaScript values return canonical usage errors before ranking."
+actual_result: "All seven linked discovery/orientation cohorts pass; 8,214 repository tests pass with exact 60,639/60,639 statements, 45,841/45,841 branches, 12,617/12,617 functions, and 58,384/58,384 lines; malformed null, string, number, array, and object authorization values return PmCliError exit 64."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[55]:
+comments[60]:
   - created_at: "2026-08-28T20:22:27.057Z"
     author: "harness:codex"
     text: "Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
@@ -193,6 +193,21 @@ comments[55]:
   - created_at: "2026-09-01T04:11:09.888Z"
     author: "harness:codex"
     text: "Review round 15 terminal evidence: all seven linked discovery/orientation cohorts pass; exact coverage is 8,214 tests at 100/100/100/100. Blank descriptions now fail closed under the same public-SDK string contract as blank names."
+  - created_at: "2026-09-01T04:38:34.485Z"
+    author: "harness:codex"
+    text: "Review round 16 recurrence: CodeRabbit issue comment 5488850807 is valid. PmToolDiscoveryCandidate.authorized is boolean or undefined, but the runtime validator accepts every defined non-boolean and ranking excludes only strict false, so malformed truthy values can expose tool metadata. Add direct public-SDK negative cases for null, string, number, array, and object values, then fail closed with canonical exit 64."
+  - created_at: "2026-09-01T04:38:57.382Z"
+    author: "harness:codex"
+    text: "TDD red for review round 16: the public SDK catalog test supplied authorized=null, string, number, array, and object. The focused suite failed its malformed-catalog case because the validator accepted the first non-boolean value and returned it as authorized before implementation."
+  - created_at: "2026-09-01T04:39:28.918Z"
+    author: "harness:codex"
+    text: "TDD green for review round 16: candidate validation now rejects every defined non-boolean authorized value with PmCliError exit 64 before ranking or permission filtering. The focused discovery suite passes 15/15, and file-scoped ESLint plus Prettier pass."
+  - created_at: "2026-09-01T04:51:51.524Z"
+    author: "harness:codex"
+    text: "Exact coverage evidence after review round 16: all 594 test files and 8,214 tests pass at exact 100%—60,639/60,639 statements, 45,841/45,841 branches, 12,617/12,617 functions, and 58,384/58,384 lines—with the malformed authorization negative branch genuinely exercised."
+  - created_at: "2026-09-01T06:21:23.084Z"
+    author: "harness:codex"
+    text: "Post-close repository gate evidence for review round 16: CI-mode quality:static passed ESLint, zero jscpd clones, build and generated contracts, package/SDK/surface parity, token/refusal/transport/graph gates, and append-only record integrity over 57,489 events. Secret scanning found no credential-like material, vulnerability scanning found no known vulnerabilities, and pnpm audit passed."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -282,7 +297,7 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Review round 8 container and code-unit ordering contract
-test_runs[17]:
+test_runs[18]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -504,6 +519,23 @@ test_runs[17]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mti6lwfn-gy3k7u
+    kind: test
+    status: passed
+    started_at: "2026-09-01T04:39:32.494Z"
+    finished_at: "2026-09-01T04:43:08.531Z"
+    recorded_at: "2026-09-01T04:43:08.531Z"
+    passed: 7
+    failed: 0
+    skipped: 0
+    executions[7]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/root-help-discovery.integration.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/discovery.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[13]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
@@ -518,5 +550,5 @@ docs[13]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Review round 15 complete: public discovery rejects blank descriptions and all exact coverage plus linked gates pass."
+close_reason: "Review round 16 complete: malformed authorization inputs fail closed, all linked cohorts pass, and exact repository coverage remains 100/100/100/100."
 body: ""

@@ -465,6 +465,10 @@ describe("progressive MCP tool discovery", () => {
       { name: "pm_get", description: "missing schema" },
       { name: "pm_get", description: "null schema", inputSchema: null },
       { name: "pm_get", description: "array schema", inputSchema: [] },
+      ...[null, "false", 0, [], {}].map((authorized) => ({
+        ...candidate("pm_get"),
+        authorized,
+      })),
     ];
     for (const candidates of [
       ...malformedCatalogs,
