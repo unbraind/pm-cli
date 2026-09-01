@@ -22,6 +22,13 @@ describe("history event classification", () => {
     expect(HISTORY_EVENT_CLASSIFICATION_VERSION).toBe(1);
     expect(classifyHistoryEvent(entry("comment_add"))).toBe("substantive");
     expect(classifyHistoryEvent(entry("release"))).toBe("maintenance");
+    expect(classifyHistoryEvent(entry("history:author-acknowledge"))).toBe(
+      "maintenance",
+    );
+    expect(classifyHistoryEvent(entry("history_compact_baseline"))).toBe(
+      "maintenance",
+    );
+    expect(classifyHistoryEvent(entry("tests_remove"))).toBe("maintenance");
     expect(
       classifyHistoryEvent(
         entry("update", [
@@ -46,5 +53,11 @@ describe("history event classification", () => {
       "substantive",
     );
     expect(classifyHistoryEvent(entry("future_operation"))).toBe("substantive");
+    expect(
+      classifyHistoryEvent({
+        ...entry("release"),
+        event_class: "future" as HistoryEntry["event_class"],
+      }),
+    ).toBe("maintenance");
   });
 });

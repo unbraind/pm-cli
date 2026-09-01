@@ -203,6 +203,8 @@ describe("context signal feature store", () => {
       { ...valid, signal_set_version: 99 },
       { ...valid, source_cursor: "" },
       { ...valid, source_cursor: " " },
+      { ...valid, recency_evidence_fingerprint: "" },
+      { ...valid, recency_evidence_fingerprint: "sha256:not-a-digest" },
       { ...valid, generated_at: "invalid" },
       { ...valid, source: "unknown" },
       { ...valid, items: {} },
@@ -276,6 +278,35 @@ describe("context signal feature store", () => {
     }
   });
 
+  it("fingerprints recency evidence with and without optional history fields", () => {
+    const withoutHistoryFields = buildContextSignalSnapshot([item("pm-a")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+      recencyEvidence: {
+        "pm-a": { source: "created_at", coordinate: now },
+      },
+    });
+    const withHistoryFields = buildContextSignalSnapshot([item("pm-a")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+      recencyEvidence: {
+        "pm-a": {
+          source: "substantive_history",
+          coordinate: now,
+          history_op: "create",
+          event_class: "substantive",
+        },
+      },
+    });
+    expect(withoutHistoryFields.recency_evidence_fingerprint).not.toBe(
+      withHistoryFields.recency_evidence_fingerprint,
+    );
+  });
+
   it("reuses fresh rows and rebuilds absent, stale, changed-corpus, and unreadable snapshots", async () => {
     const adapter = new MemoryAdapter();
     const store = new ContextSignalStore(adapter);
@@ -324,6 +355,22 @@ describe("context signal feature store", () => {
       warning_details: [],
     });
     expect(adapter.writes).toBe(2);
+    const changedEvidence = await store.readOrRebuild([item("pm-a")], {
+      ...options,
+      sourceCursor: "cursor-2",
+      recencyEvidence: {
+        "pm-a": {
+          source: "substantive_history",
+          coordinate: "2026-07-02T00:00:00.000Z",
+          history_op: "comment_add",
+          event_class: "substantive",
+        },
+      },
+    });
+    expect(changedEvidence.warnings).toEqual(["context_signal_store_stale"]);
+    expect(changedEvidence.snapshot.recency_evidence_fingerprint).toMatch(
+      /^sha256:[a-f0-9]{64}$/u,
+    );
     const changed = await store.readOrRebuild([item("pm-a"), item("pm-b")], {
       ...options,
       sourceCursor: "cursor-2",

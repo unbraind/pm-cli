@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   CONTEXT_EVALUATION_METRIC_NAMES,
   PmClient,
+  recordContextUsageDelivery,
   recordContextUsageServing,
   recordContextUsageTouches,
   runContextEvaluationScenario,
@@ -153,13 +154,20 @@ async function seedUsageFeedback(definition, idByKey, pmRoot) {
     return id;
   });
   const touchedAt = new Date();
-  await recordContextUsageServing({
+  const receipt = await recordContextUsageServing({
     pmRoot,
     author: "context-eval-agent",
     surface: definition.surface,
     profile: definition.surface,
     rows: servedIds.map((id, index) => ({ id, rank: index + 1, included: true })),
     now: new Date(touchedAt.getTime() - 60_000).toISOString(),
+  });
+  await recordContextUsageDelivery({
+    pmRoot,
+    receipt,
+    deliveredItemIds: servedIds,
+    resultOmitted: false,
+    now: new Date(touchedAt.getTime() - 30_000).toISOString(),
   });
   await recordContextUsageTouches({
     pmRoot,

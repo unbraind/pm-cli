@@ -16,14 +16,17 @@ export type HistoryEventClass = "substantive" | "maintenance";
 export const MAINTENANCE_HISTORY_OPERATIONS = [
   "docs_add",
   "files_add",
+  "history:author-acknowledge",
   "history_author_acknowledge",
   "history_compact",
+  "history_compact_baseline",
   "history_redact",
   "history_repair",
   "normalize",
   "release",
   "test_run_track",
   "tests_add",
+  "tests_remove",
   "update_audit",
   "update_ownership_bypass",
 ] as const;
@@ -99,7 +102,12 @@ function topLevelPatchField(operation: HistoryPatchOp): string | undefined {
 export function classifyHistoryEvent(
   entry: Pick<HistoryEntry, "op" | "patch" | "event_class">,
 ): HistoryEventClass {
-  if (entry.event_class !== undefined) return entry.event_class;
+  if (
+    entry.event_class === "substantive" ||
+    entry.event_class === "maintenance"
+  ) {
+    return entry.event_class;
+  }
   if (MAINTENANCE_OPERATIONS.has(entry.op)) return "maintenance";
   if (SUBSTANTIVE_OPERATIONS.has(entry.op)) return "substantive";
   if (entry.op !== "update") return "substantive";

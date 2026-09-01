@@ -1,0 +1,50 @@
+id: pm-92tp12
+title: Refresh Sentry 10.73 and TypeScript-ESLint 8.69 with exact coverage
+description: "Adopt the live registry-current compatible @sentry/node 10.73.0 and typescript-eslint 8.69.0 releases discovered during final PR closeout; preserve canonical incompatible-major deferrals and prove Sentry, lint, static, exact coverage, audit, packed artifact, and executable consumers."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-01T17:17:23.656Z"
+updated_at: "2026-09-01T17:35:25.505Z"
+closed_at: "2026-09-01T17:35:25.009Z"
+completed_at: "2026-09-01T17:35:25.009Z"
+author: "harness:codex"
+parent: pm-u9d0
+resolution: "Updated @sentry/node to 10.73.0 and typescript-eslint to 8.69.0, refreshed the lock graph and packed-consumer version ratchet, and retained incompatible majors in their canonical deferral lineage."
+expected_result: "The live compatible Sentry and TypeScript-ESLint releases install reproducibly without weakening exact coverage, static quality, vulnerability, artifact, or executable-consumer guarantees."
+actual_result: "Focused Sentry/package tests, 100/100/100/100 coverage, strict static quality, zero-clone scans, package artifact, npx/bunx smoke, and low-level audit all passed; no known vulnerabilities remain and only the two documented incompatible majors are outdated."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7xfndr,recurs_from,"2026-09-01T17:17:23.656Z","harness:codex","cli:create:dep",detected
+  pm-do5b,verifies,"2026-09-01T17:17:23.656Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,verifies,"2026-09-01T17:17:23.656Z","harness:codex","cli:create:dep",detected
+  pm-mwhv33,recurs_from,"2026-09-01T17:17:23.656Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-01T17:17:23.656Z","harness:codex","Duplicate-check evidence: complete all-status searches for exact 10.73.0/8.69.0 and compatible Sentry/TypeScript-ESLint refreshes found closed combined owner pm-7xfndr, latest Sentry owner pm-mwhv33, and earlier tooling owners, but no item owns these newly published versions. npm-package-arg 14 and TypeScript 7 remain canonical open deferrals pm-ksr40d and pm-do5b."
+  "2026-09-01T17:35:24.383Z","harness:codex","Verification evidence: @sentry/node 10.73.0 and typescript-eslint 8.69.0 are locked in the compatible dependency graph. Linked run test-local-mtixwb2z-izr9as passed focused package/Sentry compatibility, exact repo-wide coverage (596 files, 8,262 tests, 60,928/60,928 statements, 46,039/46,039 branches, 12,685/12,685 functions, 58,650/58,650 lines), and packed artifact plus npx/bunx smoke; its first static leg encountered generated tracker/changelog drift while this item was still mutating. After refreshing with pm-changelog 2026.9.1, the complete pnpm quality:static gate passed, both jscpd inventories reported zero clones, and pnpm audit --audit-level low reported no known vulnerabilities. Final pnpm outdated lists only canonical incompatible-major deferrals TypeScript 7 (pm-do5b) and npm-package-arg 14 (pm-ksr40d)."
+files[3]{path,scope,note}:
+  package.json,project,Compatible Sentry runtime and TypeScript-ESLint tooling versions
+  pnpm-lock.yaml,project,Reproducible compatible dependency graph
+  tests/unit/packages/package-manifest.spec.ts,project,Packed-consumer Sentry version ratchet
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,360,"harness:codex","2026-09-01T17:18:05.556Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Focused package and Sentry compatibility
+  "pnpm quality:static && pnpm audit --audit-level low",project,1500,"harness:codex","2026-09-01T17:18:05.556Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Strict static and vulnerability gates
+  node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-01T17:18:05.556Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Repo-wide exact coverage
+  "pnpm quality:package-artifact && pnpm smoke:npx",project,1200,"harness:codex","2026-09-01T17:18:05.556Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Packed SDK and npx bunx executable consumers
+test_runs[1]:
+  - run_id: test-local-mtixwb2z-izr9as
+    kind: test
+    status: failed
+    started_at: "2026-09-01T17:18:11.698Z"
+    finished_at: "2026-09-01T17:27:03.707Z"
+    recorded_at: "2026-09-01T17:27:03.707Z"
+    passed: 3
+    failed: 1
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:static && pnpm audit --audit-level low",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      "pnpm quality:package-artifact && pnpm smoke:npx",schema,schema,source,local_source_ref
+close_reason: "Compatible dependency refresh verified across runtime, tooling, coverage, artifact, consumers, and audit"
+body: ""

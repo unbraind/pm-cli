@@ -15,6 +15,7 @@
 
 ### Other
 
+- Refresh Sentry 10.73 and TypeScript-ESLint 8.69 with exact coverage ([pm-92tp12](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-92tp12.toon))
 - Refresh compatible 2026-09-01 jscpd 5.1.1 tooling ([pm-ur4swu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ur4swu.toon))
 
 ## 2026.9.1 - 2026-09-01

@@ -52,6 +52,8 @@ export type ContextUsageEvent =
       profile: string;
       rows: ContextUsageServingRow[];
       result_omitted?: boolean;
+      packed_item_ids?: string[];
+      /** Legacy pre-egress field ignored by the v2 affinity fold. */
       delivered_item_ids?: string[];
     }
   | {
@@ -353,7 +355,7 @@ export async function recordContextUsageServing(
     serve_id: randomUUID(),
     author: options.author.trim(),
     surface: options.surface,
-    rows: options.rows.map((row) => ({ ...row })),
+    rows: options.rows.map((row) => ({ ...row, id: row.id.trim() })),
   };
   await appendEvent(options, {
     kind: "serve",
@@ -365,7 +367,7 @@ export async function recordContextUsageServing(
     profile: options.profile.trim() || "balanced",
     rows: receipt.rows.map((row) => ({ ...row })),
     result_omitted: false,
-    delivered_item_ids: receipt.rows
+    packed_item_ids: receipt.rows
       .filter((row) => row.included)
       .map((row) => row.id),
   });
@@ -580,9 +582,7 @@ export async function readContextUsageAffinity(
       servingEvents += 1;
       const servedAt = Date.parse(event.at);
       const delivery = deliveries.get(event.serve_id as string);
-      const deliveredIds = new Set(
-        delivery?.delivered_item_ids ?? event.delivered_item_ids ?? [],
-      );
+      const deliveredIds = new Set(delivery?.delivered_item_ids ?? []);
       for (const row of event.rows) {
         if (!deliveredIds.has(row.id)) continue;
         const touchTime = findTouchTimeInHorizon(

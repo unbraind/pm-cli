@@ -1773,14 +1773,16 @@ For persistent derived signals, use `ContextSignalStore` with a caller-owned
 `ContextSignalStoreAdapter`, or use `JsonFileContextSignalStoreAdapter` for a
 same-directory atomic JSON snapshot. Each snapshot carries both a
 `format_version` and `signal_set_version`, the authoritative history or index
-`source_cursor`, the stable caller clock, and whether its items came from the
-`derived_index` or `scan_fallback` path. Item rows are deterministic and sorted;
-the snapshot never replaces item or history data.
+`source_cursor`, a deterministic `recency_evidence_fingerprint`, the stable
+caller clock, and whether its items came from the `derived_index` or
+`scan_fallback` path. Item rows are deterministic and sorted; the snapshot never
+replaces item or history data.
 
 `readOrRebuild(items, options)` reuses a snapshot only when the cursor and
-complete item-id set match. Missing, stale, version-incompatible, or corrupt
-state is rebuilt from the authoritative items and atomically replaced. The
-result reports `cache_status` and non-fatal `context_signal_store_stale`,
+complete item-id set and substantive recency-evidence fingerprint match.
+Missing, stale, version-incompatible, or corrupt state is rebuilt from the
+authoritative items and atomically replaced. The result reports `cache_status`
+and non-fatal `context_signal_store_stale`,
 `context_signal_store_invalid`, or `context_signal_store_write_failed`
 warnings. A write failure still serves the in-memory rebuilt candidates because
 the snapshot is derived, never authoritative. Optional maps for activity density,

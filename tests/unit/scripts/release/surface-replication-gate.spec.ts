@@ -625,6 +625,20 @@ describe("surface replication gate", () => {
     expect(relevant.violations).toContain(
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
+
+    const declaration = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "let RuntimeDatabaseSync: DatabaseSyncConstructor | null | undefined;",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(declaration.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
   }, 120_000);
 
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {

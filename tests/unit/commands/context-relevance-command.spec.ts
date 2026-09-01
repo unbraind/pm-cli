@@ -16,6 +16,7 @@ import {
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { recordClaimedWorkAttribution } from "../../../src/core/session/session-state.js";
 import type { ContextRelevanceReport } from "../../../src/sdk/context-relevance.js";
+import { finalizeContextUsageDelivery } from "../../../src/sdk/context-usage.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import {
@@ -408,7 +409,11 @@ describe("context relevance command integration", () => {
   it("folds usage feedback dynamically and tolerates an absent author", async () => {
     await withTempPmPath(async (context) => {
       const createdIds = createContextRankingItems(context);
-      await runContext({}, { path: context.pmPath });
+      const served = await runContext({}, { path: context.pmPath });
+      await finalizeContextUsageDelivery({
+        pmRoot: context.pmPath,
+        result: served,
+      });
       const read = context.runCli(["get", createdIds[1]!, "--json"], {
         expectJson: true,
       });

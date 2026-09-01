@@ -104,7 +104,7 @@
         }
       }
     },
-    "100000": {
+    "scratch:100000": {
       "headroom": 1.25,
       "transports": {
         "cli": {

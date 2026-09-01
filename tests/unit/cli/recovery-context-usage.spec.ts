@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { recordAfterCommandContextUsage } from "../../../src/cli/after-command-context-usage.js";
@@ -6,6 +7,9 @@ import {
   loadExtensionRecoveryFailures,
   loadUnknownCommandRecoveryFailures,
 } from "../../../src/cli/extension-recovery.js";
+import { setActiveCommandResult } from "../../../src/core/extensions/index.js";
+import { attachContextUsageServingReceipt } from "../../../src/sdk/context-usage.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("CLI recovery and derived usage helpers", () => {
   it("skips derived context usage before any filesystem access when disabled", async () => {
@@ -23,6 +27,40 @@ describe("CLI recovery and derived usage helpers", () => {
       if (previous === undefined) delete process.env.PM_CONTEXT_USAGE_DISABLED;
       else process.env.PM_CONTEXT_USAGE_DISABLED = previous;
     }
+  });
+
+  it("preserves authoritative touches when derived delivery validation fails", async () => {
+    await withTempPmPath(async (context) => {
+      const result = { ready: [{ id: "pm-unranked" }] };
+      attachContextUsageServingReceipt(result, {
+        serve_id: "serve-invalid-egress",
+        author: "agent",
+        surface: "next",
+        rows: [{ id: "pm-ranked", rank: 1, included: true }],
+      });
+      setActiveCommandResult(result);
+
+      await expect(
+        recordAfterCommandContextUsage({
+          pmRoot: context.pmPath,
+          itemIds: ["pm-touched"],
+          intent: "update",
+          author: "agent",
+        }),
+      ).resolves.toBeUndefined();
+      const events = (
+        await readFile(
+          path.join(context.pmPath, "runtime", "context-usage.jsonl"),
+          "utf8",
+        )
+      )
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as { kind: string; item_id?: string });
+      expect(events).toEqual([
+        expect.objectContaining({ kind: "touch", item_id: "pm-touched" }),
+      ]);
+    });
   });
 
   it("appends bounded extension failures to JSON and text usage", () => {

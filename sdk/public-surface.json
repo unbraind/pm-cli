@@ -1499,6 +1499,20 @@
       ],
       "package_version": "2026.9.1",
       "reason": "Version context signal snapshots and usage affinity receipts so substantive recency and exact egress delivery are explicit public contracts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
+        "signature ./sdk:ContextSignalSnapshot",
+        "signature ./sdk:ContextUsageEvent",
+        "signature ./sdk:MAINTENANCE_HISTORY_OPERATIONS",
+        "signature ./sdk/query:CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
+        "signature ./sdk/query:ContextSignalSnapshot",
+        "signature ./sdk/query:ContextUsageEvent",
+        "signature ./sdk/runtime:MAINTENANCE_HISTORY_OPERATIONS"
+      ],
+      "package_version": "2026.9.1",
+      "reason": "Tighten context signal freshness and final-egress feedback contracts before release"
     }
   ],
   "entrypoints": {
@@ -4251,7 +4265,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
-          "signature": "2"
+          "signature": "3"
         },
         {
           "classification": "supported",
@@ -4485,7 +4499,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextSignalSnapshot",
-          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
+          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; recency_evidence_fingerprint: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
         },
         {
           "classification": "supported",
@@ -4533,7 +4547,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "ContextUsageEvent",
-          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
+          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
         },
         {
           "classification": "supported",
@@ -9195,7 +9209,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "MAINTENANCE_HISTORY_OPERATIONS",
-          "signature": "readonly [\"docs_add\", \"files_add\", \"history_author_acknowledge\", \"history_compact\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"update_audit\", \"update_ownership_bypass\"]"
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "advanced_export",
@@ -27279,7 +27293,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
-          "signature": "2"
+          "signature": "3"
         },
         {
           "classification": "supported",
@@ -27507,7 +27521,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextSignalSnapshot",
-          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
+          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; recency_evidence_fingerprint: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
         },
         {
           "classification": "supported",
@@ -27555,7 +27569,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "ContextUsageEvent",
-          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
+          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
         },
         {
           "classification": "supported",
@@ -29829,7 +29843,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "MAINTENANCE_HISTORY_OPERATIONS",
-          "signature": "readonly [\"docs_add\", \"files_add\", \"history_author_acknowledge\", \"history_compact\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"update_audit\", \"update_ownership_bypass\"]"
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "supported",

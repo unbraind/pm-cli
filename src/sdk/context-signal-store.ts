@@ -21,7 +21,7 @@ import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
 import { readLatestSubstantiveHistoryEvents } from "../core/history/event-index.js";
 
 /** Current serialized feature-store envelope version. */
-export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 2;
+export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 3;
 
 /** Current canonical signal-vector version. */
 export const CONTEXT_SIGNAL_SET_VERSION = 2;
@@ -69,6 +69,8 @@ export interface ContextSignalSnapshot {
   signal_set_version: number;
   /** Authoritative history or derived-index cursor folded into this snapshot. */
   source_cursor: string;
+  /** Deterministic digest of substantive recency provenance used by the fold. */
+  recency_evidence_fingerprint: string;
   /** Stable clock supplied by the caller. */
   generated_at: string;
   /** Read substrate used for the fold. */
@@ -255,6 +257,26 @@ function stableSnapshotOptions(
   };
 }
 
+function recencyEvidenceFingerprint(
+  options: BuildContextSignalSnapshotOptions,
+): string {
+  const hash = createHash("sha256");
+  for (const [id, evidence] of Object.entries(
+    options.recencyEvidence ?? {},
+  ).sort(([left], [right]) => left.localeCompare(right))) {
+    hash.update(
+      JSON.stringify([
+        id,
+        evidence.source,
+        evidence.coordinate,
+        evidence.history_op ?? null,
+        evidence.event_class ?? null,
+      ]),
+    );
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
 function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
   if (!isRecord(value)) return null;
   const signalProvenance = value.signal_provenance;
@@ -320,6 +342,8 @@ export function parseContextSignalSnapshot(
     value.signal_set_version !== CONTEXT_SIGNAL_SET_VERSION ||
     typeof value.source_cursor !== "string" ||
     value.source_cursor.trim().length === 0 ||
+    typeof value.recency_evidence_fingerprint !== "string" ||
+    !/^sha256:[a-f0-9]{64}$/u.test(value.recency_evidence_fingerprint) ||
     typeof value.generated_at !== "string" ||
     !Number.isFinite(Date.parse(value.generated_at)) ||
     (value.source !== "derived_index" && value.source !== "scan_fallback") ||
@@ -342,6 +366,7 @@ export function parseContextSignalSnapshot(
     format_version: CONTEXT_SIGNAL_STORE_FORMAT_VERSION,
     signal_set_version: CONTEXT_SIGNAL_SET_VERSION,
     source_cursor: value.source_cursor,
+    recency_evidence_fingerprint: value.recency_evidence_fingerprint,
     generated_at: value.generated_at,
     source: value.source,
     items: validItems.sort((left, right) => left.id.localeCompare(right.id)),
@@ -386,6 +411,7 @@ export function buildContextSignalSnapshot(
     format_version: CONTEXT_SIGNAL_STORE_FORMAT_VERSION,
     signal_set_version: CONTEXT_SIGNAL_SET_VERSION,
     source_cursor: options.sourceCursor,
+    recency_evidence_fingerprint: recencyEvidenceFingerprint(options),
     generated_at: options.now,
     source: options.source,
     items: Object.freeze(rows.map((row) => Object.freeze(row))),
@@ -472,6 +498,8 @@ export class ContextSignalStore {
     const fresh =
       snapshot !== null &&
       snapshot.source_cursor === options.sourceCursor &&
+      snapshot.recency_evidence_fingerprint ===
+        recencyEvidenceFingerprint(options) &&
       snapshot.source === options.source &&
       snapshotIds.length === authoritativeIds.length &&
       snapshotIds.every((id, index) => id === authoritativeIds[index]);

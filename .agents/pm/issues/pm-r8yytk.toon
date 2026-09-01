@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:performance","area:sdk",benchmark,regression
 created_at: "2026-09-01T14:41:40.376Z"
-updated_at: "2026-09-01T16:04:05.302Z"
-closed_at: "2026-09-01T15:48:41.851Z"
-completed_at: "2026-09-01T15:48:41.851Z"
+updated_at: "2026-09-01T17:16:45.507Z"
+closed_at: "2026-09-01T17:16:44.964Z"
+completed_at: "2026-09-01T17:16:44.964Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: The scratch 10k budget is shape-qualified; exact-main and delivery-head results are compared on the supported Node 24 workflow baseline; a five-iteration delivery-head run establishes measured budgets with 25 percent headroom; the unmodified scale check passes; every command remains below the published 1000 ms p95 and 5000-token product targets; Node 26 variance is recorded without being misreported as a delivery regression.
@@ -16,25 +16,38 @@ parent: pm-9rxu
 risk: high
 confidence: high
 severity: high
-resolution: "Shape-qualified the scratch 10k tier, refreshed observations with five-run 25% headroom evidence, and documented supported-runtime baseline refresh requirements."
-expected_result: The ordinary scale gate passes while retaining published 1000ms latency and 5000-token product ceilings.
-actual_result: Exact-main and head outputs matched with no product failures; the final unmodified three-run Node 24 scale check passed.
+resolution: Normalized both scale tiers to shape-qualified keys while retaining measured regression headroom and the independent hard product-target gate.
+expected_result: Scale manifests are shape-unambiguous and every actual command remains constrained by p95 and token product targets.
+actual_result: "Fresh Node 24 scratch:10,000 CLI and SDK benchmark passed 3 iterations with p95 <= 1,000ms and actual tokens <= 5,000."
 component: performance
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
   pm-hcrmye,recurs_from,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
   pm-mi2x,verifies,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
   pm-yse5dt,verifies,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-01T14:41:40.376Z","harness:codex","Duplicate-check evidence: all-status searches for scale budget, Node 26, shape-qualified tiers, stale baselines, and list/get token drift found the original harness pm-mi2x, fixed-runtime regression pm-hcrmye, transport ratchet pm-yse5dt, and output-budget roadmap pm-5t33or, but no item owns the combined legacy-key and current-contract baseline drift. Exact-main at ba9680239 and this branch produce identical list/get bytes and comparable startup/RSS, so this is not introduced by the active context implementation."
   "2026-09-01T15:48:15.679Z","harness:codex","Delivery evidence 2026-09-01: the legacy scratch tier is now shape-qualified as scratch:10000. Clean exact-main ba9680239 and delivery-head Node 24 five-iteration reports produced identical payload contracts and no product failures. The committed observations use the documented 25% headroom methodology. Head-minus-main minimum latency deltas were CLI list -8ms, get +7ms, next +62ms, context +47ms, search -2ms, create +4ms, claim +13ms; SDK list +2ms, get +17ms, next +62ms, context +91ms, search +56ms, create +4ms, claim +6ms. Every measurement remains below the published 1000ms p95 and 5000-token product ceilings. The unmodified three-iteration Node 24 check passed and wrote .cache/scale-node24-final-report.json. Node 26 variance was treated as non-baseline diagnostic evidence, not a feature regression."
+  "2026-09-01T17:16:29.885Z","harness:codex","Review round evidence: normalized the remaining legacy 100000 budget key to scratch:100000. The suggested 5,000-token manifest cap was declined because regression headroom and the independent product target are deliberately separate: run-scale-benchmarks applies productTargetStatus after compareScaleBudgets and fails any actual command above 5,000 tokens. Fresh Node 24 linked scale verification passed at scratch:10,000 with both transports, 3 iterations, p95 <= 1,000ms and actual estimated tokens <= 5,000."
 files[1]{path,scope,note}:
   scripts/bench/scale-budgets.json,project,Shape-qualified supported-runtime regression baseline
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-node24-final-report.json,project,900,"harness:codex","2026-09-01T14:42:28.875Z",local_mutation,feat/substantive-context-signals-delivery-receipts
+test_runs[1]:
+  - run_id: test-local-mtixhyzc-vshf4n
+    kind: test
+    status: passed
+    started_at: "2026-09-01T17:15:16.116Z"
+    finished_at: "2026-09-01T17:15:54.840Z"
+    recorded_at: "2026-09-01T17:15:54.840Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-node24-final-report.json,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/PERFORMANCE.md,project,Runtime and baseline-refresh evidence contract
-close_reason: Requalified scale budgets against exact main and delivery head on supported Node 24
+close_reason: Scale budget namespace and product-target proof are complete
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

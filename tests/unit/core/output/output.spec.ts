@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearActiveExtensionHooks,
+  getActiveCommandResult,
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionRenderers,
   setActiveExtensionServices,
 } from "../../../../src/core/extensions/index.js";
+import { suppressHostOutput } from "../../../../src/core/output/output-control.js";
 import {
   formatOutput,
   outputTestOnly,
@@ -348,6 +350,9 @@ describe("core/output/output", () => {
 
     printResult({ ok: true }, { quiet: true });
     expect(stdoutSpy).not.toHaveBeenCalled();
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
 
     printResult({ ok: true }, { json: true });
     expect(stdoutSpy).toHaveBeenCalledWith(
@@ -813,6 +818,14 @@ describe("core/output/output", () => {
     expect(formatOutput({ ok: true }, { json: true })).toBe(
       `${JSON.stringify({ wrapped: { ok: true } })}\n`,
     );
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
+
+    expect(formatOutput(suppressHostOutput({ ok: true }), {})).toBe("");
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
 
     setActiveExtensionRenderers({
       overrides: [
@@ -854,6 +867,9 @@ describe("core/output/output", () => {
     expect(formatOutput({ ok: true }, { json: true })).toBe(
       `${JSON.stringify({ wrapped: { ok: true } })}\n`,
     );
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
 
     const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     printError("boom");

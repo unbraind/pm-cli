@@ -70,7 +70,7 @@ describe("context usage egress receipts", () => {
         ["--output-budget", "1", "next", "--json", "--for", "execute"],
         { expectJson: true },
       );
-      expect([0, 2, 64]).toContain(omitted.code);
+      expect(omitted.code).toBe(2);
       expect((await deliveries(context.pmPath)).at(-1)).toEqual(
         expect.objectContaining({
           surface: "next",

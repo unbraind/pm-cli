@@ -158,6 +158,7 @@ describe("history mutation event index", () => {
 
       await updateHistoryEventIndexAfterAppend(historyPath, first);
       await rebuildHistoryEventIndex(context.pmPath);
+      await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
       await updateHistoryEventIndexAfterAppend(historyPath, second);
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
@@ -231,6 +232,44 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("rejects stale valid indexes and preserves prototype-shaped stream ids", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      const stalePath = path.join(historyRoot, "pm-stale.jsonl");
+      await fs.writeFile(
+        stalePath,
+        `${JSON.stringify(historyEntry("2026-07-24T09:00:00.000Z", "agent", "create"))}\n`,
+      );
+      for (const streamId of ["constructor", "toString"]) {
+        await fs.writeFile(
+          path.join(historyRoot, `${streamId}.jsonl`),
+          `${JSON.stringify(historyEntry("2026-07-24T08:00:00.000Z", "agent", "create"))}\n`,
+        );
+      }
+      await rebuildHistoryEventIndex(context.pmPath);
+      await fs.appendFile(
+        stalePath,
+        `${JSON.stringify(historyEntry("2026-07-24T10:00:00.000Z", "agent", "comment_add"))}\n`,
+      );
+
+      const latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
+        "pm-stale",
+        "constructor",
+        "toString",
+      ]);
+      expect(latest["pm-stale"]).toMatchObject({
+        stream_offset: 1,
+        entry: { op: "comment_add" },
+      });
+      expect(Object.keys(latest).sort()).toEqual([
+        "constructor",
+        "pm-stale",
+        "toString",
+      ]);
+      expect(Object.getPrototypeOf(latest)).toBeNull();
+    });
+  });
+
   it("rebuilds incompatible recency indexes and preserves authoritative read errors", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");
@@ -259,6 +298,19 @@ describe("history mutation event index", () => {
       await expect(
         readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-directory"]),
       ).rejects.toThrow();
+    });
+  });
+
+  it("preserves non-missing stream stat failures during indexed recency reads", async () => {
+    await withTempPmPath(async (context) => {
+      await rebuildHistoryEventIndex(context.pmPath);
+      await fs.symlink(
+        "pm-loop.jsonl",
+        path.join(context.pmPath, "history", "pm-loop.jsonl"),
+      );
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-loop"]),
+      ).rejects.toMatchObject({ code: "ELOOP" });
     });
   });
 

@@ -281,12 +281,16 @@ describe("context usage feedback", () => {
       surface: "next",
       profile: "next",
       rows: [
-        { id: "pm-packed", rank: 1, included: true },
+        { id: " pm-packed ", rank: 1, included: true },
         { id: "pm-emitted", rank: 2, included: false },
       ],
       now: "2026-07-01T00:00:00.000Z",
     });
-    expect(receipt).toMatchObject({ surface: "next" });
+    expect(receipt?.rows[0]).toEqual({
+      id: "pm-packed",
+      rank: 1,
+      included: true,
+    });
     await recordContextUsageDelivery({
       pmRoot,
       receipt,
@@ -527,6 +531,7 @@ describe("context usage feedback", () => {
         profile: "orient",
         rows: [{ id: "pm-row", rank: 1, included: true }],
         result_omitted: false,
+        delivered_item_ids: ["pm-row"],
       })}\n`,
     );
     await recordContextUsageTouch({
@@ -637,13 +642,21 @@ describe("context usage feedback", () => {
 
   it("keeps the exploration floor when decay underflows to zero", async () => {
     const pmRoot = await tempPmRoot();
-    await recordContextUsageServing({
+    const receipt = await recordContextUsageServing({
       pmRoot,
       author: "agent",
       surface: "context",
       profile: "context",
       rows: [{ id: "pm-ancient", rank: 1, included: true }],
       now: "2000-01-01T00:00:00.000Z",
+      retentionDays: 3_000_000,
+    });
+    await recordContextUsageDelivery({
+      pmRoot,
+      receipt,
+      deliveredItemIds: ["pm-ancient"],
+      resultOmitted: false,
+      now: "2000-01-01T00:00:30.000Z",
       retentionDays: 3_000_000,
     });
     await recordContextUsageTouch({
