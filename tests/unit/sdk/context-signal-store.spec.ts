@@ -486,6 +486,7 @@ describe("context signal feature store", () => {
     expect(adapter.writes).toBe(2);
     const changedEvidence = await store.readOrRebuild([item("pm-a")], {
       ...options,
+      sourceCursor: "cursor-2",
       recencyEvidence: {
         "pm-a": {
           source: "substantive_history",

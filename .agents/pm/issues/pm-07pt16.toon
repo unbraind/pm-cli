@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-09-01T23:17:49.157Z"
-closed_at: "2026-09-01T23:17:48.596Z"
-completed_at: "2026-09-01T23:17:48.596Z"
+updated_at: "2026-09-01T23:47:56.121Z"
+closed_at: "2026-09-01T23:47:53.049Z"
+completed_at: "2026-09-01T23:47:53.049Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -21,9 +21,9 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
-resolution: "Both persisted SQLite indexes now participate in the consumer-call replication trigger. Metadata delta updates fail fast when SQLite is unavailable before touching the optional index path, while history fallback invalidation remains race-safe."
-expected_result: A DatabaseSync consumer change activates both index members and both optional indexes retain aligned availability behavior.
-actual_result: The replication gate passed with 2/2 members and recurrence density 1; paired focused tests and final exact 100/100/100/100 coverage passed.
+resolution: "Context recency now derives from classified substantive history, then release cohort, then created_at, with validated provenance and snapshot fingerprints exposed through the SDK. Governance-only writes cannot promote stale work. History append/index coordination preserves authoritative writes under contention, invalidates unsafe projections, and uses token-owned locks; paired DatabaseSync replication and availability behavior are aligned as supporting hardening."
+expected_result: "Governance-only writes do not distort temporal relevance; context and next explain the substantive event or stable fallback that produced recency; snapshots and optional indexes remain trustworthy under retries, concurrency, legacy data, and malformed input."
+actual_result: "Maintenance-invariance acceptance, the exact declared 118-test focused suite, exact 100/100/100/100 final-tree coverage, full static quality, Node 24 scale checks, and isolated CLI/SDK acceptance passed. Recency provenance, fallback order, cursor-stable fingerprint invalidation, lock contention, race reconstruction, and paired replication all have negative controls."
 dependencies[10]{id,kind,created_at}:
   pm-3hps,related,"2026-07-26T17:05:19.088Z"
   pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
@@ -35,7 +35,7 @@ dependencies[10]{id,kind,created_at}:
   pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z"
   pm-pcys9n,related,"2026-07-26T17:05:19.088Z"
   pm-uwfs,related,"2026-07-26T17:05:19.088Z"
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-09-01T15:48:14.615Z","harness:codex","Delivery evidence 2026-09-01: history writes now carry public event_class=v1 classification; explicit classifications win, update patch fields are classified by declared policy, and unknown operations fail closed as substantive. The v3 event index supports latest-substantive reads with authoritative fallback. Context relevance and persisted signal snapshots derive recency from the latest substantive history event, then release cohort, then created_at, and never bare updated_at; explained context/next expose source, coordinate, history operation, and event class. A temporary-project acceptance proved a dependency-only maintenance write left the substantive recency coordinate byte-for-byte unchanged while CLI and PmClient returned the expected items. Static quality passed with public-surface and replication gates; exact coverage passed 596 files / 8260 tests at 60874 statements, 46011 branches, 12674 functions, and 58599 lines, all 100%. Supported Node 24 scale check remained within product bounds."
   "2026-09-01T17:16:28.944Z","harness:codex","Review round evidence: accepted findings added the real history:author-acknowledge, history_compact_baseline, and tests_remove maintenance operations; invalid persisted event_class values now fall through to the versioned classifier; history index v4 records authoritative stream byte sizes and rejects stale-but-valid projections before rebuilding; latest-event maps use null prototypes; signal snapshot v3 fingerprints exact recency evidence; DatabaseSync replication detects declarations and assignments. Non-absence I/O errors remain authoritative failures. Linked focused suite passed 49/49 and repo coverage passed 60,928/60,928 statements, 46,039/46,039 branches, 12,685/12,685 functions, 58,650/58,650 lines."
   "2026-09-01T18:28:29.526Z","harness:codex","Late-review hardening evidence: context snapshot freshness now fingerprints every item's effective recency provenance, including release-cohort and created_at fallbacks; optional substantive-history fields are isolated in their negative control. History-index rebuilds persist byte sizes captured with the authoritative pre-read snapshot, so a concurrent append leaves a detectable conservative mismatch rather than certifying old rows against a new size. Focused context/history suites passed, including the concurrent-append regression."
@@ -52,6 +52,7 @@ comments[16]{created_at,author,text}:
   "2026-09-01T22:27:17.431Z","harness:codex","Terminal exact-head evidence: repo-wide coverage passed at 58,723/58,723 lines, 61,007/61,007 statements, 12,699/12,699 functions, and 46,099/46,099 branches. pnpm quality:static passed the complete ESLint, zero-duplication, build, contracts, SDK/package parity, agent-token, graph-composition, and record-integrity chain. A fresh temporary Git workspace initialized, created an item, and returned it through pm context; the SDK acceptance finalized one receipt twice and persisted exactly one correlated delivery. The temporary workspace was moved to Trash. Review hardening now uses private lock tokens so stale release closures cannot remove replacement locks, preserves authoritative history append when the optional derived-index lock is contended, invalidates drift state only after the authoritative append path completes, accepts valid legacy v3 provenance without event_class, and fails closed on sparse snapshots."
   "2026-09-01T23:05:05.084Z","harness:codex","Final review verification: the 118-test focused suite passed, including the deterministic locked-writer/unlocked-fallback race. Repo-wide exact coverage passed at 100/100/100/100. The first linked quality:static attempt reached repository assurance and failed only because pm-07pt16 and pm-wv47pf were deliberately non-terminal during review work; the defect-evidence gate correctly reported governed terminal defects=0. Closing the reviewed defects now and rerunning the same linked static command."
   "2026-09-01T23:17:48.041Z","harness:codex","Paired seam evidence: item-metadata index updates now resolve optional DatabaseSync availability before filesystem access; the paired 23-test query-index and replication suite passed, the live replication gate reports both members changed with density 1, and the final exact coverage rerun passed 100/100/100/100."
+  "2026-09-01T23:47:43.784Z","harness:codex","Fresh-review correction evidence: restored sourceCursor=cursor-2 in the changedEvidence case so the persisted and requested cursors remain identical and only recency-evidence fingerprint drift can cause invalidation. The exact declared five-file linked suite, including surface-replication-gate.spec.ts, now has a matching canonical passing run: 5 files and 118 tests passed. Closure wording is restored to make substantive-history recency, maintenance invariance, explainable provenance, and concurrent derived-index safety the primary delivery; DatabaseSync replication alignment remains a supporting hardening detail."
 learnings[3]{created_at,author,text}:
   "2026-09-01T15:48:17.264Z","harness:codex","Freshness is semantic event provenance, not file-write time: maintenance operations must be explicitly classified and excluded from temporal ranking, while unknown operations fail closed as substantive."
   "2026-09-01T19:41:37.711Z","harness:codex","A derived index can safely coordinate an authoritative append without a second filesystem lock by holding its SQLite write transaction across the append and paired size capture; if projection work fails after the append, preserve authority and discard the accelerator."
@@ -90,7 +91,7 @@ tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-01T13:29:41.935Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Repo-wide exact coverage gate
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,300,"harness:codex","2026-09-01T21:41:14.125Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Exact-head lock ownership snapshot compatibility delivery idempotency and CLI assertion regressions
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,project,300,"harness:codex","2026-09-01T22:49:50.952Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Exact-head fallback serialization candidate reuse replication and isolated negative controls
-test_runs[13]:
+test_runs[14]:
   - run_id: test-local-mtixgwcy-h56j44
     kind: test
     status: passed
@@ -242,11 +243,22 @@ test_runs[13]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjb9p2v-n2hzrg
+    kind: test
+    status: passed
+    started_at: "2026-09-01T23:41:02.118Z"
+    finished_at: "2026-09-01T23:41:23.383Z"
+    recorded_at: "2026-09-01T23:41:23.383Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,Substantive recency SDK and performance contract
   docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
   docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
-close_reason: Paired DatabaseSync consumer symmetry and its exact coverage are complete.
+close_reason: Substantive-history recency and maintenance-invariant context ranking are delivered with terminal concurrency and evidence hardening
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
