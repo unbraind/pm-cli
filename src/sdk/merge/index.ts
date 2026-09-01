@@ -32,6 +32,7 @@ export {
   type MergeDecisionReceiptSummary,
   type MergeReceiptEvidenceReport,
   type MergeReceiptEvidenceScan,
+  type MergeReceiptInvalidEvidence,
   type MergeReceiptReport,
 } from "./receipts.js";
 export {

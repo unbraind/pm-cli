@@ -51,6 +51,7 @@ import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
+import { sha256Hex } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import {
@@ -111,6 +112,7 @@ import {
 } from "../merge/install.js";
 import {
   inspectMergeReceiptEvidence,
+  isSafeReceiptId,
   partitionMergeReceipts,
   type MergeDecisionReceipt,
 } from "../merge/receipts.js";
@@ -616,6 +618,44 @@ interface HistoryIntegrityScan {
   unreadable: string[];
   conflictMarkers: Array<{ id: string; line: number; marker: string }>;
   invalidJson: Array<{ id: string; line: number }>;
+  mergeReceiptReferences: Array<{
+    itemId: string;
+    line: number;
+    receiptId: string;
+  }>;
+}
+
+function mergeReceiptIdsFromHistoryEntry(value: unknown): string[] {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return [];
+  }
+  const context = (value as Record<string, unknown>).context;
+  if (
+    typeof context !== "object" ||
+    context === null ||
+    Array.isArray(context)
+  ) {
+    return [];
+  }
+  const merge = (context as Record<string, unknown>).merge;
+  if (typeof merge !== "object" || merge === null || Array.isArray(merge)) {
+    return [];
+  }
+  const receipts = (merge as Record<string, unknown>).receipts;
+  if (!Array.isArray(receipts)) return [];
+  return receipts.flatMap((receipt) => {
+    if (
+      typeof receipt !== "object" ||
+      receipt === null ||
+      Array.isArray(receipt)
+    ) {
+      return [];
+    }
+    const receiptId = (receipt as Record<string, unknown>).receipt_id;
+    return typeof receiptId === "string" && receiptId.length > 0
+      ? [receiptId]
+      : [];
+  });
 }
 
 async function scanHistoryIntegrity(
@@ -625,6 +665,8 @@ async function scanHistoryIntegrity(
   const unreadable: string[] = [];
   const conflictMarkers: HistoryIntegrityScan["conflictMarkers"] = [];
   const invalidJson: HistoryIntegrityScan["invalidJson"] = [];
+  const mergeReceiptReferences: HistoryIntegrityScan["mergeReceiptReferences"] =
+    [];
   let files: string[] = [];
   try {
     files = (await fs.readdir(historyDir))
@@ -653,13 +695,26 @@ async function scanHistoryIntegrity(
     raw.split(/\r?\n/).forEach((line, index) => {
       if (!line.trim()) return;
       try {
-        JSON.parse(line);
+        const parsed = JSON.parse(line) as unknown;
+        mergeReceiptReferences.push(
+          ...mergeReceiptIdsFromHistoryEntry(parsed).map((receiptId) => ({
+            itemId,
+            line: index + 1,
+            receiptId,
+          })),
+        );
       } catch {
         invalidJson.push({ id: itemId, line: index + 1 });
       }
     });
   }
-  return { files, unreadable, conflictMarkers, invalidJson };
+  return {
+    files,
+    unreadable,
+    conflictMarkers,
+    invalidJson,
+    mergeReceiptReferences,
+  };
 }
 
 function buildHierarchyIntegrityWarnings(
@@ -684,10 +739,22 @@ function buildHierarchyIntegrityWarnings(
   ];
 }
 
-function buildMergeReceiptEvidenceWarnings(invalidEvidenceCount: number) {
-  return invalidEvidenceCount === 0
-    ? []
-    : [`merge_receipt_evidence_invalid:${invalidEvidenceCount}`];
+function buildMergeReceiptEvidenceWarnings(params: {
+  invalidEvidenceCount: number;
+  missingHistoryReferenceCount: number;
+}): string[] {
+  const warnings: string[] = [];
+  if (params.invalidEvidenceCount > 0) {
+    warnings.push(
+      `merge_receipt_evidence_invalid:${params.invalidEvidenceCount}`,
+    );
+  }
+  if (params.missingHistoryReferenceCount > 0) {
+    warnings.push(
+      `merge_receipt_history_reference_missing:${params.missingHistoryReferenceCount}`,
+    );
+  }
+  return warnings;
 }
 
 async function buildIntegrityCheck(
@@ -720,11 +787,26 @@ async function buildIntegrityCheck(
   const mergeReceiptEvidence = await inspectMergeReceiptEvidence(
     gitWorkspaceRoot ?? pmRoot,
     {
+      includeReconciled: true,
       includeLossless: true,
       pmRoot,
     },
   );
-  const pendingMergeReceipts = mergeReceiptEvidence.receipts;
+  const availableMergeReceiptIds = new Set(
+    mergeReceiptEvidence.receipts.map((receipt) => receipt.id),
+  );
+  const missingMergeReceiptReferences = historyScan.mergeReceiptReferences
+    .filter((reference) => !availableMergeReceiptIds.has(reference.receiptId))
+    .map((reference) => ({
+      item_id: reference.itemId,
+      history_line: reference.line,
+      ...(isSafeReceiptId(reference.receiptId)
+        ? { receipt_id: reference.receiptId }
+        : { receipt_reference_hash: sha256Hex(reference.receiptId) }),
+    }));
+  const pendingMergeReceipts = mergeReceiptEvidence.receipts.filter(
+    (receipt) => receipt.state === "pending",
+  );
   const {
     pendingDecisions: pendingMergeDecisions,
     lossless: losslessMergeReceipts,
@@ -776,9 +858,10 @@ async function buildIntegrityCheck(
     ...(losslessMergeReceipts.length > 0
       ? [`merge_receipts_pending:${losslessMergeReceipts.length}`]
       : []),
-    ...buildMergeReceiptEvidenceWarnings(
-      mergeReceiptEvidence.invalid_evidence_count,
-    ),
+    ...buildMergeReceiptEvidenceWarnings({
+      invalidEvidenceCount: mergeReceiptEvidence.invalid_evidence_count,
+      missingHistoryReferenceCount: missingMergeReceiptReferences.length,
+    }),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),
@@ -818,6 +901,8 @@ async function buildIntegrityCheck(
           lossless_merge_receipts: losslessMergeReceipts.length,
           invalid_merge_receipt_evidence:
             mergeReceiptEvidence.invalid_evidence_count,
+          missing_merge_receipt_history_references:
+            missingMergeReceiptReferences.length,
         },
         item_unreadable: itemScan.unreadable,
         item_conflict_markers: itemScan.conflictMarkers,
@@ -853,6 +938,14 @@ async function buildIntegrityCheck(
         lossless_merge_receipt_items: [
           ...new Set(losslessMergeReceipts.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
+        invalid_merge_receipt_evidence_details:
+          mergeReceiptEvidence.invalid_evidence,
+        invalid_merge_receipt_evidence_details_truncated:
+          mergeReceiptEvidence.invalid_evidence_truncated,
+        missing_merge_receipt_history_reference_details:
+          missingMergeReceiptReferences.slice(0, HEALTH_WARNING_LIMIT),
+        missing_merge_receipt_history_reference_details_truncated:
+          missingMergeReceiptReferences.length > HEALTH_WARNING_LIMIT,
       },
     },
     warnings: normalizedWarnings,

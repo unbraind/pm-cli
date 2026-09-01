@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import type { Stats } from "node:fs";
 import {
+  chmod,
   mkdir,
   mkdtemp,
   readFile,
@@ -236,6 +237,8 @@ describe("clone-local merge decision receipts", () => {
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
       invalid_evidence_count: 0,
+      invalid_evidence: [],
+      invalid_evidence_truncated: false,
       clone_local_evidence_resolved: false,
     });
     expect(
@@ -405,6 +408,19 @@ describe("clone-local merge decision receipts", () => {
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
       invalid_evidence_count: 2,
+      invalid_evidence: [
+        {
+          evidence_source: "clone_local",
+          reason: "schema_or_identity_invalid",
+          receipt_id: "aaaa-corrupt",
+        },
+        {
+          evidence_source: "clone_local",
+          reason: "schema_or_identity_invalid",
+          receipt_id: "bbbb-corrupt",
+        },
+      ],
+      invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
     });
     expect(
@@ -414,10 +430,59 @@ describe("clone-local merge decision receipts", () => {
       complete: false,
       count: 0,
       invalid_evidence_count: 2,
+      invalid_evidence: [
+        {
+          evidence_source: "clone_local",
+          reason: "schema_or_identity_invalid",
+          receipt_id: "aaaa-corrupt",
+        },
+        {
+          evidence_source: "clone_local",
+          reason: "schema_or_identity_invalid",
+          receipt_id: "bbbb-corrupt",
+        },
+      ],
+      invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
       receipts: [],
     });
   });
+
+  it.runIf(process.platform !== "win32" && process.getuid?.() !== 0)(
+    "classifies an unreadable receipt candidate without exposing its contents",
+    async () => {
+      const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+      workspaces.push(workspace);
+      execFileSync("git", ["init", "-q"], { cwd: workspace });
+      const receiptDirectory = execFileSync(
+        "git",
+        [
+          "rev-parse",
+          "--path-format=absolute",
+          "--git-path",
+          "pm-merge-receipts",
+        ],
+        { cwd: workspace, encoding: "utf8" },
+      ).trim();
+      await mkdir(receiptDirectory, { recursive: true });
+      const receiptPath = path.join(receiptDirectory, "unreadable.json");
+      await writeFile(receiptPath, "private malformed evidence\n", "utf8");
+      await chmod(receiptPath, 0o000);
+
+      await expect(
+        inspectMergeReceiptEvidence(workspace),
+      ).resolves.toMatchObject({
+        invalid_evidence_count: 1,
+        invalid_evidence: [
+          {
+            evidence_source: "clone_local",
+            reason: "candidate_unreadable",
+            receipt_id: "unreadable",
+          },
+        ],
+      });
+    },
+  );
 
   it("fails closed when a receipt directory path cannot be traversed", async () => {
     const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
@@ -433,7 +498,89 @@ describe("clone-local merge decision receipts", () => {
     ).resolves.toEqual({
       receipts: [],
       invalid_evidence_count: 1,
+      invalid_evidence: [
+        {
+          evidence_source: "durable",
+          reason: "directory_unreadable",
+        },
+      ],
+      invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
+    });
+  });
+
+  it("classifies ancestor traversal failures without platform error guessing", async () => {
+    const missingError = Object.assign(new Error("missing"), {
+      code: "ENOENT",
+    });
+    const deniedError = Object.assign(new Error("denied"), { code: "EACCES" });
+
+    await expect(
+      _testOnlyMergeReceipts.receiptDirectoryFailureMeansAbsent(
+        "/missing/receipt-store",
+        missingError,
+        () => Promise.reject(deniedError),
+      ),
+    ).resolves.toBe(false);
+    await expect(
+      _testOnlyMergeReceipts.receiptDirectoryFailureMeansAbsent(
+        "/missing",
+        missingError,
+        () => Promise.reject(missingError),
+      ),
+    ).resolves.toBe(true);
+    const inspectPresentFile = vi.fn(() =>
+      Promise.resolve({ isDirectory: () => false }),
+    );
+    await expect(
+      _testOnlyMergeReceipts.receiptDirectoryFailureMeansAbsent(
+        "/present/receipt-store",
+        missingError,
+        inspectPresentFile,
+      ),
+    ).resolves.toBe(false);
+    expect(inspectPresentFile).toHaveBeenCalledWith("/present/receipt-store");
+  });
+
+  it("bounds invalid candidate details while preserving the complete count", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const receiptDirectory = execFileSync(
+      "git",
+      [
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "pm-merge-receipts",
+      ],
+      { cwd: workspace, encoding: "utf8" },
+    ).trim();
+    await mkdir(receiptDirectory, { recursive: true });
+    await mkdir(path.join(receiptDirectory, "!unsafe candidate.json"));
+    await Promise.all(
+      Array.from({ length: 100 }, async (_, index) =>
+        mkdir(
+          path.join(
+            receiptDirectory,
+            `bounded-${String(index).padStart(3, "0")}.json`,
+          ),
+        ),
+      ),
+    );
+
+    const evidence = await inspectMergeReceiptEvidence(workspace);
+    expect(evidence).toMatchObject({
+      invalid_evidence_count: 101,
+      invalid_evidence_truncated: true,
+      clone_local_evidence_resolved: true,
+    });
+    expect(evidence.invalid_evidence).toHaveLength(100);
+    expect(evidence.invalid_evidence[0]).toEqual({
+      evidence_source: "clone_local",
+      reason: "candidate_not_bounded_regular_file",
+      candidate_name_hash:
+        "137b584a2d5d9672701a261ea012a48531bead7522c216b22d8ca44eff382277",
     });
   });
 
@@ -530,9 +677,10 @@ describe("clone-local merge decision receipts", () => {
       "merge-receipts",
       `${receipt?.id}.json`,
     );
-    const durable = JSON.parse(
-      await readFile(durablePath, "utf8"),
-    ) as Record<string, unknown>;
+    const durable = JSON.parse(await readFile(durablePath, "utf8")) as Record<
+      string,
+      unknown
+    >;
     durable.item_id = "pm-divergent-forged";
     durable.item_path = ".agents/pm/tasks/pm-divergent-forged.toon";
     durable.state = "reconciled";
@@ -544,8 +692,45 @@ describe("clone-local merge decision receipts", () => {
     ).resolves.toEqual({
       receipts: [],
       invalid_evidence_count: 1,
+      invalid_evidence: [
+        {
+          evidence_source: "clone_local_and_durable",
+          reason: "copy_provenance_mismatch",
+          receipt_id: receipt?.id,
+        },
+      ],
+      invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
     });
+    const receiptDirectory = execFileSync(
+      "git",
+      [
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "pm-merge-receipts",
+      ],
+      { cwd: workspace, encoding: "utf8" },
+    ).trim();
+    await Promise.all(
+      Array.from({ length: 100 }, async (_, index) =>
+        mkdir(
+          path.join(
+            receiptDirectory,
+            `000-invalid-${String(index).padStart(3, "0")}.json`,
+          ),
+        ),
+      ),
+    );
+    const boundedEvidence = await inspectMergeReceiptEvidence(workspace, {
+      pmRoot,
+    });
+    expect(boundedEvidence.invalid_evidence_count).toBe(101);
+    expect(boundedEvidence.invalid_evidence).toHaveLength(100);
+    expect(boundedEvidence.invalid_evidence_truncated).toBe(true);
+    expect(boundedEvidence.invalid_evidence).not.toContainEqual(
+      expect.objectContaining({ reason: "copy_provenance_mismatch" }),
+    );
   });
 
   it("enforces the bounded no-follow receipt file boundary", async () => {

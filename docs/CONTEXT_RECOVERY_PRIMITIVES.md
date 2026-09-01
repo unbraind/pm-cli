@@ -1,6 +1,6 @@
 # Context Integrity and Recovery Primitives
 
-Tracker: [pm-hu92i3](../.agents/pm/issues/pm-hu92i3.toon), [pm-nc94mk](../.agents/pm/issues/pm-nc94mk.toon), [pm-xrjy8o](../.agents/pm/issues/pm-xrjy8o.toon), [pm-f60039](../.agents/pm/issues/pm-f60039.toon), [pm-2qahia](../.agents/pm/issues/pm-2qahia.toon), [pm-z1z96w](../.agents/pm/issues/pm-z1z96w.toon), [pm-yhle2e](../.agents/pm/issues/pm-yhle2e.toon), [pm-t7wl00](../.agents/pm/issues/pm-t7wl00.toon), [pm-hiqlkh](../.agents/pm/issues/pm-hiqlkh.toon), [pm-ntnv4k](../.agents/pm/issues/pm-ntnv4k.toon), [pm-sxg7wl](../.agents/pm/issues/pm-sxg7wl.toon), [pm-xspd](../.agents/pm/chores/pm-xspd.toon)
+Tracker: [pm-dn8rwl](../.agents/pm/issues/pm-dn8rwl.toon), [pm-r97901](../.agents/pm/issues/pm-r97901.toon), [pm-hu92i3](../.agents/pm/issues/pm-hu92i3.toon), [pm-nc94mk](../.agents/pm/issues/pm-nc94mk.toon), [pm-xrjy8o](../.agents/pm/issues/pm-xrjy8o.toon), [pm-f60039](../.agents/pm/issues/pm-f60039.toon), [pm-2qahia](../.agents/pm/issues/pm-2qahia.toon), [pm-z1z96w](../.agents/pm/issues/pm-z1z96w.toon), [pm-yhle2e](../.agents/pm/issues/pm-yhle2e.toon), [pm-t7wl00](../.agents/pm/issues/pm-t7wl00.toon), [pm-hiqlkh](../.agents/pm/issues/pm-hiqlkh.toon), [pm-ntnv4k](../.agents/pm/issues/pm-ntnv4k.toon), [pm-sxg7wl](../.agents/pm/issues/pm-sxg7wl.toon), [pm-xspd](../.agents/pm/chores/pm-xspd.toon)
 
 `project management = context management`: a successful command is useful only when the context it records and later returns is truthful, lossless, and actionable. These SDK-owned primitives are shared by the CLI and package integrations.
 
@@ -59,7 +59,16 @@ history.
 
 Health keeps the metadata-only cache path for clean history streams. A cached hash mismatch, chain mismatch, or writer-version skew is only a candidate: health rereads canonical item sources and verifies stream content hashes before reporting corruption. The `history_drift` details expose `cache_confirmation` candidate, confirmed, and resolved-false-positive item sets, while `cache_hit_verification: metadata_then_content_hash` identifies the authoritative fallback. Drift-cache envelopes carry both their schema version and the current item-hash capability, so changing legacy canonicalization invalidates prior verdicts and a runtime with incompatible hash semantics rebuilds the cache instead of trusting it.
 
-Merge reconciliation may consume a durable hash-only receipt without `--force` only when its canonical item path, complete declared-field set, and every merged-value hash exactly match the current item snapshot. Raw discarded values remain clone-local. Any incomplete or mismatched proof fails closed. SDK gates use `inspectMergeReceiptEvidence` or `runMergeReceiptEvidenceReport` to retain the distinction between no evidence, rejected evidence, and clone-local evidence whose Git directory could not be resolved; `clone_local_evidence_resolved=false` makes the loss-aware report incomplete. The list-only and legacy report compatibility projections intentionally return valid receipts only. Diverged history unions also fail closed when deterministic suffix ordering would make any patch operation inapplicable, instead of publishing a rehashed stream with a skipped branch effect.
+Merge reconciliation may consume a durable hash-only receipt without `--force` only when its canonical item path, complete declared-field set, and every merged-value hash exactly match the current item snapshot. Raw discarded values remain clone-local. Any incomplete or mismatched proof fails closed. SDK gates use `inspectMergeReceiptEvidence` or `runMergeReceiptEvidenceReport` to retain the distinction between no evidence, rejected evidence, and clone-local evidence whose Git directory could not be resolved; `clone_local_evidence_resolved=false` makes the loss-aware report incomplete. Rejected evidence carries bounded privacy-safe source, reason, and receipt-id-or-hash locators, while the exact count and truncation receipt preserve completeness under an agent token budget. Cross-platform ancestor inspection distinguishes an absent receipt store from an unreadable or non-directory root. The list-only and legacy report compatibility projections intentionally return valid receipts only. Diverged history unions also fail closed when deterministic suffix ordering would make any patch operation inapplicable, instead of publishing a rehashed stream with a skipped branch effect.
+
+History receipt summaries are durable references, not cleanup hints. Health
+checks each `context.merge.receipts[].receipt_id` against valid pending and
+reconciled authoritative evidence. A missing reference is returned with its
+item id and one-based history line; unsafe identifiers are SHA-256 locators
+rather than echoed content. Detail is capped at 100 while the exact count and a
+truncation receipt preserve loss awareness. Recovery means restoring the named
+receipt from an authoritative clone or backup. Rewriting append-only history or
+deleting sibling evidence is never an automatic remediation.
 
 ## Strict-create recovery
 

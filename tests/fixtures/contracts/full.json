@@ -18461,6 +18461,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_receipt_history_reference_missing",
+      "class": "generic_failure",
+      "code": "merge_receipt_history_reference_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge receipt history reference missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_receipts_pending",
       "class": "generic_failure",
       "code": "merge_receipts_pending",
