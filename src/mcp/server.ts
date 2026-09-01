@@ -657,9 +657,7 @@ async function handleToolCall(
         params.inputResponses === undefined
           ? undefined
           : parseMcpInputResponses(params.inputResponses);
-      if (params.arguments !== undefined && !isMcpRecord(params.arguments)) {
-        throw new PmCliError("pm MCP tool arguments must be an object.", 64);
-      }
+      validateMcpToolArguments(params.arguments);
       const requestedArgs = {
         ...decodeHtmlEntitiesInOptions(asRecordClone(params.arguments)),
         ...(inputResponses ? { inputResponses } : {}),
@@ -974,6 +972,13 @@ function mcpTaskStore(): PmMcpTaskStore {
   });
 }
 
+/** Rejects malformed MCP tool argument containers before dispatch. */
+function validateMcpToolArguments(value: unknown): void {
+  if (value !== undefined && !isMcpRecord(value)) {
+    throw new PmCliError("pm MCP tool arguments must be an object.", 64);
+  }
+}
+
 function shouldCreateMcpTask(
   params: Record<string, unknown> | undefined,
   requestContext: PmMcpRequestContext,
@@ -1193,6 +1198,7 @@ async function dispatchModernToolMethod(
       PM_MCP_SERVER_INFO,
     );
   }
+  validateMcpToolArguments(request.params?.arguments);
   if (shouldCreateMcpTask(request.params, requestContext)) {
     return createMcpTaskForToolCall(request.params, requestContext);
   }

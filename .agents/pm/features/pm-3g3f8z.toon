@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags[7]: "area:mcp","area:sdk",progressive-discovery,result-contract,token-efficiency,tool-selection,tools
 created_at: "2026-08-28T20:22:27.057Z"
-updated_at: "2026-08-31T23:56:03.329Z"
+updated_at: "2026-09-01T00:25:45.533Z"
 deadline: "2027-03-31T00:00:00.000Z"
-closed_at: "2026-08-31T23:56:02.740Z"
-completed_at: "2026-08-31T23:56:02.740Z"
+closed_at: "2026-09-01T00:25:44.963Z"
+completed_at: "2026-09-01T00:25:44.963Z"
 author: "harness:codex"
 estimated_minutes: 840
 acceptance_criteria: A server advertises a small stable entry catalog and a deterministic expansion mechanism; discovery honors explicit token cost and omission recovery contracts; ranking composes lexical semantic graph permission freshness and usage signals without hiding policy; tool results have one canonical model-facing representation with compatibility adapters isolated; cache hints invalidation and deterministic ordering remain coherent across progressive pages; quality is gated by selection accuracy latency token cost and negative controls at one hundred one thousand and larger tool catalogs; CLI MCP and SDK surfaces derive from one contract
 parent: pm-opw1l3
 risk: high
 confidence: medium
-resolution: "Completed progressive discovery with strict field and container validation, deterministic code-unit ordering, append-only PM evidence correction, and all review hardening."
-expected_result: "Malformed MCP discovery requests fail before defaults, canonical selection is host-invariant, public item metadata remains publication-safe, and all repository gates pass."
-actual_result: "Five malformed container shapes fail with exit 64, mixed-case ties use code-unit order, current PM metadata is sanitized through pm, and 8,209 tests pass at exact 100 percent coverage with static/security/audit gates green."
+resolution: "Delivered progressive MCP discovery, canonical result contracts, deterministic and keyed pagination, token-efficient SDK/CLI/MCP capability surfaces, and fail-closed validation before both direct and asynchronous dispatch."
+expected_result: "Agents receive a bounded, deterministic, customizable project-management discovery surface whose malformed requests cannot be silently defaulted or accepted as tasks."
+actual_result: "The broad SDK/CLI/MCP delivery and nine review-hardening rounds pass 8,211 tests at exact 100/100/100/100 coverage plus all static, security, dependency, graph, token, refusal, docs, and package gates."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,verifies,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-5t33or,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-vae5ec,discovered_from,"2026-08-28T20:22:27.057Z","harness:codex","cli:create:dep",detected
   pm-rs9vry,discovered_from,"2026-08-28T20:58:24.103Z","harness:codex","cli:update:dep",detected
-comments[29]:
+comments[32]:
   - created_at: "2026-08-28T20:22:27.057Z"
     author: "harness:codex"
     text: "Duplicate check evidence: all-status searches for MCP progressive discovery tool catalog scale canonical tool results and result ambiguity found completed cache and stateless owners plus CLI tiering work but no item for the official forward primitive."
@@ -115,6 +115,15 @@ comments[29]:
   - created_at: "2026-08-31T23:56:02.191Z"
     author: "harness:codex"
     text: "Review round 8 terminal evidence: the linked container/order cohort passes 33 tests. Full repository coverage passes 8,209 tests across 594 files at exact 100% statements 60,597/60,597, branches 45,785/45,785, functions 12,609/12,609, and lines 58,343/58,343. CI static quality passed ESLint, zero clones, build/generated surfaces, package/SDK parity, token and transport gates, graph composition, and append-only record integrity. Secret scan and dependency audit report no findings."
+  - created_at: "2026-09-01T00:09:02.085Z"
+    author: "harness:codex"
+    text: "Review round 9 recurrence: CodeRabbit issue comment 5486481809 is valid. Modern task dispatch evaluates shouldCreateMcpTask before handleToolCall, so direct task tools can accept a malformed arguments container and return an asynchronous task receipt before validation. Add a task-negotiated black-box negative control and enforce the same container contract before task creation while retaining legacy-handler validation."
+  - created_at: "2026-09-01T00:10:54.454Z"
+    author: "harness:codex"
+    text: "TDD red evidence for review round 9: the negotiated task-capable pm_validate path accepted both null and array arguments containers as working asynchronous tasks instead of rejecting synchronously; focused integration run failed exactly those two new negative controls (18 passed, 2 failed)."
+  - created_at: "2026-09-01T00:25:44.360Z"
+    author: "harness:codex"
+    text: "Review round 9 terminal evidence: moved malformed MCP arguments-container validation ahead of asynchronous task selection while retaining validation at the shared tool execution boundary. Negotiated task calls with null and array containers now fail synchronously with exit 64. Focused suite passes 20 tests; linked round-8 suite passes 35 tests; full repository coverage passes 594 files and 8,211 tests at exact 60,599/60,599 statements, 45,785/45,785 branches, 12,610/12,610 functions, and 58,345/58,345 lines. CI-mode static quality, no-clone checks, build, SDK/contracts/token/refusal/graph/record gates, secret scan, vulnerability scan, and pnpm audit all pass."
 learnings[5]{created_at,author,text}:
   "2026-08-31T15:07:54.738Z","harness:codex",Progressive discovery must bind cursors to the authorization-filtered ranked request and refuse budgets that cannot advance; a non-advancing cursor is worse than an explicit recoverable minimum-budget error.
   "2026-08-31T17:25:34.767Z","harness:codex","Cursor authorization identity and response cache identity are different contracts: keep the signed request fingerprint stable across adjustable page size/budget, but key cached responses by fingerprint plus offset, limit, and budget. Exact token budgeting can remain linear by pre-serializing rows once and measuring a constant-size empty-tools envelope."
@@ -204,7 +213,7 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/progressive-capability-discovery
     note: Review round 8 container and code-unit ordering contract
-test_runs[10]:
+test_runs[11]:
   - run_id: test-local-mthdi3cv-v38sr6
     kind: test
     status: passed
@@ -319,6 +328,17 @@ test_runs[10]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mthxeenu-4517ua
+    kind: test
+    status: passed
+    started_at: "2026-09-01T00:24:51.002Z"
+    finished_at: "2026-09-01T00:25:22.362Z"
+    recorded_at: "2026-09-01T00:25:22.362Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/mcp-progressive-discovery.integration.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
 docs[11]{path,scope,note}:
   CHANGELOG.md,project,Generated reviewed-delivery changelog
   docs/AGENT_GUIDE.md,project,Separates read-only orientation from optional guidance setup
@@ -331,5 +351,5 @@ docs[11]{path,scope,note}:
   docs/README.md,project,Documentation index
   plugins/pm-claude/README.md,project,Claude plugin 32-tool catalog
   README.md,project,Canonical one-call orientation clarification from review
-close_reason: "Exact-head review hardening is complete: top-level MCP argument containers fail closed, equal-token protocol ties are locale-independent, and public PM evidence omits host-specific access workflow details."
+close_reason: Progressive discovery and canonical MCP results delivered with pre-task fail-closed argument validation and all review findings resolved.
 body: ""

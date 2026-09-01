@@ -386,4 +386,22 @@ describe("MCP progressive discovery negotiation", () => {
       },
     });
   });
+
+  it.each([[null], [[]]])(
+    "rejects malformed task tool argument containers before task creation: %j",
+    async (argumentsValue) => {
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 120,
+          method: "tools/call",
+          params: modernParams(
+            true,
+            { name: "pm_validate", arguments: argumentsValue },
+            true,
+          ),
+        }),
+      ).rejects.toMatchObject({ exitCode: 64 });
+    },
+  );
 });
