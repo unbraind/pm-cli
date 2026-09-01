@@ -722,6 +722,13 @@ export function discoverPmTools(
   candidates: readonly PmToolDiscoveryCandidate[],
   options: PmToolDiscoveryOptions = {},
 ): PmToolDiscoveryResult {
+  if (
+    options === null ||
+    typeof options !== "object" ||
+    Array.isArray(options)
+  ) {
+    throw new PmCliError("pm tool discovery options must be an object.", 64);
+  }
   const request = resolveDiscoveryRequest(options);
   const cursorIntegrityKey =
     options.cursorIntegrityKey ?? PROCESS_CURSOR_INTEGRITY_KEY;

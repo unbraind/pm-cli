@@ -5,6 +5,7 @@ import {
   discoverPmTools,
   type PmToolDiscoveryCandidate,
 } from "../../../../src/sdk/mcp/discovery.js";
+import { PmCliError } from "../../../../src/sdk/runtime-primitives.js";
 
 function candidate(
   name: string,
@@ -413,9 +414,9 @@ describe("progressive MCP tool discovery", () => {
       );
     }
     for (const profile of ["invalid", 42, null]) {
-      expect(() =>
-        discoverPmTools([], { profile: profile as never }),
-      ).toThrow(/profile/u);
+      expect(() => discoverPmTools([], { profile: profile as never })).toThrow(
+        /profile/u,
+      );
     }
     expect(
       discoverPmTools([], {
@@ -429,6 +430,22 @@ describe("progressive MCP tool discovery", () => {
           cursorIntegrityKey: cursorIntegrityKey as never,
         }),
       ).toThrow(/cursorIntegrityKey/u);
+    }
+  });
+
+  it("rejects malformed public options containers with a canonical usage error", () => {
+    for (const options of [null, [], "invalid", 42, false]) {
+      let refusal: unknown;
+      try {
+        discoverPmTools([], options as never);
+      } catch (error: unknown) {
+        refusal = error;
+      }
+      expect(refusal).toBeInstanceOf(PmCliError);
+      expect(refusal).toMatchObject({
+        exitCode: 64,
+        message: "pm tool discovery options must be an object.",
+      });
     }
   });
 });
