@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-09-02T10:18:46.201Z"
-closed_at: "2026-09-02T10:11:16.835Z"
-completed_at: "2026-09-02T10:11:16.835Z"
+updated_at: "2026-09-02T10:20:46.082Z"
+closed_at: "2026-09-02T10:20:45.481Z"
+completed_at: "2026-09-02T10:20:45.481Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -21,9 +21,9 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
-resolution: "Preserved runtime-only init cwd provenance behind a private symbol and the unchanged public runInit signature; extracted cohesive workspace-gitignore setup to satisfy the strict complexity ceiling; retained read-only files-lookup cache semantics, v5 documentation, timestamp negative controls, and cross-platform verifier hardening."
-expected_result: "The active-host SDK initializes from its requested workspace without changing the public API or violating repository complexity, coverage, documentation, or platform gates."
-actual_result: Focused init and SDK-surface verification passed 3 files / 59 tests. PM-linked repo-wide coverage passed at exact 100/100/100/100 after the final source edit. The full static chain is rerun against this terminal tracker state.
+resolution: "Context relevance now derives temporal freshness from versioned substantive history events, then stable release cohorts, then created_at, and never from maintenance-sensitive updated_at. The SDK, CLI, and MCP expose canonical recency provenance and exact delivery identifiers so feedback is attributable to returned context. Supporting hardening adds durable v5 indexed reads, contention-safe history writes, active-host init cwd provenance without a public signature change, read-only cache preservation, unconditional scale targets, and bounded cross-platform release verification."
+expected_result: "Governance and maintenance writes cannot promote unchanged work; context ordering remains stable under pure maintenance mutations; agents and extensions receive explainable canonical recency and exact delivery coordinates through compatible SDK, CLI, and MCP contracts."
+actual_result: "Property, integration, and temporary-directory acceptance tests prove maintenance-invariant ordering, substantive event provenance, exact context delivery, and active-host workspace discovery. Final PM-linked repo-wide coverage passes at 61,207/61,207 statements, 46,245/46,245 branches, 12,735/12,735 functions, and 58,910/58,910 lines (100/100/100/100); the complete static, SDK surface, duplication, graph, and record-integrity chain passes."
 dependencies[10]{id,kind,created_at}:
   pm-3hps,related,"2026-07-26T17:05:19.088Z"
   pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
@@ -394,7 +394,7 @@ docs[5]{path,scope,note}:
   docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
   docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
   docs/SDK.md,project,Complete persisted snapshot reuse contract
-close_reason: Completed terminal complexity correction and exact-head verification
+close_reason: Delivered maintenance-invariant substantive-history recency with exact context delivery and review hardening
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
