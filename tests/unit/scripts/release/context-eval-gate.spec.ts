@@ -275,6 +275,23 @@ describe("context evaluation gate", () => {
     await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", touchOnlyOperations))
       .rejects.toBe(touchError);
 
+    const undefinedFeedbackOperations: ContextUsageOperations = {
+      recordServing: vi.fn().mockRejectedValue(undefined),
+      recordDelivery: vi.fn(),
+      recordTouches: vi.fn().mockResolvedValue(undefined),
+    };
+    await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", undefinedFeedbackOperations))
+      .rejects.toBeUndefined();
+    expect(undefinedFeedbackOperations.recordTouches).toHaveBeenCalledOnce();
+
+    const undefinedTouchOperations: ContextUsageOperations = {
+      recordServing: vi.fn().mockResolvedValue({ correlation_id: "receipt" }),
+      recordDelivery: vi.fn().mockResolvedValue(undefined),
+      recordTouches: vi.fn().mockRejectedValue(undefined),
+    };
+    await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", undefinedTouchOperations))
+      .rejects.toBeUndefined();
+
     const combinedOperations: ContextUsageOperations = {
       recordServing: vi.fn().mockRejectedValue(feedbackError),
       recordDelivery: vi.fn(),

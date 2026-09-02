@@ -164,6 +164,7 @@ export async function seedUsageFeedback(
     return id;
   });
   const touchedAt = new Date();
+  let feedbackFailed = false;
   let feedbackError;
   try {
     const receipt = await operations.recordServing({
@@ -182,8 +183,10 @@ export async function seedUsageFeedback(
       now: new Date(touchedAt.getTime() - 30_000).toISOString(),
     });
   } catch (error) {
+    feedbackFailed = true;
     feedbackError = error;
   }
+  let touchFailed = false;
   let touchError;
   try {
     await operations.recordTouches({
@@ -194,16 +197,17 @@ export async function seedUsageFeedback(
       now: touchedAt.toISOString(),
     });
   } catch (error) {
+    touchFailed = true;
     touchError = error;
   }
-  if (feedbackError !== undefined && touchError !== undefined) {
+  if (feedbackFailed && touchFailed) {
     throw new AggregateError(
       [feedbackError, touchError],
       "Context evaluation feedback and touch writes both failed",
     );
   }
-  if (feedbackError !== undefined) throw feedbackError;
-  if (touchError !== undefined) throw touchError;
+  if (feedbackFailed) throw feedbackError;
+  if (touchFailed) throw touchError;
 }
 
 /** Build the committed comparison baseline from a current corpus report. */
