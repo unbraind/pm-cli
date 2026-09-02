@@ -758,9 +758,11 @@ export async function appendHistoryEntryWithEventIndex(
     if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
       throw error;
     }
+    let pendingMarkerPath: string | undefined;
     try {
       await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
         const marker = await beginHistoryEventIndexInvalidation(pmRoot);
+        pendingMarkerPath = marker.pendingPath;
         try {
           await append();
           authoritativeAppendCommitted = true;
@@ -774,6 +776,11 @@ export async function appendHistoryEntryWithEventIndex(
     } catch (fallbackError: unknown) {
       if (authoritativeAppendCommitted) {
         await invalidateHistoryEventIndex(pmRoot);
+        try {
+          await fs.rm(pendingMarkerPath as string, { force: true });
+        } catch {
+          // The authoritative append is durable; marker cleanup is best effort.
+        }
         return;
       }
       throw fallbackError;

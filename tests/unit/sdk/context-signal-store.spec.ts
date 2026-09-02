@@ -48,14 +48,17 @@ function withRecomputedFingerprint(
     ),
   );
   for (const value of ordered) {
-    const row = value as {
-      id?: unknown;
-      signal_provenance?: { recency?: Record<string, unknown> };
-    };
-    const recency = row.signal_provenance?.recency;
+    const row = value as
+      | {
+          id?: unknown;
+          signal_provenance?: { recency?: Record<string, unknown> };
+        }
+      | null
+      | undefined;
+    const recency = row?.signal_provenance?.recency;
     hash.update(
       JSON.stringify([
-        row.id,
+        row?.id,
         recency?.source,
         recency?.coordinate,
         recency?.history_op ?? null,
@@ -386,10 +389,7 @@ describe("context signal feature store", () => {
     ).not.toBeNull();
     const sparseItems = new Array<unknown>(1);
     expect(
-      parseContextSignalSnapshot({
-        ...structuredClone(valid),
-        items: sparseItems,
-      }),
+      parseContextSignalSnapshot(withRecomputedFingerprint(valid, sparseItems)),
     ).toBeNull();
     const invalidCoordinateItem = structuredClone(valid.items[0]!);
     invalidCoordinateItem.signal_provenance.recency.coordinate = "not-a-date";
@@ -408,8 +408,11 @@ describe("context signal feature store", () => {
       { ...valid, recency_evidence_fingerprint: "sha256:not-a-digest" },
       { ...valid, generated_at: "invalid" },
       { ...valid, source: "unknown" },
-      { ...valid, items: {} },
-      { ...valid, items: [null] },
+      {
+        ...(withRecomputedFingerprint(valid, []) as ContextSignalSnapshot),
+        items: {},
+      },
+      withRecomputedFingerprint(valid, [null]),
     ];
     const invalidItemSets: unknown[][] = [
       [{ ...structuredClone(valid.items[0]), id: "" }],

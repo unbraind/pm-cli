@@ -278,42 +278,6 @@ function recencyEvidenceFingerprint(
   return `sha256:${hash.digest("hex")}`;
 }
 
-function canonicalizeCandidateRecency(
-  candidates: readonly ItemContextRelevanceCandidate[],
-): ItemContextRelevanceCandidate[] {
-  return candidates.map((candidate) => {
-    const evidence = candidate.signal_provenance.recency;
-    if (
-      !CONTEXT_RECENCY_SOURCES.has(evidence.source) ||
-      (evidence.source === "substantive_history"
-        ? (evidence.history_op !== undefined &&
-            typeof evidence.history_op !== "string") ||
-          (evidence.event_class !== undefined &&
-            evidence.event_class !== "substantive")
-        : evidence.history_op !== undefined ||
-          evidence.event_class !== undefined)
-    ) {
-      throw new TypeError(
-        "Context signal recency provenance must match its source",
-      );
-    }
-    const coordinate = canonicalizeContextRecencyCoordinate(
-      evidence.coordinate,
-    );
-    if (coordinate === null) {
-      throw new TypeError(
-        "Context signal recency coordinate must be a valid absolute timestamp with millisecond precision",
-      );
-    }
-    return {
-      ...candidate,
-      signal_provenance: {
-        recency: { ...candidate.signal_provenance.recency, coordinate },
-      },
-    };
-  });
-}
-
 function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
   if (!isRecord(value)) return null;
   const signalProvenance = value.signal_provenance;
@@ -493,11 +457,9 @@ export function buildContextSignalSnapshot(
 ): ContextSignalSnapshot {
   validateSnapshotOptions(options);
   return snapshotFromCandidates(
-    canonicalizeCandidateRecency(
-      buildItemContextRelevanceCandidates(
-        items,
-        stableSnapshotOptions(items, options),
-      ),
+    buildItemContextRelevanceCandidates(
+      items,
+      stableSnapshotOptions(items, options),
     ),
     options,
   );
@@ -581,11 +543,9 @@ export class ContextSignalStore {
       .map((item) => item.id)
       .sort((left, right) => left.localeCompare(right));
     const snapshotIds = snapshot?.items.map((item) => item.id) ?? [];
-    const authoritativeCandidates = canonicalizeCandidateRecency(
-      buildItemContextRelevanceCandidates(
-        items,
-        stableSnapshotOptions(items, options),
-      ),
+    const authoritativeCandidates = buildItemContextRelevanceCandidates(
+      items,
+      stableSnapshotOptions(items, options),
     );
     const authoritativeFingerprint = recencyEvidenceFingerprint(
       authoritativeCandidates,

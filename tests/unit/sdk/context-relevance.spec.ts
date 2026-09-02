@@ -122,8 +122,7 @@ describe("context relevance SDK primitives", () => {
     expect(
       candidates.every(
         ({ signal_provenance }) =>
-          signal_provenance.recency.coordinate ===
-          "1970-01-01T00:00:00.000Z",
+          signal_provenance.recency.coordinate === "1970-01-01T00:00:00.000Z",
       ),
     ).toBe(true);
 
@@ -140,7 +139,7 @@ describe("context relevance SDK primitives", () => {
           signal_provenance.recency.source === "created_at",
       ),
     ).toBe(true);
-    expect(
+    expect(() =>
       buildItemContextRelevanceCandidates(malformed, {
         statusRegistry: registry,
         now: "invalid",
@@ -154,8 +153,8 @@ describe("context relevance SDK primitives", () => {
             coordinate: "not-a-date",
           },
         },
-      })[0]?.signals.recency,
-    ).toBe(0);
+      }),
+    ).toThrow("valid absolute timestamp with millisecond precision");
   });
 
   it("explains substantive-history, release-cohort, and created-at recency", () => {
@@ -198,7 +197,7 @@ describe("context relevance SDK primitives", () => {
         recencyEvidence: {
           "pm-history": {
             source: "substantive_history",
-            coordinate: "2026-07-21T00:00:00.000Z",
+            coordinate: "2026-07-21T02:00:00.000+02:00",
             history_op: "comment_add",
             event_class: "substantive",
           },
@@ -213,6 +212,7 @@ describe("context relevance SDK primitives", () => {
     ]);
     expect(candidates[0]?.signal_provenance.recency).toMatchObject({
       source: "substantive_history",
+      coordinate: "2026-07-21T00:00:00.000Z",
       history_op: "comment_add",
       event_class: "substantive",
     });
@@ -341,8 +341,8 @@ describe("context relevance SDK primitives", () => {
       now: "2026-07-14T00:00:00.000Z",
     });
     expect(
-      candidates.map(({ signal_provenance }) =>
-        signal_provenance.recency.coordinate,
+      candidates.map(
+        ({ signal_provenance }) => signal_provenance.recency.coordinate,
       ),
     ).toEqual([
       "1970-01-01T00:00:00.000Z",

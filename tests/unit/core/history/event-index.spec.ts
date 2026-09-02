@@ -386,10 +386,7 @@ describe("history mutation event index", () => {
       );
       await fs.mkdir(invalidationRoot, { recursive: true });
       const initialPending = path.join(invalidationRoot, "initial.pending");
-      const initialCommitted = path.join(
-        invalidationRoot,
-        "initial.committed",
-      );
+      const initialCommitted = path.join(invalidationRoot, "initial.committed");
       await fs.writeFile(initialPending, "pending\n");
       await fs.writeFile(initialCommitted, "committed\n");
       await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
@@ -464,9 +461,22 @@ describe("history mutation event index", () => {
         `${process.pid}-0-${Date.now()}-reused.pending`,
       );
       await fs.writeFile(reusedPidPending, "pending\n");
-      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
-        true,
-      );
+      const originalReadFile = fs.readFile.bind(fs);
+      const processIdentitySpy = vi
+        .spyOn(fs, "readFile")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === `/proc/${process.pid}/stat`) {
+            return `123 (node worker) ${["S", ...Array(18).fill("0"), "4242"].join(" ")}`;
+          }
+          return originalReadFile(...args);
+        });
+      try {
+        await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+          true,
+        );
+      } finally {
+        processIdentitySpy.mockRestore();
+      }
       await expect(fs.access(reusedPidPending)).rejects.toThrow();
 
       const unverifiedPending = path.join(
@@ -1562,6 +1572,55 @@ describe("history mutation event index", () => {
           await expect(
             fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
           ).rejects.toThrow();
+          await expect(
+            fs.readdir(
+              path.join(
+                context.pmPath,
+                "runtime",
+                "history-event-index-invalidations",
+              ),
+            ),
+          ).resolves.toEqual([]);
+
+          const originalRemove = fs.rm.bind(fs);
+          const removeSpy = vi
+            .spyOn(fs, "rm")
+            .mockImplementation(async (...args) => {
+              if (String(args[0]).endsWith(".pending")) {
+                throw Object.assign(new Error("marker cleanup denied"), {
+                  code: "EACCES",
+                });
+              }
+              return originalRemove(...args);
+            });
+          try {
+            await expect(
+              appendHistoryEntry(
+                historyPath,
+                historyEntry("2026-07-24T11:00:00.000Z", "agent", "update"),
+              ),
+            ).resolves.toBeUndefined();
+          } finally {
+            removeSpy.mockRestore();
+          }
+          const retainedMarkers = await fs.readdir(
+            path.join(
+              context.pmPath,
+              "runtime",
+              "history-event-index-invalidations",
+            ),
+          );
+          expect(retainedMarkers).toEqual([
+            expect.stringMatching(/\.pending$/u),
+          ]);
+          await fs.rm(
+            path.join(
+              context.pmPath,
+              "runtime",
+              "history-event-index-invalidations",
+              retainedMarkers[0] as string,
+            ),
+          );
         });
       } finally {
         renameSpy.mockRestore();
@@ -1569,7 +1628,7 @@ describe("history mutation event index", () => {
       }
       expect(
         (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
-      ).toHaveLength(2);
+      ).toHaveLength(3);
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
