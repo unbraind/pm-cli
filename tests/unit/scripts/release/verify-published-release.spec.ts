@@ -1098,7 +1098,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     ).toHaveLength(2);
   });
 
-  it("kills a detached HTTP runner tree when the evaluator times out", async () => {
+  it("kills a detached HTTP runner tree when readiness times out", async () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
 
     const tempRoot = makeRealTempDirectory(
@@ -1124,8 +1124,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         ["--input-type=module", "--eval", String(evaluatorScript)],
         {
           encoding: "utf8",
-          timeout: 800,
-          killSignal: "SIGTERM",
+          timeout: 8_000,
           env: {
             ...process.env,
             PM_VERIFY_HTTP_RUNNER: "npx",
@@ -1133,11 +1132,13 @@ describe("scripts/release/verify-published-release: executor failures", () => {
             PM_VERIFY_HTTP_PACKAGE_SPEC: "@example/pm-cli@2026.6.14",
             PM_VERIFY_HTTP_RUNNER_ARGS_JSON: JSON.stringify([fakeRunner]),
             PM_VERIFY_HTTP_PORT: String(port),
+            PM_VERIFY_HTTP_READY_TIMEOUT_MS: "200",
           },
         },
       );
-      expect((result.error as NodeJS.ErrnoException | undefined)?.code).toBe(
-        "ETIMEDOUT",
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(
+        "Published HTTP bin did not become reachable before timeout",
       );
       await assertLoopbackPortIsReusable(port);
     } finally {

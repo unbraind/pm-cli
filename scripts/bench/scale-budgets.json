@@ -1,10 +1,9 @@
 {
   "version": 1,
-  "description": "Measured regression budgets. A tier enforces the canonical product target only when it is explicitly approved; larger characterization tiers remain regression-gated without asserting an unachieved product target.",
+  "description": "Measured regression budgets. Every checked command also enforces the canonical product target independently of its tier-specific regression budget.",
   "tiers": {
     "scratch:10000": {
       "headroom": 1.25,
-      "enforce_product_target": true,
       "transports": {
         "cli": {
           "list": {

@@ -1137,6 +1137,75 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("retains an expired cleanup gate whose live owner identity still matches", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const currentIdentity = await lockInternals.readProcessStartIdentity(
+        process.pid,
+      );
+      if (currentIdentity === null) return;
+      const id = "pm-lock-stale-cleanup-matching-process";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "matching-owner",
+          process_start_identity: currentIdentity,
+        })}\n`,
+        "utf8",
+      );
+      const expiredAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, expiredAt, expiredAt);
+
+      await expect(
+        lockInternals.acquireStaleCleanupGate(lockPath, id),
+      ).resolves.toBeNull();
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
+    });
+  });
+
+  it("retains a recent live cleanup owner when process identity is unavailable", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-unavailable-process-identity";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "unverifiable-owner",
+          process_start_identity: "123",
+        })}\n`,
+        "utf8",
+      );
+      const expiredAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, expiredAt, expiredAt);
+      const realReadFile = fs.readFile.bind(fs);
+      const readFileSpy = vi
+        .spyOn(fs, "readFile")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === `/proc/${process.pid}/stat`) {
+            throw Object.assign(new Error("proc unavailable"), {
+              code: "ENOENT",
+            });
+          }
+          return await realReadFile(targetPath, options);
+        });
+
+      try {
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
+        await expect(fs.access(gatePath)).resolves.toBeUndefined();
+      } finally {
+        readFileSpy.mockRestore();
+      }
+    });
+  });
+
   it("reclaims an expired cleanup gate after detecting PID reuse", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const currentIdentity = await lockInternals.readProcessStartIdentity(
@@ -1303,6 +1372,11 @@ describe("core/lock/lock additional branch coverage", () => {
         {
           id: "pm-lock-stale-cleanup-owner-process-identity",
           rawOwner: '{"pid":1,"token":"valid","process_start_identity":42}\n',
+        },
+        {
+          id: "pm-lock-stale-cleanup-owner-nondigit-identity",
+          rawOwner:
+            '{"pid":1,"token":"valid","process_start_identity":"12-old"}\n',
         },
       ];
       for (const { id, rawOwner } of shapeCases) {

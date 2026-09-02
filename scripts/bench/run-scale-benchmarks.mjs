@@ -373,6 +373,38 @@ function compareTransportOverhead(report, tier) {
   return violations;
 }
 
+/** Compare every measured command against the universal product ceiling. */
+function compareProductTargets(transports) {
+  const violations = [];
+  for (const [transport, commands] of Object.entries(transports)) {
+    for (const [name, summary] of Object.entries(commands)) {
+      violations.push(
+        ...compareProductTarget(transport, name, summary, PRODUCT_TARGET),
+      );
+    }
+  }
+  return violations;
+}
+
+/** Compare measured commands against one shape-qualified regression tier. */
+function compareRegressionBudgets(report, tier) {
+  const violations = [];
+  for (const [transport, commands] of Object.entries(report.transports)) {
+    for (const [name, summary] of Object.entries(commands)) {
+      const budget = tier.transports?.[transport]?.[name];
+      if (!budget) {
+        violations.push(`${transport}.${name}: missing budget`);
+      } else {
+        violations.push(
+          ...compareCommandBudget(transport, name, summary, budget),
+        );
+      }
+    }
+  }
+  violations.push(...compareTransportOverhead(report, tier));
+  return violations;
+}
+
 /** Return human-readable regression and product-target violations. */
 export function compareScaleBudgets(report, manifest) {
   const violations = [];
@@ -387,26 +419,10 @@ export function compareScaleBudgets(report, manifest) {
     violations.push(
       `missing regression budget for ${shapeName}:${report.fixture.item_count}`,
     );
-    return violations;
+  } else {
+    violations.push(...compareRegressionBudgets(report, tier));
   }
-  for (const [transport, commands] of Object.entries(report.transports)) {
-    for (const [name, summary] of Object.entries(commands)) {
-      const budget = tier.transports?.[transport]?.[name];
-      if (!budget) {
-        violations.push(`${transport}.${name}: missing budget`);
-      } else {
-        violations.push(
-          ...compareCommandBudget(transport, name, summary, budget),
-        );
-      }
-      if (tier.enforce_product_target === true) {
-        violations.push(
-          ...compareProductTarget(transport, name, summary, PRODUCT_TARGET),
-        );
-      }
-    }
-  }
-  violations.push(...compareTransportOverhead(report, tier));
+  violations.push(...compareProductTargets(report.transports));
   return violations;
 }
 
@@ -483,12 +499,7 @@ export async function updateBudgetManifest(manifestPath, report, headroom) {
     // A first baseline creates the manifest.
   }
   const tierKey = `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`;
-  const enforceProductTarget =
-    manifest.tiers[tierKey]?.enforce_product_target === true;
-  manifest.tiers[tierKey] = {
-    ...buildTierBudget(report, headroom),
-    ...(enforceProductTarget ? { enforce_product_target: true } : {}),
-  };
+  manifest.tiers[tierKey] = buildTierBudget(report, headroom);
   if ((report.fixture.shape?.name ?? "scratch") === "scratch") {
     delete manifest.tiers[String(report.fixture.item_count)];
   }

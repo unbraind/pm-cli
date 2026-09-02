@@ -216,16 +216,6 @@ describe("scale benchmark runner", () => {
       "cli.list: peak RSS 1000 > 999",
     ]);
     expect(compareScaleBudgets(report, { tiers: { 10: budget } })).toEqual([]);
-    expect(
-      compareScaleBudgets(report, {
-        tiers: {
-          10: {
-            ...budget,
-            enforce_product_target: true,
-          },
-        },
-      }),
-    ).toEqual([]);
     const noRssReport = structuredClone(report);
     noRssReport.transports.cli.list.max_peak_rss_bytes = null;
     expect(
@@ -271,7 +261,6 @@ describe("scale benchmark runner", () => {
       compareScaleBudgets(productTargetFailure, {
         tiers: {
           10: {
-            enforce_product_target: true,
             transports: {
               cli: {
                 list: {
@@ -289,22 +278,12 @@ describe("scale benchmark runner", () => {
       "product_target.cli.list: 5001 tokens > 5000",
     ]);
     expect(
-      compareScaleBudgets(productTargetFailure, {
-        tiers: {
-          10: {
-            transports: {
-              cli: {
-                list: {
-                  max_latency_ms: 2000,
-                  max_peak_rss_bytes: 1000,
-                  max_estimated_tokens: 6000,
-                },
-              },
-            },
-          },
-        },
-      }),
-    ).toEqual([]);
+      compareScaleBudgets(productTargetFailure, { tiers: {} }),
+    ).toEqual([
+      "missing regression budget for scratch:10",
+      "product_target.cli.list: p95 1001ms > 1000ms",
+      "product_target.cli.list: 5001 tokens > 5000",
+    ]);
   });
 
   it("derives and gates CLI-minus-SDK transport overhead", () => {
@@ -518,19 +497,10 @@ describe("scale benchmark runner", () => {
       });
       expect(migratedManifest.tiers).not.toHaveProperty("10");
 
-      const persistedManifest = JSON.parse(
-        await readFile(legacyManifestPath, "utf8"),
-      );
-      persistedManifest.tiers["scratch:10"].enforce_product_target = true;
-      await writeFile(
-        legacyManifestPath,
-        `${JSON.stringify(persistedManifest)}\n`,
-        "utf8",
-      );
       await updateBudgetManifest(legacyManifestPath, legacyReport, 1.25);
       expect(
         JSON.parse(await readFile(legacyManifestPath, "utf8")),
-      ).toHaveProperty("tiers.scratch:10.enforce_product_target", true);
+      ).not.toHaveProperty("tiers.scratch:10.enforce_product_target");
     });
   }, 30_000);
 

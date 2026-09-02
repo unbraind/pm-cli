@@ -374,7 +374,7 @@ function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
     token.length === 0 ||
     (processStartIdentity !== undefined &&
       (typeof processStartIdentity !== "string" ||
-        processStartIdentity.length === 0))
+        !/^\d+$/u.test(processStartIdentity)))
   ) {
     return null;
   }

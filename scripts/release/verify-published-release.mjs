@@ -148,9 +148,23 @@ const waitForChildTreeExit = async () => {
 
 let stopPromise;
 const stopChild = () => {
-  if (!child.pid || !childTreeIsAlive()) return Promise.resolve();
+  if (!child.pid) return Promise.resolve();
   if (stopPromise) return stopPromise;
   stopPromise = (async () => {
+    if (process.platform === "win32") {
+      await new Promise((resolve) => {
+        const killer = spawn(
+          "taskkill.exe",
+          ["/PID", String(child.pid), "/T", "/F"],
+          { stdio: "ignore", windowsHide: true },
+        );
+        killer.once("error", resolve);
+        killer.once("close", resolve);
+      });
+      await waitForChildTreeExit();
+      return;
+    }
+    if (!childTreeIsAlive()) return;
     signalChildTree("SIGTERM");
     await waitForChildTreeExit();
     if (childTreeIsAlive()) {
@@ -187,7 +201,14 @@ try {
       },
     },
   };
-  const deadline = Date.now() + ${MCP_HTTP_READY_TIMEOUT_MS};
+  const configuredReadyTimeout = Number(
+    process.env.PM_VERIFY_HTTP_READY_TIMEOUT_MS,
+  );
+  const readyTimeout =
+    Number.isFinite(configuredReadyTimeout) && configuredReadyTimeout >= 0
+      ? configuredReadyTimeout
+      : ${MCP_HTTP_READY_TIMEOUT_MS};
+  const deadline = Date.now() + readyTimeout;
   let response;
   let payload;
   while (Date.now() < deadline) {
@@ -207,6 +228,7 @@ try {
           "Mcp-Method": "server/discover",
         },
         body: JSON.stringify(request),
+        signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
       });
       payload = await response.json();
       break;
