@@ -135,6 +135,21 @@ async function listHistoryEventIndexInvalidations(
   };
 }
 
+/** Remove only pending markers proven abandoned by the caller's invalidation-lock ownership. */
+async function recoverAbandonedHistoryEventIndexInvalidations(
+  pmRoot: string,
+): Promise<HistoryEventIndexInvalidations> {
+  const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
+  await Promise.all(
+    invalidations.pending.map((name) =>
+      fs.rm(path.join(historyEventIndexInvalidationDirectory(pmRoot), name), {
+        force: true,
+      }),
+    ),
+  );
+  return { pending: [], committed: invalidations.committed };
+}
+
 async function withHistoryEventIndexInvalidationLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
@@ -455,8 +470,17 @@ export async function rebuildHistoryEventIndex(
   const Database = resolveDatabaseSync();
   if (!Database) return false;
   return withHistoryEventIndexLock(pmRoot, async () => {
-    const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
-    if (invalidations.pending.length > 0) return false;
+    let invalidations: HistoryEventIndexInvalidations;
+    try {
+      invalidations = await withHistoryEventIndexInvalidationLock(pmRoot, () =>
+        recoverAbandonedHistoryEventIndexInvalidations(pmRoot),
+      );
+    } catch (error: unknown) {
+      if (error instanceof PmCliError && error.code === "lock_conflict") {
+        return false;
+      }
+      throw error;
+    }
     const targetPath = eventIndexPath(pmRoot);
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
     const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
@@ -478,9 +502,9 @@ export async function rebuildHistoryEventIndex(
       const published = await withHistoryEventIndexInvalidationLock(
         pmRoot,
         async () => {
-          const current = await listHistoryEventIndexInvalidations(pmRoot);
+          const current =
+            await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
           if (
-            current.pending.length > 0 ||
             !sameInvalidationNames(invalidations.committed, current.committed)
           ) {
             return false;
@@ -812,11 +836,9 @@ export async function queryHistoryEventIndex(
   try {
     return await withHistoryEventIndexLock(pmRoot, async () => {
       return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
-        if (
-          invalidations.pending.length > 0 ||
-          invalidations.committed.length > 0
-        ) {
+        const invalidations =
+          await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
+        if (invalidations.committed.length > 0) {
           return null;
         }
         database = new Database(eventIndexPath(pmRoot), { readOnly: true });
@@ -979,11 +1001,9 @@ async function readIndexedLatestSubstantiveEvents(
   try {
     return await withHistoryEventIndexLock(pmRoot, async () => {
       return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
-        if (
-          invalidations.pending.length > 0 ||
-          invalidations.committed.length > 0
-        ) {
+        const invalidations =
+          await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
+        if (invalidations.committed.length > 0) {
           return null;
         }
         database = new Database(eventIndexPath(pmRoot), { readOnly: true });

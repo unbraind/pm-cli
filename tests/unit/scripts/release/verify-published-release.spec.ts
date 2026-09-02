@@ -167,8 +167,7 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
               extensions: {
                 "io.modelcontextprotocol/skills": {
                   status: "draft",
-                  revision:
-                    "SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03",
+                  revision: "SEP-2640@a3e147ca2710f68214247aecc729731ee1ae8d03",
                   directoryRead: true,
                 },
                 "io.modelcontextprotocol/ui": {
@@ -238,7 +237,9 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
             ],
           },
         },
-      ].map((response) => JSON.stringify(response)).join("\n"),
+      ]
+        .map((response) => JSON.stringify(response))
+        .join("\n"),
       stderr: "",
     };
   }
@@ -901,11 +902,13 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         if (!(command === "npx" && args.includes("pm-mcp"))) return result;
         return transformMcpResponses(result, (responses) => {
           const response = responses.find((candidate) => candidate.id === 1);
-          const resultValue = response?.result as {
-            capabilities?: {
-              extensions?: Record<string, Record<string, unknown>>;
-            };
-          } | undefined;
+          const resultValue = response?.result as
+            | {
+                capabilities?: {
+                  extensions?: Record<string, Record<string, unknown>>;
+                };
+              }
+            | undefined;
           const capability =
             resultValue?.capabilities?.extensions?.[
               "io.modelcontextprotocol/skills"
@@ -935,8 +938,9 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         if (!(command === "npx" && args.includes("pm-mcp"))) return result;
         return transformMcpResponses(result, (responses) => {
           const response = responses.find((candidate) => candidate.id === 5);
-          const contents = (response?.result as { contents?: unknown } | undefined)
-            ?.contents;
+          const contents = (
+            response?.result as { contents?: unknown } | undefined
+          )?.contents;
           if (!Array.isArray(contents)) return;
           (contents[0] as { text?: string }).text = "tampered\n";
         });
@@ -1102,19 +1106,20 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
     expect(evaluatorScript).toContain("configuredReadyTimeout <= 15000");
     expect(evaluatorScript).toContain("$childArgs = [string[]]@(");
-    expect(evaluatorScript).toContain("Start-Process");
-    expect(evaluatorScript).toContain("-Wait");
+    expect(evaluatorScript).toContain("& $command @childArgs");
+    expect(evaluatorScript).toContain("exit $LASTEXITCODE");
+    expect(evaluatorScript).not.toContain("Start-Process");
     expect(evaluatorScript).toContain("taskkill.exe exited with code");
     expect(evaluatorScript).toContain(
       "Published HTTP process tree remained alive after taskkill.exe",
     );
   });
 
-  it("kills a detached HTTP runner tree when readiness times out", async () => {
+  it("preserves a spaced runner path and kills its tree when readiness times out", async () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
 
     const tempRoot = makeRealTempDirectory(
-      path.join(tmpdir(), "pm-http-timeout-test-"),
+      path.join(tmpdir(), "pm http timeout test "),
     );
     const fakeRunner = path.join(tempRoot, "fake-runner.mjs");
     const port = await reserveLoopbackPort();

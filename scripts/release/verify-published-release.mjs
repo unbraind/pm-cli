@@ -106,8 +106,8 @@ const windowsRunnerScript = [
   "$ErrorActionPreference = 'Stop'",
   "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:PM_VERIFY_HTTP_CHILD_COMMAND_B64))",
   "$childArgs = [string[]]@(ConvertFrom-Json -InputObject $env:PM_VERIFY_HTTP_CHILD_ARGS_JSON)",
-  "$process = Start-Process -FilePath $command -ArgumentList $childArgs -NoNewWindow -PassThru -Wait",
-  "exit $process.ExitCode",
+  "& $command @childArgs",
+  "exit $LASTEXITCODE",
 ].join("; ");
 const child = spawn(
   process.platform === "win32" ? "powershell.exe" : runnerCommand,
@@ -542,15 +542,11 @@ function assertMcpDiscovery(stdout) {
     Object(discovery._meta)["io.modelcontextprotocol/serverInfo"],
   );
   const extensions = Object(Object(discovery.capabilities).extensions);
-  const skillsCapability = Object(
-    extensions["io.modelcontextprotocol/skills"],
-  );
+  const skillsCapability = Object(extensions["io.modelcontextprotocol/skills"]);
   const skills = Object(responses.get(2)?.result).skills;
   const toolsValue = Object(responses.get(3)?.result).tools;
   const tools = Array.isArray(toolsValue) ? toolsValue : [];
-  const contextTool = Object(
-    tools.find((tool) => tool.name === "pm_context"),
-  );
+  const contextTool = Object(tools.find((tool) => tool.name === "pm_context"));
   const contextToolUi = Object(Object(contextTool._meta).ui);
   const appContents = Object(responses.get(4)?.result).contents;
   const appContent = Object(Array.isArray(appContents) ? appContents[0] : null);

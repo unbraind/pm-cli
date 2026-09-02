@@ -386,23 +386,13 @@ describe("context signal feature store", () => {
         items: sparseItems,
       }),
     ).toBeNull();
-    const invalidCoordinate = structuredClone(valid);
-    const invalidCoordinateItem = invalidCoordinate.items[0]!;
+    const invalidCoordinateItem = structuredClone(valid.items[0]!);
     invalidCoordinateItem.signal_provenance.recency.coordinate = "not-a-date";
-    invalidCoordinate.recency_evidence_fingerprint = `sha256:${createHash(
-      "sha256",
-    )
-      .update(
-        JSON.stringify([
-          invalidCoordinateItem.id,
-          invalidCoordinateItem.signal_provenance.recency.source,
-          invalidCoordinateItem.signal_provenance.recency.coordinate,
-          invalidCoordinateItem.signal_provenance.recency.history_op ?? null,
-          invalidCoordinateItem.signal_provenance.recency.event_class ?? null,
-        ]),
-      )
-      .digest("hex")}`;
-    expect(parseContextSignalSnapshot(invalidCoordinate)).toBeNull();
+    expect(
+      parseContextSignalSnapshot(
+        withRecomputedFingerprint(valid, [invalidCoordinateItem]),
+      ),
+    ).toBeNull();
     const invalidValues: unknown[] = [
       null,
       { ...valid, format_version: 99 },

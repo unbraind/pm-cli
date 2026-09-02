@@ -326,6 +326,12 @@ describe("core/shared/time", () => {
     expect(
       isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06.1234Z"),
     ).toBe(false);
+    expect(
+      isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06.1230Z"),
+    ).toBe(true);
+    expect(isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06Z")).toBe(
+      true,
+    );
     expect(isMillisecondPrecisionRfc3339DateTime("not-a-date")).toBe(false);
   });
 

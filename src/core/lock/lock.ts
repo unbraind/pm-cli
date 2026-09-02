@@ -227,7 +227,6 @@ async function releaseOwnedLock(
     }
     const elapsedMs = Date.now() - startedAtMs;
     if (elapsedMs >= LOCK_RELEASE_GATE_WAIT_MS) {
-      await unlinkLockWithHook(lockPath, "lock:release");
       return;
     }
     await sleepWithJitter(

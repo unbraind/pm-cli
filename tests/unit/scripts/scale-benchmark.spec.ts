@@ -277,9 +277,7 @@ describe("scale benchmark runner", () => {
       "product_target.cli.list: p95 1001ms > 1000ms",
       "product_target.cli.list: 5001 tokens > 5000",
     ]);
-    expect(
-      compareScaleBudgets(productTargetFailure, { tiers: {} }),
-    ).toEqual([
+    expect(compareScaleBudgets(productTargetFailure, { tiers: {} })).toEqual([
       "missing regression budget for scratch:10",
       "product_target.cli.list: p95 1001ms > 1000ms",
       "product_target.cli.list: 5001 tokens > 5000",
@@ -498,9 +496,13 @@ describe("scale benchmark runner", () => {
       expect(migratedManifest.tiers).not.toHaveProperty("10");
 
       await updateBudgetManifest(legacyManifestPath, legacyReport, 1.25);
-      expect(
-        JSON.parse(await readFile(legacyManifestPath, "utf8")),
-      ).not.toHaveProperty("tiers.scratch:10.enforce_product_target");
+      const updatedLegacyManifest = JSON.parse(
+        await readFile(legacyManifestPath, "utf8"),
+      );
+      expect(updatedLegacyManifest).toHaveProperty("tiers.scratch:10");
+      expect(updatedLegacyManifest).not.toHaveProperty(
+        "tiers.scratch:10.enforce_product_target",
+      );
     });
   }, 30_000);
 

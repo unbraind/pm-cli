@@ -860,7 +860,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("removes an owned lock after the cleanup gate remains busy past its stale threshold", async () => {
+  it("retains an owned lock when the cleanup gate remains busy past its stale threshold", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-release-cleanup-timeout";
       const lockPath = getLockPath(pmPath, id);
@@ -877,9 +877,7 @@ describe("core/lock/lock additional branch coverage", () => {
         const releasing = release();
         await vi.advanceTimersByTimeAsync(11_000);
         await expect(releasing).resolves.toBeUndefined();
-        await expect(fs.access(lockPath)).rejects.toMatchObject({
-          code: "ENOENT",
-        });
+        await expect(fs.access(lockPath)).resolves.toBeUndefined();
       } finally {
         vi.useRealTimers();
         await releaseCleanupGate();

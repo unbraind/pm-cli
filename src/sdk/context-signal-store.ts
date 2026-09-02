@@ -455,6 +455,7 @@ function validateSnapshotOptions(
 function snapshotFromCandidates(
   candidates: readonly ItemContextRelevanceCandidate[],
   options: BuildContextSignalSnapshotOptions,
+  fingerprint = recencyEvidenceFingerprint(candidates),
 ): ContextSignalSnapshot {
   const candidateIds = candidates.map(({ id }) => id);
   if (
@@ -476,7 +477,7 @@ function snapshotFromCandidates(
     format_version: CONTEXT_SIGNAL_STORE_FORMAT_VERSION,
     signal_set_version: CONTEXT_SIGNAL_SET_VERSION,
     source_cursor: options.sourceCursor,
-    recency_evidence_fingerprint: recencyEvidenceFingerprint(candidates),
+    recency_evidence_fingerprint: fingerprint,
     generated_at: options.now,
     source: options.source,
     items: Object.freeze(rows.map((row) => Object.freeze(row))),
@@ -584,11 +585,13 @@ export class ContextSignalStore {
         stableSnapshotOptions(items, options),
       ),
     );
+    const authoritativeFingerprint = recencyEvidenceFingerprint(
+      authoritativeCandidates,
+    );
     const fresh =
       snapshot !== null &&
       snapshot.source_cursor === options.sourceCursor &&
-      snapshot.recency_evidence_fingerprint ===
-        recencyEvidenceFingerprint(authoritativeCandidates) &&
+      snapshot.recency_evidence_fingerprint === authoritativeFingerprint &&
       snapshot.source === options.source &&
       snapshotIds.length === authoritativeIds.length &&
       snapshotIds.every((id, index) => id === authoritativeIds[index]);
@@ -602,6 +605,7 @@ export class ContextSignalStore {
       resolvedSnapshot = snapshotFromCandidates(
         authoritativeCandidates,
         options,
+        authoritativeFingerprint,
       );
       try {
         await this.adapter.write(resolvedSnapshot);

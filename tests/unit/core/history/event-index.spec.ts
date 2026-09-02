@@ -82,31 +82,30 @@ describe("history mutation event index", () => {
   });
 
   it("selects the latest substantive event per stream regardless of input order", () => {
+    const events = [
+      {
+        stream_id: "pm-linear",
+        stream_offset: 2,
+        entry: historyEntry("2026-07-24T11:00:00.000Z", "agent", "comment_add"),
+      },
+      {
+        stream_id: "pm-linear",
+        stream_offset: 3,
+        entry: historyEntry("2026-07-24T12:00:00.000Z", "agent", "release"),
+      },
+      {
+        stream_id: "pm-linear",
+        stream_offset: 1,
+        entry: historyEntry("2026-07-24T10:00:00.000Z", "agent", "create"),
+      },
+    ];
+    const sortSpy = vi.spyOn(events, "sort");
     const selected = _testOnly.collectLatestSubstantiveEvents(
-      [
-        {
-          stream_id: "pm-linear",
-          stream_offset: 2,
-          entry: historyEntry(
-            "2026-07-24T11:00:00.000Z",
-            "agent",
-            "comment_add",
-          ),
-        },
-        {
-          stream_id: "pm-linear",
-          stream_offset: 3,
-          entry: historyEntry("2026-07-24T12:00:00.000Z", "agent", "release"),
-        },
-        {
-          stream_id: "pm-linear",
-          stream_offset: 1,
-          entry: historyEntry("2026-07-24T10:00:00.000Z", "agent", "create"),
-        },
-      ],
+      events,
       new Set(["pm-linear"]),
     );
 
+    expect(sortSpy).not.toHaveBeenCalled();
     expect(selected["pm-linear"]?.stream_offset).toBe(2);
   });
 
@@ -362,7 +361,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("refuses pending invalidations and aborts rebuild publication when one arrives", async () => {
+  it("recovers abandoned pending invalidations while refusing an active invalidator", async () => {
     await withTempPmPath(async (context) => {
       const invalidationRoot = path.join(
         context.pmPath,
@@ -373,11 +372,59 @@ describe("history mutation event index", () => {
       const initialPending = path.join(invalidationRoot, "initial.pending");
       await fs.writeFile(initialPending, "pending\n");
       await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
-        false,
+        true,
       );
-      await fs.rm(initialPending);
+      await expect(fs.access(initialPending)).rejects.toThrow();
+
+      const releaseInvalidation = await acquireLock(
+        context.pmPath,
+        "history-event-index-invalidation",
+        300,
+        "active-invalidator",
+        false,
+        false,
+        0,
+      );
+      try {
+        await withZeroLockWait(async () => {
+          await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+            false,
+          );
+        });
+      } finally {
+        await releaseInvalidation();
+      }
 
       const originalReaddir = fs.readdir.bind(fs);
+      let committedReads = 0;
+      const racedCommitted = path.join(invalidationRoot, "raced.committed");
+      const committedReaddirSpy = vi
+        .spyOn(fs, "readdir")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === invalidationRoot) {
+            committedReads += 1;
+            if (committedReads === 2) {
+              await fs.writeFile(racedCommitted, "committed\n");
+            }
+          }
+          return originalReaddir(...args);
+        });
+      try {
+        await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+          false,
+        );
+      } finally {
+        committedReaddirSpy.mockRestore();
+      }
+      await expect(
+        fs.readdir(path.join(context.pmPath, "runtime")),
+      ).resolves.not.toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/^history-event-index\.sqlite\..+\.tmp$/),
+        ]),
+      );
+      await fs.rm(racedCommitted);
+
       let invalidationReads = 0;
       const racedPending = path.join(invalidationRoot, "raced.pending");
       const readdirSpy = vi
@@ -393,12 +440,12 @@ describe("history mutation event index", () => {
         });
       try {
         await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
-          false,
+          true,
         );
       } finally {
         readdirSpy.mockRestore();
       }
-      await fs.rm(racedPending);
+      await expect(fs.access(racedPending)).rejects.toThrow();
     });
   });
 
