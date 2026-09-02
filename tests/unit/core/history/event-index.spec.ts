@@ -244,6 +244,8 @@ describe("history mutation event index", () => {
       });
       expect(persisted.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/u);
       expect(indexed?.events[0]?.entry.ts).toBe(persisted.ts);
+      expect(persisted.event_class).toBe("substantive");
+      expect(indexed?.events[0]?.entry.event_class).toBe("substantive");
     });
   });
 

@@ -13,9 +13,9 @@ import {
 export const CONTEXT_RECENCY_EPOCH = "1970-01-01T00:00:00.000Z";
 
 /**
- * Canonicalize a calendar-valid RFC 3339 instant or legacy date-only value.
- * Compact dates remain compatible with legacy metadata, while sub-millisecond
- * instants and host-local date-times are rejected because they cannot round-trip
+ * Canonicalize a calendar-valid RFC 3339 instant or dashed legacy date-only
+ * value. Compact dates, sub-millisecond instants, and host-local date-times are
+ * rejected because they cannot round-trip through the strict timestamp contract
  * losslessly and deterministically.
  */
 export function canonicalizeContextRecencyCoordinate(
@@ -25,7 +25,7 @@ export function canonicalizeContextRecencyCoordinate(
   const trimmed = value.trim();
   if (
     !isMillisecondPrecisionRfc3339DateTime(trimmed) &&
-    !/^\d{4}(?:-?\d{2}){2}$/u.test(trimmed)
+    !/^\d{4}-\d{2}-\d{2}$/u.test(trimmed)
   ) {
     return null;
   }

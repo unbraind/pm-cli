@@ -1098,6 +1098,17 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     ).toHaveLength(2);
   });
 
+  it("bounds evaluator readiness and keeps the Windows process tree governed", async () => {
+    const evaluatorScript = await getMcpHttpEvaluatorScript();
+    expect(evaluatorScript).toContain("configuredReadyTimeout <= 15000");
+    expect(evaluatorScript).toContain("Start-Process");
+    expect(evaluatorScript).toContain("-Wait");
+    expect(evaluatorScript).toContain("taskkill.exe exited with code");
+    expect(evaluatorScript).toContain(
+      "Published HTTP process tree remained alive after taskkill.exe",
+    );
+  });
+
   it("kills a detached HTTP runner tree when readiness times out", async () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
 

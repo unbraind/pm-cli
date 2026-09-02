@@ -655,6 +655,32 @@ describe("surface replication gate", () => {
     expect(bodyChange.violations).toContain(
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
+
+    const assignmentChange = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "const Database = resolveDatabaseSync();",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(assignmentChange.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+
+    const returnChange = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": ["return RuntimeDatabaseSync;"],
+      },
+      today: "2026-08-17",
+    });
+    expect(returnChange.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
   }, 120_000);
 
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {

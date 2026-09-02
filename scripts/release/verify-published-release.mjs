@@ -102,15 +102,38 @@ const args = overrideArgs
   : runner === "npx"
     ? ["--yes", "--package", packageSpec, "--", "pm-mcp-http"]
     : ["--silent", "--bun", "--package", packageSpec, "pm-mcp-http"];
-const child = spawn(runnerCommand, args, {
-  detached: process.platform !== "win32",
-  env: {
-    ...process.env,
-    PM_MCP_HTTP_HOST: "127.0.0.1",
-    PM_MCP_HTTP_PORT: String(port),
+const windowsRunnerScript = [
+  "$ErrorActionPreference = 'Stop'",
+  "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:PM_VERIFY_HTTP_CHILD_COMMAND_B64))",
+  "$arguments = @(ConvertFrom-Json $env:PM_VERIFY_HTTP_CHILD_ARGS_JSON)",
+  "$process = Start-Process -FilePath $command -ArgumentList $arguments -NoNewWindow -PassThru -Wait",
+  "exit $process.ExitCode",
+].join("; ");
+const child = spawn(
+  process.platform === "win32" ? "powershell.exe" : runnerCommand,
+  process.platform === "win32"
+    ? [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-EncodedCommand",
+        Buffer.from(windowsRunnerScript, "utf16le").toString("base64"),
+      ]
+    : args,
+  {
+    detached: process.platform !== "win32",
+    env: {
+      ...process.env,
+      PM_MCP_HTTP_HOST: "127.0.0.1",
+      PM_MCP_HTTP_PORT: String(port),
+      PM_VERIFY_HTTP_CHILD_COMMAND_B64: Buffer.from(runnerCommand).toString(
+        "base64",
+      ),
+      PM_VERIFY_HTTP_CHILD_ARGS_JSON: JSON.stringify(args),
+    },
+    stdio: ["ignore", "ignore", "pipe"],
   },
-  stdio: ["ignore", "ignore", "pipe"],
-});
+);
 let childExit;
 let stderr = "";
 child.once("exit", (code, signal) => {
@@ -152,16 +175,25 @@ const stopChild = () => {
   if (stopPromise) return stopPromise;
   stopPromise = (async () => {
     if (process.platform === "win32") {
-      await new Promise((resolve) => {
+      if (!childTreeIsAlive()) return;
+      await new Promise((resolve, reject) => {
         const killer = spawn(
           "taskkill.exe",
           ["/PID", String(child.pid), "/T", "/F"],
           { stdio: "ignore", windowsHide: true },
         );
-        killer.once("error", resolve);
-        killer.once("close", resolve);
+        killer.once("error", reject);
+        killer.once("close", (code) => {
+          if (code === 0 || !childTreeIsAlive()) resolve();
+          else reject(new Error("taskkill.exe exited with code " + code));
+        });
       });
       await waitForChildTreeExit();
+      if (childTreeIsAlive()) {
+        throw new Error(
+          "Published HTTP process tree remained alive after taskkill.exe",
+        );
+      }
       return;
     }
     if (!childTreeIsAlive()) return;
@@ -205,7 +237,9 @@ try {
     process.env.PM_VERIFY_HTTP_READY_TIMEOUT_MS,
   );
   const readyTimeout =
-    Number.isFinite(configuredReadyTimeout) && configuredReadyTimeout >= 0
+    Number.isFinite(configuredReadyTimeout) &&
+    configuredReadyTimeout >= 0 &&
+    configuredReadyTimeout <= ${MCP_HTTP_READY_TIMEOUT_MS}
       ? configuredReadyTimeout
       : ${MCP_HTTP_READY_TIMEOUT_MS};
   const deadline = Date.now() + readyTimeout;

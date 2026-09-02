@@ -1778,8 +1778,9 @@ caller clock, and whether its items came from the `derived_index` or
 `scan_fallback` path. Item rows are deterministic and sorted; the snapshot never
 replaces item or history data.
 
-`readOrRebuild(items, options)` reuses a snapshot only when the cursor and
-complete item-id set and substantive recency-evidence fingerprint match.
+`readOrRebuild(items, options)` reuses a snapshot only when its format and
+signal-set metadata are supported, its item source matches, and its cursor,
+complete item-id set, and substantive recency-evidence fingerprint match.
 Missing, stale, version-incompatible, or corrupt state is rebuilt from the
 authoritative items and atomically replaced. The result reports `cache_status`
 and non-fatal `context_signal_store_stale`,

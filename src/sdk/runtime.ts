@@ -230,6 +230,7 @@ import {
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
   resolveRuntimeLimit,
+  shouldInvalidateWorkspaceContractsCacheAfterAction,
   updateManyOptionsFromFlat,
   withAddNoteOption,
   withFilesDiscoveryOptions,
@@ -2806,25 +2807,6 @@ async function withCwd<T>(cwd: string, run: () => Promise<T>): Promise<T> {
   }
 }
 
-const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
-  "activity",
-  "aggregate",
-  "context",
-  "contracts",
-  "deps",
-  "files-discover",
-  "get",
-  "graph",
-  "health",
-  "history",
-  "list",
-  "next",
-  "search",
-  "stats",
-  "telemetry",
-  "validate",
-]);
-
 function resolveSdkActionInput(args: PmActionInput): {
   action: string;
   args: Record<string, unknown>;
@@ -2846,14 +2828,6 @@ function resolveSdkActionInput(args: PmActionInput): {
   return { action, args: resolvedArgs };
 }
 
-function shouldInvalidateWorkspaceContractsCacheAfterAction(
-  action: string,
-): boolean {
-  return !WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS.has(
-    normalizeActionName(action),
-  );
-}
-
 /** Execute one native or extension-contributed pm action in-process. */
 export async function runAction(args: PmActionInput): Promise<unknown> {
   const resolved = resolveSdkActionInput(args);
@@ -2869,6 +2843,7 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // pins process.cwd() (inside the serialized slot) for the built-in handler.
   const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
+  global.path = resolvePmRoot(resolutionCwd, global.path);
   try {
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[

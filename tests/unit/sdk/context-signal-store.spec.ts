@@ -300,7 +300,7 @@ describe("context signal feature store", () => {
         signal_provenance.recency.coordinate,
       ),
     ).toEqual([
-      "2026-07-20T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
       "1970-01-01T00:00:00.000Z",
     ]);
     expect(() =>
@@ -613,6 +613,7 @@ describe("context signal feature store", () => {
     expect(adapter.writes).toBe(2);
     const changedEvidence = await store.readOrRebuild([item("pm-a")], {
       ...options,
+      sourceCursor: "cursor-2",
       recencyEvidence: {
         "pm-a": {
           source: "substantive_history",

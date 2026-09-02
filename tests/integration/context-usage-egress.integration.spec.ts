@@ -165,4 +165,43 @@ describe("context usage egress receipts", () => {
       );
     });
   });
+
+  it("finalizes active-extension-host delivery in the requested workspace", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Active host delivery",
+          "--description",
+          "Requested workspace egress fixture",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdId = (created.json as { item: { id: string } }).item.id;
+      const previousPmPath = process.env.PM_PATH;
+      delete process.env.PM_PATH;
+      try {
+        const result = await PmClient.forActiveExtensionHost({
+          cwd: context.tempRoot,
+        }).next({ outputBudget: "unbounded" });
+        expect(collectContextUsageDeliveredItemIds(result, "next")).toContain(
+          createdId,
+        );
+        expect((await deliveries(context.pmPath)).at(-1)).toMatchObject({
+          surface: "next",
+          result_omitted: false,
+        });
+      } finally {
+        if (previousPmPath === undefined) delete process.env.PM_PATH;
+        else process.env.PM_PATH = previousPmPath;
+      }
+    });
+  });
 });

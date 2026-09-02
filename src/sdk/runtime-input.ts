@@ -29,6 +29,25 @@ import {
 
 const MCP_MUTATION_TRANSPORT = Symbol("pm.mcp-mutation-transport");
 
+const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
+  "activity",
+  "aggregate",
+  "context",
+  "contracts",
+  "deps",
+  "files-discover",
+  "get",
+  "graph",
+  "health",
+  "history",
+  "list",
+  "next",
+  "search",
+  "stats",
+  "telemetry",
+  "validate",
+]);
+
 /** Mark an action object decoded from the MCP JSON-RPC transport. */
 export function markMcpMutationTransportInput<T extends object>(input: T): T {
   Object.defineProperty(input, MCP_MUTATION_TRANSPORT, {
@@ -471,6 +490,15 @@ export function normalizeActionName(value: string): string {
     chunks.pop();
   }
   return chunks.join("");
+}
+
+/** Return whether an action can change workspace extension contracts. */
+export function shouldInvalidateWorkspaceContractsCacheAfterAction(
+  action: string,
+): boolean {
+  return !WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS.has(
+    normalizeActionName(action),
+  );
 }
 
 /** Canonicalize one space-separated command path for lookup comparisons. */

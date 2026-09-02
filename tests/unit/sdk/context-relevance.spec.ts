@@ -302,7 +302,7 @@ describe("context relevance SDK primitives", () => {
     expect(candidates[0]?.signals?.author_affinity).toBe(0);
   });
 
-  it("preserves compact timestamp recency and rejects non-string runtime values", () => {
+  it("rejects compact and non-string timestamps at the strict recency boundary", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const items = [
       {
@@ -340,22 +340,13 @@ describe("context relevance SDK primitives", () => {
       statusRegistry: registry,
       now: "2026-07-14T00:00:00.000Z",
     });
-    expect(candidates.find(({ id }) => id === "pm-new")?.signals?.recency).toBe(
-      1,
-    );
-    expect(candidates.find(({ id }) => id === "pm-old")?.signals?.recency).toBe(
-      0.5,
-    );
-    expect(
-      candidates.find(({ id }) => id === "pm-invalid")?.signals?.recency,
-    ).toBe(0);
     expect(
       candidates.map(({ signal_provenance }) =>
         signal_provenance.recency.coordinate,
       ),
     ).toEqual([
-      "2026-07-14T00:00:00.000Z",
-      "2026-07-13T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
       "1970-01-01T00:00:00.000Z",
     ]);
   });

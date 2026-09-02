@@ -518,10 +518,14 @@ export async function appendHistoryEntry(
       return;
     }
   }
-  const normalizedEntry =
+  const timestampedEntry =
     entry.ts.trim().length > 0
       ? entry
       : { ...entry, ts: fallbackHistoryTimestamp(entry) };
+  const normalizedEntry = {
+    ...timestampedEntry,
+    event_class: classifyHistoryEvent(timestampedEntry),
+  };
   await appendHistoryEntryWithEventIndex(
     historyPath,
     normalizedEntry,
