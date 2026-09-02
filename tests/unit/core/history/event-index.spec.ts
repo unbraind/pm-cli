@@ -176,6 +176,34 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("uses one generated timestamp for blank authoritative and indexed entries", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-blank-timestamp.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      await appendHistoryEntry(historyPath, {
+        ...historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
+        ts: " ",
+      });
+
+      const persisted = JSON.parse(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n").at(-1) ??
+          "null",
+      ) as HistoryEntry;
+      const indexed = await queryHistoryEventIndex(context.pmPath, {
+        ops: ["update"],
+        limit: 1,
+      });
+      expect(persisted.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/u);
+      expect(indexed?.events[0]?.entry.ts).toBe(persisted.ts);
+    });
+  });
+
   it("selects latest substantive events from indexed and authoritative history", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");
@@ -229,6 +257,48 @@ describe("history mutation event index", () => {
       ).resolves.toMatchObject({
         "pm-recency": { stream_offset: 0, entry: { op: "create" } },
       });
+    });
+  });
+
+  it("falls back to authoritative recency after one contended index wait", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-read-contention.jsonl",
+      );
+      const entry = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      await fs.writeFile(historyPath, `${JSON.stringify(entry)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const release = await acquireLock(
+        context.pmPath,
+        "history-event-index",
+        300,
+        "contending-index-reader",
+        false,
+        false,
+        0,
+      );
+      const previousWait = process.env.PM_LOCK_WAIT_MS;
+      process.env.PM_LOCK_WAIT_MS = "400";
+      try {
+        const startedAt = performance.now();
+        await expect(
+          readLatestSubstantiveHistoryEvents(context.pmPath, [
+            "pm-read-contention",
+          ]),
+        ).resolves.toMatchObject({
+          "pm-read-contention": {
+            stream_offset: 0,
+            entry: { op: "create" },
+          },
+        });
+        expect(performance.now() - startedAt).toBeLessThan(700);
+      } finally {
+        if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
+        else process.env.PM_LOCK_WAIT_MS = previousWait;
+        await release();
+      }
     });
   });
 

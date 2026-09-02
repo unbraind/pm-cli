@@ -331,6 +331,18 @@ describe("context signal feature store", () => {
       {
         ...valid,
         items: [
+          {
+            id: "pm-a",
+            signals: {},
+            signal_provenance: {
+              recency: { source: ["created_at"], coordinate: now },
+            },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
           { id: "pm-a", signals: {} },
           { id: "pm-a", signals: {} },
         ],

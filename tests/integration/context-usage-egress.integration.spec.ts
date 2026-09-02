@@ -51,13 +51,18 @@ describe("context usage egress receipts", () => {
       const deliveredResult = delivered.json as {
         recommended?: { id: string } | null;
         ready: Array<{ id: string }>;
+        decision_needed: Array<{ id: string }>;
+        blocked: Array<{ id: string }>;
       };
       const emittedIds = [
         ...(deliveredResult.recommended
           ? [deliveredResult.recommended.id]
           : []),
         ...deliveredResult.ready.map((row) => row.id),
+        ...deliveredResult.decision_needed.map((row) => row.id),
+        ...deliveredResult.blocked.map((row) => row.id),
       ];
+      expect(emittedIds.length).toBeGreaterThan(0);
       expect((await deliveries(context.pmPath)).at(-1)).toEqual(
         expect.objectContaining({
           surface: "next",
@@ -103,7 +108,10 @@ describe("context usage egress receipts", () => {
       const emittedIds = [
         ...(result.recommended ? [result.recommended.id] : []),
         ...result.ready.map((row) => row.id),
+        ...result.decision_needed.map((row) => row.id),
+        ...result.blocked.map((row) => row.id),
       ];
+      expect(emittedIds.length).toBeGreaterThan(0);
       expect((await deliveries(context.pmPath)).at(-1)).toEqual(
         expect.objectContaining({
           surface: "next",

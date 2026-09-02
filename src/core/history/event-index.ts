@@ -22,6 +22,7 @@ const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
 const HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS = 300;
 const HISTORY_EVENT_INDEX_LOCK_WAIT_MS = 30_000;
+const HISTORY_INDEX_LOCK_CONTENDED = Symbol("history-index-lock-contended");
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 interface AuthoritativeHistoryStreamCache {
@@ -763,7 +764,11 @@ async function readIndexedLatestSubstantiveEvents(
   pmRoot: string,
   streamIds: readonly string[],
   requested: ReadonlySet<string>,
-): Promise<Record<string, IndexedHistoryEvent> | null> {
+): Promise<
+  | Record<string, IndexedHistoryEvent>
+  | typeof HISTORY_INDEX_LOCK_CONTENDED
+  | null
+> {
   if (!Database) return null;
   let database: DatabaseSync | undefined;
   try {
@@ -811,8 +816,11 @@ async function readIndexedLatestSubstantiveEvents(
       database = undefined;
       return collectLatestSubstantiveEvents(indexed, requested);
     });
-  } catch {
+  } catch (error) {
     database?.close();
+    if (error instanceof PmCliError && error.code === "lock_conflict") {
+      return HISTORY_INDEX_LOCK_CONTENDED;
+    }
     return null;
   }
 }
@@ -838,8 +846,10 @@ export async function readLatestSubstantiveHistoryEvents(
     uniqueIds,
     requested,
   );
-  if (indexed !== null) return indexed;
-  if (Database) {
+  if (indexed !== null && indexed !== HISTORY_INDEX_LOCK_CONTENDED) {
+    return indexed;
+  }
+  if (Database && indexed !== HISTORY_INDEX_LOCK_CONTENDED) {
     try {
       if (await rebuildHistoryEventIndex(pmRoot)) {
         const rebuilt = await readIndexedLatestSubstantiveEvents(
@@ -848,7 +858,9 @@ export async function readLatestSubstantiveHistoryEvents(
           uniqueIds,
           requested,
         );
-        if (rebuilt !== null) return rebuilt;
+        if (rebuilt !== null && rebuilt !== HISTORY_INDEX_LOCK_CONTENDED) {
+          return rebuilt;
+        }
       }
     } catch {
       // A corrupt unrelated stream must not prevent requested authoritative reads.

@@ -304,7 +304,8 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
   }
   if (
     ![
-      CONTEXT_RECENCY_SOURCES.has(String(recency.source)),
+      typeof recency.source === "string" &&
+        CONTEXT_RECENCY_SOURCES.has(recency.source),
       typeof recency.coordinate === "string",
       ["undefined", "string"].includes(typeof recency.history_op),
       [undefined, "substantive", "maintenance"].includes(

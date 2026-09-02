@@ -180,6 +180,10 @@ function emittedItemIds(
             ? []
             : [record.recommended]),
           ...(Array.isArray(record.ready) ? record.ready : []),
+          ...(Array.isArray(record.decision_needed)
+            ? record.decision_needed
+            : []),
+          ...(Array.isArray(record.blocked) ? record.blocked : []),
         ];
   return [
     ...new Set(

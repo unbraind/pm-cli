@@ -449,6 +449,28 @@ describe("context usage feedback", () => {
     await expect(
       finalizeContextUsageDelivery({ pmRoot, result: emptyNextResult }),
     ).resolves.toBe(true);
+    const queueReceipt = await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "next",
+      profile: "next",
+      rows: [
+        { id: "pm-recommended", rank: 1, included: true },
+        { id: "pm-ready", rank: 2, included: true },
+        { id: "pm-decision", rank: 3, included: true },
+        { id: "pm-blocked", rank: 4, included: true },
+      ],
+    });
+    const completeNextResult = {
+      recommended: { id: "pm-recommended" },
+      ready: [{ id: "pm-ready" }],
+      decision_needed: [{ id: "pm-decision" }],
+      blocked: [{ id: "pm-blocked" }],
+    };
+    attachContextUsageServingReceipt(completeNextResult, queueReceipt);
+    await expect(
+      finalizeContextUsageDelivery({ pmRoot, result: completeNextResult }),
+    ).resolves.toBe(true);
     await expect(
       finalizeContextUsageDelivery({ pmRoot, result: [] }),
     ).resolves.toBe(false);
@@ -470,6 +492,15 @@ describe("context usage feedback", () => {
       expect.objectContaining({
         delivered_item_ids: [],
         result_omitted: true,
+      }),
+      expect.objectContaining({
+        delivered_item_ids: [
+          "pm-recommended",
+          "pm-ready",
+          "pm-decision",
+          "pm-blocked",
+        ],
+        result_omitted: false,
       }),
     ]);
   });

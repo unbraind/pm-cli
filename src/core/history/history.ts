@@ -497,9 +497,20 @@ export async function appendHistoryEntry(
       return;
     }
   }
-  await appendHistoryEntryWithEventIndex(historyPath, entry, async () => {
-    await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
-  });
+  const normalizedEntry =
+    entry.ts.trim().length > 0
+      ? entry
+      : { ...entry, ts: fallbackHistoryTimestamp(entry) };
+  await appendHistoryEntryWithEventIndex(
+    historyPath,
+    normalizedEntry,
+    async () => {
+      await appendLineAtomic(
+        historyPath,
+        serializeHistoryLine(normalizedEntry, normalizedEntry),
+      );
+    },
+  );
   await invalidateHistoryDriftCacheForPath(historyPath);
 }
 
