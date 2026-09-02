@@ -2,13 +2,13 @@ id: pm-07pt16
 title: "Context recency is computed from updated_at, so every governance write the project mandates erases the freshness signal it ranks on"
 description: "computeContextRelevance derives the recency signal by rank-ordering items on updated_at alone (src/sdk/context-relevance.ts:136-153), and recency carries weight 0.35 — tied for the largest single weight in the default vector, behind only claim_focus and ahead of semantic_similarity. updated_at is the timestamp of the last write of any kind, so it cannot distinguish an item that a human or agent actually advanced from an item a sweep touched. Every maintenance operation this project requires — resolution backfill, close-reason backfill, relationship enrichment, release attribution stamping, normalization, duplicate renames — writes updated_at on terminal items and thereby promotes long-finished work to maximal freshness. This is not hypothetical: the release attribution backfill and terminal graph backfill in this same lane rewrote updated_at on 1782 and 1713 items respectively, so the entire terminal corpus now presents as newer than every genuinely active item. The narrow twin of this defect was already fixed once (pm-d9g9 rejected empty appends precisely so they could not fake freshness), which establishes that write-time is not freshness; the general class was never addressed. A maintenance-invariant temporal coordinate now exists in the data: every terminal item carries a stamped release identifier, and the immutable history stream distinguishes substantive operations (create, close, cancel, status transition, claim, comment) from maintenance operations (dependency add, metadata backfill, normalization, redaction, repair)."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-09-02T17:59:15.774Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#5e45b0a81e915e810768141f"
+updated_at: "2026-09-02T18:13:17.857Z"
+closed_at: "2026-09-02T18:05:55.005Z"
+completed_at: "2026-09-02T18:05:55.005Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -21,6 +21,9 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
+resolution: "Delivered substantive-history recency classification and indexing; public SDK context signal snapshots, ranking provenance, usage feedback, and evaluation primitives; CLI/MCP exact delivery receipts; robust lock and derived-index invalidation semantics; release and installed-consumer hardening; review automation; complete documentation; canonical PM-linked verification; qualified fallback-append projection guarantees; and context-evaluation feedback isolation that preserves authoritative touch attempts and combined failures."
+expected_result: "A universal SDK-owned context-management baseline that preserves semantic recency, records truthful egress feedback, keeps authoritative history and usage touches durable across optional projection or feedback failures, exposes exact guarantees in documentation, and binds final verification to immutable PM receipts."
+actual_result: "Implementation commit 54c59ac9778dfe2e66651c18fc1ea73790776fd3 qualifies indexed versus fallback projection transactions and makes context evaluation attempt touch persistence even when serving or delivery feedback fails, rethrowing single failures and preserving dual failures in AggregateError. The focused six-test suite, TypeScript, and ESLint passed. PM-linked coverage receipt test-local-mtkepb3p-avwxjo passed all 8,306 tests at exactly 61,258/61,258 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,959/58,959 lines."
 dependencies[10]{id,kind,created_at}:
   pm-3hps,related,"2026-07-26T17:05:19.088Z"
   pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
@@ -32,7 +35,7 @@ dependencies[10]{id,kind,created_at}:
   pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z"
   pm-pcys9n,related,"2026-07-26T17:05:19.088Z"
   pm-uwfs,related,"2026-07-26T17:05:19.088Z"
-comments[73]{created_at,author,text}:
+comments[75]{created_at,author,text}:
   "2026-09-01T15:48:14.615Z","harness:codex","Delivery evidence 2026-09-01: history writes now carry public event_class=v1 classification; explicit classifications win, update patch fields are classified by declared policy, and unknown operations fail closed as substantive. The v3 event index supports latest-substantive reads with authoritative fallback. Context relevance and persisted signal snapshots derive recency from the latest substantive history event, then release cohort, then created_at, and never bare updated_at; explained context/next expose source, coordinate, history operation, and event class. A temporary-project acceptance proved a dependency-only maintenance write left the substantive recency coordinate byte-for-byte unchanged while CLI and PmClient returned the expected items. Static quality passed with public-surface and replication gates; exact coverage passed 596 files / 8260 tests at 60874 statements, 46011 branches, 12674 functions, and 58599 lines, all 100%. Supported Node 24 scale check remained within product bounds."
   "2026-09-01T17:16:28.944Z","harness:codex","Review round evidence: accepted findings added the real history:author-acknowledge, history_compact_baseline, and tests_remove maintenance operations; invalid persisted event_class values now fall through to the versioned classifier; history index v4 records authoritative stream byte sizes and rejects stale-but-valid projections before rebuilding; latest-event maps use null prototypes; signal snapshot v3 fingerprints exact recency evidence; DatabaseSync replication detects declarations and assignments. Non-absence I/O errors remain authoritative failures. Linked focused suite passed 49/49 and repo coverage passed 60,928/60,928 statements, 46,039/46,039 branches, 12,685/12,685 functions, 58,650/58,650 lines."
   "2026-09-01T18:28:29.526Z","harness:codex","Late-review hardening evidence: context snapshot freshness now fingerprints every item's effective recency provenance, including release-cohort and created_at fallbacks; optional substantive-history fields are isolated in their negative control. History-index rebuilds persist byte sizes captured with the authoritative pre-read snapshot, so a concurrent append leaves a detectable conservative mismatch rather than certifying old rows against a new size. Focused context/history suites passed, including the concurrent-append regression."
@@ -106,6 +109,8 @@ comments[73]{created_at,author,text}:
   "2026-09-02T17:39:02.294Z","harness:codex","Post-close verification: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete ESLint, zero-clone, build, contract snapshot, repository assurance, package boundary, SDK parity, replication, grammar, refusal, token, MCP deprecation, tracker-context, gate-registry, SDK surface, transport-cost, graph-composition, and record-integrity chain after the canonical coverage receipt was recorded and the item was closed."
   "2026-09-02T17:56:09.033Z","harness:codex","Investigation note: final exact-head review produced two valid follow-ups and one invalid bounded-projection claim. Accepting the need to qualify indexed versus lock-conflict fallback transaction guarantees in docs and to ensure context-evaluation touch writes survive feedback-recording failures. Rejecting the claim that failed coverage evidence was erased: the 20-entry projection still contains multiple failed coverage runs and immutable history retains test-local-mtjpcko8-cpm11a."
   "2026-09-02T17:59:15.774Z","harness:codex","Implementation evidence: context evaluation now captures serving/delivery failures, always attempts the later authoritative touch write, rethrows the feedback or touch failure, and preserves both with AggregateError when both writes fail. Direct negative controls cover serving failure, delivery failure, touch-only failure, combined failure, and call order; the focused six-test script suite, TypeScript compilation, and focused ESLint pass. Context relevance documentation now limits atomic projection guarantees to indexed appends and explicitly requires validation or rebuild after lock-conflict fallback append."
+  "2026-09-02T18:05:54.455Z","harness:codex","Canonical post-review coverage receipt: pm-linked run test-local-mtkepb3p-avwxjo passed node scripts/run-tests.mjs coverage against implementation commit 54c59ac9778dfe2e66651c18fc1ea73790776fd3. The complete 8,306-test suite remained exact at 61,258/61,258 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,959/58,959 lines."
+  "2026-09-02T18:13:17.857Z","harness:codex","Terminal static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed against implementation tree 54c59ac9778dfe2e66651c18fc1ea73790776fd3 after the item was closed and released, including ESLint, both zero-clone scans, build/contracts, repository assurance, SDK/package parity, replication and grammar gates, refusal/token gates, tracker context quality, public surface and transport budgets, graph composition, and append-only record integrity."
 learnings[3]{created_at,author,text}:
   "2026-09-01T15:48:17.264Z","harness:codex","Freshness is semantic event provenance, not file-write time: maintenance operations must be explicitly classified and excluded from temporal ranking, while unknown operations fail closed as substantive."
   "2026-09-01T19:41:37.711Z","harness:codex","A derived index can safely coordinate an authoritative append without a second filesystem lock by holding its SQLite write transaction across the append and paired size capture; if projection work fails after the append, preserve authority and discard the accelerator."
@@ -173,22 +178,6 @@ tests[9]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,project,180,"harness:codex","2026-09-02T07:30:01.944Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Directory cap and bounded replication-gate regression
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/runtime-input-graph.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,project,300,"harness:codex","2026-09-02T09:47:16.194Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Final exact-head runtime cache recency lock and Windows verifier review regressions
 test_runs[20]:
-  - run_id: test-local-mtjpnv5z-gjhjtm
-    kind: test
-    status: passed
-    started_at: "2026-09-02T06:17:14.758Z"
-    finished_at: "2026-09-02T06:24:19.078Z"
-    recorded_at: "2026-09-02T06:24:19.078Z"
-    passed: 6
-    failed: 0
-    skipped: 0
-    executions[6]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-append-overrides.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/shared/shared-helpers.spec.ts tests/unit/scripts/scale-benchmark.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/sdk/context-signal-store.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/scripts/scale-benchmark.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
   - run_id: test-local-mtjrp7s6-roxw7v
     kind: test
     status: passed
@@ -406,12 +395,24 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkepb3p-avwxjo
+    kind: test
+    status: passed
+    started_at: "2026-09-02T17:59:36.310Z"
+    finished_at: "2026-09-02T18:05:16.789Z"
+    recorded_at: "2026-09-02T18:05:16.789Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
 docs[5]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,Substantive recency SDK and performance contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated history timestamp refusal closure evidence
   docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
   docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
   docs/SDK.md,project,Complete persisted snapshot reuse contract
+close_reason: Completed broad context-management delivery plus final transaction documentation and touch-durability review corrections
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
