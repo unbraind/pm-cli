@@ -21,7 +21,10 @@ import {
 import type { ItemMetadata } from "../types/index.js";
 import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
 import { readLatestSubstantiveHistoryEvents } from "../core/history/event-index.js";
-import { isRfc3339DateTime } from "../core/shared/time.js";
+import {
+  isRfc3339DateTime,
+  resolveIsoOrRelative,
+} from "../core/shared/time.js";
 
 /** Current serialized feature-store envelope version. */
 export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 3;
@@ -279,9 +282,23 @@ function recencyEvidenceFingerprint(
 }
 
 function canonicalRecencyCoordinate(value: unknown): string | null {
-  return typeof value === "string" && isRfc3339DateTime(value)
-    ? new Date(value).toISOString()
-    : null;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (
+    (!isRfc3339DateTime(trimmed) && !/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) ||
+    /\.\d{4,}(?:Z|[+-]\d{2}:\d{2})$/i.test(trimmed)
+  ) {
+    return null;
+  }
+  try {
+    return resolveIsoOrRelative(
+      trimmed,
+      new Date(Number.NaN),
+      "context signal recency coordinate",
+    );
+  } catch {
+    return null;
+  }
 }
 
 function canonicalizeCandidateRecency(
@@ -293,7 +310,7 @@ function canonicalizeCandidateRecency(
     );
     if (coordinate === null) {
       throw new TypeError(
-        "Context signal recency coordinate must be a valid RFC 3339 timestamp",
+        "Context signal recency coordinate must be a valid absolute timestamp with millisecond precision",
       );
     }
     return {

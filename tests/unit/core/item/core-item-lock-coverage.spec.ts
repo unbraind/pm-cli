@@ -815,7 +815,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("leaves an owned lock intact while stale cleanup owns the mutation gate", async () => {
+  it("retries owned release after a competing cleanup leaves the mutation gate", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-release-cleanup-busy";
       const lockPath = getLockPath(pmPath, id);
@@ -827,9 +827,93 @@ describe("core/lock/lock additional branch coverage", () => {
       if (releaseCleanupGate === null) {
         throw new Error("expected stale cleanup gate release");
       }
+      const originalMkdir = fs.mkdir.bind(fs);
+      let signalContendedAttempt!: () => void;
+      const contendedAttempt = new Promise<void>((resolve) => {
+        signalContendedAttempt = resolve;
+      });
+      const mkdirSpy = vi
+        .spyOn(fs, "mkdir")
+        .mockImplementation(async (...args) => {
+          try {
+            return await originalMkdir(...args);
+          } catch (error: unknown) {
+            if (String(args[0]) === `${lockPath}.stale-cleanup`) {
+              signalContendedAttempt();
+            }
+            throw error;
+          }
+        });
+      try {
+        const releasing = release();
+        await contendedAttempt;
+        await releaseCleanupGate();
+        await expect(releasing).resolves.toBeUndefined();
+        await expect(fs.access(lockPath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+      } finally {
+        mkdirSpy.mockRestore();
+        await releaseCleanupGate();
+        await fs.rm(lockPath, { force: true });
+      }
+    });
+  });
+
+  it("bounds owned release waiting when the cleanup gate stays busy", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-cleanup-timeout";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "owner-a", false);
+      const releaseCleanupGate = await lockInternals.acquireStaleCleanupGate(
+        lockPath,
+        id,
+      );
+      if (releaseCleanupGate === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      vi.useFakeTimers();
+      try {
+        const releasing = release();
+        await vi.advanceTimersByTimeAsync(300);
+        await expect(releasing).resolves.toBeUndefined();
+        await expect(fs.access(lockPath)).resolves.toBeUndefined();
+      } finally {
+        vi.useRealTimers();
+        await releaseCleanupGate();
+        await fs.rm(lockPath, { force: true });
+      }
+    });
+  });
+
+  it("abandons a contended release after the owned lock is replaced", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-cleanup-replaced";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "owner-a", false);
+      const releaseCleanupGate = await lockInternals.acquireStaleCleanupGate(
+        lockPath,
+        id,
+      );
+      if (releaseCleanupGate === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({
+          id,
+          pid: process.pid,
+          owner: "replacement-owner",
+          token: "replacement-token",
+          created_at: new Date().toISOString(),
+          ttl_seconds: 60,
+        })}\n`,
+      );
       try {
         await expect(release()).resolves.toBeUndefined();
-        await expect(fs.access(lockPath)).resolves.toBeUndefined();
+        await expect(fs.readFile(lockPath, "utf8")).resolves.toContain(
+          "replacement-token",
+        );
       } finally {
         await releaseCleanupGate();
         await fs.rm(lockPath, { force: true });

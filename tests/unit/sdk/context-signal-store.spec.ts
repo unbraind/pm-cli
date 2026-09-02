@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -220,7 +221,50 @@ describe("context signal feature store", () => {
           },
         },
       }),
-    ).toThrow("valid RFC 3339 timestamp");
+    ).toThrow("valid absolute timestamp with millisecond precision");
+    const legacyDateCoordinate = buildContextSignalSnapshot([item("pm-a")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+      recencyEvidence: {
+        "pm-a": {
+          source: "created_at",
+          coordinate: "2026-07-21",
+        },
+      },
+    });
+    expect(
+      legacyDateCoordinate.items[0]?.signal_provenance.recency.coordinate,
+    ).toBe("2026-07-21T00:00:00.000Z");
+    expect(() =>
+      buildContextSignalSnapshot([item("pm-a")], {
+        statusRegistry,
+        now,
+        source: "scan_fallback",
+        sourceCursor: "cursor",
+        recencyEvidence: {
+          "pm-a": {
+            source: "created_at",
+            coordinate: "2026-07-21T12:00:00.0001Z",
+          },
+        },
+      }),
+    ).toThrow("millisecond precision");
+    expect(() =>
+      buildContextSignalSnapshot([item("pm-a")], {
+        statusRegistry,
+        now,
+        source: "scan_fallback",
+        sourceCursor: "cursor",
+        recencyEvidence: {
+          "pm-a": {
+            source: "created_at",
+            coordinate: "2026-02-30",
+          },
+        },
+      }),
+    ).toThrow("valid absolute timestamp");
     const legacySubstantive = buildContextSignalSnapshot([item("pm-a")], {
       statusRegistry,
       now,
@@ -244,6 +288,23 @@ describe("context signal feature store", () => {
         items: sparseItems,
       }),
     ).toBeNull();
+    const invalidCoordinate = structuredClone(valid);
+    const invalidCoordinateItem = invalidCoordinate.items[0]!;
+    invalidCoordinateItem.signal_provenance.recency.coordinate = "not-a-date";
+    invalidCoordinate.recency_evidence_fingerprint = `sha256:${createHash(
+      "sha256",
+    )
+      .update(
+        JSON.stringify([
+          invalidCoordinateItem.id,
+          invalidCoordinateItem.signal_provenance.recency.source,
+          invalidCoordinateItem.signal_provenance.recency.coordinate,
+          invalidCoordinateItem.signal_provenance.recency.history_op ?? null,
+          invalidCoordinateItem.signal_provenance.recency.event_class ?? null,
+        ]),
+      )
+      .digest("hex")}`;
+    expect(parseContextSignalSnapshot(invalidCoordinate)).toBeNull();
     const invalidValues: unknown[] = [
       null,
       { ...valid, format_version: 99 },
@@ -264,6 +325,17 @@ describe("context signal feature store", () => {
         ...valid,
         items: [{ ...structuredClone(valid.items[0]), id: " " }],
       },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: { source: "created_at", coordinate: 42 },
+            },
+          },
+        ],
+      },
       { ...valid, items: [{ id: "pm-a", signals: [] }] },
       { ...valid, items: [{ id: "pm-a", signals: { recency: 2 } }] },
       { ...valid, items: [{ id: "pm-a", signals: { unknown: 0.5 } }] },
@@ -273,17 +345,6 @@ describe("context signal feature store", () => {
           {
             ...structuredClone(valid.items[0]),
             signals: { unknown: 0.5 },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: { source: "created_at", coordinate: "not-a-date" },
-            },
           },
         ],
       },

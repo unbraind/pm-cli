@@ -969,6 +969,7 @@ describe("history mutation event index", () => {
         await expect(
           appendHistoryEntry(historyPath, second),
         ).resolves.toBeUndefined();
+        expect(rmSpy).toHaveBeenCalledWith(indexPath, { force: true });
       } finally {
         statSpy.mockRestore();
         rmSpy.mockRestore();

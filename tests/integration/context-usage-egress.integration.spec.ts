@@ -116,9 +116,11 @@ describe("context usage egress receipts", () => {
         )
         .filter((event) => event.kind === "serve")
         .at(-1);
-      expect(serving?.packed_item_ids).not.toEqual(
-        expect.arrayContaining(["pm-decision", "pm-blocked", "pm-held"]),
-      );
+      expect(serving).toBeDefined();
+      expect(serving?.packed_item_ids).toEqual(expect.any(Array));
+      for (const id of ["pm-decision", "pm-blocked", "pm-held"]) {
+        expect(serving?.packed_item_ids).not.toContain(id);
+      }
 
       const omitted = context.runCli(
         ["--output-budget", "1", "next", "--json", "--for", "execute"],

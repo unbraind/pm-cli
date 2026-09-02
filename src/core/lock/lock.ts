@@ -200,11 +200,26 @@ async function releaseOwnedLock(
   owner: string,
   token: string,
 ): Promise<void> {
-  const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
-  if (releaseCleanupGate === null) {
-    return;
-  }
-  try {
+  const startedAtMs = Date.now();
+  let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
+  for (;;) {
+    const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
+    if (releaseCleanupGate !== null) {
+      try {
+        const current = await readLockInfo(lockPath, false);
+        if (
+          current.info?.id === id &&
+          current.info.pid === process.pid &&
+          current.info.owner === owner &&
+          current.info.token === token
+        ) {
+          await unlinkLockWithHook(lockPath, "lock:release");
+        }
+      } finally {
+        await releaseCleanupGate();
+      }
+      return;
+    }
     const current = await readLockInfo(lockPath, false);
     if (
       current.info?.id !== id ||
@@ -214,9 +229,12 @@ async function releaseOwnedLock(
     ) {
       return;
     }
-    await unlinkLockWithHook(lockPath, "lock:release");
-  } finally {
-    await releaseCleanupGate();
+    const elapsedMs = Date.now() - startedAtMs;
+    if (elapsedMs >= LOCK_CONFLICT_RETRY_HINT_MS) return;
+    await sleepWithJitter(
+      Math.min(backoffMs, LOCK_CONFLICT_RETRY_HINT_MS - elapsedMs),
+    );
+    backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
   }
 }
 
