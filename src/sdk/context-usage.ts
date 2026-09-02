@@ -172,9 +172,13 @@ function emittedItemIds(
   if (record === null || resultReceiptSaysOmitted(result)) return [];
   const rows =
     surface === "context"
-      ? ["high_level", "low_level", "blocked_fallback"].flatMap((key) =>
-          Array.isArray(record[key]) ? record[key] : [],
-        )
+      ? [
+          "high_level",
+          "low_level",
+          "blocked_fallback",
+          "recently_created",
+          "unparented",
+        ].flatMap((key) => (Array.isArray(record[key]) ? record[key] : []))
       : [
           ...(asObjectRecord(record.recommended) === null
             ? []

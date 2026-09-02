@@ -99,6 +99,26 @@ describe("context usage egress receipts", () => {
           delivered_item_ids: emittedIds,
         }),
       );
+      const serving = (
+        await fs.readFile(
+          path.join(context.pmPath, "runtime", "context-usage.jsonl"),
+          "utf8",
+        )
+      )
+        .trim()
+        .split("\n")
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              kind: string;
+              packed_item_ids?: string[];
+            },
+        )
+        .filter((event) => event.kind === "serve")
+        .at(-1);
+      expect(serving?.packed_item_ids).not.toEqual(
+        expect.arrayContaining(["pm-decision", "pm-blocked", "pm-held"]),
+      );
 
       const omitted = context.runCli(
         ["--output-budget", "1", "next", "--json", "--for", "execute"],

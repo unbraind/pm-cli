@@ -528,7 +528,7 @@ async function attachNextUsageFeedback(params: {
       ...params.result.blocked,
       ...params.result.held_by_others,
     ]) {
-      rows.push({ id: row.id, rank: rows.length + 1, included: true });
+      rows.push({ id: row.id, rank: rows.length + 1, included: false });
     }
     const receipt = await recordContextUsageServing({
       pmRoot: params.pmRoot,

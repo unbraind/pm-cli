@@ -192,6 +192,35 @@ describe("context signal feature store", () => {
     expect(
       parseContextSignalSnapshot(structuredClone(substantive)),
     ).not.toBeNull();
+    const offsetCoordinate = buildContextSignalSnapshot([item("pm-a")], {
+      statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: "cursor",
+      recencyEvidence: {
+        "pm-a": {
+          source: "substantive_history",
+          coordinate: "2026-07-21T14:00:00.000+02:00",
+        },
+      },
+    });
+    expect(
+      offsetCoordinate.items[0]?.signal_provenance.recency.coordinate,
+    ).toBe(now);
+    expect(() =>
+      buildContextSignalSnapshot([item("pm-a")], {
+        statusRegistry,
+        now,
+        source: "scan_fallback",
+        sourceCursor: "cursor",
+        recencyEvidence: {
+          "pm-a": {
+            source: "substantive_history",
+            coordinate: "not-a-date",
+          },
+        },
+      }),
+    ).toThrow("valid RFC 3339 timestamp");
     const legacySubstantive = buildContextSignalSnapshot([item("pm-a")], {
       statusRegistry,
       now,
@@ -244,6 +273,17 @@ describe("context signal feature store", () => {
           {
             ...structuredClone(valid.items[0]),
             signals: { unknown: 0.5 },
+          },
+        ],
+      },
+      {
+        ...valid,
+        items: [
+          {
+            ...structuredClone(valid.items[0]),
+            signal_provenance: {
+              recency: { source: "created_at", coordinate: "not-a-date" },
+            },
           },
         ],
       },

@@ -522,6 +522,68 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("holds the stale-cleanup gate across ownership validation and release", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-replacement-race";
+      const lockPath = getLockPath(pmPath, id);
+      const releaseOriginal = await acquireLock(
+        pmPath,
+        id,
+        60,
+        "original-owner",
+      );
+      const originalUnlink = fs.unlink.bind(fs);
+      let continueOriginalUnlink!: () => void;
+      let signalOriginalUnlink!: () => void;
+      const originalUnlinkStarted = new Promise<void>((resolve) => {
+        signalOriginalUnlink = resolve;
+      });
+      const originalUnlinkMayContinue = new Promise<void>((resolve) => {
+        continueOriginalUnlink = resolve;
+      });
+      let firstLockUnlink = true;
+      const unlinkSpy = vi
+        .spyOn(fs, "unlink")
+        .mockImplementation(async (targetPath) => {
+          if (String(targetPath) === lockPath && firstLockUnlink) {
+            firstLockUnlink = false;
+            signalOriginalUnlink();
+            await originalUnlinkMayContinue;
+          }
+          await originalUnlink(targetPath);
+        });
+      try {
+        const releasing = releaseOriginal();
+        await originalUnlinkStarted;
+        const replacementOutcome = await acquireLock(
+          pmPath,
+          id,
+          -1,
+          "replacement-owner",
+          true,
+          false,
+          0,
+        ).then(
+          (release) => ({ status: "fulfilled" as const, release }),
+          (reason: unknown) => ({ status: "rejected" as const, reason }),
+        );
+        continueOriginalUnlink();
+        await releasing;
+        expect(replacementOutcome).toMatchObject({
+          status: "rejected",
+          reason: { exitCode: EXIT_CODE.CONFLICT },
+        });
+        await expect(fs.access(lockPath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+      } finally {
+        continueOriginalUnlink();
+        unlinkSpy.mockRestore();
+        await fs.rm(lockPath, { force: true });
+      }
+    });
+  });
+
   it("dispatches stale lock unlink hook when forced stale removal succeeds", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-hook";
@@ -750,6 +812,28 @@ describe("core/lock/lock additional branch coverage", () => {
 
       await fs.unlink(lockPath);
       await expect(release()).resolves.toBeUndefined();
+    });
+  });
+
+  it("leaves an owned lock intact while stale cleanup owns the mutation gate", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-cleanup-busy";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "owner-a", false);
+      const releaseCleanupGate = await lockInternals.acquireStaleCleanupGate(
+        lockPath,
+        id,
+      );
+      if (releaseCleanupGate === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      try {
+        await expect(release()).resolves.toBeUndefined();
+        await expect(fs.access(lockPath)).resolves.toBeUndefined();
+      } finally {
+        await releaseCleanupGate();
+        await fs.rm(lockPath, { force: true });
+      }
     });
   });
 

@@ -357,9 +357,8 @@ describe("context usage feedback", () => {
       untrusted_serving_events: 1,
     });
 
-    const preEgressIncluded = receipt.rows
-      .filter((row) => row.included)
-      .map((row) => row.id);
+    const preEgressIncluded =
+      receipt?.rows.filter((row) => row.included).map((row) => row.id) ?? [];
     expect(preEgressIncluded).toEqual(["pm-packed"]);
   });
 
@@ -403,7 +402,9 @@ describe("context usage feedback", () => {
       profile: "orient",
       rows: [
         { id: "pm-high", rank: 1, included: true },
-        { id: "pm-invalid-row", rank: 2, included: false },
+        { id: "pm-recent", rank: 2, included: false },
+        { id: "pm-unparented", rank: 3, included: false },
+        { id: "pm-invalid-row", rank: 4, included: false },
       ],
     });
     const source = {};
@@ -412,6 +413,8 @@ describe("context usage feedback", () => {
     attachContextUsageServingReceipt({}, null);
     const contextResult = {
       high_level: [{ id: " pm-high " }],
+      recently_created: [{ id: "pm-recent" }],
+      unparented: [{ id: "pm-unparented" }],
       blocked_fallback: [{ id: 1 }],
       read_output: { result_omitted: false },
     };
@@ -486,7 +489,7 @@ describe("context usage feedback", () => {
       .map((line) => JSON.parse(line));
     expect(events.filter(({ kind }) => kind === "delivery")).toEqual([
       expect.objectContaining({
-        delivered_item_ids: ["pm-high"],
+        delivered_item_ids: ["pm-high", "pm-recent", "pm-unparented"],
         result_omitted: false,
       }),
       expect.objectContaining({

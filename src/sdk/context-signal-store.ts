@@ -21,6 +21,7 @@ import {
 import type { ItemMetadata } from "../types/index.js";
 import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
 import { readLatestSubstantiveHistoryEvents } from "../core/history/event-index.js";
+import { isRfc3339DateTime } from "../core/shared/time.js";
 
 /** Current serialized feature-store envelope version. */
 export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 3;
@@ -277,6 +278,33 @@ function recencyEvidenceFingerprint(
   return `sha256:${hash.digest("hex")}`;
 }
 
+function canonicalRecencyCoordinate(value: unknown): string | null {
+  return typeof value === "string" && isRfc3339DateTime(value)
+    ? new Date(value).toISOString()
+    : null;
+}
+
+function canonicalizeCandidateRecency(
+  candidates: readonly ItemContextRelevanceCandidate[],
+): ItemContextRelevanceCandidate[] {
+  return candidates.map((candidate) => {
+    const coordinate = canonicalRecencyCoordinate(
+      candidate.signal_provenance.recency.coordinate,
+    );
+    if (coordinate === null) {
+      throw new TypeError(
+        "Context signal recency coordinate must be a valid RFC 3339 timestamp",
+      );
+    }
+    return {
+      ...candidate,
+      signal_provenance: {
+        recency: { ...candidate.signal_provenance.recency, coordinate },
+      },
+    };
+  });
+}
+
 function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
   if (!isRecord(value)) return null;
   const signalProvenance = value.signal_provenance;
@@ -290,6 +318,8 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
     return null;
   const recency = (signalProvenance as Record<string, unknown>).recency;
   if (!isRecord(recency)) return null;
+  const coordinate = canonicalRecencyCoordinate(recency.coordinate);
+  if (coordinate === null) return null;
   const supportedSignals = new Set<string>(STORED_CONTEXT_SIGNAL_NAMES);
   const signalEntries = Object.entries(
     value.signals as Record<string, unknown>,
@@ -306,7 +336,6 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
     ![
       typeof recency.source === "string" &&
         CONTEXT_RECENCY_SOURCES.has(recency.source),
-      typeof recency.coordinate === "string",
       ["undefined", "string"].includes(typeof recency.history_op),
       [undefined, "substantive", "maintenance"].includes(
         recency.event_class as string | undefined,
@@ -328,7 +357,7 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
           | "substantive_history"
           | "release_cohort"
           | "created_at",
-        coordinate: recency.coordinate as string,
+        coordinate,
         history_op: recency.history_op as string | undefined,
         event_class: recency.event_class as
           | "substantive"
@@ -445,9 +474,11 @@ export function buildContextSignalSnapshot(
 ): ContextSignalSnapshot {
   validateSnapshotOptions(options);
   return snapshotFromCandidates(
-    buildItemContextRelevanceCandidates(
-      items,
-      stableSnapshotOptions(items, options),
+    canonicalizeCandidateRecency(
+      buildItemContextRelevanceCandidates(
+        items,
+        stableSnapshotOptions(items, options),
+      ),
     ),
     options,
   );
@@ -531,9 +562,11 @@ export class ContextSignalStore {
       .map((item) => item.id)
       .sort((left, right) => left.localeCompare(right));
     const snapshotIds = snapshot?.items.map((item) => item.id) ?? [];
-    const authoritativeCandidates = buildItemContextRelevanceCandidates(
-      items,
-      stableSnapshotOptions(items, options),
+    const authoritativeCandidates = canonicalizeCandidateRecency(
+      buildItemContextRelevanceCandidates(
+        items,
+        stableSnapshotOptions(items, options),
+      ),
     );
     const fresh =
       snapshot !== null &&

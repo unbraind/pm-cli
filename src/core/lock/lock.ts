@@ -200,16 +200,24 @@ async function releaseOwnedLock(
   owner: string,
   token: string,
 ): Promise<void> {
-  const current = await readLockInfo(lockPath, false);
-  if (
-    current.info?.id !== id ||
-    current.info.pid !== process.pid ||
-    current.info.owner !== owner ||
-    current.info.token !== token
-  ) {
+  const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
+  if (releaseCleanupGate === null) {
     return;
   }
-  await unlinkLockWithHook(lockPath, "lock:release");
+  try {
+    const current = await readLockInfo(lockPath, false);
+    if (
+      current.info?.id !== id ||
+      current.info.pid !== process.pid ||
+      current.info.owner !== owner ||
+      current.info.token !== token
+    ) {
+      return;
+    }
+    await unlinkLockWithHook(lockPath, "lock:release");
+  } finally {
+    await releaseCleanupGate();
+  }
 }
 
 function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {

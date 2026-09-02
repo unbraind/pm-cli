@@ -935,6 +935,54 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("preserves a durable append when stale projection removal fails", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-invalidation-fail.jsonl",
+      );
+      const indexPath = path.join(context.pmPath, "runtime", INDEX_FILENAME);
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const originalStat = fs.stat.bind(fs);
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === historyPath) throw new Error("stat failed");
+          return originalStat(...args);
+        });
+      const originalRm = fs.rm.bind(fs);
+      const rmSpy = vi.spyOn(fs, "rm").mockImplementation(async (...args) => {
+        if (String(args[0]) === indexPath) {
+          throw Object.assign(new Error("remove denied"), { code: "EACCES" });
+        }
+        return originalRm(...args);
+      });
+      try {
+        await expect(
+          appendHistoryEntry(historyPath, second),
+        ).resolves.toBeUndefined();
+      } finally {
+        statSpy.mockRestore();
+        rmSpy.mockRestore();
+      }
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(2);
+      await expect(fs.access(indexPath)).resolves.toBeUndefined();
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+    });
+  });
+
   it("refuses an append when the index write lock cannot be acquired", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(

@@ -101,6 +101,15 @@ function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
 }
 
+async function invalidateHistoryEventIndex(pmRoot: string): Promise<void> {
+  try {
+    await fs.rm(eventIndexPath(pmRoot), { force: true });
+  } catch {
+    // The authoritative append already committed. A retained projection remains
+    // unusable because its recorded stream byte size no longer matches authority.
+  }
+}
+
 async function withHistoryEventIndexLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
@@ -515,7 +524,7 @@ export async function appendHistoryEntryWithEventIndex(
       } catch (error: unknown) {
         database?.close();
         if (!appended) throw error;
-        await fs.rm(targetPath, { force: true });
+        await invalidateHistoryEventIndex(pmRoot);
       }
     });
   } catch (error: unknown) {
@@ -523,7 +532,7 @@ export async function appendHistoryEntryWithEventIndex(
       throw error;
     }
     await append();
-    await fs.rm(eventIndexPath(pmRoot), { force: true });
+    await invalidateHistoryEventIndex(pmRoot);
   }
 }
 
