@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-linked-test-adapters",
-  "version": "2026.9.1",
+  "version": "2026.9.2",
   "private": true,
   "type": "module",
   "description": "First-party pm package for optional linked-test run management adapters and reporters.",
