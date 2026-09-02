@@ -411,10 +411,12 @@ describe("context relevance command integration", () => {
     await withTempPmPath(async (context) => {
       const createdIds = createContextRankingItems(context);
       const served = await runContext({}, { path: context.pmPath });
-      await finalizeContextUsageDelivery({
-        pmRoot: context.pmPath,
-        result: served,
-      });
+      await expect(
+        finalizeContextUsageDelivery({
+          pmRoot: context.pmPath,
+          result: served,
+        }),
+      ).resolves.toBe(true);
       const read = context.runCli(["get", createdIds[1]!, "--json"], {
         expectJson: true,
       });
