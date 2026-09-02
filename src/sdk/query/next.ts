@@ -46,6 +46,7 @@ import { runList, type ListOptions } from "./list.js";
 import { scoreContextCandidatesWithActiveExtensions } from "../context-relevance.js";
 import {
   attachContextUsageServingReceipt,
+  collectContextUsageDeliveredItemIds,
   readContextUsageAffinity,
   recordContextUsageServing,
 } from "../context-usage.js";
@@ -523,12 +524,15 @@ async function attachNextUsageFeedback(params: {
       rank: entry.rank,
       included: included.has(entry.id),
     }));
-    for (const row of [
-      ...params.result.decision_needed,
-      ...params.result.blocked,
-      ...params.result.held_by_others,
-    ]) {
-      rows.push({ id: row.id, rank: rows.length + 1, included: false });
+    const rankedIds = new Set(rows.map((row) => row.id));
+    for (const id of collectContextUsageDeliveredItemIds(
+      params.result,
+      "next",
+    )) {
+      if (!rankedIds.has(id)) {
+        rows.push({ id, rank: rows.length + 1, included: false });
+        rankedIds.add(id);
+      }
     }
     const receipt = await recordContextUsageServing({
       pmRoot: params.pmRoot,

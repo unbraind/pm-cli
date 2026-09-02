@@ -608,6 +608,10 @@ describe("surface replication gate", () => {
     );
     expect(eventIndexTrigger?.changed_lines_contain_any).toEqual(
       expect.arrayContaining([
+        "const loaded = loadModule(",
+        "return loaded.DatabaseSync ?? null",
+        "const nodeMajor = Number.parseInt(",
+        "return Number.isFinite(nodeMajor) && nodeMajor >= 22",
         "RuntimeDatabaseSync = loadStableDatabaseSync(",
         "RuntimeDatabaseSync = databaseSync",
         "RuntimeDatabaseSync = previous",
@@ -635,29 +639,20 @@ describe("surface replication gate", () => {
       ]),
     );
 
-    const relevant = await validateSurfaceReplication(config, {
+    const bodyChange = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
-          "const Database = resolveDatabaseSync();",
+          "const loaded = loadModule(",
+          "return loaded.DatabaseSync ?? null;",
+          "const nodeMajor = Number.parseInt(nodeVersion, 10);",
+          "return Number.isFinite(nodeMajor) && nodeMajor >= 22",
         ],
       },
       today: "2026-08-17",
     });
-    expect(relevant.violations).toContain(
-      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
-    );
-
-    const returnPath = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
-      changedFiles: ["src/core/history/event-index.ts"],
-      changedLines: {
-        "src/core/history/event-index.ts": ["return RuntimeDatabaseSync;"],
-      },
-      today: "2026-08-17",
-    });
-    expect(returnPath.violations).toContain(
+    expect(bodyChange.violations).toContain(
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
   }, 120_000);

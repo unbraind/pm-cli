@@ -1,7 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { PmClient } from "../../src/sdk/index.js";
+import {
+  collectContextUsageDeliveredItemIds,
+  PmClient,
+} from "../../src/sdk/index.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 type LedgerDelivery = {
@@ -79,15 +82,10 @@ describe("context usage egress receipts", () => {
         blocked?: Array<{ id: string }>;
         held_by_others?: Array<{ id: string }>;
       };
-      const emittedIds = [
-        ...(deliveredResult.recommended
-          ? [deliveredResult.recommended.id]
-          : []),
-        ...deliveredResult.ready.map((row) => row.id),
-        ...(deliveredResult.decision_needed ?? []).map((row) => row.id),
-        ...(deliveredResult.blocked ?? []).map((row) => row.id),
-        ...(deliveredResult.held_by_others ?? []).map((row) => row.id),
-      ];
+      const emittedIds = collectContextUsageDeliveredItemIds(
+        deliveredResult,
+        "next",
+      );
       expect(emittedIds.length).toBeGreaterThan(0);
       expect(emittedIds).toEqual(
         expect.arrayContaining(["pm-decision", "pm-blocked", "pm-held"]),
@@ -156,13 +154,7 @@ describe("context usage egress receipts", () => {
         pmRoot: context.pmPath,
         noExtensions: true,
       }).next({ outputBudget: "unbounded" });
-      const emittedIds = [
-        ...(result.recommended ? [result.recommended.id] : []),
-        ...result.ready.map((row) => row.id),
-        ...result.decision_needed.map((row) => row.id),
-        ...result.blocked.map((row) => row.id),
-        ...result.held_by_others.map((row) => row.id),
-      ];
+      const emittedIds = collectContextUsageDeliveredItemIds(result, "next");
       expect(emittedIds.length).toBeGreaterThan(0);
       expect((await deliveries(context.pmPath)).at(-1)).toEqual(
         expect.objectContaining({

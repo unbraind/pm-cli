@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   attachContextUsageServingReceipt,
+  collectContextUsageDeliveredItemIds,
   ContextUsageValidationError,
   finalizeContextUsageDelivery,
   packContextCandidates,
@@ -198,6 +199,62 @@ describe("context packing", () => {
 });
 
 describe("context usage feedback", () => {
+  it("collects every item-bearing context and next projection exactly once", () => {
+    expect(
+      collectContextUsageDeliveredItemIds(
+        {
+          high_level: [{ id: "pm-focus" }],
+          hierarchy: [
+            { id: "pm-parent", children: [{ id: "pm-child" }] },
+          ],
+          activity: [{ id: "pm-activity" }],
+          progress: [{ id: "pm-parent" }],
+          blockers: [{ id: "pm-blocked", blocked_by: "pm-blocker" }],
+          files: [{ items: ["pm-file-owner"] }],
+          workload: [{ items: ["pm-worker"] }],
+          staleness: [{ id: "pm-stale" }],
+          agenda: { events: [{ item_id: "pm-agenda" }] },
+          tests: { items_failing: ["pm-failing"] },
+        },
+        "context",
+      ),
+    ).toEqual([
+      "pm-focus",
+      "pm-activity",
+      "pm-parent",
+      "pm-blocked",
+      "pm-stale",
+      "pm-blocker",
+      "pm-child",
+      "pm-file-owner",
+      "pm-worker",
+      "pm-agenda",
+      "pm-failing",
+    ]);
+    expect(
+      collectContextUsageDeliveredItemIds(
+        {
+          recommended: {
+            id: "pm-next",
+            blockers: [{ id: "pm-blocker" }],
+            unblocks: ["pm-downstream"],
+          },
+          ready: [{ id: "pm-next" }],
+          decision_needed: [{ id: "pm-decision" }],
+          blocked: [],
+          held_by_others: [{ id: "pm-held" }],
+        },
+        "next",
+      ),
+    ).toEqual([
+      "pm-next",
+      "pm-blocker",
+      "pm-downstream",
+      "pm-decision",
+      "pm-held",
+    ]);
+  });
+
   it("preserves typed warnings when post-egress usage feedback fails", async () => {
     const finalize = async (): Promise<boolean> => {
       throw new Error("derived ledger unavailable");

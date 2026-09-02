@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1837,
+    "covered_symbols": 1838,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1838
+    "required_symbols": 1839
   },
   "breaking_acknowledgements": [
     {
@@ -3514,6 +3514,12 @@
           "signature": "(command: CommandOptionPolicyCommand, rawOption: string) => string | undefined | calls: (command: CommandOptionPolicyCommand, rawOption: string) => string | undefined"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "canonicalizeContextRecencyCoordinate",
+          "signature": "(value: unknown) => string | null | calls: (value: unknown) => string | null"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "canonicalizeRelationshipKind",
@@ -3782,6 +3788,12 @@
           "kind": "function",
           "name": "collectBlockedByIdsFromCorpus",
           "signature": "(item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[] | calls: (item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectContextUsageDeliveredItemIds",
+          "signature": "(result: unknown, surface: ContextRelevanceSurface) => string[] | calls: (result: unknown, surface: ContextRelevanceSurface) => string[]"
         },
         {
           "classification": "supported",
@@ -4250,6 +4262,12 @@
           "kind": "value",
           "name": "CONTEXT_PACKING_PROFILES",
           "signature": "{ readonly balanced: { readonly redundancyPenalty: 0.35; readonly uncertaintyPenalty: 0.2; }; readonly context: { readonly redundancyPenalty: 0.45; readonly uncertaintyPenalty: 0.15; }; readonly next: { readonly redundancyPenalty: 0.25; readonly uncertaintyPenalty: 0.3; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "CONTEXT_RECENCY_EPOCH",
+          "signature": "\"1970-01-01T00:00:00.000Z\""
         },
         {
           "classification": "supported",
@@ -27236,6 +27254,12 @@
           "kind": "function",
           "name": "classifyImplicitSemanticFallbackReason",
           "signature": "(error: unknown) => ImplicitSemanticFallbackReason | calls: (error: unknown) => ImplicitSemanticFallbackReason"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectContextUsageDeliveredItemIds",
+          "signature": "(result: unknown, surface: ContextRelevanceSurface) => string[] | calls: (result: unknown, surface: ContextRelevanceSurface) => string[]"
         },
         {
           "classification": "supported",

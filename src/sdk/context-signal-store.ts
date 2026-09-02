@@ -21,10 +21,7 @@ import {
 import type { ItemMetadata } from "../types/index.js";
 import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
 import { readLatestSubstantiveHistoryEvents } from "../core/history/event-index.js";
-import {
-  isMillisecondPrecisionRfc3339DateTime,
-  resolveIsoOrRelative,
-} from "../core/shared/time.js";
+import { canonicalizeContextRecencyCoordinate } from "./context/recency.js";
 
 /** Current serialized feature-store envelope version. */
 export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 3;
@@ -281,26 +278,6 @@ function recencyEvidenceFingerprint(
   return `sha256:${hash.digest("hex")}`;
 }
 
-function canonicalRecencyCoordinate(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (
-    !isMillisecondPrecisionRfc3339DateTime(trimmed) &&
-    !/^\d{4}-\d{2}-\d{2}$/.test(trimmed)
-  ) {
-    return null;
-  }
-  try {
-    return resolveIsoOrRelative(
-      trimmed,
-      new Date(Number.NaN),
-      "context signal recency coordinate",
-    );
-  } catch {
-    return null;
-  }
-}
-
 function canonicalizeCandidateRecency(
   candidates: readonly ItemContextRelevanceCandidate[],
 ): ItemContextRelevanceCandidate[] {
@@ -318,7 +295,9 @@ function canonicalizeCandidateRecency(
         "Context signal recency provenance must match its source",
       );
     }
-    const coordinate = canonicalRecencyCoordinate(evidence.coordinate);
+    const coordinate = canonicalizeContextRecencyCoordinate(
+      evidence.coordinate,
+    );
     if (coordinate === null) {
       throw new TypeError(
         "Context signal recency coordinate must be a valid absolute timestamp with millisecond precision",
@@ -346,7 +325,9 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
     return null;
   const recency = (signalProvenance as Record<string, unknown>).recency;
   if (!isRecord(recency)) return null;
-  const coordinate = canonicalRecencyCoordinate(recency.coordinate);
+  const coordinate = canonicalizeContextRecencyCoordinate(
+    recency.coordinate,
+  );
   if (coordinate === null) return null;
   const supportedSignals = new Set<string>(STORED_CONTEXT_SIGNAL_NAMES);
   const signalEntries = Object.entries(

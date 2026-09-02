@@ -119,6 +119,13 @@ describe("context relevance SDK primitives", () => {
     expect(candidates.find(({ id }) => id === "pm-a")?.signals?.recency).toBe(
       1,
     );
+    expect(
+      candidates.every(
+        ({ signal_provenance }) =>
+          signal_provenance.recency.coordinate ===
+          "1970-01-01T00:00:00.000Z",
+      ),
+    ).toBe(true);
 
     const invalidReleaseCandidates = buildItemContextRelevanceCandidates(
       [
@@ -141,6 +148,10 @@ describe("context relevance SDK primitives", () => {
           "pm-b": {
             source: "substantive_history",
             coordinate: 1 as never,
+          },
+          "pm-a": {
+            source: "substantive_history",
+            coordinate: "not-a-date",
           },
         },
       })[0]?.signals.recency,
@@ -338,6 +349,15 @@ describe("context relevance SDK primitives", () => {
     expect(
       candidates.find(({ id }) => id === "pm-invalid")?.signals?.recency,
     ).toBe(0);
+    expect(
+      candidates.map(({ signal_provenance }) =>
+        signal_provenance.recency.coordinate,
+      ),
+    ).toEqual([
+      "2026-07-14T00:00:00.000Z",
+      "2026-07-13T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
+    ]);
   });
 
   it("preserves baseline ordering when advanced signals are absent", () => {

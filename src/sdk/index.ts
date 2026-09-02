@@ -613,6 +613,7 @@ export * from "./environment/source-context.js";
 export * from "./environment/host-environment-errors.js";
 export * from "./cli-contracts/command-exit-contracts.js";
 export * from "./context-relevance.js";
+export * from "./context/recency.js";
 export * from "./context-intent-contracts.js";
 export * from "./context-intent-runtime.js";
 export * from "./context-signal-store.js";

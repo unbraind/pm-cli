@@ -37,6 +37,39 @@ function item(id: string, overrides: Partial<ItemMetadata> = {}): ItemMetadata {
   };
 }
 
+function withRecomputedFingerprint(
+  snapshot: ContextSignalSnapshot,
+  items: readonly unknown[],
+): unknown {
+  const hash = createHash("sha256");
+  const ordered = [...items].sort((left, right) =>
+    String((left as { id?: unknown })?.id).localeCompare(
+      String((right as { id?: unknown })?.id),
+    ),
+  );
+  for (const value of ordered) {
+    const row = value as {
+      id?: unknown;
+      signal_provenance?: { recency?: Record<string, unknown> };
+    };
+    const recency = row.signal_provenance?.recency;
+    hash.update(
+      JSON.stringify([
+        row.id,
+        recency?.source,
+        recency?.coordinate,
+        recency?.history_op ?? null,
+        recency?.event_class ?? null,
+      ]),
+    );
+  }
+  return {
+    ...snapshot,
+    items,
+    recency_evidence_fingerprint: `sha256:${hash.digest("hex")}`,
+  };
+}
+
 class MemoryAdapter implements ContextSignalStoreAdapter {
   value: unknown | null = null;
   writes = 0;
@@ -251,6 +284,25 @@ describe("context signal feature store", () => {
     expect(
       legacyDateCoordinate.items[0]?.signal_provenance.recency.coordinate,
     ).toBe("2026-07-21T00:00:00.000Z");
+    expect(
+      buildContextSignalSnapshot(
+        [
+          item("pm-compact", { created_at: "20260720" }),
+          item("pm-invalid", { created_at: "invalid" }),
+        ],
+        {
+          statusRegistry,
+          now,
+          source: "scan_fallback",
+          sourceCursor: "cursor",
+        },
+      ).items.map(({ signal_provenance }) =>
+        signal_provenance.recency.coordinate,
+      ),
+    ).toEqual([
+      "2026-07-20T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
+    ]);
     expect(() =>
       buildContextSignalSnapshot([item("pm-a")], {
         statusRegistry,
@@ -353,138 +405,64 @@ describe("context signal feature store", () => {
       { ...valid, source: "unknown" },
       { ...valid, items: {} },
       { ...valid, items: [null] },
-      {
-        ...valid,
-        items: [{ ...structuredClone(valid.items[0]), id: "" }],
-      },
-      {
-        ...valid,
-        items: [{ ...structuredClone(valid.items[0]), id: " " }],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: { source: "created_at", coordinate: 42 },
-            },
-          },
-        ],
-      },
-      { ...valid, items: [{ id: "pm-a", signals: [] }] },
-      { ...valid, items: [{ id: "pm-a", signals: { recency: 2 } }] },
-      { ...valid, items: [{ id: "pm-a", signals: { unknown: 0.5 } }] },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signals: { unknown: 0.5 },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: { recency: null },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: {
-                source: "substantive_history",
-                coordinate: now,
-                event_class: "maintenance",
-              },
-            },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: {
-                source: "release_cohort",
-                coordinate: now,
-                history_op: "close",
-              },
-            },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: {
-                source: "created_at",
-                coordinate: now,
-                event_class: "substantive",
-              },
-            },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            ...structuredClone(valid.items[0]),
-            signal_provenance: {
-              recency: {
-                source: "substantive_history",
-                coordinate: now,
-                event_class: "unknown",
-              },
-            },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            id: "pm-a",
-            signals: {},
-            signal_provenance: {
-              recency: { source: "unknown", coordinate: now },
-            },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          {
-            id: "pm-a",
-            signals: {},
-            signal_provenance: {
-              recency: { source: ["created_at"], coordinate: now },
-            },
-          },
-        ],
-      },
-      {
-        ...valid,
-        items: [
-          { id: "pm-a", signals: {} },
-          { id: "pm-a", signals: {} },
-        ],
-      },
     ];
+    const invalidItemSets: unknown[][] = [
+      [{ ...structuredClone(valid.items[0]), id: "" }],
+      [{ ...structuredClone(valid.items[0]), id: " " }],
+      [
+        {
+          ...structuredClone(valid.items[0]),
+          signal_provenance: {
+            recency: { source: "created_at", coordinate: 42 },
+          },
+        },
+      ],
+      [{ id: "pm-a", signals: [] }],
+      [{ id: "pm-a", signals: { recency: 2 } }],
+      [{ id: "pm-a", signals: { unknown: 0.5 } }],
+      [
+        {
+          ...structuredClone(valid.items[0]),
+          signals: { unknown: 0.5 },
+        },
+      ],
+      [
+        {
+          ...structuredClone(valid.items[0]),
+          signal_provenance: { recency: null },
+        },
+      ],
+      ...[
+        {
+          source: "substantive_history",
+          coordinate: now,
+          event_class: "maintenance",
+        },
+        { source: "release_cohort", coordinate: now, history_op: "close" },
+        { source: "created_at", coordinate: now, event_class: "substantive" },
+        {
+          source: "substantive_history",
+          coordinate: now,
+          event_class: "unknown",
+        },
+        { source: "unknown", coordinate: now },
+        { source: ["created_at"], coordinate: now },
+      ].map((recency) => [
+        {
+          ...structuredClone(valid.items[0]),
+          signal_provenance: { recency },
+        },
+      ]),
+      [
+        { id: "pm-a", signals: {} },
+        { id: "pm-a", signals: {} },
+      ],
+    ];
+    invalidValues.push(
+      ...invalidItemSets.map((items) =>
+        withRecomputedFingerprint(valid, items),
+      ),
+    );
     for (const value of invalidValues) {
       expect(parseContextSignalSnapshot(value)).toBeNull();
     }

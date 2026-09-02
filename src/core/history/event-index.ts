@@ -866,11 +866,17 @@ function collectLatestSubstantiveEvents(
   const latest: Record<string, IndexedHistoryEvent> = Object.create(
     null,
   ) as Record<string, IndexedHistoryEvent>;
-  for (const event of [...events].sort(compareHistoryEventPosition).reverse()) {
+  for (const event of events) {
     if (
-      requested.has(event.stream_id) &&
-      latest[event.stream_id] === undefined &&
-      classifyHistoryEvent(event.entry) === "substantive"
+      !requested.has(event.stream_id) ||
+      classifyHistoryEvent(event.entry) !== "substantive"
+    ) {
+      continue;
+    }
+    const current = latest[event.stream_id];
+    if (
+      current === undefined ||
+      compareHistoryEventPosition(current, event) < 0
     ) {
       latest[event.stream_id] = event;
     }
@@ -1099,6 +1105,7 @@ export async function readLatestSubstantiveHistoryEvents(
 
 /** Test-only dependency seam for runtimes without `node:sqlite`. */
 export const _testOnly = {
+  collectLatestSubstantiveEvents,
   loadDatabaseSync,
   loadStableDatabaseSync,
   setDatabaseSync(databaseSync: DatabaseSyncConstructor | null): () => void {

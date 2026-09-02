@@ -65,6 +65,7 @@ import {
 } from "../context-packing.js";
 import {
   attachContextUsageServingReceipt,
+  collectContextUsageDeliveredItemIds,
   readContextUsageAffinity,
   recordContextUsageServing,
 } from "../context-usage.js";
@@ -2643,16 +2644,24 @@ async function attachContextUsageFeedback(
     const included = new Set(
       focusGroups.packing.included.map((entry) => entry.id),
     );
+    const rows = focusGroups.ranking.ranked.map((entry) => ({
+      id: entry.id,
+      rank: entry.rank,
+      included: included.has(entry.id),
+    }));
+    const rankedIds = new Set(rows.map((row) => row.id));
+    for (const id of collectContextUsageDeliveredItemIds(result, "context")) {
+      if (!rankedIds.has(id)) {
+        rows.push({ id, rank: rows.length + 1, included: false });
+        rankedIds.add(id);
+      }
+    }
     const receipt = await recordContextUsageServing({
       pmRoot,
       author,
       surface: "context",
       profile: focusGroups.packing.profile,
-      rows: focusGroups.ranking.ranked.map((entry) => ({
-        id: entry.id,
-        rank: entry.rank,
-        included: included.has(entry.id),
-      })),
+      rows,
       enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
     });
     attachContextUsageServingReceipt(result, receipt);

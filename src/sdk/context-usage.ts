@@ -164,44 +164,118 @@ function resultReceiptSaysOmitted(result: unknown): boolean {
   return false;
 }
 
-function emittedItemIds(
+function addContextUsageId(ids: Set<string>, value: unknown): void {
+  if (typeof value === "string" && value.trim().length > 0) {
+    ids.add(value.trim());
+  }
+}
+
+function addContextUsageDirectRows(ids: Set<string>, value: unknown): void {
+  if (!Array.isArray(value)) return;
+  for (const row of value) {
+    addContextUsageId(ids, asObjectRecord(row)?.id);
+  }
+}
+
+function addContextUsageIdList(ids: Set<string>, value: unknown): void {
+  if (!Array.isArray(value)) return;
+  for (const itemId of value) addContextUsageId(ids, itemId);
+}
+
+function collectNextResultItemIds(
+  record: Record<PropertyKey, unknown>,
+  ids: Set<string>,
+): void {
+  const rows = [
+    ...(asObjectRecord(record.recommended) === null
+      ? []
+      : [record.recommended]),
+    ...(Array.isArray(record.ready) ? record.ready : []),
+    ...(Array.isArray(record.decision_needed) ? record.decision_needed : []),
+    ...(Array.isArray(record.blocked) ? record.blocked : []),
+    ...(Array.isArray(record.held_by_others) ? record.held_by_others : []),
+  ];
+  for (const value of rows) {
+    const row = asObjectRecord(value);
+    addContextUsageId(ids, row?.id);
+    for (const blocker of Array.isArray(row?.blockers) ? row.blockers : []) {
+      addContextUsageId(ids, asObjectRecord(blocker)?.id);
+    }
+    for (const unblockedId of Array.isArray(row?.unblocks)
+      ? row.unblocks
+      : []) {
+      addContextUsageId(ids, unblockedId);
+    }
+  }
+}
+
+function collectContextResultItemIds(
+  record: Record<PropertyKey, unknown>,
+  ids: Set<string>,
+): void {
+  for (const key of [
+    "high_level",
+    "low_level",
+    "blocked_fallback",
+    "recently_created",
+    "unparented",
+    "activity",
+    "progress",
+    "blockers",
+    "staleness",
+  ]) {
+    addContextUsageDirectRows(ids, record[key]);
+  }
+  for (const value of Array.isArray(record.blockers)
+    ? record.blockers
+    : []) {
+    addContextUsageId(ids, asObjectRecord(value)?.blocked_by);
+  }
+  collectContextNestedItemIds(record, ids);
+}
+
+function collectContextNestedItemIds(
+  record: Record<PropertyKey, unknown>,
+  ids: Set<string>,
+): void {
+  for (const value of Array.isArray(record.hierarchy)
+    ? record.hierarchy
+    : []) {
+    const node = asObjectRecord(value);
+    addContextUsageId(ids, node?.id);
+    addContextUsageDirectRows(ids, node?.children);
+  }
+  for (const key of ["files", "workload"]) {
+    for (const value of Array.isArray(record[key]) ? record[key] : []) {
+      addContextUsageIdList(ids, asObjectRecord(value)?.items);
+    }
+  }
+  const agenda = asObjectRecord(record.agenda);
+  for (const value of Array.isArray(agenda?.events) ? agenda.events : []) {
+    addContextUsageId(ids, asObjectRecord(value)?.item_id);
+  }
+  const tests = asObjectRecord(record.tests);
+  addContextUsageIdList(ids, tests?.items_failing);
+}
+
+/**
+ * Collect every item identifier visible in a final context or next result.
+ * The traversal is shape-aware so summary counters and unrelated identifier
+ * fields cannot enter the privacy-minimal usage ledger.
+ */
+export function collectContextUsageDeliveredItemIds(
   result: unknown,
   surface: ContextRelevanceSurface,
 ): string[] {
   const record = asObjectRecord(result);
   if (record === null || resultReceiptSaysOmitted(result)) return [];
-  const rows =
-    surface === "context"
-      ? [
-          "high_level",
-          "low_level",
-          "blocked_fallback",
-          "recently_created",
-          "unparented",
-        ].flatMap((key) => (Array.isArray(record[key]) ? record[key] : []))
-      : [
-          ...(asObjectRecord(record.recommended) === null
-            ? []
-            : [record.recommended]),
-          ...(Array.isArray(record.ready) ? record.ready : []),
-          ...(Array.isArray(record.decision_needed)
-            ? record.decision_needed
-            : []),
-          ...(Array.isArray(record.blocked) ? record.blocked : []),
-          ...(Array.isArray(record.held_by_others)
-            ? record.held_by_others
-            : []),
-        ];
-  return [
-    ...new Set(
-      rows.flatMap((row) => {
-        const id = asObjectRecord(row)?.id;
-        return typeof id === "string" && id.trim().length > 0
-          ? [id.trim()]
-          : [];
-      }),
-    ),
-  ];
+  const ids = new Set<string>();
+  if (surface === "next") {
+    collectNextResultItemIds(record, ids);
+  } else {
+    collectContextResultItemIds(record, ids);
+  }
+  return [...ids];
 }
 
 /** Resolve and append one post-egress decision carried by a context result. */
@@ -217,7 +291,10 @@ export async function finalizeContextUsageDelivery(options: {
   await recordContextUsageDelivery({
     pmRoot: options.pmRoot,
     receipt,
-    deliveredItemIds: emittedItemIds(options.result, receipt.surface),
+    deliveredItemIds: collectContextUsageDeliveredItemIds(
+      options.result,
+      receipt.surface,
+    ),
     resultOmitted,
   });
   return true;

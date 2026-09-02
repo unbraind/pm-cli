@@ -70,6 +70,49 @@ describe("history mutation event index", () => {
     ).toBe(DatabaseSync);
   });
 
+  it("selects the latest substantive event per stream without sorting", () => {
+    const sortSpy = vi.spyOn(Array.prototype, "sort");
+    try {
+      const selected = _testOnly.collectLatestSubstantiveEvents(
+        [
+          {
+            stream_id: "pm-linear",
+            stream_offset: 2,
+            entry: historyEntry(
+              "2026-07-24T11:00:00.000Z",
+              "agent",
+              "comment_add",
+            ),
+          },
+          {
+            stream_id: "pm-linear",
+            stream_offset: 3,
+            entry: historyEntry(
+              "2026-07-24T12:00:00.000Z",
+              "agent",
+              "release",
+            ),
+          },
+          {
+            stream_id: "pm-linear",
+            stream_offset: 1,
+            entry: historyEntry(
+              "2026-07-24T10:00:00.000Z",
+              "agent",
+              "create",
+            ),
+          },
+        ],
+        new Set(["pm-linear"]),
+      );
+
+      expect(selected["pm-linear"]?.stream_offset).toBe(2);
+      expect(sortSpy).not.toHaveBeenCalled();
+    } finally {
+      sortSpy.mockRestore();
+    }
+  });
+
   it("rebuilds deterministically and applies ordering, cursors, and set filters", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");

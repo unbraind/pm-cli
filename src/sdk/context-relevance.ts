@@ -11,9 +11,13 @@ import {
   normalizeStatusInput,
 } from "../core/item/status.js";
 import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
-import { compareTimestampStrings, resolveIsoOrRelative } from "../core/shared/time.js";
+import { compareTimestampStrings } from "../core/shared/time.js";
 import type { ItemMetadata } from "../types/index.js";
 import type { HistoryEventClass } from "../core/history/event-classification.js";
+import {
+  canonicalizeContextRecencyCoordinate,
+  CONTEXT_RECENCY_EPOCH,
+} from "./context/recency.js";
 
 /** Canonical signal keys understood by the built-in relevance model. */
 export const CONTEXT_RELEVANCE_SIGNAL_NAMES = [
@@ -136,7 +140,12 @@ function fallbackRecencyEvidence(item: ItemMetadata): ContextRecencyEvidence {
   if (releaseCoordinate !== undefined) {
     return { source: "release_cohort", coordinate: releaseCoordinate };
   }
-  return { source: "created_at", coordinate: item.created_at };
+  return {
+    source: "created_at",
+    coordinate:
+      canonicalizeContextRecencyCoordinate(item.created_at) ??
+      CONTEXT_RECENCY_EPOCH,
+  };
 }
 
 function normalizedPressure(value: unknown, maximum: number): number {
@@ -175,14 +184,8 @@ export function buildItemContextRelevanceCandidates(
   items: readonly ItemMetadata[],
   options: BuildItemContextRelevanceCandidatesOptions,
 ): ItemContextRelevanceCandidate[] {
-  const sortableTimestamp = (value: unknown): string => {
-    if (typeof value !== "string") return "";
-    try {
-      return resolveIsoOrRelative(value, new Date(Number.NaN), "recency");
-    } catch {
-      return "";
-    }
-  };
+  const sortableTimestamp = (value: unknown): string =>
+    canonicalizeContextRecencyCoordinate(value) ?? "";
   const recencyEvidence = new Map(
     items.map((item) => [
       item.id,
