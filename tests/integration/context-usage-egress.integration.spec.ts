@@ -116,6 +116,7 @@ describe("context usage egress receipts", () => {
         .at(-1);
       expect(serving).toBeDefined();
       expect(serving?.packed_item_ids).toEqual(expect.any(Array));
+      expect(serving?.packed_item_ids?.length).toBeGreaterThan(0);
       for (const id of ["pm-decision", "pm-blocked", "pm-held"]) {
         expect(serving?.packed_item_ids).not.toContain(id);
       }
