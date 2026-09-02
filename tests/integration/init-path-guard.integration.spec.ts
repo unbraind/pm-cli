@@ -60,6 +60,7 @@ describe("init tracker-path guardrails", () => {
             "pm",
           ),
         });
+        expect(initialized.next_steps.length).toBeGreaterThan(0);
         expect(
           initialized.next_steps.every((step) => !step.includes("--pm-path")),
         ).toBe(true);

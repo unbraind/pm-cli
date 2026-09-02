@@ -13,7 +13,10 @@ import {
 } from "../../../../src/core/history/event-index.js";
 import type { HistoryEntry } from "../../../../src/types/index.js";
 import { appendHistoryEntry } from "../../../../src/core/history/history.js";
-import { acquireLock } from "../../../../src/core/lock/lock.js";
+import {
+  acquireLock,
+  readProcessStartIdentity,
+} from "../../../../src/core/lock/lock.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const INDEX_FILENAME = "history-event-index.sqlite";
@@ -376,9 +379,11 @@ describe("history mutation event index", () => {
       );
       await expect(fs.access(initialPending)).rejects.toThrow();
 
+      const processStartIdentity =
+        (await readProcessStartIdentity(process.pid)) ?? "unknown";
       const livePending = path.join(
         invalidationRoot,
-        `${process.pid}-live.pending`,
+        `${process.pid}-${processStartIdentity}-${Date.now()}-live.pending`,
       );
       await fs.writeFile(livePending, "pending\n");
       await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
@@ -401,7 +406,7 @@ describe("history mutation event index", () => {
       ] as const) {
         const protectedPending = path.join(
           invalidationRoot,
-          `${process.pid}-${suffix}.pending`,
+          `${process.pid}-${processStartIdentity}-${Date.now()}-${suffix}.pending`,
         );
         await fs.writeFile(protectedPending, "pending\n");
         const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
@@ -418,7 +423,10 @@ describe("history mutation event index", () => {
         await fs.rm(protectedPending);
       }
 
-      const deadPending = path.join(invalidationRoot, "999999-dead.pending");
+      const deadPending = path.join(
+        invalidationRoot,
+        `999999-unknown-${Date.now()}-dead.pending`,
+      );
       await fs.writeFile(deadPending, "pending\n");
       const deadKillSpy = vi.spyOn(process, "kill").mockImplementation(() => {
         throw Object.assign(new Error("missing"), { code: "ESRCH" });
@@ -431,6 +439,36 @@ describe("history mutation event index", () => {
         deadKillSpy.mockRestore();
       }
       await expect(fs.access(deadPending)).rejects.toThrow();
+
+      const reusedPidPending = path.join(
+        invalidationRoot,
+        `${process.pid}-0-${Date.now()}-reused.pending`,
+      );
+      await fs.writeFile(reusedPidPending, "pending\n");
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
+      await expect(fs.access(reusedPidPending)).rejects.toThrow();
+
+      const unverifiedPending = path.join(
+        invalidationRoot,
+        `${process.pid}-unknown-${Date.now()}-unverified.pending`,
+      );
+      await fs.writeFile(unverifiedPending, "pending\n");
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        false,
+      );
+      await fs.rm(unverifiedPending);
+
+      const expiredUnverifiedPending = path.join(
+        invalidationRoot,
+        `${process.pid}-unknown-0-expired.pending`,
+      );
+      await fs.writeFile(expiredUnverifiedPending, "pending\n");
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
+      await expect(fs.access(expiredUnverifiedPending)).rejects.toThrow();
 
       const releaseInvalidation = await acquireLock(
         context.pmPath,
@@ -1470,6 +1508,11 @@ describe("history mutation event index", () => {
         "history",
         "pm-lock-contention-failure.jsonl",
       );
+      const invalidationRoot = path.join(
+        context.pmPath,
+        "runtime",
+        "history-event-index-invalidations",
+      );
       const release = await acquireLock(
         context.pmPath,
         "history-event-index",
@@ -1479,6 +1522,15 @@ describe("history mutation event index", () => {
         false,
         0,
       );
+      const originalReadFile = fs.readFile.bind(fs);
+      const readFileSpy = vi
+        .spyOn(fs, "readFile")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === `/proc/${process.pid}/stat`) {
+            throw Object.assign(new Error("missing"), { code: "ENOENT" });
+          }
+          return originalReadFile(...args);
+        });
       try {
         await withZeroLockWait(async () => {
           await expect(
@@ -1486,19 +1538,23 @@ describe("history mutation event index", () => {
               historyPath,
               historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
               async () => {
+                await expect(fs.readdir(invalidationRoot)).resolves.toEqual([
+                  expect.stringMatching(
+                    new RegExp(
+                      `^${process.pid}-unknown-\\d+-.+\\.pending$`,
+                      "u",
+                    ),
+                  ),
+                ]);
                 throw new Error("append failed");
               },
             ),
           ).rejects.toThrow("append failed");
         });
       } finally {
+        readFileSpy.mockRestore();
         await release();
       }
-      const invalidationRoot = path.join(
-        context.pmPath,
-        "runtime",
-        "history-event-index-invalidations",
-      );
       await expect(fs.readdir(invalidationRoot)).resolves.toEqual([]);
     });
   });

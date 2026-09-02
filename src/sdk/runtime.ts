@@ -171,7 +171,7 @@ import {
   type ExtensionCommandResult,
 } from "./extension.js";
 import { runConfig } from "./config.js";
-import { runInit } from "./init.js";
+import { INIT_INVOCATION_CWD, runInit } from "./init.js";
 import {
   runRuntimeEvalAction,
   runRuntimeEventsAction,
@@ -694,8 +694,6 @@ export type {
 const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol(
   "pm.active-extension-host-context",
 );
-const INIT_INVOCATION_CWD = Symbol.for("pm.sdk.init-invocation-cwd");
-
 interface PmClientDefaults {
   path?: string;
   cwd?: string;
@@ -2845,9 +2843,9 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
   if (resolved.action === "init") {
-    (
-      global as GlobalOptions & { [INIT_INVOCATION_CWD]?: string }
-    )[INIT_INVOCATION_CWD] = resolutionCwd;
+    (global as GlobalOptions & { [key: symbol]: unknown })[
+      INIT_INVOCATION_CWD
+    ] = resolutionCwd;
   }
   if (
     resolved.action !== "init" ||

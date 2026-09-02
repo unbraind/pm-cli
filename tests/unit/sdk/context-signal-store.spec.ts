@@ -338,6 +338,11 @@ describe("context signal feature store", () => {
         coordinate: now,
         event_class: "maintenance" as const,
       },
+      {
+        source: "substantive_history" as const,
+        coordinate: now,
+        history_op: 1 as never,
+      },
     ]) {
       expect(() =>
         buildContextSignalSnapshot([item("pm-a")], {

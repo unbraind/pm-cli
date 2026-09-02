@@ -656,12 +656,26 @@ describe("surface replication gate", () => {
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
 
-    const assignmentChange = await validateSurfaceReplication(config, {
+    const resolverChange = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
           "const Database = resolveDatabaseSync();",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(resolverChange.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+
+    const assignmentChange = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "RuntimeDatabaseSync = databaseSync;",
         ],
       },
       today: "2026-08-17",

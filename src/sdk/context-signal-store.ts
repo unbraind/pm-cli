@@ -286,8 +286,10 @@ function canonicalizeCandidateRecency(
     if (
       !CONTEXT_RECENCY_SOURCES.has(evidence.source) ||
       (evidence.source === "substantive_history"
-        ? evidence.event_class !== undefined &&
-          evidence.event_class !== "substantive"
+        ? (evidence.history_op !== undefined &&
+            typeof evidence.history_op !== "string") ||
+          (evidence.event_class !== undefined &&
+            evidence.event_class !== "substantive")
         : evidence.history_op !== undefined ||
           evidence.event_class !== undefined)
     ) {

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-09-02T14:08:59.780Z"
-closed_at: "2026-09-02T14:08:59.226Z"
-completed_at: "2026-09-02T14:08:59.226Z"
+updated_at: "2026-09-02T15:07:46.288Z"
+closed_at: "2026-09-02T15:07:45.705Z"
+completed_at: "2026-09-02T15:07:45.705Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -21,9 +21,9 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
-resolution: "Implemented substantive-history recency in the SDK and CLI: recency derives from the latest classified substantive event with release-cohort and created_at fallbacks, maintenance-invariant ordering is proven by property and temporary-project acceptance tests, and explained context/next disclose the event, class, source, and coordinate producing each recency component. Supporting hardening includes durable context-signal snapshots, owner-bound event-index invalidation across TTL takeover, exact delivery receipts, lock ownership-safe cleanup, and portable npm/bun release verification."
-expected_result: "Applying pure-maintenance governance mutations never changes contextual freshness or workspace relevance ordering; SDK packages, CLI, and MCP share the same public classification and explainable provenance contracts; concurrent or long-running history writers cannot expose stale indexed context; exact coverage and quality gates remain mandatory and green."
-actual_result: "Property and temporary-project acceptance evidence proves dependency-only maintenance writes preserve substantive recency coordinates and ordering while context/next expose classified provenance. Owner-bound invalidation tests cover live, indeterminate, permission-denied, dead, publication-race, and indexed-query paths. Canonical repo coverage passed at exact 100/100/100/100 and the full CI-mode static-quality pipeline passed."
+resolution: "Replaced write-time freshness with a public, versioned substantive-versus-maintenance history contract; added a durable indexed latest-substantive primitive with authoritative fail-closed fallback; persisted and validated exact recency provenance in context-signal snapshots; exposed the same semantics through SDK, CLI, MCP, docs, benchmarks, and release verification; and hardened cross-process invalidation/lock ownership against contention, PID reuse, unavailable process identity, and projection failures."
+expected_result: "Maintenance-only governance writes do not change temporal relevance, while real project progress deterministically advances explainable recency across SDK, CLI, MCP, and persisted context snapshots without weakening authoritative history safety."
+actual_result: "Maintenance-invariance, malformed provenance, timestamp canonicalization, concurrent append/rebuild/read behavior, PID reuse, unknown-owner expiry, CLI init path handling, public SDK parity, package execution, and exact delivery feedback all pass focused, manual temporary-project, full static, scale, and repo-wide exact 100/100/100/100 coverage gates."
 dependencies[10]{id,kind,created_at}:
   pm-3hps,related,"2026-07-26T17:05:19.088Z"
   pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
@@ -35,7 +35,7 @@ dependencies[10]{id,kind,created_at}:
   pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z"
   pm-pcys9n,related,"2026-07-26T17:05:19.088Z"
   pm-uwfs,related,"2026-07-26T17:05:19.088Z"
-comments[62]{created_at,author,text}:
+comments[64]{created_at,author,text}:
   "2026-09-01T15:48:14.615Z","harness:codex","Delivery evidence 2026-09-01: history writes now carry public event_class=v1 classification; explicit classifications win, update patch fields are classified by declared policy, and unknown operations fail closed as substantive. The v3 event index supports latest-substantive reads with authoritative fallback. Context relevance and persisted signal snapshots derive recency from the latest substantive history event, then release cohort, then created_at, and never bare updated_at; explained context/next expose source, coordinate, history operation, and event class. A temporary-project acceptance proved a dependency-only maintenance write left the substantive recency coordinate byte-for-byte unchanged while CLI and PmClient returned the expected items. Static quality passed with public-surface and replication gates; exact coverage passed 596 files / 8260 tests at 60874 statements, 46011 branches, 12674 functions, and 58599 lines, all 100%. Supported Node 24 scale check remained within product bounds."
   "2026-09-01T17:16:28.944Z","harness:codex","Review round evidence: accepted findings added the real history:author-acknowledge, history_compact_baseline, and tests_remove maintenance operations; invalid persisted event_class values now fall through to the versioned classifier; history index v4 records authoritative stream byte sizes and rejects stale-but-valid projections before rebuilding; latest-event maps use null prototypes; signal snapshot v3 fingerprints exact recency evidence; DatabaseSync replication detects declarations and assignments. Non-absence I/O errors remain authoritative failures. Linked focused suite passed 49/49 and repo coverage passed 60,928/60,928 statements, 46,039/46,039 branches, 12,685/12,685 functions, 58,650/58,650 lines."
   "2026-09-01T18:28:29.526Z","harness:codex","Late-review hardening evidence: context snapshot freshness now fingerprints every item's effective recency provenance, including release-cohort and created_at fallbacks; optional substantive-history fields are isolated in their negative control. History-index rebuilds persist byte sizes captured with the authoritative pre-read snapshot, so a concurrent append leaves a detectable conservative mismatch rather than certifying old rows against a new size. Focused context/history suites passed, including the concurrent-append regression."
@@ -98,6 +98,8 @@ comments[62]{created_at,author,text}:
   "2026-09-02T13:38:19.432Z","harness:codex","Final local gate evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed end-to-end after the exact-head review fixes, including ESLint with zero warnings, zero jscpd clones, build/typecheck, generated contract and SDK surface freshness, package boundary and SDK parity, token/transport floors, command grammar, flag parity, refusal closure, repository assurance, graph composition, tracker context quality, and append-only record integrity."
   "2026-09-02T14:02:11.484Z","harness:codex","Cubic recurrence remediation: pending event-index invalidation markers now encode their writer PID. Recovery removes only legacy or OS-confirmed-dead owners, conservatively retains live, permission-denied, malformed-error, and otherwise unverifiable owners, and forces rebuild/index reads onto safe refusal or authoritative fallback while a writer can still complete after TTL takeover. Behavioral tests cover live, indeterminate, permission-denied, dead, publication-race, and indexed-query paths. Focused event-index tests, ESLint, TypeScript, and canonical repo-wide exact 100/100/100/100 coverage pass."
   "2026-09-02T14:08:58.667Z","harness:codex","Final recurrence gate evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed after owner-bound pending invalidations, including zero ESLint warnings, zero jscpd clones, build/typecheck, generated contracts/surfaces, package and SDK parity, token and transport floors, graph composition, tracker context quality, and append-only history integrity."
+  "2026-09-02T14:53:09.004Z","harness:codex","Terminal paginated-review remediation: event-index pending owners now carry PID, process-start identity, and creation time; PID reuse is rejected by identity mismatch and unavailable identity is retained only within a bounded TTL-derived grace period. Context snapshots reject non-string history_op before persistence. Init invocation state uses one unique-symbol constant owned by init.ts, a symbol index signature, and runtime string validation without exceeding the 120-file SDK cap. Assertions now prove non-empty init guidance, declaration-over-inference, and actual DatabaseSync assignment triggers. Focused 141-test suite and canonical exact 100/100/100/100 coverage pass."
+  "2026-09-02T15:07:45.170Z","harness:codex","Final hosted-review hardening evidence: substantive-history recency now rejects non-string history operation provenance; CLI init shares one typed invocation-CWD symbol and validates its untrusted value; init acceptance proves actionable next_steps are non-empty; the history classifier negative control uses a declared substantive maintenance-only update; and the DatabaseSync replication test exercises a real constructor assignment. Pending history-index invalidations now bind PID ownership to process-start identity, expire unverifiable owners under a bounded grace period, and reject PID reuse; real /proc-unavailable fallback is covered. The focused regression suite passed 73/73. The canonical repository coverage gate passed exact 100/100/100/100 after these changes. CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete ESLint, zero-clone, build, contract, docstring, repository assurance, package/SDK parity, surface replication, grammar, refusal, agent-token, MCP, tracker-context, SDK cost, graph-composition, and record-integrity chain."
 learnings[3]{created_at,author,text}:
   "2026-09-01T15:48:17.264Z","harness:codex","Freshness is semantic event provenance, not file-write time: maintenance operations must be explicitly classified and excluded from temporal ranking, while unknown operations fail closed as substantive."
   "2026-09-01T19:41:37.711Z","harness:codex","A derived index can safely coordinate an authoritative append without a second filesystem lock by holding its SQLite write transaction across the append and paired size capture; if projection work fails after the append, preserve authority and discard the accelerator."
@@ -164,39 +166,6 @@ tests[9]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,project,180,"harness:codex","2026-09-02T07:30:01.944Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Directory cap and bounded replication-gate regression
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/runtime-input-graph.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,project,300,"harness:codex","2026-09-02T09:47:16.194Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Final exact-head runtime cache recency lock and Windows verifier review regressions
 test_runs[20]:
-  - run_id: test-local-mtjcb4i6-0j7t3x
-    kind: test
-    status: passed
-    started_at: "2026-09-02T00:10:07.749Z"
-    finished_at: "2026-09-02T00:10:29.646Z"
-    recorded_at: "2026-09-02T00:10:29.646Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mtjcjxdu-imbu2e
-    kind: test
-    status: passed
-    started_at: "2026-09-02T00:11:23.024Z"
-    finished_at: "2026-09-02T00:17:20.322Z"
-    recorded_at: "2026-09-02T00:17:20.322Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-  - run_id: test-local-mtjdffvx-3xj0wq
-    kind: test
-    status: passed
-    started_at: "2026-09-02T00:41:29.197Z"
-    finished_at: "2026-09-02T00:41:50.637Z"
-    recorded_at: "2026-09-02T00:41:50.637Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
   - run_id: test-local-mtjf92n5-p0uxuz
     kind: test
     status: failed
@@ -410,13 +379,46 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk7c032-1lvhcz
+    kind: test
+    status: failed
+    started_at: "2026-09-02T14:33:08.462Z"
+    finished_at: "2026-09-02T14:38:58.670Z"
+    recorded_at: "2026-09-02T14:38:58.670Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk7l6sv-7e6tdq
+    kind: test
+    status: failed
+    started_at: "2026-09-02T14:40:23.016Z"
+    finished_at: "2026-09-02T14:46:07.279Z"
+    recorded_at: "2026-09-02T14:46:07.279Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk7u0a8-97wgxz
+    kind: test
+    status: passed
+    started_at: "2026-09-02T14:47:17.537Z"
+    finished_at: "2026-09-02T14:52:58.736Z"
+    recorded_at: "2026-09-02T14:52:58.736Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
 docs[5]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,Substantive recency SDK and performance contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated history timestamp refusal closure evidence
   docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
   docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
   docs/SDK.md,project,Complete persisted snapshot reuse contract
-close_reason: Delivered maintenance-invariant substantive-history recency with explainable provenance and verified ordering stability; final review hardening is complete.
+close_reason: Delivered maintenance-invariant substantive-history recency with explainable provenance and review-hardened concurrent projection safety
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

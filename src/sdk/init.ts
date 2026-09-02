@@ -55,7 +55,10 @@ import {
 } from "./init-agent-guidance.js";
 import { findGitWorkspaceRoot, installMergeFence } from "./merge/install.js";
 
-const INIT_INVOCATION_CWD = Symbol.for("pm.sdk.init-invocation-cwd");
+/** Symbol key for the captured working directory of an in-process init call. */
+export const INIT_INVOCATION_CWD: unique symbol = Symbol.for(
+  "pm.sdk.init-invocation-cwd",
+);
 
 /** Documents the init installed packages summary payload exchanged by command, SDK, and package integrations. */
 export interface InitInstalledPackagesSummary {
@@ -1243,9 +1246,10 @@ export async function runInit(
   global: GlobalOptions,
   options: InitCommandOptions = {},
 ): Promise<InitResult> {
-  const { [INIT_INVOCATION_CWD]: cwd = process.cwd() } = global as GlobalOptions & {
-    [INIT_INVOCATION_CWD]?: string;
-  };
+  const invocationCwd = (global as GlobalOptions & { [key: symbol]: unknown })[
+    INIT_INVOCATION_CWD
+  ];
+  const cwd = typeof invocationCwd === "string" ? invocationCwd : process.cwd();
   const invocation = resolveInitInvocation(
     cwd,
     global,

@@ -40,10 +40,16 @@ interface StaleLockRemovalResult {
   staleRemovalCounted: boolean;
 }
 
-interface StaleCleanupGateOwner {
+/** Stable operating-system identity for a process when the host exposes one. */
+export interface ProcessIdentity {
+  /** Operating-system process identifier captured with the owner record. */
   pid: number;
-  token: string;
+  /** Host process-start coordinate that distinguishes reuse of the same PID. */
   process_start_identity?: string;
+}
+
+interface StaleCleanupGateOwner extends ProcessIdentity {
+  token: string;
 }
 
 function parseLockInfo(raw: string): LockReadResult {
@@ -437,7 +443,10 @@ function parseLinuxProcessStartIdentity(raw: string): string | null {
   return startTime !== undefined && /^\d+$/u.test(startTime) ? startTime : null;
 }
 
-async function readProcessStartIdentity(pid: number): Promise<string | null> {
+/** Read the host process-start coordinate used to distinguish PID reuse. */
+export async function readProcessStartIdentity(
+  pid: number,
+): Promise<string | null> {
   try {
     return parseLinuxProcessStartIdentity(
       await fs.readFile(`/proc/${pid}/stat`, "utf8"),
@@ -445,6 +454,39 @@ async function readProcessStartIdentity(pid: number): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** Capture the current PID plus a host process-start coordinate when available. */
+export async function captureProcessIdentity(
+  pid = process.pid,
+): Promise<ProcessIdentity> {
+  const processStartIdentity = await readProcessStartIdentity(pid);
+  return {
+    pid,
+    ...(processStartIdentity === null
+      ? {}
+      : { process_start_identity: processStartIdentity }),
+  };
+}
+
+/**
+ * Verify that a captured process owner still exists, with a bounded grace
+ * period when the host cannot expose a reusable-PID-safe start coordinate.
+ */
+export async function isProcessIdentityAlive(
+  identity: ProcessIdentity,
+  unverifiedAgeMs: number,
+  maxUnverifiedAgeMs: number,
+): Promise<boolean> {
+  if (!isProcessAlive(identity.pid)) return false;
+  const currentStartIdentity = await readProcessStartIdentity(identity.pid);
+  if (
+    identity.process_start_identity !== undefined &&
+    currentStartIdentity !== null
+  ) {
+    return currentStartIdentity === identity.process_start_identity;
+  }
+  return unverifiedAgeMs <= maxUnverifiedAgeMs;
 }
 
 async function removeStaleCleanupGateDirectory(
@@ -480,13 +522,9 @@ async function tryCreateStaleCleanupGate(
     }
     return null;
   }
-  const processStartIdentity = await readProcessStartIdentity(process.pid);
   const owner: StaleCleanupGateOwner = {
-    pid: process.pid,
+    ...(await captureProcessIdentity()),
     token: randomUUID(),
-    ...(processStartIdentity === null
-      ? {}
-      : { process_start_identity: processStartIdentity }),
   };
   try {
     await fs.writeFile(
@@ -515,17 +553,15 @@ async function removeExpiredStaleCleanupGate(
     return isFileMissingError(error);
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
-  if (owner !== null && isProcessAlive(owner.pid)) {
-    const processStartIdentity = await readProcessStartIdentity(owner.pid);
-    if (
-      (owner.process_start_identity !== undefined &&
-        processStartIdentity === owner.process_start_identity) ||
-      ((owner.process_start_identity === undefined ||
-        processStartIdentity === null) &&
-        gateAgeMs <= STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS)
-    ) {
-      return false;
-    }
+  if (
+    owner !== null &&
+    (await isProcessIdentityAlive(
+      owner,
+      gateAgeMs,
+      STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS,
+    ))
+  ) {
+    return false;
   }
   return removeStaleCleanupGateDirectory(gatePath);
 }

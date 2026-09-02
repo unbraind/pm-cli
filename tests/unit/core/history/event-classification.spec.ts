@@ -49,9 +49,11 @@ describe("history event classification", () => {
   });
 
   it("honors immutable declarations and fails unknown operations closed", () => {
-    expect(classifyHistoryEvent(entry("update", [], "substantive"))).toBe(
-      "substantive",
-    );
+    expect(
+      classifyHistoryEvent(
+        entry("update", ["/front_matter/updated_at"], "substantive"),
+      ),
+    ).toBe("substantive");
     expect(classifyHistoryEvent(entry("future_operation"))).toBe("substantive");
     expect(
       classifyHistoryEvent({

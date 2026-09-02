@@ -11,7 +11,11 @@ import { createRequire } from "node:module";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { HistoryEntry } from "../../types/index.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
-import { acquireLock } from "../lock/lock.js";
+import {
+  acquireLock,
+  captureProcessIdentity,
+  isProcessIdentityAlive,
+} from "../lock/lock.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { isMillisecondPrecisionRfc3339DateTime } from "../shared/time.js";
@@ -28,6 +32,8 @@ const HISTORY_EVENT_INDEX_INVALIDATION_LOCK_ID =
   "history-event-index-invalidation";
 const HISTORY_EVENT_INDEX_INVALIDATION_DIRECTORY =
   "history-event-index-invalidations";
+const HISTORY_EVENT_INDEX_INVALIDATION_MAX_UNVERIFIED_AGE_MS =
+  HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS * 2 * 1_000;
 const HISTORY_INDEX_LOCK_CONTENDED = Symbol("history-index-lock-contended");
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
@@ -143,20 +149,22 @@ async function recoverAbandonedHistoryEventIndexInvalidations(
   const pending = (
     await Promise.all(
       invalidations.pending.map(async (name) => {
-        const owner = /^(\d+)-.+\.pending$/u.exec(name);
+        const owner = /^(\d+)-(unknown|\d+)-(\d+)-.+\.pending$/u.exec(name);
         if (owner !== null) {
-          try {
-            process.kill(Number(owner[1]), 0);
+          const processStartIdentity = owner[2];
+          if (
+            await isProcessIdentityAlive(
+              {
+                pid: Number(owner[1]),
+                ...(processStartIdentity === "unknown"
+                  ? {}
+                  : { process_start_identity: processStartIdentity }),
+              },
+              Math.max(0, Date.now() - Number(owner[3])),
+              HISTORY_EVENT_INDEX_INVALIDATION_MAX_UNVERIFIED_AGE_MS,
+            )
+          ) {
             return name;
-          } catch (error: unknown) {
-            if (
-              typeof error !== "object" ||
-              error === null ||
-              !("code" in error) ||
-              error.code !== "ESRCH"
-            ) {
-              return name;
-            }
           }
         }
         await fs.rm(
@@ -198,7 +206,11 @@ async function beginHistoryEventIndexInvalidation(
   const directory = historyEventIndexInvalidationDirectory(pmRoot);
   await fs.mkdir(directory, { recursive: true });
   const token = randomUUID();
-  const pendingPath = path.join(directory, `${process.pid}-${token}.pending`);
+  const processIdentity = await captureProcessIdentity();
+  const pendingPath = path.join(
+    directory,
+    `${processIdentity.pid}-${processIdentity.process_start_identity ?? "unknown"}-${Date.now()}-${token}.pending`,
+  );
   await fs.writeFile(pendingPath, "pending\n", { flag: "wx" });
   return {
     pendingPath,
