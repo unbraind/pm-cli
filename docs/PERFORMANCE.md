@@ -92,7 +92,7 @@ probe off and performs no query on the create path; advisory/strict modes reuse
 one dependency-light SDK scorer with the package-owned dedupe audit. Mutation
 history events use a separate rebuildable ordered SQLite projection so
 `pm events --since <cursor>` catch-up cost follows new history rows instead of
-workspace size. Its v4 schema also indexes the declared substantive-versus-
+workspace size. Its v5 schema also indexes the declared substantive-versus-
 maintenance event class, allowing context recency to fetch only the latest
 substantive row per requested stream instead of folding complete histories on
 each read. See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).

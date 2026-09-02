@@ -86,7 +86,7 @@ The signal selects the most recent substantive history event, then a stamped
 calendar release cohort such as `v2026.7.20`, then `created_at`. It never ranks
 bare `updated_at`, so release attribution, relationship enrichment,
 normalization, linked-artifact updates, and history maintenance cannot promote
-otherwise unchanged work. The rebuildable v4 history-event index stores the
+otherwise unchanged work. The rebuildable v5 history-event index stores the
 declared class and retrieves one latest substantive row per requested stream;
 individual immutable streams remain the authoritative fallback. Rebuilds,
 indexed validation reads, and compliant history appends share one cross-process

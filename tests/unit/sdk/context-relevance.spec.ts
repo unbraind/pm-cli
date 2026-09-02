@@ -332,8 +332,8 @@ describe("context relevance SDK primitives", () => {
         type: "Task",
         status: "open",
         priority: 2,
-        created_at: "invalid",
-        updated_at: 1,
+        created_at: 1,
+        updated_at: "invalid",
       },
     ] as unknown as ItemMetadata[];
     const candidates = buildItemContextRelevanceCandidates(items, {

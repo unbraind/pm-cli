@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-09-02T09:32:41.064Z"
-closed_at: "2026-09-02T09:25:55.418Z"
-completed_at: "2026-09-02T09:25:55.418Z"
+updated_at: "2026-09-02T10:18:46.201Z"
+closed_at: "2026-09-02T10:11:16.835Z"
+completed_at: "2026-09-02T10:11:16.835Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -21,9 +21,9 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
-resolution: "Added an explicit PowerShell string-array boundary for supervised child arguments, retained descendant-aware Start-Process -Wait and verified taskkill cleanup, added a generated-script regression assertion, and merged the current main release commit through the PM merge fence."
-expected_result: The exact PR head passes Windows Node 24 release-verifier regression tests and produces the same pm-changelog output as its reviewed merge base.
-actual_result: Focused release verification and automation suites pass 55/55 locally; the branch contains the 2026.9.2 release base and the PowerShell 5.1 conversion failure has a direct contract assertion.
+resolution: "Preserved runtime-only init cwd provenance behind a private symbol and the unchanged public runInit signature; extracted cohesive workspace-gitignore setup to satisfy the strict complexity ceiling; retained read-only files-lookup cache semantics, v5 documentation, timestamp negative controls, and cross-platform verifier hardening."
+expected_result: "The active-host SDK initializes from its requested workspace without changing the public API or violating repository complexity, coverage, documentation, or platform gates."
+actual_result: Focused init and SDK-surface verification passed 3 files / 59 tests. PM-linked repo-wide coverage passed at exact 100/100/100/100 after the final source edit. The full static chain is rerun against this terminal tracker state.
 dependencies[10]{id,kind,created_at}:
   pm-3hps,related,"2026-07-26T17:05:19.088Z"
   pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
@@ -35,7 +35,7 @@ dependencies[10]{id,kind,created_at}:
   pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z"
   pm-pcys9n,related,"2026-07-26T17:05:19.088Z"
   pm-uwfs,related,"2026-07-26T17:05:19.088Z"
-comments[46]{created_at,author,text}:
+comments[50]{created_at,author,text}:
   "2026-09-01T15:48:14.615Z","harness:codex","Delivery evidence 2026-09-01: history writes now carry public event_class=v1 classification; explicit classifications win, update patch fields are classified by declared policy, and unknown operations fail closed as substantive. The v3 event index supports latest-substantive reads with authoritative fallback. Context relevance and persisted signal snapshots derive recency from the latest substantive history event, then release cohort, then created_at, and never bare updated_at; explained context/next expose source, coordinate, history operation, and event class. A temporary-project acceptance proved a dependency-only maintenance write left the substantive recency coordinate byte-for-byte unchanged while CLI and PmClient returned the expected items. Static quality passed with public-surface and replication gates; exact coverage passed 596 files / 8260 tests at 60874 statements, 46011 branches, 12674 functions, and 58599 lines, all 100%. Supported Node 24 scale check remained within product bounds."
   "2026-09-01T17:16:28.944Z","harness:codex","Review round evidence: accepted findings added the real history:author-acknowledge, history_compact_baseline, and tests_remove maintenance operations; invalid persisted event_class values now fall through to the versioned classifier; history index v4 records authoritative stream byte sizes and rejects stale-but-valid projections before rebuilding; latest-event maps use null prototypes; signal snapshot v3 fingerprints exact recency evidence; DatabaseSync replication detects declarations and assignments. Non-absence I/O errors remain authoritative failures. Linked focused suite passed 49/49 and repo coverage passed 60,928/60,928 statements, 46,039/46,039 branches, 12,685/12,685 functions, 58,650/58,650 lines."
   "2026-09-01T18:28:29.526Z","harness:codex","Late-review hardening evidence: context snapshot freshness now fingerprints every item's effective recency provenance, including release-cohort and created_at fallbacks; optional substantive-history fields are isolated in their negative control. History-index rebuilds persist byte sizes captured with the authoritative pre-read snapshot, so a concurrent append leaves a detectable conservative mismatch rather than certifying old rows against a new size. Focused context/history suites passed, including the concurrent-append regression."
@@ -82,11 +82,15 @@ comments[46]{created_at,author,text}:
   "2026-09-02T08:54:47.795Z","harness:codex","Final exact-head verification after review-driven architecture correction: node scripts/run-tests.mjs coverage passed 596/596 files and 8299/8299 tests in 331.81s with statements 61200/61200, branches 46237/46237, functions 12734/12734, and lines 58903/58903 (100/100/100/100; zero uncovered counts). The strict source-file cap remains unchanged; existing cache-invalidation policy moved into its cohesive runtime-input owner, and focused active-host cwd egress coverage passed."
   "2026-09-02T09:25:54.871Z","harness:codex","Hosted review correction: PR CI proved PowerShell 5.1 preserves a single decoded JSON argument as an incompatible object for Start-Process -ArgumentList. The generated supervisor now explicitly materializes [string[]] before launch; focused release verification and automation suites pass 55/55. The branch also absorbed concurrent main release 2026.9.2 through the installed PM merge fence, removing synthetic-merge changelog drift."
   "2026-09-02T09:32:41.064Z","harness:codex","Terminal merged-tree verification: after the PowerShell 5.1 string-array correction and 2026.9.2 base synchronization, repository-wide coverage passed 596/596 files and 8299/8299 tests in 332.81s at statements 61200/61200, branches 46237/46237, functions 12734/12734, and lines 58903/58903 (100/100/100/100; zero uncovered counts)."
+  "2026-09-02T09:55:17.660Z","harness:codex","Verification correction: the first final PM-linked repo-wide coverage execution failed closed because the runtime-only init cwd parameter changed the published runInit signature and made sdk/public-surface.json stale. Reworked cwd provenance through a private symbol on the existing GlobalOptions object, preserving the exact public runInit signature without process-global cwd mutation. Focused exact-head verification now passes 6 files / 105 tests, including the SDK surface snapshot and active-host init integration."
+  "2026-09-02T10:00:59.474Z","harness:codex","Final PM-linked repo-wide coverage receipt passed at exact head after the compatibility correction. Coverage is 100/100/100/100 across statements, branches, functions, and lines; the focused SDK surface/runtime/cache/recency/lock/Windows regression suite passes 6 files / 105 tests."
+  "2026-09-02T10:11:16.264Z","harness:codex","Terminal static correction evidence: extracted the cohesive init workspace-gitignore operation, preserving behavior while returning runInit below the repository complexity ceiling. Focused init plus SDK-surface verification passed 3 files / 59 tests. The subsequent PM-linked repo-wide coverage receipt passed at exact 100/100/100/100."
+  "2026-09-02T10:18:46.201Z","harness:codex","Final terminal static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete ESLint, zero-clone, build, contract-generation, repository assurance, SDK/package parity, CLI/MCP grammar, refusal, token, graph-composition, public-surface, cost, and record-integrity chain after the complexity correction. No pm items remain in progress."
 learnings[3]{created_at,author,text}:
   "2026-09-01T15:48:17.264Z","harness:codex","Freshness is semantic event provenance, not file-write time: maintenance operations must be explicitly classified and excluded from temporal ranking, while unknown operations fail closed as substantive."
   "2026-09-01T19:41:37.711Z","harness:codex","A derived index can safely coordinate an authoritative append without a second filesystem lock by holding its SQLite write transaction across the append and paired size capture; if projection work fails after the append, preserve authority and discard the accelerator."
   "2026-09-01T20:11:24.024Z","harness:codex","SQLite row transactions alone do not coordinate a replace-by-rename rebuild or a stat-then-query read. A derived index that must be linearizable with compliant authoritative appends needs one shared cross-process coordination boundary spanning rebuild, append, validation, and read; the SQLite transaction remains the inner atomic projection commit."
-files[45]{path,scope,note}:
+files[48]{path,scope,note}:
   docs/SDK.md,project,Fingerprint freshness SDK contract
   scripts/bench/run-scale-benchmarks.mjs,project,Approved product-target benchmark enforcement
   scripts/bench/scale-budgets.json,project,Explicit product-target tier contract
@@ -107,6 +111,7 @@ files[45]{path,scope,note}:
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated fail-closed history timestamp refusal catalog
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated fail-closed history timestamp refusal catalog
   src/sdk/index.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/init.ts,project,Preserve active-host init workspace discovery provenance
   src/sdk/query/context.ts,project,Substantive history classification and recency provenance delivery
   src/sdk/query/next.ts,project,Substantive history classification and recency provenance delivery
   src/sdk/runtime-input.ts,project,Cohesive workspace-contract invalidation policy extracted from oversized dispatcher
@@ -115,6 +120,7 @@ files[45]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Generated history timestamp refusal contract snapshot
   tests/integration/ci-workflow-contract.spec.ts,project,Directory-cap regression coverage for the context submodule placement
   tests/integration/context-usage-egress.integration.spec.ts,project,CLI and SDK exact egress delivery acceptance
+  tests/integration/init-path-guard.integration.spec.ts,project,Active-host init discovery regression
   tests/unit/commands/context-relevance-command.spec.ts,project,CLI explained recency provenance acceptance
   tests/unit/commands/create-command.spec.ts,project,History-index lock write-hook contract
   tests/unit/commands/restore-command.spec.ts,project,History-index lock write-hook contract
@@ -132,7 +138,8 @@ files[45]{path,scope,note}:
   tests/unit/sdk/context-packing-usage.spec.ts,project,All-section context and nested next delivery contract
   tests/unit/sdk/context-relevance.spec.ts,project,Recency provenance and maintenance invariance coverage
   tests/unit/sdk/context-signal-store.spec.ts,project,Versioned signal provenance snapshot coverage
-tests[8]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  tests/unit/sdk/runtime-input-graph.spec.ts,project,Read-only workspace-contract cache regression
+tests[9]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-01T13:29:41.440Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Classified history recency unit and integration contract
   node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-01T13:29:41.935Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Repo-wide exact coverage gate
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,300,"harness:codex","2026-09-01T21:41:14.125Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Exact-head lock ownership snapshot compatibility delivery idempotency and CLI assertion regressions
@@ -141,55 +148,8 @@ tests[8]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/scale-benchmark.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,project,300,"harness:codex","2026-09-02T06:08:16.692Z",local_mutation,feat/substantive-context-signals-delivery-receipts,"Unconditional product target, cleanup-owner identity, and Windows verifier cleanup regressions"
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/integration/context-usage-egress.integration.spec.ts,project,300,"harness:codex","2026-09-02T07:17:54.624Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Linear selection canonical fallback exact delivery and replication body regressions
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,project,180,"harness:codex","2026-09-02T07:30:01.944Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Directory cap and bounded replication-gate regression
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/runtime-input-graph.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,project,300,"harness:codex","2026-09-02T09:47:16.194Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Final exact-head runtime cache recency lock and Windows verifier review regressions
 test_runs[20]:
-  - run_id: test-local-mtj5aj2k-y7ki3q
-    kind: test
-    status: passed
-    started_at: "2026-09-01T20:47:41.079Z"
-    finished_at: "2026-09-01T20:54:04.556Z"
-    recorded_at: "2026-09-01T20:54:04.556Z"
-    passed: 2
-    failed: 0
-    skipped: 0
-    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-  - run_id: test-local-mtj5wpzy-e1miat
-    kind: test
-    status: passed
-    started_at: "2026-09-01T21:04:51.170Z"
-    finished_at: "2026-09-01T21:11:19.966Z"
-    recorded_at: "2026-09-01T21:11:19.966Z"
-    passed: 2
-    failed: 0
-    skipped: 0
-    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-  - run_id: test-local-mtj79fir-cxmp5k
-    kind: test
-    status: failed
-    started_at: "2026-09-01T21:41:14.689Z"
-    finished_at: "2026-09-01T21:49:12.531Z"
-    recorded_at: "2026-09-01T21:49:12.531Z"
-    passed: 2
-    failed: 1
-    skipped: 0
-    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mtj7mhg7-62b11d
-    kind: test
-    status: failed
-    started_at: "2026-09-01T21:52:03.491Z"
-    finished_at: "2026-09-01T21:59:21.559Z"
-    recorded_at: "2026-09-01T21:59:21.559Z"
-    passed: 0
-    failed: 1
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
   - run_id: test-local-mtj7xut0-hc98de
     kind: test
     status: passed
@@ -384,13 +344,57 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjwx6v7-ej62xl
+    kind: test
+    status: passed
+    started_at: "2026-09-02T09:47:16.683Z"
+    finished_at: "2026-09-02T09:47:31.459Z"
+    recorded_at: "2026-09-02T09:47:31.459Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/runtime-input-graph.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjx4n4i-y247ae
+    kind: test
+    status: failed
+    started_at: "2026-09-02T09:47:39.115Z"
+    finished_at: "2026-09-02T09:53:19.122Z"
+    recorded_at: "2026-09-02T09:53:19.122Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjxec7r-2ea5nb
+    kind: test
+    status: passed
+    started_at: "2026-09-02T09:55:18.107Z"
+    finished_at: "2026-09-02T10:00:51.542Z"
+    recorded_at: "2026-09-02T10:00:51.542Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjxrfgp-xucqz1
+    kind: test
+    status: passed
+    started_at: "2026-09-02T10:05:29.944Z"
+    finished_at: "2026-09-02T10:11:02.280Z"
+    recorded_at: "2026-09-02T10:11:02.280Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
 docs[5]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,Substantive recency SDK and performance contract
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated history timestamp refusal closure evidence
   docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
   docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
   docs/SDK.md,project,Complete persisted snapshot reuse contract
-close_reason: Resolved the hosted Windows PowerShell 5.1 supervision incompatibility and synchronized the concurrent 2026.9.2 release base without weakening release or scale guarantees.
+close_reason: Completed terminal complexity correction and exact-head verification
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

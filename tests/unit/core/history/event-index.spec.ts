@@ -36,6 +36,17 @@ function historyEntry(
   };
 }
 
+async function withZeroLockWait<T>(run: () => Promise<T>): Promise<T> {
+  const previousWait = process.env.PM_LOCK_WAIT_MS;
+  process.env.PM_LOCK_WAIT_MS = "0";
+  try {
+    return await run();
+  } finally {
+    if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
+    else process.env.PM_LOCK_WAIT_MS = previousWait;
+  }
+}
+
 beforeEach(() => {
   restoreDatabaseSync = _testOnly.setDatabaseSync(DatabaseSync);
 });
@@ -455,8 +466,6 @@ describe("history mutation event index", () => {
         false,
         0,
       );
-      const previousWait = process.env.PM_LOCK_WAIT_MS;
-      process.env.PM_LOCK_WAIT_MS = "0";
       const lockPath = path.join(
         context.pmPath,
         "locks",
@@ -469,21 +478,21 @@ describe("history mutation event index", () => {
         return originalOpen(...args);
       });
       try {
-        await expect(
-          readLatestSubstantiveHistoryEvents(context.pmPath, [
-            "pm-read-contention",
-          ]),
-        ).resolves.toMatchObject({
-          "pm-read-contention": {
-            stream_offset: 0,
-            entry: { op: "create" },
-          },
+        await withZeroLockWait(async () => {
+          await expect(
+            readLatestSubstantiveHistoryEvents(context.pmPath, [
+              "pm-read-contention",
+            ]),
+          ).resolves.toMatchObject({
+            "pm-read-contention": {
+              stream_offset: 0,
+              entry: { op: "create" },
+            },
+          });
+          expect(lockAttempts).toBe(1);
         });
-        expect(lockAttempts).toBe(1);
       } finally {
         openSpy.mockRestore();
-        if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
-        else process.env.PM_LOCK_WAIT_MS = previousWait;
         await release();
       }
     });
@@ -1255,19 +1264,14 @@ describe("history mutation event index", () => {
         0,
       );
       try {
-        const previousWait = process.env.PM_LOCK_WAIT_MS;
-        process.env.PM_LOCK_WAIT_MS = "0";
-        try {
+        await withZeroLockWait(async () => {
           await expect(
             appendHistoryEntry(historyPath, second),
           ).resolves.toBeUndefined();
           await expect(
             fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
           ).rejects.toThrow();
-        } finally {
-          if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
-          else process.env.PM_LOCK_WAIT_MS = previousWait;
-        }
+        });
       } finally {
         await release();
       }
@@ -1296,21 +1300,19 @@ describe("history mutation event index", () => {
         false,
         0,
       );
-      const previousWait = process.env.PM_LOCK_WAIT_MS;
-      process.env.PM_LOCK_WAIT_MS = "0";
       try {
-        await expect(
-          appendHistoryEntryWithEventIndex(
-            historyPath,
-            historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
-            async () => {
-              throw new Error("append failed");
-            },
-          ),
-        ).rejects.toThrow("append failed");
+        await withZeroLockWait(async () => {
+          await expect(
+            appendHistoryEntryWithEventIndex(
+              historyPath,
+              historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
+              async () => {
+                throw new Error("append failed");
+              },
+            ),
+          ).rejects.toThrow("append failed");
+        });
       } finally {
-        if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
-        else process.env.PM_LOCK_WAIT_MS = previousWait;
         await release();
       }
       const invalidationRoot = path.join(
@@ -1360,16 +1362,11 @@ describe("history mutation event index", () => {
         },
       );
       await firstAppended;
-      const previousWait = process.env.PM_LOCK_WAIT_MS;
-      process.env.PM_LOCK_WAIT_MS = "0";
-      try {
+      await withZeroLockWait(async () => {
         await appendHistoryEntryWithEventIndex(historyPath, third, async () => {
           await fs.appendFile(historyPath, `${JSON.stringify(third)}\n`);
         });
-      } finally {
-        if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
-        else process.env.PM_LOCK_WAIT_MS = previousWait;
-      }
+      });
       allowFirstProjection();
       await indexedAppend;
 

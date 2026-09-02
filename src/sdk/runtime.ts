@@ -694,6 +694,7 @@ export type {
 const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol(
   "pm.active-extension-host-context",
 );
+const INIT_INVOCATION_CWD = Symbol.for("pm.sdk.init-invocation-cwd");
 
 interface PmClientDefaults {
   path?: string;
@@ -2843,7 +2844,14 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // pins process.cwd() (inside the serialized slot) for the built-in handler.
   const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
-  global.path = resolvePmRoot(resolutionCwd, global.path);
+  if (resolved.action === "init") {
+    (
+      global as GlobalOptions & { [INIT_INVOCATION_CWD]?: string }
+    )[INIT_INVOCATION_CWD] = resolutionCwd;
+  }
+  if (resolved.action !== "init" || global.path !== undefined) {
+    global.path = resolvePmRoot(resolutionCwd, global.path);
+  }
   try {
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
@@ -3629,7 +3637,11 @@ function runMcpHistoryAuthorAcknowledgeAction(
 
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   init: (ctx) =>
-    runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
+    runInit(
+      readString(ctx.args, "prefix"),
+      ctx.global,
+      ctx.options,
+    ),
   context: (ctx) =>
     runContext(
       applyContextIntentProjection("context", ctx.options),

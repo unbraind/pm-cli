@@ -36,6 +36,7 @@ const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
   "contracts",
   "deps",
   "files-discover",
+  "files-lookup",
   "get",
   "graph",
   "health",
