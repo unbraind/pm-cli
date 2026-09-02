@@ -5,6 +5,11 @@
 ### Fixed
 
 - Context recency is computed from updated_at, so every governance write the project mandates erases the freshness signal it ranks on ([pm-07pt16](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-07pt16.toon))
+
+## 2026.9.2 - 2026-09-02
+
+### Fixed
+
 - A read whose result was omitted for budget still records those items as served and included, so the usage-affinity signal learns from context the agent never received ([pm-wv47pf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wv47pf.toon))
 - Shape-qualified scale baselines drifted from current CLI/SDK output contracts and supported runtime ([pm-r8yytk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r8yytk.toon))
 - GH-1174: Windows Node 24 receipt traversal negative control must fail closed portably ([pm-r97901](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r97901.toon))
