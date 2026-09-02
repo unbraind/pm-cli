@@ -376,6 +376,62 @@ describe("history mutation event index", () => {
       );
       await expect(fs.access(initialPending)).rejects.toThrow();
 
+      const livePending = path.join(
+        invalidationRoot,
+        `${process.pid}-live.pending`,
+      );
+      await fs.writeFile(livePending, "pending\n");
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        false,
+      );
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-missing"]),
+      ).resolves.toEqual({});
+      await expect(fs.access(livePending)).resolves.toBeUndefined();
+      await fs.rm(livePending);
+
+      for (const [suffix, processError] of [
+        ["primitive", "permission denied"],
+        ["null", null],
+        ["shape", {}],
+        ["permission", { code: "EPERM" }],
+      ] as const) {
+        const protectedPending = path.join(
+          invalidationRoot,
+          `${process.pid}-${suffix}.pending`,
+        );
+        await fs.writeFile(protectedPending, "pending\n");
+        const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
+          throw processError;
+        });
+        try {
+          await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+            false,
+          );
+        } finally {
+          killSpy.mockRestore();
+        }
+        await expect(fs.access(protectedPending)).resolves.toBeUndefined();
+        await fs.rm(protectedPending);
+      }
+
+      const deadPending = path.join(invalidationRoot, "999999-dead.pending");
+      await fs.writeFile(deadPending, "pending\n");
+      const deadKillSpy = vi.spyOn(process, "kill").mockImplementation(() => {
+        throw Object.assign(new Error("missing"), { code: "ESRCH" });
+      });
+      try {
+        await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+          true,
+        );
+      } finally {
+        deadKillSpy.mockRestore();
+      }
+      await expect(fs.access(deadPending)).rejects.toThrow();
+
       const releaseInvalidation = await acquireLock(
         context.pmPath,
         "history-event-index-invalidation",

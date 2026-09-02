@@ -140,14 +140,36 @@ async function recoverAbandonedHistoryEventIndexInvalidations(
   pmRoot: string,
 ): Promise<HistoryEventIndexInvalidations> {
   const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
-  await Promise.all(
-    invalidations.pending.map((name) =>
-      fs.rm(path.join(historyEventIndexInvalidationDirectory(pmRoot), name), {
-        force: true,
+  const pending = (
+    await Promise.all(
+      invalidations.pending.map(async (name) => {
+        const owner = /^(\d+)-.+\.pending$/u.exec(name);
+        if (owner !== null) {
+          try {
+            process.kill(Number(owner[1]), 0);
+            return name;
+          } catch (error: unknown) {
+            if (
+              typeof error !== "object" ||
+              error === null ||
+              !("code" in error) ||
+              error.code !== "ESRCH"
+            ) {
+              return name;
+            }
+          }
+        }
+        await fs.rm(
+          path.join(historyEventIndexInvalidationDirectory(pmRoot), name),
+          {
+            force: true,
+          },
+        );
+        return null;
       }),
-    ),
-  );
-  return { pending: [], committed: invalidations.committed };
+    )
+  ).filter((name): name is string => name !== null);
+  return { pending, committed: invalidations.committed };
 }
 
 async function withHistoryEventIndexInvalidationLock<T>(
@@ -176,7 +198,7 @@ async function beginHistoryEventIndexInvalidation(
   const directory = historyEventIndexInvalidationDirectory(pmRoot);
   await fs.mkdir(directory, { recursive: true });
   const token = randomUUID();
-  const pendingPath = path.join(directory, `${token}.pending`);
+  const pendingPath = path.join(directory, `${process.pid}-${token}.pending`);
   await fs.writeFile(pendingPath, "pending\n", { flag: "wx" });
   return {
     pendingPath,
@@ -481,6 +503,7 @@ export async function rebuildHistoryEventIndex(
       }
       throw error;
     }
+    if (invalidations.pending.length > 0) return false;
     const targetPath = eventIndexPath(pmRoot);
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
     const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
@@ -505,6 +528,7 @@ export async function rebuildHistoryEventIndex(
           const current =
             await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
           if (
+            current.pending.length > 0 ||
             !sameInvalidationNames(invalidations.committed, current.committed)
           ) {
             return false;
@@ -838,7 +862,10 @@ export async function queryHistoryEventIndex(
       return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
         const invalidations =
           await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
-        if (invalidations.committed.length > 0) {
+        if (
+          invalidations.pending.length > 0 ||
+          invalidations.committed.length > 0
+        ) {
           return null;
         }
         database = new Database(eventIndexPath(pmRoot), { readOnly: true });
@@ -1003,7 +1030,10 @@ async function readIndexedLatestSubstantiveEvents(
       return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
         const invalidations =
           await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
-        if (invalidations.committed.length > 0) {
+        if (
+          invalidations.pending.length > 0 ||
+          invalidations.committed.length > 0
+        ) {
           return null;
         }
         database = new Database(eventIndexPath(pmRoot), { readOnly: true });
