@@ -518,16 +518,28 @@ async function attachNextUsageFeedback(params: {
 }): Promise<void> {
   try {
     const included = new Set(params.packing.included.map((entry) => entry.id));
+    const rows = params.ranking.ranked.map((entry) => ({
+      id: entry.id,
+      rank: entry.rank,
+      included: included.has(entry.id),
+    }));
+    const rankedIds = new Set(rows.map((row) => row.id));
+    for (const row of [
+      ...params.result.decision_needed,
+      ...params.result.blocked,
+      ...params.result.held_by_others,
+    ]) {
+      if (!rankedIds.has(row.id)) {
+        rankedIds.add(row.id);
+        rows.push({ id: row.id, rank: rows.length + 1, included: true });
+      }
+    }
     const receipt = await recordContextUsageServing({
       pmRoot: params.pmRoot,
       author: params.author,
       surface: "next",
       profile: params.packing.profile,
-      rows: params.ranking.ranked.map((entry) => ({
-        id: entry.id,
-        rank: entry.rank,
-        included: included.has(entry.id),
-      })),
+      rows,
       enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
     });
     attachContextUsageServingReceipt(params.result, receipt);

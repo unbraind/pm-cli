@@ -184,6 +184,9 @@ function emittedItemIds(
             ? record.decision_needed
             : []),
           ...(Array.isArray(record.blocked) ? record.blocked : []),
+          ...(Array.isArray(record.held_by_others)
+            ? record.held_by_others
+            : []),
         ];
   return [
     ...new Set(

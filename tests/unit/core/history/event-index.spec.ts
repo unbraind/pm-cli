@@ -260,7 +260,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("falls back to authoritative recency after one contended index wait", async () => {
+  it("falls back to authoritative recency after one contended index attempt", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -280,9 +280,19 @@ describe("history mutation event index", () => {
         0,
       );
       const previousWait = process.env.PM_LOCK_WAIT_MS;
-      process.env.PM_LOCK_WAIT_MS = "400";
+      process.env.PM_LOCK_WAIT_MS = "0";
+      const lockPath = path.join(
+        context.pmPath,
+        "locks",
+        "history-event-index.lock",
+      );
+      const originalOpen = fs.open.bind(fs);
+      let lockAttempts = 0;
+      const openSpy = vi.spyOn(fs, "open").mockImplementation((...args) => {
+        if (String(args[0]) === lockPath && args[1] === "wx") lockAttempts += 1;
+        return originalOpen(...args);
+      });
       try {
-        const startedAt = performance.now();
         await expect(
           readLatestSubstantiveHistoryEvents(context.pmPath, [
             "pm-read-contention",
@@ -293,8 +303,9 @@ describe("history mutation event index", () => {
             entry: { op: "create" },
           },
         });
-        expect(performance.now() - startedAt).toBeLessThan(700);
+        expect(lockAttempts).toBe(1);
       } finally {
+        openSpy.mockRestore();
         if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
         else process.env.PM_LOCK_WAIT_MS = previousWait;
         await release();

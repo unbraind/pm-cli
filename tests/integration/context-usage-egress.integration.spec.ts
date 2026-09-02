@@ -27,19 +27,43 @@ async function deliveries(pmRoot: string): Promise<LedgerDelivery[]> {
 describe("context usage egress receipts", () => {
   it("records CLI inclusions from emitted rows and zero rows for omitted output", async () => {
     await withTempPmPath(async (context) => {
-      for (const title of ["First", "Second", "Third"]) {
+      for (const fixture of [
+        { id: "pm-first", title: "First", type: "Task" },
+        { id: "pm-second", title: "Second", type: "Task" },
+        { id: "pm-third", title: "Third", type: "Task" },
+        { id: "pm-decision", title: "Decision", type: "Decision" },
+        { id: "pm-blocker", title: "Blocker", type: "Task" },
+        {
+          id: "pm-blocked",
+          title: "Blocked",
+          type: "Task",
+          blockedBy: "pm-blocker",
+        },
+        {
+          id: "pm-held",
+          title: "Held",
+          type: "Task",
+          assignee: "another-agent",
+        },
+      ]) {
         expect(
           context.runCli([
             "create",
             "--json",
+            "--create-mode",
+            "progressive",
+            "--id",
+            fixture.id,
             "--title",
-            title,
+            fixture.title,
             "--description",
-            `${title} context`,
+            `${fixture.title} context`,
             "--type",
-            "Task",
+            fixture.type,
             "--status",
             "open",
+            ...(fixture.blockedBy ? ["--blocked-by", fixture.blockedBy] : []),
+            ...(fixture.assignee ? ["--assignee", fixture.assignee] : []),
           ]).code,
         ).toBe(0);
       }
@@ -51,18 +75,23 @@ describe("context usage egress receipts", () => {
       const deliveredResult = delivered.json as {
         recommended?: { id: string } | null;
         ready: Array<{ id: string }>;
-        decision_needed: Array<{ id: string }>;
-        blocked: Array<{ id: string }>;
+        decision_needed?: Array<{ id: string }>;
+        blocked?: Array<{ id: string }>;
+        held_by_others?: Array<{ id: string }>;
       };
       const emittedIds = [
         ...(deliveredResult.recommended
           ? [deliveredResult.recommended.id]
           : []),
         ...deliveredResult.ready.map((row) => row.id),
-        ...deliveredResult.decision_needed.map((row) => row.id),
-        ...deliveredResult.blocked.map((row) => row.id),
+        ...(deliveredResult.decision_needed ?? []).map((row) => row.id),
+        ...(deliveredResult.blocked ?? []).map((row) => row.id),
+        ...(deliveredResult.held_by_others ?? []).map((row) => row.id),
       ];
       expect(emittedIds.length).toBeGreaterThan(0);
+      expect(emittedIds).toEqual(
+        expect.arrayContaining(["pm-decision", "pm-blocked", "pm-held"]),
+      );
       expect((await deliveries(context.pmPath)).at(-1)).toEqual(
         expect.objectContaining({
           surface: "next",
@@ -110,6 +139,7 @@ describe("context usage egress receipts", () => {
         ...result.ready.map((row) => row.id),
         ...result.decision_needed.map((row) => row.id),
         ...result.blocked.map((row) => row.id),
+        ...result.held_by_others.map((row) => row.id),
       ];
       expect(emittedIds.length).toBeGreaterThan(0);
       expect((await deliveries(context.pmPath)).at(-1)).toEqual(
