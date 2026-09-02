@@ -1,0 +1,31 @@
+id: pm-l7m7k5
+title: "GH-1177: Claude session provenance path is derived from invocation cwd instead of the session-start workspace"
+description: "GitHub issue #1177 reproduces on pm-cli 2026.9.2: readClaudeSessionProvenance derives ~/.claude/projects/<slug>/<session>.jsonl from the current invocation cwd, but Claude fixes the transcript directory to the session-start workspace. Package, monorepo, and fleet subdirectory invocations therefore miss the existing transcript and permanently record null model/version provenance while the parser itself succeeds whenever the path resolves."
+type: Issue
+status: open
+priority: 1
+tags[7]: "area:provenance","area:sdk",context-integrity,github-1177,harness,observability,regression
+created_at: "2026-09-02T21:14:31.322Z"
+updated_at: "2026-09-02T21:34:08.936Z"
+author: "harness:codex"
+acceptance_criteria: "Resolve the transcript by explicit harness path when available or bounded unique session-id discovery independent of cwd; distinguish resolver_input_missing from resolver_failed without exposing paths, prompts, identifiers, or session content; prove child-workspace and session-root invocation parity with independent fixtures and a real-layout temporary acceptance; define a justified sustained zero-success health severity; pass provenance, SDK, CLI, security, static, and exact coverage gates."
+parent: pm-5oj5
+risk: high
+confidence: high
+reporter: GitHub issue #1177
+severity: high
+environment: pm-cli 2026.9.2 under Claude Code when pm runs below the session-start directory
+repro_steps: "Start Claude in a workspace root, invoke pm from a child repository, compare the cwd-derived transcript path with the unique session JSONL under ~/.claude/projects/*, and observe provenance_resolver_zero_success with null model/version."
+expected_result: "The resolver locates the unique session transcript independently of the invocation cwd, remains privacy and resource bounded, and distinguishes missing resolver input from a parsed stream with no supported value."
+actual_result: "The resolver encodes the invocation cwd, opens a nonexistent path, catches the filesystem error as undefined, and reports the same advisory outcome as a successful parse with no match."
+component: SDK agent provenance resolver and health diagnostics
+regression: true
+customer_impact: Fleet and monorepo histories permanently lose model/runtime attribution while health remains advisory and non-actionable.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9gvazz,discovered_from,"2026-09-02T21:14:31.322Z","harness:codex","cli:create:dep",detected
+  pm-f60039,discovered_from,"2026-09-02T21:14:31.322Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-02T21:14:31.322Z","harness:codex","Duplicate-check evidence: complete all-status searches for Claude session provenance, cwd, session-start workspace, and zero-success diagnostics found closed pm-9gvazz for slug encoding, closed pm-f60039 for nested JSONL parsing, and pm-lu6sca for outcome classification. GitHub #1177 proves a distinct invocation-cwd versus session-start path boundary on 2026.9.2; no existing item owns it. Source: https://github.com/unbraind/pm-cli/issues/1177"
+  "2026-09-02T21:14:57.508Z","harness:codex","GitHub linkage evidence: issue #1177 now points to this canonical item at the merge-stable main-branch toon path."
+escape_class: production_defect
+body: ""

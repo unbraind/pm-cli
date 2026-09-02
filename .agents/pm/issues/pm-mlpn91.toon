@@ -1,0 +1,131 @@
+id: pm-mlpn91
+title: "OSSF Scorecard alert #29: qs denial-of-service advisories in the MCP Apps development dependency tree"
+description: GitHub code-scanning alert #29 reports GHSA-4mjr-xmp4-gh2g and GHSA-x5fp-wj9c-mxmx on merged main ae63802. pnpm audit resolves qs 6.15.3 through @modelcontextprotocol/ext-apps -> @modelcontextprotocol/sdk -> express/body-parser. The maintained patched release is qs 6.16.0; a narrow pnpm override can update every compatible transitive edge while retaining the existing supply-chain and frozen-lockfile policy.
+type: Issue
+status: closed
+priority: 0
+tags[7]: denial-of-service,dependencies,dev-dependency,github-code-scanning,mcp,ossf-scorecard,security
+created_at: "2026-09-02T21:17:07.092Z"
+updated_at: "2026-09-02T22:38:26.702Z"
+closed_at: "2026-09-02T22:38:26.117Z"
+completed_at: "2026-09-02T22:38:26.117Z"
+author: "harness:codex"
+acceptance_criteria: "Govern qs through the narrow patched 6.x range; regenerate the deterministic lockfile; pnpm audit reports zero advisories at every severity; pnpm install --frozen-lockfile, security scans, static quality, and exact coverage pass; GitHub code-scanning alert #29 closes on the merged head."
+parent: pm-qwoy
+risk: high
+confidence: high
+reporter: GitHub OSSF Scorecard code scanning alert #29
+severity: high
+environment: Development dependency graph on main ae63802; qs 6.15.3 through MCP Apps SDK and Express
+repro_steps: Query GitHub code-scanning alert 29 and run pnpm audit --json; observe GHSA-4mjr-xmp4-gh2g and GHSA-x5fp-wj9c-mxmx on qs 6.15.3.
+resolution: "Added the >=6.16.0 <7.0.0 workspace override, regenerated the lockfile, and recorded passing coverage receipt test-local-mtkog77v-ltx61n with ten structured exact-count measurements."
+expected_result: "Every resolved qs version is at least 6.16.0, pnpm audit has zero advisories, repository gates pass, exact coverage is machine-verifiable from structured receipt measurements, and the merged Scorecard scan retires alert #29."
+actual_result: "All compatible paths resolve qs 6.16.0; local audit, install, secret, static, and exact coverage gates pass. Receipt test-local-mtkog77v-ltx61n stores covered and total measurements for 61,262 statements, 46,281 branches, 12,742 functions, and 58,963 lines, plus 596 files and 8,307 tests. Hosted Scorecard closure remains a merge-SHA post-condition."
+affected_version: qs@6.15.3
+fixed_version: qs@6.16.0
+component: pnpm-workspace.yaml and pnpm-lock.yaml MCP Apps development dependency graph
+customer_impact: A known denial-of-service dependency remains in development tooling and causes the repository security posture to report an unresolved high-severity finding.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f5hy2n,discovered_from,"2026-09-02T21:17:07.092Z","harness:codex","cli:create:dep",detected
+  pm-qwoy,implements,"2026-09-02T21:17:07.092Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-02T21:17:07.092Z","harness:codex","Duplicate-check evidence: exact all-status searches for both GHSA identifiers returned zero items. A broad qs/MCP/denial-of-service search found the closed brace-expansion dependency remediation pm-f5hy2n as the governing pattern, not a duplicate. GitHub Dependabot and secret-scanning queues are empty; OSSF Scorecard alert #29 is the sole native security alert."
+  "2026-09-02T21:17:52.447Z","harness:codex","TDD remediation: before the override, pnpm audit reported both GHSA advisories and qs 6.15.3 on four MCP Apps SDK/Express paths. The narrow >=6.16.0 <7.0.0 override now resolves the same graph to qs 6.16.0; a frozen install succeeds and pnpm audit reports zero advisories across info, low, moderate, high, and critical."
+  "2026-09-02T21:25:59.318Z","harness:codex","Verification correction: the linked full static run reached repository-static-quality and stopped at defect-evidence because its sandbox snapshot evaluated the four newly open intake defects before the linked-test run receipt existed. A direct source-workspace defect-evidence rerun is now clean: boundary 5/9 captured with 4 live waivers, 102 governed items, 106 classified items, and zero findings. This was tracker-evidence timing, not a dependency or source regression."
+  "2026-09-02T21:53:44.621Z","harness:codex","Verification evidence: pnpm audit reports zero vulnerabilities at info, low, moderate, high, and critical; pnpm why qs resolves only 6.16.0; frozen installation and the tracked-secret scan pass. Exact coverage remains 61,262/61,262 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,963/58,963 lines across 596 source files and 8,307 tests. The strict full-tracker static suite passed as machine receipt test-local-mtkmslut-wlk7qq. GitHub alert #29 is a hosted post-merge condition and will be checked against the merged head."
+  "2026-09-02T22:18:53.153Z","harness:codex","Cubic review correction: isolated linked coverage receipt test-local-mtknr23h-jepje7 passed node scripts/run-tests.mjs coverage. Its captured stdout records 596 test files and 8,307 tests passing with the exact gate totals: 61,262/61,262 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,963/58,963 lines."
+  "2026-09-02T22:38:25.069Z","harness:codex","Cubic structured-evidence correction: passing receipt test-local-mtkog77v-ltx61n now binds ten numeric measurements directly to the producing coverage run: covered and total counts for statements 61,262, branches 46,281, functions 12,742, and lines 58,963, plus 596 test files and 8,307 test cases. Every measurement has unit=count and its exact required threshold."
+learnings[1]{created_at,author,text}:
+  "2026-09-02T21:53:45.049Z","harness:codex",A narrow pnpm override bounded to the patched qs 6.x line remediates every compatible MCP Apps SDK/Express path without overriding direct package APIs; pair local audit proof with the post-merge Scorecard SARIF result because GitHub alerts are merge-SHA scoped.
+files[2]{path,scope,note}:
+  pnpm-lock.yaml,project,Resolve the MCP Apps development graph to qs 6.16.0 reproducibly
+  pnpm-workspace.yaml,project,Govern qs to the patched 6.x line across every compatible transitive consumer
+tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  pnpm audit --audit-level low,project,240,"harness:codex","2026-09-02T21:17:49.310Z",local_mutation,tracker/history-provenance-receipt-intake,Zero known package advisories at every severity
+  pnpm install --frozen-lockfile,project,240,"harness:codex","2026-09-02T21:17:49.910Z",local_mutation,tracker/history-provenance-receipt-intake,Reproducible patched dependency graph
+  node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-02T21:17:50.541Z",local_mutation,tracker/history-provenance-receipt-intake,Repository-wide exact 100/100/100/100 coverage
+  "CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static",project,1800,"harness:codex","2026-09-02T21:17:51.209Z",local_mutation,tracker/history-provenance-receipt-intake,"Strict static, docstring, package, contract, and assurance gates"
+  node scripts/check-secrets.mjs,project,240,"harness:codex","2026-09-02T21:17:51.805Z",local_mutation,tracker/history-provenance-receipt-intake,Tracked secret scan remains clean
+test_runs[5]:
+  - run_id: test-local-mtklv238-5uw48y
+    kind: test
+    status: failed
+    started_at: "2026-09-02T21:18:00.926Z"
+    finished_at: "2026-09-02T21:25:42.356Z"
+    recorded_at: "2026-09-02T21:25:42.356Z"
+    passed: 4
+    failed: 1
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit --audit-level low,schema,schema,source,local_source_ref
+      pnpm install --frozen-lockfile,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      "CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static",schema,schema,source,local_source_ref
+      node scripts/check-secrets.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkmjh2x-ku592d
+    kind: test
+    status: failed
+    started_at: "2026-09-02T21:42:48.098Z"
+    finished_at: "2026-09-02T21:44:41.529Z"
+    recorded_at: "2026-09-02T21:44:41.529Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static",schema,schema,source,local_source_ref
+  - run_id: test-local-mtkmslut-wlk7qq
+    kind: test
+    status: passed
+    started_at: "2026-09-02T21:44:56.853Z"
+    finished_at: "2026-09-02T21:51:47.621Z"
+    recorded_at: "2026-09-02T21:51:47.621Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtknr23h-jepje7
+    kind: test
+    status: passed
+    started_at: "2026-09-02T22:12:57.836Z"
+    finished_at: "2026-09-02T22:18:34.973Z"
+    recorded_at: "2026-09-02T22:18:34.973Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkog77v-ltx61n
+    kind: test
+    status: passed
+    started_at: "2026-09-02T22:32:27.573Z"
+    finished_at: "2026-09-02T22:38:08.010Z"
+    recorded_at: "2026-09-02T22:38:08.010Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[10]{name,value,unit,threshold,recorded_at}:
+      coverage.branches.covered,46281,count,46281,"2026-09-02T22:38:08.010Z"
+      coverage.branches.total,46281,count,46281,"2026-09-02T22:38:08.010Z"
+      coverage.functions.covered,12742,count,12742,"2026-09-02T22:38:08.010Z"
+      coverage.functions.total,12742,count,12742,"2026-09-02T22:38:08.010Z"
+      coverage.lines.covered,58963,count,58963,"2026-09-02T22:38:08.010Z"
+      coverage.lines.total,58963,count,58963,"2026-09-02T22:38:08.010Z"
+      coverage.statements.covered,61262,count,61262,"2026-09-02T22:38:08.010Z"
+      coverage.statements.total,61262,count,61262,"2026-09-02T22:38:08.010Z"
+      tests.cases,8307,count,8307,"2026-09-02T22:38:08.010Z"
+      tests.files,596,count,596,"2026-09-02T22:38:08.010Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Record the qs security-floor remediation in the package changelog
+close_reason: Patched qs and bound exact coverage evidence to the producing machine receipt after two review refinements.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: transitive-qs-security-floor
+  negative_control: pnpm audit --json before the override reported GHSA-4mjr-xmp4-gh2g and GHSA-x5fp-wj9c-mxmx on qs 6.15.3
+  local_checks[5]: pnpm audit --audit-level low,pnpm install --frozen-lockfile,node scripts/check-secrets.mjs,node scripts/run-tests.mjs coverage,"CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static"
+  hosted_checks[2]: Security and Script Quality / pnpm-audit,OSSF Scorecard
+  owner: pm-mlpn91
+body: ""

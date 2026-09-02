@@ -1,0 +1,30 @@
+id: pm-javbsq
+title: "GH-1178: history hashes exclude record author and agent provenance, so attribution can be rewritten without detection"
+description: "GitHub issue #1178 reproduces on pm-cli 2026.9.2: editing a history record's ts, author, author_source, op, or agent_provenance does not alter the item patch hashes. After uncached verification, pm health --strict-exit and pm history --verify --strict-exit still report clean. The ledger therefore proves item-state replay but not the immutable attribution and operation metadata that describes who performed it."
+type: Issue
+status: open
+priority: 1
+tags[7]: "area:history","area:sdk",context-integrity,github-1178,immutability,provenance,security
+created_at: "2026-09-02T21:14:35.285Z"
+updated_at: "2026-09-02T21:34:09.595Z"
+author: "harness:codex"
+acceptance_criteria: "Define a versioned canonical hash envelope covering at least timestamp, author, author_source, operation, and agent provenance; preserve explicit backward verification for legacy histories without claiming they cover attribution; supply a documented, audited migration and repair boundary; add a negative control that changes only author or provenance and must fail history verification and health; compose with re-anchoring preservation instead of erasing original evidence; pass history, merge, restore, SDK, CLI, security, static, and exact coverage gates."
+parent: pm-o2kc
+risk: critical
+confidence: high
+reporter: GitHub issue #1178
+severity: critical
+environment: pm-cli 2026.9.2 with a fresh single-entry item history stream
+repro_steps: "Create an item, edit only the stored history record author and agent_provenance fields, remove the drift cache, then run pm health --strict-exit and pm history <id> --verify --strict-exit; both exit zero."
+expected_result: "A versioned history-integrity epoch covers immutable record metadata as well as item-state hashes, accepts legacy epochs explicitly, documents migration/repair, and rejects attribution tampering with an executable negative control."
+actual_result: "Record attribution and operation metadata sit outside the hashed content, so they can be rewritten while the item hash chain and health gate remain clean."
+component: "Core history ledger, SDK verification, health, and repair compatibility"
+customer_impact: "Reviewers and agents can receive a green integrity verdict after attribution was modified during merge, rebase, or manual repair."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-aka8m7,discovered_from,"2026-09-02T21:14:35.285Z","harness:codex","cli:create:dep",detected
+  pm-w7ccmv,verifies,"2026-09-02T21:14:35.285Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-02T21:14:35.285Z","harness:codex","Duplicate-check evidence: complete all-status searches for author/provenance hash coverage, attribution tampering, history epochs, and immutable record fields found open pm-aka8m7 for retaining original anchors during re-anchoring and open pm-9yfo for mutation-history completeness. Neither covers the record envelope itself. GitHub #1178 is the canonical owner for the demonstrated green-verifier attribution rewrite. Source: https://github.com/unbraind/pm-cli/issues/1178"
+  "2026-09-02T21:14:59.271Z","harness:codex","GitHub linkage evidence: issue #1178 now points to this canonical item at the merge-stable main-branch toon path."
+escape_class: production_defect
+body: ""

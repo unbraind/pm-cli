@@ -6,6 +6,10 @@
 
 - Context recency is computed from updated_at, so every governance write the project mandates erases the freshness signal it ranks on ([pm-07pt16](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-07pt16.toon))
 
+### Security
+
+- OSSF Scorecard alert \#29: qs denial-of-service advisories in the MCP Apps development dependency tree ([pm-mlpn91](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mlpn91.toon))
+
 ## 2026.9.2 - 2026-09-02
 
 ### Fixed
