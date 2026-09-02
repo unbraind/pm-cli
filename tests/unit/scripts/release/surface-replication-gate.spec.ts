@@ -597,10 +597,13 @@ describe("surface replication gate", () => {
     const databaseSeamSet = (
       config.sets as Array<{
         id: string;
+        owner: string;
         triggers: Array<{
           path?: string;
           changed_lines_contain_any?: string[];
         }>;
+        required_changed_members: string[];
+        members: Array<{ path: string; contains_all: string[] }>;
       }>
     ).find((entry) => entry.id === "database-sync-test-seam");
     const eventIndexTrigger = databaseSeamSet?.triggers.find(
@@ -620,9 +623,23 @@ describe("surface replication gate", () => {
         "return RuntimeDatabaseSync",
       ]),
     );
+    const root = await fixtureRoot();
+    for (const member of databaseSeamSet?.members ?? []) {
+      const memberPath = path.join(root, member.path);
+      await mkdir(path.dirname(memberPath), { recursive: true });
+      await writeFile(memberPath, member.contains_all.join("\n"), "utf8");
+    }
+    const databaseSeamConfig = {
+      version: config.version,
+      source_file_line_cap: config.source_file_line_cap,
+      sets: databaseSeamSet === undefined ? [] : [databaseSeamSet],
+      waivers: [],
+      cli_refusal_dispositions: [],
+      refusal_parity_contracts: [],
+    };
 
-    const unrelated = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const unrelated = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
@@ -639,8 +656,8 @@ describe("surface replication gate", () => {
       ]),
     );
 
-    const bodyChange = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const bodyChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
@@ -656,8 +673,8 @@ describe("surface replication gate", () => {
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
 
-    const resolverChange = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const resolverChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
@@ -670,8 +687,8 @@ describe("surface replication gate", () => {
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
 
-    const assignmentChange = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const assignmentChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
@@ -684,8 +701,8 @@ describe("surface replication gate", () => {
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
 
-    const returnChange = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const returnChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": ["return RuntimeDatabaseSync;"],
