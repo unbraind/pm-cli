@@ -102,15 +102,38 @@ const args = overrideArgs
   : runner === "npx"
     ? ["--yes", "--package", packageSpec, "--", "pm-mcp-http"]
     : ["--silent", "--bun", "--package", packageSpec, "pm-mcp-http"];
-const child = spawn(runnerCommand, args, {
-  detached: process.platform !== "win32",
-  env: {
-    ...process.env,
-    PM_MCP_HTTP_HOST: "127.0.0.1",
-    PM_MCP_HTTP_PORT: String(port),
+const windowsRunnerScript = [
+  "$ErrorActionPreference = 'Stop'",
+  "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:PM_VERIFY_HTTP_CHILD_COMMAND_B64))",
+  "$childArgs = [string[]]@(ConvertFrom-Json -InputObject $env:PM_VERIFY_HTTP_CHILD_ARGS_JSON)",
+  "& $command @childArgs",
+  "exit $LASTEXITCODE",
+].join("; ");
+const child = spawn(
+  process.platform === "win32" ? "powershell.exe" : runnerCommand,
+  process.platform === "win32"
+    ? [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-EncodedCommand",
+        Buffer.from(windowsRunnerScript, "utf16le").toString("base64"),
+      ]
+    : args,
+  {
+    detached: process.platform !== "win32",
+    env: {
+      ...process.env,
+      PM_MCP_HTTP_HOST: "127.0.0.1",
+      PM_MCP_HTTP_PORT: String(port),
+      PM_VERIFY_HTTP_CHILD_COMMAND_B64: Buffer.from(runnerCommand).toString(
+        "base64",
+      ),
+      PM_VERIFY_HTTP_CHILD_ARGS_JSON: JSON.stringify(args),
+    },
+    stdio: ["ignore", "ignore", "pipe"],
   },
-  stdio: ["ignore", "ignore", "pipe"],
-});
+);
 let childExit;
 let stderr = "";
 child.once("exit", (code, signal) => {
@@ -148,9 +171,32 @@ const waitForChildTreeExit = async () => {
 
 let stopPromise;
 const stopChild = () => {
-  if (!child.pid || !childTreeIsAlive()) return Promise.resolve();
+  if (!child.pid) return Promise.resolve();
   if (stopPromise) return stopPromise;
   stopPromise = (async () => {
+    if (process.platform === "win32") {
+      if (!childTreeIsAlive()) return;
+      await new Promise((resolve, reject) => {
+        const killer = spawn(
+          "taskkill.exe",
+          ["/PID", String(child.pid), "/T", "/F"],
+          { stdio: "ignore", windowsHide: true },
+        );
+        killer.once("error", reject);
+        killer.once("close", (code) => {
+          if (code === 0 || !childTreeIsAlive()) resolve();
+          else reject(new Error("taskkill.exe exited with code " + code));
+        });
+      });
+      await waitForChildTreeExit();
+      if (childTreeIsAlive()) {
+        throw new Error(
+          "Published HTTP process tree remained alive after taskkill.exe",
+        );
+      }
+      return;
+    }
+    if (!childTreeIsAlive()) return;
     signalChildTree("SIGTERM");
     await waitForChildTreeExit();
     if (childTreeIsAlive()) {
@@ -187,7 +233,16 @@ try {
       },
     },
   };
-  const deadline = Date.now() + ${MCP_HTTP_READY_TIMEOUT_MS};
+  const configuredReadyTimeout = Number(
+    process.env.PM_VERIFY_HTTP_READY_TIMEOUT_MS,
+  );
+  const readyTimeout =
+    Number.isFinite(configuredReadyTimeout) &&
+    configuredReadyTimeout >= 0 &&
+    configuredReadyTimeout <= ${MCP_HTTP_READY_TIMEOUT_MS}
+      ? configuredReadyTimeout
+      : ${MCP_HTTP_READY_TIMEOUT_MS};
+  const deadline = Date.now() + readyTimeout;
   let response;
   let payload;
   while (Date.now() < deadline) {
@@ -207,6 +262,7 @@ try {
           "Mcp-Method": "server/discover",
         },
         body: JSON.stringify(request),
+        signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
       });
       payload = await response.json();
       break;
@@ -486,15 +542,11 @@ function assertMcpDiscovery(stdout) {
     Object(discovery._meta)["io.modelcontextprotocol/serverInfo"],
   );
   const extensions = Object(Object(discovery.capabilities).extensions);
-  const skillsCapability = Object(
-    extensions["io.modelcontextprotocol/skills"],
-  );
+  const skillsCapability = Object(extensions["io.modelcontextprotocol/skills"]);
   const skills = Object(responses.get(2)?.result).skills;
   const toolsValue = Object(responses.get(3)?.result).tools;
   const tools = Array.isArray(toolsValue) ? toolsValue : [];
-  const contextTool = Object(
-    tools.find((tool) => tool.name === "pm_context"),
-  );
+  const contextTool = Object(tools.find((tool) => tool.name === "pm_context"));
   const contextToolUi = Object(Object(contextTool._meta).ui);
   const appContents = Object(responses.get(4)?.result).contents;
   const appContent = Object(Array.isArray(appContents) ? appContents[0] : null);

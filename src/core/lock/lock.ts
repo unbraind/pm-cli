@@ -22,6 +22,7 @@ interface LockInfo {
   id: string;
   pid: number;
   owner: string;
+  token?: string;
   created_at: string;
   ttl_seconds: number;
 }
@@ -39,8 +40,15 @@ interface StaleLockRemovalResult {
   staleRemovalCounted: boolean;
 }
 
-interface StaleCleanupGateOwner {
+/** Stable operating-system identity for a process when the host exposes one. */
+export interface ProcessIdentity {
+  /** Operating-system process identifier captured with the owner record. */
   pid: number;
+  /** Host process-start coordinate that distinguishes reuse of the same PID. */
+  process_start_identity?: string;
+}
+
+interface StaleCleanupGateOwner extends ProcessIdentity {
   token: string;
 }
 
@@ -64,6 +72,7 @@ function parseLockInfo(raw: string): LockReadResult {
   const id = candidate.id;
   const pid = candidate.pid;
   const owner = candidate.owner;
+  const token = candidate.token;
   const createdAt = candidate.created_at;
   const ttlSeconds = candidate.ttl_seconds;
   if (
@@ -71,6 +80,8 @@ function parseLockInfo(raw: string): LockReadResult {
     typeof pid !== "number" ||
     !Number.isFinite(pid) ||
     typeof owner !== "string" ||
+    (token !== undefined &&
+      (typeof token !== "string" || token.trim().length === 0)) ||
     typeof createdAt !== "string" ||
     typeof ttlSeconds !== "number" ||
     !Number.isFinite(ttlSeconds)
@@ -85,6 +96,7 @@ function parseLockInfo(raw: string): LockReadResult {
       id,
       pid,
       owner,
+      ...(typeof token === "string" ? { token } : {}),
       created_at: createdAt,
       ttl_seconds: ttlSeconds,
     },
@@ -92,13 +104,18 @@ function parseLockInfo(raw: string): LockReadResult {
   };
 }
 
-async function readLockInfo(lockPath: string): Promise<LockReadResult> {
+async function readLockInfo(
+  lockPath: string,
+  emitReadHook = true,
+): Promise<LockReadResult> {
   try {
     const raw = await fs.readFile(lockPath, "utf8");
-    await runActiveOnReadHooks({
-      path: lockPath,
-      scope: "project",
-    });
+    if (emitReadHook) {
+      await runActiveOnReadHooks({
+        path: lockPath,
+        scope: "project",
+      });
+    }
     return parseLockInfo(raw);
   } catch (error: unknown) {
     if (isFileMissingError(error)) {
@@ -138,11 +155,13 @@ function buildLockPayload(
   id: string,
   owner: string,
   ttlSeconds: number,
+  token: string = randomUUID(),
 ): LockInfo {
   return {
     id,
     pid: process.pid,
     owner,
+    token,
     created_at: nowIso(),
     ttl_seconds: ttlSeconds,
   };
@@ -153,12 +172,13 @@ async function createLockFile(
   id: string,
   owner: string,
   ttlSeconds: number,
+  token: string,
 ): Promise<void> {
   await fs.mkdir(path.dirname(lockPath), { recursive: true });
   const handle = await fs.open(lockPath, "wx");
   try {
     await handle.writeFile(
-      `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds), null, 2)}\n`,
+      `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
       "utf8",
     );
   } finally {
@@ -179,6 +199,56 @@ async function unlinkLockWithHook(
     // Lock cleanup is best-effort.
     return false;
   }
+}
+
+async function releaseOwnedLock(
+  lockPath: string,
+  id: string,
+  owner: string,
+  token: string,
+): Promise<void> {
+  const startedAtMs = Date.now();
+  let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
+  for (;;) {
+    const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
+    if (releaseCleanupGate !== null) {
+      try {
+        const current = await readLockInfo(lockPath, false);
+        if (isOwnedLock(current.info, id, owner, token)) {
+          await unlinkLockWithHook(lockPath, "lock:release");
+        }
+      } finally {
+        await releaseCleanupGate();
+      }
+      return;
+    }
+    const current = await readLockInfo(lockPath, false);
+    if (!isOwnedLock(current.info, id, owner, token)) {
+      return;
+    }
+    const elapsedMs = Date.now() - startedAtMs;
+    if (elapsedMs >= LOCK_RELEASE_GATE_WAIT_MS) {
+      return;
+    }
+    await sleepWithJitter(
+      Math.min(backoffMs, LOCK_RELEASE_GATE_WAIT_MS - elapsedMs),
+    );
+    backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
+  }
+}
+
+function isOwnedLock(
+  info: LockInfo | null,
+  id: string,
+  owner: string,
+  token: string,
+): boolean {
+  return (
+    info?.id === id &&
+    info.pid === process.pid &&
+    info.owner === owner &&
+    info.token === token
+  );
 }
 
 function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {
@@ -202,8 +272,9 @@ const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
 const STALE_CLEANUP_GATE_STALE_MS = 10_000;
-// Bounds PID-reuse false positives: a live recycled PID can delay cleanup, but not indefinitely.
-const STALE_CLEANUP_GATE_MAX_ACTIVE_MS = 5 * 60_000;
+const LOCK_RELEASE_GATE_WAIT_MS =
+  STALE_CLEANUP_GATE_STALE_MS + LOCK_WAIT_MAX_DELAY_MS;
+const STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS = 60 * 60_000;
 
 function parseNonNegativeIntegerWaitMs(
   value: string | number | undefined,
@@ -308,16 +379,26 @@ function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
   const candidate = parsed as Record<string, unknown>;
   const pid = candidate.pid;
   const token = candidate.token;
+  const processStartIdentity = candidate.process_start_identity;
   if (
     typeof pid !== "number" ||
     !Number.isInteger(pid) ||
     pid <= 0 ||
     typeof token !== "string" ||
-    token.length === 0
+    token.length === 0 ||
+    (processStartIdentity !== undefined &&
+      (typeof processStartIdentity !== "string" ||
+        !/^\d+$/u.test(processStartIdentity)))
   ) {
     return null;
   }
-  return { pid, token };
+  return {
+    pid,
+    token,
+    ...(typeof processStartIdentity === "string"
+      ? { process_start_identity: processStartIdentity }
+      : {}),
+  };
 }
 
 async function readStaleCleanupGateOwner(
@@ -336,6 +417,7 @@ async function readStaleCleanupGateOwner(
 }
 
 function isProcessAlive(pid: number): boolean {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
   try {
     process.kill(pid, 0);
     return true;
@@ -345,6 +427,62 @@ function isProcessAlive(pid: number): boolean {
     }
     return true;
   }
+}
+
+function parseLinuxProcessStartIdentity(raw: string): string | null {
+  const closeParenIndex = raw.lastIndexOf(")");
+  if (closeParenIndex < 0) return null;
+  const startTime = raw
+    .slice(closeParenIndex + 2)
+    .trim()
+    .split(/\s+/u)[19];
+  return startTime !== undefined && /^\d+$/u.test(startTime) ? startTime : null;
+}
+
+/** Read the host process-start coordinate used to distinguish PID reuse. */
+export async function readProcessStartIdentity(
+  pid: number,
+): Promise<string | null> {
+  try {
+    return parseLinuxProcessStartIdentity(
+      await fs.readFile(`/proc/${pid}/stat`, "utf8"),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** Capture the current PID plus a host process-start coordinate when available. */
+export async function captureProcessIdentity(
+  pid = process.pid,
+): Promise<ProcessIdentity> {
+  const processStartIdentity = await readProcessStartIdentity(pid);
+  return {
+    pid,
+    ...(processStartIdentity === null
+      ? {}
+      : { process_start_identity: processStartIdentity }),
+  };
+}
+
+/**
+ * Verify that a captured process owner still exists, with a bounded grace
+ * period when the host cannot expose a reusable-PID-safe start coordinate.
+ */
+export async function isProcessIdentityAlive(
+  identity: ProcessIdentity,
+  unverifiedAgeMs: number,
+  maxUnverifiedAgeMs: number,
+): Promise<boolean> {
+  if (!isProcessAlive(identity.pid)) return false;
+  const currentStartIdentity = await readProcessStartIdentity(identity.pid);
+  if (
+    identity.process_start_identity !== undefined &&
+    currentStartIdentity !== null
+  ) {
+    return currentStartIdentity === identity.process_start_identity;
+  }
+  return unverifiedAgeMs <= maxUnverifiedAgeMs;
 }
 
 async function removeStaleCleanupGateDirectory(
@@ -380,7 +518,10 @@ async function tryCreateStaleCleanupGate(
     }
     return null;
   }
-  const owner = { pid: process.pid, token: randomUUID() };
+  const owner: StaleCleanupGateOwner = {
+    ...(await captureProcessIdentity()),
+    token: randomUUID(),
+  };
   try {
     await fs.writeFile(
       path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE),
@@ -410,8 +551,11 @@ async function removeExpiredStaleCleanupGate(
   const owner = await readStaleCleanupGateOwner(gatePath);
   if (
     owner !== null &&
-    isProcessAlive(owner.pid) &&
-    gateAgeMs <= STALE_CLEANUP_GATE_MAX_ACTIVE_MS
+    (await isProcessIdentityAlive(
+      owner,
+      gateAgeMs,
+      STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS,
+    ))
   ) {
     return false;
   }
@@ -513,6 +657,8 @@ export const _testOnly = {
   isStaleLock,
   lockOwnerSuffix,
   resolveLockWaitMs,
+  parseLinuxProcessStartIdentity,
+  readProcessStartIdentity,
   acquireStaleCleanupGate,
   removeConfirmedStaleLock,
 };
@@ -554,12 +700,13 @@ export async function acquireLock(
   const startedAtMs = Date.now();
   let staleRemovals = 0;
   let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
+  const token = randomUUID();
 
   for (;;) {
     try {
-      await createLockFile(lockPath, id, owner, ttlSeconds);
+      await createLockFile(lockPath, id, owner, ttlSeconds, token);
       return async () => {
-        await unlinkLockWithHook(lockPath, "lock:release");
+        await releaseOwnedLock(lockPath, id, owner, token);
         await runActiveServiceOverride("lock_release", {
           pm_root: pmRoot,
           id,

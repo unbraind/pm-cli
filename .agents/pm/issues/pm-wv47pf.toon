@@ -2,22 +2,195 @@ id: pm-wv47pf
 title: "A read whose result was omitted for budget still records those items as served and included, so the usage-affinity signal learns from context the agent never received"
 description: "The usage-affinity signal treats a recorded serve as evidence that an item was placed in front of an agent, and that evidence feeds relevance scoring. Enforcement of intent budgets can now delete the whole payload at egress, and the ledger write happens independently of that decision, so the two disagree. Measured at HEAD with controls run back to back. pm next --for execute emitted zero rows to the caller because its budget is infeasible, and the ledger recorded 200 candidate rows with 35 of them marked included true. The control pm next emitted six rows and recorded 200 candidates with 21 marked included true. pm context --for orient emitted zero and recorded 315 rows with 77 included, against 53 included on the served control. The omitted response therefore recorded more inclusions than the response that actually served content, and nothing in the entry distinguishes the two cases. Three consequences follow. The affinity signal is trained on serves that never happened, which is a silent data-quality fault in the input to relevance scoring rather than a visible failure. The served-then-acted-on outcome that the feedback signal is built around becomes unmeasurable, because a non-action after a phantom serve is indistinguishable from a non-action after a real one. And the fault appears precisely when the agent got nothing, so the corpus of phantom serves grows fastest for exactly the intents that are most broken. This is the correctness of the recorded signal. The cost and scaling of the same ledger are tracked separately."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[2]: context-management,data-quality
 created_at: "2026-07-30T17:02:34.169Z"
-updated_at: "2026-07-31T23:07:59.633Z"
+updated_at: "2026-09-02T04:29:56.662Z"
+closed_at: "2026-09-02T04:29:56.057Z"
+completed_at: "2026-09-02T04:29:56.057Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A response that omits its result records no serve, or records one whose rows are all marked not included and whose entry states that the response was omitted; The ledger entry carries the egress decision, so a consumer can separate a delivered assembly from a suppressed one without re-deriving the budget; Inclusion is recorded from what the response actually emitted rather than from the packing decision that preceded enforcement, proved by a test that asserts recorded inclusions equal emitted rows for both a served and an omitted response; Any existing phantom serves are either identifiable by a recorded marker or the affinity reader documents that entries written before the fix cannot be trusted for inclusion; A negative control proves the assertion fails when inclusion is taken from the pre-enforcement packing set"
 parent: pm-4k6b
 risk: medium
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Context and next correlate serve and delivery receipts at the final egress boundary, record only emitted rows, preserve successful reads when feedback persistence fails, document direct SDK caller responsibility, and isolate command-state tests."
+expected_result: "Omitted or suppressed responses never train affinity as delivered context, direct SDK callers have an explicit finalization contract, and feedback failures do not replace successful reads."
+actual_result: "Exact delivered-row correlation is implemented across CLI, SDK, and MCP surfaces; both linked contracts passed, including 75 focused tests and the 8,289-test exact-coverage suite; isolated CLI acceptance passed."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
   pm-uwfs,discovered_from,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
   pm-bab3gb,related,"2026-07-30T17:18:11.070Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-4k6b,implements,"2026-09-01T13:03:30.154Z","harness:codex","cli:update:dep",detected
+comments[20]{created_at,author,text}:
   "2026-07-31T23:07:57.955Z","harness:codex","Scope disposition 2026-08-01: this tranche is implementing the upstream budget reachability, cursor-chain amortization, and egress receipt semantics first. The usage-ledger correction requires the SDK-owned context/next extraction still open on pm-z5pmf8 so it can consume the exact post-egress delivered rows without adding a second projection pass inside CLI commands. Leaving this distinct data-quality item open and unclaimed; no source edit is being made for it in this PR."
+  "2026-09-01T15:48:15.172Z","harness:codex","Delivery evidence 2026-09-01: context and next now attach an internal serving receipt, defer ledger finalization until the actual CLI/SDK/MCP projection is known, and write schema-v2 serve plus delivery records correlated by serve_id. Included rows are the exact IDs emitted after final egress; suppressed payloads record omitted=true and an empty delivered_item_ids set. Affinity consumes only correlated delivered IDs and excludes legacy/pre-delivery phantom inclusions. The final-output boundary is set before hooks and telemetry, and feedback persistence degrades to explicit warnings without replacing a successful read. Temporary-project acceptance produced 22 ledger events including 8 delivery records, all correlated, with a deliberately one-token omitted next response recording no delivered IDs. Exact coverage passed 596 files / 8260 tests at 100/100/100/100; strict static, SDK surface, package, npx/bunx, and installed npm/Bun acceptance all passed."
+  "2026-09-01T17:16:29.412Z","harness:codex","Review round evidence: affinity now requires a correlated v2 delivery and never trusts pre-egress delivered_item_ids; serving IDs normalize once; serve rows retain packed_item_ids only; quiet, host-suppressed, service-rendered, and custom-rendered output produce explicit zero-delivery omission receipts; object service projections retain the symbol receipt; delivery-write failure no longer prevents authoritative touches; evaluation fixtures now model serve-delivery-touch. Linked focused suite passed 72/72 and exact repo coverage passed 100/100/100/100."
+  "2026-09-01T18:28:29.996Z","harness:codex","Late-review hardening evidence: handled output_format services that return primitives or arrays now preserve the serving receipt on an explicit result_omitted carrier. Object service results retain their structured receipt path; strings, quiet mode, and custom renderers remain explicit omissions. Focused output suite passed 39/39."
+  "2026-09-01T21:41:04.913Z","harness:codex","Exact-head review implementation: delivery finalization now deduplicates serve_id under the ledger lock and the affinity fold preserves the first correlated delivery in legacy ledgers; repeated empty finalization cannot erase a prior positive delivery."
+  "2026-09-01T22:27:17.924Z","harness:codex","Terminal exact-head evidence: repeated SDK delivery finalization in a fresh temporary acceptance root persisted exactly one delivery for the served item. The repo-wide coverage gate passed at 100/100/100/100 (61,007 statements and 46,099 branches), and pnpm quality:static passed in full. Delivery append deduplicates serve_id while holding the ledger lock, and affinity retains the first correlated delivery for legacy duplicate ledgers so a retry cannot erase earlier positive feedback."
+  "2026-09-01T23:05:05.579Z","harness:codex","Final review verification: the exact pre-egress negative control now asserts the full packed set, the focused suite passed, and repo-wide exact coverage passed at 100/100/100/100. The first linked quality:static attempt failed only at the expected terminal-defect gate while this issue and pm-07pt16 were reopened; closing both before the terminal rerun."
+  "2026-09-02T00:10:59.497Z","harness:codex","Exact-head implementation: next-surface delivery extraction now includes recommended, ready, decision_needed, and blocked queues, deduplicated through the existing served-subset validation. CLI and PmClient integration assertions cover all emitted queues and explicitly require a non-empty positive delivery. The canonical five-file egress suite passes 75/75, including complete-queue unit correlation and omitted-output controls."
+  "2026-09-02T00:17:39.121Z","harness:codex","Shared post-implementation evidence: commit 7d7d5fe24 contains complete next-queue delivery extraction and non-vacuity assertions; the canonical pm-07pt16 linked coverage execution run after that commit passed all 8,260 tests at exact 100/100/100/100 (61,013 statements, 46,117 branches, 12,701 functions, 58,731 lines)."
+  "2026-09-02T00:25:01.952Z","harness:codex","Terminal static evidence: pnpm quality:static passed against implementation commit 7d7d5fe24 after this issue and pm-07pt16 were closed. The full repository assurance, SDK/package parity, graph, duplicate, contract, and record-integrity chain is green."
+  "2026-09-02T00:41:00.929Z","harness:codex","Fresh-review implementation: the next serving receipt now carries every item-bearing queue actually assembled for egress, including decision_needed, blocked, and held_by_others, while preserving ready scorer propensity rows. Final delivery extraction covers the same queues. Isolated CLI acceptance now creates and requires all three non-ready queue classes, so the former validation failure is reproduced and prevented; the two-file focused run passed 26/26."
+  "2026-09-02T00:48:43.749Z","harness:codex","Coverage negative-control evidence: the first post-648dfbaa3 repository run passed all 8,260 tests but correctly failed the exact gate at 46,120/46,121 branches, identifying a defensive duplicate branch that cannot occur because ready, decision, blocked, and held queues are mutually exclusive by construction. Removed that artificial branch; the canonical 75-test egress suite passes again before the final coverage rerun."
+  "2026-09-02T00:55:08.673Z","harness:codex","Final post-implementation coverage evidence: after commits 648dfbaa3 and 541c8818e, the item-owned canonical coverage command passed all 8,260 tests at exactly 61,016/61,016 statements, 46,119/46,119 branches, 12,701/12,701 functions, and 58,733/58,733 lines. This item now contains the matching passing test_run demanded by review."
+  "2026-09-02T01:02:10.472Z","harness:codex","Terminal static evidence: pnpm quality:static passed in full at implementation tree 541c8818e. ESLint, both zero-clone scans, build/contracts, repository assurance, SDK/package parity, replication, grammar/refusal/token gates, MCP inventory, graph composition, tracker context, and record integrity all passed."
+  "2026-09-02T01:20:59.620Z","harness:codex","Investigation note: exact-head review identified possible packed-item overstatement for non-packed next queues, incomplete delivered IDs for optional context sections, and a nullable receipt test access. Verifying each against full source before edits."
+  "2026-09-02T01:47:31.769Z","harness:codex","Exact-head review correction evidence: next serving rows now distinguish packer inclusion from queue-only delivery, context finalization includes recently_created and unparented IDs, and the nullable receipt negative control is type-safe. The real CLI test proves decision, blocked, and held IDs are delivered but absent from packed_item_ids. The item-owned egress suite passed 75/75 and the item-owned repository gate passed all 8,263 tests at exact 100/100/100/100."
+  "2026-09-02T02:02:33.681Z","harness:codex","Final exact-head static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete repository chain after the review fixes, including ESLint, both zero-clone jscpd scans, build and generated-contract checks, repository-static-quality, package boundary and SDK parity, CLI/MCP surface and grammar gates, refusal closure, deterministic 21-step agent-task token replay, MCP deprecation inventory, tracker-context-quality, gate registry, public SDK surface, SDK entrypoint and CLI transport costs, graph-composition, and record-integrity."
+  "2026-09-02T02:38:57.092Z","harness:codex","Exact-head Cubic correction evidence: the CLI egress acceptance now asserts each decision, blocked, and held ID is individually absent from packed_item_ids while present in final delivered IDs. The focused regression set passed 89/89 and the final repository gate passed all 8,285 tests at exact 100/100/100/100."
+  "2026-09-02T03:12:26.020Z","harness:codex","Investigation note: exact-head CodeRabbit identified a misleading direct SDK delivery-boundary statement and missing active-command-result test cleanup. Verifying both against full source before edits."
+  "2026-09-02T04:29:54.363Z","harness:codex","Exact-head terminal evidence: documentation now states that runContext/runNext require direct SDK callers to record the delivery boundary explicitly, and active-command test state is reset after every recovery test. CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed in full. The item-owned test run passed both contracts: all 8,289 tests at exact 100/100/100/100 and the canonical 75-test SDK/CLI post-egress delivery correlation suite. The isolated temporary-directory acceptance proved init, substantive comment, context emission, structured close, and terminal reread for pm-w3wj."
+learnings[1]{created_at,author,text}:
+  "2026-09-01T15:48:17.781Z","harness:codex","Usage feedback is valid only at final egress: preserve the pre-egress serve for correlation, but train affinity exclusively from the post-projection delivered ID set and represent omission explicitly."
+files[17]{path,scope,note}:
+  docs/SDK.md,project,Final-egress feedback SDK contract
+  scripts/release/context-eval-gate.mjs,project,Serve-delivery-touch evaluation ordering
+  sdk/public-surface.json,project,Post-egress context usage delivery receipt implementation
+  src/cli/after-command-context-usage.ts,project,Post-egress context usage delivery receipt implementation
+  src/core/output/output.ts,project,Post-egress context usage delivery receipt implementation
+  src/sdk/context-intent-contracts.ts,project,Post-egress context usage delivery receipt implementation
+  src/sdk/context-usage.ts,project,Post-egress context usage delivery receipt implementation
+  src/sdk/context/usage-egress.ts,project,Post-projection SDK and MCP feedback degradation boundary
+  src/sdk/index.ts,project,Post-egress context usage delivery receipt implementation
+  src/sdk/query/context.ts,project,Post-egress context usage delivery receipt implementation
+  src/sdk/query/next.ts,project,Post-egress context usage delivery receipt implementation
+  src/sdk/runtime.ts,project,Post-egress context usage delivery receipt implementation
+  tests/integration/context-usage-egress.integration.spec.ts,project,CLI and PmClient exact delivered-row acceptance coverage
+  tests/unit/cli/recovery-context-usage.spec.ts,project,Touch preservation after feedback failure
+  tests/unit/commands/context-relevance-command.spec.ts,project,SDK host delivery finalization feedback coverage
+  tests/unit/core/output/output.spec.ts,project,Quiet suppressed and custom-renderer egress coverage
+  tests/unit/sdk/context-packing-usage.spec.ts,project,Serving delivery correlation validation and affinity coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-01T13:29:42.961Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Repo-wide exact coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,project,300,"harness:codex","2026-09-01T17:14:49.473Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Exact post-egress delivery correlation and degradation regression suite
+test_runs[10]:
+  - run_id: test-local-mtixh4rs-ojr1r0
+    kind: test
+    status: passed
+    started_at: "2026-09-01T17:15:05.217Z"
+    finished_at: "2026-09-01T17:15:15.688Z"
+    recorded_at: "2026-09-01T17:15:15.688Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtj9ngrz-5m290n
+    kind: test
+    status: passed
+    started_at: "2026-09-01T22:50:02.508Z"
+    finished_at: "2026-09-01T22:56:06.575Z"
+    recorded_at: "2026-09-01T22:56:06.575Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjcbfyh-73wpcq
+    kind: test
+    status: passed
+    started_at: "2026-09-02T00:10:33.609Z"
+    finished_at: "2026-09-02T00:10:44.489Z"
+    recorded_at: "2026-09-02T00:10:44.489Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjdez0y-bsueg6
+    kind: test
+    status: passed
+    started_at: "2026-09-02T00:41:17.559Z"
+    finished_at: "2026-09-02T00:41:28.786Z"
+    recorded_at: "2026-09-02T00:41:28.786Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjdn9ea-rqg4iy
+    kind: test
+    status: failed
+    started_at: "2026-09-02T00:42:05.711Z"
+    finished_at: "2026-09-02T00:47:55.473Z"
+    recorded_at: "2026-09-02T00:47:55.473Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjdo5gx-f85mgj
+    kind: test
+    status: passed
+    started_at: "2026-09-02T00:48:25.847Z"
+    finished_at: "2026-09-02T00:48:37.040Z"
+    recorded_at: "2026-09-02T00:48:37.040Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjdw40e-7rfhfv
+    kind: test
+    status: passed
+    started_at: "2026-09-02T00:48:52.511Z"
+    finished_at: "2026-09-02T00:54:48.397Z"
+    recorded_at: "2026-09-02T00:54:48.397Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjfqvts-o5b27i
+    kind: test
+    status: passed
+    started_at: "2026-09-02T01:40:42.359Z"
+    finished_at: "2026-09-02T01:46:43.743Z"
+    recorded_at: "2026-09-02T01:46:43.743Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjfrh5b-ovhwnf
+    kind: test
+    status: passed
+    started_at: "2026-09-02T01:47:00.263Z"
+    finished_at: "2026-09-02T01:47:11.375Z"
+    recorded_at: "2026-09-02T01:47:11.375Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtjlkakt-zz9pg1
+    kind: test
+    status: passed
+    started_at: "2026-09-02T04:23:47.647Z"
+    finished_at: "2026-09-02T04:29:33.964Z"
+    recorded_at: "2026-09-02T04:29:33.964Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Exact emitted-row usage feedback contract
+  docs/READ_OUTPUT_CONTRACTS.md,project,Exact emitted-row usage feedback contract
+  docs/SDK_CONTEXT.md,project,Exact emitted-row usage feedback contract
+close_reason: Delivered exact post-egress context usage feedback and direct-caller contract clarity
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-wv47pf
+  gate_id: context-usage-final-egress-delivery-correlation
+  negative_control: Force context or next through an infeasible one-token egress budget and assert the correlated delivery record is omitted with zero delivered item IDs even when the pre-egress pack contained candidates.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/integration/context-usage-egress.integration.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

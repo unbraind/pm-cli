@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { graphOptionsFromFlat } from "../../../src/sdk/runtime-input.js";
+import {
+  graphOptionsFromFlat,
+  shouldInvalidateWorkspaceContractsCacheAfterAction,
+} from "../../../src/sdk/runtime-input.js";
 
 describe("graphOptionsFromFlat", () => {
   it("passes scalar strings, arrays, integer bounds, and summary through", () => {
@@ -75,5 +78,14 @@ describe("graphOptionsFromFlat", () => {
     expect(
       graphOptionsFromFlat({ exemptIsolate: ["pm-a", "", 7, "pm-b"] }).exemptIsolate,
     ).toEqual(["pm-a", "7", "pm-b"]);
+  });
+
+  it("preserves workspace contracts after read-only file lookup", () => {
+    expect(shouldInvalidateWorkspaceContractsCacheAfterAction("files-lookup")).toBe(
+      false,
+    );
+    expect(shouldInvalidateWorkspaceContractsCacheAfterAction("package install")).toBe(
+      true,
+    );
   });
 });

@@ -613,6 +613,7 @@ export * from "./environment/source-context.js";
 export * from "./environment/host-environment-errors.js";
 export * from "./cli-contracts/command-exit-contracts.js";
 export * from "./context-relevance.js";
+export * from "./context/recency.js";
 export * from "./context-intent-contracts.js";
 export * from "./context-intent-runtime.js";
 export * from "./context-signal-store.js";
@@ -626,6 +627,13 @@ export * from "./read-output-session.js";
 export * from "./output-token-accounting.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
+export {
+  classifyHistoryEvent,
+  HISTORY_EVENT_CLASSIFICATION_VERSION,
+  MAINTENANCE_HISTORY_OPERATIONS,
+  SUBSTANTIVE_HISTORY_OPERATIONS,
+  type HistoryEventClass,
+} from "../core/history/event-classification.js";
 export * from "./dependency-provenance.js";
 export * from "./duplicates.js";
 export * from "./lifecycle/reopen.js";

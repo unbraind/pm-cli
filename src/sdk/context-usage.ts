@@ -28,15 +28,43 @@ export interface ContextUsageServingRow {
   included: boolean;
 }
 
+/** Correlation receipt joining a pre-egress serve to its final delivery. */
+export interface ContextUsageServingReceipt {
+  /** Versioned immutable serve identifier. */
+  serve_id: string;
+  /** Caller whose feedback model owns the event. */
+  author: string;
+  /** Read surface that assembled the candidates. */
+  surface: ContextRelevanceSurface;
+  /** Propensity-complete ranked rows assembled before egress. */
+  rows: readonly ContextUsageServingRow[];
+}
+
 /** Append-only serving or subsequent-touch event. */
 export type ContextUsageEvent =
   | {
       kind: "serve";
+      schema_version?: 2;
+      serve_id?: string;
       at: string;
       author: string;
       surface: ContextRelevanceSurface;
       profile: string;
       rows: ContextUsageServingRow[];
+      result_omitted?: boolean;
+      packed_item_ids?: string[];
+      /** Legacy pre-egress field ignored by the v2 affinity fold. */
+      delivered_item_ids?: string[];
+    }
+  | {
+      kind: "delivery";
+      schema_version: 2;
+      serve_id: string;
+      at: string;
+      author: string;
+      surface: ContextRelevanceSurface;
+      result_omitted: boolean;
+      delivered_item_ids: string[];
     }
   | {
       kind: "touch";
@@ -68,6 +96,8 @@ export interface ContextUsageAffinity {
   positive_judgments: number;
   /** Number of retained serving events inspected. */
   serving_events: number;
+  /** Legacy serving events ignored because their inclusion cannot be trusted. */
+  untrusted_serving_events: number;
 }
 
 const DEFAULT_MAX_EVENTS = 2_048;
@@ -75,6 +105,200 @@ const DEFAULT_RETENTION_DAYS = 30;
 const DAY_MS = 86_400_000;
 const DEFAULT_COMPACTION_BYTES = 262_144;
 const CONTEXT_USAGE_LOCK_ID = "context-usage-ledger";
+const CONTEXT_USAGE_SERVING_RECEIPT = Symbol.for(
+  "@unbrained/pm-cli/context-usage-serving-receipt",
+);
+
+type ContextUsageReceiptCarrier = {
+  [CONTEXT_USAGE_SERVING_RECEIPT]?: ContextUsageServingReceipt;
+};
+
+function asObjectRecord(value: unknown): Record<PropertyKey, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<PropertyKey, unknown>)
+    : null;
+}
+
+/** Attach a JSON-invisible serving receipt to a result for later egress. */
+export function attachContextUsageServingReceipt(
+  result: unknown,
+  receipt: ContextUsageServingReceipt | null,
+): void {
+  const record = asObjectRecord(result) as ContextUsageReceiptCarrier | null;
+  if (record !== null && receipt !== null) {
+    record[CONTEXT_USAGE_SERVING_RECEIPT] = receipt;
+  }
+}
+
+/** Copy an attached serving receipt across a result projection boundary. */
+export function propagateContextUsageServingReceipt(
+  source: unknown,
+  target: unknown,
+): void {
+  const sourceRecord = asObjectRecord(
+    source,
+  ) as ContextUsageReceiptCarrier | null;
+  const targetRecord = asObjectRecord(
+    target,
+  ) as ContextUsageReceiptCarrier | null;
+  const receipt = sourceRecord?.[CONTEXT_USAGE_SERVING_RECEIPT];
+  if (targetRecord !== null && receipt !== undefined) {
+    targetRecord[CONTEXT_USAGE_SERVING_RECEIPT] = receipt;
+  }
+}
+
+function receiptFromResult(result: unknown): ContextUsageServingReceipt | null {
+  return (
+    (asObjectRecord(result) as ContextUsageReceiptCarrier | null)?.[
+      CONTEXT_USAGE_SERVING_RECEIPT
+    ] ?? null
+  );
+}
+
+function resultReceiptSaysOmitted(result: unknown): boolean {
+  const record = asObjectRecord(result);
+  for (const key of ["read_output", "context_intent"]) {
+    const receipt = asObjectRecord(record?.[key]);
+    if (receipt?.result_omitted === true) return true;
+  }
+  return false;
+}
+
+function addContextUsageId(ids: Set<string>, value: unknown): void {
+  if (typeof value === "string" && value.trim().length > 0) {
+    ids.add(value.trim());
+  }
+}
+
+function addContextUsageDirectRows(ids: Set<string>, value: unknown): void {
+  if (!Array.isArray(value)) return;
+  for (const row of value) {
+    addContextUsageId(ids, asObjectRecord(row)?.id);
+  }
+}
+
+function addContextUsageIdList(ids: Set<string>, value: unknown): void {
+  if (!Array.isArray(value)) return;
+  for (const itemId of value) addContextUsageId(ids, itemId);
+}
+
+function collectNextResultItemIds(
+  record: Record<PropertyKey, unknown>,
+  ids: Set<string>,
+): void {
+  const rows = [
+    ...(asObjectRecord(record.recommended) === null
+      ? []
+      : [record.recommended]),
+    ...(Array.isArray(record.ready) ? record.ready : []),
+    ...(Array.isArray(record.decision_needed) ? record.decision_needed : []),
+    ...(Array.isArray(record.blocked) ? record.blocked : []),
+    ...(Array.isArray(record.held_by_others) ? record.held_by_others : []),
+  ];
+  for (const value of rows) {
+    const row = asObjectRecord(value);
+    addContextUsageId(ids, row?.id);
+    for (const blocker of Array.isArray(row?.blockers) ? row.blockers : []) {
+      addContextUsageId(ids, asObjectRecord(blocker)?.id);
+    }
+    for (const unblockedId of Array.isArray(row?.unblocks)
+      ? row.unblocks
+      : []) {
+      addContextUsageId(ids, unblockedId);
+    }
+  }
+}
+
+function collectContextResultItemIds(
+  record: Record<PropertyKey, unknown>,
+  ids: Set<string>,
+): void {
+  for (const key of [
+    "high_level",
+    "low_level",
+    "blocked_fallback",
+    "recently_created",
+    "unparented",
+    "activity",
+    "progress",
+    "blockers",
+    "staleness",
+  ]) {
+    addContextUsageDirectRows(ids, record[key]);
+  }
+  for (const value of Array.isArray(record.blockers)
+    ? record.blockers
+    : []) {
+    addContextUsageId(ids, asObjectRecord(value)?.blocked_by);
+  }
+  collectContextNestedItemIds(record, ids);
+}
+
+function collectContextNestedItemIds(
+  record: Record<PropertyKey, unknown>,
+  ids: Set<string>,
+): void {
+  for (const value of Array.isArray(record.hierarchy)
+    ? record.hierarchy
+    : []) {
+    const node = asObjectRecord(value);
+    addContextUsageId(ids, node?.id);
+    addContextUsageDirectRows(ids, node?.children);
+  }
+  for (const key of ["files", "workload"]) {
+    for (const value of Array.isArray(record[key]) ? record[key] : []) {
+      addContextUsageIdList(ids, asObjectRecord(value)?.items);
+    }
+  }
+  const agenda = asObjectRecord(record.agenda);
+  for (const value of Array.isArray(agenda?.events) ? agenda.events : []) {
+    addContextUsageId(ids, asObjectRecord(value)?.item_id);
+  }
+  const tests = asObjectRecord(record.tests);
+  addContextUsageIdList(ids, tests?.items_failing);
+}
+
+/**
+ * Collect every item identifier visible in a final context or next result.
+ * The traversal is shape-aware so summary counters and unrelated identifier
+ * fields cannot enter the privacy-minimal usage ledger.
+ */
+export function collectContextUsageDeliveredItemIds(
+  result: unknown,
+  surface: ContextRelevanceSurface,
+): string[] {
+  const record = asObjectRecord(result);
+  if (record === null || resultReceiptSaysOmitted(result)) return [];
+  const ids = new Set<string>();
+  if (surface === "next") {
+    collectNextResultItemIds(record, ids);
+  } else {
+    collectContextResultItemIds(record, ids);
+  }
+  return [...ids];
+}
+
+/** Resolve and append one post-egress decision carried by a context result. */
+export async function finalizeContextUsageDelivery(options: {
+  /** Tracker root owning the derived ledger. */
+  pmRoot: string;
+  /** Final projected response returned or rendered to the caller. */
+  result: unknown;
+}): Promise<boolean> {
+  const receipt = receiptFromResult(options.result);
+  if (receipt === null) return false;
+  const resultOmitted = resultReceiptSaysOmitted(options.result);
+  await recordContextUsageDelivery({
+    pmRoot: options.pmRoot,
+    receipt,
+    deliveredItemIds: collectContextUsageDeliveredItemIds(
+      options.result,
+      receipt.surface,
+    ),
+    resultOmitted,
+  });
+  return true;
+}
 
 /** Named validation failure emitted by context-usage SDK inputs. */
 export class ContextUsageValidationError extends TypeError {
@@ -134,6 +358,7 @@ async function readEvents(
 async function appendEvents(
   options: ContextUsageLedgerOptions,
   events: readonly ContextUsageEvent[],
+  deliveryServeId?: string,
 ): Promise<void> {
   const maxEvents = options.maxEvents ?? DEFAULT_MAX_EVENTS;
   const retentionDays = options.retentionDays ?? DEFAULT_RETENTION_DAYS;
@@ -160,6 +385,15 @@ async function appendEvents(
   );
   try {
     await mkdir(runtimeDirectory, { recursive: true });
+    if (
+      deliveryServeId !== undefined &&
+      (await readEvents(options)).some(
+        (event) =>
+          event.kind === "delivery" && event.serve_id === deliveryServeId,
+      )
+    ) {
+      return;
+    }
     await appendFile(
       target,
       events.map((event) => `${JSON.stringify(event)}\n`).join(""),
@@ -197,12 +431,14 @@ export async function recordContextUsageServing(
     profile: string;
     rows: ContextUsageServingRow[];
   },
-): Promise<void> {
+): Promise<ContextUsageServingReceipt | null> {
   if (
-    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
-    options.enabled === false
+    [
+      process.env.PM_CONTEXT_USAGE_DISABLED === "1",
+      options.enabled === false,
+    ].includes(true)
   )
-    return;
+    return null;
   if (
     !options.author.trim() ||
     options.rows.some(
@@ -213,14 +449,81 @@ export async function recordContextUsageServing(
       "Context usage serving requires an author and valid ranked rows",
     );
   }
+  const normalizedRows = options.rows.map((row) => ({
+    ...row,
+    id: row.id.trim(),
+  }));
+  if (
+    new Set(normalizedRows.map((row) => row.id)).size !== normalizedRows.length
+  ) {
+    throw new ContextUsageValidationError(
+      "Context usage serving requires unique normalized row ids",
+    );
+  }
+  const receipt: ContextUsageServingReceipt = {
+    serve_id: randomUUID(),
+    author: options.author.trim(),
+    surface: options.surface,
+    rows: normalizedRows,
+  };
   await appendEvent(options, {
     kind: "serve",
+    schema_version: 2,
+    serve_id: receipt.serve_id,
     at: resolveNow(options).iso,
     author: options.author.trim(),
     surface: options.surface,
     profile: options.profile.trim() || "balanced",
-    rows: options.rows,
+    rows: receipt.rows.map((row) => ({ ...row })),
+    result_omitted: false,
+    packed_item_ids: receipt.rows
+      .filter((row) => row.included)
+      .map((row) => row.id),
   });
+  return receipt;
+}
+
+/** Append the exact post-egress delivery decision for one serving receipt. */
+export async function recordContextUsageDelivery(
+  options: ContextUsageLedgerOptions & {
+    /** Correlation receipt returned by {@link recordContextUsageServing}. */
+    receipt: ContextUsageServingReceipt | null;
+    /** Item ids present in the final response payload. */
+    deliveredItemIds: readonly string[];
+    /** Whether the result was suppressed by the final output budget. */
+    resultOmitted: boolean;
+  },
+): Promise<void> {
+  if (
+    options.receipt === null ||
+    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
+    options.enabled === false
+  ) {
+    return;
+  }
+  const rankedIds = new Set(options.receipt.rows.map((row) => row.id));
+  const deliveredItemIds = [
+    ...new Set(options.deliveredItemIds.map((id) => id.trim())),
+  ];
+  if (
+    deliveredItemIds.some((id) => id.length === 0 || !rankedIds.has(id)) ||
+    (options.resultOmitted && deliveredItemIds.length > 0)
+  ) {
+    throw new ContextUsageValidationError(
+      "Context usage delivery requires emitted ranked ids and zero ids for an omitted result",
+    );
+  }
+  const delivery: ContextUsageEvent = {
+    kind: "delivery",
+    schema_version: 2,
+    serve_id: options.receipt.serve_id,
+    at: resolveNow(options).iso,
+    author: options.receipt.author,
+    surface: options.receipt.surface,
+    result_omitted: options.resultOmitted,
+    delivered_item_ids: deliveredItemIds,
+  };
+  await appendEvents(options, [delivery], delivery.serve_id);
 }
 
 /** Records one subsequent item read or mutation outcome. */
@@ -324,6 +627,27 @@ function findTouchTimeInHorizon(
   )?.time;
 }
 
+function firstDeliveriesByServeId(
+  events: readonly ContextUsageEvent[],
+  author: string,
+): Map<string, Extract<ContextUsageEvent, { kind: "delivery" }>> {
+  const deliveries = new Map<
+    string,
+    Extract<ContextUsageEvent, { kind: "delivery" }>
+  >();
+  for (const event of events) {
+    if (
+      event.kind === "delivery" &&
+      event.schema_version === 2 &&
+      event.author === author &&
+      !deliveries.has(event.serve_id)
+    ) {
+      deliveries.set(event.serve_id, event);
+    }
+  }
+  return deliveries;
+}
+
 /**
  * Derives decayed served-then-touched affinity. A small exploration floor keeps
  * ignored and unseen items eligible, preventing a popularity feedback lock-in.
@@ -338,11 +662,16 @@ export async function readContextUsageAffinity(
     process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
     options.enabled === false
   )
-    return { affinity: {}, positive_judgments: 0, serving_events: 0 };
+    return {
+      affinity: {},
+      positive_judgments: 0,
+      serving_events: 0,
+      untrusted_serving_events: 0,
+    };
   const events = await readEvents(options);
   const now = resolveNow(options).ms;
   const horizonMs = (options.horizonHours ?? 24) * 3_600_000;
-  if (!Number.isFinite(horizonMs) || horizonMs <= 0)
+  if (![Number.isFinite(horizonMs), horizonMs > 0].every(Boolean))
     throw new ContextUsageValidationError(
       "Context usage horizonHours must be positive",
     );
@@ -350,40 +679,57 @@ export async function readContextUsageAffinity(
   const touches = events
     .filter(
       (event): event is Extract<ContextUsageEvent, { kind: "touch" }> =>
-        event.kind === "touch" && event.author === author,
+        event.kind === "touch",
     )
+    .filter((event) => event.author === author)
     .map((entry) => ({ entry, time: Date.parse(entry.at) }));
   const scores = new Map<string, number>();
   let servingEvents = 0;
+  let untrustedServingEvents = 0;
   let positiveJudgments = 0;
-  for (const event of events) {
-    if (event.kind !== "serve" || event.author !== author) continue;
-    servingEvents += 1;
-    const servedAt = Date.parse(event.at);
-    for (const row of event.rows) {
-      if (!row.included) continue;
-      const touchTime = findTouchTimeInHorizon(
-        touches,
-        row.id,
-        servedAt,
-        horizonMs,
-      );
-      if (touchTime === undefined) continue;
-      positiveJudgments += 1;
-      const ageDays = Math.max(0, (now - touchTime) / DAY_MS);
-      scores.set(row.id, (scores.get(row.id) ?? 0) + Math.exp(-ageDays / 14));
-    }
-  }
+  const deliveries = firstDeliveriesByServeId(events, author);
+  events
+    .filter(
+      (event): event is Extract<ContextUsageEvent, { kind: "serve" }> =>
+        event.kind === "serve",
+    )
+    .filter((event) => event.author === author)
+    .forEach((event) => {
+      if (
+        ![event.schema_version === 2, Boolean(event.serve_id)].every(Boolean)
+      ) {
+        untrustedServingEvents += 1;
+        return;
+      }
+      servingEvents += 1;
+      const servedAt = Date.parse(event.at);
+      const delivery = deliveries.get(event.serve_id as string);
+      const deliveredIds = new Set(delivery?.delivered_item_ids ?? []);
+      for (const row of event.rows) {
+        if (!deliveredIds.has(row.id)) continue;
+        const touchTime = findTouchTimeInHorizon(
+          touches,
+          row.id,
+          servedAt,
+          horizonMs,
+        );
+        if (touchTime === undefined) continue;
+        positiveJudgments += 1;
+        const ageDays = Math.max(0, (now - touchTime) / DAY_MS);
+        scores.set(row.id, (scores.get(row.id) ?? 0) + Math.exp(-ageDays / 14));
+      }
+    });
   const maximum = Math.max(0, ...scores.values());
   const affinity = Object.fromEntries(
     [...scores.entries()].map(([id, score]) => [
       id,
-      0.05 + 0.95 * (maximum > 0 ? score / maximum : 0),
+      maximum === 0 ? 0.05 : 0.05 + (0.95 * score) / maximum,
     ]),
   );
   return {
     affinity,
     positive_judgments: positiveJudgments,
     serving_events: servingEvents,
+    untrusted_serving_events: untrustedServingEvents,
   };
 }

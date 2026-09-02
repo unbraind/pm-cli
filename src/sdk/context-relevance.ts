@@ -11,8 +11,13 @@ import {
   normalizeStatusInput,
 } from "../core/item/status.js";
 import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
-import { compareTimestampStrings, resolveIsoOrRelative } from "../core/shared/time.js";
+import { compareTimestampStrings } from "../core/shared/time.js";
 import type { ItemMetadata } from "../types/index.js";
+import type { HistoryEventClass } from "../core/history/event-classification.js";
+import {
+  canonicalizeContextRecencyCoordinate,
+  CONTEXT_RECENCY_EPOCH,
+} from "./context/recency.js";
 
 /** Canonical signal keys understood by the built-in relevance model. */
 export const CONTEXT_RELEVANCE_SIGNAL_NAMES = [
@@ -39,10 +44,31 @@ export type ContextRelevanceSignals = Partial<
   Record<Exclude<ContextRelevanceSignalName, "structural">, number>
 >;
 
+/** Authoritative coordinate and fallback that produced an item's recency. */
+export interface ContextRecencyEvidence {
+  /** Source selected by the canonical fallback ladder. */
+  source: "substantive_history" | "release_cohort" | "created_at";
+  /** ISO coordinate used for deterministic recency ordering. */
+  coordinate: string;
+  /** Immutable operation selected from history when source is substantive_history. */
+  history_op?: string;
+  /** Declared class selected from history when source is substantive_history. */
+  event_class?: HistoryEventClass;
+}
+
+/** Per-signal provenance exposed by explained relevance results. */
+export interface ContextSignalProvenance {
+  /** Evidence for the canonical temporal component. */
+  recency: ContextRecencyEvidence;
+}
+
 const NO_CONTEXT_AUTHOR = Symbol("no-context-author");
 const NO_ITEM_ASSIGNEE = Symbol("no-item-assignee");
 
-function normalizeContextActor(value: unknown, missingValue: symbol): string | symbol {
+function normalizeContextActor(
+  value: unknown,
+  missingValue: symbol,
+): string | symbol {
   if (typeof value !== "string") return missingValue;
   const normalized = value.trim().toLowerCase();
   return normalized.length > 0 ? normalized : missingValue;
@@ -56,13 +82,16 @@ export interface ContextRelevanceCandidate<TItem> {
   item: TItem;
   /** Value that configures or reports signals for this contract. */
   signals?: ContextRelevanceSignals;
+  /** Authoritative source details for explainable derived signals. */
+  signal_provenance?: ContextSignalProvenance;
 }
 
 /** Item candidate whose built-in metadata derivation always supplies signals. */
-export interface ItemContextRelevanceCandidate
-  extends ContextRelevanceCandidate<ItemMetadata> {
+export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> {
   /** Complete built-in derivation result, with unavailable signals omitted by value. */
   signals: ContextRelevanceSignals;
+  /** Built-in recency derivation always discloses its source. */
+  signal_provenance: ContextSignalProvenance;
 }
 
 /** Inputs that make item-signal derivation deterministic and host-configurable. */
@@ -87,22 +116,96 @@ export interface BuildItemContextRelevanceCandidatesOptions {
   knowledgeDensity?: Readonly<Record<string, number>>;
   /** Optional history-derived author affinity by item id. */
   authorAffinity?: Readonly<Record<string, number>>;
+  /** Latest substantive history evidence keyed by item id. */
+  recencyEvidence?: Readonly<Record<string, ContextRecencyEvidence>>;
+}
+
+function releaseCohortCoordinate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = /^v?(\d{4})\.(\d{1,2})\.(\d{1,2})(?:$|[-+])/u.exec(
+    value.trim(),
+  );
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? date.toISOString()
+    : undefined;
+}
+
+function fallbackRecencyEvidence(item: ItemMetadata): ContextRecencyEvidence {
+  const releaseCoordinate = releaseCohortCoordinate(item.release);
+  if (releaseCoordinate !== undefined) {
+    return { source: "release_cohort", coordinate: releaseCoordinate };
+  }
+  return {
+    source: "created_at",
+    coordinate:
+      canonicalizeContextRecencyCoordinate(item.created_at) ??
+      CONTEXT_RECENCY_EPOCH,
+  };
+}
+
+function canonicalizeRecencyEvidence(
+  evidence: ContextRecencyEvidence,
+): ContextRecencyEvidence {
+  if (
+    !["substantive_history", "release_cohort", "created_at"].includes(
+      evidence.source,
+    ) ||
+    (evidence.source === "substantive_history"
+      ? (evidence.history_op !== undefined &&
+          typeof evidence.history_op !== "string") ||
+        (evidence.event_class !== undefined &&
+          evidence.event_class !== "substantive")
+      : evidence.history_op !== undefined || evidence.event_class !== undefined)
+  ) {
+    throw new TypeError(
+      "Context signal recency provenance must match its source",
+    );
+  }
+  const coordinate = canonicalizeContextRecencyCoordinate(evidence.coordinate);
+  if (coordinate === null) {
+    throw new TypeError(
+      "Context signal recency coordinate must be a valid absolute timestamp with millisecond precision",
+    );
+  }
+  return { ...evidence, coordinate };
 }
 
 function normalizedPressure(value: unknown, maximum: number): number {
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number.parseFloat(value) : Number.NaN;
-  return Number.isFinite(parsed) ? 1 - Math.min(Math.max(parsed, 0), maximum) / maximum : 0;
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseFloat(value)
+        : Number.NaN;
+  return Number.isFinite(parsed)
+    ? 1 - Math.min(Math.max(parsed, 0), maximum) / maximum
+    : 0;
 }
 
 function deadlinePressure(deadline: unknown, nowMs: number): number {
-  const deadlineMs = typeof deadline === "string" ? Date.parse(deadline) : deadline instanceof Date ? deadline.getTime() : typeof deadline === "number" ? deadline : Number.NaN;
+  const deadlineMs =
+    typeof deadline === "string"
+      ? Date.parse(deadline)
+      : deadline instanceof Date
+        ? deadline.getTime()
+        : typeof deadline === "number"
+          ? deadline
+          : Number.NaN;
   if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
   const days = (deadlineMs - nowMs) / 86_400_000;
   return days <= 0 ? 1 : 1 / (1 + days / 30);
 }
 
 function riskPressure(risk: ItemMetadata["risk"]): number {
-  const normalized = typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
+  const normalized =
+    typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
   if (normalized === "critical" || normalized === "high") return 1;
   if (normalized === "medium") return 0.5;
   return normalized === "low" ? 0.1 : 0;
@@ -125,40 +228,88 @@ export function buildItemContextRelevanceCandidates(
   items: readonly ItemMetadata[],
   options: BuildItemContextRelevanceCandidatesOptions,
 ): ItemContextRelevanceCandidate[] {
-  const sortableTimestamp = (value: unknown): string => {
-    if (typeof value !== "string") return "";
-    try {
-      return resolveIsoOrRelative(value, new Date(Number.NaN), "updated_at");
-    } catch {
-      return "";
-    }
-  };
+  const recencyEvidence = new Map(
+    items.map((item) => {
+      const suppliedEvidence = options.recencyEvidence?.[item.id];
+      return [
+        item.id,
+        suppliedEvidence === undefined
+          ? fallbackRecencyEvidence(item)
+          : canonicalizeRecencyEvidence(suppliedEvidence),
+      ];
+    }),
+  );
   const recencyOrder = [...items].sort((left, right) => {
-    const leftTime = sortableTimestamp(left.updated_at);
-    const rightTime = sortableTimestamp(right.updated_at);
-    return compareTimestampStrings(rightTime, leftTime) || left.id.localeCompare(right.id);
+    const leftTime = (recencyEvidence.get(left.id) as ContextRecencyEvidence)
+      .coordinate;
+    const rightTime = (recencyEvidence.get(right.id) as ContextRecencyEvidence)
+      .coordinate;
+    return (
+      compareTimestampStrings(rightTime, leftTime) ||
+      left.id.localeCompare(right.id)
+    );
   });
-  const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
+  const recencyRank = new Map(
+    recencyOrder.map((item, index) => [item.id, index]),
+  );
   const denominator = Math.max(items.length - 1, 1);
-  const normalizedAuthor = normalizeContextActor(options.author, NO_CONTEXT_AUTHOR);
-  const inProgressStatus = normalizeStatusInput("in_progress", options.statusRegistry);
+  const normalizedAuthor = normalizeContextActor(
+    options.author,
+    NO_CONTEXT_AUTHOR,
+  );
+  const inProgressStatus = normalizeStatusInput(
+    "in_progress",
+    options.statusRegistry,
+  );
   const nowMs = Date.parse(options.now);
   return items.map((item) => {
-    const assigned = normalizeContextActor(item.assignee, NO_ITEM_ASSIGNEE) === normalizedAuthor;
-    const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
+    const assigned =
+      normalizeContextActor(item.assignee, NO_ITEM_ASSIGNEE) ===
+      normalizedAuthor;
+    const knowledgeEntries =
+      (item.comments?.length ?? 0) +
+      (item.notes?.length ?? 0) +
+      (item.learnings?.length ?? 0);
     return {
       id: item.id,
       item,
+      signal_provenance: {
+        recency: recencyEvidence.get(item.id) as ContextRecencyEvidence,
+      },
       signals: {
-        recency: items.length === 1 ? 1 : 1 - (recencyRank.get(item.id) as number) / denominator,
+        recency:
+          items.length === 1
+            ? 1
+            : 1 - (recencyRank.get(item.id) as number) / denominator,
         activity_density: options.activityDensity?.[item.id],
-        graph_proximity: derivedSignalOrFallback(options.graphProximity, item.id, item.parent ? 0.3 : 0),
-        claim_focus: derivedSignalOrFallback(options.claimFocus, item.id, normalizeStatusForRegistry(item.status, options.statusRegistry) === inProgressStatus ? 1 : assigned ? 0.75 : 0),
+        graph_proximity: derivedSignalOrFallback(
+          options.graphProximity,
+          item.id,
+          item.parent ? 0.3 : 0,
+        ),
+        claim_focus: derivedSignalOrFallback(
+          options.claimFocus,
+          item.id,
+          normalizeStatusForRegistry(item.status, options.statusRegistry) ===
+            inProgressStatus
+            ? 1
+            : assigned
+              ? 0.75
+              : 0,
+        ),
         priority_pressure: normalizedPressure(item.priority, 4),
         risk_pressure: riskPressure(item.risk),
         deadline_pressure: deadlinePressure(item.deadline, nowMs),
-        knowledge_density: derivedSignalOrFallback(options.knowledgeDensity, item.id, Math.min(knowledgeEntries / 5, 1)),
-        author_affinity: derivedSignalOrFallback(options.authorAffinity, item.id, assigned ? 1 : 0),
+        knowledge_density: derivedSignalOrFallback(
+          options.knowledgeDensity,
+          item.id,
+          Math.min(knowledgeEntries / 5, 1),
+        ),
+        author_affinity: derivedSignalOrFallback(
+          options.authorAffinity,
+          item.id,
+          assigned ? 1 : 0,
+        ),
         usage_affinity: options.usageAffinity?.[item.id],
         semantic_similarity: options.semanticSimilarity?.[item.id],
       },

@@ -28,21 +28,39 @@
         {
           "path": "src/core/history/event-index.ts",
           "changed_lines_contain_any": [
-            "loadDatabaseSync",
-            "loadStableDatabaseSync",
-            "resolveDatabaseSync",
-            "RuntimeDatabaseSync",
-            "setDatabaseSync"
+            "function loadDatabaseSync(",
+            "function loadStableDatabaseSync(",
+            "function resolveDatabaseSync():",
+            "const loaded = loadModule(",
+            "return loaded.DatabaseSync ?? null",
+            "const nodeMajor = Number.parseInt(",
+            "return Number.isFinite(nodeMajor) && nodeMajor >=",
+            "const Database = resolveDatabaseSync();",
+            "let RuntimeDatabaseSync:",
+            "RuntimeDatabaseSync = loadStableDatabaseSync(",
+            "setDatabaseSync(databaseSync:",
+            "RuntimeDatabaseSync = databaseSync",
+            "RuntimeDatabaseSync = previous",
+            "return RuntimeDatabaseSync"
           ]
         },
         {
           "path": "src/core/store/item-metadata-query-index.ts",
           "changed_lines_contain_any": [
-            "loadDatabaseSync",
-            "loadStableDatabaseSync",
-            "resolveDatabaseSync",
-            "RuntimeDatabaseSync",
-            "setDatabaseSync"
+            "function loadDatabaseSync(",
+            "function loadStableDatabaseSync(",
+            "function resolveDatabaseSync():",
+            "const loaded = loadModule(",
+            "return loaded.DatabaseSync ?? null",
+            "const nodeMajor = Number.parseInt(",
+            "return Number.isFinite(nodeMajor) && nodeMajor >=",
+            "const Database = resolveDatabaseSync();",
+            "let RuntimeDatabaseSync:",
+            "RuntimeDatabaseSync = loadStableDatabaseSync(",
+            "setDatabaseSync(databaseSync:",
+            "RuntimeDatabaseSync = databaseSync",
+            "RuntimeDatabaseSync = previous",
+            "return RuntimeDatabaseSync"
           ]
         }
       ],

@@ -15,6 +15,7 @@ import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
 import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
+import { propagateContextUsageServingReceipt } from "../../sdk/context-usage.js";
 import {
   isReadOutputBudgetExceeded,
   resolveReadOutputEncoding,
@@ -76,6 +77,24 @@ type OutputStreamTarget = "stdout" | "stderr";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function setActiveCommandResultOmitted(source: unknown): void {
+  const omitted = { read_output: { result_omitted: true } };
+  propagateContextUsageServingReceipt(source, omitted);
+  setActiveCommandResult(omitted);
+}
+
+function setActiveCommandDeliveryResult(
+  result: unknown,
+  receiptSource: unknown,
+  structuredDeliveryPreserved: boolean,
+): void {
+  if (structuredDeliveryPreserved) {
+    setActiveCommandResult(result);
+    return;
+  }
+  setActiveCommandResultOmitted(receiptSource);
 }
 
 function shouldUseNativeOutput(result: unknown): boolean {
@@ -448,6 +467,7 @@ export function formatBuiltInOutput(
 interface OutputServiceResolution {
   result: unknown;
   rendered: string | null;
+  structuredDeliveryPreserved: boolean;
 }
 
 /** Resolve extension service ownership before built-in projection and rendering. */
@@ -483,11 +503,14 @@ function resolveOutputService(
       rendered: serviceOverride.result.endsWith("\n")
         ? serviceOverride.result
         : `${serviceOverride.result}\n`,
+      structuredDeliveryPreserved: false,
     };
   }
   return {
     result: serviceOverride.handled ? serviceOverride.result : effectiveResult,
     rendered: null,
+    structuredDeliveryPreserved:
+      !serviceOverride.handled || isPlainObject(serviceOverride.result),
   };
 }
 
@@ -534,8 +557,12 @@ function formatEffectiveOutput(
     effectiveOptions,
     format,
   );
-  if (service.rendered !== null) return service.rendered;
+  if (service.rendered !== null) {
+    setActiveCommandResultOmitted(effectiveResult);
+    return service.rendered;
+  }
   const outputResult = service.result;
+  propagateContextUsageServingReceipt(effectiveResult, outputResult);
   const projectedOutputResult =
     command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
@@ -548,6 +575,7 @@ function formatEffectiveOutput(
   if (isReadOutputBudgetExceeded(intentOutputResult)) {
     process.exitCode ||= EXIT_CODE.USAGE;
   }
+  let { structuredDeliveryPreserved } = service;
   const renderResolvedOutput = (value: unknown): string => {
     if (format === "toon") {
       const markdownDefault = renderDefaultMarkdownResult(value);
@@ -557,6 +585,7 @@ function formatEffectiveOutput(
       ? { rendered: null }
       : runActiveRendererOverride(format, value);
     if (rendererOverride.rendered !== null) {
+      structuredDeliveryPreserved = false;
       return rendererOverride.rendered.endsWith("\n")
         ? rendererOverride.rendered
         : `${rendererOverride.rendered}\n`;
@@ -573,7 +602,13 @@ function formatEffectiveOutput(
     options.tokenAccounting === true
       ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
       : intentOutputResult;
-  return renderResolvedOutput(accountedOutputResult);
+  const rendered = renderResolvedOutput(accountedOutputResult);
+  setActiveCommandDeliveryResult(
+    accountedOutputResult,
+    effectiveResult,
+    options.quiet !== true && structuredDeliveryPreserved,
+  );
+  return rendered;
 }
 
 /** Implements format output for the public runtime surface of this module. */
@@ -587,9 +622,11 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
     ? suppressedOutput.result
     : stripNativeOutputMarker(commandOverride.result);
   setActiveCommandResult(effectiveResult);
-  return suppressedOutput
-    ? ""
-    : formatEffectiveOutput(effectiveResult, nativeOutput, options);
+  if (suppressedOutput) {
+    setActiveCommandResultOmitted(effectiveResult);
+    return "";
+  }
+  return formatEffectiveOutput(effectiveResult, nativeOutput, options);
 }
 
 /** Implements print result for the public runtime surface of this module. */

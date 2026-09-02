@@ -78,6 +78,7 @@ import {
   applyContextIntentProjection,
   attachReadOutputContracts,
 } from "./context-intent-contracts.js";
+import { finalizeContextUsageEgress } from "./context/usage-egress.js";
 import {
   runWithDiscoveredContextIntentContracts,
   type PmContextIntentPackageModule,
@@ -170,7 +171,7 @@ import {
   type ExtensionCommandResult,
 } from "./extension.js";
 import { runConfig } from "./config.js";
-import { runInit } from "./init.js";
+import { INIT_INVOCATION_CWD, runInit } from "./init.js";
 import {
   runRuntimeEvalAction,
   runRuntimeEventsAction,
@@ -229,6 +230,7 @@ import {
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
   resolveRuntimeLimit,
+  shouldInvalidateWorkspaceContractsCacheAfterAction,
   updateManyOptionsFromFlat,
   withAddNoteOption,
   withFilesDiscoveryOptions,
@@ -372,6 +374,7 @@ export {
   appendHistoryEntry,
   createHistoryEntry,
 } from "../core/history/history.js";
+export { classifyHistoryEvent, HISTORY_EVENT_CLASSIFICATION_VERSION, MAINTENANCE_HISTORY_OPERATIONS, SUBSTANTIVE_HISTORY_OPERATIONS, type HistoryEventClass } from "../core/history/event-classification.js";
 export {
   generateItemId,
   normalizeItemId,
@@ -691,7 +694,6 @@ export type {
 const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol(
   "pm.active-extension-host-context",
 );
-
 interface PmClientDefaults {
   path?: string;
   cwd?: string;
@@ -2804,25 +2806,6 @@ async function withCwd<T>(cwd: string, run: () => Promise<T>): Promise<T> {
   }
 }
 
-const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
-  "activity",
-  "aggregate",
-  "context",
-  "contracts",
-  "deps",
-  "files-discover",
-  "get",
-  "graph",
-  "health",
-  "history",
-  "list",
-  "next",
-  "search",
-  "stats",
-  "telemetry",
-  "validate",
-]);
-
 function resolveSdkActionInput(args: PmActionInput): {
   action: string;
   args: Record<string, unknown>;
@@ -2844,14 +2827,6 @@ function resolveSdkActionInput(args: PmActionInput): {
   return { action, args: resolvedArgs };
 }
 
-function shouldInvalidateWorkspaceContractsCacheAfterAction(
-  action: string,
-): boolean {
-  return !WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS.has(
-    normalizeActionName(action),
-  );
-}
-
 /** Execute one native or extension-contributed pm action in-process. */
 export async function runAction(args: PmActionInput): Promise<unknown> {
   const resolved = resolveSdkActionInput(args);
@@ -2867,6 +2842,18 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // pins process.cwd() (inside the serialized slot) for the built-in handler.
   const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
+  if (resolved.action === "init") {
+    (global as GlobalOptions & { [key: symbol]: unknown })[
+      INIT_INVOCATION_CWD
+    ] = resolutionCwd;
+  }
+  if (
+    resolved.action !== "init" ||
+    global.path !== undefined ||
+    (process.env.PM_PATH?.trim().length ?? 0) > 0
+  ) {
+    global.path = resolvePmRoot(resolutionCwd, global.path);
+  }
   try {
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
@@ -3652,7 +3639,11 @@ function runMcpHistoryAuthorAcknowledgeAction(
 
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   init: (ctx) =>
-    runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
+    runInit(
+      readString(ctx.args, "prefix"),
+      ctx.global,
+      ctx.options,
+    ),
   context: (ctx) =>
     runContext(
       applyContextIntentProjection("context", ctx.options),
@@ -3846,7 +3837,9 @@ async function dispatchAction(
         activeExtensions,
       );
   options.resolvedOutputFormat = "json";
-  return attachReadOutputContracts(action, options, result);
+  const projected = attachReadOutputContracts(action, options, result);
+  await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
+  return projected;
 }
 
 const actionRunnerTestHooks = {

@@ -1,8 +1,16 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { canonicalDocument, normalizeItemMetadata, serializeItemDocument } from "../../../../src/core/item/item-format.js";
-import { _testOnly as lockInternals, acquireLock } from "../../../../src/core/lock/lock.js";
+import {
+  canonicalDocument,
+  normalizeItemMetadata,
+  serializeItemDocument,
+} from "../../../../src/core/item/item-format.js";
+import {
+  _testOnly as lockInternals,
+  acquireLock,
+  isProcessIdentityAlive,
+} from "../../../../src/core/lock/lock.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
@@ -41,20 +49,54 @@ describe("core/item/item-format additional branch coverage", () => {
     const normalized = normalizeItemMetadata(
       baseItemMetadata({
         dependencies: [
-          { id: "PM-DEP", kind: "related", created_at: FIXED_TS, author: "  zed " },
+          {
+            id: "PM-DEP",
+            kind: "related",
+            created_at: FIXED_TS,
+            author: "  zed ",
+          },
           { id: "pm-dep", kind: "blocks", created_at: FIXED_TS, author: " " },
-          { id: "pm-aaa", kind: "child", created_at: FIXED_TS, author: " owner " },
+          {
+            id: "pm-aaa",
+            kind: "child",
+            created_at: FIXED_TS,
+            author: " owner ",
+          },
         ],
         comments: [
           { created_at: FIXED_TS, author: "zed", text: "beta" },
           { created_at: FIXED_TS, author: "beta", text: "alpha" },
           { created_at: FIXED_TS, author: "alpha", text: "beta" },
         ],
-        files: [{ path: String.raw`src\cli\main.ts`, scope: "project", note: "  normalized  " }],
+        files: [
+          {
+            path: String.raw`src\cli\main.ts`,
+            scope: "project",
+            note: "  normalized  ",
+          },
+        ],
         tests: [
-          { scope: "project", path: String.raw`tests\unit\lock.spec.ts`, command: "pnpm test", timeout_seconds: 20, note: "z" },
-          { scope: "project", path: String.raw`tests\unit\lock.spec.ts`, command: "pnpm test", timeout_seconds: 10, note: "b" },
-          { scope: "project", path: String.raw`tests\unit\lock.spec.ts`, command: "pnpm test", timeout_seconds: 10, note: "a" },
+          {
+            scope: "project",
+            path: String.raw`tests\unit\lock.spec.ts`,
+            command: "pnpm test",
+            timeout_seconds: 20,
+            note: "z",
+          },
+          {
+            scope: "project",
+            path: String.raw`tests\unit\lock.spec.ts`,
+            command: "pnpm test",
+            timeout_seconds: 10,
+            note: "b",
+          },
+          {
+            scope: "project",
+            path: String.raw`tests\unit\lock.spec.ts`,
+            command: "pnpm test",
+            timeout_seconds: 10,
+            note: "a",
+          },
         ],
         docs: [
           { path: "docs/spec.md", scope: "project", note: "z" },
@@ -63,18 +105,20 @@ describe("core/item/item-format additional branch coverage", () => {
       }),
     );
 
-    expect(normalized.dependencies?.map((value) => `${value.id}:${value.kind}`)).toEqual([
-      "pm-aaa:child",
-      "pm-dep:blocks",
-      "PM-DEP:related",
+    expect(
+      normalized.dependencies?.map((value) => `${value.id}:${value.kind}`),
+    ).toEqual(["pm-aaa:child", "pm-dep:blocks", "PM-DEP:related"]);
+    expect(
+      normalized.comments?.map((value) => `${value.text}:${value.author}`),
+    ).toEqual(["alpha:beta", "beta:alpha", "beta:zed"]);
+    expect(normalized.files).toEqual([
+      { path: "src/cli/main.ts", scope: "project", note: "normalized" },
     ]);
-    expect(normalized.comments?.map((value) => `${value.text}:${value.author}`)).toEqual([
-      "alpha:beta",
-      "beta:alpha",
-      "beta:zed",
-    ]);
-    expect(normalized.files).toEqual([{ path: "src/cli/main.ts", scope: "project", note: "normalized" }]);
-    expect(normalized.tests?.map((value) => `${value.timeout_seconds}:${value.note}`)).toEqual(["20:z", "10:b", "10:a"]);
+    expect(
+      normalized.tests?.map(
+        (value) => `${value.timeout_seconds}:${value.note}`,
+      ),
+    ).toEqual(["20:z", "10:b", "10:a"]);
     expect(normalized.docs?.map((value) => value.note)).toEqual(["a", "z"]);
   });
 
@@ -82,8 +126,20 @@ describe("core/item/item-format additional branch coverage", () => {
     const normalized = normalizeItemMetadata(
       baseItemMetadata({
         tests: [
-          { scope: "project", path: "tests/unit/same.spec.ts", command: "pnpm test", timeout_seconds: 42, note: "z" },
-          { scope: "project", path: "tests/unit/same.spec.ts", command: "pnpm test", timeout_seconds: 42, note: "a" },
+          {
+            scope: "project",
+            path: "tests/unit/same.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 42,
+            note: "z",
+          },
+          {
+            scope: "project",
+            path: "tests/unit/same.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 42,
+            note: "a",
+          },
         ],
         docs: [
           { path: "docs/same.md", scope: "project", note: "z" },
@@ -100,52 +156,124 @@ describe("core/item/item-format additional branch coverage", () => {
     const dependencySorted = normalizeItemMetadata(
       baseItemMetadata({
         dependencies: [
-          { id: "pm-newer", kind: "related", created_at: "2026-02-21T00:00:02.000Z", author: "steve" },
-          { id: "pm-older", kind: "related", created_at: "2026-02-21T00:00:01.000Z", author: "steve" },
+          {
+            id: "pm-newer",
+            kind: "related",
+            created_at: "2026-02-21T00:00:02.000Z",
+            author: "steve",
+          },
+          {
+            id: "pm-older",
+            kind: "related",
+            created_at: "2026-02-21T00:00:01.000Z",
+            author: "steve",
+          },
         ],
       }),
     );
-    expect(dependencySorted.dependencies?.map((value) => value.id)).toEqual(["pm-older", "pm-newer"]);
+    expect(dependencySorted.dependencies?.map((value) => value.id)).toEqual([
+      "pm-older",
+      "pm-newer",
+    ]);
 
     const scopeSorted = normalizeItemMetadata(
       baseItemMetadata({
         tests: [
-          { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
-          { scope: "global", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
+          {
+            scope: "project",
+            path: "tests/unit/a.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 5,
+            note: "a",
+          },
+          {
+            scope: "global",
+            path: "tests/unit/a.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 5,
+            note: "a",
+          },
         ],
       }),
     );
-    expect(scopeSorted.tests?.map((value) => value.scope)).toEqual(["project", "global"]);
+    expect(scopeSorted.tests?.map((value) => value.scope)).toEqual([
+      "project",
+      "global",
+    ]);
 
     const pathSorted = normalizeItemMetadata(
       baseItemMetadata({
         tests: [
-          { scope: "project", path: "tests/unit/b.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
-          { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
+          {
+            scope: "project",
+            path: "tests/unit/b.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 5,
+            note: "a",
+          },
+          {
+            scope: "project",
+            path: "tests/unit/a.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 5,
+            note: "a",
+          },
         ],
       }),
     );
-    expect(pathSorted.tests?.map((value) => value.path)).toEqual(["tests/unit/b.spec.ts", "tests/unit/a.spec.ts"]);
+    expect(pathSorted.tests?.map((value) => value.path)).toEqual([
+      "tests/unit/b.spec.ts",
+      "tests/unit/a.spec.ts",
+    ]);
 
     const commandSorted = normalizeItemMetadata(
       baseItemMetadata({
         tests: [
-          { scope: "project", path: "tests/unit/a.spec.ts", command: "z-run", timeout_seconds: 5, note: "a" },
-          { scope: "project", path: "tests/unit/a.spec.ts", command: "a-run", timeout_seconds: 5, note: "a" },
+          {
+            scope: "project",
+            path: "tests/unit/a.spec.ts",
+            command: "z-run",
+            timeout_seconds: 5,
+            note: "a",
+          },
+          {
+            scope: "project",
+            path: "tests/unit/a.spec.ts",
+            command: "a-run",
+            timeout_seconds: 5,
+            note: "a",
+          },
         ],
       }),
     );
-    expect(commandSorted.tests?.map((value) => value.command)).toEqual(["z-run", "a-run"]);
+    expect(commandSorted.tests?.map((value) => value.command)).toEqual([
+      "z-run",
+      "a-run",
+    ]);
 
     const timeoutSorted = normalizeItemMetadata(
       baseItemMetadata({
         tests: [
-          { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 20, note: "a" },
-          { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 10, note: "a" },
+          {
+            scope: "project",
+            path: "tests/unit/a.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 20,
+            note: "a",
+          },
+          {
+            scope: "project",
+            path: "tests/unit/a.spec.ts",
+            command: "pnpm test",
+            timeout_seconds: 10,
+            note: "a",
+          },
         ],
       }),
     );
-    expect(timeoutSorted.tests?.map((value) => value.timeout_seconds)).toEqual([20, 10]);
+    expect(timeoutSorted.tests?.map((value) => value.timeout_seconds)).toEqual([
+      20, 10,
+    ]);
   });
 
   it("covers nullish fallback branches for optional test/doc sort keys", () => {
@@ -153,7 +281,13 @@ describe("core/item/item-format additional branch coverage", () => {
       baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/fallback.spec.ts" },
-          { scope: "project", path: "tests/unit/fallback.spec.ts", command: " ", timeout_seconds: undefined, note: " " },
+          {
+            scope: "project",
+            path: "tests/unit/fallback.spec.ts",
+            command: " ",
+            timeout_seconds: undefined,
+            note: " ",
+          },
         ],
         docs: [
           { path: "docs/fallback.md", scope: "project" },
@@ -197,39 +331,87 @@ describe("core/item/item-format additional branch coverage", () => {
 
 describe("core/lock/lock additional branch coverage", () => {
   it("covers lock metadata helper branches directly", async () => {
-    expect(lockInternals.parseLockInfo("null")).toEqual({ info: null, warnings: ["lock_info_invalid_shape"] });
-    expect(lockInternals.parseLockInfo("[]")).toEqual({ info: null, warnings: ["lock_info_invalid_shape"] });
+    expect(lockInternals.parseLockInfo("null")).toEqual({
+      info: null,
+      warnings: ["lock_info_invalid_shape"],
+    });
+    expect(lockInternals.parseLockInfo("[]")).toEqual({
+      info: null,
+      warnings: ["lock_info_invalid_shape"],
+    });
     expect(
       lockInternals.parseLockInfo(
-        JSON.stringify({ id: "pm-lock", pid: Number.NaN, owner: "owner", created_at: FIXED_TS, ttl_seconds: 60 }),
+        JSON.stringify({
+          id: "pm-lock",
+          pid: Number.NaN,
+          owner: "owner",
+          created_at: FIXED_TS,
+          ttl_seconds: 60,
+        }),
       ),
     ).toEqual({
       info: null,
       warnings: ["lock_info_invalid_shape"],
     });
     expect(
-      lockInternals.parseLockInfo(JSON.stringify({ id: "pm-lock", pid: 1, owner: "owner", created_at: FIXED_TS, ttl_seconds: 60 })),
+      lockInternals.parseLockInfo(
+        JSON.stringify({
+          id: "pm-lock",
+          pid: 1,
+          owner: "owner",
+          created_at: FIXED_TS,
+          ttl_seconds: 60,
+        }),
+      ),
     ).toMatchObject({
       info: { id: "pm-lock", owner: "owner", ttl_seconds: 60 },
       warnings: [],
     });
+    expect(
+      lockInternals.parseLockInfo(
+        JSON.stringify({
+          id: "pm-lock",
+          pid: 1,
+          owner: "owner",
+          token: " ",
+          created_at: FIXED_TS,
+          ttl_seconds: 60,
+        }),
+      ),
+    ).toEqual({
+      info: null,
+      warnings: ["lock_info_invalid_shape"],
+    });
     expect(lockInternals.isErrno({ code: "ENOENT" }, "ENOENT")).toBe(true);
     expect(lockInternals.isErrno(null, "ENOENT")).toBe(false);
-    expect(lockInternals.lockOwnerSuffix({ id: "pm-lock", pid: 1, owner: "owner", created_at: FIXED_TS, ttl_seconds: 60 })).toBe(
-      " (owner owner)",
-    );
+    expect(
+      lockInternals.lockOwnerSuffix({
+        id: "pm-lock",
+        pid: 1,
+        owner: "owner",
+        created_at: FIXED_TS,
+        ttl_seconds: 60,
+      }),
+    ).toBe(" (owner owner)");
     expect(lockInternals.lockOwnerSuffix(null)).toBe("");
     expect(lockInternals.isStaleLock(null, 60)).toBe(true);
-    expect(lockInternals.buildLockPayload("pm-lock", "owner", 60)).toMatchObject({
+    expect(
+      lockInternals.buildLockPayload("pm-lock", "owner", 60),
+    ).toMatchObject({
       id: "pm-lock",
       pid: process.pid,
       owner: "owner",
+      token: expect.any(String),
       ttl_seconds: 60,
     });
 
-    const tempDir = await fs.mkdtemp(path.join(process.cwd(), ".tmp-lock-read-"));
+    const tempDir = await fs.mkdtemp(
+      path.join(process.cwd(), ".tmp-lock-read-"),
+    );
     try {
-      await expect(lockInternals.readLockInfo(path.join(tempDir, "missing.lock"))).resolves.toEqual({ info: null, warnings: [] });
+      await expect(
+        lockInternals.readLockInfo(path.join(tempDir, "missing.lock")),
+      ).resolves.toEqual({ info: null, warnings: [] });
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
@@ -300,7 +482,9 @@ describe("core/lock/lock additional branch coverage", () => {
       setActiveExtensionHooks(hooks);
 
       const release = await acquireLock(pmPath, id, 60, "owner-a", false);
-      await expect(acquireLock(pmPath, id, 60, "owner-b", false)).rejects.toMatchObject({
+      await expect(
+        acquireLock(pmPath, id, 60, "owner-b", false),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
       });
       await release();
@@ -310,6 +494,94 @@ describe("core/lock/lock additional branch coverage", () => {
         `read:${lockPath}`,
         `write:lock:release:${lockPath}`,
       ]);
+    });
+  });
+
+  it("does not let an old release remove a replacement lock", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-ownership";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "original-owner");
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({
+          id,
+          pid: process.pid,
+          owner: "original-owner",
+          token: "replacement-token",
+          created_at: new Date().toISOString(),
+          ttl_seconds: 60,
+        })}\n`,
+      );
+
+      await release();
+
+      await expect(fs.readFile(lockPath, "utf8")).resolves.toContain(
+        "replacement-token",
+      );
+      await fs.rm(lockPath, { force: true });
+    });
+  });
+
+  it("holds the stale-cleanup gate across ownership validation and release", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-replacement-race";
+      const lockPath = getLockPath(pmPath, id);
+      const releaseOriginal = await acquireLock(
+        pmPath,
+        id,
+        60,
+        "original-owner",
+      );
+      const originalUnlink = fs.unlink.bind(fs);
+      let continueOriginalUnlink!: () => void;
+      let signalOriginalUnlink!: () => void;
+      const originalUnlinkStarted = new Promise<void>((resolve) => {
+        signalOriginalUnlink = resolve;
+      });
+      const originalUnlinkMayContinue = new Promise<void>((resolve) => {
+        continueOriginalUnlink = resolve;
+      });
+      let firstLockUnlink = true;
+      const unlinkSpy = vi
+        .spyOn(fs, "unlink")
+        .mockImplementation(async (targetPath) => {
+          if (String(targetPath) === lockPath && firstLockUnlink) {
+            firstLockUnlink = false;
+            signalOriginalUnlink();
+            await originalUnlinkMayContinue;
+          }
+          await originalUnlink(targetPath);
+        });
+      try {
+        const releasing = releaseOriginal();
+        await originalUnlinkStarted;
+        const replacementOutcome = await acquireLock(
+          pmPath,
+          id,
+          -1,
+          "replacement-owner",
+          true,
+          false,
+          0,
+        ).then(
+          (release) => ({ status: "fulfilled" as const, release }),
+          (reason: unknown) => ({ status: "rejected" as const, reason }),
+        );
+        continueOriginalUnlink();
+        await releasing;
+        expect(replacementOutcome).toMatchObject({
+          status: "rejected",
+          reason: { exitCode: EXIT_CODE.CONFLICT },
+        });
+        await expect(fs.access(lockPath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+      } finally {
+        continueOriginalUnlink();
+        unlinkSpy.mockRestore();
+        await fs.rm(lockPath, { force: true });
+      }
     });
   });
 
@@ -343,7 +615,11 @@ describe("core/lock/lock additional branch coverage", () => {
       const release = await acquireLock(pmPath, id, 60, "owner-force", true);
       await release();
 
-      expect(writeOps).toEqual(["lock:stale_remove", "lock:create", "lock:release"]);
+      expect(writeOps).toEqual([
+        "lock:stale_remove",
+        "lock:create",
+        "lock:release",
+      ]);
     });
   });
 
@@ -353,11 +629,15 @@ describe("core/lock/lock additional branch coverage", () => {
       const lockPath = getLockPath(pmPath, id);
       await fs.writeFile(lockPath, "{not-valid-json", "utf8");
 
-      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+      await expect(
+        acquireLock(pmPath, id, 60, "owner-a", false),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
         message: expect.stringContaining("lock is stale"),
       });
-      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+      await expect(
+        acquireLock(pmPath, id, 60, "owner-a", false),
+      ).rejects.toMatchObject({
         message: expect.stringContaining("lock_info_invalid_json"),
       });
     });
@@ -373,7 +653,9 @@ describe("core/lock/lock additional branch coverage", () => {
         "utf8",
       );
 
-      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+      await expect(
+        acquireLock(pmPath, id, 60, "owner-a", false),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
         message: `Item ${id} lock is stale; rerun with --force when supported for this command`,
       });
@@ -384,10 +666,19 @@ describe("core/lock/lock additional branch coverage", () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-read-failed";
       const lockPath = getLockPath(pmPath, id);
-      await fs.writeFile(lockPath, `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 })}\n`);
-      const readSpy = vi.spyOn(fs, "readFile").mockRejectedValue(Object.assign(new Error("permission denied"), { code: "EACCES" }));
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 })}\n`,
+      );
+      const readSpy = vi
+        .spyOn(fs, "readFile")
+        .mockRejectedValue(
+          Object.assign(new Error("permission denied"), { code: "EACCES" }),
+        );
       try {
-        await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+        await expect(
+          acquireLock(pmPath, id, 60, "owner-a", false),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
           message: expect.stringContaining("lock_info_read_failed"),
         });
@@ -408,7 +699,9 @@ describe("core/lock/lock additional branch coverage", () => {
       );
 
       const release = await acquireLock(pmPath, id, 60, "owner-force", true);
-      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as {
+        owner: string;
+      };
       expect(lockInfo.owner).toBe("owner-force");
       await release();
       await expect(fs.access(lockPath)).rejects.toBeInstanceOf(Error);
@@ -425,8 +718,17 @@ describe("core/lock/lock additional branch coverage", () => {
         "utf8",
       );
 
-      const release = await acquireLock(pmPath, id, 60, "owner-auto", false, false);
-      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      const release = await acquireLock(
+        pmPath,
+        id,
+        60,
+        "owner-auto",
+        false,
+        false,
+      );
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as {
+        owner: string;
+      };
       expect(lockInfo.owner).toBe("owner-auto");
       await release();
       await expect(fs.access(lockPath)).rejects.toBeInstanceOf(Error);
@@ -444,7 +746,9 @@ describe("core/lock/lock additional branch coverage", () => {
         "utf8",
       );
 
-      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+      await expect(
+        acquireLock(pmPath, id, 60, "owner-a", false),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
         message: expect.stringContaining("owner other-owner"),
       });
@@ -462,7 +766,9 @@ describe("core/lock/lock additional branch coverage", () => {
         "utf8",
       );
 
-      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+      await expect(
+        acquireLock(pmPath, id, 60, "owner-a", false),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
         message: "Item pm-lock-active-no-owner is locked",
       });
@@ -481,7 +787,9 @@ describe("core/lock/lock additional branch coverage", () => {
       );
       const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
       try {
-        await expect(acquireLock(pmPath, id, 60, "owner-a", false, true, 2)).rejects.toMatchObject({
+        await expect(
+          acquireLock(pmPath, id, 60, "owner-a", false, true, 2),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
           context: {
             code: "lock_conflict",
@@ -508,23 +816,137 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("retries owned release after a competing cleanup leaves the mutation gate", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-cleanup-busy";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "owner-a", false);
+      const releaseCleanupGate = await lockInternals.acquireStaleCleanupGate(
+        lockPath,
+        id,
+      );
+      if (releaseCleanupGate === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      const originalMkdir = fs.mkdir.bind(fs);
+      let signalContendedAttempt!: () => void;
+      const contendedAttempt = new Promise<void>((resolve) => {
+        signalContendedAttempt = resolve;
+      });
+      const mkdirSpy = vi
+        .spyOn(fs, "mkdir")
+        .mockImplementation(async (...args) => {
+          try {
+            return await originalMkdir(...args);
+          } catch (error: unknown) {
+            if (String(args[0]) === `${lockPath}.stale-cleanup`) {
+              signalContendedAttempt();
+            }
+            throw error;
+          }
+        });
+      try {
+        const releasing = release();
+        await contendedAttempt;
+        await releaseCleanupGate();
+        await expect(releasing).resolves.toBeUndefined();
+        await expect(fs.access(lockPath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+      } finally {
+        mkdirSpy.mockRestore();
+        await releaseCleanupGate();
+        await fs.rm(lockPath, { force: true });
+      }
+    });
+  });
+
+  it("retains an owned lock when the cleanup gate remains busy past its stale threshold", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-cleanup-timeout";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "owner-a", false);
+      const releaseCleanupGate = await lockInternals.acquireStaleCleanupGate(
+        lockPath,
+        id,
+      );
+      if (releaseCleanupGate === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      vi.useFakeTimers();
+      try {
+        const releasing = release();
+        await vi.advanceTimersByTimeAsync(11_000);
+        await expect(releasing).resolves.toBeUndefined();
+        await expect(fs.access(lockPath)).resolves.toBeUndefined();
+      } finally {
+        vi.useRealTimers();
+        await releaseCleanupGate();
+        await fs.rm(lockPath, { force: true });
+      }
+    });
+  });
+
+  it("abandons a contended release after the owned lock is replaced", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-release-cleanup-replaced";
+      const lockPath = getLockPath(pmPath, id);
+      const release = await acquireLock(pmPath, id, 60, "owner-a", false);
+      const releaseCleanupGate = await lockInternals.acquireStaleCleanupGate(
+        lockPath,
+        id,
+      );
+      if (releaseCleanupGate === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({
+          id,
+          pid: process.pid,
+          owner: "replacement-owner",
+          token: "replacement-token",
+          created_at: new Date().toISOString(),
+          ttl_seconds: 60,
+        })}\n`,
+      );
+      try {
+        await expect(release()).resolves.toBeUndefined();
+        await expect(fs.readFile(lockPath, "utf8")).resolves.toContain(
+          "replacement-token",
+        );
+      } finally {
+        await releaseCleanupGate();
+        await fs.rm(lockPath, { force: true });
+      }
+    });
+  });
+
   it("creates missing lock directories before acquiring locks", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const missingRoot = path.join(pmPath, "..", "missing-lock-root");
       const id = "pm-lock-missing";
       const release = await acquireLock(missingRoot, id, 60, "owner-a", false);
-      await expect(fs.access(getLockPath(missingRoot, id))).resolves.toBeUndefined();
+      await expect(
+        fs.access(getLockPath(missingRoot, id)),
+      ).resolves.toBeUndefined();
       await release();
     });
   });
 
   it("falls back to stringified error text when acquire lock failure lacks a message", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      const openSpy = vi.spyOn(fs, "open").mockRejectedValueOnce(new Error("   "));
+      const openSpy = vi
+        .spyOn(fs, "open")
+        .mockRejectedValueOnce(new Error("   "));
       try {
-        await expect(acquireLock(pmPath, "pm-lock-empty-error", 60, "owner-a", false)).rejects.toMatchObject({
+        await expect(
+          acquireLock(pmPath, "pm-lock-empty-error", 60, "owner-a", false),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.GENERIC_FAILURE,
-          message: expect.stringContaining("Failed to acquire lock for pm-lock-empty-error: Error"),
+          message: expect.stringContaining(
+            "Failed to acquire lock for pm-lock-empty-error: Error",
+          ),
         });
       } finally {
         openSpy.mockRestore();
@@ -542,14 +964,18 @@ describe("core/lock/lock additional branch coverage", () => {
         "utf8",
       );
 
-      const unlinkSpy = vi.spyOn(fs, "unlink").mockImplementation(async (targetPath) => {
-        if (String(targetPath) === lockPath) {
-          throw Object.assign(new Error("unlink denied"), { code: "EPERM" });
-        }
-      });
+      const unlinkSpy = vi
+        .spyOn(fs, "unlink")
+        .mockImplementation(async (targetPath) => {
+          if (String(targetPath) === lockPath) {
+            throw Object.assign(new Error("unlink denied"), { code: "EPERM" });
+          }
+        });
 
       try {
-        await expect(acquireLock(pmPath, id, 60, "owner-force", true)).rejects.toMatchObject({
+        await expect(
+          acquireLock(pmPath, id, 60, "owner-force", true),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
           context: {
             code: "lock_conflict",
@@ -570,7 +996,13 @@ describe("core/lock/lock additional branch coverage", () => {
       const id = "pm-lock-stale-cleanup-busy";
       const lockPath = getLockPath(pmPath, id);
       const fallbackLockInfo = {
-        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        info: {
+          id,
+          pid: 1,
+          owner: "fallback-owner",
+          created_at: STALE_TS,
+          ttl_seconds: 60,
+        },
         warnings: [],
       };
       await fs.mkdir(`${lockPath}.stale-cleanup`);
@@ -594,7 +1026,10 @@ describe("core/lock/lock additional branch coverage", () => {
           staleRemovalCounted: false,
         });
       } finally {
-        await fs.rm(`${lockPath}.stale-cleanup`, { recursive: true, force: true });
+        await fs.rm(`${lockPath}.stale-cleanup`, {
+          recursive: true,
+          force: true,
+        });
       }
     });
   });
@@ -611,12 +1046,17 @@ describe("core/lock/lock additional branch coverage", () => {
       await fs.mkdir(`${lockPath}.stale-cleanup`);
 
       try {
-        await expect(acquireLock(pmPath, id, 60, "owner-force", true, false, 0)).rejects.toMatchObject({
+        await expect(
+          acquireLock(pmPath, id, 60, "owner-force", true, false, 0),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
           message: expect.stringContaining("owner other-owner"),
         });
       } finally {
-        await fs.rm(`${lockPath}.stale-cleanup`, { recursive: true, force: true });
+        await fs.rm(`${lockPath}.stale-cleanup`, {
+          recursive: true,
+          force: true,
+        });
       }
     });
   });
@@ -635,11 +1075,23 @@ describe("core/lock/lock additional branch coverage", () => {
       const orphanedAt = new Date(Date.now() - 20_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
 
-      const release = await acquireLock(pmPath, id, 60, "owner-force", true, false, 0);
+      const release = await acquireLock(
+        pmPath,
+        id,
+        60,
+        "owner-force",
+        true,
+        false,
+        0,
+      );
 
-      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as {
+        owner: string;
+      };
       expect(lockInfo.owner).toBe("owner-force");
-      await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(gatePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
       await release();
     });
   });
@@ -650,32 +1102,198 @@ describe("core/lock/lock additional branch coverage", () => {
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
       await fs.mkdir(gatePath);
-      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: process.pid, token: "active-owner" })}\n`, "utf8");
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: process.pid, token: "active-owner" })}\n`,
+        "utf8",
+      );
       const orphanedAt = new Date(Date.now() - 20_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
 
-      await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+      await expect(
+        lockInternals.acquireStaleCleanupGate(lockPath, id),
+      ).resolves.toBeNull();
       await expect(fs.access(gatePath)).resolves.toBeUndefined();
     });
   });
 
-  it("recovers a max-aged stale cleanup gate even when the recorded pid is live", async () => {
+  it("retains a max-aged stale cleanup gate while its recorded owner is live", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-live-owner-too-old";
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
       await fs.mkdir(gatePath);
-      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: process.pid, token: "reused-pid-owner" })}\n`, "utf8");
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: process.pid, token: "reused-pid-owner" })}\n`,
+        "utf8",
+      );
       const orphanedAt = new Date(Date.now() - 10 * 60_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
 
-      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
-      if (release === null) {
-        throw new Error("expected stale cleanup gate release");
-      }
-      await release();
-      await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(
+        lockInternals.acquireStaleCleanupGate(lockPath, id),
+      ).resolves.toBeNull();
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
     });
+  });
+
+  it("retains an expired cleanup gate whose live owner identity still matches", async (context) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const currentIdentity = await lockInternals.readProcessStartIdentity(
+        process.pid,
+      );
+      if (currentIdentity === null) {
+        context.skip("host does not expose process start identity");
+      }
+      const id = "pm-lock-stale-cleanup-matching-process";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "matching-owner",
+          process_start_identity: currentIdentity,
+        })}\n`,
+        "utf8",
+      );
+      const expiredAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, expiredAt, expiredAt);
+
+      await expect(
+        lockInternals.acquireStaleCleanupGate(lockPath, id),
+      ).resolves.toBeNull();
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
+    });
+  });
+
+  it("retains a recent live cleanup owner when process identity is unavailable", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-unavailable-process-identity";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "unverifiable-owner",
+          process_start_identity: "123",
+        })}\n`,
+        "utf8",
+      );
+      const expiredAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, expiredAt, expiredAt);
+      const realReadFile = fs.readFile.bind(fs);
+      const readFileSpy = vi
+        .spyOn(fs, "readFile")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === `/proc/${process.pid}/stat`) {
+            throw Object.assign(new Error("proc unavailable"), {
+              code: "ENOENT",
+            });
+          }
+          return await realReadFile(targetPath, options);
+        });
+
+      try {
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
+        await expect(fs.access(gatePath)).resolves.toBeUndefined();
+      } finally {
+        readFileSpy.mockRestore();
+      }
+    });
+  });
+
+  it("reclaims an expired cleanup gate after detecting PID reuse", async (context) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const currentIdentity = await lockInternals.readProcessStartIdentity(
+        process.pid,
+      );
+      if (currentIdentity === null) {
+        context.skip("host does not expose process start identity");
+      }
+      const id = "pm-lock-stale-cleanup-reused-pid";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "abandoned-owner",
+          process_start_identity: `${currentIdentity}-previous`,
+        })}\n`,
+        "utf8",
+      );
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      expect(release).not.toBeNull();
+      await release?.();
+      await expect(fs.access(gatePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("bounds recovery for live legacy owners without process identity", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-legacy-max-age";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: process.pid, token: "legacy-owner" })}\n`,
+        "utf8",
+      );
+      const orphanedAt = new Date(Date.now() - 2 * 60 * 60_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      expect(release).not.toBeNull();
+      await release?.();
+      await expect(fs.access(gatePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("parses Linux process start identities and fails closed on absent processes", async () => {
+    expect(
+      lockInternals.parseLinuxProcessStartIdentity("missing close paren"),
+    ).toBeNull();
+    expect(
+      lockInternals.parseLinuxProcessStartIdentity(
+        `123 (node worker) ${["S", ...Array(18).fill("0"), "4242"].join(" ")}`,
+      ),
+    ).toBe("4242");
+    expect(
+      lockInternals.parseLinuxProcessStartIdentity("123 (node) S too-short"),
+    ).toBeNull();
+    await expect(
+      lockInternals.readProcessStartIdentity(Number.MAX_SAFE_INTEGER),
+    ).resolves.toBeNull();
+  });
+
+  it("rejects invalid process identifiers without probing the process group", async () => {
+    const killSpy = vi.spyOn(process, "kill");
+    try {
+      for (const pid of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+        await expect(isProcessIdentityAlive({ pid }, 0, 60_000)).resolves.toBe(
+          false,
+        );
+      }
+      expect(killSpy).not.toHaveBeenCalled();
+    } finally {
+      killSpy.mockRestore();
+    }
   });
 
   it("treats permission-denied process probes as live stale cleanup owners", async () => {
@@ -684,7 +1302,11 @@ describe("core/lock/lock additional branch coverage", () => {
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
       await fs.mkdir(gatePath);
-      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: 1234, token: "protected-owner" })}\n`, "utf8");
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: 1234, token: "protected-owner" })}\n`,
+        "utf8",
+      );
       const orphanedAt = new Date(Date.now() - 20_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
       const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
@@ -692,7 +1314,9 @@ describe("core/lock/lock additional branch coverage", () => {
       });
 
       try {
-        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
         await expect(fs.access(gatePath)).resolves.toBeUndefined();
       } finally {
         killSpy.mockRestore();
@@ -706,7 +1330,11 @@ describe("core/lock/lock additional branch coverage", () => {
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
       await fs.mkdir(gatePath);
-      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: 1234, token: "dead-owner" })}\n`, "utf8");
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: 1234, token: "dead-owner" })}\n`,
+        "utf8",
+      );
       const orphanedAt = new Date(Date.now() - 20_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
       const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
@@ -714,12 +1342,17 @@ describe("core/lock/lock additional branch coverage", () => {
       });
 
       try {
-        const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+        const release = await lockInternals.acquireStaleCleanupGate(
+          lockPath,
+          id,
+        );
         if (release === null) {
           throw new Error("expected stale cleanup gate release");
         }
         await release();
-        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(fs.access(gatePath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
       } finally {
         killSpy.mockRestore();
       }
@@ -741,7 +1374,9 @@ describe("core/lock/lock additional branch coverage", () => {
         throw new Error("expected stale cleanup gate release");
       }
       await release();
-      await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(gatePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     });
   });
 
@@ -749,7 +1384,19 @@ describe("core/lock/lock additional branch coverage", () => {
     await withTempPmPath(async ({ pmPath }) => {
       const shapeCases = [
         { id: "pm-lock-stale-cleanup-owner-array", rawOwner: "[]\n" },
-        { id: "pm-lock-stale-cleanup-owner-fields", rawOwner: "{\"pid\":0,\"token\":\"\"}\n" },
+        {
+          id: "pm-lock-stale-cleanup-owner-fields",
+          rawOwner: '{"pid":0,"token":""}\n',
+        },
+        {
+          id: "pm-lock-stale-cleanup-owner-process-identity",
+          rawOwner: '{"pid":1,"token":"valid","process_start_identity":42}\n',
+        },
+        {
+          id: "pm-lock-stale-cleanup-owner-nondigit-identity",
+          rawOwner:
+            '{"pid":1,"token":"valid","process_start_identity":"12-old"}\n',
+        },
       ];
       for (const { id, rawOwner } of shapeCases) {
         const lockPath = getLockPath(pmPath, id);
@@ -759,12 +1406,17 @@ describe("core/lock/lock additional branch coverage", () => {
         const orphanedAt = new Date(Date.now() - 20_000);
         await fs.utimes(gatePath, orphanedAt, orphanedAt);
 
-        const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+        const release = await lockInternals.acquireStaleCleanupGate(
+          lockPath,
+          id,
+        );
         if (release === null) {
           throw new Error("expected stale cleanup gate release");
         }
         await release();
-        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(fs.access(gatePath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
       }
     });
   });
@@ -780,7 +1432,11 @@ describe("core/lock/lock additional branch coverage", () => {
       }
       await fs.rm(gatePath, { recursive: true, force: true });
       await fs.mkdir(gatePath);
-      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: process.pid, token: "new-owner" })}\n`, "utf8");
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: process.pid, token: "new-owner" })}\n`,
+        "utf8",
+      );
 
       await release();
 
@@ -836,12 +1492,16 @@ describe("core/lock/lock additional branch coverage", () => {
         throw new Error("expected stale cleanup gate release");
       }
       const realRm = fs.rm;
-      const rmSpy = vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
-        if (String(targetPath) === gatePath) {
-          throw Object.assign(new Error("release denied"), { code: "EACCES" });
-        }
-        await realRm(targetPath, options);
-      });
+      const rmSpy = vi
+        .spyOn(fs, "rm")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === gatePath) {
+            throw Object.assign(new Error("release denied"), {
+              code: "EACCES",
+            });
+          }
+          await realRm(targetPath, options);
+        });
 
       try {
         await expect(release()).resolves.toBeUndefined();
@@ -859,16 +1519,22 @@ describe("core/lock/lock additional branch coverage", () => {
       const gatePath = `${lockPath}.stale-cleanup`;
       const ownerPath = path.join(gatePath, "owner.json");
       const realWriteFile = fs.writeFile;
-      const writeFileSpy = vi.spyOn(fs, "writeFile").mockImplementation(async (targetPath, data, options) => {
-        if (String(targetPath) === ownerPath) {
-          throw Object.assign(new Error("owner denied"), { code: "EACCES" });
-        }
-        await realWriteFile(targetPath, data, options);
-      });
+      const writeFileSpy = vi
+        .spyOn(fs, "writeFile")
+        .mockImplementation(async (targetPath, data, options) => {
+          if (String(targetPath) === ownerPath) {
+            throw Object.assign(new Error("owner denied"), { code: "EACCES" });
+          }
+          await realWriteFile(targetPath, data, options);
+        });
 
       try {
-        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
-        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
+        await expect(fs.access(gatePath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
       } finally {
         writeFileSpy.mockRestore();
       }
@@ -882,19 +1548,30 @@ describe("core/lock/lock additional branch coverage", () => {
       const gatePath = `${lockPath}.stale-cleanup`;
       const realMkdir = fs.mkdir;
       let gateMkdirAttempts = 0;
-      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
-        if (String(targetPath) === gatePath) {
-          gateMkdirAttempts += 1;
-          if (gateMkdirAttempts === 1) {
-            throw Object.assign(new Error("cleanup raced"), { code: "EEXIST" });
+      const mkdirSpy = vi
+        .spyOn(fs, "mkdir")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === gatePath) {
+            gateMkdirAttempts += 1;
+            if (gateMkdirAttempts === 1) {
+              throw Object.assign(new Error("cleanup raced"), {
+                code: "EEXIST",
+              });
+            }
           }
-        }
-        await realMkdir(targetPath, options);
-      });
-      const statSpy = vi.spyOn(fs, "stat").mockRejectedValueOnce(Object.assign(new Error("cleanup gone"), { code: "ENOENT" }));
+          await realMkdir(targetPath, options);
+        });
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockRejectedValueOnce(
+          Object.assign(new Error("cleanup gone"), { code: "ENOENT" }),
+        );
 
       try {
-        const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+        const release = await lockInternals.acquireStaleCleanupGate(
+          lockPath,
+          id,
+        );
         expect(gateMkdirAttempts).toBe(2);
         if (release === null) {
           throw new Error("expected stale cleanup gate release");
@@ -913,16 +1590,24 @@ describe("core/lock/lock additional branch coverage", () => {
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
       const realMkdir = fs.mkdir;
-      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
-        if (String(targetPath) === gatePath) {
-          throw Object.assign(new Error("cleanup busy"), { code: "EEXIST" });
-        }
-        await realMkdir(targetPath, options);
-      });
-      const statSpy = vi.spyOn(fs, "stat").mockRejectedValueOnce(Object.assign(new Error("stat denied"), { code: "EACCES" }));
+      const mkdirSpy = vi
+        .spyOn(fs, "mkdir")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === gatePath) {
+            throw Object.assign(new Error("cleanup busy"), { code: "EEXIST" });
+          }
+          await realMkdir(targetPath, options);
+        });
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockRejectedValueOnce(
+          Object.assign(new Error("stat denied"), { code: "EACCES" }),
+        );
 
       try {
-        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
       } finally {
         mkdirSpy.mockRestore();
         statSpy.mockRestore();
@@ -939,15 +1624,19 @@ describe("core/lock/lock additional branch coverage", () => {
       const orphanedAt = new Date(Date.now() - 20_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
       const realRm = fs.rm;
-      const rmSpy = vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
-        if (String(targetPath) === gatePath) {
-          throw Object.assign(new Error("remove denied"), { code: "EPERM" });
-        }
-        await realRm(targetPath, options);
-      });
+      const rmSpy = vi
+        .spyOn(fs, "rm")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === gatePath) {
+            throw Object.assign(new Error("remove denied"), { code: "EPERM" });
+          }
+          await realRm(targetPath, options);
+        });
 
       try {
-        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
       } finally {
         rmSpy.mockRestore();
         await fs.rm(gatePath, { recursive: true, force: true });
@@ -965,18 +1654,24 @@ describe("core/lock/lock additional branch coverage", () => {
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
       let gateMkdirAttempts = 0;
       const realMkdir = fs.mkdir;
-      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
-        if (String(targetPath) === gatePath) {
-          gateMkdirAttempts += 1;
-          throw Object.assign(new Error("cleanup busy"), { code: "EEXIST" });
-        }
-        await realMkdir(targetPath, options);
-      });
+      const mkdirSpy = vi
+        .spyOn(fs, "mkdir")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === gatePath) {
+            gateMkdirAttempts += 1;
+            throw Object.assign(new Error("cleanup busy"), { code: "EEXIST" });
+          }
+          await realMkdir(targetPath, options);
+        });
 
       try {
-        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+        await expect(
+          lockInternals.acquireStaleCleanupGate(lockPath, id),
+        ).resolves.toBeNull();
         expect(gateMkdirAttempts).toBe(2);
-        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(fs.access(gatePath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
       } finally {
         mkdirSpy.mockRestore();
       }
@@ -988,16 +1683,26 @@ describe("core/lock/lock additional branch coverage", () => {
       const id = "pm-lock-stale-cleanup-gate-failure";
       const lockPath = getLockPath(pmPath, id);
       const fallbackLockInfo = {
-        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        info: {
+          id,
+          pid: 1,
+          owner: "fallback-owner",
+          created_at: STALE_TS,
+          ttl_seconds: 60,
+        },
         warnings: [],
       };
       const realMkdir = fs.mkdir;
-      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
-        if (String(targetPath) === `${lockPath}.stale-cleanup`) {
-          throw Object.assign(new Error("permission denied"), { code: "EACCES" });
-        }
-        await realMkdir(targetPath, options);
-      });
+      const mkdirSpy = vi
+        .spyOn(fs, "mkdir")
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === `${lockPath}.stale-cleanup`) {
+            throw Object.assign(new Error("permission denied"), {
+              code: "EACCES",
+            });
+          }
+          await realMkdir(targetPath, options);
+        });
 
       try {
         await expect(
@@ -1028,7 +1733,13 @@ describe("core/lock/lock additional branch coverage", () => {
       const id = "pm-lock-stale-cleanup-gone";
       const lockPath = getLockPath(pmPath, id);
       const fallbackLockInfo = {
-        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        info: {
+          id,
+          pid: 1,
+          owner: "fallback-owner",
+          created_at: STALE_TS,
+          ttl_seconds: 60,
+        },
         warnings: [],
       };
 
@@ -1056,8 +1767,18 @@ describe("core/lock/lock additional branch coverage", () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-refresh";
       const lockPath = getLockPath(pmPath, id);
-      const freshLockInfo = { id, pid: process.pid, owner: "fresh-owner", created_at: new Date().toISOString(), ttl_seconds: 60 };
-      await fs.writeFile(lockPath, `${JSON.stringify(freshLockInfo, null, 2)}\n`, "utf8");
+      const freshLockInfo = {
+        id,
+        pid: process.pid,
+        owner: "fresh-owner",
+        created_at: new Date().toISOString(),
+        ttl_seconds: 60,
+      };
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify(freshLockInfo, null, 2)}\n`,
+        "utf8",
+      );
 
       const result = await lockInternals.removeConfirmedStaleLock({
         lockPath,
@@ -1069,7 +1790,13 @@ describe("core/lock/lock additional branch coverage", () => {
         waitBudgetMs: 10,
         startedAtMs: Date.now(),
         fallbackLockInfo: {
-          info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+          info: {
+            id,
+            pid: 1,
+            owner: "fallback-owner",
+            created_at: STALE_TS,
+            ttl_seconds: 60,
+          },
           warnings: [],
         },
       });
@@ -1087,10 +1814,20 @@ describe("core/lock/lock additional branch coverage", () => {
       const id = "pm-lock-stale-cleanup-exhausted";
       const lockPath = getLockPath(pmPath, id);
       const fallbackLockInfo = {
-        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        info: {
+          id,
+          pid: 1,
+          owner: "fallback-owner",
+          created_at: STALE_TS,
+          ttl_seconds: 60,
+        },
         warnings: [],
       };
-      await fs.writeFile(lockPath, `${JSON.stringify(fallbackLockInfo.info, null, 2)}\n`, "utf8");
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify(fallbackLockInfo.info, null, 2)}\n`,
+        "utf8",
+      );
 
       await expect(
         lockInternals.removeConfirmedStaleLock({
@@ -1132,31 +1869,61 @@ describe("core/lock/lock additional branch coverage", () => {
         const allowFirstUnlink = new Promise<void>((allow) => {
           releaseFirstUnlink = allow;
         });
-        const unlinkSpy = vi.spyOn(fs, "unlink").mockImplementation(async (targetPath) => {
-          if (String(targetPath) === lockPath) {
-            unlinkSpy.mockRestore();
-            resolve();
-            await allowFirstUnlink;
-          }
-          await realUnlink(targetPath);
-        });
+        const unlinkSpy = vi
+          .spyOn(fs, "unlink")
+          .mockImplementation(async (targetPath) => {
+            if (String(targetPath) === lockPath) {
+              unlinkSpy.mockRestore();
+              resolve();
+              await allowFirstUnlink;
+            }
+            await realUnlink(targetPath);
+          });
       });
 
-      const firstAcquire = acquireLock(pmPath, id, 60, "owner-a", true, false, 100);
+      const firstAcquire = acquireLock(
+        pmPath,
+        id,
+        60,
+        "owner-a",
+        true,
+        false,
+        100,
+      );
       await firstUnlinkStarted;
-      const secondAcquire = acquireLock(pmPath, id, 60, "owner-b", true, false, 5);
+      const secondAcquire = acquireLock(
+        pmPath,
+        id,
+        60,
+        "owner-b",
+        true,
+        false,
+        5,
+      );
       releaseFirstUnlink();
 
       const outcomes = await Promise.allSettled([firstAcquire, secondAcquire]);
-      const fulfilled = outcomes.filter((outcome): outcome is PromiseFulfilledResult<() => Promise<void>> => outcome.status === "fulfilled");
-      const rejected = outcomes.filter((outcome): outcome is PromiseRejectedResult => outcome.status === "rejected");
-      const fulfilledIndex = outcomes.findIndex((outcome) => outcome.status === "fulfilled");
+      const fulfilled = outcomes.filter(
+        (outcome): outcome is PromiseFulfilledResult<() => Promise<void>> =>
+          outcome.status === "fulfilled",
+      );
+      const rejected = outcomes.filter(
+        (outcome): outcome is PromiseRejectedResult =>
+          outcome.status === "rejected",
+      );
+      const fulfilledIndex = outcomes.findIndex(
+        (outcome) => outcome.status === "fulfilled",
+      );
       const expectedOwner = fulfilledIndex === 0 ? "owner-a" : "owner-b";
       expect(fulfilled).toHaveLength(1);
       expect(rejected).toHaveLength(1);
-      expect(rejected[0]?.reason).toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+      expect(rejected[0]?.reason).toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
 
-      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as {
+        owner: string;
+      };
       expect(lockInfo.owner).toBe(expectedOwner);
       await fulfilled[0]?.value();
     });
@@ -1190,9 +1957,17 @@ describe("core/lock/lock additional branch coverage", () => {
           ],
         });
 
-        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
+        const release = await acquireLock(
+          pmPath,
+          id,
+          60,
+          "owner-override",
+          false,
+        );
         // The override fully handled acquisition — no lock file should exist.
-        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({
+          code: "ENOENT",
+        });
 
         await release();
         expect(released).toBe(true);
@@ -1219,8 +1994,16 @@ describe("core/lock/lock additional branch coverage", () => {
           ],
         });
 
-        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
-        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+        const release = await acquireLock(
+          pmPath,
+          id,
+          60,
+          "owner-override",
+          false,
+        );
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({
+          code: "ENOENT",
+        });
         await release();
         expect(released).toBe(true);
       });
@@ -1242,11 +2025,21 @@ describe("core/lock/lock additional branch coverage", () => {
           ],
         });
 
-        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
+        const release = await acquireLock(
+          pmPath,
+          id,
+          60,
+          "owner-override",
+          false,
+        );
         // The real file-based lock path ran, so the lock file exists.
-        await expect(fs.access(getLockPath(pmPath, id))).resolves.toBeUndefined();
+        await expect(
+          fs.access(getLockPath(pmPath, id)),
+        ).resolves.toBeUndefined();
         await release();
-        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({
+          code: "ENOENT",
+        });
       });
     });
 
@@ -1264,10 +2057,20 @@ describe("core/lock/lock additional branch coverage", () => {
           ],
         });
 
-        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
-        await expect(fs.access(getLockPath(pmPath, id))).resolves.toBeUndefined();
+        const release = await acquireLock(
+          pmPath,
+          id,
+          60,
+          "owner-override",
+          false,
+        );
+        await expect(
+          fs.access(getLockPath(pmPath, id)),
+        ).resolves.toBeUndefined();
         await release();
-        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({
+          code: "ENOENT",
+        });
       });
     });
   });

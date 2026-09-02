@@ -55,6 +55,11 @@ import {
 } from "./init-agent-guidance.js";
 import { findGitWorkspaceRoot, installMergeFence } from "./merge/install.js";
 
+/** Symbol key for the captured working directory of an in-process init call. */
+export const INIT_INVOCATION_CWD: unique symbol = Symbol.for(
+  "pm.sdk.init-invocation-cwd",
+);
+
 /** Documents the init installed packages summary payload exchanged by command, SDK, and package integrations. */
 export interface InitInstalledPackagesSummary {
   /** Value that configures or reports installed all for this contract. */
@@ -1216,13 +1221,35 @@ async function installInitMergeFence(
   }
 }
 
+async function ensureInitWorkspaceGitignore(
+  workspaceRoot: string | null | undefined,
+  pmRoot: string,
+  agentGuidanceMode: InitAgentGuidanceMode,
+  warnings: string[],
+): Promise<void> {
+  if (
+    workspaceRoot === undefined ||
+    workspaceRoot === null ||
+    agentGuidanceMode === "status"
+  ) {
+    return;
+  }
+  const gitignore = await ensurePmGitignore(workspaceRoot, { pmRoot });
+  if (gitignore.changed) {
+    warnings.push(`updated:gitignore:${gitignore.path}`);
+  }
+}
+
 /** Implements run init for the public runtime surface of this module. */
 export async function runInit(
   prefixArg: string | undefined,
   global: GlobalOptions,
   options: InitCommandOptions = {},
 ): Promise<InitResult> {
-  const cwd = process.cwd();
+  const invocationCwd = (global as GlobalOptions & { [key: symbol]: unknown })[
+    INIT_INVOCATION_CWD
+  ];
+  const cwd = typeof invocationCwd === "string" ? invocationCwd : process.cwd();
   const invocation = resolveInitInvocation(
     cwd,
     global,
@@ -1301,12 +1328,12 @@ export async function runInit(
   }
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
-  if (workspaceRoot && normalizedOptions.agentGuidanceMode !== "status") {
-    const gitignore = await ensurePmGitignore(workspaceRoot, { pmRoot });
-    if (gitignore.changed) {
-      warnings.push(`updated:gitignore:${gitignore.path}`);
-    }
-  }
+  await ensureInitWorkspaceGitignore(
+    workspaceRoot,
+    pmRoot,
+    normalizedOptions.agentGuidanceMode,
+    warnings,
+  );
   if (
     !settingsExists &&
     options.mergeFence !== false &&

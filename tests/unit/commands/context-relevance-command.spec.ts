@@ -16,6 +16,7 @@ import {
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { recordClaimedWorkAttribution } from "../../../src/core/session/session-state.js";
 import type { ContextRelevanceReport } from "../../../src/sdk/context-relevance.js";
+import { finalizeContextUsageDelivery } from "../../../src/sdk/context-usage.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import {
@@ -297,6 +298,14 @@ describe("context relevance command integration", () => {
       expect(explainedContext.ranking?.items.map((entry) => entry.id)).toEqual(
         contextRowIds,
       );
+      expect(explainedContext.ranking!.items.length).toBeGreaterThan(0);
+      expect(
+        explainedContext.ranking?.items.every(
+          (entry) =>
+            entry.recency?.source === "substantive_history" &&
+            entry.recency.event_class === "substantive",
+        ),
+      ).toBe(true);
       expect(explainedContext.ranking?.candidate_count).toBeGreaterThanOrEqual(
         contextRowIds.length,
       );
@@ -401,7 +410,13 @@ describe("context relevance command integration", () => {
   it("folds usage feedback dynamically and tolerates an absent author", async () => {
     await withTempPmPath(async (context) => {
       const createdIds = createContextRankingItems(context);
-      await runContext({}, { path: context.pmPath });
+      const served = await runContext({}, { path: context.pmPath });
+      await expect(
+        finalizeContextUsageDelivery({
+          pmRoot: context.pmPath,
+          result: served,
+        }),
+      ).resolves.toBe(true);
       const read = context.runCli(["get", createdIds[1]!, "--json"], {
         expectJson: true,
       });

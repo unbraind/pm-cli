@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearActiveExtensionHooks,
+  getActiveCommandResult,
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionRenderers,
   setActiveExtensionServices,
 } from "../../../../src/core/extensions/index.js";
+import { suppressHostOutput } from "../../../../src/core/output/output-control.js";
 import {
   formatOutput,
   outputTestOnly,
@@ -19,6 +21,7 @@ import {
   withQuerySummary,
 } from "../../../../src/core/output/query-summary.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { attachContextUsageServingReceipt } from "../../../../src/sdk/context-usage.js";
 
 describe("core/output/output", () => {
   afterEach(() => {
@@ -348,6 +351,9 @@ describe("core/output/output", () => {
 
     printResult({ ok: true }, { quiet: true });
     expect(stdoutSpy).not.toHaveBeenCalled();
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
 
     printResult({ ok: true }, { json: true });
     expect(stdoutSpy).toHaveBeenCalledWith(
@@ -813,6 +819,14 @@ describe("core/output/output", () => {
     expect(formatOutput({ ok: true }, { json: true })).toBe(
       `${JSON.stringify({ wrapped: { ok: true } })}\n`,
     );
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
+
+    expect(formatOutput(suppressHostOutput({ ok: true }), {})).toBe("");
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
 
     setActiveExtensionRenderers({
       overrides: [
@@ -854,6 +868,9 @@ describe("core/output/output", () => {
     expect(formatOutput({ ok: true }, { json: true })).toBe(
       `${JSON.stringify({ wrapped: { ok: true } })}\n`,
     );
+    expect(getActiveCommandResult()).toEqual({
+      read_output: { result_omitted: true },
+    });
 
     const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     printError("boom");
@@ -923,6 +940,37 @@ describe("core/output/output", () => {
     const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     printError("plain");
     expect(stderrSpy).toHaveBeenCalledWith("plain\n");
+  });
+
+  it("marks handled primitive and array service results as receipt-safe omissions", () => {
+    const source = { high_level: [{ id: "pm-served" }] };
+    const receipt = {
+      serve_id: "serve-output-service",
+      author: "agent",
+      surface: "context" as const,
+      rows: [{ id: "pm-served", rank: 1, included: true }],
+    };
+    attachContextUsageServingReceipt(source, receipt);
+    const receiptSymbol = Object.getOwnPropertySymbols(source)[0];
+
+    for (const serviceResult of [42, [{ id: "rewritten" }]]) {
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "non-record-output-service-ext",
+            service: "output_format",
+            run: () => serviceResult,
+          },
+        ],
+      });
+      formatOutput(source, { json: true });
+      const activeResult = getActiveCommandResult() as Record<string, unknown>;
+      expect(activeResult).toMatchObject({
+        read_output: { result_omitted: true },
+      });
+      expect(Reflect.get(activeResult, receiptSymbol as symbol)).toBe(receipt);
+    }
   });
 });
 

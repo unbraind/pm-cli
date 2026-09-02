@@ -1,0 +1,109 @@
+id: pm-r8yytk
+title: Shape-qualified scale baselines drifted from current CLI/SDK output contracts and supported runtime
+description: "The committed scratch 10k scale budget still uses the legacy unqualified tier key and July output/startup observations. Exact-main and feature-branch runs now deterministically emit richer list/get payloads and exceed Node 24/26 cold mutation ceilings while all measured outputs remain below the 5k product target. Refreshing the baseline requires explicit cross-head evidence, the existing 25 percent methodology, and preservation of product ceilings."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:cli","area:performance","area:sdk",benchmark,regression
+created_at: "2026-09-01T14:41:40.376Z"
+updated_at: "2026-09-01T19:59:44.648Z"
+closed_at: "2026-09-01T19:41:54.042Z"
+completed_at: "2026-09-01T19:41:54.042Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: The scratch 10k budget is shape-qualified; exact-main and delivery-head results are compared on the supported Node 24 workflow baseline; a five-iteration delivery-head run establishes measured budgets with 25 percent headroom; the unmodified scale check passes; every command remains below the published 1000 ms p95 and 5000-token product targets; Node 26 variance is recorded without being misreported as a delivery regression.
+parent: pm-9rxu
+risk: high
+confidence: high
+severity: high
+resolution: "The supported Node 24 scratch:10000 linked gate now records five iterations and independently enforces 1,000 ms p95 and 5,000-token ceilings."
+expected_result: The acceptance evidence records the required five-run CLI/SDK baseline and rejects both product-target breaches and implementation regressions.
+actual_result: "Terminal five-run gate passed with worst CLI 935 ms/4,451 tokens and worst SDK 318 ms/2,935 tokens; the earlier O(corpus) prototype failure remains preserved as fail-closed evidence."
+component: performance
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+  pm-hcrmye,recurs_from,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+  pm-mi2x,verifies,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+  pm-yse5dt,verifies,"2026-09-01T14:42:24.408Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-01T14:41:40.376Z","harness:codex","Duplicate-check evidence: all-status searches for scale budget, Node 26, shape-qualified tiers, stale baselines, and list/get token drift found the original harness pm-mi2x, fixed-runtime regression pm-hcrmye, transport ratchet pm-yse5dt, and output-budget roadmap pm-5t33or, but no item owns the combined legacy-key and current-contract baseline drift. Exact-main at ba9680239 and this branch produce identical list/get bytes and comparable startup/RSS, so this is not introduced by the active context implementation."
+  "2026-09-01T15:48:15.679Z","harness:codex","Delivery evidence 2026-09-01: the legacy scratch tier is now shape-qualified as scratch:10000. Clean exact-main ba9680239 and delivery-head Node 24 five-iteration reports produced identical payload contracts and no product failures. The committed observations use the documented 25% headroom methodology. Head-minus-main minimum latency deltas were CLI list -8ms, get +7ms, next +62ms, context +47ms, search -2ms, create +4ms, claim +13ms; SDK list +2ms, get +17ms, next +62ms, context +91ms, search +56ms, create +4ms, claim +6ms. Every measurement remains below the published 1000ms p95 and 5000-token product ceilings. The unmodified three-iteration Node 24 check passed and wrote .cache/scale-node24-final-report.json. Node 26 variance was treated as non-baseline diagnostic evidence, not a feature regression."
+  "2026-09-01T17:16:29.885Z","harness:codex","Review round evidence: normalized the remaining legacy 100000 budget key to scratch:100000. The suggested 5,000-token manifest cap was declined because regression headroom and the independent product target are deliberately separate: run-scale-benchmarks applies productTargetStatus after compareScaleBudgets and fails any actual command above 5,000 tokens. Fresh Node 24 linked scale verification passed at scratch:10,000 with both transports, 3 iterations, p95 <= 1,000ms and actual estimated tokens <= 5,000."
+  "2026-09-01T18:28:29.053Z","harness:codex","Correction to earlier review disposition: the prior claim that the 5,000-token product target was already enforced was incorrect. compareScaleBudgets previously enforced only the shape-qualified manifest ceilings, so a 5,001-5,564 token result could pass. The gate now independently rejects p95 > 1,000 ms and max_estimated_tokens > 5,000 for every measured CLI and SDK command, with a negative control that stays beneath its manifest budget while breaching both product targets. Focused scale suite: 8/8 passed."
+  "2026-09-01T18:52:46.193Z","harness:codex","Terminal linked evidence: Node 24 scratch:10000 both-transport gate passed. Worst CLI p95 was context at 688 ms; worst CLI output was next at 4,451 estimated tokens. Worst SDK p95 was context at 260 ms; worst SDK output was next at 2,925 tokens. Every measured command is below the independently enforced 1,000 ms and 5,000 token product targets."
+  "2026-09-01T19:41:38.184Z","harness:codex","Machine-readable acceptance correction: replaced the duplicated three-iteration linked check with the required five-iteration Node 24 scratch:10000 CLI/SDK gate. The first run correctly caught the O(corpus) concurrency prototype; after replacing it with constant-cost SQLite serialization, terminal run passed. Final worst CLI p95/output were next at 935 ms and 4,451 tokens; worst SDK p95 was context at 318 ms and output was next at 2,935 tokens, all below hard 1,000 ms/5,000-token targets."
+  "2026-09-01T19:59:44.648Z","harness:codex","Terminal scale and quality evidence: the canonical linked five-iteration dual-transport scale run passed (run test-local-mtj2oyms-mqhjef; worst CLI p95 935ms and 4451 estimated tokens; worst SDK context p95 318ms; worst SDK next output 2935 estimated tokens). The concurrency-safe SQLite transaction implementation retained those measured bounds. Full coverage remained exact at 100/100/100/100 and pnpm quality:static passed after the final busy-timeout/refusal negative control."
+files[3]{path,scope,note}:
+  scripts/bench/run-scale-benchmarks.mjs,project,Enforce absolute latency and token product targets alongside regression budgets
+  scripts/bench/scale-budgets.json,project,Shape-qualified supported-runtime regression baseline
+  tests/unit/scripts/scale-benchmark.spec.ts,project,Negative control for product-target breaches beneath manifest ceilings
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 5 --transport both --check --output .cache/scale-node24-five-run-report.json,project,900,"harness:codex","2026-09-01T19:07:54.756Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Five-iteration supported-runtime acceptance baseline
+test_runs[5]:
+  - run_id: test-local-mtixhyzc-vshf4n
+    kind: test
+    status: passed
+    started_at: "2026-09-01T17:15:16.116Z"
+    finished_at: "2026-09-01T17:15:54.840Z"
+    recorded_at: "2026-09-01T17:15:54.840Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-node24-final-report.json,schema,schema,source,local_source_ref
+  - run_id: test-local-mtj04atp-4lrxn3
+    kind: test
+    status: passed
+    started_at: "2026-09-01T18:28:37.461Z"
+    finished_at: "2026-09-01T18:29:15.853Z"
+    recorded_at: "2026-09-01T18:29:15.853Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-node24-final-report.json,schema,schema,source,local_source_ref
+  - run_id: test-local-mtj1jksx-c68x66
+    kind: test
+    status: failed
+    started_at: "2026-09-01T19:08:00.582Z"
+    finished_at: "2026-09-01T19:09:08.240Z"
+    recorded_at: "2026-09-01T19:09:08.240Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 5 --transport both --check --output .cache/scale-node24-five-run-report.json,schema,schema,source,local_source_ref
+  - run_id: test-local-mtj1p58m-cwj8s9
+    kind: test
+    status: passed
+    started_at: "2026-09-01T19:12:40.280Z"
+    finished_at: "2026-09-01T19:13:28.006Z"
+    recorded_at: "2026-09-01T19:13:28.006Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 5 --transport both --check --output .cache/scale-node24-five-run-report.json,schema,schema,source,local_source_ref
+  - run_id: test-local-mtj2oyms-mqhjef
+    kind: test
+    status: passed
+    started_at: "2026-09-01T19:40:26.079Z"
+    finished_at: "2026-09-01T19:41:19.060Z"
+    recorded_at: "2026-09-01T19:41:19.060Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 5 --transport both --check --output .cache/scale-node24-five-run-report.json,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/PERFORMANCE.md,project,Runtime and baseline-refresh evidence contract
+close_reason: Five-iteration scale acceptance is machine-readable and terminal
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-r8yytk
+  gate_id: supported-node24-shape-qualified-scale-budget
+  negative_control: Run the ordinary scratch 10k scale check against a legacy unqualified or stale observation set and require it to fail before accepting a five-run supported-Node baseline with preserved product ceilings.
+  local_checks[3]: mise x node@24 -- node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 5 --transport both --check --output .cache/scale-node24-five-run-report.json,node scripts/run-tests.mjs test -- tests/unit/scripts/scale-benchmark.spec.ts,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[2]: "CI / Run benchmarks (Ubuntu 22.04, Node 24)",CI / Gates (static)
+body: ""

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   CONTEXT_EVALUATION_METRIC_NAMES,
   PmClient,
+  recordContextUsageDelivery,
   recordContextUsageServing,
   recordContextUsageTouches,
   runContextEvaluationScenario,
@@ -137,7 +138,17 @@ async function seedWorkspace(definition, workspaceRoot) {
   return { client, idByKey, pmRoot };
 }
 
-async function seedUsageFeedback(definition, idByKey, pmRoot) {
+/** Seed one scenario's usage signals while preserving touch evidence on feedback failures. */
+export async function seedUsageFeedback(
+  definition,
+  idByKey,
+  pmRoot,
+  operations = {
+    recordServing: recordContextUsageServing,
+    recordDelivery: recordContextUsageDelivery,
+    recordTouches: recordContextUsageTouches,
+  },
+) {
   if (definition.usage_feedback === undefined) return;
   const feedback = requiredObject(definition.usage_feedback, `scenario ${definition.id} usage_feedback`);
   const servedKeys = optionalArray(feedback.served_keys, `scenario ${definition.id} usage_feedback.served_keys`);
@@ -153,21 +164,50 @@ async function seedUsageFeedback(definition, idByKey, pmRoot) {
     return id;
   });
   const touchedAt = new Date();
-  await recordContextUsageServing({
-    pmRoot,
-    author: "context-eval-agent",
-    surface: definition.surface,
-    profile: definition.surface,
-    rows: servedIds.map((id, index) => ({ id, rank: index + 1, included: true })),
-    now: new Date(touchedAt.getTime() - 60_000).toISOString(),
-  });
-  await recordContextUsageTouches({
-    pmRoot,
-    author: "context-eval-agent",
-    itemIds: touchedIds,
-    intent: "update",
-    now: touchedAt.toISOString(),
-  });
+  let feedbackFailed = false;
+  let feedbackError;
+  try {
+    const receipt = await operations.recordServing({
+      pmRoot,
+      author: "context-eval-agent",
+      surface: definition.surface,
+      profile: definition.surface,
+      rows: servedIds.map((id, index) => ({ id, rank: index + 1, included: true })),
+      now: new Date(touchedAt.getTime() - 60_000).toISOString(),
+    });
+    await operations.recordDelivery({
+      pmRoot,
+      receipt,
+      deliveredItemIds: servedIds,
+      resultOmitted: false,
+      now: new Date(touchedAt.getTime() - 30_000).toISOString(),
+    });
+  } catch (error) {
+    feedbackFailed = true;
+    feedbackError = error;
+  }
+  let touchFailed = false;
+  let touchError;
+  try {
+    await operations.recordTouches({
+      pmRoot,
+      author: "context-eval-agent",
+      itemIds: touchedIds,
+      intent: "update",
+      now: touchedAt.toISOString(),
+    });
+  } catch (error) {
+    touchFailed = true;
+    touchError = error;
+  }
+  if (feedbackFailed && touchFailed) {
+    throw new AggregateError(
+      [feedbackError, touchError],
+      "Context evaluation feedback and touch writes both failed",
+    );
+  }
+  if (feedbackFailed) throw feedbackError;
+  if (touchFailed) throw touchError;
 }
 
 /** Build the committed comparison baseline from a current corpus report. */

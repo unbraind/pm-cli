@@ -373,6 +373,38 @@ function compareTransportOverhead(report, tier) {
   return violations;
 }
 
+/** Compare every measured command against the universal product ceiling. */
+function compareProductTargets(transports) {
+  const violations = [];
+  for (const [transport, commands] of Object.entries(transports)) {
+    for (const [name, summary] of Object.entries(commands)) {
+      violations.push(
+        ...compareProductTarget(transport, name, summary, PRODUCT_TARGET),
+      );
+    }
+  }
+  return violations;
+}
+
+/** Compare measured commands against one shape-qualified regression tier. */
+function compareRegressionBudgets(report, tier) {
+  const violations = [];
+  for (const [transport, commands] of Object.entries(report.transports)) {
+    for (const [name, summary] of Object.entries(commands)) {
+      const budget = tier.transports?.[transport]?.[name];
+      if (!budget) {
+        violations.push(`${transport}.${name}: missing budget`);
+      } else {
+        violations.push(
+          ...compareCommandBudget(transport, name, summary, budget),
+        );
+      }
+    }
+  }
+  violations.push(...compareTransportOverhead(report, tier));
+  return violations;
+}
+
 /** Return human-readable regression and product-target violations. */
 export function compareScaleBudgets(report, manifest) {
   const violations = [];
@@ -387,21 +419,25 @@ export function compareScaleBudgets(report, manifest) {
     violations.push(
       `missing regression budget for ${shapeName}:${report.fixture.item_count}`,
     );
-    return violations;
+  } else {
+    violations.push(...compareRegressionBudgets(report, tier));
   }
-  for (const [transport, commands] of Object.entries(report.transports)) {
-    for (const [name, summary] of Object.entries(commands)) {
-      const budget = tier.transports?.[transport]?.[name];
-      if (!budget) {
-        violations.push(`${transport}.${name}: missing budget`);
-        continue;
-      }
-      violations.push(
-        ...compareCommandBudget(transport, name, summary, budget),
-      );
-    }
+  violations.push(...compareProductTargets(report.transports));
+  return violations;
+}
+
+function compareProductTarget(transport, name, summary, target) {
+  const violations = [];
+  if (summary.p95_ms > target.p95_ms) {
+    violations.push(
+      `product_target.${transport}.${name}: p95 ${summary.p95_ms}ms > ${target.p95_ms}ms`,
+    );
   }
-  violations.push(...compareTransportOverhead(report, tier));
+  if (summary.max_estimated_tokens > target.max_estimated_tokens) {
+    violations.push(
+      `product_target.${transport}.${name}: ${summary.max_estimated_tokens} tokens > ${target.max_estimated_tokens}`,
+    );
+  }
   return violations;
 }
 
@@ -462,12 +498,8 @@ export async function updateBudgetManifest(manifestPath, report, headroom) {
   } catch {
     // A first baseline creates the manifest.
   }
-  manifest.tiers[
-    `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`
-  ] = buildTierBudget(
-    report,
-    headroom,
-  );
+  const tierKey = `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`;
+  manifest.tiers[tierKey] = buildTierBudget(report, headroom);
   if ((report.fixture.shape?.name ?? "scratch") === "scratch") {
     delete manifest.tiers[String(report.fixture.item_count)];
   }
@@ -567,9 +599,7 @@ export function benchmarkOptionsFromFlags(flags) {
     iterations: flags.get("iterations") ?? 3,
     seed: flags.get("seed") ?? 42,
     shape:
-      flags.get("shape") === undefined
-        ? "scratch"
-        : String(flags.get("shape")),
+      flags.get("shape") === undefined ? "scratch" : String(flags.get("shape")),
     mode:
       flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     transport: flags.get("transport") ?? "both",
@@ -633,9 +663,7 @@ export async function runScaleBenchmarkEntrypoint(options = {}) {
   const argv = options.argv ?? process.argv;
   if (!isMainModule(argv)) return false;
   try {
-    const execute =
-      options.run ??
-      ((args) => main(args, options.mainOptions));
+    const execute = options.run ?? ((args) => main(args, options.mainOptions));
     const { report, outputPath } = await execute(argv.slice(2));
     (options.write ?? ((output) => process.stdout.write(output)))(
       `${JSON.stringify(

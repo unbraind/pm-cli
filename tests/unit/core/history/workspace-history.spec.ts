@@ -30,8 +30,61 @@ import {
 import { runExtension } from "../../../../src/cli/commands/extension.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { parseJsonErrorEnvelope } from "../../../helpers/jsonErrorEnvelope.js";
+import { runWithReproducibleExecution } from "../../../../src/core/reproducibility/context.js";
 
 describe("workspace history", () => {
+  it("uses the reproducible clock for every audited workspace history path", async () => {
+    await withTempPmPath(async (context) => {
+      const clock = "2026-09-02T12:34:56.789Z";
+      const filePath = path.join(context.pmPath, "governance.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "governance_put",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      };
+      await runWithReproducibleExecution(
+        { clock, seed: "workspace-history-clock", tickMs: 0 },
+        async () => {
+          await writeWorkspaceJsonWithHistory({
+            ...common,
+            raw: '{"floor":10}\n',
+          });
+          await appendWorkspaceAuditEvent({
+            ...common,
+            op: "workspace_review",
+            context: { reviewed: true },
+            message: "Record deterministic audit evidence.",
+          });
+          await writeFile(filePath, '{"floor":8}\n');
+          await reconcileWorkspaceJsonHistory({
+            ...common,
+            op: "workspace_state_reconcile",
+            authorizationDecision: "pm-decision",
+          });
+          await restoreWorkspaceJsonFromHistory({
+            ...common,
+            op: "workspace_state_restore",
+            targetVersion: 1,
+          });
+        },
+      );
+
+      const entries = await readHistoryEntries(
+        getWorkspaceHistoryPath(context.pmPath),
+        WORKSPACE_HISTORY_ID,
+      );
+      expect(entries.map((entry) => entry.ts)).toEqual([
+        clock,
+        clock,
+        clock,
+        clock,
+      ]);
+    });
+  });
+
   it("starts an audit-only workspace stream without changing state", async () => {
     await withTempPmPath(async (context) => {
       await expect(

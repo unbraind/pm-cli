@@ -2,11 +2,13 @@ id: pm-07pt16
 title: "Context recency is computed from updated_at, so every governance write the project mandates erases the freshness signal it ranks on"
 description: "computeContextRelevance derives the recency signal by rank-ordering items on updated_at alone (src/sdk/context-relevance.ts:136-153), and recency carries weight 0.35 — tied for the largest single weight in the default vector, behind only claim_focus and ahead of semantic_similarity. updated_at is the timestamp of the last write of any kind, so it cannot distinguish an item that a human or agent actually advanced from an item a sweep touched. Every maintenance operation this project requires — resolution backfill, close-reason backfill, relationship enrichment, release attribution stamping, normalization, duplicate renames — writes updated_at on terminal items and thereby promotes long-finished work to maximal freshness. This is not hypothetical: the release attribution backfill and terminal graph backfill in this same lane rewrote updated_at on 1782 and 1713 items respectively, so the entire terminal corpus now presents as newer than every genuinely active item. The narrow twin of this defect was already fixed once (pm-d9g9 rejected empty appends precisely so they could not fake freshness), which establishes that write-time is not freshness; the general class was never addressed. A maintenance-invariant temporal coordinate now exists in the data: every terminal item carries a stamped release identifier, and the immutable history stream distinguishes substantive operations (create, close, cancel, status transition, claim, comment) from maintenance operations (dependency add, metadata backfill, normalization, redaction, repair)."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:context",context-management,governance,history,relevance,signal-quality
 created_at: "2026-07-26T17:05:19.088Z"
-updated_at: "2026-07-26T17:05:19.088Z"
+updated_at: "2026-09-02T20:43:06.643Z"
+closed_at: "2026-09-02T20:43:06.039Z"
+completed_at: "2026-09-02T20:43:06.039Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "History operations carry a declared substantive-versus-maintenance classification that is part of the contract surface rather than a heuristic inside the scorer; The recency signal derives from the most recent substantive event for an item, falling back to the stamped release cohort and then to created_at, never to a bare updated_at; A property test proves that applying a pure-maintenance mutation to any item leaves the relevance ordering of the whole workspace unchanged; The classification is exposed so packages and extensions computing their own recency agree with the core definition instead of re-deriving it; Existing recency behaviour is preserved for workspaces with no history, so small and fresh projects degrade to the current ordering exactly; Explain-ranking discloses which event and which class produced the recency component for every scored item"
@@ -19,15 +21,503 @@ why_now: "The mandated terminal-graph and attribution backfills have now touched
 parent: pm-4k6b
 risk: medium
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-3hps,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z",null,null
-  pm-4k6b,implements,"2026-07-26T17:05:19.088Z",null,null
-  pm-9yfo,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-d9g9,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-klo8,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-lnrk,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z",null,null
-  pm-pcys9n,related,"2026-07-26T17:05:19.088Z",null,null
-  pm-uwfs,related,"2026-07-26T17:05:19.088Z",null,null
+resolution: "Implemented substantive-history recency classification and indexed context signals across the public SDK, CLI, and MCP; added exact delivered-context usage receipts, schema-driven refusal and surface replication contracts, runtime and release consumers, documentation, manual package/runtime validation, and review automation. Hardened release-gate Promise rejection handling, required non-empty delivered packed sets, isolated the DatabaseSync trigger matrix, routed audited workspace state through the reproducible clock, made the paired-index trigger threshold-stable, and made delivery/classification tests non-vacuous."
+expected_result: "Context retrieval ranks and explains work by meaningful history rather than maintenance churn; CLI, SDK, and MCP consumers record exact delivered context; reproducible SDK/CLI recipes produce byte-stable audited workspace activity; release and CI surfaces fail closed on invalid evidence while remaining efficient; all code, docs, tests, and delivery evidence remain linked through PM."
+actual_result: "Delivered substantive-history recency classification and indexing, deriving every item's recency from its latest substantive event, then stamped release cohort, then created_at—never bare updated_at. Maintenance-only mutations leave relevance ordering invariant, explain-ranking exposes event/class provenance, and CLI, SDK, and MCP record exact delivered context. Supporting hardening preserves Promise rejection reasons, exercises direct negative controls, requires non-empty packed delivery sets, catches threshold-only DatabaseSync guard changes, runs the production trigger matrix against an isolated two-member fixture, and makes all audited workspace-history operations honor the reproducible clock without interactive fixture prompts. PM-linked receipt test-local-mtkib68m-60d2nw passed all 8,307 tests with exact 100% coverage: 61,262 statements, 46,281 branches, 12,742 functions, and 58,963 lines."
+dependencies[10]{id,kind,created_at}:
+  pm-3hps,related,"2026-07-26T17:05:19.088Z"
+  pm-3j6it6,discovered_from,"2026-07-26T17:05:19.088Z"
+  pm-4k6b,implements,"2026-07-26T17:05:19.088Z"
+  pm-9yfo,related,"2026-07-26T17:05:19.088Z"
+  pm-d9g9,related,"2026-07-26T17:05:19.088Z"
+  pm-klo8,related,"2026-07-26T17:05:19.088Z"
+  pm-lnrk,related,"2026-07-26T17:05:19.088Z"
+  pm-p1g43q,blocks,"2026-07-26T17:05:19.088Z"
+  pm-pcys9n,related,"2026-07-26T17:05:19.088Z"
+  pm-uwfs,related,"2026-07-26T17:05:19.088Z"
+comments[91]{created_at,author,text}:
+  "2026-09-01T15:48:14.615Z","harness:codex","Delivery evidence 2026-09-01: history writes now carry public event_class=v1 classification; explicit classifications win, update patch fields are classified by declared policy, and unknown operations fail closed as substantive. The v3 event index supports latest-substantive reads with authoritative fallback. Context relevance and persisted signal snapshots derive recency from the latest substantive history event, then release cohort, then created_at, and never bare updated_at; explained context/next expose source, coordinate, history operation, and event class. A temporary-project acceptance proved a dependency-only maintenance write left the substantive recency coordinate byte-for-byte unchanged while CLI and PmClient returned the expected items. Static quality passed with public-surface and replication gates; exact coverage passed 596 files / 8260 tests at 60874 statements, 46011 branches, 12674 functions, and 58599 lines, all 100%. Supported Node 24 scale check remained within product bounds."
+  "2026-09-01T17:16:28.944Z","harness:codex","Review round evidence: accepted findings added the real history:author-acknowledge, history_compact_baseline, and tests_remove maintenance operations; invalid persisted event_class values now fall through to the versioned classifier; history index v4 records authoritative stream byte sizes and rejects stale-but-valid projections before rebuilding; latest-event maps use null prototypes; signal snapshot v3 fingerprints exact recency evidence; DatabaseSync replication detects declarations and assignments. Non-absence I/O errors remain authoritative failures. Linked focused suite passed 49/49 and repo coverage passed 60,928/60,928 statements, 46,039/46,039 branches, 12,685/12,685 functions, 58,650/58,650 lines."
+  "2026-09-01T18:28:29.526Z","harness:codex","Late-review hardening evidence: context snapshot freshness now fingerprints every item's effective recency provenance, including release-cohort and created_at fallbacks; optional substantive-history fields are isolated in their negative control. History-index rebuilds persist byte sizes captured with the authoritative pre-read snapshot, so a concurrent append leaves a detectable conservative mismatch rather than certifying old rows against a new size. Focused context/history suites passed, including the concurrent-append regression."
+  "2026-09-01T19:41:37.247Z","harness:codex","CodeRabbit follow-up evidence: v4 documentation now matches the runtime index; ContextSignalSnapshotItem requires ContextSignalProvenance on the public surface; persisted recency rejects maintenance history as substantive and rejects history fields on release/created fallbacks. Cross-process compliant appends now hold SQLite BEGIN IMMEDIATE across authoritative append, row insertion, and byte-size capture; append failure preserves the prior index, while post-append projection failure preserves history and removes the derived index. Focused 165-test coverage passed; exact repo coverage is 60,949/60,949 statements, 46,049/46,049 branches, 12,688/12,688 functions, and 58,670/58,670 lines; full static, zero-clone, docstring, contract, SDK surface, and record-integrity gates passed."
+  "2026-09-01T19:59:44.203Z","harness:codex","Terminal review-fix evidence: history append/index coordination now acquires a SQLite BEGIN IMMEDIATE write transaction with a 5-second busy timeout before the authoritative append, serializes concurrent writers through committed byte-size capture, refuses the append if the lock cannot be acquired, preserves the prior projection when the authoritative append fails, and removes only the derived index when post-append projection work fails. Context signal snapshots now require parser-aligned typed provenance and reject contradictory fallback/history provenance; docs identify the current v4 index. Negative controls cover lock refusal, append failure, post-append projection failure, concurrency ordering, and contradictory provenance. Final full coverage: statements 60953/60953, branches 46049/46049, functions 12688/12688, lines 58674/58674. Final pnpm quality:static passed."
+  "2026-09-01T20:30:54.275Z","harness:codex","Verification note: the first post-hardening full coverage run passed all product and integration tests except one 120-second timeout in tests/unit/scripts/release/surface-replication-gate.spec.ts. The complete 18-test file then passed in isolation in 23.91 seconds, confirming suite contention rather than a deterministic surface-replication failure. Rerunning the full linked gate for a terminal exact-coverage receipt."
+  "2026-09-01T20:39:25.383Z","harness:codex","Implementation note: the DatabaseSync seam trigger test now verifies the complete configured trigger vocabulary directly and performs one representative relevant repository scan instead of four redundant scans. The isolated 18-test suite passes in 17.57 seconds and retains both unrelated-line and relevant-line behavior assertions."
+  "2026-09-01T20:47:40.599Z","harness:codex","Coverage note: the successful contention-hardened full suite reached 60,988/60,989 statements and exposed only the non-ENOENT directory-read failure branch in general indexed queries. Added a real ELOOP history-directory acceptance path; the focused 20-test event-index suite and TypeScript gates pass. Rerunning the PM-linked exact gate for the terminal receipt."
+  "2026-09-01T21:04:50.681Z","harness:codex","Final gate note: snapshot row/fingerprint consistency is now enforced at the untrusted parse boundary, keeping readOrRebuild below the strict complexity ceiling. pnpm quality:static passed all lint, zero-duplication, build, contract, docstring, package, refusal, token, graph, and record-integrity gates. The Node 24 five-iteration 10,000-item scale benchmark passed both transports with the 1,000 ms p95 and 5,000-token product targets. Running the final PM-linked exact coverage receipt after this refactor."
+  "2026-09-01T21:12:22.335Z","harness:codex","Terminal evidence: final PM-linked focused suite passed 57/57 and repo-wide exact coverage passed at 60,991/60,991 statements, 46,066/46,066 branches, 12,700/12,700 functions, and 58,707/58,707 lines. quality:static passed; the five-run Node 24 10,000-item dual-transport scale benchmark passed; isolated manual init/create/claim/comment/context acceptance rebuilt then reused a fresh derived-index signal snapshot with substantive comment_add provenance, context usage delivery, and history-event-index SQLite state. Temporary acceptance data was moved recoverably to the desktop Trash."
+  "2026-09-01T21:41:04.253Z","harness:codex","Exact-head review implementation: unique history-index lock owners now release only their own current lock; a contended optional index lock no longer blocks authoritative history append; drift-cache invalidation runs after the authoritative append/index transaction; sparse snapshots fail closed while v3 substantive provenance without event_class remains compatible."
+  "2026-09-01T21:52:02.969Z","harness:codex","Verification note: the first exact-head full coverage rerun exposed only five schema-command expectations that encoded the history lock owner literal. The implementation now preserves that public owner and stores release uniqueness in private lock token metadata; the complete 175-test focused plus schema regression suite passes."
+  "2026-09-01T22:00:37.823Z","harness:codex","Scale-gate correction: the first tokenized release implementation used the stale-cleanup gate for every ordinary unlock and made the scale generator miss its 30-second contention ceiling. Normal release now performs the token ownership check directly; stale takeover remains separately serialized. The focused history/lock/scale suite passes 76/76 with scale-workspace at 1.24 seconds."
+  "2026-09-01T22:27:17.431Z","harness:codex","Terminal exact-head evidence: repo-wide coverage passed at 58,723/58,723 lines, 61,007/61,007 statements, 12,699/12,699 functions, and 46,099/46,099 branches. pnpm quality:static passed the complete ESLint, zero-duplication, build, contracts, SDK/package parity, agent-token, graph-composition, and record-integrity chain. A fresh temporary Git workspace initialized, created an item, and returned it through pm context; the SDK acceptance finalized one receipt twice and persisted exactly one correlated delivery. The temporary workspace was moved to Trash. Review hardening now uses private lock tokens so stale release closures cannot remove replacement locks, preserves authoritative history append when the optional derived-index lock is contended, invalidates drift state only after the authoritative append path completes, accepts valid legacy v3 provenance without event_class, and fails closed on sparse snapshots."
+  "2026-09-01T23:05:05.084Z","harness:codex","Final review verification: the 118-test focused suite passed, including the deterministic locked-writer/unlocked-fallback race. Repo-wide exact coverage passed at 100/100/100/100. The first linked quality:static attempt reached repository assurance and failed only because pm-07pt16 and pm-wv47pf were deliberately non-terminal during review work; the defect-evidence gate correctly reported governed terminal defects=0. Closing the reviewed defects now and rerunning the same linked static command."
+  "2026-09-01T23:17:48.041Z","harness:codex","Paired seam evidence: item-metadata index updates now resolve optional DatabaseSync availability before filesystem access; the paired 23-test query-index and replication suite passed, the live replication gate reports both members changed with density 1, and the final exact coverage rerun passed 100/100/100/100."
+  "2026-09-01T23:47:43.784Z","harness:codex","Fresh-review correction evidence: restored sourceCursor=cursor-2 in the changedEvidence case so the persisted and requested cursors remain identical and only recency-evidence fingerprint drift can cause invalidation. The exact declared five-file linked suite, including surface-replication-gate.spec.ts, now has a matching canonical passing run: 5 files and 118 tests passed. Closure wording is restored to make substantive-history recency, maintenance invariance, explainable provenance, and concurrent derived-index safety the primary delivery; DatabaseSync replication alignment remains a supporting hardening detail."
+  "2026-09-02T00:10:59.515Z","harness:codex","Exact-head implementation: indexed latest-substantive reads now distinguish lock contention from ordinary cache misses and fall straight back to authoritative streams after one lock budget instead of attempting a second contended rebuild. Blank public HistoryEntry timestamps are generated once before the paired file/index append, preventing ordering and filter divergence. Persisted recency provenance now requires a real string source before allowlist validation. The canonical five-file linked suite passes 120/120 with new timing, timestamp-equality, and array-source negative controls."
+  "2026-09-02T00:17:39.168Z","harness:codex","Post-implementation-commit coverage evidence: after commit 7d7d5fe24, the canonical linked coverage command passed in 357.204s at exactly 61,013/61,013 statements, 46,117/46,117 branches, 12,701/12,701 functions, and 58,731/58,731 lines. This receipt unambiguously postdates the implementation commit; later PM-only closeout mutations do not change the tested source tree."
+  "2026-09-02T00:25:02.018Z","harness:codex","Terminal static evidence: pnpm quality:static passed against implementation commit 7d7d5fe24 with both defect owners closed. ESLint, both zero-clone jscpd scans, build/contracts, repository assurance, SDK/package parity, replication/grammar/refusal/token gates, MCP deprecation inventory, tracker graph composition, and record integrity all passed."
+  "2026-09-02T00:41:01.384Z","harness:codex","Fresh-review test correction: replaced the wall-clock contention threshold with a fail-fast lock-file attempt counter. The negative control now deterministically proves exactly one history-index acquisition attempt before authoritative fallback, independent of CI load; the focused event-index suite passed."
+  "2026-09-02T00:55:09.142Z","harness:codex","Shared terminal coverage evidence: after the deterministic lock-attempt correction in 648dfbaa3 and the coverage-only receipt correction in 541c8818e, the canonical repository gate passed all 8,260 tests at exact 100/100/100/100."
+  "2026-09-02T01:02:10.901Z","harness:codex","Terminal static evidence: the full pnpm quality:static chain passed at implementation tree 541c8818e after both defect owners were closed and released."
+  "2026-09-02T01:20:58.127Z","harness:codex","Investigation note: exact-head review identified possible post-append projection invalidation rejection, a release/replacement race, insufficient recency-coordinate validation, a stale v3 doc reference, and an item-local coverage receipt gap. Verifying each against full source before edits."
+  "2026-09-02T01:47:31.209Z","harness:codex","Exact-head review correction evidence: authoritative history appends now return success even when best-effort projection deletion fails, while retained projections fail byte-size validation; lock release and stale takeover share one cross-process mutation gate through ownership re-read and unlink; recency coordinates are RFC 3339-validated and UTC-canonicalized at build and parse boundaries; performance docs name index v4. Negative controls cover removal denial, release/replacement interleaving, and busy release gates. The item-owned focused suite passed 113/113, the item-owned repository gate passed 8,263 tests at exact 61,032/61,032 statements, 46,129/46,129 branches, 12,705/12,705 functions, and 58,748/58,748 lines, and the Node 24 five-run 10,000-item CLI/SDK scale contract passed both product ceilings."
+  "2026-09-02T02:02:33.189Z","harness:codex","Final exact-head static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete repository chain after the review fixes, including ESLint, both zero-clone jscpd scans, build and generated-contract checks, repository-static-quality, package boundary and SDK parity, CLI/MCP surface and grammar gates, refusal closure, deterministic 21-step agent-task token replay, MCP deprecation inventory, tracker-context-quality, gate registry, public SDK surface, SDK entrypoint and CLI transport costs, graph-composition, and record-integrity."
+  "2026-09-02T02:38:56.609Z","harness:codex","Exact-head Cubic correction evidence: owned lock release now retries a transient cleanup gate and exits safely on replacement or bounded timeout; recency coordinates accept unambiguous date-only legacy values but reject invalid calendars and sub-millisecond precision that cannot round-trip; parser and projection-removal negative controls now prove their named boundary directly. The focused regression set passed 89/89, then the final repository gate passed all 8,285 tests at exact 61,049/61,049 statements, 46,140/46,140 branches, 12,705/12,705 functions, and 58,763/58,763 lines."
+  "2026-09-02T03:12:23.652Z","harness:codex","Investigation note: exact-head CodeRabbit identified a durable projection-invalidation race, stale-cleanup gate ownership hazards, history timestamp validation gaps, build/parse provenance asymmetry, scale-target qualification, DatabaseSync return-path replication coverage, and weak negative controls. Verifying each against full source before edits."
+  "2026-09-02T04:29:53.932Z","harness:codex","Exact-head terminal evidence: CodeRabbit review corrections now use a two-phase pending/committed invalidation protocol held under a dedicated lock across history append and index query/rebuild boundaries; malformed or submillisecond timestamps fail closed with history_timestamp_invalid; signal builders enforce parser-equivalent provenance; live cleanup-gate owners never age out; and only explicitly approved benchmark tiers enforce product targets. CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete static, SDK surface, graph, and record-integrity chain. The item-owned five-contract run passed, including the new 161-test review regression set and all 8,289 repository tests at exact 61,126/61,126 statements, 46,192/46,192 branches, 12,722/12,722 functions, and 58,837/58,837 lines. An isolated temporary-directory CLI acceptance initialized a project, created and commented pm-w3wj, retrieved it through context, closed it with structured evidence, and reread terminal state successfully."
+  "2026-09-02T05:26:34.114Z","harness:codex","Exact-head Cubic correction evidence: strict history serialization now propagates timestamp validation errors for JSON-string overrides and rejects whitespace around authoritative timestamps; the v5 derived event index canonicalizes valid RFC3339 offsets to UTC for ordering and filters while preserving authoritative history bytes; context snapshots reject unsupported recency sources; stale-cleanup gates bind owners to Linux process-start identity with a bounded legacy fallback so PID reuse cannot preserve abandoned coordination forever; and scale tiers opt into one canonical product target instead of duplicating mutable thresholds. The focused 116-test regression set passed. The final repo-wide run passed all 8,293 tests at exactly 61,147/61,147 statements, 46,218/46,218 branches, 12,726/12,726 functions, and 58,856/58,856 lines; quality:static also passed before the two coverage-only negative controls were added."
+  "2026-09-02T05:33:30.481Z","harness:codex","Terminal linked-test evidence: all five registered acceptance contracts passed after the Cubic corrections. The final focused matrix covered 165 tests; the canonical repo-wide linked run passed all 8,293 tests with exact 100/100/100/100 coverage, and every execution used the trusted local source branch with isolated PM schema state."
+  "2026-09-02T06:03:16.286Z","harness:codex","Exact-head hosted review evidence: Cubic found that per-tier benchmark opt-in still permits measured commands to exceed the universal product target and that malformed process_start_identity values can be misread as PID reuse. Windows Node 24 also reproduced a detached release-verifier server cleanup race: both retries failed EADDRINUSE after evaluator timeout. Reopened only this actively edited owner to harden all three boundaries before merge."
+  "2026-09-02T06:08:17.272Z","harness:codex","Focused review correction evidence: all 94 benchmark, lock, and published-release verifier tests pass. The evaluator now aborts a hung readiness request within its own deadline and performs taskkill /T /F cleanup on Windows; the regression waits for that governed cleanup path rather than externally terminating the evaluator before it can release its child tree."
+  "2026-09-02T06:24:52.442Z","harness:codex","Terminal hosted-fix evidence: all six linked contracts passed. The final 167-test durability matrix and 96-test benchmark/lock/release-verifier matrix passed, and the repository ran 8,295 tests at exact 61,146/61,146 statements, 46,218/46,218 branches, 12,726/12,726 functions, and 58,854/58,854 lines. Universal product limits now remain enforced even without a regression tier; malformed owner identities are never interpreted as PID reuse; bounded HTTP readiness cleanup releases Windows process trees."
+  "2026-09-02T06:46:03.364Z","harness:codex","Final exact-head verification: extracted the universal product-target traversal and tier regression traversal into cohesive comparison routines to satisfy the strict complexity ceiling without changing behavior. The non-interactive CI static chain passed end to end. A fresh repository coverage run then passed all 596 files and 8,295 tests at exactly 61,152/61,152 statements, 46,214/46,214 branches, 12,728/12,728 functions, and 58,861/58,861 lines."
+  "2026-09-02T06:56:17.364Z","harness:codex","Hosted review continuation: the complete GraphQL inventory exposed five unresolved CodeRabbit threads from the prior head plus three findings submitted at 2026-09-02T06:02:23Z. Verifying all eight against the current source before accepting or refusing each; Cubic product-ceiling and process-identity findings are fixed in 256cb4b49, acknowledged inline, reacted, and resolved."
+  "2026-09-02T07:17:55.142Z","harness:codex","CodeRabbit triage: accepted linear latest-event selection, canonical created_at fallback, all-section delivery correlation, fingerprint-isolated parser controls, and DatabaseSync loader-body triggers. Refused three findings after source verification: release stamping is intentionally maintenance so it cannot fake freshness; general history queries must fail closed instead of silently omitting corrupt streams; included denotes packer selection while the separate delivery receipt denotes final output. The accepted six-file focused suite passes 97/97."
+  "2026-09-02T07:30:02.459Z","harness:codex","Full coverage attempt executed all 8,297 tests and identified two gate-only failures: src/sdk exceeded the 120-file cap by one and the DatabaseSync replication test repeated expensive repository scans until its timeout. Moved the shared recency primitive into src/sdk/context and collapsed the trigger proof into one representative activation after asserting the complete vocabulary. The focused directory-cap and replication suite now passes 32/32 in 14.34 seconds."
+  "2026-09-02T07:49:43.586Z","harness:codex","Terminal review-fix verification: the final repo-wide run passed all 596 files and 8,297 tests with exact coverage at 61,198/61,198 statements, 46,237/46,237 branches, 12,734/12,734 functions, and 58,901/58,901 lines. The shared canonical recency primitive also replaced duplicate exception-based sorting normalization, preserving deterministic malformed-coordinate handling while keeping the SDK directory within its enforced 120-file bound."
+  "2026-09-02T08:20:42.489Z","harness:codex","Exact-head terminal inventory at 2c61b6fd8 found ten unresolved threads. Accepted for implementation after initial contract review: strict dashed legacy dates, behavioral replication-seam controls, complete snapshot-reuse docs, Windows descendant cleanup and finite readiness deadline, direct-append event_class persistence, request-workspace egress, and isolated cursor evidence. The large-tier product-target suggestion conflicts with the universal product ceiling and will be refused with rationale. Hosted Gates (static) also deterministically reports CHANGELOG.md stale after the final PM close event; regenerate only after this correction cycle closes."
+  "2026-09-02T08:30:50.248Z","harness:codex","Final-round focused evidence: all 109 tests pass across strict dashed-date recency, direct append event-class persistence, request-rooted active-host SDK delivery, DatabaseSync body/assignment/return activation, bounded Windows process-tree teardown, finite readiness deadlines, snapshot metadata docs, and cursor-isolated invalidation. The 100000-item product-target exclusion was rejected because universal ceilings are product invariants rather than CI-tier allowances."
+  "2026-09-02T08:38:29.649Z","harness:codex","Terminal local evidence: repo-wide coverage passed all 596 files and 8,299 tests at exactly 61,201/61,201 statements, 46,237/46,237 branches, 12,734/12,734 functions, and 58,903/58,903 lines. Fresh temporary-project acceptance initialized and created pm-24lx through the CLI, then PmClient.forActiveExtensionHost({cwd}) returned that exact item and persisted its correlated delivery under the requested workspace; the temporary project was moved recoverably to Trash."
+  "2026-09-02T08:48:32.836Z","harness:codex","Static quality correctly rejected the first review fix because src/sdk/runtime.ts was exactly at its 3,400 logical-line ceiling. Formatter churn was removed, then the existing workspace-contract invalidation policy was moved into runtime-input so the dispatcher gains real architectural headroom; no threshold, exclusion, or generated baseline was weakened."
+  "2026-09-02T08:54:47.795Z","harness:codex","Final exact-head verification after review-driven architecture correction: node scripts/run-tests.mjs coverage passed 596/596 files and 8299/8299 tests in 331.81s with statements 61200/61200, branches 46237/46237, functions 12734/12734, and lines 58903/58903 (100/100/100/100; zero uncovered counts). The strict source-file cap remains unchanged; existing cache-invalidation policy moved into its cohesive runtime-input owner, and focused active-host cwd egress coverage passed."
+  "2026-09-02T09:25:54.871Z","harness:codex","Hosted review correction: PR CI proved PowerShell 5.1 preserves a single decoded JSON argument as an incompatible object for Start-Process -ArgumentList. The generated supervisor now explicitly materializes [string[]] before launch; focused release verification and automation suites pass 55/55. The branch also absorbed concurrent main release 2026.9.2 through the installed PM merge fence, removing synthetic-merge changelog drift."
+  "2026-09-02T09:32:41.064Z","harness:codex","Terminal merged-tree verification: after the PowerShell 5.1 string-array correction and 2026.9.2 base synchronization, repository-wide coverage passed 596/596 files and 8299/8299 tests in 332.81s at statements 61200/61200, branches 46237/46237, functions 12734/12734, and lines 58903/58903 (100/100/100/100; zero uncovered counts)."
+  "2026-09-02T09:55:17.660Z","harness:codex","Verification correction: the first final PM-linked repo-wide coverage execution failed closed because the runtime-only init cwd parameter changed the published runInit signature and made sdk/public-surface.json stale. Reworked cwd provenance through a private symbol on the existing GlobalOptions object, preserving the exact public runInit signature without process-global cwd mutation. Focused exact-head verification now passes 6 files / 105 tests, including the SDK surface snapshot and active-host init integration."
+  "2026-09-02T10:00:59.474Z","harness:codex","Final PM-linked repo-wide coverage receipt passed at exact head after the compatibility correction. Coverage is 100/100/100/100 across statements, branches, functions, and lines; the focused SDK surface/runtime/cache/recency/lock/Windows regression suite passes 6 files / 105 tests."
+  "2026-09-02T10:11:16.264Z","harness:codex","Terminal static correction evidence: extracted the cohesive init workspace-gitignore operation, preserving behavior while returning runInit below the repository complexity ceiling. Focused init plus SDK-surface verification passed 3 files / 59 tests. The subsequent PM-linked repo-wide coverage receipt passed at exact 100/100/100/100."
+  "2026-09-02T10:18:46.201Z","harness:codex","Final terminal static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete ESLint, zero-clone, build, contract-generation, repository assurance, SDK/package parity, CLI/MCP grammar, refusal, token, graph-composition, public-surface, cost, and record-integrity chain after the complexity correction. No pm items remain in progress."
+  "2026-09-02T11:39:03.677Z","harness:codex","Upstream dependency evidence: pm-changelog PR #174 merged at 7a643eb0, merged-main CI and CodeQL passed, and manual workflow_dispatch release 33624794970 published npm/GitHub tag v2026.9.2. Consuming that immutable release now to remove the UTC wall-clock changelog drift exposed by pm-cli Gates (static)."
+  "2026-09-02T11:43:08.623Z","harness:codex","Temporary-directory acceptance: a fresh Git/npm project was initialized with the branch CLI, qa-context was created and closed, pm-changelog 2026.9.2 was installed through pm package install, and changelog generation under UTC, Europe/Vienna, and America/Los_Angeles produced byte-identical JSON. The untagged package version heading was 2099.1.2 with no fabricated date and contained qa-context. The first assertion expected Unreleased, which was stricter than the actual --release-version-from-package contract; the corrected contract assertion passed. Temporary data was removed."
+  "2026-09-02T12:20:48.192Z","harness:codex","Exact-head review implementation: authoritative append state now survives projection-invalidation contention without retrying the immutable append; path-like stream IDs are rejected before indexed validation; signal snapshots reject blank or duplicate candidate IDs before serialization; SDK init preserves nonblank PM_PATH as an explicit tracker target; timestamp failures use the canonical history_timestamp_invalid envelope while lossless trailing-zero fractions remain accepted; owned lock release outlasts the stale-cleanup threshold and performs a final token ownership check; history override fixtures now contain all lock artifacts within their temporary tracker. Focused regression verification passed 7 files / 155 tests."
+  "2026-09-02T12:38:18.597Z","harness:codex","Exact-head review correction evidence: authoritative history append now executes at most once when post-append index invalidation is contended; candidate snapshots reject blank or duplicate IDs before persistence and their digest is anchored against the production serializer; path-like stream IDs are rejected before indexed lookup without provoking rebuild; invalid history timestamp precision uses the stable history_timestamp_invalid taxonomy while accepting only zero-valued sub-millisecond tails; stale lock release waits through the full cleanup-gate lease and removes its lock only after ownership re-verification; SDK init honors explicit PM_PATH without changing active-host cwd discovery; history override tests keep lock artifacts inside their sandbox. Focused suites passed, TypeScript and ESLint passed, and the PM-linked repo-wide coverage gate passed at exactly 61,220/61,220 statements, 46,255/46,255 branches, 12,739/12,739 functions, and 58,924/58,924 lines."
+  "2026-09-02T12:39:06.786Z","harness:codex","Static-gate note: the first post-review pnpm quality:static run passed ESLint, both zero-duplication checks, build, contract snapshots, and generated capability surfaces, then correctly failed because the new stable history_timestamp_invalid code made the generated error-code catalog stale. Refreshing that generated contract before rerunning the complete gate."
+  "2026-09-02T12:39:57.010Z","harness:codex","Static-gate note: after refreshing the generated error-code catalog, the second complete run passed lint, duplication, and build, then correctly detected the corresponding full contract fixture drift. Refreshing the intentional generated contract snapshot before the final complete rerun."
+  "2026-09-02T12:49:49.138Z","harness:codex","Final static evidence: after refreshing the generated error-code catalog and contract fixture and restoring runtime.ts to the repository's intentional compact public-surface layout, the complete CI-mode pnpm quality:static gate passed. It verified ESLint, zero duplicated chunks, build, generated contracts, 100% source/export/member docstrings, file/directory/complexity limits, package boundaries, SDK parity, replication, grammar, refusal closure, token budgets, MCP deprecation dispositions, context quality, graph composition, and record integrity."
+  "2026-09-02T13:12:43.467Z","harness:codex","Investigation note: final exact-head Cubic and CodeRabbit reviews found a TOCTOU risk in the unguarded release fallback, missing abandoned pending-marker recovery, Windows Start-Process argument-boundary loss, duplicate recency fingerprint work, and four test-strength issues. Reopening the canonical item and implementing all valid findings with focused negative controls before another exact-head review round."
+  "2026-09-02T13:31:34.488Z","harness:codex","Exact-head review remediation evidence: hardened lock cleanup against live cleanup-gate ownership; added behavioral publication-race coverage for committed invalidations and temporary artifact cleanup; recovered abandoned pending invalidations under the invalidation lock; preserved Windows verifier arguments and exit codes through direct PowerShell invocation; reused the authoritative context-snapshot fingerprint; expanded RFC3339 branch, scale-manifest negative-control, and canonical digest-helper coverage. Focused 170-test review suite passed, the added event-index race test passed, and the canonical repository coverage gate passed with exact 100% statements, branches, functions, and lines."
+  "2026-09-02T13:38:19.432Z","harness:codex","Final local gate evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed end-to-end after the exact-head review fixes, including ESLint with zero warnings, zero jscpd clones, build/typecheck, generated contract and SDK surface freshness, package boundary and SDK parity, token/transport floors, command grammar, flag parity, refusal closure, repository assurance, graph composition, tracker context quality, and append-only record integrity."
+  "2026-09-02T14:02:11.484Z","harness:codex","Cubic recurrence remediation: pending event-index invalidation markers now encode their writer PID. Recovery removes only legacy or OS-confirmed-dead owners, conservatively retains live, permission-denied, malformed-error, and otherwise unverifiable owners, and forces rebuild/index reads onto safe refusal or authoritative fallback while a writer can still complete after TTL takeover. Behavioral tests cover live, indeterminate, permission-denied, dead, publication-race, and indexed-query paths. Focused event-index tests, ESLint, TypeScript, and canonical repo-wide exact 100/100/100/100 coverage pass."
+  "2026-09-02T14:08:58.667Z","harness:codex","Final recurrence gate evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed after owner-bound pending invalidations, including zero ESLint warnings, zero jscpd clones, build/typecheck, generated contracts/surfaces, package and SDK parity, token and transport floors, graph composition, tracker context quality, and append-only history integrity."
+  "2026-09-02T14:53:09.004Z","harness:codex","Terminal paginated-review remediation: event-index pending owners now carry PID, process-start identity, and creation time; PID reuse is rejected by identity mismatch and unavailable identity is retained only within a bounded TTL-derived grace period. Context snapshots reject non-string history_op before persistence. Init invocation state uses one unique-symbol constant owned by init.ts, a symbol index signature, and runtime string validation without exceeding the 120-file SDK cap. Assertions now prove non-empty init guidance, declaration-over-inference, and actual DatabaseSync assignment triggers. Focused 141-test suite and canonical exact 100/100/100/100 coverage pass."
+  "2026-09-02T15:07:45.170Z","harness:codex","Final hosted-review hardening evidence: substantive-history recency now rejects non-string history operation provenance; CLI init shares one typed invocation-CWD symbol and validates its untrusted value; init acceptance proves actionable next_steps are non-empty; the history classifier negative control uses a declared substantive maintenance-only update; and the DatabaseSync replication test exercises a real constructor assignment. Pending history-index invalidations now bind PID ownership to process-start identity, expire unverifiable owners under a bounded grace period, and reject PID reuse; real /proc-unavailable fallback is covered. The focused regression suite passed 73/73. The canonical repository coverage gate passed exact 100/100/100/100 after these changes. CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete ESLint, zero-clone, build, contract, docstring, repository assurance, package/SDK parity, surface replication, grammar, refusal, agent-token, MCP, tracker-context, SDK cost, graph-composition, and record-integrity chain."
+  "2026-09-02T15:31:01.636Z","harness:codex","Investigation note: exact head b0179f263 received one Cubic and six CodeRabbit threads after all hosted checks passed. Verifying PID-domain validation, malformed patch classification, post-commit invalidation containment, shared lock ownership predicates, symbol typing against the installed compiler, exact delivered IDs, test isolation cost, and explicit unsupported-host skips before changing code."
+  "2026-09-02T16:12:18.785Z","harness:codex","Exact-head review hardening evidence: accepted and implemented fail-closed malformed update patch classification, strict positive safe-integer PID validation before process probes, canonical lock-owner predicate reuse, exact active-host delivery receipt assertions, explicit Vitest skips on hosts without process-start identity, and post-commit history append durability across projection close/invalidation/marker-publication failures. Pre-commit append and lock failures still reject. Focused regression suite passed 96/96 before the additional coverage controls; TypeScript no-emit compilation passed. The repo-wide linked coverage gate correctly failed twice while new branches or displaced marker-cleanup callbacks were not explicit, then passed after direct negative controls; final result is exact 100/100/100/100 coverage. The shared INIT_INVOCATION_CWD unique-symbol review suggestion is disproven by the installed TypeScript compiler and the giant invalidation recovery test remains intentionally consolidated to reuse one isolated tracker while keeping each race assertion localized."
+  "2026-09-02T16:42:33.298Z","harness:codex","Investigation note: exact head fbe6d6e4b received three Cubic and four CodeRabbit threads after all hosted checks passed. Verifying duplicate pending-marker cleanup findings, public SDK recency-evidence normalization, portable reused-PID coverage, recomputed snapshot fingerprints, bounded test-run projection retention, and the exact failed-run count before edits."
+  "2026-09-02T16:48:53.122Z","harness:codex","Evidence correction: the 2026-09-02 16:12 UTC comment understated the final coverage convergence count. Four consecutive coverage runs failed before test-local-mtkan1uz-esga7j passed: test-local-mtk9lk0c-3aidbi exposed the committed-index fallback catch; test-local-mtk9wham-pnwenk exposed the fallback marker rename error; test-local-mtka5c20-xg4e94 exposed post-commit database-close handling; and test-local-mtkady19-uujn97 exposed the absent-index path. This append-only correction preserves the original event while stating the complete live run history."
+  "2026-09-02T17:03:40.811Z","harness:codex","Exact-head review remediation evidence: the public item relevance builder now validates provenance and canonicalizes supplied absolute recency coordinates before ranking or disclosure; valid offsets round-trip to UTC and malformed values fail at the SDK boundary. The event-index lock-contention fallback removes its pending invalidation marker after authoritative history commits even when marker publication fails, while a direct cleanup-denied negative control proves cleanup remains best effort without losing the append. Reused-PID recovery now uses a localized procfs fixture and snapshot parser shape controls recompute their fingerprints. The focused 59-test regression set passed. The final repository run passed all 8,305 tests at exactly 61,248/61,248 statements, 46,272/46,272 branches, 12,742/12,742 functions, and 58,951/58,951 lines."
+  "2026-09-02T17:31:51.779Z","harness:codex","Canonical final coverage receipt: pm-linked run test-local-mtkdhg9c-ih5h9k executed linked test index 2 (node scripts/run-tests.mjs coverage) against exact source head 3897d1757e1fc17b9a7823124eb5946ba01d1e70 and passed. The run covered all 8,305 tests with exact 61,248/61,248 statements, 46,272/46,272 branches, 12,742/12,742 functions, and 58,951/58,951 lines. This machine-addressable test_run_track event is the canonical receipt for the closure totals requested by Cubic; the bounded item projection may rotate older entries while immutable history retains every test-run event."
+  "2026-09-02T17:39:02.294Z","harness:codex","Post-close verification: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete ESLint, zero-clone, build, contract snapshot, repository assurance, package boundary, SDK parity, replication, grammar, refusal, token, MCP deprecation, tracker-context, gate-registry, SDK surface, transport-cost, graph-composition, and record-integrity chain after the canonical coverage receipt was recorded and the item was closed."
+  "2026-09-02T17:56:09.033Z","harness:codex","Investigation note: final exact-head review produced two valid follow-ups and one invalid bounded-projection claim. Accepting the need to qualify indexed versus lock-conflict fallback transaction guarantees in docs and to ensure context-evaluation touch writes survive feedback-recording failures. Rejecting the claim that failed coverage evidence was erased: the 20-entry projection still contains multiple failed coverage runs and immutable history retains test-local-mtjpcko8-cpm11a."
+  "2026-09-02T17:59:15.774Z","harness:codex","Implementation evidence: context evaluation now captures serving/delivery failures, always attempts the later authoritative touch write, rethrows the feedback or touch failure, and preserves both with AggregateError when both writes fail. Direct negative controls cover serving failure, delivery failure, touch-only failure, combined failure, and call order; the focused six-test script suite, TypeScript compilation, and focused ESLint pass. Context relevance documentation now limits atomic projection guarantees to indexed appends and explicitly requires validation or rebuild after lock-conflict fallback append."
+  "2026-09-02T18:05:54.455Z","harness:codex","Canonical post-review coverage receipt: pm-linked run test-local-mtkepb3p-avwxjo passed node scripts/run-tests.mjs coverage against implementation commit 54c59ac9778dfe2e66651c18fc1ea73790776fd3. The complete 8,306-test suite remained exact at 61,258/61,258 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,959/58,959 lines."
+  "2026-09-02T18:13:17.857Z","harness:codex","Terminal static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed against implementation tree 54c59ac9778dfe2e66651c18fc1ea73790776fd3 after the item was closed and released, including ESLint, both zero-clone scans, build/contracts, repository assurance, SDK/package parity, replication and grammar gates, refusal/token gates, tracker context quality, public surface and transport budgets, graph composition, and append-only record integrity."
+  "2026-09-02T18:26:08.692Z","harness:codex","Investigation note: final Cubic review correctly identified that rejection payload and failure state are distinct in JavaScript, so Promise.reject(undefined) could bypass current sentinel checks. It also correctly requested that actual_result lead with the primary substantive-recency outcome. Adding explicit failure flags plus undefined-rejection negative controls, then restoring outcome-first closure wording through pm."
+  "2026-09-02T18:28:14.533Z","harness:codex","Implementation evidence: replaced error-value sentinels with explicit feedbackFailed and touchFailed state so Promise.reject(undefined) remains an observable failure while durable touches are still attempted. Added negative controls for undefined feedback and touch rejections. Focused context-eval suite passed 6/6; pnpm exec tsc --noEmit and focused ESLint both passed."
+  "2026-09-02T18:34:21.506Z","harness:codex","Exact implementation receipt: commit 30cfe7ceb preserves failures independently from their rejection payload and adds undefined-rejection negative controls. PM-linked run test-local-mtkfq3wz-dc3oux passed node scripts/run-tests.mjs coverage in 332.958 seconds: 8,306 tests; 61,262/61,262 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,963/58,963 lines."
+  "2026-09-02T18:40:08.859Z","harness:codex","Terminal static receipt: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed at implementation tree 30cfe7ce after closure, including ESLint, both zero-clone scans, build/contracts, repository assurance, SDK/package parity, CLI/MCP replication and grammar gates, refusal/token gates, graph composition, and record integrity."
+  "2026-09-02T19:03:46.039Z","harness:codex","Investigation note: final exact-head CodeRabbit review correctly identified that the supplemental-ID exclusion assertions could pass vacuously if packed_item_ids were empty. Requiring a non-empty packed set before asserting supplemental IDs remain outside it, then rerunning focused and exact coverage gates."
+  "2026-09-02T19:04:22.833Z","harness:codex","Implementation evidence: exact delivery integration now proves packed_item_ids is non-empty before asserting that decision, blocked, and held supplemental queue IDs are excluded. Focused integration passed 3/3; TypeScript and focused ESLint passed."
+  "2026-09-02T19:11:19.625Z","harness:codex","Verification note: post-1e099373f full coverage run failed only because surface-replication-gate.spec.ts exhausted its 120-second budget under monolithic-suite contention; all other product and integration tests, including the new packed-set assertion, passed. Isolating the full replication suite before rerunning the canonical repository gate; the failed receipt remains immutable evidence."
+  "2026-09-02T19:11:58.509Z","harness:codex","Isolation evidence: the complete surface replication file passed 18/18 in 24.42 seconds immediately after the contended full-suite timeout, confirming no deterministic replication regression. Rerunning the canonical PM-linked coverage gate for a terminal receipt."
+  "2026-09-02T19:18:45.697Z","harness:codex","Escalated verification finding: a second canonical coverage run reproduced the same 120-second DatabaseSync replication-test timeout despite the complete file passing alone in 23.72 seconds. Treating this as a gate-efficiency defect rather than polling or retrying again; optimizing the test's repository scan while preserving its full trigger and negative-control contract."
+  "2026-09-02T19:20:16.438Z","harness:codex","Gate-efficiency implementation: the DatabaseSync trigger test now reuses the production declaration but validates it against a two-member temporary fixture, avoiding five unrelated full-repository AST, ratchet, and refusal scans. It still asserts the complete production trigger vocabulary plus unrelated, loader-body, resolver, assignment, and return-path activation behavior. Combined replication and egress suites passed 21/21 in 12.77 seconds; TypeScript and ESLint passed."
+  "2026-09-02T19:27:43.587Z","harness:codex","Final verification: exact implementation heads 1e099373f and f0d904475 pass the canonical PM-linked coverage gate in receipt test-local-mtkhln26-alwf25: 8,306 tests passed with 100% coverage (61,262/61,262 statements, 46,281/46,281 branches, 12,742/12,742 functions, 58,963/58,963 lines). The previously contended surface-replication file completed inside the full suite in 94.235 seconds after isolating its five DatabaseSync trigger cases to the exact production two-member declaration; the complete production trigger vocabulary and markers remain under test. The two preceding immutable failed receipts document the pre-fix 120-second contention symptom and are superseded by this terminal passing receipt."
+  "2026-09-02T19:33:54.104Z","harness:codex","Terminal static investigation: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static reached agent-task-token-gate and failed because the paired replay's application payload differed only at replace:/activity/0/ts. The preceding lint, zero-clone, build/contracts, repository assurance, SDK/package parity, surface replication, grammar, flag, and refusal gates passed. Investigating the replay clock boundary under the existing delivery owner before changing it."
+  "2026-09-02T19:39:36.810Z","harness:codex","Implementation evidence: every audited workspace-history append path now uses the shared reproducible clock instead of wall time, and the transcript gate explicitly skips interactive agent-guidance setup in synthetic fixtures. A TDD negative control first observed all four workspace operations emitting wall-clock timestamps; after the fix, the paired 55-test workspace-history/token-gate suite passed, and the real transcript gate completed under a TTY without prompting or payload drift."
+  "2026-09-02T19:46:49.030Z","harness:codex","Post-commit terminal coverage: implementation commit e82cd98d9 passed PM-linked receipt test-local-mtkib68m-60d2nw with all 8,307 tests and exact 100% coverage: 61,262/61,262 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,963/58,963 lines. This includes the four-path reproducible workspace-history negative control and the 21-step paired application-payload replay."
+  "2026-09-02T19:54:21.840Z","harness:codex","Terminal static evidence: CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed at implementation tree e82cd98d9. The complete chain passed ESLint, both zero-clone scans, build/generated contracts, repository assurance, package and SDK parity, surface replication, command grammar and flag gates, refusal closure, the corrected deterministic 21-step agent-task token replay, MCP deprecation inventory, tracker-context quality, SDK surface/cost ratchets, graph composition, and record integrity."
+  "2026-09-02T20:28:50.760Z","harness:codex","Fresh final-head review correction evidence: the DatabaseSync replication seam now matches the stable Node-major guard prefix, and its negative control proves a threshold-only >=22 to >=24 edit activates the paired index requirement. Context delivery finalization now must resolve true, and explicit substantive declaration precedence is tested against a maintenance-only metadata path. Focused suite passed 28/28. Repo-wide coverage passed 596 files and 8,307 tests at exactly 61,262/61,262 statements, 46,281/46,281 branches, 12,742/12,742 functions, and 58,963/58,963 lines. CI=1 PM_NON_INTERACTIVE=1 pnpm quality:static passed the complete static, SDK/package, contract, refusal, token, graph, and record-integrity matrix."
+learnings[3]{created_at,author,text}:
+  "2026-09-01T15:48:17.264Z","harness:codex","Freshness is semantic event provenance, not file-write time: maintenance operations must be explicitly classified and excluded from temporal ranking, while unknown operations fail closed as substantive."
+  "2026-09-01T19:41:37.711Z","harness:codex","A derived index can safely coordinate an authoritative append without a second filesystem lock by holding its SQLite write transaction across the append and paired size capture; if projection work fails after the append, preserve authority and discard the accelerator."
+  "2026-09-01T20:11:24.024Z","harness:codex","SQLite row transactions alone do not coordinate a replace-by-rename rebuild or a stat-then-query read. A derived index that must be linearizable with compliant authoritative appends needs one shared cross-process coordination boundary spanning rebuild, append, validation, and read; the SQLite transaction remains the inner atomic projection commit."
+files[54]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Published pm-changelog 2026.9.2 installation receipt
+  CHANGELOG.md,project,Timezone-stable generated changelog after upstream wall-clock fix
+  docs/SDK.md,project,Fingerprint freshness SDK contract
+  scripts/bench/run-scale-benchmarks.mjs,project,Approved product-target benchmark enforcement
+  scripts/bench/scale-budgets.json,project,Explicit product-target tier contract
+  scripts/release/agent-task-token-gate.mjs,project,Non-interactive deterministic transcript fixtures
+  scripts/release/context-eval-gate.mjs,project,Causally complete delivery feedback evaluation fixture
+  scripts/release/surface-replication-sets.json,project,Precise DatabaseSync seam replication trigger contract
+  scripts/release/verify-published-release.mjs,project,Cross-platform bounded HTTP verifier cleanup
+  sdk/public-surface.json,project,Substantive history classification and recency provenance delivery
+  src/core/history/event-classification.ts,project,Substantive history classification and recency provenance delivery
+  src/core/history/event-index.ts,project,Substantive history classification and recency provenance delivery
+  src/core/history/history.ts,project,Substantive history classification and recency provenance delivery
+  src/core/history/workspace-history.ts,project,Reproducible audited workspace timestamps
+  src/core/lock/lock.ts,project,Ownership-checked lock release for history-index lease safety
+  src/core/shared/time.ts,project,Canonical millisecond-precision RFC3339 validation
+  src/core/store/item-metadata-query-index.ts,project,Paired DatabaseSync consumer resolution required by replication gate
+  src/sdk/context-relevance.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/context-signal-store.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/context-usage.ts,project,Exact item-bearing result extraction for feedback delivery
+  src/sdk/context/recency.ts,project,Shared deterministic recency coordinate contract
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated fail-closed history timestamp refusal catalog
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated fail-closed history timestamp refusal catalog
+  src/sdk/index.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/init.ts,project,Preserve active-host init workspace discovery provenance
+  src/sdk/query/context.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/query/next.ts,project,Substantive history classification and recency provenance delivery
+  src/sdk/runtime-input.ts,project,Cohesive workspace-contract invalidation policy extracted from oversized dispatcher
+  src/sdk/runtime.ts,project,Substantive history classification and recency provenance delivery
+  src/types.ts,project,Substantive history classification and recency provenance delivery
+  tests/fixtures/contracts/full.json,project,Generated history timestamp refusal contract snapshot
+  tests/integration/ci-workflow-contract.spec.ts,project,Directory-cap regression coverage for the context submodule placement
+  tests/integration/context-usage-egress.integration.spec.ts,project,CLI and SDK exact egress delivery acceptance
+  tests/integration/init-path-guard.integration.spec.ts,project,Active-host init discovery regression
+  tests/unit/commands/context-relevance-command.spec.ts,project,CLI explained recency provenance acceptance
+  tests/unit/commands/create-command.spec.ts,project,History-index lock write-hook contract
+  tests/unit/commands/restore-command.spec.ts,project,History-index lock write-hook contract
+  tests/unit/commands/schema-command.spec.ts,project,Workspace history-index lock ownership contract
+  tests/unit/core/history/event-classification.spec.ts,project,Classification policy unit and fail-closed coverage
+  tests/unit/core/history/event-index.spec.ts,project,Indexed and authoritative substantive recency coverage
+  tests/unit/core/history/history-append-overrides.spec.ts,project,Invalid and submillisecond history timestamp negative controls
+  tests/unit/core/history/workspace-history.spec.ts,project,All audited workspace clock path regressions
+  tests/unit/core/item/core-item-lock-coverage.spec.ts,project,Replacement-lock and busy-cleanup-gate release regressions
+  tests/unit/core/item/item-metadata-query-index.spec.ts,project,Paired DatabaseSync consumer availability regression
+  tests/unit/core/shared/shared-helpers.spec.ts,project,RFC3339 millisecond precision helper coverage
+  tests/unit/scripts/release/context-eval-gate.spec.ts,project,Feedback failure ordering and combined-error negative controls
+  tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Resolver consumer false-positive regression coverage
+  tests/unit/scripts/release/verify-published-release.spec.ts,project,Windows readiness-timeout process-tree cleanup regression
+  tests/unit/scripts/scale-benchmark.spec.ts,project,Explicit product-target enforcement and preservation coverage
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Immutable history event class shape coverage
+  tests/unit/sdk/context-packing-usage.spec.ts,project,All-section context and nested next delivery contract
+  tests/unit/sdk/context-relevance.spec.ts,project,Recency provenance and maintenance invariance coverage
+  tests/unit/sdk/context-signal-store.spec.ts,project,Versioned signal provenance snapshot coverage
+  tests/unit/sdk/runtime-input-graph.spec.ts,project,Read-only workspace-contract cache regression
+tests[10]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-01T13:29:41.440Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Classified history recency unit and integration contract
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1800
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-01T13:29:41.935Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Repo-wide exact coverage gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-01T21:41:14.125Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Exact-head lock ownership snapshot compatibility delivery idempotency and CLI assertion regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-01T22:49:50.952Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Exact-head fallback serialization candidate reuse replication and isolated negative controls
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-append-overrides.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/shared/shared-helpers.spec.ts tests/unit/scripts/scale-benchmark.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/sdk/context-signal-store.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-02T04:17:05.037Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Exact-head durable invalidation timestamp provenance benchmark and lock regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/scale-benchmark.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-02T06:08:16.692Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: "Unconditional product target, cleanup-owner identity, and Windows verifier cleanup regressions"
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/integration/context-usage-egress.integration.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-02T07:17:54.624Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Linear selection canonical fallback exact delivery and replication body regressions
+  - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-02T07:30:01.944Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Directory cap and bounded replication-gate regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/runtime-input-graph.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-02T09:47:16.194Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+    note: Final exact-head runtime cache recency lock and Windows verifier review regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/workspace-history.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-02T19:39:36.101Z"
+      source_kind: local_mutation
+      source_ref: feat/substantive-context-signals-delivery-receipts
+test_runs[20]:
+  - run_id: test-local-mtk2oyvf-0j5ef5
+    kind: test
+    status: failed
+    started_at: "2026-09-02T12:20:48.673Z"
+    finished_at: "2026-09-02T12:29:05.547Z"
+    recorded_at: "2026-09-02T12:29:05.547Z"
+    passed: 8
+    failed: 1
+    skipped: 0
+    executions[9]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-append-overrides.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/shared/shared-helpers.spec.ts tests/unit/scripts/scale-benchmark.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/sdk/context-signal-store.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/scale-benchmark.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/integration/context-usage-egress.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/runtime-input-graph.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk2yix5-lq1qi6
+    kind: test
+    status: passed
+    started_at: "2026-09-02T12:30:51.747Z"
+    finished_at: "2026-09-02T12:36:31.433Z"
+    recorded_at: "2026-09-02T12:36:31.433Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk4nt4d-2z6cex
+    kind: test
+    status: failed
+    started_at: "2026-09-02T13:18:28.353Z"
+    finished_at: "2026-09-02T13:24:10.669Z"
+    recorded_at: "2026-09-02T13:24:10.669Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk4x2sr-2j5ne8
+    kind: test
+    status: passed
+    started_at: "2026-09-02T13:25:47.517Z"
+    finished_at: "2026-09-02T13:31:23.114Z"
+    recorded_at: "2026-09-02T13:31:23.114Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk60hr9-k0n6nc
+    kind: test
+    status: passed
+    started_at: "2026-09-02T13:56:23.051Z"
+    finished_at: "2026-09-02T14:02:02.085Z"
+    recorded_at: "2026-09-02T14:02:02.085Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk7c032-1lvhcz
+    kind: test
+    status: failed
+    started_at: "2026-09-02T14:33:08.462Z"
+    finished_at: "2026-09-02T14:38:58.670Z"
+    recorded_at: "2026-09-02T14:38:58.670Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk7l6sv-7e6tdq
+    kind: test
+    status: failed
+    started_at: "2026-09-02T14:40:23.016Z"
+    finished_at: "2026-09-02T14:46:07.279Z"
+    recorded_at: "2026-09-02T14:46:07.279Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk7u0a8-97wgxz
+    kind: test
+    status: passed
+    started_at: "2026-09-02T14:47:17.537Z"
+    finished_at: "2026-09-02T14:52:58.736Z"
+    recorded_at: "2026-09-02T14:52:58.736Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk9lk0c-3aidbi
+    kind: test
+    status: failed
+    started_at: "2026-09-02T15:36:42.976Z"
+    finished_at: "2026-09-02T15:42:23.628Z"
+    recorded_at: "2026-09-02T15:42:23.628Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtk9wham-pnwenk
+    kind: test
+    status: failed
+    started_at: "2026-09-02T15:45:12.375Z"
+    finished_at: "2026-09-02T15:50:53.326Z"
+    recorded_at: "2026-09-02T15:50:53.326Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtka5c20-xg4e94
+    kind: test
+    status: failed
+    started_at: "2026-09-02T15:52:02.022Z"
+    finished_at: "2026-09-02T15:57:46.439Z"
+    recorded_at: "2026-09-02T15:57:46.439Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkady19-uujn97
+    kind: test
+    status: failed
+    started_at: "2026-09-02T15:58:47.436Z"
+    finished_at: "2026-09-02T16:04:28.173Z"
+    recorded_at: "2026-09-02T16:04:28.173Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkan1uz-esga7j
+    kind: test
+    status: passed
+    started_at: "2026-09-02T16:05:51.016Z"
+    finished_at: "2026-09-02T16:11:33.035Z"
+    recorded_at: "2026-09-02T16:11:33.035Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkdhg9c-ih5h9k
+    kind: test
+    status: passed
+    started_at: "2026-09-02T17:25:16.854Z"
+    finished_at: "2026-09-02T17:31:10.608Z"
+    recorded_at: "2026-09-02T17:31:10.608Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkepb3p-avwxjo
+    kind: test
+    status: passed
+    started_at: "2026-09-02T17:59:36.310Z"
+    finished_at: "2026-09-02T18:05:16.789Z"
+    recorded_at: "2026-09-02T18:05:16.789Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkfq3wz-dc3oux
+    kind: test
+    status: passed
+    started_at: "2026-09-02T18:28:20.693Z"
+    finished_at: "2026-09-02T18:33:53.747Z"
+    recorded_at: "2026-09-02T18:33:53.747Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkh1ycj-3811az
+    kind: test
+    status: failed
+    started_at: "2026-09-02T19:04:28.566Z"
+    finished_at: "2026-09-02T19:11:06.019Z"
+    recorded_at: "2026-09-02T19:11:06.019Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkhbh4a-tf256f
+    kind: test
+    status: failed
+    started_at: "2026-09-02T19:11:59.184Z"
+    finished_at: "2026-09-02T19:18:30.250Z"
+    recorded_at: "2026-09-02T19:18:30.250Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkhln26-alwf25
+    kind: test
+    status: passed
+    started_at: "2026-09-02T19:20:21.768Z"
+    finished_at: "2026-09-02T19:26:24.510Z"
+    recorded_at: "2026-09-02T19:26:24.510Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtkib68m-60d2nw
+    kind: test
+    status: passed
+    started_at: "2026-09-02T19:40:02.389Z"
+    finished_at: "2026-09-02T19:46:15.766Z"
+    recorded_at: "2026-09-02T19:46:15.766Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+docs[5]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Substantive recency SDK and performance contract
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated history timestamp refusal closure evidence
+  docs/PERFORMANCE.md,project,Substantive recency SDK and performance contract
+  docs/SDK_CONTEXT.md,project,Substantive recency SDK and performance contract
+  docs/SDK.md,project,Complete persisted snapshot reuse contract
+close_reason: "Delivered substantive context signals, exact delivery receipts, refusal-aware CI controls, reproducible audited workspace history, and final review hardening with terminal 100% coverage evidence."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-07pt16
+  gate_id: substantive-history-recency-maintenance-invariance
+  negative_control: "Apply a dependency-only maintenance mutation after a substantive event and assert the recency coordinate, event class, and workspace relevance order remain unchanged."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-classification.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/sdk/context-signal-store.spec.ts tests/unit/commands/context-relevance-command.spec.ts,node scripts/run-tests.mjs coverage,node scripts/release/defect-evidence-gate.mjs --json
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),"CI / Run benchmarks (Ubuntu 22.04, Node 24)"
 body: ""

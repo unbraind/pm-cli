@@ -1083,6 +1083,8 @@ export interface HistoryEntry {
   };
   /** Value that configures or reports op for this contract. */
   op: string;
+  /** Declared semantic effect used by recency consumers. Absent on legacy entries. */
+  event_class?: "substantive" | "maintenance";
   /** Value that configures or reports patch for this contract. */
   patch: HistoryPatchOp[];
   /** Value that configures or reports before hash for this contract. */

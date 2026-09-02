@@ -9,7 +9,19 @@ interface ContextEvalGateModule {
   buildContextEvaluationBaseline: (report: EvaluationReport, corpusVersion: number) => unknown;
   compareContextEvaluationBaseline: (report: EvaluationReport, baseline: Record<string, unknown>) => string[];
   mapScenarioDefinition: (definition: Record<string, unknown>, idByKey: Map<string, string>) => Record<string, unknown>;
+  seedUsageFeedback: (
+    definition: Record<string, unknown>,
+    idByKey: Map<string, string>,
+    pmRoot: string,
+    operations?: ContextUsageOperations,
+  ) => Promise<void>;
   main: (argv?: string[]) => Promise<EvaluationReport>;
+}
+
+interface ContextUsageOperations {
+  recordServing: ReturnType<typeof vi.fn>;
+  recordDelivery: ReturnType<typeof vi.fn>;
+  recordTouches: ReturnType<typeof vi.fn>;
 }
 
 interface EvaluationReport {
@@ -225,6 +237,72 @@ describe("context evaluation gate", () => {
     delete process.env.PM_AUTHOR;
     await expect(gate.main()).resolves.toMatchObject({ scenario_count: 5, passed: true });
     expect(process.env.PM_AUTHOR).toBeUndefined();
+  });
+
+  it("attempts durable touches before reporting feedback or touch failures", async () => {
+    const gate = await loadGate();
+    const definition = {
+      id: "feedback-errors",
+      surface: "context",
+      usage_feedback: { served_keys: ["served"], touched_keys: ["touched"] },
+    };
+    const idByKey = new Map([["served", "pm-served"], ["touched", "pm-touched"]]);
+    const feedbackError = new Error("feedback failed");
+    const touchError = new Error("touch failed");
+
+    for (const failingOperation of ["recordServing", "recordDelivery"] as const) {
+      const operations: ContextUsageOperations = {
+        recordServing: vi.fn().mockResolvedValue({ correlation_id: "receipt" }),
+        recordDelivery: vi.fn().mockResolvedValue(undefined),
+        recordTouches: vi.fn().mockResolvedValue(undefined),
+      };
+      operations[failingOperation].mockRejectedValue(feedbackError);
+
+      await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", operations))
+        .rejects.toBe(feedbackError);
+      expect(operations.recordTouches).toHaveBeenCalledOnce();
+      expect(operations.recordTouches.mock.invocationCallOrder[0]).toBeGreaterThan(
+        operations[failingOperation].mock.invocationCallOrder[0] ?? 0,
+      );
+      if (failingOperation === "recordServing") expect(operations.recordDelivery).not.toHaveBeenCalled();
+    }
+
+    const touchOnlyOperations: ContextUsageOperations = {
+      recordServing: vi.fn().mockResolvedValue({ correlation_id: "receipt" }),
+      recordDelivery: vi.fn().mockResolvedValue(undefined),
+      recordTouches: vi.fn().mockRejectedValue(touchError),
+    };
+    await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", touchOnlyOperations))
+      .rejects.toBe(touchError);
+
+    const undefinedFeedbackOperations: ContextUsageOperations = {
+      recordServing: vi.fn().mockRejectedValue(undefined),
+      recordDelivery: vi.fn(),
+      recordTouches: vi.fn().mockResolvedValue(undefined),
+    };
+    await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", undefinedFeedbackOperations))
+      .rejects.toBeUndefined();
+    expect(undefinedFeedbackOperations.recordTouches).toHaveBeenCalledOnce();
+
+    const undefinedTouchOperations: ContextUsageOperations = {
+      recordServing: vi.fn().mockResolvedValue({ correlation_id: "receipt" }),
+      recordDelivery: vi.fn().mockResolvedValue(undefined),
+      recordTouches: vi.fn().mockRejectedValue(undefined),
+    };
+    await expect(gate.seedUsageFeedback(definition, idByKey, "/tracker", undefinedTouchOperations))
+      .rejects.toBeUndefined();
+
+    const combinedOperations: ContextUsageOperations = {
+      recordServing: vi.fn().mockRejectedValue(feedbackError),
+      recordDelivery: vi.fn(),
+      recordTouches: vi.fn().mockRejectedValue(touchError),
+    };
+    const combinedFailure = gate.seedUsageFeedback(definition, idByKey, "/tracker", combinedOperations);
+    await expect(combinedFailure).rejects.toMatchObject({
+      message: "Context evaluation feedback and touch writes both failed",
+      errors: [feedbackError, touchError],
+    });
+    expect(combinedOperations.recordTouches).toHaveBeenCalledOnce();
   });
 
   it("fails closed for missing, malformed, unseedable, and regressed inputs", async () => {

@@ -17307,6 +17307,24 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_timestamp_invalid",
+      "class": "generic_failure",
+      "code": "history_timestamp_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History timestamp invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/event-index.ts",
+        "core/history/history.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_unknown_author_events"
       ],

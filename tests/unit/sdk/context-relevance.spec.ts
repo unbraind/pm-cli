@@ -1,3 +1,4 @@
+import fc from "fast-check";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   buildItemContextRelevanceCandidates,
@@ -13,7 +14,10 @@ import {
   type ContextRelevanceCandidate,
   type ExtensionServiceRegistry,
 } from "../../../src/sdk/index.js";
-import { clearActiveExtensionHooks, setActiveExtensionServices } from "../../../src/core/extensions/index.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionServices,
+} from "../../../src/core/extensions/index.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
@@ -37,73 +41,314 @@ describe("context relevance SDK primitives", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const items = [
       {
-        id: "pm-active", title: "Active", description: "Active work", type: "Task",
-        status: "in_progress", priority: 0, risk: "high", parent: "pm-parent",
-        deadline: "2026-07-13T00:00:00.000Z", created_at: "2026-07-01T00:00:00.000Z",
+        id: "pm-active",
+        title: "Active",
+        description: "Active work",
+        type: "Task",
+        status: "in_progress",
+        priority: 0,
+        risk: "high",
+        parent: "pm-parent",
+        deadline: "2026-07-13T00:00:00.000Z",
+        created_at: "2026-07-01T00:00:00.000Z",
         updated_at: "2026-07-14T00:00:00.000Z",
       },
       {
-        id: "pm-owned", title: "Owned", description: "Owned work", type: "Task",
-        status: "open", priority: 2, assignee: "Codex-Root",
-        created_at: "2026-07-01T00:00:00.000Z", updated_at: "2026-07-12T00:00:00.000Z",
+        id: "pm-owned",
+        title: "Owned",
+        description: "Owned work",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        assignee: "Codex-Root",
+        created_at: "2026-07-01T00:00:00.000Z",
+        updated_at: "2026-07-12T00:00:00.000Z",
       },
     ] as ItemMetadata[];
 
-    expect(buildItemContextRelevanceCandidates(items, {
-      statusRegistry: registry,
-      now: "2026-07-14T00:00:00.000Z",
-      author: "codex-root",
-      usageAffinity: { "pm-active": 0.8 },
-      semanticSimilarity: { "pm-active": 0.9 },
-    }).map(({ id, signals }) => ({ id, signals }))).toEqual([
-      { id: "pm-active", signals: expect.objectContaining({ recency: 1, graph_proximity: 0.3, claim_focus: 1, priority_pressure: 1, risk_pressure: 1, deadline_pressure: 1, usage_affinity: 0.8, semantic_similarity: 0.9 }) },
-      { id: "pm-owned", signals: expect.objectContaining({ recency: 0, claim_focus: 0.75, priority_pressure: 0.5, author_affinity: 1 }) },
+    expect(
+      buildItemContextRelevanceCandidates(items, {
+        statusRegistry: registry,
+        now: "2026-07-14T00:00:00.000Z",
+        author: "codex-root",
+        usageAffinity: { "pm-active": 0.8 },
+        semanticSimilarity: { "pm-active": 0.9 },
+      }).map(({ id, signals }) => ({ id, signals })),
+    ).toEqual([
+      {
+        id: "pm-active",
+        signals: expect.objectContaining({
+          recency: 1,
+          graph_proximity: 0.3,
+          claim_focus: 1,
+          priority_pressure: 1,
+          risk_pressure: 1,
+          deadline_pressure: 1,
+          usage_affinity: 0.8,
+          semantic_similarity: 0.9,
+        }),
+      },
+      {
+        id: "pm-owned",
+        signals: expect.objectContaining({
+          recency: 0,
+          claim_focus: 0.75,
+          priority_pressure: 0.5,
+          author_affinity: 1,
+        }),
+      },
     ]);
   });
 
   it("orders malformed runtime timestamps deterministically", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const malformed = ["pm-b", "pm-a"].map((id) => ({
-      id, title: id, description: id, type: "Task", status: "open", priority: 2,
-      created_at: "invalid", updated_at: "invalid",
+      id,
+      title: id,
+      description: id,
+      type: "Task",
+      status: "open",
+      priority: 2,
+      created_at: "invalid",
+      updated_at: "invalid",
     })) as ItemMetadata[];
     const candidates = buildItemContextRelevanceCandidates(malformed, {
       statusRegistry: registry,
       now: "invalid",
     });
-    expect(candidates.find(({ id }) => id === "pm-a")?.signals?.recency).toBe(1);
+    expect(candidates.find(({ id }) => id === "pm-a")?.signals?.recency).toBe(
+      1,
+    );
+    expect(
+      candidates.every(
+        ({ signal_provenance }) =>
+          signal_provenance.recency.coordinate === "1970-01-01T00:00:00.000Z",
+      ),
+    ).toBe(true);
+
+    const invalidReleaseCandidates = buildItemContextRelevanceCandidates(
+      [
+        { ...malformed[0], id: "pm-release-text", release: "not-a-release" },
+        { ...malformed[1], id: "pm-release-date", release: "v2026.2.31" },
+      ],
+      { statusRegistry: registry, now: "invalid" },
+    );
+    expect(
+      invalidReleaseCandidates.every(
+        ({ signal_provenance }) =>
+          signal_provenance.recency.source === "created_at",
+      ),
+    ).toBe(true);
+    expect(() =>
+      buildItemContextRelevanceCandidates(malformed, {
+        statusRegistry: registry,
+        now: "invalid",
+        recencyEvidence: {
+          "pm-b": {
+            source: "substantive_history",
+            coordinate: 1 as never,
+          },
+          "pm-a": {
+            source: "substantive_history",
+            coordinate: "not-a-date",
+          },
+        },
+      }),
+    ).toThrow("valid absolute timestamp with millisecond precision");
+  });
+
+  it("explains substantive-history, release-cohort, and created-at recency", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const candidates = buildItemContextRelevanceCandidates(
+      [
+        {
+          id: "pm-history",
+          title: "History",
+          description: "History",
+          type: "Task",
+          status: "open",
+          release: "v2025.1.1",
+          created_at: "2025-01-01T00:00:00.000Z",
+          updated_at: "2099-01-01T00:00:00.000Z",
+        },
+        {
+          id: "pm-release",
+          title: "Release",
+          description: "Release",
+          type: "Task",
+          status: "closed",
+          release: "v2026.7.20",
+          created_at: "2024-01-01T00:00:00.000Z",
+          updated_at: "2099-01-01T00:00:00.000Z",
+        },
+        {
+          id: "pm-created",
+          title: "Created",
+          description: "Created",
+          type: "Task",
+          status: "open",
+          created_at: "2026-07-10T00:00:00.000Z",
+          updated_at: "2099-01-01T00:00:00.000Z",
+        },
+      ] as ItemMetadata[],
+      {
+        statusRegistry: registry,
+        now: "2026-07-21T00:00:00.000Z",
+        recencyEvidence: {
+          "pm-history": {
+            source: "substantive_history",
+            coordinate: "2026-07-21T02:00:00.000+02:00",
+            history_op: "comment_add",
+            event_class: "substantive",
+          },
+        },
+      },
+    );
+
+    expect(candidates.map(({ id }) => id)).toEqual([
+      "pm-history",
+      "pm-release",
+      "pm-created",
+    ]);
+    expect(candidates[0]?.signal_provenance.recency).toMatchObject({
+      source: "substantive_history",
+      coordinate: "2026-07-21T00:00:00.000Z",
+      history_op: "comment_add",
+      event_class: "substantive",
+    });
+    expect(candidates[1]?.signal_provenance.recency).toMatchObject({
+      source: "release_cohort",
+      coordinate: "2026-07-20T00:00:00.000Z",
+    });
+    expect(candidates[2]?.signal_provenance.recency).toMatchObject({
+      source: "created_at",
+      coordinate: "2026-07-10T00:00:00.000Z",
+    });
+  });
+
+  it("keeps workspace ordering invariant under pure maintenance writes", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(fc.integer({ min: 1, max: 10_000 }), {
+          minLength: 2,
+          maxLength: 20,
+        }),
+        fc.date({
+          min: new Date("2026-01-01T00:00:00.000Z"),
+          max: new Date("2026-12-31T00:00:00.000Z"),
+          noInvalidDate: true,
+        }),
+        (identifiers, maintenanceTime) => {
+          const items = identifiers.map((identifier, index) => ({
+            id: `pm-${identifier}`,
+            title: `Item ${identifier}`,
+            description: "Property fixture",
+            type: "Task",
+            status: "open",
+            created_at: new Date(
+              Date.UTC(2026, 0, Math.min(index + 1, 28)),
+            ).toISOString(),
+            updated_at: "2026-01-01T00:00:00.000Z",
+          })) as ItemMetadata[];
+          const options = {
+            statusRegistry: registry,
+            now: "2027-01-01T00:00:00.000Z",
+          };
+          const before = buildItemContextRelevanceCandidates(items, options);
+          const target = identifiers.length - 1;
+          const after = buildItemContextRelevanceCandidates(
+            items.map((item, index) =>
+              index === target
+                ? {
+                    ...item,
+                    updated_at: maintenanceTime.toISOString(),
+                    dependencies: [{ id: "pm-maintenance", kind: "related" }],
+                  }
+                : item,
+            ) as ItemMetadata[],
+            options,
+          );
+          expect(after.map(({ id, signals }) => [id, signals.recency])).toEqual(
+            before.map(({ id, signals }) => [id, signals.recency]),
+          );
+        },
+      ),
+    );
   });
 
   it("treats whitespace-only actors as missing without matching them", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
-    const candidates = buildItemContextRelevanceCandidates([
+    const candidates = buildItemContextRelevanceCandidates(
+      [
+        {
+          id: "pm-unassigned",
+          title: "Unassigned",
+          description: "Unassigned",
+          type: "Task",
+          status: "open",
+          priority: 2,
+          assignee: " ",
+          created_at: "2026-07-01T00:00:00.000Z",
+          updated_at: "2026-07-01T00:00:00.000Z",
+        },
+      ] as ItemMetadata[],
       {
-        id: "pm-unassigned", title: "Unassigned", description: "Unassigned", type: "Task",
-        status: "open", priority: 2, assignee: " ", created_at: "2026-07-01T00:00:00.000Z",
-        updated_at: "2026-07-01T00:00:00.000Z",
+        statusRegistry: registry,
+        now: "2026-07-14T00:00:00.000Z",
+        author: " ",
       },
-    ] as ItemMetadata[], {
-      statusRegistry: registry,
-      now: "2026-07-14T00:00:00.000Z",
-      author: " ",
-    });
+    );
     expect(candidates[0]?.signals?.author_affinity).toBe(0);
   });
 
-  it("preserves compact timestamp recency and rejects non-string runtime values", () => {
+  it("rejects compact and non-string timestamps at the strict recency boundary", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const items = [
-      { id: "pm-new", title: "new", description: "new", type: "Task", status: "open", priority: 2, created_at: "20260714", updated_at: "20260714" },
-      { id: "pm-old", title: "old", description: "old", type: "Task", status: "open", priority: 2, created_at: "20260713", updated_at: "20260713" },
-      { id: "pm-invalid", title: "invalid", description: "invalid", type: "Task", status: "open", priority: 2, created_at: "invalid", updated_at: 1 },
+      {
+        id: "pm-new",
+        title: "new",
+        description: "new",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        created_at: "20260714",
+        updated_at: "20260714",
+      },
+      {
+        id: "pm-old",
+        title: "old",
+        description: "old",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        created_at: "20260713",
+        updated_at: "20260713",
+      },
+      {
+        id: "pm-invalid",
+        title: "invalid",
+        description: "invalid",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        created_at: 1,
+        updated_at: "invalid",
+      },
     ] as unknown as ItemMetadata[];
     const candidates = buildItemContextRelevanceCandidates(items, {
       statusRegistry: registry,
       now: "2026-07-14T00:00:00.000Z",
     });
-    expect(candidates.find(({ id }) => id === "pm-new")?.signals?.recency).toBe(1);
-    expect(candidates.find(({ id }) => id === "pm-old")?.signals?.recency).toBe(0.5);
-    expect(candidates.find(({ id }) => id === "pm-invalid")?.signals?.recency).toBe(0);
+    expect(
+      candidates.map(
+        ({ signal_provenance }) => signal_provenance.recency.coordinate,
+      ),
+    ).toEqual([
+      "1970-01-01T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
+      "1970-01-01T00:00:00.000Z",
+    ]);
   });
 
   it("preserves baseline ordering when advanced signals are absent", () => {
@@ -113,61 +358,133 @@ describe("context relevance SDK primitives", () => {
       candidate("pm-c", "third"),
     ]);
 
-    expect(report.ranked.map((entry) => entry.id)).toEqual(["pm-b", "pm-a", "pm-c"]);
+    expect(report.ranked.map((entry) => entry.id)).toEqual([
+      "pm-b",
+      "pm-a",
+      "pm-c",
+    ]);
     expect(report.ranked.map((entry) => entry.rank)).toEqual([1, 2, 3]);
     expect(report.available_signals).toEqual(["structural"]);
-    expect(defaultScoreContextCandidates([candidate("pm-only", "only")]).ranked[0]?.score).toBe(1);
-    expect(defaultScoreContextCandidates([candidate("pm-zero", "zero")], { weights: { structural: 0 } }).ranked[0]?.score).toBe(0);
-    expect(defaultScoreContextCandidates([
-      candidate("pm-a", "first"),
-      candidate("pm-b", "second"),
-    ], { weights: { structural: 0 } }).ranked.map((entry) => entry.id)).toEqual(["pm-a", "pm-b"]);
+    expect(
+      defaultScoreContextCandidates([candidate("pm-only", "only")]).ranked[0]
+        ?.score,
+    ).toBe(1);
+    expect(
+      defaultScoreContextCandidates([candidate("pm-zero", "zero")], {
+        weights: { structural: 0 },
+      }).ranked[0]?.score,
+    ).toBe(0);
+    expect(
+      defaultScoreContextCandidates(
+        [candidate("pm-a", "first"), candidate("pm-b", "second")],
+        { weights: { structural: 0 } },
+      ).ranked.map((entry) => entry.id),
+    ).toEqual(["pm-a", "pm-b"]);
   });
 
   it("validates candidate identity, signal values, and weights", () => {
-    expect(() => defaultScoreContextCandidates([candidate("", "blank")])).toThrow("unique non-empty ids");
-    expect(() => defaultScoreContextCandidates([candidate("pm-a", "first"), candidate("pm-a", "duplicate")])).toThrow("unique non-empty ids");
-    expect(() => defaultScoreContextCandidates([
-      { ...candidate("pm-a", "unknown"), signals: { unknown: 1 } as never },
-    ])).toThrow("Unknown context relevance signal");
-    expect(() => defaultScoreContextCandidates([
-      { ...candidate("pm-a", "structural override"), signals: { structural: 1 } as never },
-    ])).toThrow("Unknown context relevance signal: structural");
-    expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: Number.NaN })])).toThrow("finite number from 0 to 1");
-    expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: -0.1 })])).toThrow("finite number from 0 to 1");
-    expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: 1.1 })])).toThrow("finite number from 0 to 1");
-    expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid")], { weights: { recency: -1 } })).toThrow("finite non-negative number");
-    expect(defaultScoreContextCandidates([
-      candidate("pm-a", "explicitly omitted", { recency: undefined }),
-    ])).toMatchObject({ available_signals: ["structural"] });
-    expect(defaultScoreContextCandidates([
-      candidate("pm-a", "undefined weight override", { recency: 1 }),
-    ], { weights: { recency: undefined } })).toEqual(defaultScoreContextCandidates([
-      candidate("pm-a", "undefined weight override", { recency: 1 }),
-    ]));
-    expect(defaultScoreContextCandidates([
-      candidate("pm-a", "unknown weight override", { recency: 1 }),
-    ], { weights: { rogue: Number.NaN } } as never)).toEqual(defaultScoreContextCandidates([
-      candidate("pm-a", "unknown weight override", { recency: 1 }),
-    ]));
+    expect(() =>
+      defaultScoreContextCandidates([candidate("", "blank")]),
+    ).toThrow("unique non-empty ids");
+    expect(() =>
+      defaultScoreContextCandidates([
+        candidate("pm-a", "first"),
+        candidate("pm-a", "duplicate"),
+      ]),
+    ).toThrow("unique non-empty ids");
+    expect(() =>
+      defaultScoreContextCandidates([
+        { ...candidate("pm-a", "unknown"), signals: { unknown: 1 } as never },
+      ]),
+    ).toThrow("Unknown context relevance signal");
+    expect(() =>
+      defaultScoreContextCandidates([
+        {
+          ...candidate("pm-a", "structural override"),
+          signals: { structural: 1 } as never,
+        },
+      ]),
+    ).toThrow("Unknown context relevance signal: structural");
+    expect(() =>
+      defaultScoreContextCandidates([
+        candidate("pm-a", "invalid", { recency: Number.NaN }),
+      ]),
+    ).toThrow("finite number from 0 to 1");
+    expect(() =>
+      defaultScoreContextCandidates([
+        candidate("pm-a", "invalid", { recency: -0.1 }),
+      ]),
+    ).toThrow("finite number from 0 to 1");
+    expect(() =>
+      defaultScoreContextCandidates([
+        candidate("pm-a", "invalid", { recency: 1.1 }),
+      ]),
+    ).toThrow("finite number from 0 to 1");
+    expect(() =>
+      defaultScoreContextCandidates([candidate("pm-a", "invalid")], {
+        weights: { recency: -1 },
+      }),
+    ).toThrow("finite non-negative number");
+    expect(
+      defaultScoreContextCandidates([
+        candidate("pm-a", "explicitly omitted", { recency: undefined }),
+      ]),
+    ).toMatchObject({ available_signals: ["structural"] });
+    expect(
+      defaultScoreContextCandidates(
+        [candidate("pm-a", "undefined weight override", { recency: 1 })],
+        { weights: { recency: undefined } },
+      ),
+    ).toEqual(
+      defaultScoreContextCandidates([
+        candidate("pm-a", "undefined weight override", { recency: 1 }),
+      ]),
+    );
+    expect(
+      defaultScoreContextCandidates(
+        [candidate("pm-a", "unknown weight override", { recency: 1 })],
+        { weights: { rogue: Number.NaN } } as never,
+      ),
+    ).toEqual(
+      defaultScoreContextCandidates([
+        candidate("pm-a", "unknown weight override", { recency: 1 }),
+      ]),
+    );
   });
 
   it("combines available signal families with explainable contributions", () => {
     const report = defaultScoreContextCandidates([
-      candidate("pm-old", "baseline leader", { recency: 0, semantic_similarity: 0 }),
-      candidate("pm-relevant", "semantic match", { recency: 1, semantic_similarity: 1 }),
+      candidate("pm-old", "baseline leader", {
+        recency: 0,
+        semantic_similarity: 0,
+      }),
+      candidate("pm-relevant", "semantic match", {
+        recency: 1,
+        semantic_similarity: 1,
+      }),
     ]);
 
     expect(report.ranked[0]?.id).toBe("pm-relevant");
-    expect(report.available_signals).toEqual(["structural", "recency", "semantic_similarity"]);
-    expect(report.ranked[0]?.contributions.semantic_similarity).toBeGreaterThan(0);
+    expect(report.available_signals).toEqual([
+      "structural",
+      "recency",
+      "semantic_similarity",
+    ]);
+    expect(report.ranked[0]?.contributions.semantic_similarity).toBeGreaterThan(
+      0,
+    );
     expect(CONTEXT_RELEVANCE_SIGNAL_NAMES).toContain("knowledge_density");
-    expect(report.ranked.find((entry) => entry.id === "pm-old")?.contributions).toHaveProperty("recency");
+    expect(
+      report.ranked.find((entry) => entry.id === "pm-old")?.contributions,
+    ).toHaveProperty("recency");
     const sparse = defaultScoreContextCandidates([
       candidate("pm-sparse", "sparse"),
       candidate("pm-signaled", "signaled", { risk_pressure: 1 }),
     ]);
-    expect(sparse.ranked.find((entry) => entry.id === "pm-sparse")?.contributions.risk_pressure).toBeUndefined();
+    expect(
+      sparse.ranked.find((entry) => entry.id === "pm-sparse")?.contributions
+        .risk_pressure,
+    ).toBeUndefined();
   });
 
   it("improves claimed-work relevance without increasing the token ceiling", () => {
@@ -184,8 +501,12 @@ describe("context relevance SDK primitives", () => {
       candidate("pm-target", "claimed target"),
     ]);
     const adaptive = defaultScoreContextCandidates([
-      candidate("pm-distractor", "baseline leader", { claim_focus: affinity?.["pm-distractor"] ?? 0 }),
-      candidate("pm-target", "claimed target", { claim_focus: affinity?.["pm-target"] ?? 0 }),
+      candidate("pm-distractor", "baseline leader", {
+        claim_focus: affinity?.["pm-distractor"] ?? 0,
+      }),
+      candidate("pm-target", "claimed target", {
+        claim_focus: affinity?.["pm-target"] ?? 0,
+      }),
     ]);
     const baselineQuality = evaluateContextRanking({
       ranked_ids: baseline.ranked.map((entry) => entry.id),
@@ -204,8 +525,12 @@ describe("context relevance SDK primitives", () => {
 
     expect(adaptive.ranked[0]?.id).toBe("pm-target");
     expect(adaptiveQuality.ndcg).toBeGreaterThan(baselineQuality.ndcg);
-    expect(adaptiveQuality.reciprocal_rank).toBeGreaterThan(baselineQuality.reciprocal_rank);
-    expect(adaptiveQuality.token_budget_adherence).toBe(baselineQuality.token_budget_adherence);
+    expect(adaptiveQuality.reciprocal_rank).toBeGreaterThan(
+      baselineQuality.reciprocal_rank,
+    );
+    expect(adaptiveQuality.token_budget_adherence).toBe(
+      baselineQuality.token_budget_adherence,
+    );
     expect(semanticAttributionAffinity(undefined)).toBeUndefined();
   });
 
@@ -224,11 +549,20 @@ describe("context relevance SDK primitives", () => {
 
     expect(report.model).toBe("custom");
     expect(report.ranked.map((entry) => entry.id)).toEqual(["pm-b", "pm-a"]);
-    expect(report.ranked[0]?.contributions).toEqual({ custom: report.ranked[0]?.score });
-    expect((await scoreContextCandidates(
-      [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
-      { scorer: ({ candidates }) => candidates.map((entry) => ({ id: entry.id, score: 1 })) },
-    )).ranked.map((entry) => entry.id)).toEqual(["pm-a", "pm-b"]);
+    expect(report.ranked[0]?.contributions).toEqual({
+      custom: report.ranked[0]?.score,
+    });
+    expect(
+      (
+        await scoreContextCandidates(
+          [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
+          {
+            scorer: ({ candidates }) =>
+              candidates.map((entry) => ({ id: entry.id, score: 1 })),
+          },
+        )
+      ).ranked.map((entry) => entry.id),
+    ).toEqual(["pm-a", "pm-b"]);
   });
 
   it("rejects malformed custom scorer output", async () => {
@@ -236,17 +570,33 @@ describe("context relevance SDK primitives", () => {
       scoreContextCandidates([candidate("pm-a", "alpha")], {
         scorer: () => [{ id: "pm-missing", score: Number.NaN }],
       }),
-    ).rejects.toThrow("Context relevance scorer must return one finite score for every candidate");
-    await expect(scoreContextCandidates(
-      [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
-      { scorer: () => [{ id: "pm-a", score: 1 }] },
-    )).rejects.toThrow("one finite score for every candidate");
-    await expect(scoreContextCandidates(
-      [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
-      { scorer: () => [{ id: "pm-a", score: 1 }, { id: "pm-a", score: 2 }] },
-    )).rejects.toThrow("one finite score for every candidate");
-    await expect(scoreContextCandidates([candidate("pm-a", "alpha")])).resolves.toMatchObject({ model: "default-weighted-v1" });
-    const extensionFree = await scoreContextCandidatesWithActiveExtensions("context", [candidate("pm-a", "alpha")]);
+    ).rejects.toThrow(
+      "Context relevance scorer must return one finite score for every candidate",
+    );
+    await expect(
+      scoreContextCandidates(
+        [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
+        { scorer: () => [{ id: "pm-a", score: 1 }] },
+      ),
+    ).rejects.toThrow("one finite score for every candidate");
+    await expect(
+      scoreContextCandidates(
+        [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
+        {
+          scorer: () => [
+            { id: "pm-a", score: 1 },
+            { id: "pm-a", score: 2 },
+          ],
+        },
+      ),
+    ).rejects.toThrow("one finite score for every candidate");
+    await expect(
+      scoreContextCandidates([candidate("pm-a", "alpha")]),
+    ).resolves.toMatchObject({ model: "default-weighted-v1" });
+    const extensionFree = await scoreContextCandidatesWithActiveExtensions(
+      "context",
+      [candidate("pm-a", "alpha")],
+    );
     expect(extensionFree.model).toBe("default-weighted-v1");
     expect(extensionFree.warnings).toBeUndefined();
   });
@@ -259,18 +609,23 @@ describe("context relevance SDK primitives", () => {
           name: "relevance-test",
           service: "context_relevance",
           run(context) {
-            const payload = context.payload as { candidates: Array<{ id: string }> };
-            return payload.candidates.map((entry) => ({ id: entry.id, score: entry.id === "pm-b" ? 5 : 1 }));
+            const payload = context.payload as {
+              candidates: Array<{ id: string }>;
+            };
+            return payload.candidates.map((entry) => ({
+              id: entry.id,
+              score: entry.id === "pm-b" ? 5 : 1,
+            }));
           },
         },
       ],
     };
     setActiveExtensionServices(services);
 
-    const report = await scoreContextCandidatesWithActiveExtensions(
-      "context",
-      [candidate("pm-a", "alpha"), candidate("pm-b", "beta")],
-    );
+    const report = await scoreContextCandidatesWithActiveExtensions("context", [
+      candidate("pm-a", "alpha"),
+      candidate("pm-b", "beta"),
+    ]);
 
     expect(report.model).toBe("custom");
     expect(report.ranked.map((entry) => entry.id)).toEqual(["pm-b", "pm-a"]);
@@ -296,37 +651,90 @@ describe("context relevance SDK primitives", () => {
         },
       ],
     });
-    await expect(scoreContextCandidatesWithActiveExtensions("next", [candidate("pm-a", "alpha")])).resolves.toMatchObject({
+    await expect(
+      scoreContextCandidatesWithActiveExtensions("next", [
+        candidate("pm-a", "alpha"),
+      ]),
+    ).resolves.toMatchObject({
       model: "custom",
-      warnings: ["extension_service_override_failed:project:throwing-first:context_relevance"],
+      warnings: [
+        "extension_service_override_failed:project:throwing-first:context_relevance",
+      ],
     });
 
-    setActiveExtensionServices({ overrides: [{ ...validOverride, name: "invalid-shape", run: () => ({ score: 1 }) }] });
-    await expect(scoreContextCandidatesWithActiveExtensions("context", [candidate("pm-a", "alpha")])).resolves.toMatchObject({
-      model: "default-weighted-v1",
-      warnings: ["extension_context_relevance_invalid_result"],
+    setActiveExtensionServices({
+      overrides: [
+        { ...validOverride, name: "invalid-shape", run: () => ({ score: 1 }) },
+      ],
     });
-
-    setActiveExtensionServices({ overrides: [{ ...validOverride, name: "invalid-score", run: () => [{ id: "pm-a", score: Number.NaN }] }] });
-    await expect(scoreContextCandidatesWithActiveExtensions("context", [candidate("pm-a", "alpha")])).resolves.toMatchObject({
+    await expect(
+      scoreContextCandidatesWithActiveExtensions("context", [
+        candidate("pm-a", "alpha"),
+      ]),
+    ).resolves.toMatchObject({
       model: "default-weighted-v1",
       warnings: ["extension_context_relevance_invalid_result"],
     });
 
     setActiveExtensionServices({
-      overrides: [{ ...validOverride, name: "invalid-members", run: () => [{ id: "pm-a", score: 1 }, { id: "pm-a", score: 2 }] }],
+      overrides: [
+        {
+          ...validOverride,
+          name: "invalid-score",
+          run: () => [{ id: "pm-a", score: Number.NaN }],
+        },
+      ],
     });
-    await expect(scoreContextCandidatesWithActiveExtensions("context", [candidate("pm-a", "alpha")])).resolves.toMatchObject({
+    await expect(
+      scoreContextCandidatesWithActiveExtensions("context", [
+        candidate("pm-a", "alpha"),
+      ]),
+    ).resolves.toMatchObject({
       model: "default-weighted-v1",
       warnings: ["extension_context_relevance_invalid_result"],
     });
 
     setActiveExtensionServices({
-      overrides: [{ ...validOverride, name: "only-failure", run: () => { throw new Error("expected test failure"); } }],
+      overrides: [
+        {
+          ...validOverride,
+          name: "invalid-members",
+          run: () => [
+            { id: "pm-a", score: 1 },
+            { id: "pm-a", score: 2 },
+          ],
+        },
+      ],
     });
-    await expect(scoreContextCandidatesWithActiveExtensions("context", [candidate("pm-a", "alpha")])).resolves.toMatchObject({
+    await expect(
+      scoreContextCandidatesWithActiveExtensions("context", [
+        candidate("pm-a", "alpha"),
+      ]),
+    ).resolves.toMatchObject({
       model: "default-weighted-v1",
-      warnings: ["extension_service_override_failed:project:only-failure:context_relevance"],
+      warnings: ["extension_context_relevance_invalid_result"],
+    });
+
+    setActiveExtensionServices({
+      overrides: [
+        {
+          ...validOverride,
+          name: "only-failure",
+          run: () => {
+            throw new Error("expected test failure");
+          },
+        },
+      ],
+    });
+    await expect(
+      scoreContextCandidatesWithActiveExtensions("context", [
+        candidate("pm-a", "alpha"),
+      ]),
+    ).resolves.toMatchObject({
+      model: "default-weighted-v1",
+      warnings: [
+        "extension_service_override_failed:project:only-failure:context_relevance",
+      ],
     });
   });
 
@@ -348,35 +756,43 @@ describe("context relevance SDK primitives", () => {
       token_budget_adherence: 1,
       within_token_budget: true,
     });
-    expect(evaluateContextRanking({
-      ranked_ids: ["pm-missing"],
-      judgments: {},
-      actual_tokens: 200,
-      token_budget: 100,
-    })).toMatchObject({
+    expect(
+      evaluateContextRanking({
+        ranked_ids: ["pm-missing"],
+        judgments: {},
+        actual_tokens: 200,
+        token_budget: 100,
+      }),
+    ).toMatchObject({
       ndcg: 1,
       reciprocal_rank: 0,
       token_budget_adherence: 0.5,
       within_token_budget: false,
     });
-    expect(evaluateContextRanking({
-      ranked_ids: ["pm-missing"],
-      judgments: undefined as never,
-      actual_tokens: 1,
-      token_budget: 100,
-    })).toMatchObject({ ndcg: 1, reciprocal_rank: 0 });
-    expect(evaluateContextRanking({
-      ranked_ids: [],
-      judgments: { "pm-positive": 3 },
-      actual_tokens: 0,
-      token_budget: 100,
-    }).ndcg).toBe(0);
-    expect(() => evaluateContextRanking({
-      ranked_ids: [],
-      judgments: {},
-      actual_tokens: -1,
-      token_budget: 0,
-    })).toThrow("token counts");
+    expect(
+      evaluateContextRanking({
+        ranked_ids: ["pm-missing"],
+        judgments: undefined as never,
+        actual_tokens: 1,
+        token_budget: 100,
+      }),
+    ).toMatchObject({ ndcg: 1, reciprocal_rank: 0 });
+    expect(
+      evaluateContextRanking({
+        ranked_ids: [],
+        judgments: { "pm-positive": 3 },
+        actual_tokens: 0,
+        token_budget: 100,
+      }).ndcg,
+    ).toBe(0);
+    expect(() =>
+      evaluateContextRanking({
+        ranked_ids: [],
+        judgments: {},
+        actual_tokens: -1,
+        token_budget: 0,
+      }),
+    ).toThrow("token counts");
   });
 
   it("runs context and next judgments through the public read contract", async () => {
@@ -384,8 +800,20 @@ describe("context relevance SDK primitives", () => {
       model: "test",
       available_signals: ["structural"] as const,
       items: [
-        { id: "pm-a", rank: 1, baseline_rank: 1, score: 1, contributions: { structural: 1 } },
-        { id: "pm-b", rank: 2, baseline_rank: 2, score: 0.5, contributions: { structural: 0.5 } },
+        {
+          id: "pm-a",
+          rank: 1,
+          baseline_rank: 1,
+          score: 1,
+          contributions: { structural: 1 },
+        },
+        {
+          id: "pm-b",
+          rank: 2,
+          baseline_rank: 2,
+          score: 0.5,
+          contributions: { structural: 0.5 },
+        },
       ],
     };
     const focus = (id: string) => ({ id }) as never;
@@ -393,11 +821,20 @@ describe("context relevance SDK primitives", () => {
     const reader = {
       context: async (options?: Record<string, unknown>) => {
         observedReadOptions.push(options ?? {});
-        return { high_level: [], low_level: [focus("pm-a"), focus("pm-b")], blocked_fallback: [], ranking } as never;
+        return {
+          high_level: [],
+          low_level: [focus("pm-a"), focus("pm-b")],
+          blocked_fallback: [],
+          ranking,
+        } as never;
       },
       next: async (options?: Record<string, unknown>) => {
         observedReadOptions.push(options ?? {});
-        return { recommended: focus("pm-b"), ready: [focus("pm-a")], ranking } as never;
+        return {
+          recommended: focus("pm-b"),
+          ready: [focus("pm-a")],
+          ranking,
+        } as never;
       },
     };
     const scenarios = [
@@ -433,108 +870,149 @@ describe("context relevance SDK primitives", () => {
       { explainRanking: true, outputBudget: "unbounded" },
       { explainRanking: true, outputBudget: "unbounded" },
     ]);
-    expect(report.scenarios[0]?.attribution[0]).toEqual({ id: "pm-a", contributions: { structural: 1 } });
+    expect(report.scenarios[0]?.attribution[0]).toEqual({
+      id: "pm-a",
+      contributions: { structural: 1 },
+    });
     expect(report.scenarios[1]?.ranked_ids).toEqual(["pm-b", "pm-a"]);
 
-    const noAttribution = await runContextEvaluationScenario({
-      id: "no-attribution",
-      surface: "context",
-      judgments: {},
-      token_budget: 100,
-      rationale: "A reader may omit optional ranking metadata.",
-    }, {
-      context: async () => ({ high_level: [], low_level: [], blocked_fallback: [] }) as never,
-      next: async () => ({ ready: [] }) as never,
-    });
+    const noAttribution = await runContextEvaluationScenario(
+      {
+        id: "no-attribution",
+        surface: "context",
+        judgments: {},
+        token_budget: 100,
+        rationale: "A reader may omit optional ranking metadata.",
+      },
+      {
+        context: async () =>
+          ({ high_level: [], low_level: [], blocked_fallback: [] }) as never,
+        next: async () => ({ ready: [] }) as never,
+      },
+    );
     expect(noAttribution.attribution).toEqual([]);
-    const sparseResult = await runContextEvaluationScenario({
-      id: "sparse-result",
-      surface: "context",
-      judgments: {},
-      token_budget: 100,
-      rationale: "Runtime readers may omit arrays despite their static contract.",
-    }, {
-      context: async () => ({}) as never,
-      next: async () => ({}) as never,
-    });
+    const sparseResult = await runContextEvaluationScenario(
+      {
+        id: "sparse-result",
+        surface: "context",
+        judgments: {},
+        token_budget: 100,
+        rationale:
+          "Runtime readers may omit arrays despite their static contract.",
+      },
+      {
+        context: async () => ({}) as never,
+        next: async () => ({}) as never,
+      },
+    );
     expect(sparseResult.ranked_ids).toEqual([]);
-    const sparseNext = await runContextEvaluationScenario({
-      id: "sparse-next",
-      surface: "next",
-      judgments: {},
-      token_budget: 100,
-      rationale: "Runtime next readers may omit ready arrays.",
-    }, {
-      context: async () => ({}) as never,
-      next: async () => ({}) as never,
-    });
+    const sparseNext = await runContextEvaluationScenario(
+      {
+        id: "sparse-next",
+        surface: "next",
+        judgments: {},
+        token_budget: 100,
+        rationale: "Runtime next readers may omit ready arrays.",
+      },
+      {
+        context: async () => ({}) as never,
+        next: async () => ({}) as never,
+      },
+    );
     expect(sparseNext.ranked_ids).toEqual([]);
   });
 
   it("reports aggregate threshold failures and validates scenario/corpus metadata", async () => {
     const reader = {
-      context: async () => ({ high_level: [], low_level: [], blocked_fallback: [], ranking: { items: [] } }) as never,
+      context: async () =>
+        ({
+          high_level: [],
+          low_level: [],
+          blocked_fallback: [],
+          ranking: { items: [] },
+        }) as never,
       next: async () => ({ ready: [], ranking: { items: [] } }) as never,
     };
     await expect(
       runContextEvaluationScenario(
-        { id: "", surface: "context", judgments: {}, token_budget: 1, rationale: "" },
+        {
+          id: "",
+          surface: "context",
+          judgments: {},
+          token_budget: 1,
+          rationale: "",
+        },
         reader,
       ),
     ).rejects.toThrow("non-empty id and rationale");
-    expect(() => summarizeContextEvaluationReports([], {
-      ndcg: 1,
-      reciprocal_rank: 1,
-      required_recall: 1,
-      continuity_coverage: 1,
-      token_budget_adherence: 1,
-    })).toThrow("at least one scenario");
+    expect(() =>
+      summarizeContextEvaluationReports([], {
+        ndcg: 1,
+        reciprocal_rank: 1,
+        required_recall: 1,
+        continuity_coverage: 1,
+        token_budget_adherence: 1,
+      }),
+    ).toThrow("at least one scenario");
 
-    const report = summarizeContextEvaluationReports([
-      {
-        id: "weak",
-        surface: "context",
-        rationale: "Regression fixture",
-        ranked_ids: [],
-        actual_tokens: 2,
-        attribution: [],
-        metrics: {
-          ndcg: 0.5,
-          reciprocal_rank: 0,
-          required_recall: 1,
-          continuity_coverage: 1,
-          token_budget_adherence: 0.5,
-          within_token_budget: false,
+    const report = summarizeContextEvaluationReports(
+      [
+        {
+          id: "weak",
+          surface: "context",
+          rationale: "Regression fixture",
+          ranked_ids: [],
+          actual_tokens: 2,
+          attribution: [],
+          metrics: {
+            ndcg: 0.5,
+            reciprocal_rank: 0,
+            required_recall: 1,
+            continuity_coverage: 1,
+            token_budget_adherence: 0.5,
+            within_token_budget: false,
+          },
         },
+      ],
+      {
+        ndcg: 0.8,
+        reciprocal_rank: 0.5,
+        required_recall: 1,
+        continuity_coverage: 1,
+        token_budget_adherence: 0.9,
       },
-    ], {
-      ndcg: 0.8,
-      reciprocal_rank: 0.5,
-      required_recall: 1,
-      continuity_coverage: 1,
-      token_budget_adherence: 0.9,
-    });
+    );
     expect(report.passed).toBe(false);
-    expect(report.failures).toEqual(["ndcg:0.5<0.8", "reciprocal_rank:0<0.5", "token_budget_adherence:0.5<0.9"]);
-    expect(Object.keys(summarizeContextEvaluationReports(report.scenarios, {
-      ndcg: 0,
-      reciprocal_rank: 0,
-      required_recall: 0,
-      continuity_coverage: 0,
-      token_budget_adherence: 0,
-      rogue: 1,
-    } as never).aggregate)).toEqual([
+    expect(report.failures).toEqual([
+      "ndcg:0.5<0.8",
+      "reciprocal_rank:0<0.5",
+      "token_budget_adherence:0.5<0.9",
+    ]);
+    expect(
+      Object.keys(
+        summarizeContextEvaluationReports(report.scenarios, {
+          ndcg: 0,
+          reciprocal_rank: 0,
+          required_recall: 0,
+          continuity_coverage: 0,
+          token_budget_adherence: 0,
+          rogue: 1,
+        } as never).aggregate,
+      ),
+    ).toEqual([
       "ndcg",
       "reciprocal_rank",
       "required_recall",
       "continuity_coverage",
       "token_budget_adherence",
     ]);
-    expect(() => summarizeContextEvaluationReports(report.scenarios, {
-      reciprocal_rank: 0,
-      required_recall: 0,
-      continuity_coverage: 0,
-      token_budget_adherence: 0,
-    } as never)).toThrow("threshold ndcg must be a finite number");
+    expect(() =>
+      summarizeContextEvaluationReports(report.scenarios, {
+        reciprocal_rank: 0,
+        required_recall: 0,
+        continuity_coverage: 0,
+        token_budget_adherence: 0,
+      } as never),
+    ).toThrow("threshold ndcg must be a finite number");
   });
 });

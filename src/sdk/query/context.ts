@@ -47,6 +47,7 @@ import { runActivity, type CompactActivityEntry } from "./activity.js";
 import {
   scoreContextCandidatesWithActiveExtensions,
   type ContextRelevanceContributions,
+  type ContextRecencyEvidence,
   type ContextRelevanceReport,
   type ContextRelevanceSignalName,
 } from "../context-relevance.js";
@@ -63,6 +64,8 @@ import {
   type ContextPackingReport,
 } from "../context-packing.js";
 import {
+  attachContextUsageServingReceipt,
+  collectContextUsageDeliveredItemIds,
   readContextUsageAffinity,
   recordContextUsageServing,
 } from "../context-usage.js";
@@ -513,6 +516,8 @@ export interface ContextRankingSummary {
     baseline_rank: number;
     score: number;
     contributions: ContextRelevanceContributions;
+    /** Authoritative temporal source used for the recency contribution. */
+    recency?: ContextRecencyEvidence;
   }>;
   /** Number of candidates considered before answer-sized projection. */
   candidate_count: number;
@@ -1100,6 +1105,9 @@ export function toContextRankingSummary<TItem>(
       baseline_rank: entry.baseline_rank,
       score: entry.score,
       contributions: entry.contributions,
+      ...(entry.signal_provenance === undefined
+        ? {}
+        : { recency: entry.signal_provenance.recency }),
     })),
     candidate_count: report.ranked.length,
     omitted_count: report.ranked.length - ranked.length,
@@ -2636,18 +2644,27 @@ async function attachContextUsageFeedback(
     const included = new Set(
       focusGroups.packing.included.map((entry) => entry.id),
     );
-    await recordContextUsageServing({
+    const rows = focusGroups.ranking.ranked.map((entry) => ({
+      id: entry.id,
+      rank: entry.rank,
+      included: included.has(entry.id),
+    }));
+    const rankedIds = new Set(rows.map((row) => row.id));
+    for (const id of collectContextUsageDeliveredItemIds(result, "context")) {
+      if (!rankedIds.has(id)) {
+        rows.push({ id, rank: rows.length + 1, included: false });
+        rankedIds.add(id);
+      }
+    }
+    const receipt = await recordContextUsageServing({
       pmRoot,
       author,
       surface: "context",
       profile: focusGroups.packing.profile,
-      rows: focusGroups.ranking.ranked.map((entry) => ({
-        id: entry.id,
-        rank: entry.rank,
-        included: included.has(entry.id),
-      })),
+      rows,
       enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
     });
+    attachContextUsageServingReceipt(result, receipt);
   } catch {
     result.warnings = mergeSortedWarnings(result.warnings, [
       "context_usage_feedback_write_failed",

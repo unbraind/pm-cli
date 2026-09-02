@@ -12,6 +12,7 @@ import {
   applyReadOutputDimensions,
   stabilizeReadOutputReceiptEstimates,
 } from "./read-output-contracts.js";
+import { propagateContextUsageServingReceipt } from "./context-usage.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -1088,6 +1089,7 @@ export function attachReadOutputContracts(
           ),
         )
       : disclosedResult;
+  propagateContextUsageServingReceipt(result, projected);
   if (
     options.outputRowContract === true ||
     options.output_row_contract === true ||
@@ -1098,10 +1100,12 @@ export function attachReadOutputContracts(
   ) {
     return projected;
   }
-  return stabilizeSuppressedRowContractReceipts(
+  const suppressed = stabilizeSuppressedRowContractReceipts(
     Object.fromEntries(
       Object.entries(projected).filter(([key]) => key !== "row_contract"),
     ),
     options,
   );
+  propagateContextUsageServingReceipt(projected, suppressed);
+  return suppressed;
 }

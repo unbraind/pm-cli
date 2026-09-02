@@ -4,7 +4,7 @@
  * Implements append-only history and replay behavior for History.
  */
 import jsonPatch from "fast-json-patch";
-import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
+import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
@@ -14,7 +14,10 @@ import {
   sha256Hex,
   stableStringify,
 } from "../shared/serialization.js";
-import { nowIso } from "../shared/time.js";
+import {
+  isMillisecondPrecisionRfc3339DateTime,
+  nowIso,
+} from "../shared/time.js";
 import {
   diagnoseAgentIdentity,
   resolveHistoryAgentIdentity,
@@ -28,10 +31,12 @@ import type {
   LinkedTest,
 } from "../../types/index.js";
 import {
+  appendHistoryEntryWithEventIndex,
   removeHistoryEventIndexForHistoryPath,
-  updateHistoryEventIndexAfterAppend,
 } from "./event-index.js";
+import { classifyHistoryEvent } from "./event-classification.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
+import { PmCliError } from "../shared/errors.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
@@ -79,16 +84,36 @@ function compareLegacyLinkedTests(left: LinkedTest, right: LinkedTest): number {
     compareOptionalStrings(left.command, right.command),
     compareOptionalNumbers(left.timeout_seconds, right.timeout_seconds),
     compareOptionalStrings(left.pm_context_mode, right.pm_context_mode),
-    Number(Boolean(left.shared_host_safe)) - Number(Boolean(right.shared_host_safe)),
+    Number(Boolean(left.shared_host_safe)) -
+      Number(Boolean(right.shared_host_safe)),
     compareJsonValues(left.env_clear, right.env_clear, []),
     compareJsonValues(left.env_set, right.env_set, {}),
-    compareJsonValues(left.assert_stdout_contains, right.assert_stdout_contains, []),
+    compareJsonValues(
+      left.assert_stdout_contains,
+      right.assert_stdout_contains,
+      [],
+    ),
     compareJsonValues(left.assert_stdout_regex, right.assert_stdout_regex, []),
-    compareJsonValues(left.assert_stderr_contains, right.assert_stderr_contains, []),
+    compareJsonValues(
+      left.assert_stderr_contains,
+      right.assert_stderr_contains,
+      [],
+    ),
     compareJsonValues(left.assert_stderr_regex, right.assert_stderr_regex, []),
-    compareOptionalNumbers(left.assert_stdout_min_lines, right.assert_stdout_min_lines),
-    compareJsonValues(left.assert_json_field_equals, right.assert_json_field_equals, {}),
-    compareJsonValues(left.assert_json_field_gte, right.assert_json_field_gte, {}),
+    compareOptionalNumbers(
+      left.assert_stdout_min_lines,
+      right.assert_stdout_min_lines,
+    ),
+    compareJsonValues(
+      left.assert_json_field_equals,
+      right.assert_json_field_equals,
+      {},
+    ),
+    compareJsonValues(
+      left.assert_json_field_gte,
+      right.assert_json_field_gte,
+      {},
+    ),
     compareOptionalStrings(left.note, right.note),
   ];
   return comparisons.find((comparison) => comparison !== 0) ?? 0;
@@ -189,41 +214,40 @@ function canonicalHashDocument(
   // dependency ids. Later epoch-2 writers included those fields without
   // advancing the marker, so verification must retain both immutable forms.
   const usesLegacyFields = version === 1 || (version === 2 && legacyV2Fields);
-  const epochMetadata =
-    usesLegacyFields
-      ? {
-          ...canonical.metadata,
-          ...(canonical.metadata.dependencies === undefined
-            ? {}
-            : {
-                dependencies: canonical.metadata.dependencies.map(
-                  (dependency) => ({
-                    ...dependency,
-                    id: dependency.id.toLowerCase(),
-                  }),
-                ),
-              }),
-          ...(canonical.metadata.tests === undefined
-            ? {}
-            : {
-                tests: canonical.metadata.tests.map(
-                  ({
-                    workspace_context_mode: _workspaceContextMode,
-                    provenance: _provenance,
-                    provenance_invalid: _provenanceInvalid,
-                    ...test
-                  }) => test,
-                ),
-              }),
-          ...(canonical.metadata.test_runs === undefined
-            ? {}
-            : {
-                test_runs: canonical.metadata.test_runs.map(
-                  ({ executions: _executions, ...testRun }) => testRun,
-                ),
-              }),
-        }
-      : canonical.metadata;
+  const epochMetadata = usesLegacyFields
+    ? {
+        ...canonical.metadata,
+        ...(canonical.metadata.dependencies === undefined
+          ? {}
+          : {
+              dependencies: canonical.metadata.dependencies.map(
+                (dependency) => ({
+                  ...dependency,
+                  id: dependency.id.toLowerCase(),
+                }),
+              ),
+            }),
+        ...(canonical.metadata.tests === undefined
+          ? {}
+          : {
+              tests: canonical.metadata.tests.map(
+                ({
+                  workspace_context_mode: _workspaceContextMode,
+                  provenance: _provenance,
+                  provenance_invalid: _provenanceInvalid,
+                  ...test
+                }) => test,
+              ),
+            }),
+        ...(canonical.metadata.test_runs === undefined
+          ? {}
+          : {
+              test_runs: canonical.metadata.test_runs.map(
+                ({ executions: _executions, ...testRun }) => testRun,
+              ),
+            }),
+      }
+    : canonical.metadata;
   const metadata =
     version === 1 && epochMetadata.tests
       ? {
@@ -345,14 +369,15 @@ export function createHistoryEntry(params: {
       )
     : undefined;
   const context =
-    provenanceOutcomes === undefined || Object.keys(provenanceOutcomes).length === 0
+    provenanceOutcomes === undefined ||
+    Object.keys(provenanceOutcomes).length === 0
       ? params.context
       : {
           ...params.context,
           agent_provenance_outcomes: provenanceOutcomes,
         };
 
-  return {
+  const entry: HistoryEntry = {
     ts: params.nowIso,
     author: params.author,
     author_source:
@@ -368,9 +393,7 @@ export function createHistoryEntry(params: {
     ...(agentIdentity.provenance
       ? { agent_provenance: agentIdentity.provenance }
       : {}),
-    ...(agentIdentity.episode
-      ? { agent_episode: agentIdentity.episode }
-      : {}),
+    ...(agentIdentity.episode ? { agent_episode: agentIdentity.episode } : {}),
     op: params.op,
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
@@ -379,15 +402,33 @@ export function createHistoryEntry(params: {
     message: params.message === undefined ? undefined : params.message,
     ...(context === undefined ? {} : { context }),
   };
+  return { ...entry, event_class: classifyHistoryEvent(entry) };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function invalidHistoryTimestamp(message: string): PmCliError {
+  return new PmCliError(message, EXIT_CODE.GENERIC_FAILURE, {
+    code: "history_timestamp_invalid",
+  });
+}
+
 function fallbackHistoryTimestamp(entry: Pick<HistoryEntry, "ts">): string {
   const ts = entry.ts.trim();
-  return ts.length > 0 ? ts : nowIso();
+  if (ts.length === 0) return nowIso();
+  if (!isMillisecondPrecisionRfc3339DateTime(ts)) {
+    throw invalidHistoryTimestamp(
+      "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
+    );
+  }
+  if (ts !== entry.ts) {
+    throw invalidHistoryTimestamp(
+      "History timestamp must not contain surrounding whitespace",
+    );
+  }
+  return entry.ts;
 }
 
 function withHistoryTimestamp(
@@ -396,6 +437,11 @@ function withHistoryTimestamp(
 ): Record<string, unknown> {
   const ts = value.ts;
   if (typeof ts === "string" && ts.trim().length > 0) {
+    if (!isMillisecondPrecisionRfc3339DateTime(ts)) {
+      throw invalidHistoryTimestamp(
+        "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
+      );
+    }
     return value;
   }
   return { ...value, ts: fallbackTs };
@@ -407,13 +453,15 @@ function serializeHistoryLine(
 ): string {
   const fallbackTs = fallbackHistoryTimestamp(fallbackEntry);
   if (typeof value === "string") {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(value) as unknown;
-      if (isRecord(parsed)) {
-        return JSON.stringify(withHistoryTimestamp(parsed, fallbackTs));
-      }
+      parsed = JSON.parse(value) as unknown;
     } catch {
       // Non-JSON extension lines are preserved for compatibility.
+      return value;
+    }
+    if (isRecord(parsed)) {
+      return JSON.stringify(withHistoryTimestamp(parsed, fallbackTs));
     }
     return value;
   }
@@ -477,9 +525,25 @@ export async function appendHistoryEntry(
       return;
     }
   }
-  await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
+  const timestampedEntry =
+    entry.ts.trim().length > 0
+      ? entry
+      : { ...entry, ts: fallbackHistoryTimestamp(entry) };
+  const normalizedEntry = {
+    ...timestampedEntry,
+    event_class: classifyHistoryEvent(timestampedEntry),
+  };
+  await appendHistoryEntryWithEventIndex(
+    historyPath,
+    normalizedEntry,
+    async () => {
+      await appendLineAtomic(
+        historyPath,
+        serializeHistoryLine(normalizedEntry, normalizedEntry),
+      );
+    },
+  );
   await invalidateHistoryDriftCacheForPath(historyPath);
-  await updateHistoryEventIndexAfterAppend(historyPath, entry);
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

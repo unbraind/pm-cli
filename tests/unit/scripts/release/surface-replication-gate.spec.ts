@@ -594,13 +594,58 @@ describe("surface replication gate", () => {
     ) as Record<string, unknown>;
     config.waivers = [];
 
-    const unrelated = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const databaseSeamSet = (
+      config.sets as Array<{
+        id: string;
+        owner: string;
+        triggers: Array<{
+          path?: string;
+          changed_lines_contain_any?: string[];
+        }>;
+        required_changed_members: string[];
+        members: Array<{ path: string; contains_all: string[] }>;
+      }>
+    ).find((entry) => entry.id === "database-sync-test-seam");
+    const eventIndexTrigger = databaseSeamSet?.triggers.find(
+      (entry) => entry.path === "src/core/history/event-index.ts",
+    );
+    expect(eventIndexTrigger?.changed_lines_contain_any).toEqual(
+      expect.arrayContaining([
+        "const loaded = loadModule(",
+        "return loaded.DatabaseSync ?? null",
+        "const nodeMajor = Number.parseInt(",
+        "return Number.isFinite(nodeMajor) && nodeMajor >=",
+        "RuntimeDatabaseSync = loadStableDatabaseSync(",
+        "RuntimeDatabaseSync = databaseSync",
+        "RuntimeDatabaseSync = previous",
+        "let RuntimeDatabaseSync:",
+        "const Database = resolveDatabaseSync();",
+        "return RuntimeDatabaseSync",
+      ]),
+    );
+    const root = await fixtureRoot();
+    for (const member of databaseSeamSet?.members ?? []) {
+      const memberPath = path.join(root, member.path);
+      await mkdir(path.dirname(memberPath), { recursive: true });
+      await writeFile(memberPath, member.contains_all.join("\n"), "utf8");
+    }
+    const databaseSeamConfig = {
+      version: config.version,
+      source_file_line_cap: config.source_file_line_cap,
+      sets: databaseSeamSet === undefined ? [] : [databaseSeamSet],
+      waivers: [],
+      cli_refusal_dispositions: [],
+      refusal_parity_contracts: [],
+    };
+
+    const unrelated = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
           "queryHistoryEventStreams",
           "readAuthoritativeHistoryEvents",
+          "compareHistoryEventPosition",
         ],
       },
       today: "2026-08-17",
@@ -611,17 +656,60 @@ describe("surface replication gate", () => {
       ]),
     );
 
-    const relevant = await validateSurfaceReplication(config, {
-      repoRoot: path.resolve("."),
+    const bodyChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
       changedFiles: ["src/core/history/event-index.ts"],
       changedLines: {
         "src/core/history/event-index.ts": [
-          "RuntimeDatabaseSync = loadStableDatabaseSync(",
+          "const loaded = loadModule(",
+          "return loaded.DatabaseSync ?? null;",
+          "const nodeMajor = Number.parseInt(nodeVersion, 10);",
+          "return Number.isFinite(nodeMajor) && nodeMajor >= 24",
         ],
       },
       today: "2026-08-17",
     });
-    expect(relevant.violations).toContain(
+    expect(bodyChange.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+
+    const resolverChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "const Database = resolveDatabaseSync();",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(resolverChange.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+
+    const assignmentChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "RuntimeDatabaseSync = databaseSync;",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(assignmentChange.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+
+    const returnChange = await validateSurfaceReplication(databaseSeamConfig, {
+      repoRoot: root,
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": ["return RuntimeDatabaseSync;"],
+      },
+      today: "2026-08-17",
+    });
+    expect(returnChange.violations).toContain(
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
   }, 120_000);

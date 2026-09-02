@@ -11,6 +11,7 @@ import { acquireLock } from "../lock/lock.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { stableStringify } from "../shared/serialization.js";
+import { nowIso } from "../shared/time.js";
 import type { HistoryEntry, ItemDocument, ItemMetadata } from "../../types.js";
 import { appendHistoryEntry, createHistoryEntry } from "./history.js";
 import { readHistoryEntries } from "./read.js";
@@ -335,7 +336,7 @@ async function appendWorkspaceHistoryChangeLocked(
   if (idempotentEntry) {
     return { entry: idempotentEntry, historyPath };
   }
-  const timestamp = new Date().toISOString();
+  const timestamp = nowIso();
   const beforeDocument: ItemDocument =
     entries.length === 0
       ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
@@ -438,7 +439,7 @@ export async function appendWorkspaceAuditEvent(
         ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
         : replayWorkspaceEntries(entries);
     const entry = createHistoryEntry({
-      nowIso: new Date().toISOString(),
+      nowIso: nowIso(),
       author: options.author,
       op: options.op,
       before: beforeDocument,
@@ -598,7 +599,7 @@ export async function reconcileWorkspaceJsonHistory(
     if (stableStringify(priorDocuments[documentPath]) === stableStringify(current)) {
       return { changed: false, historyPath };
     }
-    const timestamp = new Date().toISOString();
+    const timestamp = nowIso();
     const entry = createHistoryEntry({
       nowIso: timestamp,
       author: options.author,
@@ -678,7 +679,7 @@ export async function restoreWorkspaceJsonFromHistory(
         changed: false,
       };
     const beforeDocument = replayWorkspaceEntries(entries);
-    const timestamp = new Date().toISOString();
+    const timestamp = nowIso();
     const entry = createHistoryEntry({
       nowIso: timestamp,
       author: options.author,

@@ -22,6 +22,7 @@ import {
 import {
   _testOnly as timeTestOnly,
   compareTimestampStrings,
+  isMillisecondPrecisionRfc3339DateTime,
   isRfc3339DateTime,
   isTimestampLiteral,
   nowIso,
@@ -319,6 +320,19 @@ describe("core/shared/time", () => {
     expect(resolveIsoOrRelative("2026-02-03\v04:05:06Z", base)).toBe(
       "2026-02-03T04:05:06.000Z",
     );
+    expect(
+      isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06.123Z"),
+    ).toBe(true);
+    expect(
+      isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06.1234Z"),
+    ).toBe(false);
+    expect(
+      isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06.1230Z"),
+    ).toBe(true);
+    expect(isMillisecondPrecisionRfc3339DateTime("2026-02-03T04:05:06Z")).toBe(
+      true,
+    );
+    expect(isMillisecondPrecisionRfc3339DateTime("not-a-date")).toBe(false);
   });
 
   it("exposes pure timestamp fallback helpers for defensive branch coverage", () => {

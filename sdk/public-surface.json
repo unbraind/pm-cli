@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1825,
+    "covered_symbols": 1838,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1826
+    "required_symbols": 1839
   },
   "breaking_acknowledgements": [
     {
@@ -1473,6 +1473,54 @@
       ],
       "package_version": "2026.9.1",
       "reason": "Expose loss-aware receipt evidence details as required runtime fields so SDK gates cannot silently discard invalid candidates."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BuildItemContextRelevanceCandidatesOptions",
+        "signature ./sdk:CONTEXT_SIGNAL_SET_VERSION",
+        "signature ./sdk:CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
+        "signature ./sdk:ContextRankingSummary",
+        "signature ./sdk:ContextRelevanceCandidate",
+        "signature ./sdk:ContextSignalSnapshotItem",
+        "signature ./sdk:ContextUsageAffinity",
+        "signature ./sdk:ContextUsageEvent",
+        "signature ./sdk:ItemContextRelevanceCandidate",
+        "signature ./sdk:recordContextUsageServing",
+        "signature ./sdk/query:BuildItemContextRelevanceCandidatesOptions",
+        "signature ./sdk/query:CONTEXT_SIGNAL_SET_VERSION",
+        "signature ./sdk/query:CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
+        "signature ./sdk/query:ContextRankingSummary",
+        "signature ./sdk/query:ContextRelevanceCandidate",
+        "signature ./sdk/query:ContextSignalSnapshotItem",
+        "signature ./sdk/query:ContextUsageAffinity",
+        "signature ./sdk/query:ContextUsageEvent",
+        "signature ./sdk/query:ItemContextRelevanceCandidate",
+        "signature ./sdk/query:recordContextUsageServing"
+      ],
+      "package_version": "2026.9.1",
+      "reason": "Version context signal snapshots and usage affinity receipts so substantive recency and exact egress delivery are explicit public contracts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
+        "signature ./sdk:ContextSignalSnapshot",
+        "signature ./sdk:ContextUsageEvent",
+        "signature ./sdk:MAINTENANCE_HISTORY_OPERATIONS",
+        "signature ./sdk/query:CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
+        "signature ./sdk/query:ContextSignalSnapshot",
+        "signature ./sdk/query:ContextUsageEvent",
+        "signature ./sdk/runtime:MAINTENANCE_HISTORY_OPERATIONS"
+      ],
+      "package_version": "2026.9.1",
+      "reason": "Tighten context signal freshness and final-egress feedback contracts before release"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContextSignalSnapshotItem",
+        "signature ./sdk/query:ContextSignalSnapshotItem"
+      ],
+      "package_version": "2026.9.1",
+      "reason": "Align ContextSignalSnapshotItem signal provenance with the parser-enforced required persisted contract"
     }
   ],
   "entrypoints": {
@@ -2872,6 +2920,12 @@
           "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; } | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "attachContextUsageServingReceipt",
+          "signature": "(result: unknown, receipt: ContextUsageServingReceipt | null) => void | calls: (result: unknown, receipt: ContextUsageServingReceipt | null) => void"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "attachLinkedTestMutationProvenance",
@@ -3163,7 +3217,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BuildItemContextRelevanceCandidatesOptions",
-          "signature": "export interface BuildItemContextRelevanceCandidatesOptions { statusRegistry: RuntimeStatusRegistry; now: string; author?: string; usageAffinity?: Readonly<Record<string, number>>; semanticSimilarity?: Readonly<Record<string, number>>; activityDensity?: Readonly<Record<string, number>>; graphProximity?: Readonly<Record<string, number>>; claimFocus?: Readonly<Record<string, number>>; knowledgeDensity?: Readonly<Record<string, number>>; authorAffinity?: Readonly<Record<string, number>>; }"
+          "signature": "export interface BuildItemContextRelevanceCandidatesOptions { statusRegistry: RuntimeStatusRegistry; now: string; author?: string; usageAffinity?: Readonly<Record<string, number>>; semanticSimilarity?: Readonly<Record<string, number>>; activityDensity?: Readonly<Record<string, number>>; graphProximity?: Readonly<Record<string, number>>; claimFocus?: Readonly<Record<string, number>>; knowledgeDensity?: Readonly<Record<string, number>>; authorAffinity?: Readonly<Record<string, number>>; recencyEvidence?: Readonly<Record<string, ContextRecencyEvidence>>; }"
         },
         {
           "classification": "advanced_export",
@@ -3460,6 +3514,12 @@
           "signature": "(command: CommandOptionPolicyCommand, rawOption: string) => string | undefined | calls: (command: CommandOptionPolicyCommand, rawOption: string) => string | undefined"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "canonicalizeContextRecencyCoordinate",
+          "signature": "(value: unknown) => string | null | calls: (value: unknown) => string | null"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "canonicalizeRelationshipKind",
@@ -3536,6 +3596,12 @@
           "kind": "value",
           "name": "classifyHistoryAuthorEvent",
           "signature": "(parsed: unknown) => \"actionable_unknown\" | \"attributed\" | \"legacy_unknown\" | calls: (parsed: unknown) => \"attributed\" | \"legacy_unknown\" | \"actionable_unknown\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "classifyHistoryEvent",
+          "signature": "(entry: Pick<HistoryEntry, \"event_class\" | \"op\" | \"patch\">) => HistoryEventClass | calls: (entry: Pick<HistoryEntry, \"op\" | \"patch\" | \"event_class\">) => HistoryEventClass"
         },
         {
           "classification": "advanced_export",
@@ -3722,6 +3788,12 @@
           "kind": "function",
           "name": "collectBlockedByIdsFromCorpus",
           "signature": "(item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[] | calls: (item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectContextUsageDeliveredItemIds",
+          "signature": "(result: unknown, surface: ContextRelevanceSurface) => string[] | calls: (result: unknown, surface: ContextRelevanceSurface) => string[]"
         },
         {
           "classification": "supported",
@@ -4192,6 +4264,12 @@
           "signature": "{ readonly balanced: { readonly redundancyPenalty: 0.35; readonly uncertaintyPenalty: 0.2; }; readonly context: { readonly redundancyPenalty: 0.45; readonly uncertaintyPenalty: 0.15; }; readonly next: { readonly redundancyPenalty: 0.25; readonly uncertaintyPenalty: 0.3; }; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "CONTEXT_RECENCY_EPOCH",
+          "signature": "\"1970-01-01T00:00:00.000Z\""
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_RELEVANCE_SERVICE",
@@ -4207,13 +4285,13 @@
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_SIGNAL_SET_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
-          "signature": "1"
+          "signature": "3"
         },
         {
           "classification": "supported",
@@ -4369,13 +4447,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextRankingSummary",
-          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; candidate_count: number; omitted_count: number; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
+          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; recency?: ContextRecencyEvidence; }>; candidate_count: number; omitted_count: number; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextRecencyEvidence",
+          "signature": "export interface ContextRecencyEvidence { source: \"substantive_history\" | \"release_cohort\" | \"created_at\"; coordinate: string; history_op?: string; event_class?: HistoryEventClass; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextRelevanceCandidate",
-          "signature": "export interface ContextRelevanceCandidate<TItem> { id: string; item: TItem; signals?: ContextRelevanceSignals; }"
+          "signature": "export interface ContextRelevanceCandidate<TItem> { id: string; item: TItem; signals?: ContextRelevanceSignals; signal_provenance?: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -4434,14 +4518,20 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ContextSignalProvenance",
+          "signature": "export interface ContextSignalProvenance { recency: ContextRecencyEvidence; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ContextSignalSnapshot",
-          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
+          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; recency_evidence_fingerprint: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextSignalSnapshotItem",
-          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; }"
+          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -4477,19 +4567,25 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageAffinity",
-          "signature": "export interface ContextUsageAffinity { affinity: Record<string, number>; positive_judgments: number; serving_events: number; }"
+          "signature": "export interface ContextUsageAffinity { affinity: Record<string, number>; positive_judgments: number; serving_events: number; untrusted_serving_events: number; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "ContextUsageEvent",
-          "signature": "export type ContextUsageEvent = { kind: \"serve\"; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
+          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageLedgerOptions",
           "signature": "export interface ContextUsageLedgerOptions { pmRoot: string; enabled?: boolean; maxEvents?: number; retentionDays?: number; now?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextUsageServingReceipt",
+          "signature": "export interface ContextUsageServingReceipt { serve_id: string; author: string; surface: ContextRelevanceSurface; rows: readonly ContextUsageServingRow[]; }"
         },
         {
           "classification": "supported",
@@ -6784,6 +6880,12 @@
           "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "finalizeContextUsageDelivery",
+          "signature": "(options: { pmRoot: string; result: unknown; }) => Promise<boolean> | calls: (options: { pmRoot: string; result: unknown; }) => Promise<boolean>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "findCoverageDeficits",
@@ -7678,6 +7780,12 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "HISTORY_EVENT_CLASSIFICATION_VERSION",
+          "signature": "1"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "HISTORY_FLAG_CONTRACTS",
@@ -7790,6 +7898,12 @@
           "kind": "function",
           "name": "historyEntryMatchesProvenance",
           "signature": "(entry: HistoryEntry, filters: HistoryProvenanceFilters, vocabulary?: AuthorIdentityVocabulary, dimensions?: readonly string[]) => boolean | calls: (entry: HistoryEntry, filters: HistoryProvenanceFilters, vocabulary?: AuthorIdentityVocabulary, dimensions?: readonly string[]) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "HistoryEventClass",
+          "signature": "export type HistoryEventClass = \"substantive\" | \"maintenance\";"
         },
         {
           "classification": "advanced_export",
@@ -8419,7 +8533,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemContextRelevanceCandidate",
-          "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; }"
+          "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -9116,6 +9230,12 @@
           "kind": "function",
           "name": "looksLikeGenericKeyValueEntry",
           "signature": "(raw: string) => boolean | calls: (raw: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "MAINTENANCE_HISTORY_OPERATIONS",
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "advanced_export",
@@ -13012,6 +13132,12 @@
           "signature": "(pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>> | calls: (pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "propagateContextUsageServingReceipt",
+          "signature": "(source: unknown, target: unknown) => void | calls: (source: unknown, target: unknown) => void"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ProvenanceCoverageAnalytics",
@@ -13410,8 +13536,14 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "recordContextUsageDelivery",
+          "signature": "(options: ContextUsageLedgerOptions & { receipt: ContextUsageServingReceipt | null; deliveredItemIds: readonly string[]; resultOmitted: boolean; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { receipt: ContextUsageServingReceipt | null; deliveredItemIds: readonly string[]; resultOmitted: boolean; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "recordContextUsageServing",
-          "signature": "(options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<void>"
+          "signature": "(options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<ContextUsageServingReceipt | null> | calls: (options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<ContextUsageServingReceipt | null>"
         },
         {
           "classification": "supported",
@@ -17264,6 +17396,12 @@
           "kind": "interface",
           "name": "SubscribeMutationEventsOptions",
           "signature": "export interface SubscribeMutationEventsOptions extends ListMutationEventsOptions { intervalMs?: number; signal?: AbortSignal; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "SUBSTANTIVE_HISTORY_OPERATIONS",
+          "signature": "readonly [\"append\", \"cancel\", \"claim\", \"close\", \"comment_add\", \"create\", \"learning_add\", \"note_add\", \"reopen\"]"
         },
         {
           "classification": "advanced_export",
@@ -26975,6 +27113,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "attachContextUsageServingReceipt",
+          "signature": "(result: unknown, receipt: ContextUsageServingReceipt | null) => void | calls: (result: unknown, receipt: ContextUsageServingReceipt | null) => void"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "BlockerEntry",
           "signature": "export interface BlockerEntry { id: string; title: string; blocked_by: string | null; blocked_by_title: string | null; blocked_by_status: ItemStatus | null; blocked_reason: string | null; unblock_note: string | null; }"
@@ -27037,7 +27181,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BuildItemContextRelevanceCandidatesOptions",
-          "signature": "export interface BuildItemContextRelevanceCandidatesOptions { statusRegistry: RuntimeStatusRegistry; now: string; author?: string; usageAffinity?: Readonly<Record<string, number>>; semanticSimilarity?: Readonly<Record<string, number>>; activityDensity?: Readonly<Record<string, number>>; graphProximity?: Readonly<Record<string, number>>; claimFocus?: Readonly<Record<string, number>>; knowledgeDensity?: Readonly<Record<string, number>>; authorAffinity?: Readonly<Record<string, number>>; }"
+          "signature": "export interface BuildItemContextRelevanceCandidatesOptions { statusRegistry: RuntimeStatusRegistry; now: string; author?: string; usageAffinity?: Readonly<Record<string, number>>; semanticSimilarity?: Readonly<Record<string, number>>; activityDensity?: Readonly<Record<string, number>>; graphProximity?: Readonly<Record<string, number>>; claimFocus?: Readonly<Record<string, number>>; knowledgeDensity?: Readonly<Record<string, number>>; authorAffinity?: Readonly<Record<string, number>>; recencyEvidence?: Readonly<Record<string, ContextRecencyEvidence>>; }"
         },
         {
           "classification": "supported",
@@ -27114,6 +27258,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "collectContextUsageDeliveredItemIds",
+          "signature": "(result: unknown, surface: ContextRelevanceSurface) => string[] | calls: (result: unknown, surface: ContextRelevanceSurface) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "collectErrorCauseCodes",
           "signature": "(error: unknown) => string | calls: (error: unknown) => string"
         },
@@ -27169,13 +27319,13 @@
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_SIGNAL_SET_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
-          "signature": "1"
+          "signature": "3"
         },
         {
           "classification": "supported",
@@ -27325,13 +27475,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextRankingSummary",
-          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; candidate_count: number; omitted_count: number; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
+          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; recency?: ContextRecencyEvidence; }>; candidate_count: number; omitted_count: number; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextRecencyEvidence",
+          "signature": "export interface ContextRecencyEvidence { source: \"substantive_history\" | \"release_cohort\" | \"created_at\"; coordinate: string; history_op?: string; event_class?: HistoryEventClass; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextRelevanceCandidate",
-          "signature": "export interface ContextRelevanceCandidate<TItem> { id: string; item: TItem; signals?: ContextRelevanceSignals; }"
+          "signature": "export interface ContextRelevanceCandidate<TItem> { id: string; item: TItem; signals?: ContextRelevanceSignals; signal_provenance?: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -27390,14 +27546,20 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ContextSignalProvenance",
+          "signature": "export interface ContextSignalProvenance { recency: ContextRecencyEvidence; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ContextSignalSnapshot",
-          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
+          "signature": "export interface ContextSignalSnapshot { format_version: number; signal_set_version: number; source_cursor: string; recency_evidence_fingerprint: string; generated_at: string; source: ContextSignalSnapshotSource; items: readonly ContextSignalSnapshotItem[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextSignalSnapshotItem",
-          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; }"
+          "signature": "export interface ContextSignalSnapshotItem { id: string; signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -27433,19 +27595,25 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageAffinity",
-          "signature": "export interface ContextUsageAffinity { affinity: Record<string, number>; positive_judgments: number; serving_events: number; }"
+          "signature": "export interface ContextUsageAffinity { affinity: Record<string, number>; positive_judgments: number; serving_events: number; untrusted_serving_events: number; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "ContextUsageEvent",
-          "signature": "export type ContextUsageEvent = { kind: \"serve\"; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
+          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageLedgerOptions",
           "signature": "export interface ContextUsageLedgerOptions { pmRoot: string; enabled?: boolean; maxEvents?: number; retentionDays?: number; now?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextUsageServingReceipt",
+          "signature": "export interface ContextUsageServingReceipt { serve_id: string; author: string; surface: ContextRelevanceSurface; rows: readonly ContextUsageServingRow[]; }"
         },
         {
           "classification": "supported",
@@ -27552,6 +27720,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "finalizeContextUsageDelivery",
+          "signature": "(options: { pmRoot: string; result: unknown; }) => Promise<boolean> | calls: (options: { pmRoot: string; result: unknown; }) => Promise<boolean>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "formatVectorIndexRecoveryWarnings",
           "signature": "(staleCount: number, recovery: VectorIndexRecovery) => string[] | calls: (staleCount: number, recovery: VectorIndexRecovery) => string[]"
         },
@@ -27625,7 +27799,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemContextRelevanceCandidate",
-          "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; }"
+          "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
           "classification": "supported",
@@ -28025,6 +28199,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "propagateContextUsageServingReceipt",
+          "signature": "(source: unknown, target: unknown) => void | calls: (source: unknown, target: unknown) => void"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "QUERY_CURSOR_CONTRACT",
           "signature": "Readonly<{ version: 1; max_length: 4096; }>"
@@ -28116,8 +28296,14 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "recordContextUsageDelivery",
+          "signature": "(options: ContextUsageLedgerOptions & { receipt: ContextUsageServingReceipt | null; deliveredItemIds: readonly string[]; resultOmitted: boolean; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { receipt: ContextUsageServingReceipt | null; deliveredItemIds: readonly string[]; resultOmitted: boolean; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "recordContextUsageServing",
-          "signature": "(options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<void>"
+          "signature": "(options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<ContextUsageServingReceipt | null> | calls: (options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<ContextUsageServingReceipt | null>"
         },
         {
           "classification": "supported",
@@ -28694,6 +28880,12 @@
           "kind": "interface",
           "name": "ClaimResult",
           "signature": "export interface ClaimResult { item: Record<string, unknown>; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "classifyHistoryEvent",
+          "signature": "(entry: Pick<HistoryEntry, \"event_class\" | \"op\" | \"patch\">) => HistoryEventClass | calls: (entry: Pick<HistoryEntry, \"op\" | \"patch\" | \"event_class\">) => HistoryEventClass"
         },
         {
           "classification": "supported",
@@ -29351,6 +29543,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "HISTORY_EVENT_CLASSIFICATION_VERSION",
+          "signature": "1"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "historyCompact",
           "signature": "(id: string, options?: HistoryCompactCommandOptions, clientOptions?: PmClientOptions) => Promise<HistoryCompactResult> | calls: (id: string, options?: HistoryCompactCommandOptions, clientOptions?: PmClientOptions) => Promise<HistoryCompactResult>"
@@ -29360,6 +29558,12 @@
           "kind": "function",
           "name": "historyCompactBulk",
           "signature": "(options: HistoryCompactBulkCommandOptions, clientOptions?: PmClientOptions) => Promise<HistoryCompactBulkResult> | calls: (options: HistoryCompactBulkCommandOptions, clientOptions?: PmClientOptions) => Promise<HistoryCompactBulkResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "HistoryEventClass",
+          "signature": "export type HistoryEventClass = \"substantive\" | \"maintenance\";"
         },
         {
           "classification": "advanced_export",
@@ -29666,6 +29870,12 @@
           "kind": "interface",
           "name": "LogNote",
           "signature": "export interface LogNote { created_at: string; author: string; text: string; format?: \"json\"; data?: StructuredJsonValue; event_type?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "MAINTENANCE_HISTORY_OPERATIONS",
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "supported",
@@ -31061,6 +31271,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "SUBSTANTIVE_HISTORY_OPERATIONS",
+          "signature": "readonly [\"append\", \"cancel\", \"claim\", \"close\", \"comment_add\", \"create\", \"learning_add\", \"note_add\", \"reopen\"]"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "TemplatesListResult",
           "signature": "export interface TemplatesListResult { templates: string[]; count: number; builtin_templates: string[]; user_templates: string[]; }"
@@ -32051,6 +32267,7 @@
     "history_merge_conflict_markers_detected",
     "history_stream_over_compact_threshold",
     "history_target_out_of_range",
+    "history_timestamp_invalid",
     "history_unknown_author_events",
     "host_environment_capacity_fault",
     "host_environment_operation_invalid",

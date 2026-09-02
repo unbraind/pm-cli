@@ -1,12 +1,76 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { PmClient } from "../../src/sdk/index.js";
 import { runDirectDistCli } from "../helpers/cliRunner.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { expectJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("init tracker-path guardrails", () => {
+  it("preserves an explicit PM_PATH as an SDK init tracker target", async () => {
+    await withTempPmPath(async (context) => {
+      const workspaceRoot = path.join(
+        context.tempRoot,
+        "sdk-explicit-env-workspace",
+      );
+      await mkdir(workspaceRoot, { recursive: true });
+      const previousPmPath = process.env.PM_PATH;
+      process.env.PM_PATH = context.pmPath;
+      try {
+        const initialized = await new PmClient({
+          cwd: workspaceRoot,
+          noExtensions: true,
+        }).init(undefined, { defaults: true });
+        expect(initialized.target).toEqual({
+          mode: "tracker-path",
+          tracker_root: context.pmPath,
+        });
+        expect(initialized.path).toBe(context.pmPath);
+      } finally {
+        if (previousPmPath === undefined) delete process.env.PM_PATH;
+        else process.env.PM_PATH = previousPmPath;
+      }
+    });
+  });
+
+  it("preserves workspace discovery for active-host SDK init without an explicit path", async () => {
+    await withTempPmPath(async (context) => {
+      const workspaceRoot = path.join(
+        context.tempRoot,
+        "sdk-discovered-workspace",
+      );
+      await mkdir(workspaceRoot, { recursive: true });
+      const previousPmPath = process.env.PM_PATH;
+      delete process.env.PM_PATH;
+      try {
+        const initialized = await PmClient.forActiveExtensionHost({
+          cwd: workspaceRoot,
+          noExtensions: true,
+        }).init(undefined, { defaults: true });
+        expect(initialized.target).toEqual({
+          mode: "workspace-discovery",
+          tracker_root: context.pmPath,
+          workspace_root: context.tempRoot,
+          discovery: "ancestor",
+          requested_cwd: workspaceRoot,
+          suggested_current_tracker_root: path.join(
+            workspaceRoot,
+            ".agents",
+            "pm",
+          ),
+        });
+        expect(initialized.next_steps.length).toBeGreaterThan(0);
+        expect(
+          initialized.next_steps.every((step) => !step.includes("--pm-path")),
+        ).toBe(true);
+      } finally {
+        if (previousPmPath === undefined) delete process.env.PM_PATH;
+        else process.env.PM_PATH = previousPmPath;
+      }
+    });
+  });
+
   it("accepts flag-oriented id prefixes, preserves positional parity, and rejects conflicting inputs", async () => {
     await withTempPmPath(async (context) => {
       const flaggedRoot = path.join(context.tempRoot, "flagged-prefix");

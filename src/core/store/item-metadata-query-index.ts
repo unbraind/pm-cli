@@ -333,12 +333,12 @@ export async function updateItemMetadataQueryIndex(options: {
   row: ItemMetadataQueryIndexRow | null;
   deletedRelativePaths?: readonly string[];
 }): Promise<boolean> {
+  const Database = resolveDatabaseSync();
+  if (!Database) return false;
   const indexPath = queryIndexPath(options.pmRoot);
   let database: DatabaseSync | undefined;
   try {
     await fs.access(indexPath);
-    const Database = resolveDatabaseSync();
-    if (!Database) return false;
     database = new Database(indexPath);
     database.exec("PRAGMA foreign_keys = ON");
     const metadata = readIndexMetadata(database);
