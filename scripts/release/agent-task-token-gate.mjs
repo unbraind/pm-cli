@@ -505,7 +505,7 @@ async function seedWorkspace(workspaceRoot) {
     PM_CLOCK_TICK_MS: "1",
     PM_SEED: REPLAY_SEED,
   })(async () => {
-    await client.init(undefined, { defaults: true });
+    await client.init(undefined, { defaults: true, agentGuidance: "skip" });
     await client.create({
       id: anchorId,
       title: "Token accounting anchor",
