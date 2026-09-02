@@ -106,9 +106,9 @@ CLI and `PmClient` egress append a delivery event containing the final
 `result_omitted` decision and exact emitted item ids. A whole-result omission
 therefore delivers zero items even when the packer selected rows earlier.
 
-Direct `runContext` and `runNext` calls remain valid delivery boundaries and
-record their assembled rows on the serve event. A later CLI or client
-projection supersedes that initial decision with its correlated delivery.
+Direct `runContext` and `runNext` calls record only their assembled rows on a
+serve event; they do not claim delivery or train affinity by themselves. A
+later CLI or `PmClient` projection appends the correlated delivery decision.
 Legacy serve events have no correlation marker, so the affinity reader ignores
 their inclusion flags and reports them as `untrusted_serving_events` instead of
 training on unverifiable phantom serves.

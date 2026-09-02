@@ -14,7 +14,10 @@ import {
   sha256Hex,
   stableStringify,
 } from "../shared/serialization.js";
-import { nowIso } from "../shared/time.js";
+import {
+  isMillisecondPrecisionRfc3339DateTime,
+  nowIso,
+} from "../shared/time.js";
 import {
   diagnoseAgentIdentity,
   resolveHistoryAgentIdentity,
@@ -407,7 +410,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function fallbackHistoryTimestamp(entry: Pick<HistoryEntry, "ts">): string {
   const ts = entry.ts.trim();
-  return ts.length > 0 ? ts : nowIso();
+  if (ts.length === 0) return nowIso();
+  if (!isMillisecondPrecisionRfc3339DateTime(ts)) {
+    throw new TypeError(
+      "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
+    );
+  }
+  return entry.ts;
 }
 
 function withHistoryTimestamp(
@@ -416,6 +425,11 @@ function withHistoryTimestamp(
 ): Record<string, unknown> {
   const ts = value.ts;
   if (typeof ts === "string" && ts.trim().length > 0) {
+    if (!isMillisecondPrecisionRfc3339DateTime(ts.trim())) {
+      throw new TypeError(
+        "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
+      );
+    }
     return value;
   }
   return { ...value, ts: fallbackTs };

@@ -251,6 +251,28 @@ describe("context signal feature store", () => {
         },
       }),
     ).toThrow("millisecond precision");
+    for (const recency of [
+      {
+        source: "created_at" as const,
+        coordinate: now,
+        history_op: "comment_add",
+      },
+      {
+        source: "substantive_history" as const,
+        coordinate: now,
+        event_class: "maintenance" as const,
+      },
+    ]) {
+      expect(() =>
+        buildContextSignalSnapshot([item("pm-a")], {
+          statusRegistry,
+          now,
+          source: "scan_fallback",
+          sourceCursor: "cursor",
+          recencyEvidence: { "pm-a": recency },
+        }),
+      ).toThrow("provenance must match its source");
+    }
     expect(() =>
       buildContextSignalSnapshot([item("pm-a")], {
         statusRegistry,
@@ -599,7 +621,6 @@ describe("context signal feature store", () => {
     expect(adapter.writes).toBe(2);
     const changedEvidence = await store.readOrRebuild([item("pm-a")], {
       ...options,
-      sourceCursor: "cursor-2",
       recencyEvidence: {
         "pm-a": {
           source: "substantive_history",

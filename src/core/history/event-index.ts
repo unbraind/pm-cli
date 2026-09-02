@@ -12,7 +12,9 @@ import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { HistoryEntry } from "../../types/index.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
+import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { isMillisecondPrecisionRfc3339DateTime } from "../shared/time.js";
 import { readHistoryEntries } from "./read.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 
@@ -22,6 +24,10 @@ const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
 const HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS = 300;
 const HISTORY_EVENT_INDEX_LOCK_WAIT_MS = 30_000;
+const HISTORY_EVENT_INDEX_INVALIDATION_LOCK_ID =
+  "history-event-index-invalidation";
+const HISTORY_EVENT_INDEX_INVALIDATION_DIRECTORY =
+  "history-event-index-invalidations";
 const HISTORY_INDEX_LOCK_CONTENDED = Symbol("history-index-lock-contended");
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
@@ -101,6 +107,78 @@ function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
 }
 
+interface HistoryEventIndexInvalidations {
+  pending: string[];
+  committed: string[];
+}
+
+function historyEventIndexInvalidationDirectory(pmRoot: string): string {
+  return path.join(
+    pmRoot,
+    "runtime",
+    HISTORY_EVENT_INDEX_INVALIDATION_DIRECTORY,
+  );
+}
+
+async function listHistoryEventIndexInvalidations(
+  pmRoot: string,
+): Promise<HistoryEventIndexInvalidations> {
+  const entries = await fs
+    .readdir(historyEventIndexInvalidationDirectory(pmRoot))
+    .catch((error: unknown) => {
+      if (isFileMissingError(error)) return [];
+      throw error;
+    });
+  return {
+    pending: entries.filter((name) => name.endsWith(".pending")).sort(),
+    committed: entries.filter((name) => name.endsWith(".committed")).sort(),
+  };
+}
+
+async function withHistoryEventIndexInvalidationLock<T>(
+  pmRoot: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const release = await acquireLock(
+    pmRoot,
+    HISTORY_EVENT_INDEX_INVALIDATION_LOCK_ID,
+    HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS,
+    `history-event-index-invalidation:${process.pid}`,
+    false,
+    false,
+    HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
+  );
+  try {
+    return await operation();
+  } finally {
+    await release();
+  }
+}
+
+async function beginHistoryEventIndexInvalidation(
+  pmRoot: string,
+): Promise<{ pendingPath: string; committedPath: string }> {
+  const directory = historyEventIndexInvalidationDirectory(pmRoot);
+  await fs.mkdir(directory, { recursive: true });
+  const token = randomUUID();
+  const pendingPath = path.join(directory, `${token}.pending`);
+  await fs.writeFile(pendingPath, "pending\n", { flag: "wx" });
+  return {
+    pendingPath,
+    committedPath: path.join(directory, `${token}.committed`),
+  };
+}
+
+function sameInvalidationNames(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((name, index) => name === right[index])
+  );
+}
+
 async function invalidateHistoryEventIndex(pmRoot: string): Promise<void> {
   try {
     await fs.rm(eventIndexPath(pmRoot), { force: true });
@@ -168,7 +246,7 @@ async function readAuthoritativeHistorySnapshot(
       stats.ctimeNs,
     ].join(":");
     if (cached.streams.get(streamId)?.signature === signature) continue;
-    const history = await readHistoryEntries(historyPath, streamId);
+    const history = await readIndexableHistoryEntries(historyPath, streamId);
     cached.streams.set(streamId, {
       signature,
       byte_size: Number(stats.size),
@@ -206,6 +284,26 @@ async function readAuthoritativeHistorySnapshot(
       ]),
     ),
   };
+}
+
+async function readIndexableHistoryEntries(
+  historyPath: string,
+  streamId: string,
+): Promise<HistoryEntry[]> {
+  const entries = await readHistoryEntries(historyPath, streamId);
+  for (const [index, entry] of entries.entries()) {
+    if (
+      typeof entry.ts !== "string" ||
+      !isMillisecondPrecisionRfc3339DateTime(entry.ts.trim())
+    ) {
+      throw new PmCliError(
+        `History for ${streamId} contains an invalid or sub-millisecond timestamp at line ${index + 1}. Repair or restore the history stream and retry.`,
+        EXIT_CODE.GENERIC_FAILURE,
+        { code: "history_timestamp_invalid" },
+      );
+    }
+  }
+  return entries;
 }
 
 async function readAuthoritativeHistoryEvents(
@@ -311,6 +409,25 @@ function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
     );
 }
 
+function parseIndexedHistoryEvent(row: {
+  stream_id?: unknown;
+  stream_offset?: unknown;
+  entry_json?: unknown;
+}): IndexedHistoryEvent | null {
+  const entry = JSON.parse(String(row.entry_json)) as HistoryEntry;
+  if (
+    typeof entry.ts !== "string" ||
+    !isMillisecondPrecisionRfc3339DateTime(entry.ts.trim())
+  ) {
+    return null;
+  }
+  return {
+    stream_id: String(row.stream_id),
+    stream_offset: Number(row.stream_offset),
+    entry,
+  };
+}
+
 function upsertStreamByteSize(
   database: DatabaseSync,
   streamId: string,
@@ -331,6 +448,8 @@ export async function rebuildHistoryEventIndex(
   const Database = resolveDatabaseSync();
   if (!Database) return false;
   return withHistoryEventIndexLock(pmRoot, async () => {
+    const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
+    if (invalidations.pending.length > 0) return false;
     const targetPath = eventIndexPath(pmRoot);
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
     const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
@@ -349,9 +468,31 @@ export async function rebuildHistoryEventIndex(
       database.exec("COMMIT");
       database.close();
       database = undefined;
-      await fs.rm(targetPath, { force: true });
-      await fs.rename(temporaryPath, targetPath);
-      return true;
+      const published = await withHistoryEventIndexInvalidationLock(
+        pmRoot,
+        async () => {
+          const current = await listHistoryEventIndexInvalidations(pmRoot);
+          if (
+            current.pending.length > 0 ||
+            !sameInvalidationNames(invalidations.committed, current.committed)
+          ) {
+            return false;
+          }
+          await fs.rm(targetPath, { force: true });
+          await fs.rename(temporaryPath, targetPath);
+          await Promise.all(
+            invalidations.committed.map((name) =>
+              fs.rm(
+                path.join(historyEventIndexInvalidationDirectory(pmRoot), name),
+                { force: true },
+              ),
+            ),
+          );
+          return true;
+        },
+      );
+      if (!published) await fs.rm(temporaryPath, { force: true });
+      return published;
     } catch (error: unknown) {
       database?.close();
       await fs.rm(temporaryPath, { force: true });
@@ -524,15 +665,28 @@ export async function appendHistoryEntryWithEventIndex(
       } catch (error: unknown) {
         database?.close();
         if (!appended) throw error;
-        await invalidateHistoryEventIndex(pmRoot);
+        await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
+          const marker = await beginHistoryEventIndexInvalidation(pmRoot);
+          await fs.rename(marker.pendingPath, marker.committedPath);
+          await invalidateHistoryEventIndex(pmRoot);
+        });
       }
     });
   } catch (error: unknown) {
     if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
       throw error;
     }
-    await append();
-    await invalidateHistoryEventIndex(pmRoot);
+    await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
+      const marker = await beginHistoryEventIndexInvalidation(pmRoot);
+      try {
+        await append();
+      } catch (appendError: unknown) {
+        await fs.rm(marker.pendingPath, { force: true });
+        throw appendError;
+      }
+      await fs.rename(marker.pendingPath, marker.committedPath);
+      await invalidateHistoryEventIndex(pmRoot);
+    });
   }
 }
 
@@ -630,44 +784,53 @@ export async function queryHistoryEventIndex(
   let database: DatabaseSync | undefined;
   try {
     return await withHistoryEventIndexLock(pmRoot, async () => {
-      database = new Database(eventIndexPath(pmRoot), { readOnly: true });
-      const version = database
-        .prepare("SELECT value FROM metadata WHERE key = 'version'")
-        .get() as { value?: unknown } | undefined;
-      const validationStreamIds = await historyIndexValidationStreamIds(
-        database,
-        pmRoot,
-        query.stream_ids,
-      );
-      if (
-        version?.value !== EVENT_INDEX_VERSION ||
-        !(await historyIndexMatchesStreamSizes(
+      return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
+        const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
+        if (
+          invalidations.pending.length > 0 ||
+          invalidations.committed.length > 0
+        ) {
+          return null;
+        }
+        database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+        const version = database
+          .prepare("SELECT value FROM metadata WHERE key = 'version'")
+          .get() as { value?: unknown } | undefined;
+        const validationStreamIds = await historyIndexValidationStreamIds(
           database,
           pmRoot,
-          validationStreamIds,
-        ))
-      ) {
+          query.stream_ids,
+        );
+        if (
+          version?.value !== EVENT_INDEX_VERSION ||
+          !(await historyIndexMatchesStreamSizes(
+            database,
+            pmRoot,
+            validationStreamIds,
+          ))
+        ) {
+          database.close();
+          database = undefined;
+          return null;
+        }
+        const rows = database
+          .prepare(
+            `SELECT stream_id, stream_offset, entry_json
+             FROM events${where}
+             ORDER BY ts, stream_id, stream_offset
+             LIMIT ?`,
+          )
+          .all(...parameters, Math.max(0, Math.floor(query.limit)) + 1);
+        const events = rows.slice(0, query.limit).map(parseIndexedHistoryEvent);
         database.close();
         database = undefined;
-        return null;
-      }
-      const rows = database
-        .prepare(
-          `SELECT stream_id, stream_offset, entry_json
-           FROM events${where}
-           ORDER BY ts, stream_id, stream_offset
-           LIMIT ?`,
-        )
-        .all(...parameters, Math.max(0, Math.floor(query.limit)) + 1);
-      const hasMore = rows.length > query.limit;
-      const events = rows.slice(0, query.limit).map((row) => ({
-        stream_id: String(row.stream_id),
-        stream_offset: Number(row.stream_offset),
-        entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
-      }));
-      database.close();
-      database = undefined;
-      return { events, has_more: hasMore };
+        return events.includes(null)
+          ? null
+          : {
+              events: events as IndexedHistoryEvent[],
+              has_more: rows.length > query.limit,
+            };
+      });
     });
   } catch {
     database?.close();
@@ -782,48 +945,57 @@ async function readIndexedLatestSubstantiveEvents(
   let database: DatabaseSync | undefined;
   try {
     return await withHistoryEventIndexLock(pmRoot, async () => {
-      database = new Database(eventIndexPath(pmRoot), { readOnly: true });
-      const version = database
-        .prepare("SELECT value FROM metadata WHERE key = 'version'")
-        .get() as { value?: unknown } | undefined;
-      if (
-        version?.value !== EVENT_INDEX_VERSION ||
-        !(await historyIndexMatchesStreamSizes(database, pmRoot, streamIds))
-      ) {
+      return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
+        const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
+        if (
+          invalidations.pending.length > 0 ||
+          invalidations.committed.length > 0
+        ) {
+          return null;
+        }
+        database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+        const version = database
+          .prepare("SELECT value FROM metadata WHERE key = 'version'")
+          .get() as { value?: unknown } | undefined;
+        if (
+          version?.value !== EVENT_INDEX_VERSION ||
+          !(await historyIndexMatchesStreamSizes(database, pmRoot, streamIds))
+        ) {
+          database.close();
+          database = undefined;
+          return null;
+        }
+        const indexed: IndexedHistoryEvent[] = [];
+        for (let start = 0; start < streamIds.length; start += 500) {
+          const chunk = streamIds.slice(start, start + 500);
+          const rows = database
+            .prepare(
+              `SELECT stream_id, stream_offset, entry_json
+               FROM (
+                 SELECT stream_id, stream_offset, entry_json,
+                        ROW_NUMBER() OVER (
+                          PARTITION BY stream_id
+                          ORDER BY ts DESC, stream_offset DESC
+                        ) AS recency_rank
+                 FROM events
+                 WHERE event_class = 'substantive'
+                   AND stream_id IN (${chunk.map(() => "?").join(", ")})
+               )
+               WHERE recency_rank = 1`,
+            )
+            .all(...chunk);
+          const parsed = rows.map(parseIndexedHistoryEvent);
+          if (parsed.includes(null)) {
+            database.close();
+            database = undefined;
+            return null;
+          }
+          indexed.push(...(parsed as IndexedHistoryEvent[]));
+        }
         database.close();
         database = undefined;
-        return null;
-      }
-      const indexed: IndexedHistoryEvent[] = [];
-      for (let start = 0; start < streamIds.length; start += 500) {
-        const chunk = streamIds.slice(start, start + 500);
-        const rows = database
-          .prepare(
-            `SELECT stream_id, stream_offset, entry_json
-             FROM (
-               SELECT stream_id, stream_offset, entry_json,
-                      ROW_NUMBER() OVER (
-                        PARTITION BY stream_id
-                        ORDER BY ts DESC, stream_offset DESC
-                      ) AS recency_rank
-               FROM events
-               WHERE event_class = 'substantive'
-                 AND stream_id IN (${chunk.map(() => "?").join(", ")})
-             )
-             WHERE recency_rank = 1`,
-          )
-          .all(...chunk);
-        indexed.push(
-          ...rows.map((row) => ({
-            stream_id: String(row.stream_id),
-            stream_offset: Number(row.stream_offset),
-            entry: JSON.parse(String(row.entry_json)) as HistoryEntry,
-          })),
-        );
-      }
-      database.close();
-      database = undefined;
-      return collectLatestSubstantiveEvents(indexed, requested);
+        return collectLatestSubstantiveEvents(indexed, requested);
+      });
     });
   } catch (error) {
     database?.close();
@@ -880,7 +1052,18 @@ export async function readLatestSubstantiveHistoryEvents(
     uniqueIds.map(async (streamId) => {
       if (path.basename(streamId) !== streamId) return;
       const historyPath = path.join(pmRoot, "history", `${streamId}.jsonl`);
-      const entries = await readHistoryEntries(historyPath, streamId);
+      const entries = await readIndexableHistoryEntries(
+        historyPath,
+        streamId,
+      ).catch((error: unknown) => {
+        if (
+          error instanceof PmCliError &&
+          error.code === "history_timestamp_invalid"
+        ) {
+          return [];
+        }
+        throw error;
+      });
       entries.forEach((entry, streamOffset) => {
         authoritative.push({
           stream_id: streamId,

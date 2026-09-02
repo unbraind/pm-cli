@@ -1116,7 +1116,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("recovers a max-aged stale cleanup gate even when the recorded pid is live", async () => {
+  it("retains a max-aged stale cleanup gate while its recorded owner is live", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-live-owner-too-old";
       const lockPath = getLockPath(pmPath, id);
@@ -1130,14 +1130,10 @@ describe("core/lock/lock additional branch coverage", () => {
       const orphanedAt = new Date(Date.now() - 10 * 60_000);
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
 
-      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
-      if (release === null) {
-        throw new Error("expected stale cleanup gate release");
-      }
-      await release();
-      await expect(fs.access(gatePath)).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      await expect(
+        lockInternals.acquireStaleCleanupGate(lockPath, id),
+      ).resolves.toBeNull();
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
     });
   });
 

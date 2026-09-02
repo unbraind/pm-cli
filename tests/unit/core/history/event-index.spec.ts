@@ -204,6 +204,84 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("rejects corrupt authoritative timestamps and refuses malformed indexed rows", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      const historyPath = path.join(historyRoot, "pm-invalid-ts.jsonl");
+      const valid = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      await fs.writeFile(historyPath, `${JSON.stringify(valid)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const database = new DatabaseSync(
+        path.join(context.pmPath, "runtime", INDEX_FILENAME),
+      );
+      database
+        .prepare("UPDATE events SET entry_json = ?, ts = ?")
+        .run(
+          JSON.stringify({ ...valid, ts: "2026-07-24T09:00:00.0001Z" }),
+          "2026-07-24T09:00:00.0001Z",
+        );
+      database.close();
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-invalid-ts"]),
+      ).resolves.toMatchObject({
+        "pm-invalid-ts": { entry: { op: "create" } },
+      });
+
+      await removeHistoryEventIndexForHistoryPath(historyPath);
+      await fs.writeFile(
+        historyPath,
+        `${JSON.stringify({ ...valid, ts: "not-a-date" })}\n`,
+      );
+      const latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
+        "pm-invalid-ts",
+      ]);
+      expect(Object.keys(latest)).toEqual([]);
+    });
+  });
+
+  it("refuses pending invalidations and aborts rebuild publication when one arrives", async () => {
+    await withTempPmPath(async (context) => {
+      const invalidationRoot = path.join(
+        context.pmPath,
+        "runtime",
+        "history-event-index-invalidations",
+      );
+      await fs.mkdir(invalidationRoot, { recursive: true });
+      const initialPending = path.join(invalidationRoot, "initial.pending");
+      await fs.writeFile(initialPending, "pending\n");
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        false,
+      );
+      await fs.rm(initialPending);
+
+      const originalReaddir = fs.readdir.bind(fs);
+      let invalidationReads = 0;
+      const racedPending = path.join(invalidationRoot, "raced.pending");
+      const readdirSpy = vi
+        .spyOn(fs, "readdir")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === invalidationRoot) {
+            invalidationReads += 1;
+            if (invalidationReads === 2) {
+              await fs.writeFile(racedPending, "pending\n");
+            }
+          }
+          return originalReaddir(...args);
+        });
+      try {
+        await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+          false,
+        );
+      } finally {
+        readdirSpy.mockRestore();
+      }
+      await fs.rm(racedPending);
+    });
+  });
+
   it("selects latest substantive events from indexed and authoritative history", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");
@@ -223,19 +301,19 @@ describe("history mutation event index", () => {
           .join("\n") + "\n",
       );
       await rebuildHistoryEventIndex(context.pmPath);
-      await expect(
-        readLatestSubstantiveHistoryEvents(context.pmPath, [
-          "pm-recency",
-          "pm-missing",
-          "../unsafe",
-          "",
-        ]),
-      ).resolves.toMatchObject({
+      const latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
+        "pm-recency",
+        "pm-missing",
+        "../unsafe",
+        "",
+      ]);
+      expect(latest).toMatchObject({
         "pm-recency": {
           stream_offset: 0,
           entry: { op: "create", event_class: "substantive" },
         },
       });
+      expect(Object.keys(latest)).toEqual(["pm-recency"]);
 
       await removeHistoryEventIndexForHistoryPath(
         path.join(historyRoot, "pm-recency.jsonl"),
@@ -342,7 +420,6 @@ describe("history mutation event index", () => {
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
-
       const latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
         "pm-stale",
         "constructor",
@@ -981,6 +1058,24 @@ describe("history mutation event index", () => {
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, [
+          "pm-invalidation-fail",
+        ]),
+      ).resolves.toMatchObject({
+        "pm-invalidation-fail": { entry: { op: "update" } },
+      });
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        events: [
+          { stream_offset: 0, entry: { op: "create" } },
+          { stream_offset: 1, entry: { op: "update" } },
+        ],
+      });
     });
   });
 
@@ -1084,6 +1179,48 @@ describe("history mutation event index", () => {
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
+    });
+  });
+
+  it("removes its pending marker when an unlocked fallback append fails", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-lock-contention-failure.jsonl",
+      );
+      const release = await acquireLock(
+        context.pmPath,
+        "history-event-index",
+        300,
+        "contending-index-operation",
+        false,
+        false,
+        0,
+      );
+      const previousWait = process.env.PM_LOCK_WAIT_MS;
+      process.env.PM_LOCK_WAIT_MS = "0";
+      try {
+        await expect(
+          appendHistoryEntryWithEventIndex(
+            historyPath,
+            historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
+            async () => {
+              throw new Error("append failed");
+            },
+          ),
+        ).rejects.toThrow("append failed");
+      } finally {
+        if (previousWait === undefined) delete process.env.PM_LOCK_WAIT_MS;
+        else process.env.PM_LOCK_WAIT_MS = previousWait;
+        await release();
+      }
+      const invalidationRoot = path.join(
+        context.pmPath,
+        "runtime",
+        "history-event-index-invalidations",
+      );
+      await expect(fs.readdir(invalidationRoot)).resolves.toEqual([]);
     });
   });
 

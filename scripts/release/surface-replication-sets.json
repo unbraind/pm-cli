@@ -36,7 +36,8 @@
             "RuntimeDatabaseSync = loadStableDatabaseSync(",
             "setDatabaseSync(databaseSync:",
             "RuntimeDatabaseSync = databaseSync",
-            "RuntimeDatabaseSync = previous"
+            "RuntimeDatabaseSync = previous",
+            "return RuntimeDatabaseSync"
           ]
         },
         {
@@ -50,7 +51,8 @@
             "RuntimeDatabaseSync = loadStableDatabaseSync(",
             "setDatabaseSync(databaseSync:",
             "RuntimeDatabaseSync = databaseSync",
-            "RuntimeDatabaseSync = previous"
+            "RuntimeDatabaseSync = previous",
+            "return RuntimeDatabaseSync"
           ]
         }
       ],

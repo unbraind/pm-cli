@@ -32243,6 +32243,7 @@
     "history_merge_conflict_markers_detected",
     "history_stream_over_compact_threshold",
     "history_target_out_of_range",
+    "history_timestamp_invalid",
     "history_unknown_author_events",
     "host_environment_capacity_fault",
     "host_environment_operation_invalid",

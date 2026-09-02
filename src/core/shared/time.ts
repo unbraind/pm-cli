@@ -66,6 +66,13 @@ export function isRfc3339DateTime(input: string): boolean {
   );
 }
 
+/** Return whether a value is a calendar-valid RFC 3339 date-time whose fractional precision can be represented losslessly by JavaScript milliseconds. */
+export function isMillisecondPrecisionRfc3339DateTime(input: string): boolean {
+  return (
+    isRfc3339DateTime(input) && !/\.\d{4,}(?:Z|[+-]\d{2}:\d{2})$/iu.test(input)
+  );
+}
+
 /**
  * Memoized `Date.parse` for {@link compareTimestampStrings}. Sort comparators call it
  * O(n log n) times over a corpus whose timestamp strings repeat heavily, and

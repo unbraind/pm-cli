@@ -399,23 +399,32 @@ export function compareScaleBudgets(report, manifest) {
           ...compareCommandBudget(transport, name, summary, budget),
         );
       }
-      violations.push(...compareProductTarget(transport, name, summary));
+      if (tier.product_target) {
+        violations.push(
+          ...compareProductTarget(
+            transport,
+            name,
+            summary,
+            tier.product_target,
+          ),
+        );
+      }
     }
   }
   violations.push(...compareTransportOverhead(report, tier));
   return violations;
 }
 
-function compareProductTarget(transport, name, summary) {
+function compareProductTarget(transport, name, summary, target) {
   const violations = [];
-  if (summary.p95_ms > PRODUCT_TARGET.p95_ms) {
+  if (summary.p95_ms > target.p95_ms) {
     violations.push(
-      `product_target.${transport}.${name}: p95 ${summary.p95_ms}ms > ${PRODUCT_TARGET.p95_ms}ms`,
+      `product_target.${transport}.${name}: p95 ${summary.p95_ms}ms > ${target.p95_ms}ms`,
     );
   }
-  if (summary.max_estimated_tokens > PRODUCT_TARGET.max_estimated_tokens) {
+  if (summary.max_estimated_tokens > target.max_estimated_tokens) {
     violations.push(
-      `product_target.${transport}.${name}: ${summary.max_estimated_tokens} tokens > ${PRODUCT_TARGET.max_estimated_tokens}`,
+      `product_target.${transport}.${name}: ${summary.max_estimated_tokens} tokens > ${target.max_estimated_tokens}`,
     );
   }
   return violations;
@@ -478,9 +487,14 @@ export async function updateBudgetManifest(manifestPath, report, headroom) {
   } catch {
     // A first baseline creates the manifest.
   }
-  manifest.tiers[
-    `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`
-  ] = buildTierBudget(report, headroom);
+  const tierKey = `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`;
+  const previousProductTarget = manifest.tiers[tierKey]?.product_target;
+  manifest.tiers[tierKey] = {
+    ...buildTierBudget(report, headroom),
+    ...(previousProductTarget === undefined
+      ? {}
+      : { product_target: previousProductTarget }),
+  };
   if ((report.fixture.shape?.name ?? "scratch") === "scratch") {
     delete manifest.tiers[String(report.fixture.item_count)];
   }

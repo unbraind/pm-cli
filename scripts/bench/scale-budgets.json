@@ -1,9 +1,13 @@
 {
   "version": 1,
-  "description": "Measured regression budgets. Product targets remain p95 <= 1000ms and <= 5000 estimated tokens per command at every scale tier.",
+  "description": "Measured regression budgets. A tier enforces product targets only when it carries an approved product_target contract; larger characterization tiers remain regression-gated without asserting an unachieved global target.",
   "tiers": {
     "scratch:10000": {
       "headroom": 1.25,
+      "product_target": {
+        "p95_ms": 1000,
+        "max_estimated_tokens": 5000
+      },
       "transports": {
         "cli": {
           "list": {

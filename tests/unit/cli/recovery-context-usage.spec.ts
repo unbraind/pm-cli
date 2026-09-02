@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { recordAfterCommandContextUsage } from "../../../src/cli/after-command-context-usage.js";
 import { appendCommanderExtensionFailures } from "../../../src/cli/commander-usage.js";
 import {
@@ -10,6 +10,8 @@ import {
 import { setActiveCommandResult } from "../../../src/core/extensions/index.js";
 import { attachContextUsageServingReceipt } from "../../../src/sdk/context-usage.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+afterEach(() => setActiveCommandResult(undefined));
 
 describe("CLI recovery and derived usage helpers", () => {
   it("skips derived context usage before any filesystem access when disabled", async () => {

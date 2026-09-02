@@ -613,6 +613,7 @@ describe("surface replication gate", () => {
         "RuntimeDatabaseSync = previous",
         "let RuntimeDatabaseSync:",
         "const Database = resolveDatabaseSync();",
+        "return RuntimeDatabaseSync",
       ]),
     );
 
@@ -645,6 +646,18 @@ describe("surface replication gate", () => {
       today: "2026-08-17",
     });
     expect(relevant.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+
+    const returnPath = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": ["return RuntimeDatabaseSync;"],
+      },
+      today: "2026-08-17",
+    });
+    expect(returnPath.violations).toContain(
       "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
     );
   }, 120_000);

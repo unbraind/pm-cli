@@ -22,7 +22,7 @@ import type { ItemMetadata } from "../types/index.js";
 import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
 import { readLatestSubstantiveHistoryEvents } from "../core/history/event-index.js";
 import {
-  isRfc3339DateTime,
+  isMillisecondPrecisionRfc3339DateTime,
   resolveIsoOrRelative,
 } from "../core/shared/time.js";
 
@@ -285,8 +285,8 @@ function canonicalRecencyCoordinate(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (
-    (!isRfc3339DateTime(trimmed) && !/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) ||
-    /\.\d{4,}(?:Z|[+-]\d{2}:\d{2})$/i.test(trimmed)
+    !isMillisecondPrecisionRfc3339DateTime(trimmed) &&
+    !/^\d{4}-\d{2}-\d{2}$/.test(trimmed)
   ) {
     return null;
   }
@@ -305,9 +305,19 @@ function canonicalizeCandidateRecency(
   candidates: readonly ItemContextRelevanceCandidate[],
 ): ItemContextRelevanceCandidate[] {
   return candidates.map((candidate) => {
-    const coordinate = canonicalRecencyCoordinate(
-      candidate.signal_provenance.recency.coordinate,
-    );
+    const evidence = candidate.signal_provenance.recency;
+    if (
+      evidence.source === "substantive_history"
+        ? evidence.event_class !== undefined &&
+          evidence.event_class !== "substantive"
+        : evidence.history_op !== undefined ||
+          evidence.event_class !== undefined
+    ) {
+      throw new TypeError(
+        "Context signal recency provenance must match its source",
+      );
+    }
+    const coordinate = canonicalRecencyCoordinate(evidence.coordinate);
     if (coordinate === null) {
       throw new TypeError(
         "Context signal recency coordinate must be a valid absolute timestamp with millisecond precision",

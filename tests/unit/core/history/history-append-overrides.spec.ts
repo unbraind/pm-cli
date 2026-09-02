@@ -370,6 +370,43 @@ describe("appendHistoryEntry object service override", () => {
     }
   });
 
+  it("rejects invalid timestamps from authoritative and extension-projected entries", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
+    try {
+      const invalid = createHistoryEntry({
+        nowIso: FIXED_TS,
+        author: "test-agent",
+        op: "update",
+        before: fullDoc({ id: "pm-invalid-ts", title: "a" }),
+        after: fullDoc({ id: "pm-invalid-ts", title: "b" }),
+      });
+      invalid.ts = "2026-02-20T00:00:00.0001Z";
+      await expect(
+        appendHistoryEntry(path.join(dir, "authoritative.jsonl"), invalid),
+      ).rejects.toThrow("millisecond precision");
+
+      invalid.ts = FIXED_TS;
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-invalid-timestamp",
+            service: "history_append",
+            run: () => ({ entry: { ts: "not-a-date", op: "override" } }),
+          },
+        ],
+      });
+      await expect(
+        appendHistoryEntry(path.join(dir, "override.jsonl"), invalid),
+      ).rejects.toThrow("millisecond precision");
+    } finally {
+      clearActiveExtensionHooks();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("serializes primitive object override entry payloads defensively", async () => {
     const dir = await fs.mkdtemp(
       path.join(os.tmpdir(), "pm-history-override-"),

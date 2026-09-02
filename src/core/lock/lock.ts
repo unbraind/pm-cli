@@ -259,8 +259,6 @@ const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
 const STALE_CLEANUP_GATE_STALE_MS = 10_000;
-// Bounds PID-reuse false positives: a live recycled PID can delay cleanup, but not indefinitely.
-const STALE_CLEANUP_GATE_MAX_ACTIVE_MS = 5 * 60_000;
 
 function parseNonNegativeIntegerWaitMs(
   value: string | number | undefined,
@@ -465,11 +463,7 @@ async function removeExpiredStaleCleanupGate(
     return isFileMissingError(error);
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
-  if (
-    owner !== null &&
-    isProcessAlive(owner.pid) &&
-    gateAgeMs <= STALE_CLEANUP_GATE_MAX_ACTIVE_MS
-  ) {
+  if (owner !== null && isProcessAlive(owner.pid)) {
     return false;
   }
   return removeStaleCleanupGateDirectory(gatePath);
