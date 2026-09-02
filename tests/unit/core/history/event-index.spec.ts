@@ -215,6 +215,19 @@ describe("history mutation event index", () => {
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
+      const third = historyEntry(
+        "2026-07-24T11:00:00.000Z",
+        "agent",
+        "comment_add",
+      );
+      await expect(
+        appendHistoryEntryWithEventIndex(historyPath, third, async () => {
+          await fs.appendFile(historyPath, `${JSON.stringify(third)}\n`);
+        }),
+      ).resolves.toBeUndefined();
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(3);
     });
   });
 
@@ -373,11 +386,17 @@ describe("history mutation event index", () => {
       );
       await fs.mkdir(invalidationRoot, { recursive: true });
       const initialPending = path.join(invalidationRoot, "initial.pending");
+      const initialCommitted = path.join(
+        invalidationRoot,
+        "initial.committed",
+      );
       await fs.writeFile(initialPending, "pending\n");
+      await fs.writeFile(initialCommitted, "committed\n");
       await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
         true,
       );
       await expect(fs.access(initialPending)).rejects.toThrow();
+      await expect(fs.access(initialCommitted)).rejects.toThrow();
 
       const processStartIdentity =
         (await readProcessStartIdentity(process.pid)) ?? "unknown";
@@ -1283,6 +1302,46 @@ describe("history mutation event index", () => {
         (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
       ).toHaveLength(2);
       await expect(fs.access(indexPath)).rejects.toThrow();
+
+      await rebuildHistoryEventIndex(context.pmPath);
+      class PostCommitCloseFailureDatabase {
+        readonly database: DatabaseSync;
+        closed = false;
+
+        constructor(...args: ConstructorParameters<typeof DatabaseSync>) {
+          this.database = new DatabaseSync(...args);
+        }
+
+        prepare(...args: Parameters<DatabaseSync["prepare"]>) {
+          return this.database.prepare(...args);
+        }
+
+        exec(...args: Parameters<DatabaseSync["exec"]>) {
+          return this.database.exec(...args);
+        }
+
+        close(): never {
+          if (!this.closed) {
+            this.closed = true;
+            this.database.close();
+          }
+          throw new Error("post-commit close failed");
+        }
+      }
+      restoreDatabaseSync?.();
+      restoreDatabaseSync = _testOnly.setDatabaseSync(
+        PostCommitCloseFailureDatabase as never,
+      );
+      await expect(
+        appendHistoryEntry(
+          historyPath,
+          historyEntry("2026-07-24T11:00:00.000Z", "agent", "comment_add"),
+        ),
+      ).resolves.toBeUndefined();
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(3);
+      await expect(fs.access(indexPath)).rejects.toThrow();
     });
   });
 
@@ -1480,16 +1539,32 @@ describe("history mutation event index", () => {
         false,
         0,
       );
+      const originalRename = fs.rename.bind(fs);
+      const renameSpy = vi
+        .spyOn(fs, "rename")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]).endsWith(".pending")) {
+            throw Object.assign(new Error("marker publication denied"), {
+              code: "EACCES",
+            });
+          }
+          return originalRename(...args);
+        });
       try {
         await withZeroLockWait(async () => {
           await expect(
             appendHistoryEntry(historyPath, second),
           ).resolves.toBeUndefined();
+          expect(renameSpy).toHaveBeenCalledWith(
+            expect.stringMatching(/\.pending$/u),
+            expect.stringMatching(/\.committed$/u),
+          );
           await expect(
             fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
           ).rejects.toThrow();
         });
       } finally {
+        renameSpy.mockRestore();
         await release();
       }
       expect(

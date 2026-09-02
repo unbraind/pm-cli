@@ -191,12 +191,12 @@ describe("context usage egress receipts", () => {
         const result = await PmClient.forActiveExtensionHost({
           cwd: context.tempRoot,
         }).next({ outputBudget: "unbounded" });
-        expect(collectContextUsageDeliveredItemIds(result, "next")).toContain(
-          createdId,
-        );
+        const emittedIds = collectContextUsageDeliveredItemIds(result, "next");
+        expect(emittedIds).toContain(createdId);
         expect((await deliveries(context.pmPath)).at(-1)).toMatchObject({
           surface: "next",
           result_omitted: false,
+          delivered_item_ids: emittedIds,
         });
       } finally {
         if (previousPmPath === undefined) delete process.env.PM_PATH;

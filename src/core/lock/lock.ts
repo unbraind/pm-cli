@@ -214,12 +214,7 @@ async function releaseOwnedLock(
     if (releaseCleanupGate !== null) {
       try {
         const current = await readLockInfo(lockPath, false);
-        if (
-          current.info?.id === id &&
-          current.info.pid === process.pid &&
-          current.info.owner === owner &&
-          current.info.token === token
-        ) {
+        if (isOwnedLock(current.info, id, owner, token)) {
           await unlinkLockWithHook(lockPath, "lock:release");
         }
       } finally {
@@ -422,6 +417,7 @@ async function readStaleCleanupGateOwner(
 }
 
 function isProcessAlive(pid: number): boolean {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
   try {
     process.kill(pid, 0);
     return true;

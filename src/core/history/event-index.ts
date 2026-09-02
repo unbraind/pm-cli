@@ -747,32 +747,37 @@ export async function appendHistoryEntryWithEventIndex(
       } catch (error: unknown) {
         database?.close();
         if (!appended) throw error;
-        await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-          const marker = await beginHistoryEventIndexInvalidation(pmRoot);
-          await fs.rename(marker.pendingPath, marker.committedPath);
-          await invalidateHistoryEventIndex(pmRoot);
-        });
+        await invalidateHistoryEventIndex(pmRoot);
       }
     });
   } catch (error: unknown) {
-    if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
-      throw error;
-    }
     if (authoritativeAppendCommitted) {
       await invalidateHistoryEventIndex(pmRoot);
       return;
     }
-    await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-      const marker = await beginHistoryEventIndexInvalidation(pmRoot);
-      try {
-        await append();
-      } catch (appendError: unknown) {
-        await fs.rm(marker.pendingPath, { force: true });
-        throw appendError;
+    if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
+      throw error;
+    }
+    try {
+      await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
+        const marker = await beginHistoryEventIndexInvalidation(pmRoot);
+        try {
+          await append();
+          authoritativeAppendCommitted = true;
+        } catch (appendError: unknown) {
+          await fs.rm(marker.pendingPath, { force: true });
+          throw appendError;
+        }
+        await fs.rename(marker.pendingPath, marker.committedPath);
+        await invalidateHistoryEventIndex(pmRoot);
+      });
+    } catch (fallbackError: unknown) {
+      if (authoritativeAppendCommitted) {
+        await invalidateHistoryEventIndex(pmRoot);
+        return;
       }
-      await fs.rename(marker.pendingPath, marker.committedPath);
-      await invalidateHistoryEventIndex(pmRoot);
-    });
+      throw fallbackError;
+    }
   }
 }
 

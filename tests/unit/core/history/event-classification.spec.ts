@@ -61,5 +61,11 @@ describe("history event classification", () => {
         event_class: "future" as HistoryEntry["event_class"],
       }),
     ).toBe("maintenance");
+    expect(
+      classifyHistoryEvent({
+        ...entry("update"),
+        patch: null as never,
+      }),
+    ).toBe("substantive");
   });
 });

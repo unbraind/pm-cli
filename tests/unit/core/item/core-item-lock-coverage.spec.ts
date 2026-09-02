@@ -9,6 +9,7 @@ import {
 import {
   _testOnly as lockInternals,
   acquireLock,
+  isProcessIdentityAlive,
 } from "../../../../src/core/lock/lock.js";
 import {
   clearActiveExtensionHooks,
@@ -1137,12 +1138,14 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("retains an expired cleanup gate whose live owner identity still matches", async () => {
+  it("retains an expired cleanup gate whose live owner identity still matches", async (context) => {
     await withTempPmPath(async ({ pmPath }) => {
       const currentIdentity = await lockInternals.readProcessStartIdentity(
         process.pid,
       );
-      if (currentIdentity === null) return;
+      if (currentIdentity === null) {
+        context.skip("host does not expose process start identity");
+      }
       const id = "pm-lock-stale-cleanup-matching-process";
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
@@ -1206,12 +1209,14 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("reclaims an expired cleanup gate after detecting PID reuse", async () => {
+  it("reclaims an expired cleanup gate after detecting PID reuse", async (context) => {
     await withTempPmPath(async ({ pmPath }) => {
       const currentIdentity = await lockInternals.readProcessStartIdentity(
         process.pid,
       );
-      if (currentIdentity === null) return;
+      if (currentIdentity === null) {
+        context.skip("host does not expose process start identity");
+      }
       const id = "pm-lock-stale-cleanup-reused-pid";
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
@@ -1275,6 +1280,20 @@ describe("core/lock/lock additional branch coverage", () => {
     await expect(
       lockInternals.readProcessStartIdentity(Number.MAX_SAFE_INTEGER),
     ).resolves.toBeNull();
+  });
+
+  it("rejects invalid process identifiers without probing the process group", async () => {
+    const killSpy = vi.spyOn(process, "kill");
+    try {
+      for (const pid of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+        await expect(isProcessIdentityAlive({ pid }, 0, 60_000)).resolves.toBe(
+          false,
+        );
+      }
+      expect(killSpy).not.toHaveBeenCalled();
+    } finally {
+      killSpy.mockRestore();
+    }
   });
 
   it("treats permission-denied process probes as live stale cleanup owners", async () => {

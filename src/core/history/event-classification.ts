@@ -111,7 +111,8 @@ export function classifyHistoryEvent(
   if (MAINTENANCE_OPERATIONS.has(entry.op)) return "maintenance";
   if (SUBSTANTIVE_OPERATIONS.has(entry.op)) return "substantive";
   if (entry.op !== "update") return "substantive";
-  return entry.patch.length > 0 &&
+  return Array.isArray(entry.patch) &&
+    entry.patch.length > 0 &&
     entry.patch.every((operation) => {
       const field = topLevelPatchField(operation);
       return field !== undefined && MAINTENANCE_UPDATE_FIELDS.has(field);
