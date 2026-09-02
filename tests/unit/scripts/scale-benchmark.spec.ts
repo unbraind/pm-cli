@@ -221,10 +221,7 @@ describe("scale benchmark runner", () => {
         tiers: {
           10: {
             ...budget,
-            product_target: {
-              p95_ms: 1000,
-              max_estimated_tokens: 5000,
-            },
+            enforce_product_target: true,
           },
         },
       }),
@@ -274,10 +271,7 @@ describe("scale benchmark runner", () => {
       compareScaleBudgets(productTargetFailure, {
         tiers: {
           10: {
-            product_target: {
-              p95_ms: 1000,
-              max_estimated_tokens: 5000,
-            },
+            enforce_product_target: true,
             transports: {
               cli: {
                 list: {
@@ -524,14 +518,10 @@ describe("scale benchmark runner", () => {
       });
       expect(migratedManifest.tiers).not.toHaveProperty("10");
 
-      const preservedTarget = {
-        p95_ms: 1000,
-        max_estimated_tokens: 5000,
-      };
       const persistedManifest = JSON.parse(
         await readFile(legacyManifestPath, "utf8"),
       );
-      persistedManifest.tiers["scratch:10"].product_target = preservedTarget;
+      persistedManifest.tiers["scratch:10"].enforce_product_target = true;
       await writeFile(
         legacyManifestPath,
         `${JSON.stringify(persistedManifest)}\n`,
@@ -540,7 +530,7 @@ describe("scale benchmark runner", () => {
       await updateBudgetManifest(legacyManifestPath, legacyReport, 1.25);
       expect(
         JSON.parse(await readFile(legacyManifestPath, "utf8")),
-      ).toHaveProperty("tiers.scratch:10.product_target", preservedTarget);
+      ).toHaveProperty("tiers.scratch:10.enforce_product_target", true);
     });
   }, 30_000);
 

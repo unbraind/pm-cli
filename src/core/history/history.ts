@@ -416,6 +416,11 @@ function fallbackHistoryTimestamp(entry: Pick<HistoryEntry, "ts">): string {
       "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
     );
   }
+  if (ts !== entry.ts) {
+    throw new TypeError(
+      "History timestamp must not contain surrounding whitespace",
+    );
+  }
   return entry.ts;
 }
 
@@ -425,7 +430,7 @@ function withHistoryTimestamp(
 ): Record<string, unknown> {
   const ts = value.ts;
   if (typeof ts === "string" && ts.trim().length > 0) {
-    if (!isMillisecondPrecisionRfc3339DateTime(ts.trim())) {
+    if (!isMillisecondPrecisionRfc3339DateTime(ts)) {
       throw new TypeError(
         "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
       );
@@ -441,13 +446,15 @@ function serializeHistoryLine(
 ): string {
   const fallbackTs = fallbackHistoryTimestamp(fallbackEntry);
   if (typeof value === "string") {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(value) as unknown;
-      if (isRecord(parsed)) {
-        return JSON.stringify(withHistoryTimestamp(parsed, fallbackTs));
-      }
+      parsed = JSON.parse(value) as unknown;
     } catch {
       // Non-JSON extension lines are preserved for compatibility.
+      return value;
+    }
+    if (isRecord(parsed)) {
+      return JSON.stringify(withHistoryTimestamp(parsed, fallbackTs));
     }
     return value;
   }

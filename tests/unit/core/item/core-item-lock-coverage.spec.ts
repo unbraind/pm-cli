@@ -1137,6 +1137,77 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("reclaims an expired cleanup gate after detecting PID reuse", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const currentIdentity = await lockInternals.readProcessStartIdentity(
+        process.pid,
+      );
+      if (currentIdentity === null) return;
+      const id = "pm-lock-stale-cleanup-reused-pid";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "abandoned-owner",
+          process_start_identity: `${currentIdentity}-previous`,
+        })}\n`,
+        "utf8",
+      );
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      expect(release).not.toBeNull();
+      await release?.();
+      await expect(fs.access(gatePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("bounds recovery for live legacy owners without process identity", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-legacy-max-age";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(
+        `${gatePath}/owner.json`,
+        `${JSON.stringify({ pid: process.pid, token: "legacy-owner" })}\n`,
+        "utf8",
+      );
+      const orphanedAt = new Date(Date.now() - 2 * 60 * 60_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      expect(release).not.toBeNull();
+      await release?.();
+      await expect(fs.access(gatePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("parses Linux process start identities and fails closed on absent processes", async () => {
+    expect(
+      lockInternals.parseLinuxProcessStartIdentity("missing close paren"),
+    ).toBeNull();
+    expect(
+      lockInternals.parseLinuxProcessStartIdentity(
+        `123 (node worker) ${["S", ...Array(18).fill("0"), "4242"].join(" ")}`,
+      ),
+    ).toBe("4242");
+    expect(
+      lockInternals.parseLinuxProcessStartIdentity("123 (node) S too-short"),
+    ).toBeNull();
+    await expect(
+      lockInternals.readProcessStartIdentity(Number.MAX_SAFE_INTEGER),
+    ).resolves.toBeNull();
+  });
+
   it("treats permission-denied process probes as live stale cleanup owners", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-eperm-owner";
@@ -1228,6 +1299,10 @@ describe("core/lock/lock additional branch coverage", () => {
         {
           id: "pm-lock-stale-cleanup-owner-fields",
           rawOwner: '{"pid":0,"token":""}\n',
+        },
+        {
+          id: "pm-lock-stale-cleanup-owner-process-identity",
+          rawOwner: '{"pid":1,"token":"valid","process_start_identity":42}\n',
         },
       ];
       for (const { id, rawOwner } of shapeCases) {

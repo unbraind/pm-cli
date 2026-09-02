@@ -43,6 +43,7 @@ interface StaleLockRemovalResult {
 interface StaleCleanupGateOwner {
   pid: number;
   token: string;
+  process_start_identity?: string;
 }
 
 function parseLockInfo(raw: string): LockReadResult {
@@ -259,6 +260,7 @@ const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
 const STALE_CLEANUP_GATE_STALE_MS = 10_000;
+const STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS = 60 * 60_000;
 
 function parseNonNegativeIntegerWaitMs(
   value: string | number | undefined,
@@ -363,16 +365,26 @@ function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
   const candidate = parsed as Record<string, unknown>;
   const pid = candidate.pid;
   const token = candidate.token;
+  const processStartIdentity = candidate.process_start_identity;
   if (
     typeof pid !== "number" ||
     !Number.isInteger(pid) ||
     pid <= 0 ||
     typeof token !== "string" ||
-    token.length === 0
+    token.length === 0 ||
+    (processStartIdentity !== undefined &&
+      (typeof processStartIdentity !== "string" ||
+        processStartIdentity.length === 0))
   ) {
     return null;
   }
-  return { pid, token };
+  return {
+    pid,
+    token,
+    ...(typeof processStartIdentity === "string"
+      ? { process_start_identity: processStartIdentity }
+      : {}),
+  };
 }
 
 async function readStaleCleanupGateOwner(
@@ -399,6 +411,26 @@ function isProcessAlive(pid: number): boolean {
       return false;
     }
     return true;
+  }
+}
+
+function parseLinuxProcessStartIdentity(raw: string): string | null {
+  const closeParenIndex = raw.lastIndexOf(")");
+  if (closeParenIndex < 0) return null;
+  const startTime = raw
+    .slice(closeParenIndex + 2)
+    .trim()
+    .split(/\s+/u)[19];
+  return startTime !== undefined && /^\d+$/u.test(startTime) ? startTime : null;
+}
+
+async function readProcessStartIdentity(pid: number): Promise<string | null> {
+  try {
+    return parseLinuxProcessStartIdentity(
+      await fs.readFile(`/proc/${pid}/stat`, "utf8"),
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -435,7 +467,14 @@ async function tryCreateStaleCleanupGate(
     }
     return null;
   }
-  const owner = { pid: process.pid, token: randomUUID() };
+  const processStartIdentity = await readProcessStartIdentity(process.pid);
+  const owner: StaleCleanupGateOwner = {
+    pid: process.pid,
+    token: randomUUID(),
+    ...(processStartIdentity === null
+      ? {}
+      : { process_start_identity: processStartIdentity }),
+  };
   try {
     await fs.writeFile(
       path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE),
@@ -464,7 +503,16 @@ async function removeExpiredStaleCleanupGate(
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
   if (owner !== null && isProcessAlive(owner.pid)) {
-    return false;
+    const processStartIdentity = await readProcessStartIdentity(owner.pid);
+    if (
+      (owner.process_start_identity !== undefined &&
+        processStartIdentity === owner.process_start_identity) ||
+      ((owner.process_start_identity === undefined ||
+        processStartIdentity === null) &&
+        gateAgeMs <= STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS)
+    ) {
+      return false;
+    }
   }
   return removeStaleCleanupGateDirectory(gatePath);
 }
@@ -564,6 +612,8 @@ export const _testOnly = {
   isStaleLock,
   lockOwnerSuffix,
   resolveLockWaitMs,
+  parseLinuxProcessStartIdentity,
+  readProcessStartIdentity,
   acquireStaleCleanupGate,
   removeConfirmedStaleLock,
 };

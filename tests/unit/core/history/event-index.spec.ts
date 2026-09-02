@@ -242,6 +242,59 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("canonicalizes equivalent RFC3339 offsets for index ordering and filters", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-offset-order.jsonl",
+      );
+      await fs.writeFile(
+        historyPath,
+        [
+          historyEntry("2026-07-24T10:30:00.000+02:00", "agent", "comment_add"),
+          historyEntry("2026-07-24T09:00:00.000Z", "agent", "close"),
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join("\n"),
+      );
+
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          since_ts: "2026-07-24T10:45:00.000+02:00",
+          limit: 10,
+        }),
+      ).resolves.toMatchObject({
+        events: [{ entry: { ts: "2026-07-24T09:00:00.000Z", op: "close" } }],
+      });
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          since_ts: "not-a-date",
+          limit: 10,
+        }),
+      ).resolves.toMatchObject({ events: [] });
+      await expect(
+        queryHistoryEventStreams(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        events: [
+          { entry: { ts: "2026-07-24T08:30:00.000Z" } },
+          { entry: { ts: "2026-07-24T09:00:00.000Z" } },
+        ],
+      });
+      await expect(
+        readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-offset-order"]),
+      ).resolves.toMatchObject({
+        "pm-offset-order": { entry: { ts: "2026-07-24T09:00:00.000Z" } },
+      });
+      expect(await fs.readFile(historyPath, "utf8")).toContain(
+        "2026-07-24T10:30:00.000+02:00",
+      );
+    });
+  });
+
   it("refuses pending invalidations and aborts rebuild publication when one arrives", async () => {
     await withTempPmPath(async (context) => {
       const invalidationRoot = path.join(

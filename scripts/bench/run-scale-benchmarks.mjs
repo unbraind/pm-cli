@@ -399,14 +399,9 @@ export function compareScaleBudgets(report, manifest) {
           ...compareCommandBudget(transport, name, summary, budget),
         );
       }
-      if (tier.product_target) {
+      if (tier.enforce_product_target === true) {
         violations.push(
-          ...compareProductTarget(
-            transport,
-            name,
-            summary,
-            tier.product_target,
-          ),
+          ...compareProductTarget(transport, name, summary, PRODUCT_TARGET),
         );
       }
     }
@@ -488,12 +483,11 @@ export async function updateBudgetManifest(manifestPath, report, headroom) {
     // A first baseline creates the manifest.
   }
   const tierKey = `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`;
-  const previousProductTarget = manifest.tiers[tierKey]?.product_target;
+  const enforceProductTarget =
+    manifest.tiers[tierKey]?.enforce_product_target === true;
   manifest.tiers[tierKey] = {
     ...buildTierBudget(report, headroom),
-    ...(previousProductTarget === undefined
-      ? {}
-      : { product_target: previousProductTarget }),
+    ...(enforceProductTarget ? { enforce_product_target: true } : {}),
   };
   if ((report.fixture.shape?.name ?? "scratch") === "scratch") {
     delete manifest.tiers[String(report.fixture.item_count)];

@@ -222,6 +222,20 @@ describe("context signal feature store", () => {
         },
       }),
     ).toThrow("valid absolute timestamp with millisecond precision");
+    expect(() =>
+      buildContextSignalSnapshot([item("pm-a")], {
+        statusRegistry,
+        now,
+        source: "scan_fallback",
+        sourceCursor: "cursor",
+        recencyEvidence: {
+          "pm-a": {
+            source: "unsupported" as never,
+            coordinate: now,
+          },
+        },
+      }),
+    ).toThrow("provenance must match its source");
     const legacyDateCoordinate = buildContextSignalSnapshot([item("pm-a")], {
       statusRegistry,
       now,

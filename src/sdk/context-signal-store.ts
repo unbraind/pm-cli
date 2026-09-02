@@ -307,11 +307,12 @@ function canonicalizeCandidateRecency(
   return candidates.map((candidate) => {
     const evidence = candidate.signal_provenance.recency;
     if (
-      evidence.source === "substantive_history"
+      !CONTEXT_RECENCY_SOURCES.has(evidence.source) ||
+      (evidence.source === "substantive_history"
         ? evidence.event_class !== undefined &&
           evidence.event_class !== "substantive"
         : evidence.history_op !== undefined ||
-          evidence.event_class !== undefined
+          evidence.event_class !== undefined)
     ) {
       throw new TypeError(
         "Context signal recency provenance must match its source",

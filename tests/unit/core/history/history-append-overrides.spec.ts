@@ -386,6 +386,10 @@ describe("appendHistoryEntry object service override", () => {
       await expect(
         appendHistoryEntry(path.join(dir, "authoritative.jsonl"), invalid),
       ).rejects.toThrow("millisecond precision");
+      invalid.ts = ` ${FIXED_TS}`;
+      await expect(
+        appendHistoryEntry(path.join(dir, "whitespace.jsonl"), invalid),
+      ).rejects.toThrow("surrounding whitespace");
 
       invalid.ts = FIXED_TS;
       setActiveExtensionServices({
@@ -400,6 +404,20 @@ describe("appendHistoryEntry object service override", () => {
       });
       await expect(
         appendHistoryEntry(path.join(dir, "override.jsonl"), invalid),
+      ).rejects.toThrow("millisecond precision");
+      clearActiveExtensionHooks();
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-invalid-string-timestamp",
+            service: "history_append",
+            run: () => JSON.stringify({ ts: "not-a-date", op: "override" }),
+          },
+        ],
+      });
+      await expect(
+        appendHistoryEntry(path.join(dir, "override-string.jsonl"), invalid),
       ).rejects.toThrow("millisecond precision");
     } finally {
       clearActiveExtensionHooks();
@@ -435,6 +453,20 @@ describe("appendHistoryEntry object service override", () => {
       await appendHistoryEntry(historyPath, entry);
       const written = await fs.readFile(historyPath, "utf8");
       expect(JSON.parse(written.trim())).toBe(42);
+
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-primitive-string-entry",
+            service: "history_append",
+            run: () => ({ entry: "42" }),
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      const lines = (await fs.readFile(historyPath, "utf8")).trim().split("\n");
+      expect(JSON.parse(lines[1] ?? "")).toBe(42);
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });

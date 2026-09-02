@@ -19,7 +19,7 @@ import { readHistoryEntries } from "./read.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
-const EVENT_INDEX_VERSION = "4";
+const EVENT_INDEX_VERSION = "5";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
 const HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS = 300;
@@ -303,7 +303,10 @@ async function readIndexableHistoryEntries(
       );
     }
   }
-  return entries;
+  return entries.map((entry) => ({
+    ...entry,
+    ts: new Date(entry.ts.trim()).toISOString(),
+  }));
 }
 
 async function readAuthoritativeHistoryEvents(
@@ -389,6 +392,10 @@ function createSchema(database: DatabaseSync): void {
 }
 
 function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
+  const entry = {
+    ...event.entry,
+    ts: new Date(event.entry.ts.trim()).toISOString(),
+  };
   database
     .prepare(
       `INSERT INTO events(
@@ -399,13 +406,13 @@ function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
     .run(
       event.stream_id,
       event.stream_offset,
-      event.entry.ts,
-      event.entry.author,
-      event.entry.agent_harness ?? null,
-      event.entry.agent_instance ?? null,
-      event.entry.op,
-      classifyHistoryEvent(event.entry),
-      JSON.stringify(event.entry),
+      entry.ts,
+      entry.author,
+      entry.agent_harness ?? null,
+      entry.agent_instance ?? null,
+      entry.op,
+      classifyHistoryEvent(entry),
+      JSON.stringify(entry),
     );
 }
 
@@ -424,7 +431,7 @@ function parseIndexedHistoryEvent(row: {
   return {
     stream_id: String(row.stream_id),
     stream_offset: Number(row.stream_offset),
-    entry,
+    entry: { ...entry, ts: new Date(entry.ts.trim()).toISOString() },
   };
 }
 
@@ -519,6 +526,13 @@ function compareHistoryEventPosition(
   );
 }
 
+function canonicalHistoryQueryTimestamp(value: string): string {
+  const milliseconds = Date.parse(value);
+  return Number.isFinite(milliseconds)
+    ? new Date(milliseconds).toISOString()
+    : value;
+}
+
 function isInsideHistoryEventWindow(
   event: IndexedHistoryEvent,
   query: HistoryEventIndexQuery,
@@ -532,12 +546,18 @@ function isInsideHistoryEventWindow(
       compareHistoryEventPosition(event, {
         stream_id: query.after_stream_id,
         stream_offset: query.after_stream_offset,
-        entry: { ...event.entry, ts: query.after_ts },
+        entry: {
+          ...event.entry,
+          ts: canonicalHistoryQueryTimestamp(query.after_ts),
+        },
       }) <= 0
     ) {
       return false;
     }
-  } else if (query.since_ts !== undefined && event.entry.ts < query.since_ts) {
+  } else if (
+    query.since_ts !== undefined &&
+    event.entry.ts < canonicalHistoryQueryTimestamp(query.since_ts)
+  ) {
     return false;
   }
   return true;
@@ -747,17 +767,18 @@ export async function queryHistoryEventIndex(
     clauses.push(
       "(ts > ? OR (ts = ? AND stream_id > ?) OR (ts = ? AND stream_id = ? AND stream_offset > ?))",
     );
+    const afterTimestamp = canonicalHistoryQueryTimestamp(query.after_ts);
     parameters.push(
-      query.after_ts,
-      query.after_ts,
+      afterTimestamp,
+      afterTimestamp,
       query.after_stream_id,
-      query.after_ts,
+      afterTimestamp,
       query.after_stream_id,
       query.after_stream_offset,
     );
   } else if (query.since_ts !== undefined) {
     clauses.push("ts >= ?");
-    parameters.push(query.since_ts);
+    parameters.push(canonicalHistoryQueryTimestamp(query.since_ts));
   }
   appendSetPredicate(clauses, parameters, "op", query.ops);
   appendSetPredicate(clauses, parameters, "author", query.authors);
