@@ -1101,6 +1101,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
   it("bounds evaluator readiness and keeps the Windows process tree governed", async () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
     expect(evaluatorScript).toContain("configuredReadyTimeout <= 15000");
+    expect(evaluatorScript).toContain("$childArgs = [string[]]@(");
     expect(evaluatorScript).toContain("Start-Process");
     expect(evaluatorScript).toContain("-Wait");
     expect(evaluatorScript).toContain("taskkill.exe exited with code");

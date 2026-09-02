@@ -105,8 +105,8 @@ const args = overrideArgs
 const windowsRunnerScript = [
   "$ErrorActionPreference = 'Stop'",
   "$command = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:PM_VERIFY_HTTP_CHILD_COMMAND_B64))",
-  "$arguments = @(ConvertFrom-Json $env:PM_VERIFY_HTTP_CHILD_ARGS_JSON)",
-  "$process = Start-Process -FilePath $command -ArgumentList $arguments -NoNewWindow -PassThru -Wait",
+  "$childArgs = [string[]]@(ConvertFrom-Json -InputObject $env:PM_VERIFY_HTTP_CHILD_ARGS_JSON)",
+  "$process = Start-Process -FilePath $command -ArgumentList $childArgs -NoNewWindow -PassThru -Wait",
   "exit $process.ExitCode",
 ].join("; ");
 const child = spawn(
