@@ -89,9 +89,12 @@ normalization, linked-artifact updates, and history maintenance cannot promote
 otherwise unchanged work. The rebuildable v5 history-event index stores the
 declared class and retrieves one latest substantive row per requested stream;
 individual immutable streams remain the authoritative fallback. Rebuilds,
-indexed validation reads, and compliant history appends share one cross-process
-coordination lock, while each append also commits its projection row and stream
-size in one SQLite transaction.
+indexed validation reads, and compliant indexed appends share one cross-process
+coordination lock; indexed appends commit their projection row and stream size
+in one SQLite transaction. A lock-conflict fallback append writes authoritative
+history without committing projection data in that transaction, publishes an
+invalidation marker when possible, and discards the derived projection. The
+index must validate or rebuild before serving that append.
 
 Explained ranking includes `recency.source`, `coordinate`, and, for history,
 `history_op` plus `event_class` on every served scorer row. Signal snapshots
