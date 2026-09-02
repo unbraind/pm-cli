@@ -132,6 +132,19 @@ describe("context signal feature store", () => {
       "semantic_similarity",
     );
     expect(Object.isFrozen(snapshot)).toBe(true);
+    for (const invalidItems of [
+      [item(" ")],
+      [item("pm-duplicate"), item("pm-duplicate")],
+    ]) {
+      expect(() =>
+        buildContextSignalSnapshot(invalidItems, {
+          statusRegistry,
+          now,
+          source: "scan_fallback",
+          sourceCursor: "cursor",
+        }),
+      ).toThrow("item IDs must be unique and non-empty");
+    }
     expect(() =>
       buildContextSignalSnapshot([], {
         statusRegistry,
@@ -296,13 +309,10 @@ describe("context signal feature store", () => {
           source: "scan_fallback",
           sourceCursor: "cursor",
         },
-      ).items.map(({ signal_provenance }) =>
-        signal_provenance.recency.coordinate,
+      ).items.map(
+        ({ signal_provenance }) => signal_provenance.recency.coordinate,
       ),
-    ).toEqual([
-      "1970-01-01T00:00:00.000Z",
-      "1970-01-01T00:00:00.000Z",
-    ]);
+    ).toEqual(["1970-01-01T00:00:00.000Z", "1970-01-01T00:00:00.000Z"]);
     expect(() =>
       buildContextSignalSnapshot([item("pm-a")], {
         statusRegistry,
@@ -458,6 +468,10 @@ describe("context signal feature store", () => {
         { id: "pm-a", signals: {} },
       ],
     ];
+    expect(
+      (withRecomputedFingerprint(valid, valid.items) as ContextSignalSnapshot)
+        .recency_evidence_fingerprint,
+    ).toBe(valid.recency_evidence_fingerprint);
     invalidValues.push(
       ...invalidItemSets.map((items) =>
         withRecomputedFingerprint(valid, items),

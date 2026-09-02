@@ -629,6 +629,7 @@ export async function appendHistoryEntryWithEventIndex(
     await append();
     return;
   }
+  let authoritativeAppendCommitted = false;
   try {
     await withHistoryEventIndexLock(pmRoot, async () => {
       const targetPath = eventIndexPath(pmRoot);
@@ -664,6 +665,7 @@ export async function appendHistoryEntryWithEventIndex(
       try {
         await append();
         appended = true;
+        authoritativeAppendCommitted = true;
         const streamId = path.basename(historyPath, ".jsonl");
         const offset = database
           .prepare(
@@ -695,6 +697,10 @@ export async function appendHistoryEntryWithEventIndex(
   } catch (error: unknown) {
     if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
       throw error;
+    }
+    if (authoritativeAppendCommitted) {
+      await invalidateHistoryEventIndex(pmRoot);
+      return;
     }
     await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
       const marker = await beginHistoryEventIndexInvalidation(pmRoot);
@@ -1043,7 +1049,11 @@ export async function readLatestSubstantiveHistoryEvents(
   streamIds: readonly string[],
 ): Promise<LatestSubstantiveHistoryEvents> {
   const uniqueIds = [
-    ...new Set(streamIds.filter((id) => id.trim().length > 0)),
+    ...new Set(
+      streamIds.filter(
+        (id) => id.trim().length > 0 && path.basename(id) === id,
+      ),
+    ),
   ];
   if (uniqueIds.length === 0) return {};
   const requested = new Set(uniqueIds);
@@ -1077,7 +1087,6 @@ export async function readLatestSubstantiveHistoryEvents(
   const authoritative: IndexedHistoryEvent[] = [];
   await Promise.all(
     uniqueIds.map(async (streamId) => {
-      if (path.basename(streamId) !== streamId) return;
       const historyPath = path.join(pmRoot, "history", `${streamId}.jsonl`);
       const entries = await readIndexableHistoryEntries(
         historyPath,

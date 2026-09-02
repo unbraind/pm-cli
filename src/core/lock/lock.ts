@@ -222,21 +222,33 @@ async function releaseOwnedLock(
       return;
     }
     const current = await readLockInfo(lockPath, false);
-    if (
-      current.info?.id !== id ||
-      current.info.pid !== process.pid ||
-      current.info.owner !== owner ||
-      current.info.token !== token
-    ) {
+    if (!isOwnedLock(current.info, id, owner, token)) {
       return;
     }
     const elapsedMs = Date.now() - startedAtMs;
-    if (elapsedMs >= LOCK_CONFLICT_RETRY_HINT_MS) return;
+    if (elapsedMs >= LOCK_RELEASE_GATE_WAIT_MS) {
+      await unlinkLockWithHook(lockPath, "lock:release");
+      return;
+    }
     await sleepWithJitter(
-      Math.min(backoffMs, LOCK_CONFLICT_RETRY_HINT_MS - elapsedMs),
+      Math.min(backoffMs, LOCK_RELEASE_GATE_WAIT_MS - elapsedMs),
     );
     backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
   }
+}
+
+function isOwnedLock(
+  info: LockInfo | null,
+  id: string,
+  owner: string,
+  token: string,
+): boolean {
+  return (
+    info?.id === id &&
+    info.pid === process.pid &&
+    info.owner === owner &&
+    info.token === token
+  );
 }
 
 function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {
@@ -260,6 +272,8 @@ const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
 const STALE_CLEANUP_GATE_STALE_MS = 10_000;
+const LOCK_RELEASE_GATE_WAIT_MS =
+  STALE_CLEANUP_GATE_STALE_MS + LOCK_WAIT_MAX_DELAY_MS;
 const STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS = 60 * 60_000;
 
 function parseNonNegativeIntegerWaitMs(

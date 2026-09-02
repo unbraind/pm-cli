@@ -17319,7 +17319,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/history/event-index.ts"
+        "core/history/event-index.ts",
+        "core/history/history.ts"
       ],
       "stability": "provisional"
     },

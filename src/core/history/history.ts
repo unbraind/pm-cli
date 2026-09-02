@@ -4,7 +4,7 @@
  * Implements append-only history and replay behavior for History.
  */
 import jsonPatch from "fast-json-patch";
-import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
+import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
@@ -36,6 +36,7 @@ import {
 } from "./event-index.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
+import { PmCliError } from "../shared/errors.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
@@ -408,16 +409,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function invalidHistoryTimestamp(message: string): PmCliError {
+  return new PmCliError(message, EXIT_CODE.GENERIC_FAILURE, {
+    code: "history_timestamp_invalid",
+  });
+}
+
 function fallbackHistoryTimestamp(entry: Pick<HistoryEntry, "ts">): string {
   const ts = entry.ts.trim();
   if (ts.length === 0) return nowIso();
   if (!isMillisecondPrecisionRfc3339DateTime(ts)) {
-    throw new TypeError(
+    throw invalidHistoryTimestamp(
       "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
     );
   }
   if (ts !== entry.ts) {
-    throw new TypeError(
+    throw invalidHistoryTimestamp(
       "History timestamp must not contain surrounding whitespace",
     );
   }
@@ -431,7 +438,7 @@ function withHistoryTimestamp(
   const ts = value.ts;
   if (typeof ts === "string" && ts.trim().length > 0) {
     if (!isMillisecondPrecisionRfc3339DateTime(ts)) {
-      throw new TypeError(
+      throw invalidHistoryTimestamp(
         "History timestamp must be a valid RFC 3339 date-time with millisecond precision",
       );
     }

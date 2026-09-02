@@ -2849,7 +2849,11 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       global as GlobalOptions & { [INIT_INVOCATION_CWD]?: string }
     )[INIT_INVOCATION_CWD] = resolutionCwd;
   }
-  if (resolved.action !== "init" || global.path !== undefined) {
+  if (
+    resolved.action !== "init" ||
+    global.path !== undefined ||
+    (process.env.PM_PATH?.trim().length ?? 0) > 0
+  ) {
     global.path = resolvePmRoot(resolutionCwd, global.path);
   }
   try {

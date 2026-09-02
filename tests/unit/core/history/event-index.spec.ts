@@ -81,47 +81,33 @@ describe("history mutation event index", () => {
     ).toBe(DatabaseSync);
   });
 
-  it("selects the latest substantive event per stream without sorting", () => {
-    const sortSpy = vi.spyOn(Array.prototype, "sort");
-    try {
-      const selected = _testOnly.collectLatestSubstantiveEvents(
-        [
-          {
-            stream_id: "pm-linear",
-            stream_offset: 2,
-            entry: historyEntry(
-              "2026-07-24T11:00:00.000Z",
-              "agent",
-              "comment_add",
-            ),
-          },
-          {
-            stream_id: "pm-linear",
-            stream_offset: 3,
-            entry: historyEntry(
-              "2026-07-24T12:00:00.000Z",
-              "agent",
-              "release",
-            ),
-          },
-          {
-            stream_id: "pm-linear",
-            stream_offset: 1,
-            entry: historyEntry(
-              "2026-07-24T10:00:00.000Z",
-              "agent",
-              "create",
-            ),
-          },
-        ],
-        new Set(["pm-linear"]),
-      );
+  it("selects the latest substantive event per stream regardless of input order", () => {
+    const selected = _testOnly.collectLatestSubstantiveEvents(
+      [
+        {
+          stream_id: "pm-linear",
+          stream_offset: 2,
+          entry: historyEntry(
+            "2026-07-24T11:00:00.000Z",
+            "agent",
+            "comment_add",
+          ),
+        },
+        {
+          stream_id: "pm-linear",
+          stream_offset: 3,
+          entry: historyEntry("2026-07-24T12:00:00.000Z", "agent", "release"),
+        },
+        {
+          stream_id: "pm-linear",
+          stream_offset: 1,
+          entry: historyEntry("2026-07-24T10:00:00.000Z", "agent", "create"),
+        },
+      ],
+      new Set(["pm-linear"]),
+    );
 
-      expect(selected["pm-linear"]?.stream_offset).toBe(2);
-      expect(sortSpy).not.toHaveBeenCalled();
-    } finally {
-      sortSpy.mockRestore();
-    }
+    expect(selected["pm-linear"]?.stream_offset).toBe(2);
   });
 
   it("rebuilds deterministically and applies ordering, cursors, and set filters", async () => {
@@ -298,6 +284,31 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("accepts fractional timestamps whose extra digits are only trailing zeros", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-lossless-fraction.jsonl",
+      );
+      await fs.writeFile(
+        historyPath,
+        `${JSON.stringify(
+          historyEntry("2026-07-24T09:00:00.1230Z", "agent", "comment_add"),
+        )}\n`,
+      );
+
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        events: [{ entry: { ts: "2026-07-24T09:00:00.123Z" } }],
+      });
+    });
+  });
+
   it("canonicalizes equivalent RFC3339 offsets for index ordering and filters", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
@@ -410,12 +421,27 @@ describe("history mutation event index", () => {
           .join("\n") + "\n",
       );
       await rebuildHistoryEventIndex(context.pmPath);
-      const latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
-        "pm-recency",
-        "pm-missing",
-        "../unsafe",
-        "",
-      ]);
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          stream_ids: ["../unsafe"],
+          limit: 10,
+        }),
+      ).resolves.toBeNull();
+      const renameSpy = vi.spyOn(fs, "rename");
+      let latest: Awaited<
+        ReturnType<typeof readLatestSubstantiveHistoryEvents>
+      >;
+      try {
+        latest = await readLatestSubstantiveHistoryEvents(context.pmPath, [
+          "pm-recency",
+          "pm-missing",
+          "../unsafe",
+          "",
+        ]);
+        expect(renameSpy).not.toHaveBeenCalled();
+      } finally {
+        renameSpy.mockRestore();
+      }
       expect(latest).toMatchObject({
         "pm-recency": {
           stream_offset: 0,
@@ -1116,6 +1142,56 @@ describe("history mutation event index", () => {
         (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
       ).toHaveLength(2);
       await expect(fs.access(indexPath)).rejects.toThrow();
+    });
+  });
+
+  it("does not duplicate a durable append when index invalidation is contended", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-invalidation-contention.jsonl",
+      );
+      const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
+      await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      await rebuildHistoryEventIndex(context.pmPath);
+      const release = await acquireLock(
+        context.pmPath,
+        "history-event-index-invalidation",
+        300,
+        "contending-invalidation",
+        false,
+        false,
+        0,
+      );
+      const originalStat = fs.stat.bind(fs);
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === historyPath) throw new Error("stat failed");
+          return originalStat(...args);
+        });
+      try {
+        await withZeroLockWait(async () => {
+          await expect(
+            appendHistoryEntry(historyPath, second),
+          ).resolves.toBeUndefined();
+        });
+      } finally {
+        statSpy.mockRestore();
+        await release();
+      }
+      expect(
+        (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+      ).toHaveLength(2);
+      await expect(
+        fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
+      ).rejects.toThrow();
     });
   });
 

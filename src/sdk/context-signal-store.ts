@@ -325,9 +325,7 @@ function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
     return null;
   const recency = (signalProvenance as Record<string, unknown>).recency;
   if (!isRecord(recency)) return null;
-  const coordinate = canonicalizeContextRecencyCoordinate(
-    recency.coordinate,
-  );
+  const coordinate = canonicalizeContextRecencyCoordinate(recency.coordinate);
   if (coordinate === null) return null;
   const supportedSignals = new Set<string>(STORED_CONTEXT_SIGNAL_NAMES);
   const signalEntries = Object.entries(
@@ -458,6 +456,15 @@ function snapshotFromCandidates(
   candidates: readonly ItemContextRelevanceCandidate[],
   options: BuildContextSignalSnapshotOptions,
 ): ContextSignalSnapshot {
+  const candidateIds = candidates.map(({ id }) => id);
+  if (
+    new Set(candidateIds).size !== candidateIds.length ||
+    candidateIds.some((id) => id.trim().length === 0)
+  ) {
+    throw new TypeError(
+      "Context signal snapshot item IDs must be unique and non-empty",
+    );
+  }
   const rows = candidates
     .map(({ id, signals, signal_provenance }) => ({
       id,

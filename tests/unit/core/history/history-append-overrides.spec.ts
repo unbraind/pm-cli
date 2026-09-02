@@ -36,6 +36,15 @@ function fullDoc(overrides: Record<string, unknown>, body = ""): ItemDocument {
   );
 }
 
+async function trackerHistoryPath(
+  tempRoot: string,
+  filename: string,
+): Promise<string> {
+  const historyRoot = path.join(tempRoot, ".agents", "pm", "history");
+  await fs.mkdir(historyRoot, { recursive: true });
+  return path.join(historyRoot, filename);
+}
+
 afterEach(() => {
   clearActiveExtensionHooks();
 });
@@ -125,7 +134,7 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const historyPath = path.join(dir, "pm-skip.jsonl");
+      const historyPath = await trackerHistoryPath(dir, "pm-skip.jsonl");
       setActiveExtensionServices({
         overrides: [
           {
@@ -161,7 +170,7 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const historyPath = path.join(dir, "fallthrough.jsonl");
+      const historyPath = await trackerHistoryPath(dir, "fallthrough.jsonl");
       setActiveExtensionServices({
         overrides: [
           {
@@ -201,8 +210,8 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const requestedPath = path.join(dir, "requested.jsonl");
-      const redirectedPath = path.join(dir, "redirected.jsonl");
+      const requestedPath = await trackerHistoryPath(dir, "requested.jsonl");
+      const redirectedPath = await trackerHistoryPath(dir, "redirected.jsonl");
       setActiveExtensionServices({
         overrides: [
           {
@@ -239,8 +248,14 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const requestedPath = path.join(dir, "requested-entry.jsonl");
-      const redirectedPath = path.join(dir, "redirected-entry.jsonl");
+      const requestedPath = await trackerHistoryPath(
+        dir,
+        "requested-entry.jsonl",
+      );
+      const redirectedPath = await trackerHistoryPath(
+        dir,
+        "redirected-entry.jsonl",
+      );
       setActiveExtensionServices({
         overrides: [
           {
@@ -284,7 +299,10 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const historyPath = path.join(dir, "fallback-now-entry.jsonl");
+      const historyPath = await trackerHistoryPath(
+        dir,
+        "fallback-now-entry.jsonl",
+      );
       setActiveExtensionServices({
         overrides: [
           {
@@ -332,7 +350,7 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const historyPath = path.join(dir, "line-entry.jsonl");
+      const historyPath = await trackerHistoryPath(dir, "line-entry.jsonl");
       setActiveExtensionServices({
         overrides: [
           {
@@ -384,12 +402,18 @@ describe("appendHistoryEntry object service override", () => {
       });
       invalid.ts = "2026-02-20T00:00:00.0001Z";
       await expect(
-        appendHistoryEntry(path.join(dir, "authoritative.jsonl"), invalid),
-      ).rejects.toThrow("millisecond precision");
+        appendHistoryEntry(
+          await trackerHistoryPath(dir, "authoritative.jsonl"),
+          invalid,
+        ),
+      ).rejects.toMatchObject({ code: "history_timestamp_invalid" });
       invalid.ts = ` ${FIXED_TS}`;
       await expect(
-        appendHistoryEntry(path.join(dir, "whitespace.jsonl"), invalid),
-      ).rejects.toThrow("surrounding whitespace");
+        appendHistoryEntry(
+          await trackerHistoryPath(dir, "whitespace.jsonl"),
+          invalid,
+        ),
+      ).rejects.toMatchObject({ code: "history_timestamp_invalid" });
 
       invalid.ts = FIXED_TS;
       setActiveExtensionServices({
@@ -403,8 +427,11 @@ describe("appendHistoryEntry object service override", () => {
         ],
       });
       await expect(
-        appendHistoryEntry(path.join(dir, "override.jsonl"), invalid),
-      ).rejects.toThrow("millisecond precision");
+        appendHistoryEntry(
+          await trackerHistoryPath(dir, "override.jsonl"),
+          invalid,
+        ),
+      ).rejects.toMatchObject({ code: "history_timestamp_invalid" });
       clearActiveExtensionHooks();
       setActiveExtensionServices({
         overrides: [
@@ -417,8 +444,11 @@ describe("appendHistoryEntry object service override", () => {
         ],
       });
       await expect(
-        appendHistoryEntry(path.join(dir, "override-string.jsonl"), invalid),
-      ).rejects.toThrow("millisecond precision");
+        appendHistoryEntry(
+          await trackerHistoryPath(dir, "override-string.jsonl"),
+          invalid,
+        ),
+      ).rejects.toMatchObject({ code: "history_timestamp_invalid" });
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });
@@ -430,7 +460,10 @@ describe("appendHistoryEntry object service override", () => {
       path.join(os.tmpdir(), "pm-history-override-"),
     );
     try {
-      const historyPath = path.join(dir, "primitive-entry.jsonl");
+      const historyPath = await trackerHistoryPath(
+        dir,
+        "primitive-entry.jsonl",
+      );
       setActiveExtensionServices({
         overrides: [
           {
