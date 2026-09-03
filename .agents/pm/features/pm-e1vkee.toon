@@ -2,11 +2,13 @@ id: pm-e1vkee
 title: "Verdict contract: one declared vocabulary of reproducible predicates over recorded state, composable into a score, with reward shaping explicitly refused"
 description: "Second of the four seams pm-klxax7 owns. The epic states the failure mode in both directions: too narrow and every environment author reimplements state inspection, too wide and pm acquires opinions about reward shaping that belong to the training loop. The boundary is reproducibility: a verdict is a function of recorded workspace state and yields the same answer forever at the same version; a reward depends on a training objective and must be allowed to change while the workspace does not. Five verdict sources already exist and none declares itself as one (pm-e96opw criterion predicates, pm-htbetn transition field completeness, linked-test exit status, pm-3z0k chain attestation, pm-8bgeye assembly attestation), so composing a scoring function today means knowing all five and hand-writing the join. Duplicate check: searched verdict/reward/score/predicate lineages and read pm-e96opw, pm-li2fj5, pm-kw4b, pm-atfm, pm-htbetn; the epic names this seam and no item owns it."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-environment,"area:sdk",governance,rl
 created_at: "2026-08-01T09:48:02.975Z"
-updated_at: "2026-08-01T09:56:42.649Z"
+updated_at: "2026-09-03T17:36:17.528Z"
+closed_at: "2026-09-03T17:36:16.947Z"
+completed_at: "2026-09-03T17:36:16.947Z"
 author: "harness:claude-code"
 estimated_minutes: 1080
 acceptance_criteria: "A named versioned predicate vocabulary with total results (satisfied, violated, or not-applicable with reason -- never an exception and never silence) and an evidence pointer per result; verdicts compose by declared combinators so a scoring function is versionable data rather than code; a verdict recomputed against the same workspace version yields the same result and the same evidence pointers; a workspace with no criteria and no linked tests still yields a total verdict; scoring never mutates the workspace it reads; pm publishes no reward, discount, shaping or baseline comparison"
@@ -17,6 +19,9 @@ why_now: "pm-li2fj5 composes a verdict into the episode unit without a defined b
 parent: pm-klxax7
 risk: medium
 confidence: medium
+resolution: "Added versioned declarative predicates, all/any composition, total outcomes, reproducible evidence pointers, privacy-safe digests, and an explicit no-reward policy to the published SDK."
+expected_result: "Consumers can compute stable project verdicts from recorded state without mutation, silence, exceptions, or reward-shaping policy."
+actual_result: "Focused tests exercise satisfied, violated, not-applicable, empty, escaped-pointer, composition, determinism, and immutability paths; exact repository coverage and all static assurances pass."
 dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
   pm-3z0k,related,"2026-08-01T09:48:02.975Z","harness:claude-code","cli:create:dep",detected
   pm-5gf0xf,related,"2026-08-01T09:48:02.975Z","harness:claude-code","cli:create:dep",detected
@@ -33,4 +38,29 @@ dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
   pm-wlqxg3,blocked_by,"2026-08-01T09:48:02.975Z","harness:claude-code","cli:create:dep",detected
   pm-qapjw5,related,"2026-08-01T09:56:42.365Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-01T09:56:42.365Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-03T17:36:06.081Z","harness:codex","Completion evidence: the public SDK now publishes a named versioned verdict vocabulary with field-equals/present/absent predicates, declared all/any composition, total satisfied/violated/not_applicable outcomes, exact snapshot plus escaped JSON-pointer evidence, value digests instead of copied private values, deterministic read-only evaluation, and an explicit verdict_only_no_reward policy. Empty predicate sets yield not_applicable rather than exception or silence. Focused linked tests passed 14/14 and prove byte-stable recomputation and no state mutation; repo-wide coverage passed exactly 100/100/100/100; typecheck and complete static/graph/history assurance passed."
+learnings[1]{created_at,author,text}:
+  "2026-09-03T17:36:07.063Z","harness:codex",A reproducible project verdict belongs in the SDK as versioned declarative data over immutable recorded state; reward shaping remains a consumer policy and must not leak into the project-management substrate.
+files[2]{path,scope,note}:
+  src/sdk/environment/agent-environment.ts,project,Composable observation verdict and episode SDK contracts
+  tests/unit/sdk/environment/agent-environment.spec.ts,project,Exact-coverage contract and runtime evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/environment/agent-environment.spec.ts,project,120,"harness:codex","2026-09-03T17:01:16.179Z",local_mutation,feat/executable-criteria-verdict-episodes
+test_runs[1]:
+  - run_id: test-local-mtlt2kde-91zh9q
+    kind: test
+    status: passed
+    started_at: "2026-09-03T17:35:10.292Z"
+    finished_at: "2026-09-03T17:35:16.129Z"
+    recorded_at: "2026-09-03T17:35:16.129Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/environment/agent-environment.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated release changelog entry for the public SDK verdict contract
+  docs/AGENT_ENVIRONMENTS.md,project,Public contract boundaries and consumer guidance
+close_reason: The public SDK now owns a deterministic total verdict contract over recorded project state.
 body: "## The seam\n\npm-klxax7 names this seam and states the failure mode in both directions: \"too narrow and every author reimplements state inspection, too wide and pm acquires opinions about reward shaping that belong to the training loop.\" pm-li2fj5 composes a computed verdict into the episode unit but does not define where the computation stops. This item draws that line and makes it enforceable.\n\n## The distinction being drawn\n\nA **verdict** is a function of recorded workspace state. It is computable by pm alone, from data pm already holds, and it is reproducible — the same workspace at the same version yields the same verdict, forever, on any machine. \"Did item X reach `closed` with a non-empty resolution\", \"did every acceptance criterion attached to X record a passing predicate\", \"did the linked test command exit zero within its declared timeout\", \"is the history chain for X intact from genesis to head\" are all verdicts.\n\nA **reward** is a function of a verdict and of things pm does not know: the training objective, the shaping schedule, the discount, the comparison against a baseline policy, the human preference model. It is not reproducible from workspace state alone, and it must not be, because it changes between runs by design.\n\npm computes verdicts. The training loop computes rewards. The contract is the boundary, and the boundary is drawn by reproducibility: if the answer can change while the workspace does not, it is a reward and it is outside.\n\n## Why the boundary has to be declared rather than assumed\n\nThe verdict surface pm can offer is already implied by work in flight, and each piece currently answers a slightly different question. Executable acceptance criteria (pm-e96opw) attach a machine-checkable predicate and a recorded verdict to each criterion. Lifecycle field-completeness (pm-htbetn) declares which fields a status transition requires. Linked-test execution records pass/fail per command. Portable integrity attestation (pm-3z0k) verifies the chain standalone. Attested context reads (pm-8bgeye) certify that an assembly is reproducible.\n\nEvery one of those is a verdict source, and none of them declares itself as one. An environment author assembling a scoring function today has to know all five exist, read each one's output shape, and hand-write the composition — which is precisely the \"every author reimplements state inspection\" failure the epic warns about. The composition is the deliverable.\n\n## What this item owns\n\nOne declared verdict vocabulary: a set of named, versioned predicates over workspace state, each with a declared input shape, a total result (satisfied, violated, or not-applicable-with-reason — never an exception, never silence), and a recorded evidence pointer identifying what was read to reach it.\n\nOne composition surface: verdicts compose into a scored result by declared combinators, and the composition is itself a declaration rather than code, so an environment's scoring function is data that can be versioned, diffed, and replayed against an older workspace.\n\nOne reproducibility guarantee, and it is the acceptance test: a verdict computed against a workspace at version V must be recomputable against the same workspace at version V and yield the same result and the same evidence pointers. Point-in-time reconstruction (pm-5gf0xf, gated by pm-wlqxg3) is what makes that checkable, which is why this item depends on it rather than restating it.\n\nOne explicit refusal: pm publishes no reward, no discount, no shaping, no baseline comparison and no aggregate across episodes that implies a training objective. An environment that wants those computes them from verdicts, outside.\n\n## The degenerate cases that keep it honest\n\nA workspace with no acceptance criteria and no linked tests must still produce a total verdict — not-applicable with a reason, never an error and never a silent pass. An environment scoring an empty episode must be told plainly that nothing was checkable.\n\nA verdict must never mutate the workspace it reads. Scoring is a read, and a scoring pass that writes turns evaluation into part of the trajectory it is evaluating.\n\n## Boundaries\n\nNot executable acceptance criteria (pm-e96opw), which owns per-criterion predicates. This owns the vocabulary they register into and the composition above them.\n\nNot the episode substrate (pm-li2fj5), which owns the unit a verdict is attached to.\n\nNot benchmark methodology (pm-kw4b), which owns what is measured and published about context quality. This owns what an environment may ask pm to certify."

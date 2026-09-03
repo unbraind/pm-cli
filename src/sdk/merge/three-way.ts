@@ -18,6 +18,7 @@ import {
   serializeItemDocument,
   type ItemDocumentFormatOptions,
 } from "../../core/item/item-format.js";
+import { splitAcceptanceCriteria } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -419,6 +420,9 @@ export const ITEM_UNION_COLLECTION_FIELDS = [
   "events",
 ] as const;
 
+/** Delimiter-backed list fields that use the same lossless element merge as native metadata collections while retaining their legacy scalar storage shape. */
+const ITEM_UNION_DELIMITED_FIELDS = ["acceptance_criteria"] as const;
+
 /** Item metadata fields resolved by deterministic latest-timestamp-wins instead of three-way conflict, so disjoint-field edits never conflict on the shared freshness scalar every mutation rewrites. */
 export const ITEM_LATEST_TIMESTAMP_FIELDS = ["updated_at"] as const;
 
@@ -653,6 +657,12 @@ function mergeItemUnionField(params: {
   const union =
     params.field === "tests"
       ? unionLinkedTests(params.baseValue, params.oursValue, params.theirsValue)
+      : params.field === "acceptance_criteria"
+        ? unionCollection(
+            splitAcceptanceCriteria(params.baseValue),
+            splitAcceptanceCriteria(params.oursValue),
+            splitAcceptanceCriteria(params.theirsValue),
+          ).join("; ")
       : unionCollection(params.baseValue, params.oursValue, params.theirsValue);
   params.accumulator.merged[params.field] = union;
   if (!jsonEquals(union, params.oursValue)) {
@@ -703,7 +713,10 @@ function mergeItemMetadataRecords(
   preferred: MergePreferredSide,
   conflictResolution: "preferred_side" | "stable_value_order",
 ): ItemMetadataMergeAccumulator {
-  const unionFieldSet = new Set<string>(ITEM_UNION_COLLECTION_FIELDS);
+  const unionFieldSet = new Set<string>([
+    ...ITEM_UNION_COLLECTION_FIELDS,
+    ...ITEM_UNION_DELIMITED_FIELDS,
+  ]);
   const latestFieldSet = new Set<string>(ITEM_LATEST_TIMESTAMP_FIELDS);
   const fieldNames = [
     ...new Set([...Object.keys(oursRecord), ...Object.keys(theirsRecord)]),

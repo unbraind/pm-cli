@@ -3781,6 +3781,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ClosedEpisode",
+          "signature": "export interface ClosedEpisode { verdict: VerdictResult; trajectory: readonly EpisodeTrajectoryEntry[]; reward?: never; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "closeItem",
           "signature": "(id: string, closeReasonText: string | undefined, options: CloseOperationOptions, global: GlobalOptions) => Promise<CloseOperationResult> | calls: (id: string, closeReasonText: string | undefined, options: CloseOperationOptions, global: GlobalOptions) => Promise<CloseOperationResult>"
@@ -5280,6 +5286,12 @@
           "signature": "<const Shape extends CorpusShape>(shape: ExactCorpusShape<Shape>) => Readonly<Shape> | calls: <const Shape extends CorpusShape>(shape: ExactCorpusShape<Shape>) => Readonly<Shape>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "defineEpisodeSpecification",
+          "signature": "(declaration: EpisodeSpecification) => EpisodeSpecification | calls: (declaration: EpisodeSpecification) => EpisodeSpecification"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "defineExporter",
@@ -5332,6 +5344,12 @@
           "kind": "function",
           "name": "defineMigration",
           "signature": "<TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration | calls: <TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "defineObservationContract",
+          "signature": "(declaration: ObservationContract) => ObservationContract | calls: (declaration: ObservationContract) => ObservationContract"
         },
         {
           "classification": "supported",
@@ -5410,6 +5428,12 @@
           "kind": "function",
           "name": "defineVectorStoreAdapter",
           "signature": "<TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter | calls: <TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "defineVerdictContract",
+          "signature": "(declaration: VerdictContract) => VerdictContract | calls: (declaration: VerdictContract) => VerdictContract"
         },
         {
           "classification": "advanced_export",
@@ -5602,6 +5626,12 @@
           "kind": "function",
           "name": "describeItemOwnershipConflict",
           "signature": "(pmRoot: string, itemId: string, assignee: string) => Promise<string> | calls: (pmRoot: string, itemId: string, assignee: string) => Promise<string>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "describeObservationCost",
+          "signature": "(contract: ObservationContract) => ObservationCostDescription | calls: (contract: ObservationContract) => ObservationCostDescription"
         },
         {
           "classification": "supported",
@@ -5916,6 +5946,42 @@
           "signature": "(graph: RelationshipGraph, source: string, target: string, options?: GraphPathOptions) => RelationshipQueryResult<RelationshipPath[]> | calls: (graph: RelationshipGraph, source: string, target: string, options?: GraphPathOptions) => RelationshipQueryResult<RelationshipPath[]>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "EpisodeActionReceipt",
+          "signature": "export interface EpisodeActionReceipt<TOutput> { state_id: string; output: TOutput; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "EpisodeLimits",
+          "signature": "export interface EpisodeLimits { max_actions: number; max_observations: number; max_tokens_per_observation: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "EpisodeResetReceipt",
+          "signature": "export interface EpisodeResetReceipt { workspace_id: string; state_id: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "EpisodeRuntimeAdapter",
+          "signature": "export interface EpisodeRuntimeAdapter<TAction, TOutput = unknown> { reset(recipe: WorkspaceRecipe): Promise<EpisodeResetReceipt>; execute(action: TAction): Promise<EpisodeActionReceipt<TOutput>>; readRecordedState(): Promise<WorkspaceRecordedState>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "EpisodeSpecification",
+          "signature": "export interface EpisodeSpecification { schema: typeof PM_EPISODE_SCHEMA; id: string; version: number; mode: \"benchmark\" | \"evaluation\" | \"training\" | \"scale_transfer\"; recipe: WorkspaceRecipe; task_item_ids: readonly string[]; observable_fields: readonly string[]; withheld_fields: readonly string[]; observation: ObservationContract; verdict: VerdictContract; limits: EpisodeLimits; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "EpisodeTrajectoryEntry",
+          "signature": "export interface EpisodeTrajectoryEntry { sequence: number; kind: \"reset\" | \"observation\" | \"action\" | \"verdict\" | \"close\"; state_id: string; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "estimatePmOutputTokens",
@@ -6034,6 +6100,12 @@
           "kind": "function",
           "name": "evaluateTransition",
           "signature": "(input: EvaluateTransitionInput) => EvaluateTransitionResult | calls: (input: EvaluateTransitionInput) => EvaluateTransitionResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "evaluateVerdictContract",
+          "signature": "(contract: VerdictContract, recorded: WorkspaceRecordedState) => VerdictResult | calls: (contract: VerdictContract, recorded: WorkspaceRecordedState) => VerdictResult"
         },
         {
           "classification": "contract_data",
@@ -9960,6 +10032,60 @@
           "signature": "export interface NpmInstallSource { kind: \"npm\"; input: string; spec: string; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationCalibration",
+          "signature": "export interface ObservationCalibration { basis: \"emitted_bytes\"; samples: readonly number[]; expected_emitted_bytes: number; tolerance_bytes: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationContract",
+          "signature": "export interface ObservationContract { schema: typeof PM_OBSERVATION_SCHEMA; id: string; version: number; reads: readonly ObservationReadDeclaration[]; calibration: ObservationCalibration; corpus_dependence: ObservationCorpusDependence; tiers: readonly ObservationTier[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ObservationCorpusDependence",
+          "signature": "export type ObservationCorpusDependence = { readonly kind: \"independent\"; } | { readonly kind: \"bounded\"; readonly dimension: string; readonly maximum: number; };"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationCostDescription",
+          "signature": "export interface ObservationCostDescription { contract_id: string; contract_version: number; guaranteed_ceiling_tokens: number; expected_emitted_bytes: number; expected_tokens: number; tolerance_bytes: number; calibration_basis: \"emitted_bytes\"; corpus_dependence: ObservationCorpusDependence; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationReadDeclaration",
+          "signature": "export interface ObservationReadDeclaration { command: string; budget_tokens: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationReceipt",
+          "signature": "export interface ObservationReceipt { contract_id: string; contract_version: number; served_tier: string | null; degraded: boolean; attempted_tiers: readonly string[]; emitted_bytes: number | null; estimated_tokens: number | null; calibration_basis: \"emitted_bytes\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationRequest",
+          "signature": "export interface ObservationRequest { budget_tokens: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ObservationResult",
+          "signature": "export type ObservationResult<T> = ServedObservation<T> | RefusedObservation;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ObservationTier",
+          "signature": "export interface ObservationTier { id: string; max_tokens: number; fields: readonly string[]; }"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "OnIndexHook",
@@ -10006,6 +10132,12 @@
           "kind": "function",
           "name": "openMcpRequestState",
           "signature": "(value: string, secret: string | Uint8Array, expected: { method: string; parameterDigest: string; principal: string; nowMs?: number; }) => PmMcpRequestStatePayload | calls: (value: string, secret: string | Uint8Array, expected: { method: string; parameterDigest: string; principal: string; nowMs?: number; }) => PmMcpRequestStatePayload"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "openPmEpisode",
+          "signature": "<TAction, TOutput = unknown>(specification: EpisodeSpecification, adapter: EpisodeRuntimeAdapter<TAction, TOutput>) => Promise<PmEpisodeSession<TAction, TOutput>> | calls: <TAction, TOutput = unknown>(specification: EpisodeSpecification, adapter: EpisodeRuntimeAdapter<TAction, TOutput>) => Promise<PmEpisodeSession<TAction, TOutput>>"
         },
         {
           "classification": "contract_data",
@@ -10932,6 +11064,12 @@
           "signature": "readonly PmToolAction[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_EPISODE_SCHEMA",
+          "signature": "\"pm.agent-episode/v1\""
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_ERROR_CODE_CATALOG",
@@ -11196,6 +11334,12 @@
           "signature": "readonly [{ readonly action: \"append\"; readonly history_scope: \"item\"; }, { readonly action: \"claim\"; readonly history_scope: \"item\"; }, { readonly action: \"close\"; readonly history_scope: \"item\"; }, { readonly action: \"close-many\"; readonly history_scope: \"item\"; }, { readonly action: \"close-task\"; readonly history_scope: \"item\"; }, { readonly action: \"comments\"; readonly history_scope: \"conditional\"; }, { readonly action: \"config\"; readonly history_scope: \"conditional\"; }, { readonly action: \"copy\"; readonly history_scope: \"item\"; }, { readonly action: \"create\"; readonly history_scope: \"item\"; }, { readonly action: \"delete\"; readonly history_scope: \"item\"; }, { readonly action: \"deps\"; readonly history_scope: \"conditional\"; }, { readonly action: \"discover\"; readonly history_scope: \"item\"; }, { readonly action: \"docs\"; readonly history_scope: \"conditional\"; }, { readonly action: \"files\"; readonly history_scope: \"conditional\"; }, { readonly action: \"focus\"; readonly history_scope: \"conditional\"; }, { readonly action: \"gc\"; readonly history_scope: \"conditional\"; }, { readonly action: \"history-compact\"; readonly history_scope: \"history\"; }, { readonly action: \"history-author-acknowledge\"; readonly history_scope: \"workspace\"; }, { readonly action: \"history-redact\"; readonly history_scope: \"history\"; }, { readonly action: \"history-repair\"; readonly history_scope: \"history\"; }, { readonly action: \"init\"; readonly history_scope: \"workspace\"; }, { readonly action: \"install\"; readonly history_scope: \"conditional\"; }, { readonly action: \"learnings\"; readonly history_scope: \"conditional\"; }, { readonly action: \"notes\"; readonly history_scope: \"conditional\"; }, { readonly action: \"package\"; readonly history_scope: \"conditional\"; }, { readonly action: \"pause-task\"; readonly history_scope: \"item\"; }, { readonly action: \"plan\"; readonly history_scope: \"conditional\"; }, { readonly action: \"profile\"; readonly history_scope: \"conditional\"; }, { readonly action: \"release\"; readonly history_scope: \"item\"; }, { readonly action: \"restore\"; readonly history_scope: \"item\"; }, { readonly action: \"schema\"; readonly history_scope: \"conditional\"; }, { readonly action: \"start-task\"; readonly history_scope: \"item\"; }, { readonly action: \"templates\"; readonly history_scope: \"conditional\"; }, { readonly action: \"test\"; readonly history_scope: \"conditional\"; }, { readonly action: \"test-all\"; readonly history_scope: \"conditional\"; }, { readonly action: \"update\"; readonly history_scope: \"item\"; }, { readonly action: \"update-many\"; readonly history_scope: \"item\"; }, { readonly action: \"upgrade\"; readonly history_scope: \"conditional\"; }]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_OBSERVATION_SCHEMA",
+          "signature": "\"pm.agent-observation/v1\""
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_OUTPUT_BUDGET_CLASSES",
@@ -11392,6 +11536,12 @@
           "kind": "value",
           "name": "PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES",
           "signature": "ReadonlySet<string>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_VERDICT_SCHEMA",
+          "signature": "\"pm.agent-verdict/v1\""
         },
         {
           "classification": "advanced_export",
@@ -11854,6 +12004,12 @@
           "kind": "interface",
           "name": "PmDiagnosticOutputReceipt",
           "signature": "export interface PmDiagnosticOutputReceipt { diagnostic_class: PmDiagnosticOutputClass; format: \"json\" | \"text\"; budget: number; budget_source: \"default\" | \"explicit\"; original_estimated_tokens: number; estimated_tokens: number; truncated: boolean; degradation_steps: PmDiagnosticDegradationStep[]; omitted_fields: string[]; omitted_fields_overflow_count?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmEpisodeSession",
+          "signature": "export interface PmEpisodeSession<TAction, TOutput> { observe(): Promise<ObservationResult<RecordedStateObject>>; step(action: TAction): Promise<EpisodeActionReceipt<TOutput>>; score(): Promise<VerdictResult>; close(): Promise<ClosedEpisode>; }"
         },
         {
           "classification": "contract_data",
@@ -12816,6 +12972,12 @@
           "signature": "(slots: readonly PmCommandPositionalSlotContract[]) => string | calls: (slots: readonly PmCommandPositionalSlotContract[]) => string"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PredicateVerdict",
+          "signature": "export interface PredicateVerdict { id: string; outcome: \"satisfied\" | \"violated\"; evidence_pointer: string; evidence_digest: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "preflightExtension",
@@ -13686,6 +13848,12 @@
           "signature": "(options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "RecordedStateObject",
+          "signature": "export type RecordedStateObject = Readonly<Record<string, unknown>>;"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "recordFocusSemanticAttribution",
@@ -13744,6 +13912,12 @@
           "kind": "function",
           "name": "refreshSearchArtifactsForMutation",
           "signature": "(pmRoot: string, itemIds: string[], options?: RefreshSearchArtifactsForMutationOptions) => Promise<SearchMutationArtifactRefreshResult> | calls: (pmRoot: string, itemIds: string[], options?: RefreshSearchArtifactsForMutationOptions) => Promise<SearchMutationArtifactRefreshResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RefusedObservation",
+          "signature": "export interface RefusedObservation { status: \"refused\"; reason: \"no_declared_tier_fits_budget\"; receipt: ObservationReceipt; }"
         },
         {
           "classification": "supported",
@@ -17094,6 +17268,18 @@
           "signature": "(rows: readonly unknown[], trailer: PmNdjsonStreamTrailerInput) => string | calls: (rows: readonly unknown[], trailer: PmNdjsonStreamTrailerInput) => string"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "serveDeclaredObservation",
+          "signature": "<T>(contract: ObservationContract, collect: (tier: ObservationTier) => Promise<T>, request: ObservationRequest) => Promise<ObservationResult<T>> | calls: <T>(contract: ObservationContract, collect: (tier: ObservationTier) => Promise<T>, request: ObservationRequest) => Promise<ObservationResult<T>>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ServedObservation",
+          "signature": "export interface ServedObservation<T> { status: \"served\"; payload: T; receipt: ObservationReceipt; }"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ServiceOverride",
@@ -18546,6 +18732,30 @@
           "signature": "export interface VectorStoreUpsertPoint { id: string; vector: number[]; payload?: Record<string, unknown>; [key: string]: unknown; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "VerdictComposition",
+          "signature": "export interface VerdictComposition { operator: \"all\" | \"any\"; predicate_ids: readonly string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "VerdictContract",
+          "signature": "export interface VerdictContract { schema: typeof PM_VERDICT_SCHEMA; id: string; version: number; predicates: readonly VerdictPredicate[]; composition: VerdictComposition; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "VerdictPredicate",
+          "signature": "export type VerdictPredicate = { readonly id: string; readonly kind: \"field_equals\"; readonly path: string; readonly expected: unknown; } | { readonly id: string; readonly kind: \"field_present\"; readonly path: string; } | { readonly id: string; readonly kind: \"field_absent\"; readonly path: string; };"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "VerdictResult",
+          "signature": "export interface VerdictResult { contract_id: string; contract_version: number; snapshot_id: string; outcome: \"satisfied\" | \"violated\" | \"not_applicable\"; score: number | null; policy: \"verdict_only_no_reward\"; reason?: \"no_predicates_declared\"; predicates: readonly PredicateVerdict[]; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "verifyCliFlagInvocationParity",
@@ -18862,6 +19072,12 @@
           "kind": "interface",
           "name": "WorkspaceRecipeOperation",
           "signature": "export interface WorkspaceRecipeOperation { action: string; input: Readonly<Record<string, WorkspaceRecipeJsonValue>>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceRecordedState",
+          "signature": "export interface WorkspaceRecordedState { snapshot_id: string; state: RecordedStateObject; }"
         },
         {
           "classification": "supported",

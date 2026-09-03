@@ -11,6 +11,8 @@ retained re-anchor evidence are tracked by
 [pm-aka8m7](../.agents/pm/issues/pm-aka8m7.toon); preferred-era receipt-summary
 compatibility is tracked by
 [pm-wn3ee5](../.agents/pm/issues/pm-wn3ee5.toon).
+Lossless concurrent acceptance-criteria composition is tracked by
+[pm-inn5y5](../.agents/pm/issues/pm-inn5y5.toon).
 
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
@@ -84,6 +86,14 @@ uses the two-part project-policy plus per-run override documented in
 boundary for append-like data that becomes executable after a merge; ordinary
 notes, files, and other non-executable collections retain normal set-union
 behavior.
+
+Although `acceptance_criteria` is serialized as a semicolon-delimited scalar
+for backward compatibility, the item driver treats its parsed criteria as a
+collection. Independent additions compose in branch order, removals made by
+either side remain removed, the field is reported in `union_fields`, and a
+lossless merge does not create a scalar conflict decision. This gives repeated
+`pm update --add-ac` mutations the same multi-branch preservation guarantee as
+native append-like metadata without a storage migration.
 
 When both sides change the same item scalar differently, the driver writes the same stable value regardless of which branch Git labels ours or theirs, but exits nonzero. Item results and receipts expose the caller's `requested_preference`; the per-decision `retained` and `discarded` values or hashes are authoritative because stable value order can retain either side. Readers normalize the legacy receipt key `preferred`, while new receipts no longer emit it. JSON leaf conflicts retain the explicit preferred-side policy. Git keeps either path conflicted so a human or coordinating agent must review the discarded value and explicitly `git add` the resolution. This correction is tracked by [pm-qckpnq](../.agents/pm/issues/pm-qckpnq.toon).
 

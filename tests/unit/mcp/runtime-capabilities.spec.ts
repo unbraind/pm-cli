@@ -544,6 +544,35 @@ describe("runtime MCP capabilities", () => {
 
   it("promotes pm_run only for a visible activated extension action", async () => {
     await withTempPmPath(async (context) => {
+      const missingPmRoot = path.join(
+        context.tempRoot,
+        "missing-workspace",
+        ".agents",
+        "pm",
+      );
+      await expect(
+        resolveMcpToolAccess(
+          TOOLS,
+          "pm_run",
+          { cwd: context.tempRoot, path: missingPmRoot },
+          {},
+        ),
+      ).resolves.toEqual({ profile: "core", available: false });
+      await expect(
+        handleRequest({
+          id: "missing-mutation-workspace",
+          method: "tools/call",
+          params: {
+            name: "pm_create",
+            arguments: {
+              cwd: context.tempRoot,
+              path: missingPmRoot,
+              title: "Cannot create outside an initialized tracker",
+            },
+          },
+        }),
+      ).rejects.toThrow(/not initialized|does not exist/u);
+
       await writeTestExtension({
         root: path.join(context.pmPath, "extensions"),
         directory: "mcp-core-command",

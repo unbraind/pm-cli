@@ -2,11 +2,13 @@ id: pm-inn5y5
 title: "Acceptance criteria are documented as merging like tags but are stored as one delimiter-joined scalar, so concurrent criteria additions from different branches are silently discarded"
 description: "src/core/item/parse.ts:92 documents applyAcceptanceCriteriaMutations as giving --add-ac/--remove-ac 'tag-API parity' with the explicit promise that 'disjoint additions merge cleanly across branches'. Tags have that property because 'tags' is in ITEM_UNION_COLLECTION_FIELDS and merges by element identity. acceptance_criteria is not in that list: it is stored as a single string joined with '; ', so it takes the scalar three-way path and resolves toward the preferred side like any other scalar. The documented guarantee is therefore false for the one field whose CLI grammar is explicitly list-shaped. Criteria are the field close-validation reads, so the loss is silent in exactly the workflow that is supposed to be enforced."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: acceptance-criteria,concurrency,data-loss,merge
 created_at: "2026-08-02T21:05:22.040Z"
-updated_at: "2026-08-02T21:10:20.937Z"
+updated_at: "2026-09-03T17:40:42.440Z"
+closed_at: "2026-09-03T17:40:41.940Z"
+completed_at: "2026-09-03T17:40:41.940Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Concurrent disjoint --add-ac additions on separate branches all survive a merge, or the delimiter-joined scalar semantics are documented at src/core/item/parse.ts, in pm update --help, and in the merge guidance; Every field whose CLI grammar exposes additive and subtractive mutation is either a union collection or is listed as a known-lossy scalar in one enumerable place the merge driver and the docs both read; A merge that discards acceptance criteria names acceptance_criteria and the number of discarded criteria in the receipt guidance rather than reporting a generic scalar conflict"
@@ -20,8 +22,9 @@ confidence: high
 severity: high
 environment: git merge via pm merge drivers; pm 2026.8.2
 repro_steps: "Create an item on a base commit, branch three ways, run pm update <id> --add-ac 'criterion from A|B|C' on each branch, commit, then merge all three branches into one clone."
-expected_result: "All three disjoint criteria survive, matching the tag-API parity documented at src/core/item/parse.ts:92."
-actual_result: "Exactly one criterion survives: acceptance_criteria = 'criterion from A'. The other two appear only as discarded_hash values in the merge receipt. No warning names acceptance_criteria as a lossy field."
+resolution: "The three-way item merge parses acceptance criteria into canonical elements, composes concurrent additions and removals, preserves legacy scalar serialization, reports the field as a union, and is protected by a focused negative-control gate."
+expected_result: Concurrent additive and subtractive acceptance-criteria mutations merge without silent loss and expose field-specific merge evidence.
+actual_result: "Three-branch additions and both-side removals pass focused regression coverage without a scalar conflict decision; exact coverage, typecheck, static assurance, and defect-evidence gates pass."
 component: core/item/parse
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-dlx7v7,discovered_from,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
@@ -29,4 +32,37 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-htbetn,related,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
   pm-wenq,related,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-03T17:36:05.568Z","harness:codex","Completion evidence: TDD reproduced scalar loss, then the item merge driver began parsing acceptance_criteria through the canonical parser and applying the same add/remove-aware three-way union used by native collections while preserving the legacy serialized shape. Multi-branch A/B/C additions survive, either-side removals remain removed, union_fields names acceptance_criteria, and no scalar conflict decision is emitted. Focused linked tests passed 3/3; repo-wide coverage passed exactly 59387/59387 lines, 61714/61714 statements, 12840/12840 functions, and 46669/46669 branches; typecheck and the complete static/graph/history assurance pipeline passed."
+learnings[1]{created_at,author,text}:
+  "2026-09-03T17:36:06.552Z","harness:codex","A delimiter-backed field with additive CLI grammar must be merged as parsed elements, not as its serialized scalar; storage compatibility does not justify lossy concurrency semantics."
+files[2]{path,scope,note}:
+  src/sdk/merge/three-way.ts,project,SDK-owned semantic merge for delimited acceptance criteria
+  tests/unit/sdk/merge/acceptance-criteria-merge.spec.ts,project,Multi-branch lossless criteria regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/acceptance-criteria-merge.spec.ts tests/unit/sdk/merge-direction-contract.spec.ts,project,120,"harness:codex","2026-09-03T17:02:21.652Z",local_mutation,feat/executable-criteria-verdict-episodes
+test_runs[1]:
+  - run_id: test-local-mtlt2ay2-i9pamw
+    kind: test
+    status: passed
+    started_at: "2026-09-03T17:34:57.481Z"
+    finished_at: "2026-09-03T17:35:03.914Z"
+    recorded_at: "2026-09-03T17:35:03.914Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/acceptance-criteria-merge.spec.ts tests/unit/sdk/merge-direction-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated release changelog entry for lossless acceptance-criteria merges
+  docs/MERGE_SAFETY.md,project,Acceptance-criteria merge contract and receipt semantics
+close_reason: "Lossless collection semantics now match the additive acceptance-criteria CLI contract, with governed defect evidence."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-inn5y5
+  gate_id: lossless-acceptance-criteria-merge
+  negative_control: Route acceptance_criteria through scalar three-way resolution or remove the multi-branch and either-side-removal regression assertions; the focused merge test and exact coverage gate must fail.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/acceptance-criteria-merge.spec.ts tests/unit/sdk/merge-direction-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
