@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:36.495Z"
-updated_at: "2026-09-03T18:07:08.462Z"
+updated_at: "2026-09-03T18:20:45.910Z"
 author: "harness:codex"
 acceptance_criteria: "Both merge directions converge to the same scalar value; the ordering key is declared and uses meaningful recorded evidence rather than spelling; --prefer behavior and exclusions are machine-readable and match help; status and priority regressions cover older/newer writes, equal timestamps, both directions, and both preference values; receipts remain truthful and privacy-safe"
 parent: pm-dj98
@@ -18,8 +18,7 @@ repro_steps: "Create one item, diverge two branches, update the same scalar at d
 expected_result: "A documented deterministic policy preserves direction-independent convergence while choosing by meaningful recorded evidence, and any advertised preference control either affects its declared class or explicitly excludes it."
 actual_result: "stable_value_order retains lexicographically smaller statuses and numeric values independent of write time, merge direction, and --prefer."
 component: sdk/merge
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
-  pm-dlx7v7,related,"2026-09-03T18:06:36.495Z","harness:codex","cli:create:dep",detected
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-qckpnq,recurs_from,"2026-09-03T18:06:36.495Z","harness:codex","cli:create:dep",detected
 comments[2]{created_at,author,text}:
   "2026-09-03T18:06:36.495Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1184. All-status duplicate check searched scalar merge, stable value order, preference, recency, and direction lineages; pm-qckpnq closed the truthful requested_preference receipt field and pm-dlx7v7 closed direction independence, but neither makes the winning scalar policy recency-aware. This is new recurrence/semantic-policy work, linked rather than reopening shipped history."

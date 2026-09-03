@@ -338,8 +338,8 @@ function assertNonEmpty(value: string, label: string): void {
 /** Recursively freeze a structured clone without mutating caller input. */
 function frozenCopy<T>(value: T): T {
   if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
-    for (const nested of Object.values(value)) frozenCopy(nested);
     Object.freeze(value);
+    for (const nested of Object.values(value)) frozenCopy(nested);
   }
   return value;
 }
@@ -574,6 +574,24 @@ function jsonPointer(path: string): string {
     .join("/")}`;
 }
 
+/** Reject equality operands that cannot survive portable JSON storage. */
+function assertPortableExpectedValue(predicate: VerdictPredicate): void {
+  if (predicate.kind !== "field_equals") return;
+  let serializedExpected: string | undefined;
+  try {
+    serializedExpected = JSON.stringify(predicate.expected);
+  } catch {
+    throw new Error(
+      `Expected value for verdict predicate ${predicate.id} must be JSON serializable.`,
+    );
+  }
+  if (serializedExpected === undefined) {
+    throw new Error(
+      `Expected value for verdict predicate ${predicate.id} must be JSON serializable.`,
+    );
+  }
+}
+
 /** Validate, clone, and freeze a portable total-verdict declaration. */
 export function defineVerdictContract(
   declaration: VerdictContract,
@@ -599,6 +617,7 @@ export function defineVerdictContract(
     }
     if (predicateIds.has(predicate.id))
       throw new Error(`Duplicate verdict predicate: ${predicate.id}.`);
+    assertPortableExpectedValue(predicate);
     predicateIds.add(predicate.id);
   }
   if (
@@ -715,15 +734,24 @@ export function defineEpisodeSpecification(
     declaration.limits.max_tokens_per_observation,
     "episode.limits.max_tokens_per_observation",
   );
-  const withheld = new Set(declaration.withheld_fields);
   for (const field of declaration.observable_fields) {
     parseFieldPath(field, "episode.observable_fields");
-    if (withheld.has(field)) {
-      throw new Error(`Observable field ${field} is also a withheld field.`);
-    }
   }
   for (const field of declaration.withheld_fields) {
     parseFieldPath(field, "episode.withheld_fields");
+  }
+  for (const observable of declaration.observable_fields) {
+    const overlap = declaration.withheld_fields.find(
+      (withheld) =>
+        observable === withheld ||
+        observable.startsWith(`${withheld}.`) ||
+        withheld.startsWith(`${observable}.`),
+    );
+    if (overlap !== undefined) {
+      throw new Error(
+        `Observable field ${observable} overlaps withheld field ${overlap}.`,
+      );
+    }
   }
   for (const tier of declaration.observation.tiers) {
     for (const field of tier.fields) {
@@ -821,6 +849,10 @@ export async function openPmEpisode<TAction, TOutput = unknown>(
 
   const evaluate = async (): Promise<VerdictResult> => {
     if (closed) throw new Error("episode is already closed.");
+    if (observations >= specification.limits.max_observations) {
+      throw new Error("episode exceeded limits.max_observations.");
+    }
+    observations += 1;
     const recorded = await adapter.readRecordedState();
     const result = evaluateVerdictContract(specification.verdict, recorded);
     trajectory.push({

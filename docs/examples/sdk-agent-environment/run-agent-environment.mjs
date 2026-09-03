@@ -23,6 +23,7 @@ class PublicSdkAdapter {
     const created = await runWithWorkspaceRecipe(recipe, async () => {
       await this.client.init("environment");
       return this.client.create({
+        id: "pm-created-by-adapter",
         title: "Complete the SDK environment task",
         type: "Task",
         status: "open",
@@ -118,7 +119,7 @@ try {
         tickMs: 1,
         operations: [],
       },
-      task_item_ids: ["created-by-adapter"],
+      task_item_ids: ["pm-created-by-adapter"],
       observable_fields: [
         "item.id",
         "item.title",

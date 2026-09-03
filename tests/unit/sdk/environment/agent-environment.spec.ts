@@ -414,6 +414,8 @@ describe("agent-environment SDK contracts", () => {
   });
 
   it("fails closed on malformed verdict declarations", () => {
+    const cyclicExpected: Record<string, unknown> = {};
+    cyclicExpected.self = cyclicExpected;
     const cases: VerdictContract[] = [
       { ...verdict, schema: "wrong" as typeof PM_VERDICT_SCHEMA },
       { ...verdict, id: "" },
@@ -457,6 +459,30 @@ describe("agent-environment SDK contracts", () => {
       {
         ...verdict,
         composition: { operator: "all", predicate_ids: ["closed", "unknown"] },
+      },
+      {
+        ...verdict,
+        predicates: [
+          {
+            id: "cyclic",
+            kind: "field_equals",
+            path: "item.value",
+            expected: cyclicExpected,
+          },
+        ],
+        composition: { operator: "all", predicate_ids: ["cyclic"] },
+      },
+      {
+        ...verdict,
+        predicates: [
+          {
+            id: "undefined",
+            kind: "field_equals",
+            path: "item.value",
+            expected: undefined,
+          },
+        ],
+        composition: { operator: "all", predicate_ids: ["undefined"] },
       },
     ];
 
@@ -528,25 +554,63 @@ describe("agent-environment SDK contracts", () => {
     ).toThrow(/withheld field/u);
   });
 
-  it("enforces observation and closed-session limits", async () => {
-    const session = await openPmEpisode(
+  it("rejects ancestor and descendant overlaps with withheld fields", () => {
+    for (const observableField of [
+      "grading",
+      "grading.expected_status.detail",
+    ]) {
+      expect(() =>
+        defineEpisodeSpecification({
+          ...episodeSpecification,
+          observable_fields: [observableField],
+        }),
+      ).toThrow(/overlaps withheld field/u);
+    }
+  });
+
+  it("charges observation and grading reads to one closed-session limit", async () => {
+    const observationLimited = await openPmEpisode(
       defineEpisodeSpecification({
         ...episodeSpecification,
         limits: { ...episodeSpecification.limits, max_observations: 1 },
       }),
       new MemoryEpisodeAdapter(),
     );
-    await session.observe();
-    await expect(session.observe()).rejects.toThrow(/max_observations/u);
-    const verdictResult = await session.score();
+    await observationLimited.observe();
+    await expect(observationLimited.observe()).rejects.toThrow(
+      /max_observations/u,
+    );
+    await expect(observationLimited.score()).rejects.toThrow(
+      /max_observations/u,
+    );
+
+    const scoreLimited = await openPmEpisode(
+      defineEpisodeSpecification({
+        ...episodeSpecification,
+        limits: { ...episodeSpecification.limits, max_observations: 1 },
+      }),
+      new MemoryEpisodeAdapter(),
+    );
+    const verdictResult = await scoreLimited.score();
     expect(verdictResult.outcome).toBe("violated");
-    await session.close();
-    await expect(session.observe()).rejects.toThrow(/already closed/u);
-    await expect(session.step({ status: "open" })).rejects.toThrow(
+    await expect(scoreLimited.score()).rejects.toThrow(/max_observations/u);
+    await expect(scoreLimited.close()).rejects.toThrow(/max_observations/u);
+
+    const closedSession = await openPmEpisode(
+      defineEpisodeSpecification({
+        ...episodeSpecification,
+        limits: { ...episodeSpecification.limits, max_observations: 2 },
+      }),
+      new MemoryEpisodeAdapter(),
+    );
+    await closedSession.observe();
+    await closedSession.close();
+    await expect(closedSession.observe()).rejects.toThrow(/already closed/u);
+    await expect(closedSession.step({ status: "open" })).rejects.toThrow(
       /already closed/u,
     );
-    await expect(session.score()).rejects.toThrow(/already closed/u);
-    await expect(session.close()).rejects.toThrow(/already closed/u);
+    await expect(closedSession.score()).rejects.toThrow(/already closed/u);
+    await expect(closedSession.close()).rejects.toThrow(/already closed/u);
   });
 
   it("fails closed on malformed episode declarations", () => {
