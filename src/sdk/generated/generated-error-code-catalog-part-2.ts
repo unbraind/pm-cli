@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_cli_flag",
-    meaning: "Missing cli flag condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_cli_flag",
-    aliases: [],
-  },
-  {
     code: "missing_destination",
     meaning: "Missing destination condition.",
     stability: "provisional",
@@ -542,6 +529,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
     canonical_code: "profile_title_empty",
+    aliases: [],
+  },
+  {
+    code: "project_runtime_history_epoch_incompatible",
+    meaning: "Project runtime history epoch incompatible condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/environment/project-runtime-compatibility.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "project_runtime_history_epoch_incompatible",
     aliases: [],
   },
   {

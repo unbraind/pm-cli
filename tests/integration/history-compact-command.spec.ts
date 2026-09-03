@@ -10,12 +10,14 @@ import {
 import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
 import * as replayModule from "../../src/core/history/replay.js";
 import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";
+import { sealHistoryRecord } from "../../src/core/history/history.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import {
   withTempPmPath,
   type TempPmContext,
 } from "../helpers/withTempPmPath.js";
+import type { HistoryEntry } from "../../src/types.js";
 
 function createItem(context: TempPmContext, title: string): string {
   const result = context.runCli(
@@ -67,7 +69,7 @@ async function rewriteEntryTimestamps(
     if (index < timestamps.length) {
       parsed.ts = timestamps[index];
     }
-    return JSON.stringify(parsed);
+    return JSON.stringify(sealHistoryRecord(parsed as unknown as HistoryEntry));
   });
   await writeFile(file, `${rewritten.join("\n")}\n`, "utf8");
 }
@@ -113,6 +115,14 @@ describe("history-compact command", () => {
       const historyRaw = await readFile(getHistoryPath(context, id), "utf8");
       expect(historyRaw).toContain('"op":"history_compact_baseline"');
       expect(historyRaw).toContain('"op":"history_compact"');
+      const baseline = JSON.parse(historyRaw.split("\n")[0]!) as HistoryEntry;
+      expect(baseline.context?.history_compaction).toMatchObject({
+        contract_version: 1,
+        pruned_entry_count: before.count,
+        pruned_stream_digest: expect.any(String),
+        retained_proof: "stream_digest_and_checkpoint",
+        limitation: "individual_pruned_entries_require_pre_compaction_stream",
+      });
 
       const restore = context.runCli(["restore", id, "1", "--json"], {
         expectJson: true,
@@ -154,7 +164,13 @@ describe("history-compact command", () => {
       );
       expect(after.verification?.ok).toBe(true);
       expect(after.history[0]?.op).toBe("history_compact_baseline");
-      expect(after.history.some((entry) => entry.op === "append")).toBe(true);
+      const retainedAppend = after.history.find(
+        (entry) => entry.op === "append",
+      );
+      expect(retainedAppend).toMatchObject({
+        record_hash_version: expect.any(Number),
+        record_hash: expect.any(String),
+      });
       expect(after.history[after.history.length - 1]?.op).toBe(
         "history_compact",
       );

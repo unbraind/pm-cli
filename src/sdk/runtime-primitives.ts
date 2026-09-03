@@ -106,12 +106,22 @@ export {
 export {
   appendHistoryEntry,
   CURRENT_HISTORY_ITEM_HASH_VERSION,
+  CURRENT_HISTORY_RECORD_HASH_VERSION,
   createHistoryEntry,
   hashDocument,
   hashDocumentForVersion,
   hashEmptyDocument,
+  hashHistoryPatch,
+  hashHistoryRecord,
+  hashHistoryStream,
+  resealHistoryRewrite,
+  sealHistoryRecord,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
+  SUPPORTED_HISTORY_RECORD_HASH_VERSIONS,
+  verifyHistoryRecordHash,
+  verifyHistoryRewriteEvidence,
   type HistoryItemHashVersion,
+  type HistoryRecordHashVersion,
 } from "../core/history/history.js";
 export { readHistoryEntries } from "../core/history/read.js";
 export {
@@ -136,6 +146,7 @@ export {
 } from "../core/history/workspace-history.js";
 export {
   normalizeReplayPatchOps,
+  reanchorHistoryEntries,
   replayToCanonicalItemDocument,
   replayToItemDocument,
   toReplayDocument,

@@ -10,7 +10,11 @@ import {
   readFileIfExists,
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
-import { createHistoryEntry } from "../core/history/history.js";
+import {
+  createHistoryEntry,
+  resealHistoryRewrite,
+  verifyHistoryRecordHash,
+} from "../core/history/history.js";
 import { invalidateHistoryDriftCacheForPath } from "../core/history/drift-cache.js";
 import { executeHistoryRewrite } from "../core/history/history-rewrite.js";
 import {
@@ -49,7 +53,12 @@ import {
 } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { resolveAuthor } from "../core/shared/author.js";
-import type { HistoryEntry, ItemDocument } from "../types/index.js";
+import type {
+  HistoryEntry,
+  HistoryPatchOp,
+  HistoryReanchorEvidence,
+  ItemDocument,
+} from "../types/index.js";
 
 /** Documents the history redact command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRedactCommandOptions {
@@ -375,6 +384,31 @@ function redactUnknownValue(
   };
 }
 
+function redactHistoryPatch(
+  patch: HistoryPatchOp[],
+  rules: RedactionRule[],
+  replacement: string,
+): { patch: HistoryPatchOp[]; replacements: number } {
+  let replacements = 0;
+  const redactedPatch = patch.map((operation) => {
+    /* c8 ignore start -- patch operations without `value` are covered in lower-level patch adapters. */
+    if (!Object.prototype.hasOwnProperty.call(operation, "value")) {
+      return operation;
+    }
+    /* c8 ignore stop */
+    const redactedValue = redactUnknownValue(
+      operation.value,
+      rules,
+      replacement,
+    );
+    replacements += redactedValue.replacements;
+    return redactedValue.replacements > 0
+      ? { ...operation, value: redactedValue.value }
+      : operation;
+  });
+  return { patch: redactedPatch, replacements };
+}
+
 function inspectHistoryIntegrity(
   entries: HistoryEntry[],
 ): HistoryIntegritySnapshot {
@@ -408,9 +442,11 @@ function redactHistoryEntry(
   entry: HistoryEntry;
   replacements: number;
   changed: boolean;
+  reanchorEvidenceRedacted: boolean;
 } {
   let replacements = 0;
   let changed = false;
+  let reanchorEvidenceRedacted = false;
   let nextMessage = entry.message;
 
   if (typeof entry.message === "string") {
@@ -426,36 +462,39 @@ function redactHistoryEntry(
     }
   }
 
-  const nextPatch = entry.patch.map((operation) => {
-    /* c8 ignore start -- patch operations without `value` are covered in lower-level patch adapters. */
-    if (!Object.prototype.hasOwnProperty.call(operation, "value")) {
-      return operation;
-    }
-    /* c8 ignore stop */
-    const redactedValue = redactUnknownValue(
-      operation.value,
-      rules,
-      replacement,
-    );
-    replacements += redactedValue.replacements;
-    if (redactedValue.replacements > 0) {
-      changed = true;
-      return {
-        ...operation,
-        value: redactedValue.value,
-      };
-    }
-    return operation;
-  });
+  const redactedPatch = redactHistoryPatch(entry.patch, rules, replacement);
+  replacements += redactedPatch.replacements;
+  changed ||= redactedPatch.replacements > 0;
+
+  const nextReanchorEvidence = entry.reanchor_evidence?.map(
+    (evidence): HistoryReanchorEvidence => {
+      if (!evidence.patch) return evidence;
+      const redactedEvidencePatch = redactHistoryPatch(
+        evidence.patch,
+        rules,
+        replacement,
+      );
+      replacements += redactedEvidencePatch.replacements;
+      changed ||= redactedEvidencePatch.replacements > 0;
+      if (redactedEvidencePatch.replacements === 0) return evidence;
+      reanchorEvidenceRedacted = true;
+      const { patch: _sensitivePatch, ...digestOnlyEvidence } = evidence;
+      return digestOnlyEvidence;
+    },
+  );
 
   return {
     entry: {
       ...entry,
       message: nextMessage,
-      patch: nextPatch,
+      patch: redactedPatch.patch,
+      ...(nextReanchorEvidence
+        ? { reanchor_evidence: nextReanchorEvidence }
+        : {}),
     },
     replacements,
     changed,
+    reanchorEvidenceRedacted,
   };
 }
 
@@ -470,7 +509,15 @@ function rewriteHistoryEntries(
   const rewrittenEntries: HistoryEntry[] = [];
 
   for (let index = 0; index < entries.length; index += 1) {
-    const redacted = redactHistoryEntry(entries[index], rules, replacement);
+    const original = entries[index];
+    const recordVerification = verifyHistoryRecordHash(original);
+    if (!recordVerification.ok) {
+      throw new PmCliError(
+        `history-redact refuses invalid immutable record ${index + 1} (${recordVerification.error}).`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    const redacted = redactHistoryEntry(original, rules, replacement);
     replacements += redacted.replacements;
     if (redacted.changed) {
       entriesChanged += 1;
@@ -483,11 +530,19 @@ function rewriteHistoryEntries(
       redacted.entry.op,
     );
     const afterHash = replayHash(replay);
-    rewrittenEntries.push({
-      ...redacted.entry,
-      before_hash: beforeHash,
-      after_hash: afterHash,
-    });
+    rewrittenEntries.push(
+      resealHistoryRewrite(
+        original,
+        {
+          ...redacted.entry,
+          before_hash: beforeHash,
+          after_hash: afterHash,
+        },
+        {
+          retainPriorRecordHash: !redacted.reanchorEvidenceRedacted,
+        },
+      ),
+    );
   }
 
   return {

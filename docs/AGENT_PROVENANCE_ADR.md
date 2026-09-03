@@ -10,7 +10,9 @@ Implementation lineage:
 resolution and patch-free historical reads implemented by
 [pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
 [pm-v8gfi7](../.agents/pm/issues/pm-v8gfi7.toon), and
-[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon). Cross-harness adapters and
+[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon). Stable Claude session
+discovery across child working directories is tracked by
+[pm-l7m7k5](../.agents/pm/issues/pm-l7m7k5.toon). Cross-harness adapters and
 operator-managed probe/vocabulary controls are tracked by
 [pm-c0lrdm](../.agents/pm/features/pm-c0lrdm.toon) and
 [pm-yds9dt](../.agents/pm/chores/pm-yds9dt.toon).
@@ -56,7 +58,13 @@ from literal descriptor keys, trusted caller data, or a named bounded resolver.
 Detection does not spawn processes, traverse process trees, evaluate user
 regexes, or access the network. The built-in Claude and Codex resolvers read
 only bounded windows of the current session's harness-owned JSONL file. Claude
-uses the recent tail to recover its recorded model/version. Codex uses the
+resolves an explicitly supplied transcript first, then the direct workspace
+coordinate, then performs a deterministic scan of at most 512 immediate
+project directories for the unique stable session id. This keeps provenance
+attached when the invocation cwd moves into a child package. No match is
+reported as `resolver_input_missing`; multiple matches are ambiguous and remain
+`resolver_failed` instead of selecting an arbitrary transcript. Claude uses the
+bounded session window to recover its recorded model/version. Codex uses the
 recent tail plus a bounded initial-head fallback for oversized sessions to
 recover allow-listed `turn_context.model` and `turn_context.effort` values.
 Both cap traversal, file bytes, lines, and line length, ignore all other fields,
@@ -69,6 +77,12 @@ telemetry. When a harness and session are both present, history may retain only
 the existing domain-separated, truncated `agent_instance` digest. Public
 telemetry continues to use installation-scoped hashes or presence booleans; it
 does not export raw provenance values.
+
+Health counts only resolvers that actually opened a uniquely resolved input as
+attempts. A sustained attempted-but-zero-success series remains advisory: it
+truthfully identifies a parser or provider-shape drift without treating missing
+descriptive metadata as authorization or item-state corruption. Missing-input
+events are classified separately and do not inflate that warning.
 
 ## Compatibility
 

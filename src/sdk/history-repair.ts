@@ -24,7 +24,11 @@ import {
   verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
-import type { HistoryItemHashVersion } from "../core/history/history.js";
+import {
+  sealHistoryRecord,
+  type HistoryItemHashVersion,
+} from "../core/history/history.js";
+import { classifyHistoryEvent } from "../core/history/event-classification.js";
 import { scanHistoryDrift } from "../core/history/drift-scan.js";
 import { invalidateHistoryDriftCache } from "../core/history/drift-cache.js";
 import { readHistoryEntries } from "../core/history/read.js";
@@ -636,7 +640,7 @@ function buildHistoryRepairEntries(params: {
     afterReplay,
     params.itemHashVersion,
   );
-  rewrittenEntries.push({
+  const auditEntry: HistoryEntry = {
     ts: nowIso(),
     author: params.author,
     op: params.auditOperation,
@@ -656,7 +660,13 @@ function buildHistoryRepairEntries(params: {
     ...(params.auditContext === undefined
       ? {}
       : { context: params.auditContext }),
-  });
+  };
+  rewrittenEntries.push(
+    sealHistoryRecord({
+      ...auditEntry,
+      event_class: classifyHistoryEvent(auditEntry),
+    }),
+  );
   return { rewrittenEntries, auditEntryAdded: true };
 }
 

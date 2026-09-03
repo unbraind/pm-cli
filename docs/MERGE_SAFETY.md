@@ -5,7 +5,12 @@ Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity an
 Lossless receipt health gating is tracked by
 [pm-baksix](../.agents/pm/issues/pm-baksix.toon), and executable remediation
 that performs settlement is tracked by
-[pm-r0p3at](../.agents/pm/issues/pm-r0p3at.toon).
+[pm-r0p3at](../.agents/pm/issues/pm-r0p3at.toon). Immutable record sealing and
+retained re-anchor evidence are tracked by
+[pm-javbsq](../.agents/pm/issues/pm-javbsq.toon) and
+[pm-aka8m7](../.agents/pm/issues/pm-aka8m7.toon); preferred-era receipt-summary
+compatibility is tracked by
+[pm-wn3ee5](../.agents/pm/issues/pm-wn3ee5.toon).
 
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
@@ -124,7 +129,12 @@ backup; it never recommends deleting receipts or rewriting history. The CLI
 exits nonzero when evidence is incomplete, even when the valid-receipt count is
 zero. Current SDK implementations always emit the new field, while its optional
 type preserves structural compatibility for existing typed adapters and test
-fixtures. `runMergeReceiptReport` remains the compatible valid-only report.
+fixtures. A structurally valid preferred-era history summary that contains its
+complete privacy-safe receipt evidence is accepted in place: health counts it
+as `accepted_legacy_merge_receipt_references` and does not demand an external
+receipt file that the older writer never created. Incomplete, contradictory, or
+modern summaries still fail closed. `runMergeReceiptReport` remains the
+compatible valid-only report.
 
 ## Cross-branch id collision safety
 
@@ -232,6 +242,29 @@ reported as `unsupported_item_hash_version` and repair refuses to guess. This
 keeps version incompatibility distinct from item corruption and is tracked by
 [pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon) and
 [pm-2qahia](../.agents/pm/issues/pm-2qahia.toon).
+
+New history events also carry `record_hash_version` and `record_hash`. Unlike
+the item anchors, the record hash covers the complete immutable event: author
+and agent provenance, timestamp, operation, message, context, patch, item-hash
+epoch, and before/after anchors. A record that carries only one envelope field,
+uses an unsupported record epoch, or changes after sealing fails verification.
+Entries created before this envelope remain readable as explicit
+`item_state_only` coverage; they are not presented as record-authenticated.
+
+Every maintenance rewrite verifies a present record hash before changing the
+stream and reseals the output. When anchors or patch representation change, the
+entry's append-only `reanchor_evidence` retains the prior anchors, item epoch,
+patch digest, and prior record envelope. Lenient repair additionally retains
+the complete replaced patch operations. `verifyHistoryRewriteEvidence()`
+reconstructs every available prior envelope and rejects a record that was
+modified and merely resealed after maintenance. Redaction never copies sensitive patch
+values into new evidence: it keeps the digest and drops a retained patch if the
+patch itself matched a redaction rule. Compaction baselines retain the pruned
+entry count and ordered stream digest plus an explicit
+`individual_pruned_entries_require_pre_compaction_stream` limitation. A holder
+of the pre-compaction stream can therefore validate the checkpoint, while the
+post-compaction stream does not falsely claim that it can reconstruct content
+that was intentionally pruned.
 
 ## Delete versus modify policy
 

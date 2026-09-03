@@ -10,6 +10,10 @@ import {
   runHistoryRepairAll,
 } from "../../../src/sdk/history-repair.js";
 import { reanchorHistoryEntries } from "../../../src/core/history/replay.js";
+import {
+  sealHistoryRecord,
+  verifyHistoryRecordHash,
+} from "../../../src/core/history/history.js";
 import type { HistoryEntry } from "../../../src/types.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -35,6 +39,13 @@ describe("history provenance normalization", () => {
     expect(normalized.entries[0].agent_provenance).toEqual({
       model: { source: "environment", value: "bounded-model" },
     });
+    expect(verifyHistoryRecordHash(normalized.entries[0])).toEqual({
+      ok: true,
+      coverage: "record_and_item_state",
+    });
+    expect(normalized.entries[0].reanchor_evidence).toEqual([
+      expect.objectContaining({ patch_hash: expect.any(String) }),
+    ]);
     expect(normalized.receipt).toEqual({
       changed: true,
       events_changed: 1,
@@ -67,6 +78,18 @@ describe("history provenance normalization", () => {
       clean,
     ]);
     expect(normalized.entries).toEqual([withoutProvenance, clean]);
+    expect(normalized.receipt).toMatchObject({
+      changed: false,
+      events_changed: 0,
+      observations_removed: 0,
+    });
+  });
+
+  it("refuses to normalize an invalid sealed record", () => {
+    const sealed = sealHistoryRecord(invalidEntry());
+    const tampered = { ...sealed, author: "tampered-author" };
+    const normalized = normalizeInvalidHistoryProvenance([tampered]);
+    expect(normalized.entries).toEqual([tampered]);
     expect(normalized.receipt).toMatchObject({
       changed: false,
       events_changed: 0,
@@ -183,6 +206,8 @@ describe("history provenance normalization", () => {
           model: { source: "environment", value: "bounded-model" },
         },
       };
+      delete entries[0].record_hash;
+      delete entries[0].record_hash_version;
       await writeFile(
         historyPath,
         `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
@@ -282,6 +307,8 @@ describe("history provenance normalization", () => {
         .map((entry) => {
           const legacy = { ...entry };
           delete legacy.item_hash_version;
+          delete legacy.record_hash;
+          delete legacy.record_hash_version;
           return legacy;
         });
       const legacyEntries = reanchorHistoryEntries(currentEntries, 1).entries;
@@ -292,6 +319,8 @@ describe("history provenance normalization", () => {
           role: { source: "environment", value: "1" },
         },
       };
+      delete legacyEntries[0].record_hash;
+      delete legacyEntries[0].record_hash_version;
       await writeFile(
         historyPath,
         `${legacyEntries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,

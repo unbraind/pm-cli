@@ -19285,6 +19285,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "project_runtime_history_epoch_incompatible",
+      "class": "conflict",
+      "code": "project_runtime_history_epoch_incompatible",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Project runtime history epoch incompatible condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/project-runtime-compatibility.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "project_runtime_stale_mutation",
       "class": "conflict",
       "code": "project_runtime_stale_mutation",

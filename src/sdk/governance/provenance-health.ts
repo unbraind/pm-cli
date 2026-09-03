@@ -5,6 +5,10 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  resealHistoryRewrite,
+  verifyHistoryRecordHash,
+} from "../../core/history/history.js";
 import type { HistoryEntry } from "../../types/index.js";
 
 /** Aggregated resolver attempts for one harness provenance dimension. */
@@ -118,6 +122,7 @@ export function normalizeInvalidHistoryProvenance(
       ? entry.agent_provenance
       : undefined;
     if (provenance === undefined) return entry;
+    if (!verifyHistoryRecordHash(entry).ok) return entry;
     const retained: Record<string, unknown> = {};
     let eventChanged = false;
     for (const [dimension, observation] of Object.entries(provenance)) {
@@ -149,7 +154,7 @@ export function normalizeInvalidHistoryProvenance(
     } else {
       next.agent_provenance = retained as HistoryEntry["agent_provenance"];
     }
-    return next;
+    return resealHistoryRewrite(entry, next, { retainPriorRecord: true });
   });
   return {
     entries: normalized,
@@ -174,7 +179,10 @@ export async function listInvalidProvenanceHistoryStreamIds(
   const ids: string[] = [];
   for (const file of await listHistoryFiles(pmRoot)) {
     try {
-      const content = await fs.readFile(path.join(pmRoot, "history", file), "utf8");
+      const content = await fs.readFile(
+        path.join(pmRoot, "history", file),
+        "utf8",
+      );
       for (const line of content.split("\n")) {
         if (line.trim().length === 0) continue;
         const entry = parseHistoryEntry(line);

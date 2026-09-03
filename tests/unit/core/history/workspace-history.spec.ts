@@ -254,9 +254,7 @@ describe("workspace history", () => {
         type: "urn:pm-cli:error:workspace_history_chain_invalid",
         code: "workspace_history_chain_invalid",
         exit_code: EXIT_CODE.CONFLICT,
-        verification_errors: [
-          "verify_failed:before_hash_mismatch:entry_1",
-        ],
+        verification_errors: ["verify_failed:record_hash_mismatch:entry_1"],
         recovery: {
           next_best_command: "pm history _workspace --verify --json",
         },
@@ -285,7 +283,9 @@ describe("workspace history", () => {
       });
       await writeFile(filePath, '{"floor":8}\n');
 
-      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+      await expect(
+        inspectWorkspaceHistoryState(context.pmPath),
+      ).resolves.toMatchObject({
         ok: false,
         document_count: 1,
         matching_documents: [],
@@ -313,7 +313,9 @@ describe("workspace history", () => {
         message: "Accept the intended governance bound after review.",
         authorizationDecision: "pm-decision",
       });
-      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+      await expect(
+        inspectWorkspaceHistoryState(context.pmPath),
+      ).resolves.toMatchObject({
         ok: true,
         matching_documents: ["governance.json"],
       });
@@ -341,11 +343,17 @@ describe("workspace history", () => {
         changed: false,
         restored_from_version: 1,
       });
-      expect(verifyHistoryChain(await readHistoryEntries(
-        getWorkspaceHistoryPath(context.pmPath),
-        WORKSPACE_HISTORY_ID,
-      ))).toEqual({ ok: true, errors: [] });
-      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+      expect(
+        verifyHistoryChain(
+          await readHistoryEntries(
+            getWorkspaceHistoryPath(context.pmPath),
+            WORKSPACE_HISTORY_ID,
+          ),
+        ),
+      ).toEqual({ ok: true, errors: [] });
+      await expect(
+        inspectWorkspaceHistoryState(context.pmPath),
+      ).resolves.toMatchObject({
         ok: true,
         matching_documents: ["governance.json"],
       });
@@ -376,16 +384,16 @@ describe("workspace history", () => {
         const outOfBandRaw = '{"floor":8}\n';
         await writeFile(filePath, outOfBandRaw);
         appendSpy.mockRejectedValueOnce(new Error("restore-append-failed"));
-        await expect(
-          restoreWorkspaceJsonFromHistory(common),
-        ).rejects.toThrow("restore-append-failed");
+        await expect(restoreWorkspaceJsonFromHistory(common)).rejects.toThrow(
+          "restore-append-failed",
+        );
         expect(await readFile(filePath, "utf8")).toBe(outOfBandRaw);
 
         await rm(filePath);
         appendSpy.mockRejectedValueOnce(new Error("restore-append-failed"));
-        await expect(
-          restoreWorkspaceJsonFromHistory(common),
-        ).rejects.toThrow("restore-append-failed");
+        await expect(restoreWorkspaceJsonFromHistory(common)).rejects.toThrow(
+          "restore-append-failed",
+        );
         await expect(readFile(filePath, "utf8")).rejects.toMatchObject({
           code: "ENOENT",
         });
@@ -466,12 +474,16 @@ describe("workspace history", () => {
       expect(JSON.parse(await readFile(filePath, "utf8"))).toEqual({
         floor: 10,
       });
-      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+      await expect(
+        inspectWorkspaceHistoryState(context.pmPath),
+      ).resolves.toMatchObject({
         ok: true,
         matching_documents: ["governance.json"],
       });
       await writeFile(filePath, "not-json");
-      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+      await expect(
+        inspectWorkspaceHistoryState(context.pmPath),
+      ).resolves.toMatchObject({
         ok: false,
         unreadable_documents: ["governance.json"],
       });
@@ -510,7 +522,7 @@ describe("workspace history", () => {
       ).rejects.toThrow("document is missing");
 
       const ungovernedPath = path.join(context.pmPath, "ungoverned.json");
-      await writeFile(ungovernedPath, '{}\n');
+      await writeFile(ungovernedPath, "{}\n");
       await expect(
         reconcileWorkspaceJsonHistory({
           ...common,
@@ -518,8 +530,11 @@ describe("workspace history", () => {
           authorizationDecision: "pm-decision",
         }),
       ).rejects.toThrow("does not govern document");
-      const outsidePath = path.join(path.dirname(context.pmPath), "outside.json");
-      await writeFile(outsidePath, '{}\n');
+      const outsidePath = path.join(
+        path.dirname(context.pmPath),
+        "outside.json",
+      );
+      await writeFile(outsidePath, "{}\n");
       await expect(
         reconcileWorkspaceJsonHistory({
           ...common,
@@ -814,7 +829,7 @@ describe("workspace history", () => {
         code: "workspace_history_chain_invalid",
         context: {
           reason: "workspace_history_chain_verification_failed",
-          verification_errors: ["verify_failed:after_hash_mismatch:entry_1"],
+          verification_errors: ["verify_failed:record_hash_mismatch:entry_1"],
         },
       });
       const drift = await scanHistoryDrift(context.pmPath, []);

@@ -102,11 +102,6 @@
       "count": 1
     }
   },
-  "src/core/history/history.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
   "src/core/item/item-format.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 2

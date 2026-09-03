@@ -80,6 +80,8 @@ const GLOBAL_VALUE_FLAGS = new Set([
   "--pm-path",
 ]);
 const VERSION_PATTERN = /\b(\d{4})\.(\d{1,2})\.(\d{1,2})(?:-(\d+))?\b/u;
+/** First pm release whose history writer and reader support item-hash epoch 3. */
+export const HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN = "2026.8.31";
 
 /** Return whether an invocation includes one of the exact mutation switches. */
 function hasAnyToken(
@@ -214,6 +216,8 @@ export interface ProjectRuntimeVersionPin {
     | "package-lock.json"
     | "pnpm-lock.yaml"
     | "yarn.lock";
+  /** Whether the declaration selects one runtime or only establishes a lower bound. */
+  constraint: "exact" | "minimum";
 }
 
 /** Structured result returned by the read-only compatibility probe. */
@@ -232,6 +236,14 @@ export interface ProjectRuntimeCompatibilityResult {
   mutating: boolean;
   /** Whether the active executable is older than the strongest project pin. */
   stale?: boolean;
+  /** Whether this mutation would write a history epoch an exact project pin cannot read. */
+  history_epoch_incompatible?: boolean;
+  /** Item-hash epoch the executing runtime writes. */
+  writer_item_hash_version?: 2 | 3;
+  /** Exact project runtime that cannot read the writer epoch. */
+  incompatible_project_version?: string;
+  /** Origin of the exact incompatible project runtime. */
+  incompatible_source?: ProjectRuntimeVersionPin["source"];
   /** Non-blocking diagnostic attached to stale read-only invocations. */
   warning?: ProjectRuntimeCompatibilityWarning;
   /** Whether the explicit one-invocation recovery override was accepted. */
@@ -284,6 +296,37 @@ export function comparePmDateVersions(
   return 0;
 }
 
+/** Resolve the item-hash epoch written by a known pm runtime release. */
+export function historyItemHashVersionForRuntime(version: string): 2 | 3 {
+  return comparePmDateVersions(
+    version,
+    HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
+  ) !== -1
+    ? 3
+    : 2;
+}
+
+/** Find the oldest exact pin that cannot read the executing writer epoch. */
+function findIncompatibleHistoryEpochPin(
+  pins: readonly ProjectRuntimeVersionPin[],
+  writerItemHashVersion: 2 | 3,
+): ProjectRuntimeVersionPin | undefined {
+  if (writerItemHashVersion !== 3) return undefined;
+  return pins
+    .filter(
+      (pin) =>
+        pin.constraint === "exact" &&
+        comparePmDateVersions(
+          pin.version,
+          HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
+        ) === -1,
+    )
+    .sort(
+      (left, right) =>
+        comparePmDateVersions(left.version, right.version) as number,
+    )[0];
+}
+
 /** Read one optional JSON object without turning absence or corruption into startup failure. */
 function readJsonRecord(filePath: string): Record<string, unknown> | null {
   try {
@@ -301,8 +344,10 @@ function readJsonRecord(filePath: string): Record<string, unknown> | null {
 /** Extract the highest explicit lower-bound pm date version from dependency declarations. */
 function dependencyPin(
   packageJson: Record<string, unknown>,
-): string | undefined {
-  const versions: string[] = [];
+): Pick<ProjectRuntimeVersionPin, "constraint" | "version"> | undefined {
+  const versions: Array<
+    Pick<ProjectRuntimeVersionPin, "constraint" | "version">
+  > = [];
   for (const field of [
     "dependencies",
     "devDependencies",
@@ -316,10 +361,20 @@ function dependencyPin(
     const version = /^[<!]/u.test(specification)
       ? undefined
       : specification.match(VERSION_PATTERN)?.[0];
-    if (version) versions.push(version);
+    if (version) {
+      versions.push({
+        version,
+        constraint: /^(?:=|v)?\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/u.test(
+          specification,
+        )
+          ? "exact"
+          : "minimum",
+      });
+    }
   }
   return versions.sort(
-    (left, right) => comparePmDateVersions(right, left) as number,
+    (left, right) =>
+      comparePmDateVersions(right.version, left.version) as number,
   )[0];
 }
 
@@ -375,7 +430,7 @@ export function discoverProjectRuntimeVersionPins(
   const pins: ProjectRuntimeVersionPin[] = [];
   const projectPackage = readJsonRecord(path.join(projectRoot, "package.json"));
   const declared = projectPackage ? dependencyPin(projectPackage) : undefined;
-  if (declared) pins.push({ version: declared, source: "package.json" });
+  if (declared) pins.push({ ...declared, source: "package.json" });
   const installedPackage = readJsonRecord(
     path.join(
       projectRoot,
@@ -390,15 +445,23 @@ export function discoverProjectRuntimeVersionPins(
     typeof installedVersion === "string" &&
     parseDateVersion(installedVersion)
   ) {
-    pins.push({ version: installedVersion, source: "installed-package" });
+    pins.push({
+      version: installedVersion,
+      source: "installed-package",
+      constraint: "exact",
+    });
   }
   const packageLockVersion = packageLockPin(projectRoot);
   if (packageLockVersion && parseDateVersion(packageLockVersion)) {
-    pins.push({ version: packageLockVersion, source: "package-lock.json" });
+    pins.push({
+      version: packageLockVersion,
+      source: "package-lock.json",
+      constraint: "exact",
+    });
   }
   for (const file of ["pnpm-lock.yaml", "yarn.lock"] as const) {
     const version = textLockPin(projectRoot, file);
-    if (version) pins.push({ version, source: file });
+    if (version) pins.push({ version, source: file, constraint: "exact" });
   }
   return pins;
 }
@@ -461,6 +524,15 @@ export function inspectProjectRuntimeCompatibility(options: {
   const stale =
     newest !== undefined &&
     comparePmDateVersions(options.executingVersion, newest.version) === -1;
+  const writerItemHashVersion = historyItemHashVersionForRuntime(
+    options.executingVersion,
+  );
+  const incompatibleEpochPin = findIncompatibleHistoryEpochPin(
+    pins,
+    writerItemHashVersion,
+  );
+  const historyEpochIncompatible =
+    mutating && incompatibleEpochPin !== undefined;
   const warning =
     stale && !mutating
       ? {
@@ -477,7 +549,10 @@ export function inspectProjectRuntimeCompatibility(options: {
         }
       : undefined;
   return {
-    compatible: !mutating || !stale || options.allowStale === true,
+    compatible:
+      !mutating ||
+      (!stale && !historyEpochIncompatible) ||
+      options.allowStale === true,
     executing_version: options.executingVersion,
     ...(newest
       ? { project_version: newest.version, source: newest.source }
@@ -485,8 +560,19 @@ export function inspectProjectRuntimeCompatibility(options: {
     ...(command ? { command } : {}),
     mutating,
     stale,
+    history_epoch_incompatible: historyEpochIncompatible,
+    writer_item_hash_version: writerItemHashVersion,
+    ...(incompatibleEpochPin
+      ? {
+          incompatible_project_version: incompatibleEpochPin.version,
+          incompatible_source: incompatibleEpochPin.source,
+        }
+      : {}),
     ...(warning ? { warning } : {}),
-    override_applied: stale && mutating && options.allowStale === true,
+    override_applied:
+      mutating &&
+      (stale || historyEpochIncompatible) &&
+      options.allowStale === true,
   };
 }
 
@@ -499,6 +585,22 @@ export function assertProjectRuntimeCompatibility(options: {
 }): ProjectRuntimeCompatibilityResult {
   const result = inspectProjectRuntimeCompatibility(options);
   if (result.compatible) return result;
+  if (result.history_epoch_incompatible) {
+    throw new PmCliError(
+      `pm ${result.executing_version} cannot write item-hash epoch ${result.writer_item_hash_version} into a project pinned to pm ${result.incompatible_project_version}.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "project_runtime_history_epoch_incompatible",
+        reason: result.incompatible_source,
+        why: `The pinned runtime cannot read item_hash_version ${result.writer_item_hash_version}; allowing the write would break its health and validation gates.`,
+        nextSteps: [
+          `Upgrade the project's ${PACKAGE_NAME} pin to ${HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN} or newer before mutating tracker history.`,
+          "For an intentional coordinated migration only, set PM_ALLOW_STALE_CLI=1 for this invocation and record why.",
+          "Read-only commands remain available without an override.",
+        ],
+      },
+    );
+  }
   throw new PmCliError(
     `pm ${result.executing_version} cannot mutate a project pinned to newer pm ${result.project_version}.`,
     EXIT_CODE.CONFLICT,

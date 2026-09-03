@@ -15,6 +15,7 @@ import { setActiveExtensionServices } from "../../../src/core/extensions/index.j
 import {
   createHistoryEntry,
   hashDocumentVerificationCandidates,
+  sealHistoryRecord,
 } from "../../../src/core/history/history.js";
 import {
   sha256Hex,
@@ -204,7 +205,7 @@ describe("public merge-safety SDK primitives", () => {
         created_at: "2026-08-30T00:02:00.000Z",
       },
     ];
-    const create = {
+    const create = sealHistoryRecord({
       ...createHistoryEntry({
         nowIso: "2026-08-30T00:00:00.000Z",
         author: "seed",
@@ -215,8 +216,8 @@ describe("public merge-safety SDK primitives", () => {
       before_hash: hashDocumentVerificationCandidates(empty, 2)[0],
       after_hash: hashDocumentVerificationCandidates(baseDocument, 2)[0],
       item_hash_version: 2 as const,
-    };
-    const ours = {
+    });
+    const ours = sealHistoryRecord({
       ...createHistoryEntry({
         nowIso: "2026-08-30T00:01:00.000Z",
         author: "expanded-writer",
@@ -227,8 +228,8 @@ describe("public merge-safety SDK primitives", () => {
       before_hash: hashDocumentVerificationCandidates(baseDocument, 2)[0],
       after_hash: hashDocumentVerificationCandidates(oursDocument, 2)[0],
       item_hash_version: 2 as const,
-    };
-    const theirs = {
+    });
+    const theirs = sealHistoryRecord({
       ...createHistoryEntry({
         nowIso: "2026-08-30T00:02:00.000Z",
         author: "legacy-writer",
@@ -239,7 +240,7 @@ describe("public merge-safety SDK primitives", () => {
       before_hash: hashDocumentVerificationCandidates(baseDocument, 2)[1],
       after_hash: hashDocumentVerificationCandidates(theirsDocument, 2)[1],
       item_hash_version: 2 as const,
-    };
+    });
 
     const merged = mergeHistoryStreams(
       historyEntriesToRaw([create]),
@@ -273,9 +274,10 @@ describe("public merge-safety SDK primitives", () => {
     delete (oursDocument.metadata as unknown as Record<string, unknown>).review;
     oursDocument.metadata.updated_at = "2026-08-30T00:01:00.000Z";
     const theirsDocument = structuredClone(baseDocument);
-    (
-      theirsDocument.metadata as unknown as Record<string, unknown>
-    ).review = { stable: "base", detail: "theirs" };
+    (theirsDocument.metadata as unknown as Record<string, unknown>).review = {
+      stable: "base",
+      detail: "theirs",
+    };
     theirsDocument.metadata.updated_at = "2026-08-30T00:02:00.000Z";
     const create = createHistoryEntry({
       nowIso: "2026-08-30T00:00:00.000Z",

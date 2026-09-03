@@ -2,7 +2,9 @@
 
 Tracker: [pm-1eted6](../.agents/pm/issues/pm-1eted6.toon),
 [pm-3lhth4](../.agents/pm/issues/pm-3lhth4.toon), and
-[pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon). Refusal reachability and
+[pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), with forward history-epoch
+protection tracked by
+[pm-aka8m7](../.agents/pm/issues/pm-aka8m7.toon). Refusal reachability and
 recovery completeness are tracked by
 [pm-elmpav](../.agents/pm/features/pm-elmpav.toon),
 [pm-185870](../.agents/pm/issues/pm-185870.toon), and
@@ -28,6 +30,15 @@ human modes identify both versions, the redaction-safe pin source, and a
 package-manager-neutral recovery action. SDK callers receive the same warning
 inside `ProjectRuntimeCompatibilityResult`. `PM_ALLOW_STALE_CLI=1` is the
 explicit, auditable emergency override.
+
+The boundary is bidirectional for history storage. A current runtime also
+refuses a mutation when an exact package or lockfile pin predates the runtime's
+writer epoch and therefore cannot read the new event. The stable
+`project_runtime_history_epoch_incompatible` error reports the writer epoch,
+the exact incompatible pin, its redaction-safe source, and the minimum upgrade.
+Version ranges are lower bounds rather than exact pins and do not trigger this
+forward guard. Reads remain available, and the same emergency override is
+reserved for an intentionally coordinated fleet migration.
 
 The public `isProjectMutatingInvocation` classifier applies the same decision
 to package hosts and the bundled CLI. It resolves mixed command families by

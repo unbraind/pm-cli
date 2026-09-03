@@ -150,6 +150,8 @@ describe("history repair hash epoch contract", () => {
         entry.before_hash = beforeCandidates[1];
         entry.after_hash = afterCandidates[1];
         entry.item_hash_version = 2;
+        delete entry.record_hash;
+        delete entry.record_hash_version;
         replay = applied.document;
       }
       expect(replayHashVerificationCandidates(replay, 2)[0]).not.toBe(
@@ -210,6 +212,10 @@ describe("history repair hash epoch contract", () => {
         .map((line) => JSON.parse(line) as HistoryEntry);
       entries[0] = { ...entries[0], item_hash_version: 1 };
       entries[1] = { ...entries[1], item_hash_version: 2 };
+      for (const entry of entries) {
+        delete entry.record_hash;
+        delete entry.record_hash_version;
+      }
       await writeFile(
         historyPath,
         `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,

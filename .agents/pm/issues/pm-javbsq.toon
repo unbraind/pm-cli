@@ -2,11 +2,13 @@ id: pm-javbsq
 title: "GH-1178: history hashes exclude record author and agent provenance, so attribution can be rewritten without detection"
 description: "GitHub issue #1178 reproduces on pm-cli 2026.9.2: editing a history record's ts, author, author_source, op, or agent_provenance does not alter the item patch hashes. After uncached verification, pm health --strict-exit and pm history --verify --strict-exit still report clean. The ledger therefore proves item-state replay but not the immutable attribution and operation metadata that describes who performed it."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: "area:history","area:sdk",context-integrity,github-1178,immutability,provenance,security
 created_at: "2026-09-02T21:14:35.285Z"
-updated_at: "2026-09-02T21:34:09.595Z"
+updated_at: "2026-09-03T06:08:28.310Z"
+closed_at: "2026-09-03T05:56:55.531Z"
+completed_at: "2026-09-03T05:56:55.531Z"
 author: "harness:codex"
 acceptance_criteria: "Define a versioned canonical hash envelope covering at least timestamp, author, author_source, operation, and agent provenance; preserve explicit backward verification for legacy histories without claiming they cover attribution; supply a documented, audited migration and repair boundary; add a negative control that changes only author or provenance and must fail history verification and health; compose with re-anchoring preservation instead of erasing original evidence; pass history, merge, restore, SDK, CLI, security, static, and exact coverage gates."
 parent: pm-o2kc
@@ -16,15 +18,69 @@ reporter: GitHub issue #1178
 severity: critical
 environment: pm-cli 2026.9.2 with a fresh single-entry item history stream
 repro_steps: "Create an item, edit only the stored history record author and agent_provenance fields, remove the drift cache, then run pm health --strict-exit and pm history <id> --verify --strict-exit; both exit zero."
-expected_result: "A versioned history-integrity epoch covers immutable record metadata as well as item-state hashes, accepts legacy epochs explicitly, documents migration/repair, and rejects attribution tampering with an executable negative control."
-actual_result: "Record attribution and operation metadata sit outside the hashed content, so they can be rewritten while the item hash chain and health gate remain clean."
+resolution: "Sealed immutable history envelopes over attribution, operation, context, patch, and item anchors; verified them in replay and every rewrite path; retained reconstructable prior-record evidence with privacy-safe digest-only degradation during sensitive redaction."
+expected_result: Author or provenance-only tampering fails verification while legacy item-state-only streams remain truthfully compatible.
+actual_result: "Author-only tampering is rejected by CLI health/history and SDK verification; legacy coverage is explicit; 8,318 tests pass at exact 100/100/100/100 coverage and packed SDK consumers pass."
 component: "Core history ledger, SDK verification, health, and repair compatibility"
 customer_impact: "Reviewers and agents can receive a green integrity verdict after attribution was modified during merge, rebase, or manual repair."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-aka8m7,discovered_from,"2026-09-02T21:14:35.285Z","harness:codex","cli:create:dep",detected
   pm-w7ccmv,verifies,"2026-09-02T21:14:35.285Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-aka8m7,implements,"2026-09-03T05:34:40.975Z","harness:codex","cli:update:dep",detected
+  pm-l7m7k5,verifies,"2026-09-03T05:34:40.975Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-09-02T21:14:35.285Z","harness:codex","Duplicate-check evidence: complete all-status searches for author/provenance hash coverage, attribution tampering, history epochs, and immutable record fields found open pm-aka8m7 for retaining original anchors during re-anchoring and open pm-9yfo for mutation-history completeness. Neither covers the record envelope itself. GitHub #1178 is the canonical owner for the demonstrated green-verifier attribution rewrite. Source: https://github.com/unbraind/pm-cli/issues/1178"
   "2026-09-02T21:14:59.271Z","harness:codex","GitHub linkage evidence: issue #1178 now points to this canonical item at the merge-stable main-branch toon path."
+  "2026-09-03T05:35:06.469Z","harness:codex","Implementation evidence: every newly written history record is sealed with a versioned canonical record hash covering attribution, operation, context, patch, and item anchors. Replay, health, redaction, repair, compaction, and provenance normalization verify the immutable envelope before rewriting; rewrite evidence reconstructs retained prior envelopes and rejects author, patch, or record tampering. Full gate: 600 files, 8,318 tests, 100/100/100/100 coverage."
+  "2026-09-03T05:46:55.822Z","harness:codex","Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
+  "2026-09-03T06:08:28.310Z","harness:codex","Governance evidence: the final real-tracker static run correctly failed closed until whole-record integrity closure was bound to executable prevention evidence. Author, time, operation, context, patch, and anchor tampering are negative controls across replay/rewrite tests, exact coverage, record-integrity assurance, and hosted static/coverage checks; no waiver is used."
+notes[1]{created_at,author,text}:
+  "2026-09-03T05:35:07.060Z","harness:codex","Compatibility note: legacy records remain explicitly item-state-only evidence. The new verifier does not overclaim attribution integrity for an epoch that never stored a record envelope."
+learnings[1]{created_at,author,text}:
+  "2026-09-03T05:35:07.551Z","harness:codex","Item-state hashes prove replay results, not who performed an operation or what immutable metadata accompanied it. A record envelope must be separately versioned, and any maintenance rewrite must preserve enough prior-envelope material for independent verification."
+files[13]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.9.2 installation receipt
+  eslint-suppressions.json,project,Implementation and regression evidence for pm-javbsq
+  scripts/release/static-quality-gate.mts,project,Implementation and regression evidence for pm-javbsq
+  sdk/public-surface.json,project,Implementation and regression evidence for pm-javbsq
+  src/core/history/history.ts,project,Implementation and regression evidence for pm-javbsq
+  src/sdk/governance/provenance-health.ts,project,Implementation and regression evidence for pm-javbsq
+  src/sdk/history-redact.ts,project,Implementation and regression evidence for pm-javbsq
+  src/sdk/index.ts,project,Implementation and regression evidence for pm-javbsq
+  src/sdk/runtime-primitives.ts,project,Implementation and regression evidence for pm-javbsq
+  src/types.ts,project,Implementation and regression evidence for pm-javbsq
+  tests/integration/history-redact-record-integrity.integration.spec.ts,project,Implementation and regression evidence for pm-javbsq
+  tests/unit/core/history/history-record-integrity.spec.ts,project,Implementation and regression evidence for pm-javbsq
+  tests/unit/sdk/provenance-normalization-contract.spec.ts,project,Implementation and regression evidence for pm-javbsq
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  CI=1 node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-09-03T05:33:54.957Z",local_mutation,feat/history-provenance-integrity-compatibility,Repository-wide exact 100/100/100/100 coverage gate
+  "pnpm smoke:npx",project,300,"harness:codex","2026-09-03T05:46:54.344Z",local_mutation,feat/history-provenance-integrity-compatibility,Packed npm/npx/bunx and strict external TypeScript SDK consumer acceptance
+test_runs[1]:
+  - run_id: test-all-local-mtl3stcu-h2nm8i
+    kind: test-all
+    status: passed
+    started_at: "2026-09-03T05:47:50.762Z"
+    finished_at: "2026-09-03T05:55:50.185Z"
+    recorded_at: "2026-09-03T05:55:50.185Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      CI=1 node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated by pm-changelog 2026.9.2 from the four closed delivery items
+  docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Public contract documentation for pm-javbsq
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Public contract documentation for pm-javbsq
+close_reason: Completed versioned whole-record history integrity and independently verifiable maintenance rewrite ancestry.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-javbsq
+  gate_id: whole-history-record-integrity
+  negative_control: "Mutate author, timestamp, operation, context, patch, or item anchors on a sealed history record, or drop retained rewrite ancestry; replay, rewrite, exact coverage, and record-integrity gates must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/history-record-integrity.spec.ts tests/unit/core/history/workspace-history.spec.ts tests/unit/core/history/drift-scan.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
