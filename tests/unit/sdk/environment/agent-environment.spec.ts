@@ -99,6 +99,8 @@ const episodeSpecification: EpisodeSpecification = {
 class MemoryEpisodeAdapter implements EpisodeRuntimeAdapter<{
   status: string;
 }> {
+  recordedStateReads = 0;
+
   private state: WorkspaceRecordedState = {
     snapshot_id: "snapshot:initial",
     state: {
@@ -135,6 +137,7 @@ class MemoryEpisodeAdapter implements EpisodeRuntimeAdapter<{
   }
 
   async readRecordedState() {
+    this.recordedStateReads += 1;
     return structuredClone(this.state);
   }
 }
@@ -611,6 +614,32 @@ describe("agent-environment SDK contracts", () => {
     );
     await expect(closedSession.score()).rejects.toThrow(/already closed/u);
     await expect(closedSession.close()).rejects.toThrow(/already closed/u);
+  });
+
+  it("reserves one atomic close across concurrent callers", async () => {
+    const adapter = new MemoryEpisodeAdapter();
+    const session = await openPmEpisode(
+      defineEpisodeSpecification(episodeSpecification),
+      adapter,
+    );
+    await session.step({ status: "closed" });
+
+    const firstClose = session.close();
+    const secondClose = session.close();
+    expect(firstClose).toBe(secondClose);
+    await expect(session.step({ status: "open" })).rejects.toThrow(
+      /already closed/u,
+    );
+    const [first, second] = await Promise.all([firstClose, secondClose]);
+
+    expect(first).toBe(second);
+    expect(adapter.recordedStateReads).toBe(1);
+    expect(first.trajectory.map((entry) => entry.kind)).toEqual([
+      "reset",
+      "action",
+      "verdict",
+      "close",
+    ]);
   });
 
   it("fails closed on malformed episode declarations", () => {

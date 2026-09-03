@@ -813,6 +813,7 @@ export async function openPmEpisode<TAction, TOutput = unknown>(
   let actions = 0;
   let observations = 0;
   let closed = false;
+  let closing: Promise<ClosedEpisode> | undefined;
   const context = {
     episode: {
       id: specification.id,
@@ -847,8 +848,9 @@ export async function openPmEpisode<TAction, TOutput = unknown>(
     return result;
   };
 
-  const evaluate = async (): Promise<VerdictResult> => {
-    if (closed) throw new Error("episode is already closed.");
+  const evaluate = async (reservedForClose = false): Promise<VerdictResult> => {
+    if (closed && !reservedForClose)
+      throw new Error("episode is already closed.");
     if (observations >= specification.limits.max_observations) {
       throw new Error("episode exceeded limits.max_observations.");
     }
@@ -882,15 +884,32 @@ export async function openPmEpisode<TAction, TOutput = unknown>(
       return result;
     },
     score: () => runWithAgentSessionContext(context, evaluate),
-    close: async () => {
-      const verdict = await runWithAgentSessionContext(context, evaluate);
+    close: () => {
+      if (closing !== undefined) return closing;
+      if (closed) return Promise.reject(new Error("episode is already closed."));
       closed = true;
-      trajectory.push({
-        sequence: trajectory.length + 1,
-        kind: "close",
-        state_id: verdict.snapshot_id,
+      const operation = runWithAgentSessionContext(context, () =>
+        evaluate(true),
+      )
+        .then((verdict) => {
+          trajectory.push({
+            sequence: trajectory.length + 1,
+            kind: "close",
+            state_id: verdict.snapshot_id,
+          });
+          return {
+            verdict,
+            trajectory: frozenCopy(structuredClone(trajectory)),
+          };
+        })
+        .catch((error: unknown) => {
+          closed = false;
+          throw error;
+        });
+      closing = operation.finally(() => {
+        closing = undefined;
       });
-      return { verdict, trajectory: frozenCopy(structuredClone(trajectory)) };
+      return closing;
     },
   };
 }

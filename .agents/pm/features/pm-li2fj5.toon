@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[8]: "area:sdk",benchmark,context-management,determinism,eval,rl,training,universal-domain
 created_at: "2026-07-28T09:59:50.073Z"
-updated_at: "2026-09-03T18:37:06.811Z"
+updated_at: "2026-09-03T18:59:30.270Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "An episode specification is a declared, storable, shareable artifact naming the workspace recipe, the task item set, the observable and withheld field sets, the observation token budget, the grading criteria, and the run limits; A different machine and a different pm build within the supported format window can re-execute the same specification and obtain the same result; The public SDK opens an episode, exposes the bounded observation, scores it, and closes it with a recorded result, with no shelling out required; The agent acts through the ordinary pm surface only, with no episode-specific mutation API; Scoring reads recorded workspace state exclusively, and a negative control proves an episode fails to score when a grader consults state the history does not contain; Withheld grading fields are unreachable through every read surface available to the agent, proven by a test that attempts to read them from inside an episode; One benchmark, one evaluation, one training and one scale-transfer configuration all run on the same loop with no special path; A single item and a single episode work with no special path, and concurrent episodes share no mutable state; A worked exemplar in the repository runs a passing episode, a failing episode, and an episode that fails for the wrong reason"
@@ -26,17 +26,18 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-t4d7nz,implements,"2026-07-28T09:59:50.073Z","harness:claude-code","cli:create:dep",detected
   pm-6l2mza,blocked_by,"2026-07-29T16:55:17.181Z","harness:claude-code","cli:update:dep",detected
   pm-klxax7,implements,"2026-07-31T14:26:24.672Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-03T17:36:40.689Z","harness:codex","Progress evidence: added a public portable episode specification composing WorkspaceRecipe, canonical task ids, observable/withheld fields, observation/verdict contracts, hard limits, and an isolated SDK session over an ordinary PmClient-capable adapter. Tests prove reset/observe/action/verdict/close, hidden-field projection, limits, and concurrent byte-identical isolation. Residual before closure: supported-build re-execution evidence, a missing-recorded-state grader negative control, all four workload configurations as executions, and passing/failing/wrong-reason exemplars."
   "2026-09-03T18:22:15.911Z","harness:codex","Review evidence: CodeRabbit identified that score() and close() grading reads bypassed limits.max_observations (https://github.com/unbraind/pm-cli/pull/1187#discussion_r3927407456). The runtime now charges every recorded-state grading read to the same limit before adapter access. Focused behavior passed 14/14 tests, and the changed SDK module reports exact 100% statements, branches, functions, and lines. The feature remains open for its previously documented cross-build, workload, and exemplar residuals."
   "2026-09-03T18:34:55.678Z","harness:codex","Complete CodeRabbit round-one evidence: canonical task identity now matches the explicit PmClient create id (discussion_r3927407410); recursive freezing terminates safely and cyclic/non-JSON equality declarations fail at the contract boundary (discussion_r3927407416); observable/withheld ancestor and descendant overlaps now fail closed (discussion_r3927407447); and score/close grading reads share the observation budget (discussion_r3927407456). Focused SDK plus packed-example tests pass 17/17. Both changed runtime artifacts report exact 100% statements, branches, functions, and lines."
   "2026-09-03T18:37:05.728Z","harness:codex","Final review remediation evidence: extracted the portable expected-value boundary to keep defineVerdictContract below the mandatory cognitive-complexity ceiling. Focused ESLint passed, behavior and fresh packed-consumer suites passed 17/17, and both changed runtime artifacts remain exact 100% statements, branches, functions, and lines."
+  "2026-09-03T18:59:22.916Z","harness:codex","CodeRabbit second-round evidence: full review at https://github.com/unbraind/pm-cli/pull/1187#issuecomment-5530514718 found a concurrent close race. close() now reserves terminal state before its first await, shares one in-flight result, blocks concurrent actions, records one verdict and one close, performs one grading read, and restores the open state if grading fails. Focused suites pass 18/18; the SDK module remains exact 100% statements, branches, functions, and lines."
 files[2]{path,scope,note}:
   src/sdk/environment/agent-environment.ts,project,Composable observation verdict and episode SDK contracts
   tests/unit/sdk/environment/agent-environment.spec.ts,project,Exact-coverage contract and runtime evidence
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/environment/agent-environment.spec.ts,project,120,"harness:codex","2026-09-03T17:01:21.148Z",local_mutation,feat/executable-criteria-verdict-episodes
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtlt2tnb-t30uki
     kind: test
     status: passed
@@ -65,6 +66,17 @@ test_runs[3]:
     started_at: "2026-09-03T18:34:56.118Z"
     finished_at: "2026-09-03T18:35:01.674Z"
     recorded_at: "2026-09-03T18:35:01.674Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/environment/agent-environment.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtlw2vfh-1vuzjw
+    kind: test
+    status: passed
+    started_at: "2026-09-03T18:59:23.355Z"
+    finished_at: "2026-09-03T18:59:29.309Z"
+    recorded_at: "2026-09-03T18:59:29.309Z"
     passed: 1
     failed: 0
     skipped: 0
