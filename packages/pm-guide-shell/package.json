@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-guide-shell",
-  "version": "2026.9.2",
+  "version": "2026.9.3",
   "private": true,
   "type": "module",
   "description": "First-party pm package for guide and shell completion workflows.",
