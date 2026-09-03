@@ -48,6 +48,12 @@ describe("merge receipt history compatibility", () => {
     ).toBe(false);
     expect(
       isLegacyMergeReceiptSummary(
+        { ...legacySummary(), decisions: null },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
         { ...legacySummary(), decisions: [] },
         "pm-receipt",
       ),
@@ -76,6 +82,12 @@ describe("merge receipt history compatibility", () => {
     expect(
       isLegacyMergeReceiptSummary(
         { ...legacySummary(), item_path: "../tasks/pm-receipt.md" },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), item_path: 42 },
         "pm-receipt",
       ),
     ).toBe(false);

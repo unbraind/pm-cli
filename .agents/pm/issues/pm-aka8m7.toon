@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: history,immutability,integrity,merge,multi-agent
 created_at: "2026-07-31T14:23:27.186Z"
-updated_at: "2026-09-03T08:20:18.732Z"
+updated_at: "2026-09-03T08:43:48.897Z"
 closed_at: "2026-09-03T05:56:57.935Z"
 completed_at: "2026-09-03T05:56:57.935Z"
 author: "harness:claude-code"
@@ -31,13 +31,14 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm0id4,related,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
   pm-34w8za,implements,"2026-09-03T05:34:42.481Z","harness:codex","cli:update:dep",detected
   pm-javbsq,verifies,"2026-09-03T05:34:42.481Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-03T05:35:09.702Z","harness:codex","Implementation evidence: shared resealHistoryRewrite retention is used by merge reanchoring, lenient repair, redaction, compaction, and provenance normalization. It retains original anchors, patch digest or full replaced patch, item epoch, and record envelope; verification reconstructs prior records and rejects tampering. Compaction now records the ordered pruned-stream digest, retained proof, and its explicit proof limitation. Exact coverage is 100/100/100/100."
   "2026-09-03T05:46:56.750Z","harness:codex","Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
   "2026-09-03T06:08:27.880Z","harness:codex","Governance evidence: the final real-tracker static run correctly failed closed until this terminal production defect declared its escape class and structured prevention evidence. Closure is bound to rewrite resealing, prior-envelope ancestry, pruned-stream proof, stale-writer epoch refusal, focused history and compatibility tests, exact coverage, and hosted static/coverage checks; no waiver is used."
   "2026-09-03T07:33:43.303Z","harness:codex","Review-round evidence: the history epoch guard now evaluates every manifest declaration instead of selecting one winning section and rejects upper-bounded ranges that cannot select the first epoch-3 reader. Clean Node 24 and Node 26 builds agree on the regenerated SDK surface. The compact acceptance test now verifies the exact ordered pruned-stream digest rather than only its type."
   "2026-09-03T07:52:46.801Z","harness:codex","Final acceptance evidence: the packed 2026.9.2 artifact was installed in a fresh temporary npm consumer; top-level SDK imports, npx pm 2026.9.2, bunx pm 2026.9.2, init/create/claim/update/files/docs/test/comment/close/release, and the linked test all passed. The temporary workspace ended closed and was moved to recoverable trash. Runtime pin classification remains source-compatible by retaining minimum pins, adding bounded range pins, and making epoch compatibility additive."
   "2026-09-03T08:20:18.732Z","harness:codex","Second review remediation: runtime compatibility now evaluates each disjunctive range alternative independently, treats inclusive npm/pnpm/yarn hyphen ranges as upper-bounded, preserves the full incompatible declaration in SDK diagnostics, and retains additive public pin fields. Focused range regressions passed."
+  "2026-09-03T08:43:48.897Z","harness:codex","Final integrated evidence: after merging the 2026.9.3 main baseline, the full sandboxed suite passed 600 files and 8,322 tests at exact 100.00% statements/branches/functions/lines (61,464/46,536/12,798/59,145). pnpm quality:static passed the mandatory ESLint, 100% docstring, zero-clone jscpd, SDK parity, token-surface, tracker integrity, and 58,267-record history-integrity gates. pnpm smoke:npx passed the packed 2026.9.3 distribution through both npx and bunx for all 13 packages; changelog and public SDK surface reproducibility checks also passed."
 notes[2]{created_at,author,text}:
   "2026-09-03T05:35:10.293Z","harness:codex","Runtime safety note: exact package, installed, or lockfile pins older than the history item-hash epoch may read but refuse mutation with project_runtime_history_epoch_incompatible. Semver ranges are minimum-compatible, and PM_ALLOW_STALE_CLI=1 is the explicit operator override."
   "2026-09-03T07:33:43.790Z","harness:codex","Correction to the earlier compatibility note: ranges are not universally minimum-compatible. Each dependency section is preserved, and a bounded range whose upper limit excludes the first reader for the writer epoch is incompatible and refuses mutation."
