@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:provenance","area:sdk",context-integrity,github-1177,harness,observability,regression
 created_at: "2026-09-02T21:14:31.322Z"
-updated_at: "2026-09-03T07:52:47.276Z"
+updated_at: "2026-09-03T08:20:19.196Z"
 closed_at: "2026-09-03T05:56:54.330Z"
 completed_at: "2026-09-03T05:56:54.330Z"
 author: "harness:codex"
@@ -29,7 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-f60039,discovered_from,"2026-09-02T21:14:31.322Z","harness:codex","cli:create:dep",detected
   pm-5oj5,implements,"2026-09-03T05:34:40.254Z","harness:codex","cli:update:dep",detected
   pm-f60039,verifies,"2026-09-03T05:34:40.254Z","harness:codex","cli:update:dep",detected
-comments[7]:
+comments[8]:
   - created_at: "2026-09-02T21:14:31.322Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: complete all-status searches for Claude session provenance, cwd, session-start workspace, and zero-success diagnostics found closed pm-9gvazz for slug encoding, closed pm-f60039 for nested JSONL parsing, and pm-lu6sca for outcome classification. GitHub #1177 proves a distinct invocation-cwd versus session-start path boundary on 2026.9.2; no existing item owns it. Source: https://github.com/unbraind/pm-cli/issues/1177"
@@ -52,6 +52,9 @@ comments[7]:
   - created_at: "2026-09-03T07:52:47.276Z"
     author: "harness:codex"
     text: "Final gate evidence: clean build, strict ESLint, packed npm/npx/bunx smoke, manual installed-consumer SDK import, and the complete exact-coverage suite passed after no-follow provenance hardening."
+  - created_at: "2026-09-03T08:20:19.196Z"
+    author: "harness:codex"
+    text: "Second review remediation: bounded cross-workspace Claude discovery now propagates non-absence candidate inspection failures as resolver_failed instead of collapsing them into resolver_input_missing; a discovered EACCES regression proves the distinction."
 notes[1]{created_at,author,text}:
   "2026-09-03T05:35:05.439Z","harness:codex","Design note: cwd independence is intentionally session-id based and bounded. The resolver never recursively walks arbitrary trees and never emits discovered host paths in diagnostics."
 learnings[1]{created_at,author,text}:

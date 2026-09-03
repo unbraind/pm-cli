@@ -1558,6 +1558,13 @@
       ],
       "package_version": "2026.9.2",
       "reason": "Whole-record rewrite evidence and range-aware history compatibility intentionally strengthen fail-closed SDK result unions"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeVersionPin"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Range diagnostics retain their complete declaration and rewrite verification rejects malformed evidence"
     }
   ],
   "entrypoints": {
@@ -13232,7 +13239,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ProjectRuntimeVersionPin",
-          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; constraint: \"exact\" | \"minimum\" | \"range\"; history_epoch_compatible?: boolean; }"
+          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; constraint: \"exact\" | \"minimum\" | \"range\"; declaration?: string; history_epoch_compatible?: boolean; }"
         },
         {
           "classification": "supported",

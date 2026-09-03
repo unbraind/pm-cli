@@ -137,6 +137,7 @@ describe("project runtime compatibility", () => {
         version: "2026.8.8",
         source: "package.json",
         constraint: "minimum",
+        declaration: "^2026.8.8",
         history_epoch_compatible: true,
       },
       {
@@ -325,6 +326,16 @@ describe("project runtime compatibility", () => {
         code: "project_runtime_history_epoch_incompatible",
       }),
     );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "bounded range"],
+      }),
+    ).toMatchObject({
+      incompatible_project_version: ">=2026.8.28 <2026.8.31",
+      history_epoch_incompatible: true,
+    });
     await writeFile(
       path.join(root, "package.json"),
       JSON.stringify({
@@ -344,6 +355,40 @@ describe("project runtime compatibility", () => {
         code: "project_runtime_history_epoch_incompatible",
       }),
     );
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          "@unbrained/pm-cli": "2026.8.1 - 2026.8.30",
+        },
+      }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "hyphen bounded range"],
+      }),
+    ).toMatchObject({
+      compatible: false,
+      history_epoch_incompatible: true,
+      incompatible_project_version: "2026.8.1 - 2026.8.30",
+    });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          "@unbrained/pm-cli": ">=2026.8.28 <2026.8.31 || >=2026.9.1",
+        },
+      }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "disjunctive range"],
+      }),
+    ).toMatchObject({ compatible: true, history_epoch_incompatible: false });
     await writeFile(
       path.join(root, "package.json"),
       JSON.stringify({

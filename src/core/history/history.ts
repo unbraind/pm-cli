@@ -203,15 +203,18 @@ function isHistoryPatch(value: unknown): value is HistoryPatchOp[] {
   if (!Array.isArray(value) || Object.keys(value).length !== value.length) {
     return false;
   }
-  return value.every(
-    (operation) =>
-      isRecord(operation) &&
-      ["add", "remove", "replace", "move", "copy", "test"].includes(
-        operation.op as string,
-      ) &&
-      typeof operation.path === "string" &&
-      (operation.from === undefined || typeof operation.from === "string"),
-  );
+  return value.every((operation) => {
+    if (!isRecord(operation) || typeof operation.path !== "string") {
+      return false;
+    }
+    if (operation.op === "move" || operation.op === "copy") {
+      return typeof operation.from === "string";
+    }
+    if (["add", "replace", "test"].includes(operation.op as string)) {
+      return Object.hasOwn(operation, "value");
+    }
+    return operation.op === "remove";
+  });
 }
 
 /** Return whether a retained record has the minimum immutable event shape. */
@@ -227,12 +230,22 @@ function isRetainedHistoryRecordShape(value: unknown): value is HistoryEntry {
   );
 }
 
+/** Return whether optional retained record-hash fields form a complete pair. */
+function hasCompleteRetainedRecordHashEnvelope(
+  evidence: Record<string, unknown>,
+): boolean {
+  const hasVersion = evidence.record_hash_version !== undefined;
+  const hasHash = evidence.record_hash !== undefined;
+  return hasVersion === hasHash;
+}
+
 /** Return whether runtime evidence has the bounded shape needed for verification. */
 function isHistoryReanchorEvidence(
   evidence: unknown,
 ): evidence is HistoryReanchorEvidence {
   if (
     !isRecord(evidence) ||
+    !hasCompleteRetainedRecordHashEnvelope(evidence) ||
     typeof evidence.before_hash !== "string" ||
     typeof evidence.after_hash !== "string" ||
     typeof evidence.patch_hash !== "string" ||

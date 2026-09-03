@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:history","area:sdk",context-integrity,github-1178,immutability,provenance,security
 created_at: "2026-09-02T21:14:35.285Z"
-updated_at: "2026-09-03T07:52:46.343Z"
+updated_at: "2026-09-03T08:20:19.648Z"
 closed_at: "2026-09-03T05:56:55.531Z"
 completed_at: "2026-09-03T05:56:55.531Z"
 author: "harness:codex"
@@ -28,7 +28,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,verifies,"2026-09-02T21:14:35.285Z","harness:codex","cli:create:dep",detected
   pm-aka8m7,implements,"2026-09-03T05:34:40.975Z","harness:codex","cli:update:dep",detected
   pm-l7m7k5,verifies,"2026-09-03T05:34:40.975Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-02T21:14:35.285Z","harness:codex","Duplicate-check evidence: complete all-status searches for author/provenance hash coverage, attribution tampering, history epochs, and immutable record fields found open pm-aka8m7 for retaining original anchors during re-anchoring and open pm-9yfo for mutation-history completeness. Neither covers the record envelope itself. GitHub #1178 is the canonical owner for the demonstrated green-verifier attribution rewrite. Source: https://github.com/unbraind/pm-cli/issues/1178"
   "2026-09-02T21:14:59.271Z","harness:codex","GitHub linkage evidence: issue #1178 now points to this canonical item at the merge-stable main-branch toon path."
   "2026-09-03T05:35:06.469Z","harness:codex","Implementation evidence: every newly written history record is sealed with a versioned canonical record hash covering attribution, operation, context, patch, and item anchors. Replay, health, redaction, repair, compaction, and provenance normalization verify the immutable envelope before rewriting; rewrite evidence reconstructs retained prior envelopes and rejects author, patch, or record tampering. Full gate: 600 files, 8,318 tests, 100/100/100/100 coverage."
@@ -36,6 +36,7 @@ comments[7]{created_at,author,text}:
   "2026-09-03T06:08:28.310Z","harness:codex","Governance evidence: the final real-tracker static run correctly failed closed until whole-record integrity closure was bound to executable prevention evidence. Author, time, operation, context, patch, and anchor tampering are negative controls across replay/rewrite tests, exact coverage, record-integrity assurance, and hosted static/coverage checks; no waiver is used."
   "2026-09-03T07:33:42.854Z","harness:codex","Review-round evidence: whole-record rewrite ancestry now retains the exact prior sealed record when policy permits, validates malformed and sparse evidence without throwing, distinguishes incomplete envelopes, and deliberately degrades privacy-sensitive redaction and provenance normalization to digest-only evidence. Negative controls cover metadata-only rewrites, contradictory summaries, invalid prior hashes, malformed runtime values, and replay refusal. Full repository coverage passes 8,322 tests at exact 100/100/100/100."
   "2026-09-03T07:52:46.343Z","harness:codex","Final verification evidence: review remediation passed the repository-wide exact-coverage gate across 600 files and 8,322 tests: statements 61,438/61,438, branches 46,516/46,516, functions 12,785/12,785, lines 59,119/59,119. Static quality, audit, credential scan, and SDK surface checks also passed."
+  "2026-09-03T08:20:19.647Z","harness:codex","Second review remediation: rewrite evidence now requires paired record-hash envelope fields and operation-specific RFC 6902 members before complete coverage can be reported; malformed move/copy/add/replace/test evidence fails closed."
 notes[1]{created_at,author,text}:
   "2026-09-03T05:35:07.060Z","harness:codex","Compatibility note: legacy records remain explicitly item-state-only evidence. The new verifier does not overclaim attribution integrity for an epoch that never stored a record envelope."
 learnings[1]{created_at,author,text}:

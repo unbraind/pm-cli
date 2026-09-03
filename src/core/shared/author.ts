@@ -721,6 +721,51 @@ function claudeTranscriptCandidateStatus(
   }
 }
 
+/** Resolve a bounded cross-workspace Claude transcript discovery result. */
+function discoverClaudeSessionFile(
+  projectsRoot: string,
+  session: string,
+):
+  | Readonly<{ status: "available"; path: string }>
+  | Readonly<{ status: "ambiguous" | "failed" | "missing" }> {
+  let discovered: Array<{
+    candidate: string;
+    status: "available" | "failed" | "missing";
+  }>;
+  try {
+    discovered = fs
+      .readdirSync(projectsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .slice(0, 512)
+      .map((entry) => {
+        const candidate = path.join(
+          projectsRoot,
+          entry.name,
+          `${session}.jsonl`,
+        );
+        return {
+          candidate,
+          status: claudeTranscriptCandidateStatus(candidate),
+        };
+      });
+  } catch (error) {
+    return { status: isFileAbsentError(error) ? "missing" : "failed" };
+  }
+  const matches = discovered
+    .filter(({ status }) => status === "available")
+    .map(({ candidate }) => candidate);
+  if (matches.length === 0) {
+    return {
+      status: discovered.some(({ status }) => status === "failed")
+        ? "failed"
+        : "missing",
+    };
+  }
+  if (matches.length > 1) return { status: "ambiguous" };
+  return { status: "available", path: matches[0]! };
+}
+
 /** Resolve one Claude transcript by stable session identity without exposing its path. */
 function resolveClaudeSessionFile(
   signals: HarnessDetectionSignals,
@@ -757,31 +802,7 @@ function resolveClaudeSessionFile(
     if (status === "available") return { status, path: candidate };
     if (status === "failed") return { status };
   }
-  let matches: string[];
-  try {
-    matches = fs
-      .readdirSync(projectsRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .sort((left, right) => left.name.localeCompare(right.name))
-      .slice(0, 512)
-      .flatMap((entry) => {
-        const candidate = path.join(
-          projectsRoot,
-          entry.name,
-          `${session}.jsonl`,
-        );
-        return claudeTranscriptCandidateStatus(candidate) === "available"
-          ? [candidate]
-          : [];
-      });
-  } catch (error) {
-    return {
-      status: isFileAbsentError(error) ? "missing" : "failed",
-    };
-  }
-  if (matches.length === 0) return { status: "missing" };
-  if (matches.length > 1) return { status: "ambiguous" };
-  return { status: "available", path: matches[0]! };
+  return discoverClaudeSessionFile(projectsRoot, session);
 }
 
 function readClaudeSessionProvenance(

@@ -218,6 +218,8 @@ export interface ProjectRuntimeVersionPin {
     | "yarn.lock";
   /** Whether the declaration selects one runtime, a minimum, or a bounded range. */
   constraint: "exact" | "minimum" | "range";
+  /** Original package declaration when it conveys more than the representative version. */
+  declaration?: string;
   /** Whether the declaration permits a reader that understands history item-hash epoch 3. */
   history_epoch_compatible?: boolean;
 }
@@ -238,13 +240,13 @@ export interface ProjectRuntimeCompatibilityResult {
   mutating: boolean;
   /** Whether the active executable is older than the strongest project pin. */
   stale?: boolean;
-  /** Whether this mutation would write a history epoch an exact project pin cannot read. */
+  /** Whether this mutation would write a history epoch a project pin cannot read. */
   history_epoch_incompatible?: boolean;
   /** Item-hash epoch the executing runtime writes. */
   writer_item_hash_version?: 2 | 3;
-  /** Exact project runtime that cannot read the writer epoch. */
+  /** Project runtime declaration that cannot read the writer epoch. */
   incompatible_project_version?: string;
-  /** Origin of the exact incompatible project runtime. */
+  /** Origin of the incompatible project runtime declaration. */
   incompatible_source?: ProjectRuntimeVersionPin["source"];
   /** Non-blocking diagnostic attached to stale read-only invocations. */
   warning?: ProjectRuntimeCompatibilityWarning;
@@ -312,10 +314,11 @@ export function historyItemHashVersionForRuntime(version: string): 2 | 3 {
 function findIncompatibleHistoryEpochPin(
   pins: readonly ProjectRuntimeVersionPin[],
   writerItemHashVersion: 2 | 3,
-): ProjectRuntimeVersionPin | undefined {
+): (ProjectRuntimeVersionPin & Readonly<{ declaration: string }>) | undefined {
   if (writerItemHashVersion !== 3) return undefined;
   return pins
     .filter((pin) => pin.history_epoch_compatible === false)
+    .map((pin) => ({ ...pin, declaration: pin.declaration ?? pin.version }))
     .sort(
       (left, right) =>
         comparePmDateVersions(left.version, right.version) as number,
@@ -336,23 +339,44 @@ function readJsonRecord(filePath: string): Record<string, unknown> | null {
   }
 }
 
-/** Return whether a supported range can select the first epoch-3 reader. */
-function rangePermitsHistoryEpochReader(specification: string): boolean {
-  const upperBounds = [
-    ...specification.matchAll(
-      /(<|<=)\s*v?(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)/gu,
+/** Extract explicit comparator and hyphen upper bounds from one range branch. */
+function rangeUpperBounds(
+  alternative: string,
+): Array<Readonly<{ inclusive: boolean; version: string }>> {
+  const comparators = [
+    ...alternative.matchAll(/(<=|<)\s*v?(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)/gu),
+  ].map((match) => ({ inclusive: match[1] === "<=", version: match[2]! }));
+  const hyphen = alternative.match(
+    /\b\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?\s+-\s+v?(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)/u,
+  );
+  return hyphen
+    ? [...comparators, { inclusive: true, version: hyphen[1]! }]
+    : comparators;
+}
+
+/** Classify whether a range is bounded and can select an epoch-3 reader. */
+function analyzeHistoryEpochRange(specification: string): Readonly<{
+  bounded: boolean;
+  compatible: boolean;
+}> {
+  const alternativeBounds = specification
+    .split("||")
+    .map((alternative) => rangeUpperBounds(alternative));
+  return {
+    bounded: alternativeBounds.some((bounds) => bounds.length > 0),
+    compatible: alternativeBounds.some((bounds) =>
+      bounds.every((bound) => {
+        const comparison = comparePmDateVersions(
+          HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
+          bound.version,
+        );
+        return (
+          comparison !== null &&
+          (bound.inclusive ? comparison !== 1 : comparison === -1)
+        );
+      }),
     ),
-  ];
-  return upperBounds.every((match) => {
-    const comparison = comparePmDateVersions(
-      HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
-      match[2]!,
-    );
-    return (
-      comparison !== null &&
-      (match[1] === "<" ? comparison === -1 : comparison !== 1)
-    );
-  });
+  };
 }
 
 /** Extract every supported pm declaration without letting one section hide another. */
@@ -361,7 +385,7 @@ function dependencyPins(
 ): Array<
   Pick<
     ProjectRuntimeVersionPin,
-    "constraint" | "history_epoch_compatible" | "version"
+    "constraint" | "declaration" | "history_epoch_compatible" | "version"
   >
 > {
   return [
@@ -381,19 +405,18 @@ function dependencyPins(
     const exact = /^(?:=|v)?\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/u.test(
       specification,
     );
-    const bounded = /(?:<|<=)\s*v?\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?/u.test(
-      specification,
-    );
+    const range = analyzeHistoryEpochRange(specification);
     return [
       {
         version,
-        constraint: exact ? "exact" : bounded ? "range" : "minimum",
+        constraint: exact ? "exact" : range.bounded ? "range" : "minimum",
+        ...(exact ? {} : { declaration: specification }),
         history_epoch_compatible: exact
           ? comparePmDateVersions(
               version,
               HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
             ) !== -1
-          : rangePermitsHistoryEpochReader(specification),
+          : range.compatible,
       },
     ];
   });
@@ -603,7 +626,7 @@ export function inspectProjectRuntimeCompatibility(options: {
     writer_item_hash_version: writerItemHashVersion,
     ...(incompatibleEpochPin
       ? {
-          incompatible_project_version: incompatibleEpochPin.version,
+          incompatible_project_version: incompatibleEpochPin.declaration,
           incompatible_source: incompatibleEpochPin.source,
         }
       : {}),

@@ -56,6 +56,7 @@ function isFieldArray(value: unknown): value is string[] {
       typeof field !== "string" ||
       field.length === 0 ||
       field.length > 256 ||
+      field.includes("\0") ||
       fields.has(field)
     ) {
       return false;
@@ -76,10 +77,27 @@ function isLegacyDecision(value: unknown): value is {
     typeof value.field === "string" &&
     value.field.length > 0 &&
     value.field.length <= 256 &&
+    !value.field.includes("\0") &&
     typeof value.retained_hash === "string" &&
     /^[a-f0-9]{64}$/u.test(value.retained_hash) &&
     typeof value.discarded_hash === "string" &&
     /^[a-f0-9]{64}$/u.test(value.discarded_hash)
+  );
+}
+
+/** Return whether a legacy item path is normalized, bounded, and item-scoped. */
+function isLegacyItemPath(value: unknown, historyItemId: string): boolean {
+  if (typeof value !== "string") return false;
+  const normalized = path.posix.normalize(value);
+  return (
+    value.length <= 4_096 &&
+    !value.includes("\\") &&
+    !value.includes("\0") &&
+    !path.posix.isAbsolute(value) &&
+    normalized === value &&
+    !normalized.startsWith("../") &&
+    (path.posix.basename(normalized) === `${historyItemId}.toon` ||
+      path.posix.basename(normalized) === `${historyItemId}.md`)
   );
 }
 
@@ -88,9 +106,6 @@ function hasLegacyReceiptIdentity(
   value: Record<string, unknown>,
   historyItemId: string,
 ): boolean {
-  const itemPath = value.item_path;
-  const normalizedItemPath =
-    typeof itemPath === "string" ? path.posix.normalize(itemPath) : "";
   return (
     typeof value.receipt_id === "string" &&
     isSafeReceiptId(value.receipt_id) &&
@@ -98,14 +113,7 @@ function hasLegacyReceiptIdentity(
     value.requested_preference === undefined &&
     value.conflict_resolution === undefined &&
     value.item_id === historyItemId &&
-    typeof itemPath === "string" &&
-    itemPath.length <= 4_096 &&
-    !itemPath.includes("\\") &&
-    !path.posix.isAbsolute(itemPath) &&
-    normalizedItemPath === itemPath &&
-    !normalizedItemPath.startsWith("../") &&
-    (path.posix.basename(normalizedItemPath) === `${historyItemId}.toon` ||
-      path.posix.basename(normalizedItemPath) === `${historyItemId}.md`)
+    isLegacyItemPath(value.item_path, historyItemId)
   );
 }
 
@@ -115,6 +123,13 @@ function hasLegacyReceiptCollections(value: Record<string, unknown>): boolean {
   const fieldsFromTheirs = value.fields_from_theirs;
   const unionFields = value.union_fields;
   const decisions = value.decisions;
+  const decisionFields = Array.isArray(decisions)
+    ? new Set(
+        decisions.flatMap((decision) =>
+          isLegacyDecision(decision) ? [decision.field] : [],
+        ),
+      )
+    : new Set<string>();
   return (
     isFieldArray(conflictFields) &&
     isFieldArray(fieldsFromTheirs) &&
@@ -124,13 +139,9 @@ function hasLegacyReceiptCollections(value: Record<string, unknown>): boolean {
     decisions.length <= 256 &&
     Object.keys(decisions).length === decisions.length &&
     decisions.every(isLegacyDecision) &&
-    new Set(decisions.map((decision) => decision.field)).size ===
-      decisions.length &&
-    [...conflictFields].sort().join("\0") ===
-      decisions
-        .map((decision) => decision.field)
-        .sort()
-        .join("\0")
+    decisionFields.size === decisions.length &&
+    conflictFields.length === decisionFields.size &&
+    conflictFields.every((field) => decisionFields.has(field))
   );
 }
 

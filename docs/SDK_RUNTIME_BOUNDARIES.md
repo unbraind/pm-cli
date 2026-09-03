@@ -35,7 +35,11 @@ The boundary is bidirectional for history storage. A current runtime also
 refuses a mutation when any package declaration or lockfile pin cannot select a
 runtime that reads the writer epoch. Every manifest section is evaluated, so a
 newer permissive declaration cannot hide an older exact pin. Upper-bounded
-ranges that exclude the first compatible reader also fail closed. The typed
+ranges that exclude the first compatible reader also fail closed, including
+inclusive hyphen ranges. Disjunctive ranges evaluate each alternative, so one
+branch that can select a compatible reader keeps the declaration writable. The
+original incompatible declaration is preserved in the diagnostic rather than
+being reduced to its representative lower bound. The typed
 `project_runtime_history_epoch_incompatible` error reports the writer epoch,
 the incompatible declaration, its redaction-safe source, and the minimum
 upgrade. Reads remain available, and the same emergency override is reserved

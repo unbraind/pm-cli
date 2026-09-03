@@ -79,6 +79,15 @@ describe("merge receipt history compatibility", () => {
         "pm-receipt",
       ),
     ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        {
+          ...legacySummary(),
+          item_path: ".agents/pm/tasks/pm-receipt.md\0ignored",
+        },
+        "pm-receipt",
+      ),
+    ).toBe(false);
   });
 
   it("rejects sparse or duplicated collection evidence", () => {
@@ -98,6 +107,27 @@ describe("merge receipt history compatibility", () => {
     expect(
       isLegacyMergeReceiptSummary(
         { ...legacySummary(), conflict_fields: Array(257).fill("field") },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        {
+          ...legacySummary(),
+          conflict_fields: ["a\0b", "c"],
+          decisions: [
+            {
+              field: "a",
+              retained_hash: "a".repeat(64),
+              discarded_hash: "b".repeat(64),
+            },
+            {
+              field: "b\0c",
+              retained_hash: "c".repeat(64),
+              discarded_hash: "d".repeat(64),
+            },
+          ],
+        },
         "pm-receipt",
       ),
     ).toBe(false);

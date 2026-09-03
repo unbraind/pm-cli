@@ -539,6 +539,40 @@ describe("agent runtime SDK primitives", () => {
     } finally {
       readdir.mockRestore();
     }
+
+    const discoveredSession = "session-discovered-denied";
+    const discoveredPath = path.join(
+      home,
+      ".claude",
+      "projects",
+      "neighbor",
+      `${discoveredSession}.jsonl`,
+    );
+    const discoveredLstat = vi
+      .spyOn(fs, "lstatSync")
+      .mockImplementation((candidate) => {
+        if (candidate === discoveredPath) throw denied;
+        return nativeLstat(candidate);
+      });
+    const discoveredRead = vi
+      .spyOn(fs, "readdirSync")
+      .mockReturnValue([
+        { isDirectory: () => true, name: "neighbor" } as fs.Dirent,
+      ]);
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: discoveredSession,
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "failed", reason: "resolver_failed" });
+    } finally {
+      discoveredRead.mockRestore();
+      discoveredLstat.mockRestore();
+    }
   });
 
   it("does not touch Claude session storage when probes are disabled", () => {
