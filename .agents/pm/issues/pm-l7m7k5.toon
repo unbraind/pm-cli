@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:provenance","area:sdk",context-integrity,github-1177,harness,observability,regression
 created_at: "2026-09-02T21:14:31.322Z"
-updated_at: "2026-09-03T08:20:19.196Z"
+updated_at: "2026-09-03T08:52:41.488Z"
 closed_at: "2026-09-03T05:56:54.330Z"
-completed_at: "2026-09-03T05:56:54.330Z"
+completed_at: "2026-09-03T08:52:40.000Z"
 author: "harness:codex"
 acceptance_criteria: "Resolve the transcript by explicit harness path when available or bounded unique session-id discovery independent of cwd; distinguish resolver_input_missing from resolver_failed without exposing paths, prompts, identifiers, or session content; prove child-workspace and session-root invocation parity with independent fixtures and a real-layout temporary acceptance; define a justified sustained zero-success health severity; pass provenance, SDK, CLI, security, static, and exact coverage gates."
 parent: pm-5oj5

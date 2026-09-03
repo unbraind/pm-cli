@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: history,immutability,integrity,merge,multi-agent
 created_at: "2026-07-31T14:23:27.186Z"
-updated_at: "2026-09-03T08:43:48.897Z"
+updated_at: "2026-09-03T08:52:41.051Z"
 closed_at: "2026-09-03T05:56:57.935Z"
-completed_at: "2026-09-03T05:56:57.935Z"
+completed_at: "2026-09-03T08:52:40.000Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "The original before_hash and after_hash of every re-anchored entry are retained durably, so a verifier can reconstruct the pre-re-anchor anchor set without holding the pre-merge stream; A verification path confirms that a re-anchor changed only anchors and entry ordering, and did not change any author, timestamp, operation, message or patch content, and fails loudly when it did; The lenient patch-repair path records the original patch operations it replaced or skipped, not only an aggregate skippedOps count, so recorded intent survives a repair; The same retention applies to every path that re-anchors - merge, history-repair, history-redact and history-compact - enforced once at the shared pipeline rather than per command, which makes pm-34w8za a natural carrier; History compaction states explicitly what it can no longer prove after pruning a checkpointed prefix, so the loss is recorded rather than silent; A negative-control test tampers with one entry's author or patch inside a simulated merge window and proves the verification path rejects the resulting stream, since a check that cannot fail adds no assurance"

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:health","area:merge","area:sdk",compatibility,github-1179,merge-receipts,regression
 created_at: "2026-09-02T21:14:41.932Z"
-updated_at: "2026-09-03T08:20:20.110Z"
+updated_at: "2026-09-03T08:52:42.465Z"
 closed_at: "2026-09-03T05:56:56.743Z"
-completed_at: "2026-09-03T05:56:56.743Z"
+completed_at: "2026-09-03T08:52:40.000Z"
 author: "harness:codex"
 acceptance_criteria: "Normalize or explicitly version the preferred-era receipt shape at the compatibility boundary; never classify a present receipt as a missing reference solely because newer fields are absent; downgrade genuinely unverifiable legacy evidence to a truthful advisory or provide an audited state-changing migration; ensure every gate-failing remediation can progress state; add old/new mixed-history integration and strict-exit negative controls; pass merge, health, SDK, CLI, security, static, and exact coverage gates."
 parent: pm-dj98
