@@ -451,6 +451,122 @@ describe("core/lock/lock additional branch coverage", () => {
     }
   });
 
+  it("retries evidenced Windows-style lock creation contention without hiding permission failures", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-windows-delete-pending";
+      const lockPath = getLockPath(pmPath, id);
+      const transientError = Object.assign(new Error("delete pending"), {
+        code: "EPERM",
+      });
+      const missingPath = path.join(pmPath, "locks", "missing.lock");
+      expect(
+        await lockInternals.isLockCreateContention(
+          { code: "EEXIST" },
+          missingPath,
+        ),
+      ).toBe(true);
+      expect(
+        await lockInternals.isLockCreateContention(
+          { code: "EINVAL" },
+          missingPath,
+        ),
+      ).toBe(false);
+      expect(
+        await lockInternals.isLockCreateContention(
+          transientError,
+          missingPath,
+          "linux",
+        ),
+      ).toBe(false);
+      expect(
+        await lockInternals.isLockCreateContention(
+          transientError,
+          missingPath,
+          "win32",
+        ),
+      ).toBe(true);
+
+      const lstatSpy = vi.spyOn(fs, "lstat");
+      try {
+        for (const code of ["EPERM", "EACCES", "EBUSY"]) {
+          lstatSpy.mockRejectedValueOnce(
+            Object.assign(new Error("path temporarily unavailable"), { code }),
+          );
+          expect(
+            await lockInternals.isLockCreateContention(
+              transientError,
+              missingPath,
+              "win32",
+            ),
+          ).toBe(true);
+        }
+      } finally {
+        lstatSpy.mockRestore();
+      }
+
+      const accessSpy = vi
+        .spyOn(fs, "access")
+        .mockRejectedValueOnce(
+          Object.assign(new Error("directory denied"), { code: "EACCES" }),
+        );
+      try {
+        expect(
+          await lockInternals.isLockCreateContention(
+            transientError,
+            missingPath,
+            "win32",
+          ),
+        ).toBe(false);
+      } finally {
+        accessSpy.mockRestore();
+      }
+
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({
+          id,
+          pid: process.pid,
+          owner: "departing-owner",
+          created_at: new Date().toISOString(),
+          ttl_seconds: 60,
+        })}\n`,
+      );
+      const realOpen = fs.open.bind(fs);
+      const realReadFile = fs.readFile.bind(fs);
+      const openSpy = vi
+        .spyOn(fs, "open")
+        .mockRejectedValueOnce(transientError)
+        .mockImplementation(realOpen);
+      const readFileSpy = vi
+        .spyOn(fs, "readFile")
+        .mockImplementation(async (...args) => {
+          const value = await realReadFile(...args);
+          if (String(args[0]) === lockPath) {
+            await fs.rm(lockPath, { force: true });
+          }
+          return value;
+        });
+      try {
+        const release = await acquireLock(
+          pmPath,
+          id,
+          60,
+          "replacement-owner",
+          false,
+          false,
+          100,
+        );
+        await expect(fs.readFile(lockPath, "utf8")).resolves.toContain(
+          "replacement-owner",
+        );
+        await release();
+      } finally {
+        readFileSpy.mockRestore();
+        openSpy.mockRestore();
+      }
+    });
+  });
+
   it("dispatches extension lock lifecycle hooks for read create and release", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-hook-lifecycle";

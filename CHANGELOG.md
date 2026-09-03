@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1183: Windows nightly event-index lock acquisition and fallback publication are nondeterministic ([pm-fqlocp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fqlocp.toon))
 - GH-1177: Claude session provenance path is derived from invocation cwd instead of the session-start workspace ([pm-l7m7k5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l7m7k5.toon))
 - GH-1179: legacy merge-receipt shape is misclassified as a gate-failing missing history reference with no remedy ([pm-wn3ee5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wn3ee5.toon))
 - Re-anchoring overwrites the original hash pair, so the immutability proof for every pre-merge entry is destroyed by the operation that repairs the chain ([pm-aka8m7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aka8m7.toon))

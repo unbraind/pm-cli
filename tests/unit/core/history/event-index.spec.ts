@@ -1400,8 +1400,8 @@ describe("history mutation event index", () => {
         (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
       ).toHaveLength(2);
       await expect(
-        fs.access(path.join(context.pmPath, "runtime", INDEX_FILENAME)),
-      ).rejects.toThrow();
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
     });
   });
 
