@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Verdict contract: one declared vocabulary of reproducible predicates over recorded state, composable into a score, with reward shaping explicitly refused ([pm-e1vkee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e1vkee.toon))
+
 ### Fixed
 
+- Acceptance criteria are documented as merging like tags but are stored as one delimiter-joined scalar, so concurrent criteria additions from different branches are silently discarded ([pm-inn5y5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-inn5y5.toon))
 - GH-1183: Windows nightly event-index lock acquisition and fallback publication are nondeterministic ([pm-fqlocp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fqlocp.toon))
 - GH-1177: Claude session provenance path is derived from invocation cwd instead of the session-start workspace ([pm-l7m7k5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l7m7k5.toon))
 - GH-1179: legacy merge-receipt shape is misclassified as a gate-failing missing history reference with no remedy ([pm-wn3ee5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wn3ee5.toon))

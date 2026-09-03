@@ -1,0 +1,8 @@
+{
+  "name": "pm-sdk-agent-environment-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node run-agent-environment.mjs"
+  }
+}

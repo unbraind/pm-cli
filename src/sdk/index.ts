@@ -26,6 +26,7 @@ export * from "./mcp/apps.js";
 export * from "./mcp/skills.js";
 export * from "./cli-contracts/grammar-contracts.js";
 export * from "./agent-session-context.js";
+export * from "./environment/agent-environment.js";
 export type {
   PmCommandCapabilityContract,
   PmCommandCapabilityFamily,

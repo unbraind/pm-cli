@@ -63,6 +63,7 @@ pm guide release --json
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
 - [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) - inherited role/topic context, cross-process episode identity, and deterministic history grouping.
+- [SDK Agent Environments](AGENT_ENVIRONMENTS.md) - calibrated observations, total verdicts, isolated episodes, and an executable public-SDK environment.
 - [Improvement Ledger and History Analytics](IMPROVEMENT_ANALYTICS.md) - audited quantitative observations, live provenance coverage, and bounded observational fleet outcomes.
 - [Project Assurance Primitives](ASSURANCE.md) - SDK-owned measurements, assertions, lifecycle gates, cost receipts, and durable verdict history shared by CLI and MCP.
 - [Defect Recurrence and Boundary Evidence](DEFECT_RECURRENCE.md) - captured external samples, structured defect-escape evidence, incremental change-risk indexing, and executable recovery-producer census.

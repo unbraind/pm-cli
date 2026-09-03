@@ -1,0 +1,27 @@
+id: pm-mg13iz
+title: "GH-1185: hash-only merge receipts make discarded scalar values unreachable to the reviewing agent"
+description: "On pm 2026.9.3, merge decisions retain pm_value_hash while base, ours, and theirs are null and value_availability is hash_only. pm merge report exposes the same data, so explicit acceptance requires out-of-band git archaeology. Low-cardinality hashes are cheaply enumerable while free-text hashes are irrecoverable, providing neither reliable confidentiality nor actionable review evidence."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-03T18:06:37.336Z"
+updated_at: "2026-09-03T18:07:08.922Z"
+author: "harness:codex"
+acceptance_criteria: "A documented bounded policy distinguishes inline, redacted, truncated, and hash-only values; at least one supported SDK/CLI report path returns reviewable discarded evidence when policy permits; receipts never claim recoverability when only a digest exists; low-cardinality and free-text privacy negative controls pass; reconciliation and explicit acceptance remain auditable and backward compatible"
+parent: pm-dj98
+risk: critical
+confidence: high
+severity: high
+environment: pm-cli 2026.9.3; Node 26.5.0; Linux; fresh merge-driver install
+repro_steps: "Create divergent scalar values, merge to produce a field decision, then inspect the receipt and pm merge report; confirm base/ours/theirs are null and no command returns the discarded value."
+expected_result: "A bounded privacy policy makes discarded values reviewable through a supported command or records a truthful retrievable reference, while hashes remain available for verification and oversized or sensitive values fail closed."
+actual_result: The only durable evidence is a digest; the agent cannot discover the discarded scalar from pm merge report and must locate historical branch state manually.
+component: sdk/merge-receipts
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rh98vo,related,"2026-09-03T18:06:37.336Z","harness:codex","cli:create:dep",detected
+  pm-z1z96w,recurs_from,"2026-09-03T18:06:37.336Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-03T18:06:37.336Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1185. All-status duplicate check searched discarded value, hash-only, merge report, and value availability. pm-z1z96w shipped truthful proof-backed reconciliation for hash-only receipts and pm-rh98vo shipped durable receipt discovery, but their live resolutions do not provide a readable discarded value. This report is a recurrence/boundary extension and receives a new item linked to both shipped lineages."
+  "2026-09-03T18:07:08.922Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1185#issuecomment-5530007658"
+body: ""
