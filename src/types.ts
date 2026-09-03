@@ -1038,6 +1038,8 @@ export interface HistoryReanchorEvidence {
   record_hash_version?: number;
   /** Record hash protecting the pre-re-anchor attribution and operation metadata. */
   record_hash?: string;
+  /** Exact prior sealed record when maintenance can retain its non-sensitive payload. */
+  record?: HistoryEntry;
 }
 
 /** Documents the history entry payload exchanged by command, SDK, and package integrations. */

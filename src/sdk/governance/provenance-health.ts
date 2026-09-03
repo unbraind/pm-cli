@@ -154,7 +154,10 @@ export function normalizeInvalidHistoryProvenance(
     } else {
       next.agent_provenance = retained as HistoryEntry["agent_provenance"];
     }
-    return resealHistoryRewrite(entry, next, { retainPriorRecord: true });
+    return resealHistoryRewrite(entry, next, {
+      retainPriorRecord: true,
+      retainPriorRecordHash: false,
+    });
   });
   return {
     entries: normalized,

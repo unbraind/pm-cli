@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:provenance","area:sdk",context-integrity,github-1177,harness,observability,regression
 created_at: "2026-09-02T21:14:31.322Z"
-updated_at: "2026-09-03T06:08:28.786Z"
+updated_at: "2026-09-03T07:52:47.276Z"
 closed_at: "2026-09-03T05:56:54.330Z"
 completed_at: "2026-09-03T05:56:54.330Z"
 author: "harness:codex"
@@ -29,12 +29,29 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-f60039,discovered_from,"2026-09-02T21:14:31.322Z","harness:codex","cli:create:dep",detected
   pm-5oj5,implements,"2026-09-03T05:34:40.254Z","harness:codex","cli:update:dep",detected
   pm-f60039,verifies,"2026-09-03T05:34:40.254Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
-  "2026-09-02T21:14:31.322Z","harness:codex","Duplicate-check evidence: complete all-status searches for Claude session provenance, cwd, session-start workspace, and zero-success diagnostics found closed pm-9gvazz for slug encoding, closed pm-f60039 for nested JSONL parsing, and pm-lu6sca for outcome classification. GitHub #1177 proves a distinct invocation-cwd versus session-start path boundary on 2026.9.2; no existing item owns it. Source: https://github.com/unbraind/pm-cli/issues/1177"
-  "2026-09-02T21:14:57.508Z","harness:codex","GitHub linkage evidence: issue #1177 now points to this canonical item at the merge-stable main-branch toon path."
-  "2026-09-03T05:35:04.969Z","harness:codex","Implementation evidence: Claude provenance now resolves an explicit transcript path first, the invocation-workspace path second, then a deterministic scan of at most 512 direct project directories for one unique safe session id. Ambiguity and read failures fail closed without recording paths or transcript content. The focused provenance suite passes and the repository-wide exact coverage gate includes child-workspace, non-file candidate, ambiguity, malformed version, and unreadable transcript controls."
-  "2026-09-03T05:46:55.373Z","harness:codex","Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
-  "2026-09-03T06:08:28.786Z","harness:codex","Governance evidence: the final real-tracker static run correctly failed closed until Claude provenance closure was bound to executable prevention evidence. Explicit path precedence, child-cwd discovery, bounded ambiguity, and privacy-safe resolver outcomes are negative controls across focused runtime tests, exact coverage, and hosted static/coverage checks; no waiver is used."
+comments[7]:
+  - created_at: "2026-09-02T21:14:31.322Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: complete all-status searches for Claude session provenance, cwd, session-start workspace, and zero-success diagnostics found closed pm-9gvazz for slug encoding, closed pm-f60039 for nested JSONL parsing, and pm-lu6sca for outcome classification. GitHub #1177 proves a distinct invocation-cwd versus session-start path boundary on 2026.9.2; no existing item owns it. Source: https://github.com/unbraind/pm-cli/issues/1177"
+  - created_at: "2026-09-02T21:14:57.508Z"
+    author: "harness:codex"
+    text: "GitHub linkage evidence: issue #1177 now points to this canonical item at the merge-stable main-branch toon path."
+  - created_at: "2026-09-03T05:35:04.969Z"
+    author: "harness:codex"
+    text: "Implementation evidence: Claude provenance now resolves an explicit transcript path first, the invocation-workspace path second, then a deterministic scan of at most 512 direct project directories for one unique safe session id. Ambiguity and read failures fail closed without recording paths or transcript content. The focused provenance suite passes and the repository-wide exact coverage gate includes child-workspace, non-file candidate, ambiguity, malformed version, and unreadable transcript controls."
+  - created_at: "2026-09-03T05:46:55.373Z"
+    author: "harness:codex"
+    text: "Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
+  - created_at: "2026-09-03T06:08:28.786Z"
+    author: "harness:codex"
+    text: "Governance evidence: the final real-tracker static run correctly failed closed until Claude provenance closure was bound to executable prevention evidence. Explicit path precedence, child-cwd discovery, bounded ambiguity, and privacy-safe resolver outcomes are negative controls across focused runtime tests, exact coverage, and hosted static/coverage checks; no waiver is used."
+  - created_at: "2026-09-03T07:33:44.272Z"
+    author: "harness:codex"
+    text: "Review-round evidence: Claude transcript discovery now uses lstat, opens with O_NOFOLLOW, rejects symlink candidates, reports inaccessible discovery roots as resolver_failed, and short-circuits before any filesystem access when probes are disabled. The focused resolver suite and exact repository coverage pass."
+    edited_at: "2026-09-03T07:34:03.807Z"
+  - created_at: "2026-09-03T07:52:47.276Z"
+    author: "harness:codex"
+    text: "Final gate evidence: clean build, strict ESLint, packed npm/npx/bunx smoke, manual installed-consumer SDK import, and the complete exact-coverage suite passed after no-follow provenance hardening."
 notes[1]{created_at,author,text}:
   "2026-09-03T05:35:05.439Z","harness:codex","Design note: cwd independence is intentionally session-id based and bounded. The resolver never recursively walks arbitrary trees and never emits discovered host paths in diagnostics."
 learnings[1]{created_at,author,text}:

@@ -4,6 +4,7 @@
  * Classifies privacy-safe merge receipt references embedded in history.
  */
 import { createHash } from "node:crypto";
+import path from "node:path";
 
 import { isSafeReceiptId } from "../merge/receipts.js";
 
@@ -44,18 +45,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Return whether every member of an unknown value is a string. */
-function isStringArray(value: unknown): boolean {
-  return (
-    Array.isArray(value) && value.every((entry) => typeof entry === "string")
-  );
+/** Return a bounded dense list of unique, non-empty field names. */
+function isFieldArray(value: unknown): value is string[] {
+  if (!Array.isArray(value) || value.length > 256) return false;
+  const fields = new Set<string>();
+  for (let index = 0; index < value.length; index += 1) {
+    const field = value[index];
+    if (
+      !(index in value) ||
+      typeof field !== "string" ||
+      field.length === 0 ||
+      field.length > 256 ||
+      fields.has(field)
+    ) {
+      return false;
+    }
+    fields.add(field);
+  }
+  return true;
 }
 
 /** Return whether an unknown value is one complete legacy field decision. */
-function isLegacyDecision(value: unknown): boolean {
+function isLegacyDecision(value: unknown): value is {
+  discarded_hash: string;
+  field: string;
+  retained_hash: string;
+} {
   if (!isRecord(value)) return false;
   return (
     typeof value.field === "string" &&
+    value.field.length > 0 &&
+    value.field.length <= 256 &&
     typeof value.retained_hash === "string" &&
     /^[a-f0-9]{64}$/u.test(value.retained_hash) &&
     typeof value.discarded_hash === "string" &&
@@ -63,12 +83,14 @@ function isLegacyDecision(value: unknown): boolean {
   );
 }
 
-/** Return whether one summary is a complete, self-contained preferred-era receipt. */
-export function isLegacyMergeReceiptSummary(
+/** Return whether a preferred-era summary has one safe canonical identity. */
+function hasLegacyReceiptIdentity(
   value: Record<string, unknown>,
   historyItemId: string,
 ): boolean {
   const itemPath = value.item_path;
+  const normalizedItemPath =
+    typeof itemPath === "string" ? path.posix.normalize(itemPath) : "";
   return (
     typeof value.receipt_id === "string" &&
     isSafeReceiptId(value.receipt_id) &&
@@ -77,13 +99,49 @@ export function isLegacyMergeReceiptSummary(
     value.conflict_resolution === undefined &&
     value.item_id === historyItemId &&
     typeof itemPath === "string" &&
-    (itemPath.endsWith(`/${historyItemId}.toon`) ||
-      itemPath.endsWith(`/${historyItemId}.md`)) &&
-    isStringArray(value.conflict_fields) &&
-    isStringArray(value.fields_from_theirs) &&
-    isStringArray(value.union_fields) &&
-    Array.isArray(value.decisions) &&
-    value.decisions.every(isLegacyDecision)
+    itemPath.length <= 4_096 &&
+    !itemPath.includes("\\") &&
+    !path.posix.isAbsolute(itemPath) &&
+    normalizedItemPath === itemPath &&
+    !normalizedItemPath.startsWith("../") &&
+    (path.posix.basename(normalizedItemPath) === `${historyItemId}.toon` ||
+      path.posix.basename(normalizedItemPath) === `${historyItemId}.md`)
+  );
+}
+
+/** Return whether preferred-era summary collections are dense and self-consistent. */
+function hasLegacyReceiptCollections(value: Record<string, unknown>): boolean {
+  const conflictFields = value.conflict_fields;
+  const fieldsFromTheirs = value.fields_from_theirs;
+  const unionFields = value.union_fields;
+  const decisions = value.decisions;
+  return (
+    isFieldArray(conflictFields) &&
+    isFieldArray(fieldsFromTheirs) &&
+    isFieldArray(unionFields) &&
+    Array.isArray(decisions) &&
+    decisions.length > 0 &&
+    decisions.length <= 256 &&
+    Object.keys(decisions).length === decisions.length &&
+    decisions.every(isLegacyDecision) &&
+    new Set(decisions.map((decision) => decision.field)).size ===
+      decisions.length &&
+    [...conflictFields].sort().join("\0") ===
+      decisions
+        .map((decision) => decision.field)
+        .sort()
+        .join("\0")
+  );
+}
+
+/** Return whether one summary is a complete, self-contained preferred-era receipt. */
+export function isLegacyMergeReceiptSummary(
+  value: Record<string, unknown>,
+  historyItemId: string,
+): boolean {
+  return (
+    hasLegacyReceiptIdentity(value, historyItemId) &&
+    hasLegacyReceiptCollections(value)
   );
 }
 

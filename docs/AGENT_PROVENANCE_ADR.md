@@ -78,10 +78,11 @@ the existing domain-separated, truncated `agent_instance` digest. Public
 telemetry continues to use installation-scoped hashes or presence booleans; it
 does not export raw provenance values.
 
-Health counts only resolvers that actually opened a uniquely resolved input as
-attempts. A sustained attempted-but-zero-success series remains advisory: it
-truthfully identifies a parser or provider-shape drift without treating missing
-descriptive metadata as authorization or item-state corruption. Missing-input
+Health counts resolvers with an available input, plus failed or ambiguous
+resolution attempts, as attempts. A sustained attempted-but-zero-success series
+remains advisory: it truthfully identifies parser, filesystem, ambiguity, or
+provider-shape drift without treating missing descriptive metadata as
+authorization or item-state corruption. Missing-input and probes-disabled
 events are classified separately and do not inflate that warning.
 
 ## Compatibility

@@ -17,6 +17,7 @@ import {
   readAgentSemanticAttributionSync,
   type AgentSemanticAttribution,
 } from "../session/session-state.js";
+import { isFileAbsentError } from "../fs/fs-utils.js";
 
 /** Stable provenance categories recorded beside newly appended history authors. */
 export type AuthorSource = "asserted" | "configured" | "detected" | "unknown";
@@ -709,13 +710,26 @@ function parseClaudeProvenanceLine(
   return Object.freeze({ model, version });
 }
 
+/** Classify one candidate without following symlinks or leaking filesystem detail. */
+function claudeTranscriptCandidateStatus(
+  candidate: string,
+): "available" | "failed" | "missing" {
+  try {
+    return fs.lstatSync(candidate).isFile() ? "available" : "missing";
+  } catch (error) {
+    return isFileAbsentError(error) ? "missing" : "failed";
+  }
+}
+
 /** Resolve one Claude transcript by stable session identity without exposing its path. */
 function resolveClaudeSessionFile(
   signals: HarnessDetectionSignals,
   env: Readonly<Record<string, string | undefined>>,
 ):
   | Readonly<{ status: "available"; path: string }>
-  | Readonly<{ status: "ambiguous" | "missing" | "unavailable" }> {
+  | Readonly<{
+      status: "ambiguous" | "failed" | "missing" | "unavailable";
+    }> {
   const session = nonBlank(env.CLAUDE_CODE_SESSION_ID);
   if (!session || !/^[A-Za-z0-9_-]{1,128}$/u.test(session)) {
     return { status: "unavailable" };
@@ -739,13 +753,9 @@ function resolveClaudeSessionFile(
       : undefined;
   for (const candidate of [suppliedPath, directPath]) {
     if (!candidate) continue;
-    try {
-      if (fs.statSync(candidate).isFile()) {
-        return { status: "available", path: candidate };
-      }
-    } catch {
-      // Continue into bounded session-id discovery.
-    }
+    const status = claudeTranscriptCandidateStatus(candidate);
+    if (status === "available") return { status, path: candidate };
+    if (status === "failed") return { status };
   }
   let matches: string[];
   try {
@@ -760,14 +770,14 @@ function resolveClaudeSessionFile(
           entry.name,
           `${session}.jsonl`,
         );
-        try {
-          return fs.statSync(candidate).isFile() ? [candidate] : [];
-        } catch {
-          return [];
-        }
+        return claudeTranscriptCandidateStatus(candidate) === "available"
+          ? [candidate]
+          : [];
       });
-  } catch {
-    return { status: "missing" };
+  } catch (error) {
+    return {
+      status: isFileAbsentError(error) ? "missing" : "failed",
+    };
   }
   if (matches.length === 0) return { status: "missing" };
   if (matches.length > 1) return { status: "ambiguous" };
@@ -782,7 +792,10 @@ function readClaudeSessionProvenance(
   const resolution = resolveClaudeSessionFile(signals, env);
   if (resolution.status !== "available") return undefined;
   try {
-    const file = fs.openSync(resolution.path, "r");
+    const file = fs.openSync(
+      resolution.path,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW,
+    );
     try {
       const stats = fs.fstatSync(file);
       const cacheKey = `${resolution.path}\u0000${stats.size}\u0000${stats.mtimeMs}`;
@@ -998,7 +1011,7 @@ function provenanceResolverHasInput(
   descriptor: NormalizedHarnessSignalDescriptor,
   signals: HarnessDetectionSignals,
   env: Readonly<Record<string, string | undefined>>,
-): "ambiguous" | "available" | "missing" | "unavailable" {
+): "ambiguous" | "available" | "failed" | "missing" | "unavailable" {
   if (resolver === "ai_agent_version") {
     const value = nonBlank(env.AI_AGENT);
     return value !== undefined &&
@@ -1525,14 +1538,15 @@ export function detectAgentIdentity(
 
 /** Classify one configured resolver's privacy-safe absence outcome. */
 function provenanceResolverAbsence(
-  resolverInput: "ambiguous" | "available" | "missing" | "unavailable",
-  probesEnabled: boolean,
+  resolverInput:
+    | "ambiguous"
+    | "available"
+    | "failed"
+    | "missing"
+    | "unavailable",
 ): Pick<AgentProvenanceOutcome, "reason" | "status"> {
   if (resolverInput === "unavailable") {
     return { status: "unavailable", reason: "harness_unavailable" };
-  }
-  if (!probesEnabled) {
-    return { status: "unavailable", reason: "probes_disabled" };
   }
   if (resolverInput === "missing") {
     return { status: "unavailable", reason: "resolver_input_missing" };
@@ -1565,6 +1579,14 @@ function resolveProvenanceOutcome(
     };
   }
   if (resolver) {
+    if (!probesEnabled) {
+      return {
+        status: "unavailable",
+        reason: "probes_disabled",
+        resolver,
+        rule_version: "v1",
+      };
+    }
     const resolverInput = provenanceResolverHasInput(
       resolver,
       descriptor,
@@ -1572,7 +1594,7 @@ function resolveProvenanceOutcome(
       env,
     );
     return {
-      ...provenanceResolverAbsence(resolverInput, probesEnabled),
+      ...provenanceResolverAbsence(resolverInput),
       resolver,
       rule_version: "v1",
     };

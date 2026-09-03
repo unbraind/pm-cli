@@ -468,6 +468,104 @@ describe("agent runtime SDK primitives", () => {
     }
   });
 
+  it("rejects symlink transcripts and reports inaccessible discovery roots", async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), "pm-claude-boundary-"));
+    tempRoots.push(home);
+    const sessionFile = path.join(home, "session-boundary.jsonl");
+    const nativeLstat = fs.lstatSync.bind(fs);
+    const lstat = vi
+      .spyOn(fs, "lstatSync")
+      .mockImplementation((candidate) =>
+        candidate === sessionFile
+          ? ({ isFile: () => false } as fs.Stats)
+          : nativeLstat(candidate),
+      );
+    const open = vi.spyOn(fs, "openSync");
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          session_file: sessionFile,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-boundary",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({
+        status: "unavailable",
+        reason: "resolver_input_missing",
+      });
+      expect(open).not.toHaveBeenCalled();
+    } finally {
+      open.mockRestore();
+      lstat.mockRestore();
+    }
+
+    const denied = Object.assign(new Error("denied"), { code: "EACCES" });
+    const deniedLstat = vi
+      .spyOn(fs, "lstatSync")
+      .mockImplementation((candidate) => {
+        if (candidate === sessionFile) throw denied;
+        return nativeLstat(candidate);
+      });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          session_file: sessionFile,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-boundary",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "failed", reason: "resolver_failed" });
+    } finally {
+      deniedLstat.mockRestore();
+    }
+
+    const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(() => {
+      throw denied;
+    });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-denied",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "failed", reason: "resolver_failed" });
+    } finally {
+      readdir.mockRestore();
+    }
+  });
+
+  it("does not touch Claude session storage when probes are disabled", () => {
+    const lstat = vi.spyOn(fs, "lstatSync").mockImplementation(() => {
+      throw new Error("probe attempted");
+    });
+    const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(() => {
+      throw new Error("probe attempted");
+    });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          probes_enabled: false,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "disabled-session",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "unavailable", reason: "probes_disabled" });
+      expect(lstat).not.toHaveBeenCalled();
+      expect(readdir).not.toHaveBeenCalled();
+    } finally {
+      readdir.mockRestore();
+      lstat.mockRestore();
+    }
+  });
+
   it("uses ambient signals by default and records extensible effort and role provenance", async () => {
     await withIsolatedHarnessEnvironment(
       {

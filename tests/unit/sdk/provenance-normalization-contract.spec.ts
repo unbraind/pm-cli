@@ -46,6 +46,12 @@ describe("history provenance normalization", () => {
     expect(normalized.entries[0].reanchor_evidence).toEqual([
       expect.objectContaining({ patch_hash: expect.any(String) }),
     ]);
+    expect(
+      normalized.entries[0].reanchor_evidence?.[0]?.record,
+    ).toBeUndefined();
+    expect(
+      normalized.entries[0].reanchor_evidence?.[0]?.record_hash,
+    ).toBeUndefined();
     expect(normalized.receipt).toEqual({
       changed: true,
       events_changed: 1,

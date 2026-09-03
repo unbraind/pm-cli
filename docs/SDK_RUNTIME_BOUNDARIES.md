@@ -32,13 +32,14 @@ inside `ProjectRuntimeCompatibilityResult`. `PM_ALLOW_STALE_CLI=1` is the
 explicit, auditable emergency override.
 
 The boundary is bidirectional for history storage. A current runtime also
-refuses a mutation when an exact package or lockfile pin predates the runtime's
-writer epoch and therefore cannot read the new event. The stable
+refuses a mutation when any package declaration or lockfile pin cannot select a
+runtime that reads the writer epoch. Every manifest section is evaluated, so a
+newer permissive declaration cannot hide an older exact pin. Upper-bounded
+ranges that exclude the first compatible reader also fail closed. The typed
 `project_runtime_history_epoch_incompatible` error reports the writer epoch,
-the exact incompatible pin, its redaction-safe source, and the minimum upgrade.
-Version ranges are lower bounds rather than exact pins and do not trigger this
-forward guard. Reads remain available, and the same emergency override is
-reserved for an intentionally coordinated fleet migration.
+the incompatible declaration, its redaction-safe source, and the minimum
+upgrade. Reads remain available, and the same emergency override is reserved
+for an intentionally coordinated fleet migration.
 
 The public `isProjectMutatingInvocation` classifier applies the same decision
 to package hosts and the bundled CLI. It resolves mixed command families by

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:health","area:merge","area:sdk",compatibility,github-1179,merge-receipts,regression
 created_at: "2026-09-02T21:14:41.932Z"
-updated_at: "2026-09-03T06:08:29.270Z"
+updated_at: "2026-09-03T07:52:47.728Z"
 closed_at: "2026-09-03T05:56:56.743Z"
 completed_at: "2026-09-03T05:56:56.743Z"
 author: "harness:codex"
@@ -30,12 +30,14 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-z1z96w,discovered_from,"2026-09-02T21:14:41.932Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-09-03T05:34:41.732Z","harness:codex","cli:update:dep",detected
   pm-lwmstb,verifies,"2026-09-03T05:34:41.732Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-02T21:14:41.932Z","harness:codex","Duplicate-check evidence: complete all-status searches for preferred-era receipts, conflict_resolution compatibility, missing history references, and no-op reconciliation found closed pm-qckpnq for truthful requested_preference output, closed pm-lwmstb for remediation routing, and closed pm-z1z96w for proof-gated hash-only settlement. None owns health misclassification of already-present legacy receipt records. Source: https://github.com/unbraind/pm-cli/issues/1179"
   "2026-09-02T21:15:00.913Z","harness:codex","GitHub linkage evidence: issue #1179 now points to this canonical item at the merge-stable main-branch toon path."
   "2026-09-03T05:35:08.100Z","harness:codex","Implementation evidence: merge-reconcile history classification now has a public SDK primitive that accepts structurally complete preferred-era legacy summaries, requires safe ids and 64-hex decision hashes, prefers same-item references, and reports privacy-safe hashed diagnostics for unsafe ids. Current conflict-resolution receipts retain their stricter path. Focused legacy/current integration and SDK tests pass within the exact coverage run."
   "2026-09-03T05:46:56.297Z","harness:codex","Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
   "2026-09-03T06:08:29.270Z","harness:codex","Governance evidence: the final real-tracker static run correctly failed closed until legacy receipt compatibility was bound to executable prevention evidence. Partial, cross-item, unsafe-identifier, and malformed-digest summaries are negative controls across public SDK unit/integration tests, exact coverage, and hosted static/coverage checks; no waiver is used."
+  "2026-09-03T07:33:44.725Z","harness:codex","Review-round evidence: preferred-era legacy summaries now require safe normalized relative item paths, dense bounded unique field collections, non-empty bounded decisions, unique decision fields, and exact conflict_fields-to-decision agreement. Integration fixtures preserve every JSONL row while modifying only the target event. Sparse, empty, mismatched, unsafe-path, and oversized controls fail closed."
+  "2026-09-03T07:52:47.728Z","harness:codex","Final gate evidence: strict legacy receipt validation, JSONL stream preservation, static quality, packed consumer smoke, and the complete 8,322-test exact-coverage suite passed."
 notes[1]{created_at,author,text}:
   "2026-09-03T05:35:08.663Z","harness:codex","Compatibility note: the classifier recognizes a proved legacy capability rather than treating the absence of a field introduced later as missing evidence. Malformed and cross-item summaries still fail closed."
 learnings[1]{created_at,author,text}:

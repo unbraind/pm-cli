@@ -134,29 +134,40 @@ describe("project runtime compatibility", () => {
     );
     expect(discoverProjectRuntimeVersionPins(root)).toEqual([
       {
+        version: "2026.8.8",
+        source: "package.json",
+        constraint: "minimum",
+        history_epoch_compatible: true,
+      },
+      {
         version: "2026.8.13",
         source: "package.json",
         constraint: "exact",
+        history_epoch_compatible: false,
       },
       {
         version: "2026.8.9",
         source: "installed-package",
         constraint: "exact",
+        history_epoch_compatible: false,
       },
       {
         version: "2026.8.10",
         source: "package-lock.json",
         constraint: "exact",
+        history_epoch_compatible: false,
       },
       {
         version: "2026.8.11",
         source: "pnpm-lock.yaml",
         constraint: "exact",
+        history_epoch_compatible: false,
       },
       {
         version: "2026.8.12",
         source: "yarn.lock",
         constraint: "exact",
+        history_epoch_compatible: false,
       },
     ]);
     expect(
@@ -174,6 +185,7 @@ describe("project runtime compatibility", () => {
       version: "2026.8.14",
       source: "yarn.lock",
       constraint: "exact",
+      history_epoch_compatible: false,
     });
   });
 
@@ -295,6 +307,43 @@ describe("project runtime compatibility", () => {
     });
 
     await rm(path.join(root, "node_modules"), { recursive: true, force: true });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        dependencies: { "@unbrained/pm-cli": "2026.9.2" },
+        devDependencies: { "@unbrained/pm-cli": ">=2026.8.28 <2026.8.31" },
+      }),
+    );
+    expect(() =>
+      assertProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "bounded range"],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "project_runtime_history_epoch_incompatible",
+      }),
+    );
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          "@unbrained/pm-cli": ">=2026.8.28 <=2026.8.30",
+        },
+      }),
+    );
+    expect(() =>
+      assertProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "inclusive bounded range"],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "project_runtime_history_epoch_incompatible",
+      }),
+    );
     await writeFile(
       path.join(root, "package.json"),
       JSON.stringify({

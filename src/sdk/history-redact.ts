@@ -468,18 +468,30 @@ function redactHistoryEntry(
 
   const nextReanchorEvidence = entry.reanchor_evidence?.map(
     (evidence): HistoryReanchorEvidence => {
-      if (!evidence.patch) return evidence;
-      const redactedEvidencePatch = redactHistoryPatch(
-        evidence.patch,
-        rules,
-        replacement,
-      );
+      const redactedEvidencePatch = evidence.patch
+        ? redactHistoryPatch(evidence.patch, rules, replacement)
+        : { patch: undefined, replacements: 0 };
+      const redactedEvidenceRecord = evidence.record
+        ? redactUnknownValue(evidence.record, rules, replacement)
+        : { value: undefined, replacements: 0 };
       replacements += redactedEvidencePatch.replacements;
-      changed ||= redactedEvidencePatch.replacements > 0;
-      if (redactedEvidencePatch.replacements === 0) return evidence;
+      replacements += redactedEvidenceRecord.replacements;
+      const evidenceChanged =
+        redactedEvidencePatch.replacements > 0 ||
+        redactedEvidenceRecord.replacements > 0;
+      changed ||= evidenceChanged;
+      if (!evidenceChanged) return evidence;
       reanchorEvidenceRedacted = true;
-      const { patch: _sensitivePatch, ...digestOnlyEvidence } = evidence;
-      return digestOnlyEvidence;
+      const {
+        patch: _sensitivePatch,
+        record: _sensitiveRecord,
+        record_hash: _priorRecordHash,
+        record_hash_version: _priorRecordHashVersion,
+        ...digestOnlyEvidence
+      } = evidence;
+      return redactedEvidencePatch.replacements > 0
+        ? digestOnlyEvidence
+        : { ...digestOnlyEvidence, patch: evidence.patch };
     },
   );
 
@@ -539,7 +551,8 @@ function rewriteHistoryEntries(
           after_hash: afterHash,
         },
         {
-          retainPriorRecordHash: !redacted.reanchorEvidenceRedacted,
+          retainPriorRecord: redacted.changed,
+          retainPriorRecordHash: !redacted.changed,
         },
       ),
     );

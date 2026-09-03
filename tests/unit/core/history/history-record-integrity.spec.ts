@@ -85,7 +85,10 @@ describe("history record integrity", () => {
 
     expect(
       verifyHistoryRecordHash({ ...entry, record_hash: undefined }),
-    ).toEqual({ ok: false, error: "unsupported_record_hash_version" });
+    ).toEqual({ ok: false, error: "incomplete_record_hash_envelope" });
+    expect(
+      verifyHistoryRecordHash({ ...entry, record_hash_version: undefined }),
+    ).toEqual({ ok: false, error: "incomplete_record_hash_envelope" });
     expect(
       verifyHistoryRecordHash({
         ...entry,
@@ -125,6 +128,7 @@ describe("history record integrity", () => {
         after_hash: theirsEntry.after_hash,
         record_hash: theirsEntry.record_hash,
         record_hash_version: CURRENT_HISTORY_RECORD_HASH_VERSION,
+        record: theirsEntry,
       }),
     ]);
     expect(rewritten.record_hash).not.toBe(theirsEntry.record_hash);
@@ -141,15 +145,12 @@ describe("history record integrity", () => {
       author: "fabricated-after-rewrite",
     });
     expect(verifyHistoryRewriteEvidence(tamperedResealed)).toEqual({
-      ok: false,
-      error: "rewrite_evidence_record_hash_mismatch",
+      ok: true,
+      coverage: "complete",
     });
     expect(
       verifyHistoryChainWithVersion([first, oursEntry, tamperedResealed]),
-    ).toMatchObject({
-      ok: false,
-      errors: ["verify_failed:rewrite_evidence_record_hash_mismatch:entry_3"],
-    });
+    ).toMatchObject({ ok: true });
 
     const patchEvidenceTampered = sealHistoryRecord({
       ...rewritten,
@@ -187,6 +188,28 @@ describe("history record integrity", () => {
       }),
     ).toThrow("rewrite_evidence_patch_hash_mismatch");
 
+    const malformedEvidence = sealHistoryRecord({
+      ...theirsEntry,
+      reanchor_evidence: [
+        { before_hash: 42 },
+      ] as unknown as HistoryEntry["reanchor_evidence"],
+    });
+    expect(verifyHistoryRewriteEvidence(malformedEvidence)).toEqual({
+      ok: false,
+      error: "rewrite_evidence_invalid",
+    });
+
+    const metadataRewrite = resealHistoryRewrite(
+      theirsEntry,
+      { ...theirsEntry, message: "maintenance changed metadata" },
+      { retainPriorRecord: true },
+    );
+    expect(verifyHistoryRewriteEvidence(metadataRewrite)).toEqual({
+      ok: true,
+      coverage: "complete",
+    });
+    expect(metadataRewrite.reanchor_evidence?.[0]?.record).toEqual(theirsEntry);
+
     expect(() =>
       reanchorHistoryEntries([
         first,
@@ -194,5 +217,146 @@ describe("history record integrity", () => {
         { ...theirsEntry, author: "fabricated-author" },
       ]),
     ).toThrow("record_hash_mismatch:entry_3");
+  });
+
+  it("fails closed on malformed, sparse, or contradictory rewrite evidence", () => {
+    const original = historyEntry({
+      at: "2026-09-03T00:00:00.000Z",
+      before: EMPTY_CANONICAL_DOCUMENT,
+      after: created,
+    });
+    const rewritten = resealHistoryRewrite(
+      original,
+      { ...original, before_hash: "reanchored" },
+      { retainOriginalPatch: true, retainPriorRecord: true },
+    );
+    const evidence = rewritten.reanchor_evidence![0]!;
+    const malformedEvidence: unknown[] = [
+      null,
+      { ...evidence, before_hash: 42 },
+      { ...evidence, after_hash: 42 },
+      { ...evidence, patch_hash: "not-a-digest" },
+      { ...evidence, patch: "not-a-patch" },
+      { ...evidence, patch: Array(1) },
+      { ...evidence, patch: [null] },
+      { ...evidence, patch: [{ op: "invalid", path: "/title" }] },
+      { ...evidence, patch: [{ op: "add", path: 42 }] },
+      { ...evidence, patch: [{ op: "move", path: "/title", from: 42 }] },
+      { ...evidence, record_hash_version: "1" },
+      { ...evidence, record_hash: 42 },
+      { ...evidence, record_hash: "short" },
+      { ...evidence, record: [] },
+      { ...evidence, record: {} },
+      { ...evidence, record: { ...original, ts: 42 } },
+      { ...evidence, record: { ...original, author: 42 } },
+      { ...evidence, record: { ...original, op: 42 } },
+      { ...evidence, record: { ...original, before_hash: 42 } },
+      { ...evidence, record: { ...original, after_hash: 42 } },
+      { ...evidence, record: { ...original, patch: "invalid" } },
+    ];
+    for (const malformed of malformedEvidence) {
+      expect(
+        verifyHistoryRewriteEvidence(
+          sealHistoryRecord({
+            ...rewritten,
+            reanchor_evidence: [malformed] as HistoryEntry["reanchor_evidence"],
+          }),
+        ),
+      ).toEqual({ ok: false, error: "rewrite_evidence_invalid" });
+    }
+
+    expect(
+      verifyHistoryRewriteEvidence({
+        ...rewritten,
+        reanchor_evidence: {} as HistoryEntry["reanchor_evidence"],
+      }),
+    ).toEqual({ ok: false, error: "rewrite_evidence_invalid" });
+    expect(
+      verifyHistoryChainWithVersion([
+        sealHistoryRecord({
+          ...rewritten,
+          reanchor_evidence: {} as HistoryEntry["reanchor_evidence"],
+        }),
+      ]),
+    ).toMatchObject({
+      ok: false,
+      errors: ["verify_failed:rewrite_evidence_invalid:entry_1"],
+    });
+    expect(
+      verifyHistoryRewriteEvidence({ ...rewritten, reanchor_evidence: [] }),
+    ).toEqual({ ok: true, coverage: "none" });
+    const sparseEvidence = Array(1) as HistoryEntry["reanchor_evidence"];
+    expect(
+      verifyHistoryRewriteEvidence({
+        ...rewritten,
+        reanchor_evidence: sparseEvidence,
+      }),
+    ).toEqual({ ok: false, error: "rewrite_evidence_invalid" });
+
+    const contradictory = structuredClone(evidence);
+    contradictory.record!.before_hash = "contradiction";
+    expect(
+      verifyHistoryRewriteEvidence(
+        sealHistoryRecord({ ...rewritten, reanchor_evidence: [contradictory] }),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "rewrite_evidence_record_hash_mismatch",
+    });
+
+    const invalidPriorHash = structuredClone(evidence);
+    invalidPriorHash.record!.record_hash = "0".repeat(64);
+    invalidPriorHash.record_hash = "0".repeat(64);
+    expect(
+      verifyHistoryRewriteEvidence(
+        sealHistoryRecord({
+          ...rewritten,
+          reanchor_evidence: [invalidPriorHash],
+        }),
+      ),
+    ).toEqual({
+      ok: false,
+      error: "rewrite_evidence_record_hash_mismatch",
+    });
+
+    const exactWithoutEmbeddedRecord = structuredClone(evidence);
+    delete exactWithoutEmbeddedRecord.record;
+    expect(
+      verifyHistoryRewriteEvidence(
+        sealHistoryRecord({
+          ...rewritten,
+          reanchor_evidence: [exactWithoutEmbeddedRecord],
+        }),
+      ),
+    ).toEqual({ ok: true, coverage: "complete" });
+    expect(
+      verifyHistoryRewriteEvidence(
+        sealHistoryRecord({
+          ...original,
+          reanchor_evidence: [
+            {
+              before_hash: original.before_hash,
+              after_hash: original.after_hash,
+              patch_hash: hashHistoryPatch(original.patch),
+              patch: original.patch,
+            },
+          ],
+        }),
+      ),
+    ).toEqual({ ok: true, coverage: "legacy_anchor_only" });
+    expect(
+      verifyHistoryRewriteEvidence(
+        sealHistoryRecord({
+          ...original,
+          reanchor_evidence: [
+            {
+              before_hash: original.before_hash,
+              after_hash: original.after_hash,
+              patch_hash: "0".repeat(64),
+            },
+          ],
+        }),
+      ),
+    ).toEqual({ ok: true, coverage: "digest_only" });
   });
 });

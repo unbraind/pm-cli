@@ -53,11 +53,11 @@ History writers using item-hash epoch 2 always emit `item_hash_version: 2`. An e
 
 Repair keeps implicit legacy streams implicit and byte-stable when no drift exists. Unsupported explicit epochs still fail with a typed `unsupported_item_hash_version` diagnostic instead of being rewritten.
 
-| Writer/runtime range                     | Item-hash output | Read contract                                                                                             |
-| ---------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
-| Legacy writers before an explicit marker | implicit epoch 1 | Modern readers retain legacy canonicalization candidates.                                                 |
-| Observed 2026.8.24 through 2026.8.28     | explicit epoch 2 | Modern readers accept both field-frozen and expanded epoch-2 forms without mixing forms inside one entry. |
-| 2026.8.31 and newer                      | explicit epoch 3 | Older exact pins below 2026.8.31 cannot read epoch 3; current runtimes reject the write before mutation.  |
+| Writer/runtime range                     | Item-hash output | Read contract                                                                                                                  |
+| ---------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Legacy writers before an explicit marker | implicit epoch 1 | Modern readers retain legacy canonicalization candidates.                                                                      |
+| Observed 2026.8.24 through 2026.8.28     | explicit epoch 2 | Modern readers accept both field-frozen and expanded epoch-2 forms without mixing forms inside one entry.                      |
+| 2026.8.31 and newer                      | explicit epoch 3 | Exact pins and bounded ranges that cannot select an epoch-3 reader cause current runtimes to reject the write before mutation. |
 
 The table records confirmed release boundaries rather than inventing an exact
 first release for legacy epoch 1 or epoch 2. The SDK exports
@@ -81,11 +81,14 @@ reanchoring primitives so packages and embedded hosts do not need private core
 imports or their own canonicalization.
 
 Maintenance retains prior anchors and patch digests in `reanchor_evidence`.
-This separates two claims: the current chain is replay-consistent, and a
-rewrite preserved evidence of what it replaced. Compaction records a digest of
-its pruned prefix and explicitly states that individual pruned entries require
-the pre-compaction stream; it never upgrades intentional information loss into
-a stronger assurance claim.
+When policy permits, it also retains the exact prior sealed record so
+metadata-only rewrites remain independently verifiable. Privacy-sensitive
+redaction and provenance normalization deliberately retain digest-only evidence
+instead of embedding the removed value. This separates two claims: the current
+chain is replay-consistent, and a rewrite preserved evidence of what it
+replaced. Compaction records a digest of its pruned prefix and explicitly states
+that individual pruned entries require the pre-compaction stream; it never
+upgrades intentional information loss into a stronger assurance claim.
 
 ## Verification Boundary
 

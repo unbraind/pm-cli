@@ -46,6 +46,61 @@ describe("merge receipt history compatibility", () => {
         "pm-receipt",
       ),
     ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), decisions: [] },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        {
+          ...legacySummary(),
+          decisions: [
+            {
+              field: "",
+              retained_hash: "a".repeat(64),
+              discarded_hash: "b".repeat(64),
+            },
+          ],
+        },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), conflict_fields: ["description"] },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), item_path: "../tasks/pm-receipt.md" },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects sparse or duplicated collection evidence", () => {
+    const sparse = Array(1) as unknown[];
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), decisions: sparse },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), conflict_fields: ["title", "title"] },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isLegacyMergeReceiptSummary(
+        { ...legacySummary(), conflict_fields: Array(257).fill("field") },
+        "pm-receipt",
+      ),
+    ).toBe(false);
   });
 
   it("ignores blank receipt identifiers during bounded extraction", () => {

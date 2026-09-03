@@ -207,7 +207,7 @@ const MIXED_COMMAND_CLASSIFIERS: Readonly<
 
 /** One discovered project pin that can prove the active executable is stale. */
 export interface ProjectRuntimeVersionPin {
-  /** Exact or minimum date-version extracted from the project declaration. */
+  /** Representative date-version extracted from the project declaration. */
   version: string;
   /** Redaction-safe origin of the pin. */
   source:
@@ -216,8 +216,10 @@ export interface ProjectRuntimeVersionPin {
     | "package-lock.json"
     | "pnpm-lock.yaml"
     | "yarn.lock";
-  /** Whether the declaration selects one runtime or only establishes a lower bound. */
-  constraint: "exact" | "minimum";
+  /** Whether the declaration selects one runtime, a minimum, or a bounded range. */
+  constraint: "exact" | "minimum" | "range";
+  /** Whether the declaration permits a reader that understands history item-hash epoch 3. */
+  history_epoch_compatible?: boolean;
 }
 
 /** Structured result returned by the read-only compatibility probe. */
@@ -306,21 +308,14 @@ export function historyItemHashVersionForRuntime(version: string): 2 | 3 {
     : 2;
 }
 
-/** Find the oldest exact pin that cannot read the executing writer epoch. */
+/** Find the oldest declaration that cannot select a reader for the executing writer epoch. */
 function findIncompatibleHistoryEpochPin(
   pins: readonly ProjectRuntimeVersionPin[],
   writerItemHashVersion: 2 | 3,
 ): ProjectRuntimeVersionPin | undefined {
   if (writerItemHashVersion !== 3) return undefined;
   return pins
-    .filter(
-      (pin) =>
-        pin.constraint === "exact" &&
-        comparePmDateVersions(
-          pin.version,
-          HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
-        ) === -1,
-    )
+    .filter((pin) => pin.history_epoch_compatible === false)
     .sort(
       (left, right) =>
         comparePmDateVersions(left.version, right.version) as number,
@@ -341,41 +336,67 @@ function readJsonRecord(filePath: string): Record<string, unknown> | null {
   }
 }
 
-/** Extract the highest explicit lower-bound pm date version from dependency declarations. */
-function dependencyPin(
+/** Return whether a supported range can select the first epoch-3 reader. */
+function rangePermitsHistoryEpochReader(specification: string): boolean {
+  const upperBounds = [
+    ...specification.matchAll(
+      /(<|<=)\s*v?(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)/gu,
+    ),
+  ];
+  return upperBounds.every((match) => {
+    const comparison = comparePmDateVersions(
+      HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
+      match[2]!,
+    );
+    return (
+      comparison !== null &&
+      (match[1] === "<" ? comparison === -1 : comparison !== 1)
+    );
+  });
+}
+
+/** Extract every supported pm declaration without letting one section hide another. */
+function dependencyPins(
   packageJson: Record<string, unknown>,
-): Pick<ProjectRuntimeVersionPin, "constraint" | "version"> | undefined {
-  const versions: Array<
-    Pick<ProjectRuntimeVersionPin, "constraint" | "version">
-  > = [];
-  for (const field of [
+): Array<
+  Pick<
+    ProjectRuntimeVersionPin,
+    "constraint" | "history_epoch_compatible" | "version"
+  >
+> {
+  return [
     "dependencies",
     "devDependencies",
     "optionalDependencies",
     "peerDependencies",
-  ]) {
+  ].flatMap((field) => {
     const dependencies = packageJson[field];
-    if (typeof dependencies !== "object" || dependencies === null) continue;
+    if (typeof dependencies !== "object" || dependencies === null) return [];
     const value = (dependencies as Record<string, unknown>)[PACKAGE_NAME];
     const specification = typeof value === "string" ? value.trim() : "";
     const version = /^[<!]/u.test(specification)
       ? undefined
       : specification.match(VERSION_PATTERN)?.[0];
-    if (version) {
-      versions.push({
+    if (!version) return [];
+    const exact = /^(?:=|v)?\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/u.test(
+      specification,
+    );
+    const bounded = /(?:<|<=)\s*v?\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?/u.test(
+      specification,
+    );
+    return [
+      {
         version,
-        constraint: /^(?:=|v)?\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/u.test(
-          specification,
-        )
-          ? "exact"
-          : "minimum",
-      });
-    }
-  }
-  return versions.sort(
-    (left, right) =>
-      comparePmDateVersions(right.version, left.version) as number,
-  )[0];
+        constraint: exact ? "exact" : bounded ? "range" : "minimum",
+        history_epoch_compatible: exact
+          ? comparePmDateVersions(
+              version,
+              HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN,
+            ) !== -1
+          : rangePermitsHistoryEpochReader(specification),
+      },
+    ];
+  });
 }
 
 /** Read npm's exact installed package coordinate from package-lock.json. */
@@ -429,8 +450,14 @@ export function discoverProjectRuntimeVersionPins(
 ): ProjectRuntimeVersionPin[] {
   const pins: ProjectRuntimeVersionPin[] = [];
   const projectPackage = readJsonRecord(path.join(projectRoot, "package.json"));
-  const declared = projectPackage ? dependencyPin(projectPackage) : undefined;
-  if (declared) pins.push({ ...declared, source: "package.json" });
+  if (projectPackage) {
+    pins.push(
+      ...dependencyPins(projectPackage).map((pin) => ({
+        ...pin,
+        source: "package.json" as const,
+      })),
+    );
+  }
   const installedPackage = readJsonRecord(
     path.join(
       projectRoot,
@@ -449,6 +476,8 @@ export function discoverProjectRuntimeVersionPins(
       version: installedVersion,
       source: "installed-package",
       constraint: "exact",
+      history_epoch_compatible:
+        historyItemHashVersionForRuntime(installedVersion) === 3,
     });
   }
   const packageLockVersion = packageLockPin(projectRoot);
@@ -457,11 +486,21 @@ export function discoverProjectRuntimeVersionPins(
       version: packageLockVersion,
       source: "package-lock.json",
       constraint: "exact",
+      history_epoch_compatible:
+        historyItemHashVersionForRuntime(packageLockVersion) === 3,
     });
   }
   for (const file of ["pnpm-lock.yaml", "yarn.lock"] as const) {
     const version = textLockPin(projectRoot, file);
-    if (version) pins.push({ version, source: file, constraint: "exact" });
+    if (version) {
+      pins.push({
+        version,
+        source: file,
+        constraint: "exact",
+        history_epoch_compatible:
+          historyItemHashVersionForRuntime(version) === 3,
+      });
+    }
   }
   return pins;
 }

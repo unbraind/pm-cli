@@ -1541,6 +1541,23 @@
       ],
       "package_version": "2026.9.2",
       "reason": "Extend history rewrite provenance to preserve independently verifiable record ancestry"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeVersionPin",
+        "signature ./sdk:reanchorHistoryEntries",
+        "signature ./sdk:verifyHistoryRecordHash",
+        "signature ./sdk:verifyHistoryRewriteEvidence"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Whole-record rewrite evidence and range-aware history compatibility intentionally strengthen fail-closed SDK result unions"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeVersionPin"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Whole-record rewrite evidence and range-aware history compatibility intentionally strengthen fail-closed SDK result unions"
     }
   ],
   "entrypoints": {
@@ -13215,7 +13232,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ProjectRuntimeVersionPin",
-          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; constraint: \"exact\" | \"minimum\"; }"
+          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; constraint: \"exact\" | \"minimum\" | \"range\"; history_epoch_compatible?: boolean; }"
         },
         {
           "classification": "supported",
@@ -13599,7 +13616,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "reanchorHistoryEntries",
-          "signature": "(entries: HistoryEntry[], itemHashVersion?: 3 | 1 | 2, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: 3 | 1 | 2, options?: ReanchorHistoryOptions) => ReanchorResult"
+          "signature": "(entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult"
         },
         {
           "classification": "supported",
@@ -18555,13 +18572,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "verifyHistoryRecordHash",
-          "signature": "(entry: HistoryEntry) => { ok: true; coverage: \"item_state_only\" | \"record_and_item_state\"; } | { ok: false; error: \"record_hash_mismatch\" | \"unsupported_record_hash_version\"; } | calls: (entry: HistoryEntry) => { ok: true; coverage: \"record_and_item_state\" | \"item_state_only\"; } | { ok: false; error: \"record_hash_mismatch\" | \"unsupported_record_hash_version\"; }"
+          "signature": "(entry: HistoryEntry) => { ok: true; coverage: \"item_state_only\" | \"record_and_item_state\"; } | { ok: false; error: \"incomplete_record_hash_envelope\" | \"record_hash_mismatch\" | \"unsupported_record_hash_version\"; } | calls: (entry: HistoryEntry) => { ok: true; coverage: \"record_and_item_state\" | \"item_state_only\"; } | { ok: false; error: \"incomplete_record_hash_envelope\" | \"record_hash_mismatch\" | \"unsupported_record_hash_version\"; }"
         },
         {
           "classification": "advanced_export",
           "kind": "function",
           "name": "verifyHistoryRewriteEvidence",
-          "signature": "(entry: HistoryEntry) => { ok: true; coverage: \"complete\" | \"digest_only\" | \"legacy_anchor_only\" | \"none\"; } | { ok: false; error: \"rewrite_evidence_patch_hash_mismatch\" | \"rewrite_evidence_record_hash_mismatch\"; } | calls: (entry: HistoryEntry) => { ok: true; coverage: \"complete\" | \"digest_only\" | \"legacy_anchor_only\" | \"none\"; } | { ok: false; error: \"rewrite_evidence_patch_hash_mismatch\" | \"rewrite_evidence_record_hash_mismatch\"; }"
+          "signature": "(entry: HistoryEntry) => { ok: true; coverage: \"complete\" | \"digest_only\" | \"legacy_anchor_only\" | \"none\"; } | { ok: false; error: \"rewrite_evidence_invalid\" | \"rewrite_evidence_patch_hash_mismatch\" | \"rewrite_evidence_record_hash_mismatch\"; } | calls: (entry: HistoryEntry) => { ok: true; coverage: \"complete\" | \"digest_only\" | \"legacy_anchor_only\" | \"none\"; } | { ok: false; error: \"rewrite_evidence_invalid\" | \"rewrite_evidence_patch_hash_mismatch\" | \"rewrite_evidence_record_hash_mismatch\"; }"
         },
         {
           "classification": "contract_data",

@@ -34,9 +34,11 @@ describe("legacy merge receipt history compatibility", () => {
         "history",
         "pm-legacy-receipt.jsonl",
       );
-      const entry = JSON.parse(
-        (await fs.readFile(historyPath, "utf8")).trim(),
-      ) as Record<string, unknown>;
+      const entries = (await fs.readFile(historyPath, "utf8"))
+        .trimEnd()
+        .split("\n")
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+      const entry = entries.at(-1)!;
       delete entry.record_hash;
       delete entry.record_hash_version;
       entry.context = {
@@ -61,7 +63,11 @@ describe("legacy merge receipt history compatibility", () => {
           ],
         },
       };
-      await fs.writeFile(historyPath, `${JSON.stringify(entry)}\n`, "utf8");
+      await fs.writeFile(
+        historyPath,
+        `${entries.map((historyEntry) => JSON.stringify(historyEntry)).join("\n")}\n`,
+        "utf8",
+      );
 
       const health = await runHealth(
         { path: context.pmPath },
@@ -103,9 +109,11 @@ describe("legacy merge receipt history compatibility", () => {
         "history",
         "pm-mixed-receipts.jsonl",
       );
-      const entry = JSON.parse(
-        (await fs.readFile(historyPath, "utf8")).trim(),
-      ) as Record<string, unknown>;
+      const entries = (await fs.readFile(historyPath, "utf8"))
+        .trimEnd()
+        .split("\n")
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+      const entry = entries.at(-1)!;
       delete entry.record_hash;
       delete entry.record_hash_version;
       entry.context = {
@@ -151,7 +159,11 @@ describe("legacy merge receipt history compatibility", () => {
           ],
         },
       };
-      await fs.writeFile(historyPath, `${JSON.stringify(entry)}\n`, "utf8");
+      await fs.writeFile(
+        historyPath,
+        `${entries.map((historyEntry) => JSON.stringify(historyEntry)).join("\n")}\n`,
+        "utf8",
+      );
 
       const health = await runHealth(
         { path: context.pmPath },

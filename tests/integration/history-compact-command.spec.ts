@@ -10,7 +10,10 @@ import {
 import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
 import * as replayModule from "../../src/core/history/replay.js";
 import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";
-import { sealHistoryRecord } from "../../src/core/history/history.js";
+import {
+  hashHistoryStream,
+  sealHistoryRecord,
+} from "../../src/core/history/history.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import {
@@ -87,7 +90,7 @@ describe("history-compact command", () => {
 
       const before = await runHistory(
         id,
-        { verify: true },
+        { full: true, verify: true },
         { path: context.pmPath },
       );
       expect(before.verification?.ok).toBe(true);
@@ -119,7 +122,7 @@ describe("history-compact command", () => {
       expect(baseline.context?.history_compaction).toMatchObject({
         contract_version: 1,
         pruned_entry_count: before.count,
-        pruned_stream_digest: expect.any(String),
+        pruned_stream_digest: hashHistoryStream(before.history),
         retained_proof: "stream_digest_and_checkpoint",
         limitation: "individual_pruned_entries_require_pre_compaction_stream",
       });

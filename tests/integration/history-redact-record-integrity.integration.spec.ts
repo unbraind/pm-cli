@@ -49,6 +49,11 @@ describe("history redaction record integrity", () => {
           value: "public-value",
         },
       ];
+      const priorRecord = sealHistoryRecord({
+        ...original,
+        patch: retainedSafePatch,
+        message: secret,
+      });
       const withPriorRewriteEvidence = sealHistoryRecord({
         ...original,
         reanchor_evidence: [
@@ -58,6 +63,9 @@ describe("history redaction record integrity", () => {
             item_hash_version: original.item_hash_version,
             patch_hash: hashHistoryPatch(retainedSafePatch),
             patch: retainedSafePatch,
+            record_hash_version: priorRecord.record_hash_version,
+            record_hash: priorRecord.record_hash,
+            record: priorRecord,
           },
           {
             before_hash: original.before_hash,
@@ -94,13 +102,16 @@ describe("history redaction record integrity", () => {
       expect(entries[0]?.reanchor_evidence?.[0]?.patch).toEqual(
         retainedSafePatch,
       );
+      expect(entries[0]?.reanchor_evidence?.[0]?.record).toBeUndefined();
       expect(
-        entries[0]?.reanchor_evidence?.slice(1).every(
-          (evidence) =>
-            typeof evidence.patch_hash === "string" &&
-            evidence.patch === undefined &&
-            evidence.record_hash === undefined,
-        ),
+        entries[0]?.reanchor_evidence
+          ?.slice(1)
+          .every(
+            (evidence) =>
+              typeof evidence.patch_hash === "string" &&
+              evidence.patch === undefined &&
+              evidence.record_hash === undefined,
+          ),
       ).toBe(true);
       expect(verifyHistoryRewriteEvidence(entries[0]!)).toEqual({
         ok: true,
