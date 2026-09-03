@@ -1,6 +1,6 @@
 # Context Integrity Contracts
 
-Tracker references: [pm-4fwgaz](../.agents/pm/issues/pm-4fwgaz.toon), [pm-qqoumq](../.agents/pm/issues/pm-qqoumq.toon), [pm-fpdk37](../.agents/pm/issues/pm-fpdk37.toon), [pm-jn1x30](../.agents/pm/issues/pm-jn1x30.toon), and [pm-0wfdim](../.agents/pm/issues/pm-0wfdim.toon).
+Tracker references: [pm-4fwgaz](../.agents/pm/issues/pm-4fwgaz.toon), [pm-qqoumq](../.agents/pm/issues/pm-qqoumq.toon), [pm-fpdk37](../.agents/pm/issues/pm-fpdk37.toon), [pm-jn1x30](../.agents/pm/issues/pm-jn1x30.toon), [pm-0wfdim](../.agents/pm/issues/pm-0wfdim.toon), [pm-javbsq](../.agents/pm/issues/pm-javbsq.toon), and [pm-aka8m7](../.agents/pm/issues/pm-aka8m7.toon).
 
 ## Agent Quick Context
 
@@ -52,6 +52,43 @@ This prevents a shared `related` item from bridging an incoming impact query int
 History writers using item-hash epoch 2 always emit `item_hash_version: 2`. An entry without an explicit epoch is therefore legacy epoch 1 when the entire stream is implicit, including documents whose hashes happen to be identical under both algorithms. A supported explicit epoch becomes authoritative from its marker forward, so earlier unversioned entries retain both legacy and transitional candidates while a trailing ambiguous hash cannot downgrade the marked epoch. Verification and repair no longer guess a different epoch from the last ambiguous entry.
 
 Repair keeps implicit legacy streams implicit and byte-stable when no drift exists. Unsupported explicit epochs still fail with a typed `unsupported_item_hash_version` diagnostic instead of being rewritten.
+
+| Writer/runtime range                     | Item-hash output | Read contract                                                                                                                  |
+| ---------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Legacy writers before an explicit marker | implicit epoch 1 | Modern readers retain legacy canonicalization candidates.                                                                      |
+| Observed 2026.8.24 through 2026.8.28     | explicit epoch 2 | Modern readers accept both field-frozen and expanded epoch-2 forms without mixing forms inside one entry.                      |
+| 2026.8.31 and newer                      | explicit epoch 3 | Exact pins and bounded ranges that cannot select an epoch-3 reader cause current runtimes to reject the write before mutation. |
+
+The table records confirmed release boundaries rather than inventing an exact
+first release for legacy epoch 1 or epoch 2. The SDK exports
+`HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN`, and runtime compatibility checks
+use that boundary for package-manager-neutral write refusal.
+
+## Whole-Record History Integrity
+
+Item anchors prove the replayed project state; they do not prove who recorded an
+event, when it happened, which operation produced it, or which provenance and
+context were attached. New events therefore use a separate record-integrity
+epoch. `record_hash_version: 1` seals every immutable field while preserving the
+item-hash epoch as an independent compatibility contract.
+
+`verifyHistoryRecordHash()` reports `record_and_item_state` for a valid sealed
+event and `item_state_only` for a legacy event with neither record-envelope
+field. Half-present, unsupported, and mismatched envelopes fail closed. The
+public SDK also exports the record and patch hashing, sealing,
+`verifyHistoryRewriteEvidence()`, rewrite-resealing, stream-digest, and
+reanchoring primitives so packages and embedded hosts do not need private core
+imports or their own canonicalization.
+
+Maintenance retains prior anchors and patch digests in `reanchor_evidence`.
+When policy permits, it also retains the exact prior sealed record so
+metadata-only rewrites remain independently verifiable. Privacy-sensitive
+redaction and provenance normalization deliberately retain digest-only evidence
+instead of embedding the removed value. This separates two claims: the current
+chain is replay-consistent, and a rewrite preserved evidence of what it
+replaced. Compaction records a digest of its pruned prefix and explicitly states
+that individual pruned entries require the pre-compaction stream; it never
+upgrades intentional information loss into a stronger assurance claim.
 
 ## Verification Boundary
 

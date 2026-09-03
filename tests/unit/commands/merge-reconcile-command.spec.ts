@@ -19,6 +19,8 @@ async function tamperHistoryChain(historyPath: string): Promise<string> {
     .filter(Boolean);
   const entry = JSON.parse(lines[1]!) as Record<string, unknown>;
   entry.before_hash = "0".repeat(64);
+  delete entry.record_hash;
+  delete entry.record_hash_version;
   lines[1] = JSON.stringify(entry);
   const tampered = `${lines.join("\n")}\n`;
   await writeFile(historyPath, tampered, "utf8");

@@ -245,6 +245,8 @@ describe("core/history/drift-scan", () => {
       };
       const {
         item_hash_version: _itemHashVersion,
+        record_hash: _recordHash,
+        record_hash_version: _recordHashVersion,
         ...unversionedSupportedEntry
       } = supportedEntry;
       const legacyEntry = {
@@ -252,9 +254,14 @@ describe("core/history/drift-scan", () => {
         before_hash: supportedEntry.after_hash,
         patch: [],
       };
+      const {
+        record_hash: _unsupportedRecordHash,
+        record_hash_version: _unsupportedRecordHashVersion,
+        ...legacyUnsupportedEntry
+      } = unsupportedEntry;
       await fs.writeFile(
         historyPath,
-        `${JSON.stringify(unsupportedEntry)}\n${JSON.stringify(legacyEntry)}\n`,
+        `${JSON.stringify(legacyUnsupportedEntry)}\n${JSON.stringify(legacyEntry)}\n`,
         "utf8",
       );
       const items = (await listAllItemMetadataWithBody(context.pmPath)).map(

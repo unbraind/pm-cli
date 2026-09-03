@@ -2,7 +2,9 @@
 
 Tracker: [pm-1eted6](../.agents/pm/issues/pm-1eted6.toon),
 [pm-3lhth4](../.agents/pm/issues/pm-3lhth4.toon), and
-[pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon). Refusal reachability and
+[pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), with forward history-epoch
+protection tracked by
+[pm-aka8m7](../.agents/pm/issues/pm-aka8m7.toon). Refusal reachability and
 recovery completeness are tracked by
 [pm-elmpav](../.agents/pm/features/pm-elmpav.toon),
 [pm-185870](../.agents/pm/issues/pm-185870.toon), and
@@ -28,6 +30,20 @@ human modes identify both versions, the redaction-safe pin source, and a
 package-manager-neutral recovery action. SDK callers receive the same warning
 inside `ProjectRuntimeCompatibilityResult`. `PM_ALLOW_STALE_CLI=1` is the
 explicit, auditable emergency override.
+
+The boundary is bidirectional for history storage. A current runtime also
+refuses a mutation when any package declaration or lockfile pin cannot select a
+runtime that reads the writer epoch. Every manifest section is evaluated, so a
+newer permissive declaration cannot hide an older exact pin. Upper-bounded
+ranges that exclude the first compatible reader also fail closed, including
+inclusive hyphen ranges. Disjunctive ranges evaluate each alternative, so one
+branch that can select a compatible reader keeps the declaration writable. The
+original incompatible declaration is preserved in the diagnostic rather than
+being reduced to its representative lower bound. The typed
+`project_runtime_history_epoch_incompatible` error reports the writer epoch,
+the incompatible declaration, its redaction-safe source, and the minimum
+upgrade. Reads remain available, and the same emergency override is reserved
+for an intentionally coordinated fleet migration.
 
 The public `isProjectMutatingInvocation` classifier applies the same decision
 to package hosts and the bundled CLI. It resolves mixed command families by

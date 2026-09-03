@@ -2,20 +2,23 @@ id: pm-aka8m7
 title: "Re-anchoring overwrites the original hash pair, so the immutability proof for every pre-merge entry is destroyed by the operation that repairs the chain"
 description: "pm-w7ccmv states the outcome as every mutation immutably recorded, independently verifiable, restorable to any version. The first two clauses hold for a stream that has never been merged and stop holding the moment one is.\n\nreanchorHistoryEntries in src/core/history/replay.ts:321-390 replays a stream from an empty document, recomputes beforeHash and afterHash at each step, and writes the rewritten entry as {...entry, patch: outPatch, before_hash: beforeHash, after_hash: afterHash} at lines 365-370. The entry's original before_hash and after_hash are overwritten in place and are not retained anywhere: the returned ReanchorResult carries an entriesRehashed count and a per-entry ReanchorEntryDetail whose rehashed field is a boolean. So the operation records THAT a hash changed and never records what it was.\n\nRe-anchoring is not an exceptional path. src/sdk/merge/three-way.ts:57 documents the reanchored flag as 'true for every union merge', and a union is the normal outcome whenever two branches both appended to the same stream - which is the ordinary case for concurrent agents, and the case the merge fence exists to serve. docs/MERGE_SAFETY.md describes the history driver as preserving both divergent suffixes, ordering deterministically, then re-anchoring, and the driver emits guidance to run pm validate --check-history-drift and pm history-repair afterwards. All of that is sound as chain repair. None of it preserves the prior anchors.\n\nThe consequence is specific and worth stating precisely, because the chain does still verify. After a merge, a verifier can confirm that the merged sequence is internally consistent: each entry's before_hash equals the replay hash of its predecessors. What a verifier can no longer do is confirm that any given entry was originally written against the state its author observed, because the value the author committed to has been replaced by a value derived from the merged ordering. An entry altered during the merge window - by a faulty driver, a bad conflict resolution, or deliberate tampering - produces a merged stream that verifies exactly as cleanly as an honest one. The property that makes a hash chain evidence rather than a checksum is that the anchors are fixed at write time by a party who did not know the future; re-anchoring replaces them with values computed after the fact.\n\nA second, narrower loss sits in the same function. When a patch does not apply strictly, the lenient path at lines 346-356 recomputes the stored patch as jsonPatch.compare(replay, next) and counts skippedOps. Operations the original author recorded can therefore be absent from the rewritten patch, with only an aggregate count surviving. The recorded intent is replaced by a diff of outcomes.\n\nThis is adjacent to but not covered by what already exists. pm-9j2r3b closed by making merged state replay-addressable through receipt-backed merge_reconcile events, which solves addressability of the merged result and not provenance of the inputs. pm-85hm delivered the audited history-repair command. pm-lwmstb owns receipt settlement after repair. pm-34w8za owns deduplicating the load-verify-rewrite-re-anchor pipeline across redact, repair and compact - and that consolidation is the natural place to add retention once, since all three paths re-anchor.\n\nScope is retention and verifiability, not preventing re-anchoring, which is necessary and correct. The original anchor pair for every rewritten entry needs a durable home - alongside the entry, in the merge receipt, or in a checkpoint - such that a third party holding the pre-merge streams and the post-merge stream can confirm that re-anchoring changed only anchors and ordering and changed no author, timestamp, operation or patch content. The same requirement applies to redaction and compaction, which re-anchor for their own reasons, and history compaction additionally prunes prefixes, so the retention design has to survive pruning or explicitly record what it can no longer prove."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: history,immutability,integrity,merge,multi-agent
 created_at: "2026-07-31T14:23:27.186Z"
-updated_at: "2026-07-31T14:28:50.040Z"
+updated_at: "2026-09-03T08:52:41.051Z"
+closed_at: "2026-09-03T05:56:57.935Z"
+completed_at: "2026-09-03T08:52:40.000Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "The original before_hash and after_hash of every re-anchored entry are retained durably, so a verifier can reconstruct the pre-re-anchor anchor set without holding the pre-merge stream; A verification path confirms that a re-anchor changed only anchors and entry ordering, and did not change any author, timestamp, operation, message or patch content, and fails loudly when it did; The lenient patch-repair path records the original patch operations it replaced or skipped, not only an aggregate skippedOps count, so recorded intent survives a repair; The same retention applies to every path that re-anchors - merge, history-repair, history-redact and history-compact - enforced once at the shared pipeline rather than per command, which makes pm-34w8za a natural carrier; History compaction states explicitly what it can no longer prove after pruning a checkpointed prefix, so the loss is recorded rather than silent; A negative-control test tampers with one entry's author or patch inside a simulated merge window and proves the verification path rejects the resulting stream, since a check that cannot fail adds no assurance"
 parent: pm-o2kc
 risk: high
 confidence: 94
-expected_result: "After a union merge, a third party can independently verify that the merge preserved every recorded mutation and altered only anchors and ordering."
-actual_result: "The original anchors are overwritten in place and retained nowhere; the merged chain verifies identically whether or not entry content was altered during the merge, and a lenient patch repair can replace recorded operations with a diff of outcomes while retaining only a count."
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Centralized rewrite resealing and prior-envelope evidence across merge, repair, redaction, compaction, and provenance normalization; retained replaced patches or digests; added compaction stream proofs; refused exact stale runtime pins for mutation while preserving reads and an explicit override."
+expected_result: "A third party can verify rewritten history ancestry and detect content tampering, with explicit limitations after redaction or prefix pruning."
+actual_result: "Rewrite evidence reconstructs prior anchors and record envelopes, tampering fails loudly, sensitive redaction retains digest-only proof, compaction states its limitation, stale exact pins refuse writes, and all linked/manual gates pass."
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-34w8za,related,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
   pm-4a7m,related,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
   pm-85hm,related,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
@@ -26,13 +29,83 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,verifies,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
   pm-wc1r,related,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
   pm-xm0id4,related,"2026-07-31T14:23:51.848Z","harness:claude-code","cli:update:dep",detected
-learnings[1]{created_at,author,text}:
+  pm-34w8za,implements,"2026-09-03T05:34:42.481Z","harness:codex","cli:update:dep",detected
+  pm-javbsq,verifies,"2026-09-03T05:34:42.481Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-03T05:35:09.702Z","harness:codex","Implementation evidence: shared resealHistoryRewrite retention is used by merge reanchoring, lenient repair, redaction, compaction, and provenance normalization. It retains original anchors, patch digest or full replaced patch, item epoch, and record envelope; verification reconstructs prior records and rejects tampering. Compaction now records the ordered pruned-stream digest, retained proof, and its explicit proof limitation. Exact coverage is 100/100/100/100."
+  "2026-09-03T05:46:56.750Z","harness:codex","Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
+  "2026-09-03T06:08:27.880Z","harness:codex","Governance evidence: the final real-tracker static run correctly failed closed until this terminal production defect declared its escape class and structured prevention evidence. Closure is bound to rewrite resealing, prior-envelope ancestry, pruned-stream proof, stale-writer epoch refusal, focused history and compatibility tests, exact coverage, and hosted static/coverage checks; no waiver is used."
+  "2026-09-03T07:33:43.303Z","harness:codex","Review-round evidence: the history epoch guard now evaluates every manifest declaration instead of selecting one winning section and rejects upper-bounded ranges that cannot select the first epoch-3 reader. Clean Node 24 and Node 26 builds agree on the regenerated SDK surface. The compact acceptance test now verifies the exact ordered pruned-stream digest rather than only its type."
+  "2026-09-03T07:52:46.801Z","harness:codex","Final acceptance evidence: the packed 2026.9.2 artifact was installed in a fresh temporary npm consumer; top-level SDK imports, npx pm 2026.9.2, bunx pm 2026.9.2, init/create/claim/update/files/docs/test/comment/close/release, and the linked test all passed. The temporary workspace ended closed and was moved to recoverable trash. Runtime pin classification remains source-compatible by retaining minimum pins, adding bounded range pins, and making epoch compatibility additive."
+  "2026-09-03T08:20:18.732Z","harness:codex","Second review remediation: runtime compatibility now evaluates each disjunctive range alternative independently, treats inclusive npm/pnpm/yarn hyphen ranges as upper-bounded, preserves the full incompatible declaration in SDK diagnostics, and retains additive public pin fields. Focused range regressions passed."
+  "2026-09-03T08:43:48.897Z","harness:codex","Final integrated evidence: after merging the 2026.9.3 main baseline, the full sandboxed suite passed 600 files and 8,322 tests at exact 100.00% statements/branches/functions/lines (61,464/46,536/12,798/59,145). pnpm quality:static passed the mandatory ESLint, 100% docstring, zero-clone jscpd, SDK parity, token-surface, tracker integrity, and 58,267-record history-integrity gates. pnpm smoke:npx passed the packed 2026.9.3 distribution through both npx and bunx for all 13 packages; changelog and public SDK surface reproducibility checks also passed."
+notes[2]{created_at,author,text}:
+  "2026-09-03T05:35:10.293Z","harness:codex","Runtime safety note: exact package, installed, or lockfile pins older than the history item-hash epoch may read but refuse mutation with project_runtime_history_epoch_incompatible. Semver ranges are minimum-compatible, and PM_ALLOW_STALE_CLI=1 is the explicit operator override."
+  "2026-09-03T07:33:43.790Z","harness:codex","Correction to the earlier compatibility note: ranges are not universally minimum-compatible. Each dependency section is preserved, and a bounded range whose upper limit excludes the first reader for the writer epoch is incompatible and refuses mutation."
+learnings[2]{created_at,author,text}:
   "2026-07-31T14:28:50.040Z","harness:claude-code","A hash chain that is repaired by recomputation stops being tamper evidence and becomes a checksum. The distinguishing property is that anchors are fixed at write time by a party who cannot see the future; once any maintenance path recomputes them, an altered stream and an honest one verify identically. Every re-anchoring operation therefore needs to retain what it replaced, or the guarantee it protects is only as strong as trust in the operation itself."
-files[2]{path,scope,note}:
+  "2026-09-03T05:35:10.873Z","harness:codex","Reanchoring is a necessary state-order repair, but it becomes attestable only when the values it replaced survive. Redaction may deliberately destroy sensitive full-patch evidence, so it retains a digest and marks the proof boundary instead of reintroducing the secret."
+files[12]{path,scope,note}:
   src/core/history/replay.ts,project,"reanchorHistoryEntries lines 321-390; anchors overwritten at 365-370,lenient patch rewrite at 346-356"
   src/sdk/merge/three-way.ts,project,line 57 documents reanchored as true for every union merge
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- merge,project,300
-docs[1]{path,scope,note}:
+  src/sdk/environment/project-runtime-compatibility.ts,project,Implementation and regression evidence for pm-aka8m7
+  src/sdk/history-compact.ts,project,Implementation and regression evidence for pm-aka8m7
+  src/sdk/history-repair.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/integration/history-compact-command.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/unit/commands/history-activity-command.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/unit/commands/history-repair-command.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/unit/core/history/drift-scan.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/unit/core/history/workspace-history.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/unit/sdk/history-repair-version-contract.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+  tests/unit/sdk/project-runtime-compatibility.spec.ts,project,Implementation and regression evidence for pm-aka8m7
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- merge
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/project-runtime-compatibility.spec.ts tests/integration/history-compact-command.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/unit/core/history/workspace-history.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-03T05:33:55.996Z"
+      source_kind: local_mutation
+      source_ref: feat/history-provenance-integrity-compatibility
+    note: "History epoch compatibility, reanchor, compaction, and repair suite"
+  - command: "pnpm dogfood:package-first"
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-03T05:46:54.848Z"
+      source_kind: local_mutation
+      source_ref: feat/history-provenance-integrity-compatibility
+    note: "Eighty-eight-command isolated CLI, SDK, package, history, validation, and lifecycle dogfood"
+test_runs[1]:
+  - run_id: test-all-local-mtl3stcu-h2nm8i
+    kind: test-all
+    status: passed
+    started_at: "2026-09-03T05:47:50.762Z"
+    finished_at: "2026-09-03T05:49:17.767Z"
+    recorded_at: "2026-09-03T05:49:17.767Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- merge,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/sdk/project-runtime-compatibility.spec.ts tests/integration/history-compact-command.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/unit/core/history/workspace-history.spec.ts,schema,schema,source,local_source_ref
+      "pnpm dogfood:package-first",schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,describes the re-anchor step and the post-merge repair guidance without stating that prior anchors are not retained
+  docs/SDK_RUNTIME_BOUNDARIES.md,project,Public contract documentation for pm-aka8m7
+close_reason: "Completed durable reanchor provenance, lenient patch intent retention, compaction proof boundaries, and stale-writer epoch safety."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-aka8m7
+  gate_id: history-rewrite-reanchor-epoch-safety
+  negative_control: "Remove rewrite resealing, retained prior-envelope evidence, pruned-stream proof, or stale exact-pin mutation refusal; the focused history, compatibility, integration, coverage, and static gates must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/history-record-integrity.spec.ts tests/unit/sdk/project-runtime-compatibility.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

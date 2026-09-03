@@ -1521,6 +1521,50 @@
       ],
       "package_version": "2026.9.1",
       "reason": "Align ContextSignalSnapshotItem signal provenance with the parser-enforced required persisted contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AgentProvenanceAbsenceReason",
+        "signature ./sdk:HarnessDetectionSignals",
+        "signature ./sdk:ProjectRuntimeCompatibilityResult",
+        "signature ./sdk:ProjectRuntimeVersionPin",
+        "signature ./sdk/core:AgentProvenanceAbsenceReason",
+        "signature ./sdk/core:HarnessDetectionSignals"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Extend provenance absence, session discovery, runtime pin, and compatibility result contracts for fail-closed history integrity"
+    },
+    {
+      "changes": [
+        "signature ./sdk:reanchorHistoryEntries",
+        "signature ./sdk:resealHistoryRewrite"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Extend history rewrite provenance to preserve independently verifiable record ancestry"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeVersionPin",
+        "signature ./sdk:reanchorHistoryEntries",
+        "signature ./sdk:verifyHistoryRecordHash",
+        "signature ./sdk:verifyHistoryRewriteEvidence"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Whole-record rewrite evidence and range-aware history compatibility intentionally strengthen fail-closed SDK result unions"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeVersionPin"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Whole-record rewrite evidence and range-aware history compatibility intentionally strengthen fail-closed SDK result unions"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeVersionPin"
+      ],
+      "package_version": "2026.9.2",
+      "reason": "Range diagnostics retain their complete declaration and rewrite verification rejects malformed evidence"
     }
   ],
   "entrypoints": {
@@ -1873,7 +1917,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AgentProvenanceAbsenceReason",
-          "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
+          "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_input_missing\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
         },
         {
           "classification": "supported",
@@ -3606,6 +3650,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "classifyHistoryMergeReceiptReferences",
+          "signature": "(references: readonly HistoryMergeReceiptReference[], availableReceiptIds: ReadonlySet<string>) => HistoryMergeReceiptReferenceClassification | calls: (references: readonly HistoryMergeReceiptReference[], availableReceiptIds: ReadonlySet<string>) => HistoryMergeReceiptReferenceClassification"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "classifyHostEnvironmentFault",
           "signature": "(error: unknown) => string | null | calls: (error: unknown) => string | null"
         },
@@ -4940,6 +4990,12 @@
           "kind": "value",
           "name": "CURRENT_HISTORY_ITEM_HASH_VERSION",
           "signature": "3"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "CURRENT_HISTORY_RECORD_HASH_VERSION",
+          "signature": "1"
         },
         {
           "classification": "supported",
@@ -6780,6 +6836,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "extractHistoryMergeReceiptReferences",
+          "signature": "(value: unknown, historyItemId: string) => Array<Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">> | calls: (value: unknown, historyItemId: string) => Array<Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "extractMcpTraceContext",
           "signature": "(params: unknown, options?: { baggageAllowlist?: readonly string[]; }) => PmMcpTraceContext | calls: (params: unknown, options?: { baggageAllowlist?: readonly string[]; }) => PmMcpTraceContext"
         },
@@ -7597,7 +7659,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; session_context?: AgentSessionContext; descriptors?: readonly HarnessSignalDescriptor[]; probes_enabled?: boolean; cwd?: string; home_dir?: string; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; session_context?: AgentSessionContext; descriptors?: readonly HarnessSignalDescriptor[]; probes_enabled?: boolean; cwd?: string; home_dir?: string; session_file?: string; }"
         },
         {
           "classification": "supported",
@@ -7622,6 +7684,24 @@
           "kind": "function",
           "name": "hashEmptyDocument",
           "signature": "() => string | calls: () => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "hashHistoryPatch",
+          "signature": "(patch: readonly HistoryPatchOp[]) => string | calls: (patch: readonly HistoryPatchOp[]) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "hashHistoryRecord",
+          "signature": "(entry: Omit<HistoryEntry, \"record_hash\">) => string | calls: (entry: Omit<HistoryEntry, \"record_hash\">) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "hashHistoryStream",
+          "signature": "(entries: readonly HistoryEntry[]) => string | calls: (entries: readonly HistoryEntry[]) => string"
         },
         {
           "classification": "advanced_export",
@@ -7792,6 +7872,12 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "HISTORY_ITEM_HASH_VERSION_3_INTRODUCED_IN",
+          "signature": "\"2026.8.31\""
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "HISTORY_REDACT_FLAG_CONTRACTS",
@@ -7912,6 +7998,24 @@
           "signature": "export type HistoryItemHashVersion = (typeof SUPPORTED_HISTORY_ITEM_HASH_VERSIONS)[number];"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "historyItemHashVersionForRuntime",
+          "signature": "(version: string) => 2 | 3 | calls: (version: string) => 2 | 3"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryMergeReceiptReference",
+          "signature": "export interface HistoryMergeReceiptReference { itemId: string; line: number; receiptId: string; legacySummaryAccepted: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryMergeReceiptReferenceClassification",
+          "signature": "export interface HistoryMergeReceiptReferenceClassification { missing: MissingHistoryMergeReceiptReference[]; acceptedLegacyCount: number; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryMergeResult",
@@ -7940,6 +8044,12 @@
           "kind": "interface",
           "name": "HistoryProvenanceSummary",
           "signature": "export interface HistoryProvenanceSummary { entries: number; vocabulary_version: number; harness: { resolved: number; unresolved: number; unresolved_authors: Array<{ author: string; entries: number; }>; }; dimensions: Array<{ dimension: string; observed: number; unavailable: number; legacy_missing: number; }>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "HistoryRecordHashVersion",
+          "signature": "export type HistoryRecordHashVersion = (typeof SUPPORTED_HISTORY_RECORD_HASH_VERSIONS)[number];"
         },
         {
           "classification": "advanced_export",
@@ -8348,6 +8458,12 @@
           "kind": "function",
           "name": "isHostOutputSuppressed",
           "signature": "(value: unknown) => value is SuppressedHostOutput | calls: (value: unknown) => value is SuppressedHostOutput"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isLegacyMergeReceiptSummary",
+          "signature": "(value: Record<string, unknown>, historyItemId: string) => boolean | calls: (value: Record<string, unknown>, historyItemId: string) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -9482,6 +9598,12 @@
           "kind": "function",
           "name": "migrateItemFilesToFormat",
           "signature": "(pmRoot: string, targetFormat: ItemFormat, op?: string, typeToFolder?: Record<string, string>, schema?: RuntimeSchemaSettings) => Promise<ItemFormatMigrationResult> | calls: (pmRoot: string, targetFormat: ItemFormat, op?: string, typeToFolder?: Record<string, string>, schema?: RuntimeSchemaSettings) => Promise<ItemFormatMigrationResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "MissingHistoryMergeReceiptReference",
+          "signature": "export interface MissingHistoryMergeReceiptReference { item_id: string; history_line: number; receipt_id?: string; receipt_reference_hash?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -13105,7 +13227,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ProjectRuntimeCompatibilityResult",
-          "signature": "export interface ProjectRuntimeCompatibilityResult { compatible: boolean; executing_version: string; project_version?: string; source?: ProjectRuntimeVersionPin[\"source\"]; command?: string; mutating: boolean; stale?: boolean; warning?: ProjectRuntimeCompatibilityWarning; override_applied: boolean; }"
+          "signature": "export interface ProjectRuntimeCompatibilityResult { compatible: boolean; executing_version: string; project_version?: string; source?: ProjectRuntimeVersionPin[\"source\"]; command?: string; mutating: boolean; stale?: boolean; history_epoch_incompatible?: boolean; writer_item_hash_version?: 2 | 3; incompatible_project_version?: string; incompatible_source?: ProjectRuntimeVersionPin[\"source\"]; warning?: ProjectRuntimeCompatibilityWarning; override_applied: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -13117,7 +13239,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ProjectRuntimeVersionPin",
-          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; }"
+          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; constraint: \"exact\" | \"minimum\" | \"range\"; declaration?: string; history_epoch_compatible?: boolean; }"
         },
         {
           "classification": "supported",
@@ -13496,6 +13618,12 @@
           "kind": "function",
           "name": "readWorkspacePosition",
           "signature": "(global: GlobalOptions) => Promise<WorkspacePositionResult> | calls: (global: GlobalOptions) => Promise<WorkspacePositionResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "reanchorHistoryEntries",
+          "signature": "(entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult"
         },
         {
           "classification": "supported",
@@ -14612,6 +14740,12 @@
           "kind": "function",
           "name": "requireTerminalReasonWithRecovery",
           "signature": "(input: TerminalReasonInput, required: boolean, recovery: TerminalReasonRecoveryContext) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean, recovery: TerminalReasonRecoveryContext) => TerminalReasonResolution"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resealHistoryRewrite",
+          "signature": "(original: HistoryEntry, rewritten: HistoryEntry, options?: Readonly<{ retainOriginalPatch?: boolean; retainPriorRecord?: boolean; retainPriorRecordHash?: boolean; }>) => HistoryEntry | calls: (original: HistoryEntry, rewritten: HistoryEntry, options?: Readonly<{ retainOriginalPatch?: boolean; retainPriorRecord?: boolean; retainPriorRecordHash?: boolean; }>) => HistoryEntry"
         },
         {
           "classification": "supported",
@@ -16698,6 +16832,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "sealHistoryRecord",
+          "signature": "(entry: HistoryEntry) => HistoryEntry | calls: (entry: HistoryEntry) => HistoryEntry"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "sealMcpRequestState",
           "signature": "(payload: PmMcpRequestStatePayload, secret: string | Uint8Array) => string | calls: (payload: PmMcpRequestStatePayload, secret: string | Uint8Array) => string"
         },
@@ -17456,6 +17596,12 @@
           "kind": "value",
           "name": "SUPPORTED_HISTORY_ITEM_HASH_VERSIONS",
           "signature": "readonly [1, 2, 3]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "SUPPORTED_HISTORY_RECORD_HASH_VERSIONS",
+          "signature": "readonly [1]"
         },
         {
           "classification": "advanced_export",
@@ -18428,6 +18574,18 @@
           "kind": "function",
           "name": "verifyHistoryEntries",
           "signature": "(history: HistoryEntry[], currentDocument?: ItemDocument) => HistoryVerificationResult | calls: (history: HistoryEntry[], currentDocument?: ItemDocument) => HistoryVerificationResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "verifyHistoryRecordHash",
+          "signature": "(entry: HistoryEntry) => { ok: true; coverage: \"item_state_only\" | \"record_and_item_state\"; } | { ok: false; error: \"incomplete_record_hash_envelope\" | \"record_hash_mismatch\" | \"unsupported_record_hash_version\"; } | calls: (entry: HistoryEntry) => { ok: true; coverage: \"record_and_item_state\" | \"item_state_only\"; } | { ok: false; error: \"incomplete_record_hash_envelope\" | \"record_hash_mismatch\" | \"unsupported_record_hash_version\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "verifyHistoryRewriteEvidence",
+          "signature": "(entry: HistoryEntry) => { ok: true; coverage: \"complete\" | \"digest_only\" | \"legacy_anchor_only\" | \"none\"; } | { ok: false; error: \"rewrite_evidence_invalid\" | \"rewrite_evidence_patch_hash_mismatch\" | \"rewrite_evidence_record_hash_mismatch\"; } | calls: (entry: HistoryEntry) => { ok: true; coverage: \"complete\" | \"digest_only\" | \"legacy_anchor_only\" | \"none\"; } | { ok: false; error: \"rewrite_evidence_invalid\" | \"rewrite_evidence_patch_hash_mismatch\" | \"rewrite_evidence_record_hash_mismatch\"; }"
         },
         {
           "classification": "contract_data",
@@ -22651,7 +22809,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AgentProvenanceAbsenceReason",
-          "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
+          "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_input_missing\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
         },
         {
           "classification": "supported",
@@ -23167,7 +23325,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; session_context?: AgentSessionContext; descriptors?: readonly HarnessSignalDescriptor[]; probes_enabled?: boolean; cwd?: string; home_dir?: string; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; session_context?: AgentSessionContext; descriptors?: readonly HarnessSignalDescriptor[]; probes_enabled?: boolean; cwd?: string; home_dir?: string; session_file?: string; }"
         },
         {
           "classification": "supported",
@@ -32380,6 +32538,7 @@
     "profile_name_not_normalized",
     "profile_summary_empty",
     "profile_title_empty",
+    "project_runtime_history_epoch_incompatible",
     "project_runtime_stale_mutation",
     "project_runtime_stale_read",
     "projection_options_mutually_exclusive",

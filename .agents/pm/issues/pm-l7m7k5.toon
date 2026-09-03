@@ -2,11 +2,13 @@ id: pm-l7m7k5
 title: "GH-1177: Claude session provenance path is derived from invocation cwd instead of the session-start workspace"
 description: "GitHub issue #1177 reproduces on pm-cli 2026.9.2: readClaudeSessionProvenance derives ~/.claude/projects/<slug>/<session>.jsonl from the current invocation cwd, but Claude fixes the transcript directory to the session-start workspace. Package, monorepo, and fleet subdirectory invocations therefore miss the existing transcript and permanently record null model/version provenance while the parser itself succeeds whenever the path resolves."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: "area:provenance","area:sdk",context-integrity,github-1177,harness,observability,regression
 created_at: "2026-09-02T21:14:31.322Z"
-updated_at: "2026-09-02T21:34:08.936Z"
+updated_at: "2026-09-03T08:52:41.488Z"
+closed_at: "2026-09-03T05:56:54.330Z"
+completed_at: "2026-09-03T08:52:40.000Z"
 author: "harness:codex"
 acceptance_criteria: "Resolve the transcript by explicit harness path when available or bounded unique session-id discovery independent of cwd; distinguish resolver_input_missing from resolver_failed without exposing paths, prompts, identifiers, or session content; prove child-workspace and session-root invocation parity with independent fixtures and a real-layout temporary acceptance; define a justified sustained zero-success health severity; pass provenance, SDK, CLI, security, static, and exact coverage gates."
 parent: pm-5oj5
@@ -16,16 +18,78 @@ reporter: GitHub issue #1177
 severity: high
 environment: pm-cli 2026.9.2 under Claude Code when pm runs below the session-start directory
 repro_steps: "Start Claude in a workspace root, invoke pm from a child repository, compare the cwd-derived transcript path with the unique session JSONL under ~/.claude/projects/*, and observe provenance_resolver_zero_success with null model/version."
-expected_result: "The resolver locates the unique session transcript independently of the invocation cwd, remains privacy and resource bounded, and distinguishes missing resolver input from a parsed stream with no supported value."
-actual_result: "The resolver encodes the invocation cwd, opens a nonexistent path, catches the filesystem error as undefined, and reports the same advisory outcome as a successful parse with no match."
+resolution: "Added explicit-path, direct-workspace, and deterministic bounded unique-session discovery; separated missing input, ambiguity, unreadable transcript, and no-match outcomes; documented the contract and protected it with unit and temporary-layout acceptance tests."
+expected_result: Claude model and version provenance resolves from session-start storage when pm runs in a child directory without leaking host paths or content.
+actual_result: "Child-directory and explicit-path probes resolve the expected model/version; ambiguous, missing, invalid, and unreadable cases fail closed; pm-linked tests, packed acceptance, static gates, and exact coverage pass."
 component: SDK agent provenance resolver and health diagnostics
 regression: true
 customer_impact: Fleet and monorepo histories permanently lose model/runtime attribution while health remains advisory and non-actionable.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-9gvazz,discovered_from,"2026-09-02T21:14:31.322Z","harness:codex","cli:create:dep",detected
   pm-f60039,discovered_from,"2026-09-02T21:14:31.322Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
-  "2026-09-02T21:14:31.322Z","harness:codex","Duplicate-check evidence: complete all-status searches for Claude session provenance, cwd, session-start workspace, and zero-success diagnostics found closed pm-9gvazz for slug encoding, closed pm-f60039 for nested JSONL parsing, and pm-lu6sca for outcome classification. GitHub #1177 proves a distinct invocation-cwd versus session-start path boundary on 2026.9.2; no existing item owns it. Source: https://github.com/unbraind/pm-cli/issues/1177"
-  "2026-09-02T21:14:57.508Z","harness:codex","GitHub linkage evidence: issue #1177 now points to this canonical item at the merge-stable main-branch toon path."
+  pm-5oj5,implements,"2026-09-03T05:34:40.254Z","harness:codex","cli:update:dep",detected
+  pm-f60039,verifies,"2026-09-03T05:34:40.254Z","harness:codex","cli:update:dep",detected
+comments[8]:
+  - created_at: "2026-09-02T21:14:31.322Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: complete all-status searches for Claude session provenance, cwd, session-start workspace, and zero-success diagnostics found closed pm-9gvazz for slug encoding, closed pm-f60039 for nested JSONL parsing, and pm-lu6sca for outcome classification. GitHub #1177 proves a distinct invocation-cwd versus session-start path boundary on 2026.9.2; no existing item owns it. Source: https://github.com/unbraind/pm-cli/issues/1177"
+  - created_at: "2026-09-02T21:14:57.508Z"
+    author: "harness:codex"
+    text: "GitHub linkage evidence: issue #1177 now points to this canonical item at the merge-stable main-branch toon path."
+  - created_at: "2026-09-03T05:35:04.969Z"
+    author: "harness:codex"
+    text: "Implementation evidence: Claude provenance now resolves an explicit transcript path first, the invocation-workspace path second, then a deterministic scan of at most 512 direct project directories for one unique safe session id. Ambiguity and read failures fail closed without recording paths or transcript content. The focused provenance suite passes and the repository-wide exact coverage gate includes child-workspace, non-file candidate, ambiguity, malformed version, and unreadable transcript controls."
+  - created_at: "2026-09-03T05:46:55.373Z"
+    author: "harness:codex"
+    text: "Manual temporary-directory acceptance passed: the packed package launched through both npx and bunx, installed 13 bundled packages, and compiled a strict external TypeScript consumer; the 88-command package-first dogfood passed; a dedicated isolated probe verified public SDK record hashing, author-only tamper refusal, stale exact-pin reads, stale exact-pin mutation refusal with project_runtime_history_epoch_incompatible, PM_ALLOW_STALE_CLI override, child-cwd Claude session discovery without path leakage, and legacy receipt acceptance."
+  - created_at: "2026-09-03T06:08:28.786Z"
+    author: "harness:codex"
+    text: "Governance evidence: the final real-tracker static run correctly failed closed until Claude provenance closure was bound to executable prevention evidence. Explicit path precedence, child-cwd discovery, bounded ambiguity, and privacy-safe resolver outcomes are negative controls across focused runtime tests, exact coverage, and hosted static/coverage checks; no waiver is used."
+  - created_at: "2026-09-03T07:33:44.272Z"
+    author: "harness:codex"
+    text: "Review-round evidence: Claude transcript discovery now uses lstat, opens with O_NOFOLLOW, rejects symlink candidates, reports inaccessible discovery roots as resolver_failed, and short-circuits before any filesystem access when probes are disabled. The focused resolver suite and exact repository coverage pass."
+    edited_at: "2026-09-03T07:34:03.807Z"
+  - created_at: "2026-09-03T07:52:47.276Z"
+    author: "harness:codex"
+    text: "Final gate evidence: clean build, strict ESLint, packed npm/npx/bunx smoke, manual installed-consumer SDK import, and the complete exact-coverage suite passed after no-follow provenance hardening."
+  - created_at: "2026-09-03T08:20:19.196Z"
+    author: "harness:codex"
+    text: "Second review remediation: bounded cross-workspace Claude discovery now propagates non-absence candidate inspection failures as resolver_failed instead of collapsing them into resolver_input_missing; a discovered EACCES regression proves the distinction."
+notes[1]{created_at,author,text}:
+  "2026-09-03T05:35:05.439Z","harness:codex","Design note: cwd independence is intentionally session-id based and bounded. The resolver never recursively walks arbitrary trees and never emits discovered host paths in diagnostics."
+learnings[1]{created_at,author,text}:
+  "2026-09-03T05:35:05.929Z","harness:codex","A transcript parser and a transcript locator have separate failure domains. Resolver input missing, ambiguous discovery, unreadable input, and a parsed stream with no supported value must remain distinguishable so fleet health can recommend the correct remediation."
+files[5]{path,scope,note}:
+  src/core/shared/author.ts,project,Implementation and regression evidence for pm-l7m7k5
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Implementation and regression evidence for pm-l7m7k5
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Implementation and regression evidence for pm-l7m7k5
+  tests/fixtures/contracts/full.json,project,Implementation and regression evidence for pm-l7m7k5
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Implementation and regression evidence for pm-l7m7k5
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,300,"harness:codex","2026-09-03T05:33:54.475Z",local_mutation,feat/history-provenance-integrity-compatibility,Claude provenance resolver and cwd-independent discovery regression suite
+test_runs[1]:
+  - run_id: test-all-local-mtl3stcu-h2nm8i
+    kind: test-all
+    status: passed
+    started_at: "2026-09-03T05:47:50.762Z"
+    finished_at: "2026-09-03T05:55:58.800Z"
+    recorded_at: "2026-09-03T05:55:58.800Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Public contract documentation for pm-l7m7k5
+close_reason: "Completed cwd-independent, privacy-bounded Claude session provenance resolution with explicit failure semantics and verified package behavior."
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-l7m7k5
+  gate_id: claude-session-provenance-resolution
+  negative_control: "Remove explicit-path precedence, child-cwd project discovery, bounded ambiguity refusal, or privacy-safe resolver outcomes; the author and agent-runtime focused tests, coverage, and static gates must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

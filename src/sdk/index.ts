@@ -607,6 +607,7 @@ export * from "./governance/assurance-runtime.js";
 export * from "./governance/assurance-presets.js";
 export * from "./governance/boundary-fixtures.js";
 export * from "./governance/defect-recurrence.js";
+export * from "./governance/merge-receipt-history.js";
 export * from "./compile-cache.js";
 export * from "./environment/project-runtime-compatibility.js";
 export * from "./environment/source-context.js";

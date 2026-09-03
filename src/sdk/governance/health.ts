@@ -51,7 +51,6 @@ import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
-import { sha256Hex } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import {
@@ -112,10 +111,14 @@ import {
 } from "../merge/install.js";
 import {
   inspectMergeReceiptEvidence,
-  isSafeReceiptId,
   partitionMergeReceipts,
   type MergeDecisionReceipt,
 } from "../merge/receipts.js";
+import {
+  classifyHistoryMergeReceiptReferences,
+  extractHistoryMergeReceiptReferences,
+  type HistoryMergeReceiptReference,
+} from "./merge-receipt-history.js";
 import { runHistoryRepair } from "../history-repair.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import {
@@ -618,44 +621,7 @@ interface HistoryIntegrityScan {
   unreadable: string[];
   conflictMarkers: Array<{ id: string; line: number; marker: string }>;
   invalidJson: Array<{ id: string; line: number }>;
-  mergeReceiptReferences: Array<{
-    itemId: string;
-    line: number;
-    receiptId: string;
-  }>;
-}
-
-function mergeReceiptIdsFromHistoryEntry(value: unknown): string[] {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return [];
-  }
-  const context = (value as Record<string, unknown>).context;
-  if (
-    typeof context !== "object" ||
-    context === null ||
-    Array.isArray(context)
-  ) {
-    return [];
-  }
-  const merge = (context as Record<string, unknown>).merge;
-  if (typeof merge !== "object" || merge === null || Array.isArray(merge)) {
-    return [];
-  }
-  const receipts = (merge as Record<string, unknown>).receipts;
-  if (!Array.isArray(receipts)) return [];
-  return receipts.flatMap((receipt) => {
-    if (
-      typeof receipt !== "object" ||
-      receipt === null ||
-      Array.isArray(receipt)
-    ) {
-      return [];
-    }
-    const receiptId = (receipt as Record<string, unknown>).receipt_id;
-    return typeof receiptId === "string" && receiptId.length > 0
-      ? [receiptId]
-      : [];
-  });
+  mergeReceiptReferences: HistoryMergeReceiptReference[];
 }
 
 async function scanHistoryIntegrity(
@@ -697,11 +663,13 @@ async function scanHistoryIntegrity(
       try {
         const parsed = JSON.parse(line) as unknown;
         mergeReceiptReferences.push(
-          ...mergeReceiptIdsFromHistoryEntry(parsed).map((receiptId) => ({
-            itemId,
-            line: index + 1,
-            receiptId,
-          })),
+          ...extractHistoryMergeReceiptReferences(parsed, itemId).map(
+            (reference) => ({
+              itemId,
+              line: index + 1,
+              ...reference,
+            }),
+          ),
         );
       } catch {
         invalidJson.push({ id: itemId, line: index + 1 });
@@ -795,15 +763,11 @@ async function buildIntegrityCheck(
   const availableMergeReceiptIds = new Set(
     mergeReceiptEvidence.receipts.map((receipt) => receipt.id),
   );
-  const missingMergeReceiptReferences = historyScan.mergeReceiptReferences
-    .filter((reference) => !availableMergeReceiptIds.has(reference.receiptId))
-    .map((reference) => ({
-      item_id: reference.itemId,
-      history_line: reference.line,
-      ...(isSafeReceiptId(reference.receiptId)
-        ? { receipt_id: reference.receiptId }
-        : { receipt_reference_hash: sha256Hex(reference.receiptId) }),
-    }));
+  const historyReceiptClassification = classifyHistoryMergeReceiptReferences(
+    historyScan.mergeReceiptReferences,
+    availableMergeReceiptIds,
+  );
+  const missingMergeReceiptReferences = historyReceiptClassification.missing;
   const pendingMergeReceipts = mergeReceiptEvidence.receipts.filter(
     (receipt) => receipt.state === "pending",
   );
@@ -903,6 +867,8 @@ async function buildIntegrityCheck(
             mergeReceiptEvidence.invalid_evidence_count,
           missing_merge_receipt_history_references:
             missingMergeReceiptReferences.length,
+          accepted_legacy_merge_receipt_references:
+            historyReceiptClassification.acceptedLegacyCount,
         },
         item_unreadable: itemScan.unreadable,
         item_conflict_markers: itemScan.conflictMarkers,

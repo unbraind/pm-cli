@@ -4,6 +4,7 @@
  * Coordinates tracker lock ownership and cleanup for Lock.
  */
 import { isFileMissingError } from "../fs/fs-utils.js";
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -138,6 +139,49 @@ function isErrno(error: unknown, code: string): boolean {
     "code" in error &&
     (error as { code?: string }).code === code
   );
+}
+
+/**
+ * Classify exclusive-create failures that prove another lock lifecycle is in
+ * flight. Windows can report `EPERM`, `EACCES`, or `EBUSY` while a just-unlinked
+ * lock is still delete-pending; treating those as fatal makes bounded lock
+ * waiting fail nondeterministically. Existing paths are contention on every
+ * host. A missing or temporarily unstatable Windows path is contention only
+ * when its parent remains writable, preserving genuine permission failures.
+ */
+async function isLockCreateContention(
+  error: unknown,
+  lockPath: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<boolean> {
+  if (isErrno(error, "EEXIST")) return true;
+  if (
+    !isErrno(error, "EPERM") &&
+    !isErrno(error, "EACCES") &&
+    !isErrno(error, "EBUSY")
+  ) {
+    return false;
+  }
+  try {
+    await fs.lstat(lockPath);
+    return true;
+  } catch (probeError: unknown) {
+    if (
+      platform !== "win32" ||
+      (!isFileMissingError(probeError) &&
+        !isErrno(probeError, "EPERM") &&
+        !isErrno(probeError, "EACCES") &&
+        !isErrno(probeError, "EBUSY"))
+    ) {
+      return false;
+    }
+  }
+  try {
+    await fs.access(path.dirname(lockPath), fsConstants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function emitLockWriteHook(
@@ -653,6 +697,7 @@ export const _testOnly = {
   parseLockInfo,
   readLockInfo,
   isErrno,
+  isLockCreateContention,
   buildLockPayload,
   isStaleLock,
   lockOwnerSuffix,
@@ -714,7 +759,7 @@ export async function acquireLock(
         });
       };
     } catch (error: unknown) {
-      if (!isErrno(error, "EEXIST")) {
+      if (!(await isLockCreateContention(error, lockPath))) {
         throw new PmCliError(
           `Failed to acquire lock for ${id}: ${toErrorMessage(error)}`,
           EXIT_CODE.GENERIC_FAILURE,

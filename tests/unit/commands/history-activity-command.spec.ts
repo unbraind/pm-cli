@@ -23,7 +23,10 @@ import {
   setActiveExtensionHooks,
   type ExtensionHookRegistry,
 } from "../../../src/core/extensions/index.js";
-import { createHistoryEntry } from "../../../src/core/history/history.js";
+import {
+  createHistoryEntry,
+  sealHistoryRecord,
+} from "../../../src/core/history/history.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
   replayHash,
@@ -42,6 +45,7 @@ import {
   withTempPmPath,
   type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
+import type { HistoryEntry } from "../../../src/types/index.js";
 
 function createItem(context: TempPmContext, title: string): string {
   const result = context.runCli(
@@ -673,10 +677,7 @@ describe("runHistory and runActivity", () => {
         ]),
       });
       await expect(
-        runActivity(
-          { provenance: true, id },
-          { path: context.pmPath },
-        ),
+        runActivity({ provenance: true, id }, { path: context.pmPath }),
       ).resolves.toMatchObject({
         projection: { mode: "provenance" },
         provenance_activity: expect.arrayContaining([
@@ -896,10 +897,14 @@ describe("runHistory and runActivity", () => {
         .filter((line) => line.length > 0);
       const firstEntry = JSON.parse(rawLines[0]) as {
         patch: Array<{ op: string; path: string; value?: unknown }>;
+        record_hash?: string;
+        record_hash_version?: number;
       };
       firstEntry.patch = [
         { op: "replace", path: "/metadata/does_not_exist", value: true },
       ];
+      delete firstEntry.record_hash;
+      delete firstEntry.record_hash_version;
       rawLines[0] = JSON.stringify(firstEntry);
       await writeFile(historyPath, `${rawLines.join("\n")}\n`, "utf8");
 
@@ -1446,9 +1451,9 @@ describe("runHistory and runActivity", () => {
       // Strip the `message` field from every entry so the message-redaction branch is skipped
       // and only the patch-value redaction path runs.
       const stripped = lines.map((line) => {
-        const entry = JSON.parse(line) as Record<string, unknown>;
+        const entry = JSON.parse(line) as HistoryEntry;
         delete entry.message;
-        return JSON.stringify(entry);
+        return JSON.stringify(sealHistoryRecord(entry));
       });
       await writeFile(historyPath, `${stripped.join("\n")}\n`, "utf8");
 
@@ -1544,6 +1549,8 @@ describe("runHistory and runActivity", () => {
         .filter((line) => line.length > 0);
       const first = JSON.parse(lines[0] ?? "{}") as Record<string, unknown>;
       first.before_hash = "0".repeat(64);
+      delete first.record_hash;
+      delete first.record_hash_version;
       lines[0] = JSON.stringify(first);
       await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
 

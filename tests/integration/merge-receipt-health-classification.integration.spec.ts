@@ -15,6 +15,7 @@ import {
   stableStringify,
 } from "../../src/core/shared/serialization.js";
 import { parseItemDocument } from "../../src/core/item/item-format.js";
+import { sealHistoryRecord } from "../../src/core/history/history.js";
 import {
   listMergeReceipts,
   markMergeReceiptReconciled,
@@ -25,6 +26,7 @@ import {
   runHistoryRepair,
   runHistoryRepairAll,
 } from "../../src/sdk/history-repair.js";
+import type { HistoryEntry } from "../../src/types/index.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 interface DiagnosticEnvelope {
@@ -254,7 +256,9 @@ describe("merge receipt health classification", () => {
           ],
         },
       };
-      historyLines[historyLines.length - 1] = JSON.stringify(lastEntry);
+      historyLines[historyLines.length - 1] = JSON.stringify(
+        sealHistoryRecord(lastEntry as HistoryEntry),
+      );
       await fs.writeFile(historyPath, `${historyLines.join("\n")}\n`, "utf8");
 
       const health = context.runCli(

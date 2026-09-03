@@ -16,6 +16,9 @@ import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
   hashDocumentVerificationCandidates,
+  resealHistoryRewrite,
+  verifyHistoryRecordHash,
+  verifyHistoryRewriteEvidence,
   type HistoryItemHashVersion,
 } from "./history.js";
 import type {
@@ -284,6 +287,35 @@ function historyEntryHashCandidates(
     : [authoritativeVersion];
 }
 
+/** Return the first record or retained-rewrite integrity failure for one entry. */
+function historyEntryIntegrityError(entry: HistoryEntry): string | undefined {
+  const recordVerification = verifyHistoryRecordHash(entry);
+  if (!recordVerification.ok) return recordVerification.error;
+  const rewriteVerification = verifyHistoryRewriteEvidence(entry);
+  return rewriteVerification.ok ? undefined : rewriteVerification.error;
+}
+
+/** Validate immutable metadata and apply one patch for chain verification. */
+function verifyHistoryEntryInput(
+  entry: HistoryEntry,
+  replay: ReplayDocument,
+): { ok: true; document: ReplayDocument } | { ok: false; error: string } {
+  const integrityError = historyEntryIntegrityError(entry);
+  if (integrityError) return { ok: false, error: integrityError };
+  const applied = tryApplyReplayPatch(replay, entry.patch);
+  return applied.ok
+    ? { ok: true, document: applied.document }
+    : { ok: false, error: "patch_apply_failed" };
+}
+
+/** Refuse any entry whose current or retained immutable envelope is invalid. */
+function assertHistoryEntryIntegrity(entry: HistoryEntry, index: number): void {
+  const integrityError = historyEntryIntegrityError(entry);
+  if (integrityError) {
+    throw new TypeError(`${integrityError}:entry_${index + 1}`);
+  }
+}
+
 /** Deterministically verify a history chain: each entry's before_hash must equal the prior replayed after_hash, the patch must strictly apply, and the recorded after_hash must equal the replayed result. */
 /** Verify a chain and report the explicit or auto-detected item hash epoch. */
 export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
@@ -305,18 +337,15 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
         `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
       );
     }
-    const applied = tryApplyReplayPatch(replay, entry.patch);
-    if (!applied.ok) {
+    const input = verifyHistoryEntryInput(entry, replay);
+    if (!input.ok) {
       return {
         ok: false,
-        errors: [
-          ...errors,
-          `verify_failed:patch_apply_failed:entry_${index + 1}`,
-        ],
+        errors: [...errors, `verify_failed:${input.error}:entry_${index + 1}`],
       };
     }
     if (unsupportedVersion) {
-      replay = applied.document;
+      replay = input.document;
       detectedVersion = undefined;
       authoritativeExplicitVersion = undefined;
       continue;
@@ -330,12 +359,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     );
     const candidateMatches = candidates.map((version) => ({
       version,
-      match: matchReplayHashCandidates(
-        replay,
-        applied.document,
-        version,
-        entry,
-      ),
+      match: matchReplayHashCandidates(replay, input.document, version, entry),
     }));
     const matchingVersion = candidateMatches.find(
       ({ match }) => match.pairIndex >= 0,
@@ -353,7 +377,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
       };
     }
     const version = matchingVersion.version;
-    replay = applied.document;
+    replay = input.document;
     detectedVersion = version;
     authoritativeExplicitVersion =
       (explicitVersion as HistoryItemHashVersion | undefined) ??
@@ -517,6 +541,37 @@ export function resolveHistoryRepairItemHashVersion(
   return CURRENT_HISTORY_ITEM_HASH_VERSION;
 }
 
+/** Apply one patch strictly or return its deterministic lenient repair projection. */
+function applyReanchorPatch(
+  replay: ReplayDocument,
+  entry: HistoryEntry,
+): {
+  next: ReplayDocument;
+  patch: HistoryPatchOp[];
+  repaired: boolean;
+  converted: number;
+  skipped: number;
+} {
+  const strict = tryApplyReplayPatch(replay, entry.patch);
+  if (strict.ok) {
+    return {
+      next: strict.document,
+      patch: entry.patch,
+      repaired: false,
+      converted: 0,
+      skipped: 0,
+    };
+  }
+  const lenient = lenientApplyReplayPatch(replay, entry.patch);
+  return {
+    next: lenient.document,
+    patch: jsonPatch.compare(replay, lenient.document) as HistoryPatchOp[],
+    repaired: true,
+    converted: lenient.convertedReplaceToAdd,
+    skipped: lenient.skippedOps,
+  };
+}
+
 /** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
@@ -545,28 +600,18 @@ export function reanchorHistoryEntries(
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    const strict = tryApplyReplayPatch(replay, entry.patch);
-
-    let next: ReplayDocument;
-    let outPatch: HistoryPatchOp[];
-    let patchRepaired = false;
-    let entryConverted = 0;
-    let entrySkipped = 0;
-
-    if (strict.ok) {
-      next = strict.document;
-      outPatch = entry.patch;
-    } else {
-      const lenient = lenientApplyReplayPatch(replay, entry.patch);
-      next = lenient.document;
-      outPatch = jsonPatch.compare(replay, next) as HistoryPatchOp[];
-      patchRepaired = true;
-      entryConverted = lenient.convertedReplaceToAdd;
-      entrySkipped = lenient.skippedOps;
-      convertedReplaceToAdd += entryConverted;
-      skippedOps += entrySkipped;
-      entriesPatchRepaired += 1;
-    }
+    assertHistoryEntryIntegrity(entry, index);
+    const patchApplication = applyReanchorPatch(replay, entry);
+    const {
+      next,
+      patch: outPatch,
+      repaired: patchRepaired,
+      converted: entryConverted,
+      skipped: entrySkipped,
+    } = patchApplication;
+    convertedReplaceToAdd += entryConverted;
+    skippedOps += entrySkipped;
+    entriesPatchRepaired += Number(patchRepaired);
 
     const hashMatch = matchReplayHashCandidates(
       replay,
@@ -595,7 +640,7 @@ export function reanchorHistoryEntries(
       entriesRehashed += 1;
     }
 
-    const rewrittenEntry: HistoryEntry = {
+    let rewrittenEntry: HistoryEntry = {
       ...entry,
       patch: outPatch,
       before_hash: beforeHash,
@@ -605,6 +650,13 @@ export function reanchorHistoryEntries(
       rewrittenEntry.item_hash_version = itemHashVersion;
     } else {
       delete rewrittenEntry.item_hash_version;
+    }
+    const versionChanged =
+      rewrittenEntry.item_hash_version !== entry.item_hash_version;
+    if (rehashed || patchRepaired || versionChanged) {
+      rewrittenEntry = resealHistoryRewrite(entry, rewrittenEntry, {
+        retainOriginalPatch: patchRepaired,
+      });
     }
     rewritten.push(rewrittenEntry);
     details.push({

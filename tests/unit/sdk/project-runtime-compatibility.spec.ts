@@ -7,6 +7,7 @@ import {
   assertProjectRuntimeCompatibility,
   comparePmDateVersions,
   discoverProjectRuntimeVersionPins,
+  historyItemHashVersionForRuntime,
   inspectProjectRuntimeCompatibility,
   isProjectMutatingInvocation,
 } from "../../../src/sdk/environment/project-runtime-compatibility.js";
@@ -31,6 +32,8 @@ describe("project runtime compatibility", () => {
     expect(comparePmDateVersions("2026.8.8-2", "2026.8.8-1")).toBe(1);
     expect(comparePmDateVersions("2026.8.8", "2026.8.8")).toBe(0);
     expect(comparePmDateVersions("latest", "2026.8.8")).toBeNull();
+    expect(historyItemHashVersionForRuntime("2026.8.30")).toBe(2);
+    expect(historyItemHashVersionForRuntime("2026.8.31")).toBe(3);
   });
 
   it.each([
@@ -130,11 +133,43 @@ describe("project runtime compatibility", () => {
       '"@unbrained/pm-cli@^2026.8.8":\n  version "2026.8.12"\nneighboring-package@^1:\n  version "2099.1.1"\n',
     );
     expect(discoverProjectRuntimeVersionPins(root)).toEqual([
-      { version: "2026.8.13", source: "package.json" },
-      { version: "2026.8.9", source: "installed-package" },
-      { version: "2026.8.10", source: "package-lock.json" },
-      { version: "2026.8.11", source: "pnpm-lock.yaml" },
-      { version: "2026.8.12", source: "yarn.lock" },
+      {
+        version: "2026.8.8",
+        source: "package.json",
+        constraint: "minimum",
+        declaration: "^2026.8.8",
+        history_epoch_compatible: true,
+      },
+      {
+        version: "2026.8.13",
+        source: "package.json",
+        constraint: "exact",
+        history_epoch_compatible: false,
+      },
+      {
+        version: "2026.8.9",
+        source: "installed-package",
+        constraint: "exact",
+        history_epoch_compatible: false,
+      },
+      {
+        version: "2026.8.10",
+        source: "package-lock.json",
+        constraint: "exact",
+        history_epoch_compatible: false,
+      },
+      {
+        version: "2026.8.11",
+        source: "pnpm-lock.yaml",
+        constraint: "exact",
+        history_epoch_compatible: false,
+      },
+      {
+        version: "2026.8.12",
+        source: "yarn.lock",
+        constraint: "exact",
+        history_epoch_compatible: false,
+      },
     ]);
     expect(
       inspectProjectRuntimeCompatibility({
@@ -150,6 +185,8 @@ describe("project runtime compatibility", () => {
     expect(discoverProjectRuntimeVersionPins(root)).toContainEqual({
       version: "2026.8.14",
       source: "yarn.lock",
+      constraint: "exact",
+      history_epoch_compatible: false,
     });
   });
 
@@ -216,6 +253,155 @@ describe("project runtime compatibility", () => {
       override_applied: true,
       project_version: "2026.8.9",
     });
+  });
+
+  it("refuses a newer writer epoch when an exact project pin cannot read it", async () => {
+    const root = await project();
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({ devDependencies: { "@unbrained/pm-cli": "2026.8.28" } }),
+    );
+    await mkdir(path.join(root, "node_modules", "@unbrained", "pm-cli"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(root, "node_modules", "@unbrained", "pm-cli", "package.json"),
+      JSON.stringify({ version: "2026.8.27" }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["context"],
+      }),
+    ).toMatchObject({
+      compatible: true,
+      mutating: false,
+      history_epoch_incompatible: false,
+      writer_item_hash_version: 3,
+    });
+    expect(() =>
+      assertProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "epoch guard"],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "project_runtime_history_epoch_incompatible",
+        exitCode: 4,
+      }),
+    );
+    expect(
+      assertProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "coordinated migration"],
+        allowStale: true,
+      }),
+    ).toMatchObject({
+      compatible: true,
+      history_epoch_incompatible: true,
+      incompatible_project_version: "2026.8.27",
+      incompatible_source: "installed-package",
+      override_applied: true,
+    });
+
+    await rm(path.join(root, "node_modules"), { recursive: true, force: true });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        dependencies: { "@unbrained/pm-cli": "2026.9.2" },
+        devDependencies: { "@unbrained/pm-cli": ">=2026.8.28 <2026.8.31" },
+      }),
+    );
+    expect(() =>
+      assertProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "bounded range"],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "project_runtime_history_epoch_incompatible",
+      }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "bounded range"],
+      }),
+    ).toMatchObject({
+      incompatible_project_version: ">=2026.8.28 <2026.8.31",
+      history_epoch_incompatible: true,
+    });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          "@unbrained/pm-cli": ">=2026.8.28 <=2026.8.30",
+        },
+      }),
+    );
+    expect(() =>
+      assertProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "inclusive bounded range"],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "project_runtime_history_epoch_incompatible",
+      }),
+    );
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          "@unbrained/pm-cli": "2026.8.1 - 2026.8.30",
+        },
+      }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "hyphen bounded range"],
+      }),
+    ).toMatchObject({
+      compatible: false,
+      history_epoch_incompatible: true,
+      incompatible_project_version: "2026.8.1 - 2026.8.30",
+    });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          "@unbrained/pm-cli": ">=2026.8.28 <2026.8.31 || >=2026.9.1",
+        },
+      }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "disjunctive range"],
+      }),
+    ).toMatchObject({ compatible: true, history_epoch_incompatible: false });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        devDependencies: { "@unbrained/pm-cli": "^2026.8.28" },
+      }),
+    );
+    expect(
+      inspectProjectRuntimeCompatibility({
+        executingVersion: "2026.9.2",
+        projectRoot: root,
+        argv: ["create", "Task", "range permits upgrade"],
+      }),
+    ).toMatchObject({ compatible: true, history_epoch_incompatible: false });
   });
 
   it("enforces the packaged CLI boundary with machine-readable recovery", async () => {

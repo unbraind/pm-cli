@@ -6,7 +6,11 @@
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createHistoryEntry } from "../core/history/history.js";
+import {
+  createHistoryEntry,
+  hashHistoryStream,
+  resealHistoryRewrite,
+} from "../core/history/history.js";
 import {
   selectHistoryCompactBulkTargets,
   type HistoryCompactBulkCandidate,
@@ -246,11 +250,13 @@ function reanchorRetainedEntries(
       retainedEntryOffset + index + 1,
       entry.op,
     );
-    rewritten.push({
-      ...entry,
-      before_hash: beforeHash,
-      after_hash: replayHash(replay),
-    });
+    rewritten.push(
+      resealHistoryRewrite(entry, {
+        ...entry,
+        before_hash: beforeHash,
+        after_hash: replayHash(replay),
+      }),
+    );
   }
   return {
     entries: rewritten,
@@ -349,6 +355,17 @@ function buildHistoryCompactEntries(params: {
     before: replayToItemDocument(cloneEmptyReplayDocument()),
     after: replayToItemDocument(checkpoint),
     message: buildHistoryCompactBaselineMessage(params.boundary),
+    context: {
+      history_compaction: {
+        contract_version: 1,
+        pruned_entry_count: params.boundary.compactCount,
+        pruned_stream_digest: hashHistoryStream(
+          params.historyEntries.slice(0, params.boundary.compactCount),
+        ),
+        retained_proof: "stream_digest_and_checkpoint",
+        limitation: "individual_pruned_entries_require_pre_compaction_stream",
+      },
+    },
   });
   const rewrittenEntries = [baselineEntry, ...reanchored.entries];
   if (!params.dryRun) {

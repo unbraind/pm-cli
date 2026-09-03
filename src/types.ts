@@ -1022,6 +1022,26 @@ export interface HistoryPatchOp {
   value?: unknown;
 }
 
+/** Immutable evidence retained whenever history maintenance replaces anchors or patch operations. */
+export interface HistoryReanchorEvidence {
+  /** Before-state anchor present on the record before re-anchoring. */
+  before_hash: string;
+  /** After-state anchor present on the record before re-anchoring. */
+  after_hash: string;
+  /** Item hash epoch present before re-anchoring. */
+  item_hash_version?: number;
+  /** Hash of the original patch, retained even when redaction forbids retaining its values. */
+  patch_hash: string;
+  /** Original patch operations when repair replaced or skipped recorded intent. */
+  patch?: HistoryPatchOp[];
+  /** Record-integrity epoch protecting the pre-re-anchor record. */
+  record_hash_version?: number;
+  /** Record hash protecting the pre-re-anchor attribution and operation metadata. */
+  record_hash?: string;
+  /** Exact prior sealed record when maintenance can retain its non-sensitive payload. */
+  record?: HistoryEntry;
+}
+
 /** Documents the history entry payload exchanged by command, SDK, and package integrations. */
 export interface HistoryEntry {
   /** Value that configures or reports ts for this contract. */
@@ -1093,6 +1113,12 @@ export interface HistoryEntry {
   after_hash: string;
   /** Version of the item canonicalization used by before_hash and after_hash. Absent on legacy streams. */
   item_hash_version?: number;
+  /** Version of the canonical immutable-record envelope. Absent on legacy entries whose coverage is item-state-only. */
+  record_hash_version?: number;
+  /** SHA-256 hash covering this event's immutable metadata, patch, and item anchors. */
+  record_hash?: string;
+  /** Append-only evidence for every prior anchor or patch representation replaced by maintenance. */
+  reanchor_evidence?: HistoryReanchorEvidence[];
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
   /** Structured audit metadata that does not alter replayed item state. */

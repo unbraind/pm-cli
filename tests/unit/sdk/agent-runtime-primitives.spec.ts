@@ -1,7 +1,8 @@
+import fs from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { coerceLooseCommandOptionsWithFlagDefinitions } from "../../../src/cli/extension-command-options.js";
 import {
   activateExtensions,
@@ -11,6 +12,7 @@ import {
 } from "../../../src/core/extensions/index.js";
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
+  CURRENT_HISTORY_RECORD_HASH_VERSION,
   createHistoryEntry,
 } from "../../../src/core/history/history.js";
 import {
@@ -268,6 +270,70 @@ describe("agent runtime SDK primitives", () => {
       },
     });
     expect(JSON.stringify(identity)).not.toContain("private session content");
+    const childIdentity = detectAgentIdentity({
+      cwd: path.join(cwd, "packages", "child"),
+      home_dir: home,
+      env: {
+        CLAUDECODE: "1",
+        CLAUDE_CODE_SESSION_ID: "session-123",
+      },
+    });
+    expect(childIdentity).toMatchObject({
+      model: "claude-opus-5",
+      model_source: "probe",
+      provenance: {
+        model: { source: "probe", value: "claude-opus-5" },
+        version: { source: "probe", value: "2.1.220" },
+      },
+    });
+    await mkdir(
+      path.join(
+        home,
+        ".claude",
+        "projects",
+        "non-file-session-candidate",
+        "session-123.jsonl",
+      ),
+      { recursive: true },
+    );
+    expect(
+      detectAgentIdentity({
+        cwd: path.join(cwd, "packages", "another-child"),
+        home_dir: home,
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "session-123",
+        },
+      }),
+    ).toMatchObject({ model: "claude-opus-5", model_source: "probe" });
+    const duplicateSessionDirectory = path.join(
+      home,
+      ".claude",
+      "projects",
+      "duplicate-workspace",
+    );
+    await mkdir(duplicateSessionDirectory, { recursive: true });
+    await writeFile(
+      path.join(duplicateSessionDirectory, "session-123.jsonl"),
+      '{"message":{"model":"ambiguous-model"}}\n',
+      "utf8",
+    );
+    expect(
+      diagnoseAgentIdentity({
+        cwd: path.join(cwd, "another-child"),
+        home_dir: home,
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "session-123",
+        },
+      }).provenance_outcomes.model,
+    ).toEqual({
+      status: "failed",
+      reason: "resolver_failed",
+      resolver: "claude_session_file",
+      rule_version: "v1",
+    });
+    await rm(duplicateSessionDirectory, { recursive: true, force: true });
     expect(
       detectAgentIdentity({
         cwd,
@@ -349,6 +415,16 @@ describe("agent runtime SDK primitives", () => {
     ).not.toHaveProperty("version");
     expect(
       diagnoseAgentIdentity({
+        env: { CODEX_HOME: "/tmp/codex", AI_AGENT: "codex/unknown" },
+      }).provenance_outcomes.version,
+    ).toEqual({
+      status: "failed",
+      reason: "resolver_failed",
+      resolver: "ai_agent_version",
+      rule_version: "v1",
+    });
+    expect(
+      diagnoseAgentIdentity({
         env: {
           CODEX_HOME: "/tmp/codex",
           AI_AGENT: "claude-code_2-1-226_agent",
@@ -360,6 +436,168 @@ describe("agent runtime SDK primitives", () => {
       resolver: "ai_agent_version",
       rule_version: "v1",
     });
+  });
+
+  it("fails closed when a resolved Claude transcript becomes unreadable", async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), "pm-claude-unreadable-"));
+    tempRoots.push(home);
+    const sessionFile = path.join(home, "session-unreadable.jsonl");
+    await writeFile(sessionFile, '{"message":{"model":"private-model"}}\n');
+    const open = vi.spyOn(fs, "openSync").mockImplementation(() => {
+      throw new Error("simulated read failure");
+    });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          cwd: home,
+          home_dir: home,
+          session_file: sessionFile,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-unreadable",
+          },
+        }).provenance_outcomes.model,
+      ).toEqual({
+        status: "failed",
+        reason: "resolver_failed",
+        resolver: "claude_session_file",
+        rule_version: "v1",
+      });
+    } finally {
+      open.mockRestore();
+    }
+  });
+
+  it("rejects symlink transcripts and reports inaccessible discovery roots", async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), "pm-claude-boundary-"));
+    tempRoots.push(home);
+    const sessionFile = path.join(home, "session-boundary.jsonl");
+    const nativeLstat = fs.lstatSync.bind(fs);
+    const lstat = vi
+      .spyOn(fs, "lstatSync")
+      .mockImplementation((candidate) =>
+        candidate === sessionFile
+          ? ({ isFile: () => false } as fs.Stats)
+          : nativeLstat(candidate),
+      );
+    const open = vi.spyOn(fs, "openSync");
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          session_file: sessionFile,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-boundary",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({
+        status: "unavailable",
+        reason: "resolver_input_missing",
+      });
+      expect(open).not.toHaveBeenCalled();
+    } finally {
+      open.mockRestore();
+      lstat.mockRestore();
+    }
+
+    const denied = Object.assign(new Error("denied"), { code: "EACCES" });
+    const deniedLstat = vi
+      .spyOn(fs, "lstatSync")
+      .mockImplementation((candidate) => {
+        if (candidate === sessionFile) throw denied;
+        return nativeLstat(candidate);
+      });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          session_file: sessionFile,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-boundary",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "failed", reason: "resolver_failed" });
+    } finally {
+      deniedLstat.mockRestore();
+    }
+
+    const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(() => {
+      throw denied;
+    });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "session-denied",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "failed", reason: "resolver_failed" });
+    } finally {
+      readdir.mockRestore();
+    }
+
+    const discoveredSession = "session-discovered-denied";
+    const discoveredPath = path.join(
+      home,
+      ".claude",
+      "projects",
+      "neighbor",
+      `${discoveredSession}.jsonl`,
+    );
+    const discoveredLstat = vi
+      .spyOn(fs, "lstatSync")
+      .mockImplementation((candidate) => {
+        if (candidate === discoveredPath) throw denied;
+        return nativeLstat(candidate);
+      });
+    const discoveredRead = vi
+      .spyOn(fs, "readdirSync")
+      .mockReturnValue([
+        { isDirectory: () => true, name: "neighbor" } as fs.Dirent,
+      ]);
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          home_dir: home,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: discoveredSession,
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "failed", reason: "resolver_failed" });
+    } finally {
+      discoveredRead.mockRestore();
+      discoveredLstat.mockRestore();
+    }
+  });
+
+  it("does not touch Claude session storage when probes are disabled", () => {
+    const lstat = vi.spyOn(fs, "lstatSync").mockImplementation(() => {
+      throw new Error("probe attempted");
+    });
+    const readdir = vi.spyOn(fs, "readdirSync").mockImplementation(() => {
+      throw new Error("probe attempted");
+    });
+    try {
+      expect(
+        diagnoseAgentIdentity({
+          probes_enabled: false,
+          env: {
+            CLAUDECODE: "1",
+            CLAUDE_CODE_SESSION_ID: "disabled-session",
+          },
+        }).provenance_outcomes.model,
+      ).toMatchObject({ status: "unavailable", reason: "probes_disabled" });
+      expect(lstat).not.toHaveBeenCalled();
+      expect(readdir).not.toHaveBeenCalled();
+    } finally {
+      readdir.mockRestore();
+      lstat.mockRestore();
+    }
   });
 
   it("uses ambient signals by default and records extensible effort and role provenance", async () => {
@@ -422,8 +660,8 @@ describe("agent runtime SDK primitives", () => {
     });
     expect(diagnosed.provenance?.topic).toBeNull();
     expect(diagnosed.provenance_outcomes.model).toEqual({
-      status: "failed",
-      reason: "resolver_failed",
+      status: "unavailable",
+      reason: "resolver_input_missing",
       resolver: "claude_session_file",
       rule_version: "v1",
     });
@@ -500,8 +738,8 @@ describe("agent runtime SDK primitives", () => {
       command: "test",
       agent_provenance_outcomes: {
         model: {
-          status: "failed",
-          reason: "resolver_failed",
+          status: "unavailable",
+          reason: "resolver_input_missing",
           resolver: "claude_session_file",
           rule_version: "v1",
         },
@@ -818,6 +1056,8 @@ describe("agent runtime SDK primitives", () => {
           before_hash: expect.any(String),
           after_hash: expect.any(String),
           item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
+          record_hash_version: CURRENT_HISTORY_RECORD_HASH_VERSION,
+          record_hash: expect.any(String),
         },
         {
           op: "close",
@@ -841,6 +1081,8 @@ describe("agent runtime SDK primitives", () => {
           before_hash: expect.any(String),
           after_hash: expect.any(String),
           item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
+          record_hash_version: CURRENT_HISTORY_RECORD_HASH_VERSION,
+          record_hash: expect.any(String),
         },
       ]);
     });

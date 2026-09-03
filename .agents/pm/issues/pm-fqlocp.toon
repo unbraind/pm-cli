@@ -1,0 +1,75 @@
+id: pm-fqlocp
+title: "GH-1183: Windows nightly event-index lock acquisition and fallback publication are nondeterministic"
+description: "Nightly Validation run 33734934714 on main 41200e76b failed twice on Windows Node 24: scale workspace SDK writes received EPERM while opening the history-event-index lock, and the unlocked-fallback append regression observed an index file that should have remained unpublished. Treat Windows lock denial consistently with contention, isolate test hooks, and preserve the rule that an unlocked fallback append can never publish a size-certified incomplete index."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:history","area:tests",ci,locks,windows
+created_at: "2026-09-03T09:11:33.408Z"
+updated_at: "2026-09-03T09:59:26.688Z"
+closed_at: "2026-09-03T09:55:35.701Z"
+completed_at: "2026-09-03T09:55:35.701Z"
+author: "harness:codex"
+acceptance_criteria: The Windows Node 24 full suite passes repeatedly; scale direct/SDK layouts remain byte-identical; EPERM contention is bounded and recoverable; an unlocked fallback append invalidates or withholds the event index; focused lock/event-index tests and exact coverage pass.
+parent: pm-u9d0
+severity: high
+environment: "GitHub Actions windows-latest, Node 24, run 33734934714 at main 41200e76b"
+repro_steps: Run the full nightly suite on Windows; observe EPERM opening locks/history-event-index.lock in scale-workspace equivalence and an unexpectedly present runtime history-event-index after the forced unlocked fallback append.
+resolution: Lock creation now retries Windows delete-pending errors only with filesystem contention evidence; event-index fallback tests assert committed invalidation rather than POSIX-only unlink; typed lineage and exact regression coverage are recorded.
+expected_result: "Windows Node 24 scale SDK writes tolerate bounded delete-pending contention without concealing permissions, and unlocked fallback appends never expose an incomplete derived index."
+actual_result: "Focused 98-test regression suite, complete 8,323-test exact coverage, tracker-context quality, packed npx/bunx, and fresh installed SDK/CLI lifecycle acceptance all pass."
+affected_version: 2026.9.3
+component: history event index and cross-platform lock
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-801d,implements,"2026-09-03T09:31:43.415Z","harness:codex","cli:update:dep",detected
+  pm-tgq6,recurs_from,"2026-09-03T09:31:43.415Z","harness:codex","cli:update:dep",detected
+  pm-zwib,verifies,"2026-09-03T09:31:43.415Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-03T09:11:33.408Z","harness:codex","Duplicate check: all-status searches for EPERM history-event-index Windows lock, unlocked fallback append incomplete index, and Nightly Validation Windows found no item owning this combined event-index regression. pm-tgq6 owns an older stale-cleanup mock-path flake, pm-zwib owns stale-lock takeover safety, and pm-801d owns the broader derived-index roadmap; this item preserves the distinct GH-1183 failure evidence."
+  "2026-09-03T09:11:59.050Z","harness:codex","Implementation start: the exact nightly log shows two independent retry-stable failures on main 41200e76b: EPERM opening locks/history-event-index.lock during scale SDK history appends, and a forced unlocked-fallback append leaving runtime/history-event-index.json present. I will preserve cross-platform lock semantics and the fail-closed derived-index publication invariant, then verify with focused, full exact-coverage, packed, and Windows CI evidence."
+  "2026-09-03T09:33:38.424Z","harness:codex","Implementation evidence: Windows delete-pending EPERM, EACCES, and EBUSY create failures are retryable only when an existing lock or writable parent proves contention; genuine directory permission failures remain fatal. Event-index fallback coverage now asserts the portable public invariant that a committed invalidation marker makes the index unqueryable even when Windows keeps an open SQLite file physically present. Focused lock, index, and scale equivalence suite passed 98 tests."
+  "2026-09-03T09:55:35.162Z","harness:codex","Verification evidence: exact full suite passed 600 files and 8,323 tests at 100% statements (61,477/61,477), branches (46,551/46,551), functions (12,799/12,799), and lines (59,157/59,157). Packed npx and bunx smoke passed version 2026.9.3 across 13 packages. Fresh temporary installed-package acceptance created, claimed, updated, read four immutable history events, closed, released, health-checked, and validated pm-ia4g entirely through the public CLI and @unbrained/pm-cli/sdk/runtime."
+learnings[1]{created_at,author,text}:
+  "2026-09-03T09:33:38.900Z","harness:codex","Cross-platform derived-cache correctness must depend on committed invalidation and content-size evidence, not successful physical unlink. Windows exclusive-create errors should be reclassified as contention only with filesystem evidence so retry tolerance cannot conceal genuine permissions."
+files[3]{path,scope,note}:
+  src/core/lock/lock.ts,project,Classify Windows delete-pending lock open errors as bounded contention only after path or directory evidence
+  tests/unit/core/history/event-index.spec.ts,project,Assert the portable invalidation contract instead of POSIX-only physical deletion
+  tests/unit/core/item/core-item-lock-coverage.spec.ts,project,Cover transient EPERM lock creation and fail-closed permission diagnostics
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/scripts/scale-workspace.spec.ts,project,300,"harness:codex","2026-09-03T09:14:42.685Z",local_mutation,feat/history-provenance-integrity-compatibility,"Focused Windows lock, event-index fallback, and scale SDK equivalence regressions"
+  node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-09-03T09:14:43.214Z",local_mutation,feat/history-provenance-integrity-compatibility,Mandatory complete exact 100/100/100/100 coverage gate
+test_runs[2]:
+  - run_id: test-local-mtlc2sl8-hb82bl
+    kind: test
+    status: failed
+    started_at: "2026-09-03T09:33:44.118Z"
+    finished_at: "2026-09-03T09:39:33.308Z"
+    recorded_at: "2026-09-03T09:39:33.308Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/scripts/scale-workspace.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mtlcip6s-grzrdb
+    kind: test
+    status: passed
+    started_at: "2026-09-03T09:46:17.412Z"
+    finished_at: "2026-09-03T09:51:55.396Z"
+    recorded_at: "2026-09-03T09:51:55.396Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+close_reason: GH-1183 Windows event-index concurrency and fallback publication regressions are fixed and fully verified
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-fqlocp
+  gate_id: windows-history-event-index-contention-invalidation
+  negative_control: "Reclassify a genuine permission failure as contention, stop retrying an evidenced Windows delete-pending lock, or expose an index after an unlocked fallback append; the focused lock, event-index, scale-equivalence, exact-coverage, static, and Windows CI gates must fail."
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/scripts/scale-workspace.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static","pnpm smoke:npx"
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Test (Windows)
+body: ""
