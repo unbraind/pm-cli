@@ -174,9 +174,9 @@ describe("merge receipt history compatibility", () => {
       ...legacySummary(),
       conflict_resolution: "stable_value_order",
     };
-    expect(
-      isPreDurableCloneLocalReceiptSummary(summary, "pm-receipt"),
-    ).toBe(true);
+    expect(isPreDurableCloneLocalReceiptSummary(summary, "pm-receipt")).toBe(
+      true,
+    );
     expect(
       isPreDurableCloneLocalReceiptSummary(
         { ...summary, item_path: "../pm-receipt.md" },
@@ -208,9 +208,9 @@ describe("merge receipt history compatibility", () => {
       },
       "pm-receipt",
     );
-    expect(
-      isPreDurableDispositionEligibleReference(extractedReference!),
-    ).toBe(true);
+    expect(isPreDurableDispositionEligibleReference(extractedReference!)).toBe(
+      true,
+    );
     const reference = {
       ...extractedReference!,
       itemId: "pm-receipt",
@@ -277,6 +277,16 @@ describe("merge receipt history compatibility", () => {
         [{ ...reference, eventTimestamp: "2026-08-10T00:00:00.000Z" }],
         new Set(),
         dispositions,
+      ).missing,
+    ).toHaveLength(1);
+    expect(
+      classifyHistoryMergeReceiptReferences(
+        [{ ...reference, eventTimestamp: "2026-08-10T00:00:00.000Z" }],
+        new Set(),
+        dispositions.map((disposition) => ({
+          ...disposition,
+          originalEventTimestamp: "2026-08-10T00:00:00.000Z",
+        })),
       ).missing,
     ).toHaveLength(1);
     expect(

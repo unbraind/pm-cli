@@ -36,6 +36,7 @@ import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { sha256Hex, stableStringify } from "../core/shared/serialization.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
 import {
@@ -59,7 +60,10 @@ import {
   summarizeMergeReceipt,
   type MergeDecisionReceipt,
 } from "./merge/receipts.js";
-import { hashItemScalarDecisionValue } from "./merge/three-way.js";
+import {
+  encodeItemScalarDecisionValue,
+  hashItemScalarDecisionValue,
+} from "./merge/three-way.js";
 import {
   listInvalidProvenanceHistoryStreamIds,
   normalizeInvalidHistoryProvenance,
@@ -400,7 +404,10 @@ async function verifyReceiptAgainstSnapshot(params: {
   const valuesMatch = declaredFields.every((field) => {
     const value =
       field === "body" ? params.currentItemReplay.body : currentMetadata[field];
-    return hashes[field] === hashItemScalarDecisionValue(value);
+    return [
+      hashItemScalarDecisionValue(value),
+      sha256Hex(stableStringify(encodeItemScalarDecisionValue(value))),
+    ].includes(hashes[field] as string);
   });
   return valuesMatch ? { receipt: params.receipt, declaredFields } : null;
 }

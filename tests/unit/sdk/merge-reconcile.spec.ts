@@ -528,6 +528,48 @@ describe("merge reconciliation SDK", () => {
     }
   });
 
+  it("reports bounded missing-reference batches and requires repeated review", async () => {
+    mocks.runHealth.mockResolvedValue({
+      checks: [
+        {
+          name: "integrity",
+          details: {
+            counts: { missing_merge_receipt_history_references: 101 },
+            missing_merge_receipt_history_reference_details: [],
+            missing_merge_receipt_history_reference_details_truncated: true,
+          },
+        },
+      ],
+    });
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "ok" }],
+      generated_at: "2026-09-04T00:00:00.000Z",
+    });
+
+    const result = await runMergeReconcile({ dryRun: true }, globalOptions);
+
+    expect(result).toMatchObject({
+      ok: false,
+      receipts: {
+        missing_history_references_before: 101,
+        legacy_disposition_eligible: 0,
+        missing_history_references_after: 101,
+      },
+    });
+    expect(result.guidance).toContainEqual(
+      expect.stringContaining("each reviewed --force pass"),
+    );
+    const applied = await runMergeReconcile({}, globalOptions);
+    expect(applied.ok).toBe(false);
+    expect(applied.guidance).toContainEqual(
+      expect.stringContaining("each reviewed --force pass"),
+    );
+  });
+
   it("guides an apply pass to force only after finding an eligible legacy coordinate", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-reconcile-legacy-"));
     const pmRoot = path.join(root, ".agents", "pm");

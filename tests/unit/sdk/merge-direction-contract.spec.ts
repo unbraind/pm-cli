@@ -153,6 +153,40 @@ describe("item merge direction contract", () => {
     );
   });
 
+  it("keeps null distinct from a newer deletion during scalar comparison", () => {
+    const nullableBase = { ...JSON.parse(base), extension_value: null };
+    const deleted: Record<string, unknown> = {
+      ...nullableBase,
+      updated_at: "2026-08-08T03:00:00.000Z",
+    };
+    delete deleted.extension_value;
+    const edited = {
+      ...nullableBase,
+      extension_value: "older-value",
+      updated_at: "2026-08-08T02:00:00.000Z",
+    };
+
+    const result = mergeItemDocuments(
+      JSON.stringify(nullableBase),
+      JSON.stringify(deleted),
+      JSON.stringify(edited),
+      { format: "json", conflictResolution: "latest_document_update" },
+    );
+
+    expect(JSON.parse(result.merged)).not.toHaveProperty("extension_value");
+    expect(result.conflict_fields).toContain("extension_value");
+    expect(result.conflict_decisions).toContainEqual(
+      expect.objectContaining({
+        field: "extension_value",
+        base: null,
+        retained: ITEM_SCALAR_MISSING_VALUE,
+        discarded: "older-value",
+        retained_side: "ours",
+        resolution_basis: "document_updated_at",
+      }),
+    );
+  });
+
   it("recognizes only the exact missing-scalar evidence marker", () => {
     expect(isItemScalarMissingValue(ITEM_SCALAR_MISSING_VALUE)).toBe(true);
     expect(isItemScalarMissingValue(undefined)).toBe(false);

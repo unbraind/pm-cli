@@ -513,7 +513,10 @@ export interface ItemDocumentMergeResult {
 }
 
 function jsonEquals(left: unknown, right: unknown): boolean {
-  return stableStringify(left ?? null) === stableStringify(right ?? null);
+  if (left === undefined || right === undefined) {
+    return left === undefined && right === undefined;
+  }
+  return stableStringify(left) === stableStringify(right);
 }
 
 function unionCollection(

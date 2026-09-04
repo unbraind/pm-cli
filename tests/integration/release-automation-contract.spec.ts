@@ -207,7 +207,12 @@ describe("release automation contract", () => {
     const registeredGate = gateRegistry.automation_inventory.gate_scripts.find(
       (entry) => entry.path === "scripts/release/static-quality-gate.mts",
     );
-    expect(registeredGate?.provider_args).toContain(String(total));
+    const suppressionArgumentIndex =
+      registeredGate?.provider_args?.indexOf("--max-eslint-suppressions") ?? -1;
+    expect(suppressionArgumentIndex).toBeGreaterThanOrEqual(0);
+    expect(registeredGate?.provider_args?.[suppressionArgumentIndex + 1]).toBe(
+      String(total),
+    );
   });
 
   it("keeps bundle rebuilds safe for concurrent local pm invocations", async () => {

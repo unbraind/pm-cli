@@ -3,11 +3,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  sha256Hex,
+  stableStringify,
+} from "../../../src/core/shared/serialization.js";
+import {
   runMergeReconcile,
   type MergeReconcileResult,
 } from "../../../src/sdk/merge/reconcile.js";
 import { writeMergeReceipt } from "../../../src/sdk/merge/receipts.js";
-import { hashItemScalarDecisionValue } from "../../../src/sdk/merge/three-way.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 async function tamperHistoryChain(historyPath: string): Promise<string> {
@@ -211,7 +214,7 @@ describe("merge reconcile command", () => {
     });
   });
 
-  it("records privacy-safe receipt context on a clean merge stream", async () => {
+  it("records privacy-safe context while accepting a legacy v1 field hash", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
       expect(
@@ -248,7 +251,7 @@ describe("merge reconcile command", () => {
         fieldsFromTheirs: [],
         unionFields: [],
         mergedFieldHashes: {
-          title: hashItemScalarDecisionValue("Clean receipt merge"),
+          title: sha256Hex(stableStringify("Clean receipt merge")),
         },
         decisions: [
           {

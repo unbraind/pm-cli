@@ -234,16 +234,19 @@ and drift on unrelated items fail closed to the normal `pm history-repair`
 guidance. Health indexes authoritative evidence once by item and reconciliation
 uses the same per-item groups with a fixed receipt-only worker pool, so committed
 sidecars cannot amplify drift scans into unbounded parallel repair work.
-The machine-executable remediation names the apply command because `--dry-run`
-returns a successful preview without changing the red health state. Operators
-may still run the documented dry-run first; agents that execute the remediation
-field verbatim perform the settlement instead of entering a successful no-op
-loop.
+The machine-executable remediation for a missing receipt reference names
+`pm merge reconcile --dry-run`. It never publishes `--force` as an executable
+hint: the human-readable summary explains that exact eligible pre-durable
+coordinates may be dispositioned by a separately reviewed force pass. Ordinary
+pending lossless receipts retain their unforced apply remediation.
 Apply-mode reconciliation repeats the same proof against the exact
 item snapshot used by the audited history rewrite. The audit event and
 settlement include only the individually proven receipt id, so one valid receipt
 cannot authorize an untrusted same-item sibling. Failed or unproven receipts
 remain pending unless the coordinator explicitly reviews and supplies `--force`.
+Snapshot verification accepts both the current presence-domain digest and the
+legacy version-1 scalar digest, so already-written receipts remain repairable;
+new receipts always use the collision-free presence-domain scheme.
 Receipts with discarded scalar values retain the distinct
 `merge_decisions_unreviewed:<n>` finding. Matching authoritative hash proof
 allows those receipts to settle without `--force`; without qualifying proof,
@@ -256,8 +259,12 @@ already-proven canonical snapshot.
 The same `--force` boundary also handles an unrecoverable pre-durable
 clone-local-only history reference. Preview and apply results expose
 `missing_history_references_before`, `legacy_disposition_eligible`,
-`legacy_disposition_recorded`, and `missing_history_references_after`; an apply
-result cannot return `ok: true` while any missing reference remains.
+`legacy_disposition_recorded`, and `missing_history_references_after`. When
+coordinates exceed the bounded health response, explicit result guidance
+requires repeated dry-run and reviewed force passes until health no longer
+reports truncated coordinate details and the remaining count is zero. An apply
+result cannot return `ok: true` while any missing reference or truncated
+evidence remains.
 It exits nonzero while either merge-critical validation check is non-green, so
 CI and explicit post-merge hooks cannot approve unresolved receipts or drift.
 The apply pass uses the audited history rewrite boundary to append a

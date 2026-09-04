@@ -96,6 +96,7 @@ interface LegacyReceiptDispositionCandidate extends MissingReceiptHistoryCoordin
 /** Extract bounded item, line, and receipt coordinates from health evidence. */
 function missingReceiptCoordinates(health: HealthResult): {
   count: number;
+  truncated: boolean;
   coordinates: MissingReceiptHistoryCoordinate[];
 } {
   const integrity = health.checks.find((check) => check.name === "integrity");
@@ -111,6 +112,9 @@ function missingReceiptCoordinates(health: HealthResult): {
       : 0;
   const details =
     integrity?.details.missing_merge_receipt_history_reference_details;
+  const truncated =
+    integrity?.details
+      .missing_merge_receipt_history_reference_details_truncated === true;
   const coordinates = Array.isArray(details)
     ? details.flatMap((detail) => {
         if (
@@ -135,7 +139,7 @@ function missingReceiptCoordinates(health: HealthResult): {
           : [];
       })
     : [];
-  return { count, coordinates };
+  return { count, truncated, coordinates };
 }
 
 /** Re-read history and retain only exact pre-durable clone-local references. */
@@ -474,27 +478,36 @@ export async function runMergeReconcile(
     mergeChecksGreen,
     receiptSettlementComplete,
     missingAfter.count === 0,
+    !missingAfter.truncated,
   ].every(Boolean);
-  const guidance = dryRun
-    ? [
-        "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",
-        "No Git hook is installed automatically; invoke this command from an explicit post-merge hook only when your repository policy opts in.",
-      ]
-    : ok
+  const boundedBatchGuidance =
+    missingBefore.truncated || missingAfter.truncated
+      ? "Missing receipt coordinates exceed the bounded detail response; each reviewed --force pass can disposition only the reported eligible batch. Repeat dry-run and --force passes until receipts.missing_history_reference_details_truncated_after=false and missing_history_references_after=0."
+      : undefined;
+  const guidance = (
+    dryRun
       ? [
-          "Reconciliation is complete; commit changed history streams with the merge result.",
-          "Rerun pm merge reconcile --dry-run after future tracker-data merges as a non-mutating integrity check.",
+          "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",
+          boundedBatchGuidance,
+          "No Git hook is installed automatically; invoke this command from an explicit post-merge hook only when your repository policy opts in.",
         ]
-      : [
-          "Reconciliation remains incomplete; inspect repair failures and non-green validation checks before retrying.",
-          ...(legacyDispositionCandidates.length > 0 &&
-          recordedLegacyDispositionCount === 0
-            ? [
-                "Pre-durable clone-local-only receipt references are eligible for an audited disposition; rerun with --force after reviewing receipts.legacy_disposition_eligible.",
-              ]
-            : []),
-          "Do not commit repaired history streams as reconciled until pm merge reconcile returns ok=true.",
-        ];
+      : ok
+        ? [
+            "Reconciliation is complete; commit changed history streams with the merge result.",
+            "Rerun pm merge reconcile --dry-run after future tracker-data merges as a non-mutating integrity check.",
+          ]
+        : [
+            "Reconciliation remains incomplete; inspect repair failures and non-green validation checks before retrying.",
+            boundedBatchGuidance,
+            ...(legacyDispositionCandidates.length > 0 &&
+            recordedLegacyDispositionCount === 0
+              ? [
+                  "Pre-durable clone-local-only receipt references are eligible for an audited disposition; rerun with --force after reviewing receipts.legacy_disposition_eligible.",
+                ]
+              : []),
+            "Do not commit repaired history streams as reconciled until pm merge reconcile returns ok=true.",
+          ]
+  ).filter((message): message is string => message !== undefined);
   return {
     ok,
     dry_run: dryRun,
