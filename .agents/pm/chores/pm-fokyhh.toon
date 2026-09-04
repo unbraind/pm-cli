@@ -1,0 +1,20 @@
+id: pm-fokyhh
+title: Adopt Vitest 5 after CodSpeed supports its peer contract
+description: "Own the Vitest 5.0.0 and @vitest/coverage-v8 5.0.0 major pair separately from routine dependency refreshes. The repository's mandatory @codspeed/vitest-plugin 5.7.1 currently declares vitest ^3.2 || ^4, so adopting Vitest 5 would violate the installed performance-gate peer contract."
+type: Chore
+status: open
+priority: 3
+tags[4]: codspeed,dependencies,peer-contract,testing
+created_at: "2026-09-04T16:26:03.878Z"
+updated_at: "2026-09-04T16:26:03.878Z"
+author: "harness:codex"
+acceptance_criteria: "A current @codspeed/vitest-plugin release accepts Vitest 5; Vitest and coverage-v8 are upgraded as an exact compatible pair; CodSpeed, full exact coverage, cross-platform CI, typecheck, static quality, packed consumers, and vulnerability gates pass."
+parent: pm-92if
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-n5ysuk,recurs_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
+  pm-yh6t,discovered_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-04T16:26:03.878Z","harness:codex","Duplicate-check evidence: complete all-status PM searches for Vitest 5, Vitest major, and CodSpeed peer compatibility found the closed compatible Vitest 4.1.11 refresh pm-n5ysuk and CodSpeed adoption pm-yh6t, but no owner for the 5.0.0 major. Live registry evidence on 2026-09-04: vitest 5.0.0 supports Node ^22.12 || ^24 || >=26, but mandatory @codspeed/vitest-plugin 5.7.1 declares peer vitest ^3.2 || ^4. This item remains open and unclaimed until that external peer contract is compatible."
+body: ""

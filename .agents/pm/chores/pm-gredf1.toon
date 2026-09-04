@@ -1,0 +1,44 @@
+id: pm-gredf1
+title: Refresh compatible jscpd 5.1.2 and reconcile the 2026-09-04 dependency census
+description: "Adopt registry-current jscpd 5.1.2, preserve its zero-clone mandatory gate, and record every remaining incompatible major against a canonical PM owner using live runtime and peer-contract evidence."
+type: Chore
+status: closed
+priority: 2
+tags[4]: dependencies,quality,supply-chain,tooling
+created_at: "2026-09-04T16:26:07.452Z"
+updated_at: "2026-09-04T16:43:10.188Z"
+closed_at: "2026-09-04T16:43:09.678Z"
+completed_at: "2026-09-04T16:43:09.678Z"
+author: "harness:codex"
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve jscpd 5.1.2; duplicate scans, typecheck, strict static quality, exact 100/100/100/100 coverage, audit, package artifact, and manual packed-consumer acceptance pass; pnpm outdated contains only canonical incompatible-major deferrals."
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "Updated jscpd to 5.1.2 and its complete native lock graph; documented Vitest 5, npm-package-arg 14, and TypeScript 7 in canonical unclaimed compatibility items with live blocker evidence."
+expected_result: The latest compatible duplicate-analysis patch is reproducible and every remaining outdated major has a precise non-duplicated PM owner rather than being silently ignored.
+actual_result: "jscpd 5.1.2 passes zero-clone scans, 8,364-test exact 100/100/100/100 coverage, full tracker-aware static quality, zero-vulnerability audit, artifact budget, and isolated packed npx/bunx acceptance; only three explicitly owned incompatible majors remain."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,verifies,"2026-09-04T16:26:07.452Z","harness:codex","cli:create:dep",detected
+  pm-fokyhh,verifies,"2026-09-04T16:26:07.452Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,verifies,"2026-09-04T16:26:07.452Z","harness:codex","cli:create:dep",detected
+  pm-ur4swu,recurs_from,"2026-09-04T16:26:07.452Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-04T16:26:07.452Z","harness:codex","Duplicate-check evidence: complete all-status searches for jscpd 5.1.2 found closed prior refresh pm-ur4swu but no current patch owner. Registry jscpd 5.1.2 requires Node >=18 and was published 2026-09-03, compatible with pm-cli Node >=22.18.0. The same live census assigned Vitest 5 to pm-fokyhh, npm-package-arg 14 to pm-ksr40d, and TypeScript 7 to pm-do5b."
+  "2026-09-04T16:43:08.481Z","harness:codex","Final implementation evidence: package.json and pnpm-lock.yaml resolve jscpd 5.1.2 including the new linux-arm64-musl artifact. Both jscpd configurations report zero clones across 1,167 repository files and 458 source files. Typecheck and pnpm audit pass with zero known vulnerabilities. Base package gate passes at 19,961,138 / 20,000,000 bytes and 1,423 files with no source maps. Fresh exact coverage passes 603 files / 8,364 tests at 61,894/61,894 statements, 46,879/46,879 branches, 12,871/12,871 functions, and 59,551/59,551 lines. Direct tracker-aware pnpm quality:static passes every repository, SDK, token, graph, and append-only history gate. Isolated packed npx and bunx smoke passes all 13 packages."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T16:43:09.081Z","harness:codex","Dependency freshness is a compatibility census, not a blind latest-version operation: patch updates can ship immediately when runtime and supply-chain contracts fit, while each incompatible major needs one canonical unclaimed owner with the exact external peer or engine blocker."
+files[2]{path,scope,note}:
+  package.json,project,Compatible jscpd 5.1.2 dependency declaration
+  pnpm-lock.yaml,project,Resolved jscpd 5.1.2 native package graph
+tests[7]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm lint:duplicates",project,300,"harness:codex","2026-09-04T16:26:37.010Z",local_mutation,fix/sentry-artifact-budget-parity
+  pnpm typecheck,project,600,"harness:codex","2026-09-04T16:26:37.555Z",local_mutation,fix/sentry-artifact-budget-parity
+  pnpm audit --audit-level=low,project,300,"harness:codex","2026-09-04T16:26:38.130Z",local_mutation,fix/sentry-artifact-budget-parity
+  "pnpm quality:package-artifact",project,600,"harness:codex","2026-09-04T16:26:38.647Z",local_mutation,fix/sentry-artifact-budget-parity
+  node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-09-04T16:26:39.224Z",local_mutation,fix/sentry-artifact-budget-parity
+  "pnpm quality:static",project,1200,"harness:codex","2026-09-04T16:26:39.806Z",local_mutation,fix/sentry-artifact-budget-parity
+  "pnpm smoke:npx",project,1200,"harness:codex","2026-09-04T16:26:40.351Z",local_mutation,fix/sentry-artifact-budget-parity
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog generated dependency refresh record
+close_reason: "Adopted compatible jscpd 5.1.2 with zero-clone, exact coverage, static quality, artifact, audit, and packed npx/bunx proof; reconciled every remaining major to a canonical compatibility owner."
+body: ""
