@@ -38,7 +38,6 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
-import { sha256Hex, stableStringify } from "../core/shared/serialization.js";
 import {
   getActiveExtensionRegistrations,
   runActiveOnWriteHooks,
@@ -60,6 +59,7 @@ import {
   summarizeMergeReceipt,
   type MergeDecisionReceipt,
 } from "./merge/receipts.js";
+import { hashItemScalarDecisionValue } from "./merge/three-way.js";
 import {
   listInvalidProvenanceHistoryStreamIds,
   normalizeInvalidHistoryProvenance,
@@ -400,7 +400,7 @@ async function verifyReceiptAgainstSnapshot(params: {
   const valuesMatch = declaredFields.every((field) => {
     const value =
       field === "body" ? params.currentItemReplay.body : currentMetadata[field];
-    return hashes[field] === sha256Hex(stableStringify(value));
+    return hashes[field] === hashItemScalarDecisionValue(value);
   });
   return valuesMatch ? { receipt: params.receipt, declaredFields } : null;
 }

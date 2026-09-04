@@ -15,6 +15,10 @@ import { isSafeReceiptId } from "../merge/receipts.js";
 /** First commit timestamp at which merge receipts gained a tracked durable copy. */
 export const DURABLE_MERGE_RECEIPT_INTRODUCED_AT = "2026-08-09T16:15:18.000Z";
 
+const PRE_DURABLE_DISPOSITION_ELIGIBLE = Symbol(
+  "pre-durable-disposition-eligible",
+);
+
 /** One receipt reference discovered at an immutable history coordinate. */
 export interface HistoryMergeReceiptReference {
   /** Item whose history contains the summary. */
@@ -28,6 +32,13 @@ export interface HistoryMergeReceiptReference {
   /** Timestamp of the history event that introduced the reference, when valid. */
   eventTimestamp?: string;
 }
+
+type ExtractedHistoryMergeReceiptReference = Omit<
+  HistoryMergeReceiptReference,
+  "itemId" | "line"
+> & {
+  [PRE_DURABLE_DISPOSITION_ELIGIBLE]: boolean;
+};
 
 /** Audited disposition for one receipt that a pre-durable writer could never publish. */
 export interface HistoryMergeReceiptDisposition {
@@ -183,6 +194,35 @@ export function isLegacyMergeReceiptSummary(
   );
 }
 
+/** Return whether a summary matches the final clone-local-only schema before durable receipts. */
+export function isPreDurableCloneLocalReceiptSummary(
+  value: Record<string, unknown>,
+  historyItemId: string,
+): boolean {
+  return (
+    typeof value.receipt_id === "string" &&
+    isSafeReceiptId(value.receipt_id) &&
+    (value.preferred === "ours" || value.preferred === "theirs") &&
+    value.requested_preference === undefined &&
+    (value.conflict_resolution === "preferred_side" ||
+      value.conflict_resolution === "stable_value_order") &&
+    value.item_id === historyItemId &&
+    isLegacyItemPath(value.item_path, historyItemId) &&
+    hasLegacyReceiptCollections(value)
+  );
+}
+
+/** Return whether an extracted reference carried a validated pre-durable summary. */
+export function isPreDurableDispositionEligibleReference(
+  reference: Omit<HistoryMergeReceiptReference, "itemId" | "line">,
+): boolean {
+  return (
+    (reference as ExtractedHistoryMergeReceiptReference)[
+      PRE_DURABLE_DISPOSITION_ELIGIBLE
+    ] === true
+  );
+}
+
 /** Extract receipt ids and legacy compatibility disposition from one history entry. */
 export function extractHistoryMergeReceiptReferences(
   value: unknown,
@@ -199,18 +239,21 @@ export function extractHistoryMergeReceiptReferences(
     ) {
       return [];
     }
-    return [
-      {
-        receiptId: receipt.receipt_id,
-        legacySummaryAccepted: isLegacyMergeReceiptSummary(
-          receipt,
-          historyItemId,
-        ),
-        ...(typeof value.ts === "string" && isRfc3339DateTime(value.ts)
-          ? { eventTimestamp: value.ts }
-          : {}),
-      },
-    ];
+    const reference: ExtractedHistoryMergeReceiptReference = {
+      receiptId: receipt.receipt_id,
+      legacySummaryAccepted: isLegacyMergeReceiptSummary(
+        receipt,
+        historyItemId,
+      ),
+      [PRE_DURABLE_DISPOSITION_ELIGIBLE]: isPreDurableCloneLocalReceiptSummary(
+        receipt,
+        historyItemId,
+      ),
+      ...(typeof value.ts === "string" && isRfc3339DateTime(value.ts)
+        ? { eventTimestamp: value.ts }
+        : {}),
+    };
+    return [reference];
   });
 }
 
@@ -271,6 +314,7 @@ export function classifyHistoryMergeReceiptReferences(
   const dispositionAccepts = (
     reference: HistoryMergeReceiptReference,
   ): boolean =>
+    isPreDurableDispositionEligibleReference(reference) &&
     reference.eventTimestamp !== undefined &&
     compareTimestampStrings(
       reference.eventTimestamp,

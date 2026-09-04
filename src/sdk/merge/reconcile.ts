@@ -17,6 +17,7 @@ import { runHealth, type HealthResult } from "../governance/health.js";
 import {
   DURABLE_MERGE_RECEIPT_INTRODUCED_AT,
   extractHistoryMergeReceiptReferences,
+  isPreDurableDispositionEligibleReference,
 } from "../governance/merge-receipt-history.js";
 import { runValidate, type ValidateResult } from "../governance/validate.js";
 import {
@@ -92,6 +93,7 @@ interface LegacyReceiptDispositionCandidate extends MissingReceiptHistoryCoordin
   original_event_ts: string;
 }
 
+/** Extract bounded item, line, and receipt coordinates from health evidence. */
 function missingReceiptCoordinates(health: HealthResult): {
   count: number;
   coordinates: MissingReceiptHistoryCoordinate[];
@@ -136,6 +138,7 @@ function missingReceiptCoordinates(health: HealthResult): {
   return { count, coordinates };
 }
 
+/** Re-read history and retain only exact pre-durable clone-local references. */
 async function identifyLegacyDispositionCandidates(
   pmRoot: string,
   coordinates: readonly MissingReceiptHistoryCoordinate[],
@@ -164,7 +167,9 @@ async function identifyLegacyDispositionCandidates(
       coordinate.item_id,
     ).find((entry) => entry.receiptId === coordinate.receipt_id);
     if (
-      reference?.eventTimestamp === undefined ||
+      reference === undefined ||
+      !isPreDurableDispositionEligibleReference(reference) ||
+      reference.eventTimestamp === undefined ||
       compareTimestampStrings(
         reference.eventTimestamp,
         DURABLE_MERGE_RECEIPT_INTRODUCED_AT,
@@ -180,6 +185,7 @@ async function identifyLegacyDispositionCandidates(
   return candidates;
 }
 
+/** Append auditable dispositions for eligible receipts that cannot be restored. */
 async function recordLegacyReceiptDispositions(params: {
   candidates: readonly LegacyReceiptDispositionCandidate[];
   options: MergeReconcileOptions;
@@ -226,6 +232,7 @@ async function recordLegacyReceiptDispositions(params: {
   return params.candidates.length;
 }
 
+/** Execute one receipt-backed repair while preserving its settled result. */
 async function runReceiptOnlyRepair(params: {
   id: string;
   dryRun: boolean;
@@ -259,6 +266,7 @@ async function runReceiptOnlyRepair(params: {
   }
 }
 
+/** Fold settled receipt repairs into the aggregate reconciliation result. */
 function appendReceiptOnlyResults(params: {
   receiptOnlyIds: string[];
   results: Array<PromiseSettledResult<HistoryRepairResult>>;
@@ -294,9 +302,9 @@ function appendReceiptOnlyResults(params: {
   });
 }
 
+/** Settle only receipts named by successful trusted repair evidence. */
 async function settleProvenReceipts(params: {
   dryRun: boolean;
-  force: boolean;
   pendingReceipts: Awaited<
     ReturnType<typeof inspectMergeReceiptEvidence>
   >["receipts"];
@@ -311,11 +319,9 @@ async function settleProvenReceipts(params: {
         : [],
     ),
   );
-  const receiptsToSettle = params.force
-    ? params.pendingReceipts
-    : params.pendingReceipts.filter((receipt) =>
-        trustedReceiptIds.has(receipt.id),
-      );
+  const receiptsToSettle = params.pendingReceipts.filter((receipt) =>
+    trustedReceiptIds.has(receipt.id),
+  );
   await Promise.all(
     receiptsToSettle.map((receipt) =>
       markMergeReceiptReconciled(
@@ -439,7 +445,6 @@ export async function runMergeReconcile(
   });
   const reconciledReceiptCount = await settleProvenReceipts({
     dryRun,
-    force: options.force === true,
     pendingReceipts,
     repair,
     gitWorkspaceRoot,

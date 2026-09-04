@@ -143,7 +143,7 @@ describe("legacy merge receipt history compatibility", () => {
               conflict_fields: ["title"],
               fields_from_theirs: [],
               union_fields: [],
-              requested_preference: "ours",
+              preferred: "ours",
               conflict_resolution: "stable_value_order",
               decisions: [],
             },
@@ -231,7 +231,7 @@ describe("legacy merge receipt history compatibility", () => {
               conflict_fields: ["title"],
               fields_from_theirs: [],
               union_fields: [],
-              requested_preference: "ours",
+              preferred: "ours",
               conflict_resolution: "stable_value_order",
               decisions: [
                 {

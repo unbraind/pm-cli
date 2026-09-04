@@ -307,6 +307,31 @@ describe("merge reconciliation SDK", () => {
     });
   });
 
+  it("does not let force settle an unrelated unproven receipt", async () => {
+    const receipt = {
+      id: "receipt-unproven",
+      item_id: "pm-unproven",
+      state: "pending",
+    };
+    mocks.listMergeReceipts.mockResolvedValue([receipt]);
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [{ id: "pm-unproven" }],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "warn" }],
+      generated_at: "2026-07-21T00:03:45.000Z",
+    });
+
+    const result = await runMergeReconcile({ force: true }, globalOptions);
+
+    expect(mocks.markMergeReceiptReconciled).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      ok: false,
+      receipts: { pending_before: 1, reconciled: 0 },
+    });
+  });
+
   it("isolates receipt-only history failures without consuming receipts", async () => {
     mocks.listMergeReceipts.mockResolvedValue([
       { id: "receipt-error", item_id: "pm-error" },
@@ -512,7 +537,29 @@ describe("merge reconciliation SDK", () => {
       path.join(historyRoot, "pm-legacy.jsonl"),
       `${JSON.stringify({
         ts: "2026-08-06T00:00:00.000Z",
-        context: { merge: { receipts: [{ receipt_id: "legacy-lost" }] } },
+        context: {
+          merge: {
+            receipts: [
+              {
+                receipt_id: "legacy-lost",
+                item_id: "pm-legacy",
+                item_path: ".agents/pm/tasks/pm-legacy.toon",
+                conflict_fields: ["title"],
+                fields_from_theirs: [],
+                union_fields: [],
+                preferred: "ours",
+                conflict_resolution: "stable_value_order",
+                decisions: [
+                  {
+                    field: "title",
+                    retained_hash: "a".repeat(64),
+                    discarded_hash: "b".repeat(64),
+                  },
+                ],
+              },
+            ],
+          },
+        },
       })}\n`,
     );
     mocks.runHealth.mockResolvedValue({

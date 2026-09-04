@@ -6,26 +6,30 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-04T05:31:14.304Z"
-updated_at: "2026-09-04T06:43:12.973Z"
+updated_at: "2026-09-04T08:19:59.566Z"
 closed_at: "2026-09-04T06:43:12.373Z"
 completed_at: "2026-09-04T06:43:12.373Z"
 author: "harness:codex"
 acceptance_criteria: Fresh-runner npx dependency reification has a bounded timeout above observed valid latency; the timeout remains asserted by unit tests; the canonical packed npx plus bunx smoke completes; no subprocess becomes unbounded.
 parent: pm-ygli86
-resolution: "Each packed command retains a finite 600-second timeout, covering the observed primary, bare-package, alias, and real workflow paths without treating slow successful npm reification as a product failure."
+resolution: "Packed validation now installs the tarball once for multi-command workflows while retaining explicit npx, pm-cli alias, bunx, and strict TypeScript consumer checks under the calibrated cold-command bound."
 expected_result: "Valid npx and bunx packed installs and package, calendar, upgrade, CLI, and SDK consumer workflows complete without a false 120-second or 300-second timeout."
-actual_result: The 24-test timeout contract and the complete real packed smoke passed; exact coverage and static quality also passed.
+actual_result: The optimized focused suite passes 21 tests; the exact packed smoke and hosted Gates (smokes) rerun provide terminal timing evidence.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-p5u6,discovered_from,"2026-09-04T05:31:40.629Z","harness:codex","cli:update:dep",detected
   pm-pgew,recurs_from,"2026-09-04T05:31:40.629Z","harness:codex","cli:update:dep",detected
   pm-vnjh,verifies,"2026-09-04T05:31:40.629Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-04T05:49:53.687Z","harness:codex","Reproduction evidence: pnpm smoke:npx failed twice because the hard-coded 120000 ms bound killed npx and npm-exec while resolving the local 4.7 MB/1423-file tarball. The identical primary npx command completed with version 2026.9.3 after about 155 seconds and bunx completed in 1.4 seconds. A first 300000 ms correction passed the primary and bare-package paths but still timed out the distinct pm-cli alias cache entry; exact alias latency measurement is continuing before final calibration."
   "2026-09-04T06:23:33.978Z","harness:codex","Final repository verification: pnpm quality:static passed the complete mandatory static gate; node scripts/run-tests.mjs coverage passed 603 files and 8,350 tests at exact 100% statements, branches, functions, and lines; pnpm security:scan, pnpm audit, documentation links, and package-artifact checks passed. GitHub Dependabot, code-scanning, and secret-scanning alert inventories were empty. The timeout unit suite passed all 24 tests; the final packed npx/bunx workflow remains in progress under the new finite bound and will be recorded separately at terminal state."
   "2026-09-04T06:42:50.012Z","harness:codex","Terminal packed acceptance: pnpm smoke:npx passed real npx and bunx installs plus package catalog/install, calendar mutation/read, upgrade dry-run, CLI consumer, and SDK consumer workflows at version 2026.9.3 with 13 packages. Exact-tree coverage passed 8,351 tests at 100/100/100/100 and static quality passed."
+  "2026-09-04T07:42:10.806Z","harness:codex","Hosted CI round 1 exposed the job-wide 20-minute ceiling: repeated npx tarball reification was canceled during pm init despite the per-command timeout. The smoke now installs one packed consumer for workflows and typechecking while retaining explicit cold npx, pm-cli alias, and bunx entrypoint checks."
+  "2026-09-04T08:19:59.566Z","harness:codex","Operational evidence: scheduled Auto Release run 33848488906 failed at npx-smoke when repeated tarball reification timed out on the pm-cli alias; GitHub issue #1189 now links this item and PR #1188. The optimized smoke installs once for workflows/types while retaining cold npx, explicit alias, and bunx checks; it passed locally in 6m15s, below the hosted 20-minute job ceiling. The removed ESLint suppression ratchets the mandatory budget 110 -> 109."
 learnings[1]{created_at,author,text}:
   "2026-09-04T06:22:43.332Z","harness:codex","Packed npx smoke timeouts must accommodate cold local-tarball dependency reification, including the package-name alias path; on this host valid installs exceeded 300 seconds even though the installed CLI completed successfully."
-files[2]{path,scope,note}:
+files[4]{path,scope,note}:
+  eslint-suppressions.json,project,Remove the obsolete caught-error suppression after eliminating repeated npx fallback reification
+  scripts/release/static-quality-gate.mts,project,Ratchets the ESLint suppression budget down after the packed smoke no longer needs preserve-caught-error suppression
   scripts/smoke-npx-from-pack.mjs,project,Bounded packed-command timeout calibrated to observed dependency reification
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,Timeout contract remains explicit and bounded
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
@@ -54,4 +58,12 @@ test_runs[2]:
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
 close_reason: Calibrated the packed npx smoke bound to valid cold local-tarball dependency reification.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-8eebb6
+  gate_id: single-install-packed-npx-bunx-consumer-smoke
+  negative_control: "Reify the tarball for every workflow command, remove either explicit npx or bunx entrypoint check, or restore the 120-second cold-command bound; the packed smoke unit and hosted smokes gates must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,"pnpm smoke:npx","pnpm quality:package-artifact"
+  hosted_checks[2]: CI / Gates (smokes),Release / npx tarball smoke check
 body: ""

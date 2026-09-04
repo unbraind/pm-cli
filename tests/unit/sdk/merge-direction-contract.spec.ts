@@ -5,7 +5,12 @@
  * merge driver so branch checkout order cannot change the merged document.
  */
 import { describe, expect, it } from "vitest";
-import { mergeItemDocuments } from "../../../src/sdk/merge/three-way.js";
+import {
+  ITEM_SCALAR_MISSING_VALUE,
+  hashItemScalarDecisionValue,
+  isItemScalarMissingValue,
+  mergeItemDocuments,
+} from "../../../src/sdk/merge/three-way.js";
 
 const base = JSON.stringify({
   id: "pm-direction",
@@ -102,6 +107,62 @@ describe("item merge direction contract", () => {
         retained: "alpha",
         resolution_basis: "stable_value_tiebreak",
       }),
+    );
+  });
+
+  it("preserves a later scalar deletion as distinct JSON-stable evidence", () => {
+    const deletionBase = { ...JSON.parse(base), assignee: "base-agent" };
+    const deleted = JSON.stringify({
+      ...deletionBase,
+      assignee: undefined,
+      updated_at: "2026-08-08T03:00:00.000Z",
+    });
+    const edited = JSON.stringify({
+      ...deletionBase,
+      assignee: "older-agent",
+      updated_at: "2026-08-08T02:00:00.000Z",
+    });
+
+    const result = mergeItemDocuments(
+      JSON.stringify(deletionBase),
+      deleted,
+      edited,
+      {
+        format: "json",
+        conflictResolution: "latest_document_update",
+      },
+    );
+
+    expect(JSON.parse(result.merged)).not.toHaveProperty("assignee");
+    expect(result.conflict_decisions).toContainEqual(
+      expect.objectContaining({
+        field: "assignee",
+        retained: ITEM_SCALAR_MISSING_VALUE,
+        discarded: "older-agent",
+        retained_side: "ours",
+      }),
+    );
+    expect(
+      JSON.parse(JSON.stringify(result.conflict_decisions[0])),
+    ).toHaveProperty("retained");
+    expect(hashItemScalarDecisionValue(undefined)).not.toBe(
+      hashItemScalarDecisionValue("undefined"),
+    );
+  });
+
+  it("recognizes only the exact missing-scalar evidence marker", () => {
+    expect(isItemScalarMissingValue(ITEM_SCALAR_MISSING_VALUE)).toBe(true);
+    expect(isItemScalarMissingValue(undefined)).toBe(false);
+    expect(isItemScalarMissingValue(null)).toBe(false);
+    expect(isItemScalarMissingValue([])).toBe(false);
+    expect(
+      isItemScalarMissingValue({
+        pm_item_scalar_missing: true,
+        unexpected: true,
+      }),
+    ).toBe(false);
+    expect(isItemScalarMissingValue({ pm_item_scalar_missing: false })).toBe(
+      false,
     );
   });
 });

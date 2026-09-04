@@ -21,10 +21,11 @@ import {
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { isRfc3339DateTime, nowIso } from "../../core/shared/time.js";
-import type {
-  ItemMergeConflictDecision,
-  ItemScalarConflictResolution,
-  MergePreferredSide,
+import {
+  hashItemScalarDecisionValue,
+  type ItemMergeConflictDecision,
+  type ItemScalarConflictResolution,
+  type MergePreferredSide,
 } from "./three-way.js";
 import { readBoundedRegularFile } from "./receipt-file-boundary.js";
 
@@ -451,6 +452,7 @@ function hasValidReceiptTimestamps(value: Record<string, unknown>): boolean {
   );
 }
 
+/** Validate one hash-only or policy-bounded durable decision value. */
 function hasDurableDecisionValue(field: string, value: unknown): boolean {
   if (!isRecord(value) || isPrehashedValue(value) === undefined) return false;
   const keys = Object.keys(value);
@@ -467,6 +469,7 @@ function hasDurableDecisionValue(field: string, value: unknown): boolean {
   return allowed && sha256Hex(stableStringify(preview)) === value.pm_value_hash;
 }
 
+/** Validate durable decision redaction and the declared availability summary. */
 function hasValidDurableDecisions(receipt: MergeDecisionReceipt): boolean {
   if (
     !receipt.decisions.every(
@@ -505,6 +508,7 @@ function hasValidDurableDecisions(receipt: MergeDecisionReceipt): boolean {
   );
 }
 
+/** Return the narrowest validation class for untrusted receipt evidence. */
 function receiptValidationError(
   value: unknown,
   evidenceSource: "clone_local" | "durable",
@@ -667,10 +671,10 @@ export function summarizeMergeReceipt(
       field: decision.field,
       retained_hash:
         isPrehashedValue(decision.retained) ??
-        sha256Hex(stableStringify(decision.retained)),
+        hashItemScalarDecisionValue(decision.retained),
       discarded_hash:
         isPrehashedValue(decision.discarded) ??
-        sha256Hex(stableStringify(decision.discarded)),
+        hashItemScalarDecisionValue(decision.discarded),
     })),
   };
 }
@@ -690,11 +694,12 @@ function isPrehashedValue(value: unknown): string | undefined {
     : undefined;
 }
 
+/** Convert a raw scalar into hashed evidence with an allowlisted preview. */
 function durableValueEvidence(
   field: string,
   value: unknown,
 ): { pm_value_hash: string; pm_value?: unknown } {
-  const pmValueHash = sha256Hex(stableStringify(value));
+  const pmValueHash = hashItemScalarDecisionValue(value);
   const reviewable =
     value === null ||
     REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(

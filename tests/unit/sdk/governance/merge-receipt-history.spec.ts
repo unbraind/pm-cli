@@ -10,6 +10,8 @@ import {
   extractHistoryMergeReceiptDispositions,
   extractHistoryMergeReceiptReferences,
   isLegacyMergeReceiptSummary,
+  isPreDurableCloneLocalReceiptSummary,
+  isPreDurableDispositionEligibleReference,
 } from "../../../../src/sdk/governance/merge-receipt-history.js";
 
 function legacySummary(): Record<string, unknown> {
@@ -159,16 +161,60 @@ describe("merge receipt history compatibility", () => {
         },
         "pm-receipt",
       ),
-    ).toEqual([{ receiptId: "legacy-receipt", legacySummaryAccepted: true }]);
+    ).toEqual([
+      expect.objectContaining({
+        receiptId: "legacy-receipt",
+        legacySummaryAccepted: true,
+      }),
+    ]);
+  });
+
+  it("requires the exact final pre-durable schema before disposition", () => {
+    const summary = {
+      ...legacySummary(),
+      conflict_resolution: "stable_value_order",
+    };
+    expect(
+      isPreDurableCloneLocalReceiptSummary(summary, "pm-receipt"),
+    ).toBe(true);
+    expect(
+      isPreDurableCloneLocalReceiptSummary(
+        { ...summary, item_path: "../pm-receipt.md" },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isPreDurableCloneLocalReceiptSummary(
+        { ...summary, conflict_resolution: "unknown" },
+        "pm-receipt",
+      ),
+    ).toBe(false);
   });
 
   it("accepts only audited pre-durable missing-receipt dispositions", () => {
+    const [extractedReference] = extractHistoryMergeReceiptReferences(
+      {
+        ts: "2026-08-06T22:21:21.734Z",
+        context: {
+          merge: {
+            receipts: [
+              {
+                ...legacySummary(),
+                conflict_resolution: "stable_value_order",
+              },
+            ],
+          },
+        },
+      },
+      "pm-receipt",
+    );
+    expect(
+      isPreDurableDispositionEligibleReference(extractedReference!),
+    ).toBe(true);
     const reference = {
+      ...extractedReference!,
       itemId: "pm-receipt",
       line: 9,
-      receiptId: "legacy-receipt",
-      legacySummaryAccepted: false,
-      eventTimestamp: "2026-08-06T22:21:21.734Z",
     };
     const dispositions = extractHistoryMergeReceiptDispositions(
       {
@@ -209,6 +255,21 @@ describe("merge receipt history compatibility", () => {
           ...disposition,
           auditHistoryLine: reference.line,
         })),
+      ).missing,
+    ).toHaveLength(1);
+    expect(
+      classifyHistoryMergeReceiptReferences(
+        [
+          {
+            itemId: reference.itemId,
+            line: reference.line,
+            receiptId: reference.receiptId,
+            legacySummaryAccepted: false,
+            eventTimestamp: reference.eventTimestamp,
+          },
+        ],
+        new Set(),
+        dispositions,
       ).missing,
     ).toHaveLength(1);
     expect(

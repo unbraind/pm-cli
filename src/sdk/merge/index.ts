@@ -7,8 +7,12 @@
  * this module so packages and hosts can reuse the same merge behavior.
  */
 export {
+  ITEM_SCALAR_MISSING_VALUE,
   ITEM_LATEST_TIMESTAMP_FIELDS,
   ITEM_UNION_COLLECTION_FIELDS,
+  encodeItemScalarDecisionValue,
+  hashItemScalarDecisionValue,
+  isItemScalarMissingValue,
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,

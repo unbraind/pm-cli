@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1840,
+    "covered_symbols": 1844,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1841
+    "required_symbols": 1845
   },
   "breaking_acknowledgements": [
     {
@@ -5901,6 +5901,12 @@
           "signature": "() => ItemDocument | calls: () => ItemDocument"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "encodeItemScalarDecisionValue",
+          "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "encodeMcpHttpHeaderValue",
@@ -7821,6 +7827,12 @@
           "signature": "(entries: readonly HistoryEntry[]) => string | calls: (entries: readonly HistoryEntry[]) => string"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "hashItemScalarDecisionValue",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "hasMcpClientExtension",
@@ -8583,6 +8595,12 @@
           "signature": "(value: unknown) => value is SuppressedHostOutput | calls: (value: unknown) => value is SuppressedHostOutput"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isItemScalarMissingValue",
+          "signature": "(value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE | calls: (value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "isLegacyMergeReceiptSummary",
@@ -8669,6 +8687,18 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "isPreDurableCloneLocalReceiptSummary",
+          "signature": "(value: Record<string, unknown>, historyItemId: string) => boolean | calls: (value: Record<string, unknown>, historyItemId: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isPreDurableDispositionEligibleReference",
+          "signature": "(reference: Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">) => boolean | calls: (reference: Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "isProjectMutatingInvocation",
           "signature": "(argv: readonly string[]) => boolean | calls: (argv: readonly string[]) => boolean"
         },
@@ -8749,6 +8779,12 @@
           "kind": "value",
           "name": "ITEM_REOPEN_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ITEM_SCALAR_MISSING_VALUE",
+          "signature": "Readonly<{ readonly pm_item_scalar_missing: true; }>"
         },
         {
           "classification": "supported",
@@ -27155,8 +27191,20 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "encodeItemScalarDecisionValue",
+          "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "findGitWorkspaceRoot",
           "signature": "(cwd: string) => Promise<string | null> | calls: (cwd: string) => Promise<string | null>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "hashItemScalarDecisionValue",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
         },
         {
           "classification": "supported",
@@ -27184,9 +27232,21 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "isItemScalarMissingValue",
+          "signature": "(value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE | calls: (value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "ITEM_LATEST_TIMESTAMP_FIELDS",
           "signature": "readonly [\"updated_at\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ITEM_SCALAR_MISSING_VALUE",
+          "signature": "Readonly<{ readonly pm_item_scalar_missing: true; }>"
         },
         {
           "classification": "supported",

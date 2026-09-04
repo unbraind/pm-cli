@@ -17,12 +17,12 @@ import { parseItemDocument } from "../../core/item/item-format.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFormat, PmSettings } from "../../types/index.js";
 import {
+  hashItemScalarDecisionValue,
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
@@ -281,10 +281,8 @@ export async function runMergeDriver(
         mergedFieldHashes: Object.fromEntries(
           receiptFields.map((field) => [
             field,
-            sha256Hex(
-              stableStringify(
-                field === "body" ? mergedDocument.body : mergedMetadata[field],
-              ),
+            hashItemScalarDecisionValue(
+              field === "body" ? mergedDocument.body : mergedMetadata[field],
             ),
           ]),
         ),

@@ -22,7 +22,7 @@ import { splitAcceptanceCriteria } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { stableStringify } from "../../core/shared/serialization.js";
+import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { compareTimestampStrings } from "../../core/shared/time.js";
 import type {
   HistoryEntry,
@@ -45,6 +45,34 @@ export type ItemScalarResolutionBasis =
   | "requested_preference"
   | "document_updated_at"
   | "stable_value_tiebreak";
+
+/** JSON-stable marker used when a conflict decision refers to an absent scalar. */
+export const ITEM_SCALAR_MISSING_VALUE = Object.freeze({
+  pm_item_scalar_missing: true,
+} as const);
+
+/** Return whether receipt evidence represents an absent item scalar. */
+export function isItemScalarMissingValue(
+  value: unknown,
+): value is typeof ITEM_SCALAR_MISSING_VALUE {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === 1 &&
+    (value as Record<string, unknown>).pm_item_scalar_missing === true
+  );
+}
+
+/** Encode an absent scalar so every decision property survives JSON serialization. */
+export function encodeItemScalarDecisionValue(value: unknown): unknown {
+  return value === undefined ? ITEM_SCALAR_MISSING_VALUE : value;
+}
+
+/** Hash item scalar evidence without conflating absence with the string "undefined". */
+export function hashItemScalarDecisionValue(value: unknown): string {
+  return sha256Hex(stableStringify(encodeItemScalarDecisionValue(value)));
+}
 
 /** Restricts the strategy labels reported by the history stream merge. */
 export type HistoryMergeStrategy =
@@ -618,6 +646,7 @@ function mergeScalarThreeWay(
   };
 }
 
+/** Resolve one item scalar with explicit recency and deterministic tie evidence. */
 function mergeItemScalarThreeWay(
   base: unknown,
   ours: unknown,
@@ -653,7 +682,9 @@ function mergeItemScalarThreeWay(
     };
   }
   const retainTheirs =
-    stableStringify(theirs).localeCompare(stableStringify(ours)) < 0;
+    stableStringify(encodeItemScalarDecisionValue(theirs)).localeCompare(
+      stableStringify(encodeItemScalarDecisionValue(ours)),
+    ) < 0;
   return {
     value: retainTheirs ? theirs : ours,
     from_theirs: retainTheirs,
@@ -754,11 +785,13 @@ function mergeItemScalarField(params: {
     params.accumulator.conflictFields.push(params.field);
     params.accumulator.conflictDecisions.push({
       field: params.field,
-      base: params.baseValue,
-      ours: params.oursValue,
-      theirs: params.theirsValue,
-      retained: outcome.value,
-      discarded: outcome.from_theirs ? params.oursValue : params.theirsValue,
+      base: encodeItemScalarDecisionValue(params.baseValue),
+      ours: encodeItemScalarDecisionValue(params.oursValue),
+      theirs: encodeItemScalarDecisionValue(params.theirsValue),
+      retained: encodeItemScalarDecisionValue(outcome.value),
+      discarded: encodeItemScalarDecisionValue(
+        outcome.from_theirs ? params.oursValue : params.theirsValue,
+      ),
       retained_side: outcome.retained_side,
       resolution_basis: outcome.resolution_basis,
     });
@@ -897,11 +930,13 @@ export function mergeItemDocuments(
     conflictFields.push("body");
     conflictDecisions.push({
       field: "body",
-      base: hasBase ? base.body : "",
-      ours: ours.body,
-      theirs: theirs.body,
-      retained: bodyOutcome.value,
-      discarded: bodyOutcome.from_theirs ? ours.body : theirs.body,
+      base: encodeItemScalarDecisionValue(hasBase ? base.body : ""),
+      ours: encodeItemScalarDecisionValue(ours.body),
+      theirs: encodeItemScalarDecisionValue(theirs.body),
+      retained: encodeItemScalarDecisionValue(bodyOutcome.value),
+      discarded: encodeItemScalarDecisionValue(
+        bodyOutcome.from_theirs ? ours.body : theirs.body,
+      ),
       retained_side: bodyOutcome.retained_side,
       resolution_basis: bodyOutcome.resolution_basis,
     });

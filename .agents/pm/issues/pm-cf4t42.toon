@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:41.043Z"
-updated_at: "2026-09-04T06:43:11.761Z"
+updated_at: "2026-09-04T08:19:58.985Z"
 closed_at: "2026-09-04T06:43:11.161Z"
 completed_at: "2026-09-04T06:43:11.161Z"
 author: "harness:codex"
@@ -25,13 +25,15 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-wn3ee5,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-dn8rwl,verifies,"2026-09-04T04:20:49.400Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-03T18:06:41.043Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1186. All-status duplicate check searched missing receipt history reference, strict health, reconcile, and remediation. pm-wn3ee5 closed preferred-era shape compatibility and pm-lwmstb closed ordinary pending-receipt settlement, but this fleet report proves the distinct unrecoverable clone-local-reference path still has no remedy. A new recurrence item preserves both shipped baselines."
   "2026-09-03T18:07:09.387Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1186#issuecomment-5530007892"
   "2026-09-04T05:49:53.199Z","harness:codex","Implementation evidence: history health now classifies missing receipt coordinates precisely and accepts only audited dispositions for pre-durable receipt references, with exact item/receipt/original-line identity and a strictly later disposition event. pm merge reconcile --force appends grouped merge_reconcile history repair events, re-runs health, and refuses malformed, missing, or post-cutoff coordinates. Focused unit/integration/remediation suites recorded 42 passing tests."
   "2026-09-04T05:49:54.131Z","harness:codex","Manual acceptance evidence: a real temporary Git repository produced an item-file merge conflict through the installed merge driver; the newer document priority 4 was retained over priority 1, receipt policy reported latest_document_update/document_updated_at, a fresh clone exposed bounded_inline review values, dry-run reconciliation reported the legacy reference, and forced reviewed reconciliation returned ok:true with strict health restored."
   "2026-09-04T06:23:33.457Z","harness:codex","Final repository verification: pnpm quality:static passed the complete mandatory static gate; node scripts/run-tests.mjs coverage passed 603 files and 8,350 tests at exact 100% statements, branches, functions, and lines; pnpm security:scan, pnpm audit, documentation links, and package-artifact checks passed. GitHub Dependabot, code-scanning, and secret-scanning alert inventories were empty. Focused reconciliation, health-classification, remediation, and legacy-history integration tests passed; the real temporary Git workflow also proved fail-closed conflict handling and successful audited reconciliation."
   "2026-09-04T06:42:49.530Z","harness:codex","Terminal closeout evidence: exact-tree coverage passed 603 files and 8,351 tests at 100/100/100/100; reconciliation now validates receipt evidence before any disposition mutation, and the complete static-quality pipeline passed."
+  "2026-09-04T07:42:10.291Z","harness:codex","Review round 1: CodeRabbit correctly found that --force could settle unrelated unproven pending receipts; settlement now always requires item-specific trusted proof. Its suggested legacySummaryAccepted guard would make disposition impossible because those summaries are already accepted, so the implementation instead requires the exact final pre-durable clone-local schema plus the existing timestamp and coordinate checks."
+  "2026-09-04T08:19:58.985Z","harness:codex","Review remediation evidence: forced legacy recovery now requires the final historically exact pre-durable schema and always settles only receipt IDs named by trusted repair proof. Malformed summaries and unrelated unproven receipts are negative controls. All three CodeRabbit threads were answered, reacted to, and resolved."
 learnings[1]{created_at,author,text}:
   "2026-09-04T06:22:42.830Z","harness:codex","A legacy missing-receipt disposition is trustworthy only when it names the exact item, receipt id, and original history line and is appended after that reference; item-level forgiveness permits forged or stale suppression."
 files[10]{path,scope,note}:
@@ -63,4 +65,12 @@ docs[2]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Document legacy cutoff exact audit coordinates and fail-closed modern evidence
   docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,Document SDK reconciliation disposition result contract
 close_reason: Implemented exact audited recovery for provably pre-durable clone-local-only receipt references.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-cf4t42
+  gate_id: coordinate-bound-pre-durable-receipt-disposition
+  negative_control: "Disposition a malformed or post-cutoff receipt, permit an earlier audit line, or let --force settle an unrelated unproven receipt; reconciliation, health integration, and exact coverage gates must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/merge-receipt-history.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeRabbit
 body: ""
