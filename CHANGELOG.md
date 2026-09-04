@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Windows published-release verifier test can preempt its own readiness and cleanup contract ([pm-euqm7x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-euqm7x.toon))
 - Packed npx smoke timeout rejects valid slow dependency reification ([pm-8eebb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8eebb6.toon))
 - GH-1186: unrecoverable legacy merge-receipt references block strict health with diagnostic-only remediation ([pm-cf4t42](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cf4t42.toon))
 - GH-1185: hash-only merge receipts make discarded scalar values unreachable to the reviewing agent ([pm-mg13iz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mg13iz.toon))

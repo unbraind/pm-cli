@@ -1165,6 +1165,15 @@ describe("scripts/release/verify-published-release: executor failures", () => {
 
   it("kills a surviving server after its intermediate runner exits", async () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
+    const readyTimeoutMs = 4_000;
+    const harnessTimeoutMs = 10_000;
+    const shutdownGraceMatch = evaluatorScript.match(
+      /const deadline = Date\.now\(\) \+ (\d+);/u,
+    );
+    expect(shutdownGraceMatch).not.toBeNull();
+    expect(harnessTimeoutMs - readyTimeoutMs).toBeGreaterThanOrEqual(
+      Number(shutdownGraceMatch?.[1]),
+    );
 
     const tempRoot = makeRealTempDirectory(
       path.join(tmpdir(), "pm-http-runner-exit-test-"),
@@ -1210,7 +1219,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         ["--input-type=module", "--eval", String(evaluatorScript)],
         {
           encoding: "utf8",
-          timeout: 10_000,
+          timeout: harnessTimeoutMs,
           env: {
             ...process.env,
             PM_VERIFY_HTTP_RUNNER: "npx",
@@ -1218,9 +1227,11 @@ describe("scripts/release/verify-published-release: executor failures", () => {
             PM_VERIFY_HTTP_PACKAGE_SPEC: "@example/pm-cli@2026.6.14",
             PM_VERIFY_HTTP_RUNNER_ARGS_JSON: JSON.stringify([runnerScript]),
             PM_VERIFY_HTTP_PORT: String(port),
+            PM_VERIFY_HTTP_READY_TIMEOUT_MS: String(readyTimeoutMs),
           },
         },
       );
+      expect(result.error).toBeUndefined();
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain(
         "Published HTTP discovery response was invalid",
