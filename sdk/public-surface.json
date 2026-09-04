@@ -1598,6 +1598,66 @@
       ],
       "package_version": "2026.9.3",
       "reason": "2026-09-04 merge disposition hardening: the public extractor requires the audit history coordinate so classification proves dispositions are append-after-reference."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GetItemAtResult",
+        "signature ./sdk:GetResult",
+        "signature ./sdk:HistoryDiffEntry",
+        "signature ./sdk:HistoryRepairCommandOptions",
+        "signature ./sdk:HistoryRepairResult",
+        "signature ./sdk:HistoryResult",
+        "signature ./sdk:RestoreResult",
+        "signature ./sdk/core:GetResult",
+        "signature ./sdk/core:RestoreResult",
+        "signature ./sdk/query:GetResult",
+        "signature ./sdk/query:HistoryDiffEntry",
+        "signature ./sdk/query:HistoryResult",
+        "signature ./sdk/runtime:GetResult",
+        "signature ./sdk/runtime:RestoreResult"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "History recovery now preserves original version addresses; legacy checkpoints return null as_of_version instead of inventing an ordinal. Migration guidance is in docs/HISTORY_RECOVERY.md. Repair options and coordinate receipts are additive."
+    },
+    {
+      "changes": [
+        "signature ./sdk:reanchorHistoryEntries"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "History recovery legacy checkpoint versions are nullable; additive salvage contracts. See docs/HISTORY_RECOVERY.md."
+    },
+    {
+      "changes": [
+        "signature ./sdk:MAINTENANCE_HISTORY_OPERATIONS",
+        "signature ./sdk:reanchorHistoryEntries",
+        "signature ./sdk/runtime:MAINTENANCE_HISTORY_OPERATIONS"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "History recovery preserves legacy epochs, exposes nullable legacy version addresses and adds explicit salvage refusal contracts; see docs/HISTORY_RECOVERY.md."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "Historical reads now expose unknown legacy checkpoint addresses as null instead of inventing a numeric version; salvage and identity diagnostics add public typed capabilities."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "Expose optional item ID, path and byte-length diagnostics; preserve the documented nullable legacy history-version mapping contract."
+    },
+    {
+      "changes": [
+        "signature ./sdk:reanchorHistoryEntries"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "Name the existing HistoryItemHashVersion parameter explicitly so equivalent union printer order does not churn the public reanchor signature; accepted values and runtime behavior are unchanged."
     }
   ],
   "entrypoints": {
@@ -7097,6 +7157,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "findHistoryIdentityDiscontinuities",
+          "signature": "(entries: readonly HistoryEntry[]) => HistoryIdentityDiscontinuity[] | calls: (entries: readonly HistoryEntry[]) => HistoryIdentityDiscontinuity[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "findInstalledNpmPackageCandidate",
           "signature": "(packageName: string, cwd?: string) => Promise<InstalledNpmPackageCandidate | null> | calls: (packageName: string, cwd?: string) => Promise<InstalledNpmPackageCandidate | null>"
         },
@@ -7410,7 +7476,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GetItemAtResult",
-          "signature": "export interface GetItemAtResult { document: ItemDocument; reconstructed: true; as_of_version: number; as_of_timestamp: string; target: ResolvedHistoryTarget; history_length: number; }"
+          "signature": "export interface GetItemAtResult { document: ItemDocument; reconstructed: true; as_of_version: number | null; as_of_timestamp: string; target: ResolvedHistoryTarget; history_length: number; }"
         },
         {
           "classification": "advanced_export",
@@ -7440,7 +7506,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "advanced_export",
@@ -8100,7 +8166,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryDiffEntry",
-          "signature": "export interface HistoryDiffEntry { index: number; ts: string; op: string; author: string; patch_ops: number; changed_fields: string[]; }"
+          "signature": "export interface HistoryDiffEntry { index: number; version?: number | null; ts: string; op: string; author: string; patch_ops: number; changed_fields: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -8119,6 +8185,12 @@
           "kind": "type",
           "name": "HistoryEventClass",
           "signature": "export type HistoryEventClass = \"substantive\" | \"maintenance\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryIdentityDiscontinuity",
+          "signature": "export interface HistoryIdentityDiscontinuity { prior_genesis_index: number; repeated_create_index: number; sequence: \"delete_then_create\" | \"multiple_creates\" | \"checkpoint_then_create\"; }"
         },
         {
           "classification": "advanced_export",
@@ -8232,7 +8304,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairCommandOptions",
-          "signature": "export interface HistoryRepairCommandOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; }"
+          "signature": "export interface HistoryRepairCommandOptions { salvageTail?: boolean; dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; mergeReceiptProof?: { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }; mergeReceiptProofById?: Record<string, { gitWorkspaceRoot: string | null; receipts: MergeDecisionReceipt[]; }>; }"
         },
         {
           "classification": "advanced_export",
@@ -8250,13 +8322,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { salvage?: HistorySalvageReceipt; id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryResult",
-          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
         },
         {
           "classification": "supported",
@@ -9522,7 +9594,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "MAINTENANCE_HISTORY_OPERATIONS",
-          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "advanced_export",
@@ -11490,7 +11562,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.4.0\""
+          "signature": "\"1.5.0\""
         },
         {
           "classification": "supported",
@@ -11628,7 +11700,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.10.1\""
+          "signature": "\"4.11.0\""
         },
         {
           "classification": "contract_data",
@@ -11778,7 +11850,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; item_path?: string; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -13884,7 +13956,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "reanchorHistoryEntries",
-          "signature": "(entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult"
+          "signature": "(entries: HistoryEntry[], itemHashVersion?: HistoryItemHashVersion, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: HistoryItemHashVersion, options?: ReanchorHistoryOptions) => ReanchorResult"
         },
         {
           "classification": "supported",
@@ -15744,7 +15816,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RestoreResult",
-          "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
+          "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; version: number | null; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -21792,7 +21864,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.4.0\""
+          "signature": "\"1.5.0\""
         },
         {
           "classification": "contract_data",
@@ -21864,7 +21936,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.10.1\""
+          "signature": "\"4.11.0\""
         },
         {
           "classification": "contract_data",
@@ -23622,7 +23694,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "supported",
@@ -24162,7 +24234,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RestoreResult",
-          "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
+          "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; version: number | null; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -28254,7 +28326,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "supported",
@@ -28278,13 +28350,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryDiffEntry",
-          "signature": "export interface HistoryDiffEntry { index: number; ts: string; op: string; author: string; patch_ops: number; changed_fields: string[]; }"
+          "signature": "export interface HistoryDiffEntry { index: number; version?: number | null; ts: string; op: string; author: string; patch_ops: number; changed_fields: string[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryResult",
-          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
         },
         {
           "classification": "supported",
@@ -29976,7 +30048,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "advanced_export",
@@ -30384,7 +30456,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "MAINTENANCE_HISTORY_OPERATIONS",
-          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "supported",
@@ -31176,7 +31248,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RestoreResult",
-          "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
+          "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; version: number | null; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -32767,17 +32839,23 @@
     "history_author_acknowledge_selector_required",
     "history_author_acknowledge_target_not_actionable",
     "history_author_acknowledge_target_unreadable",
+    "history_baseline_unavailable",
     "history_drift_chain_mismatch",
     "history_drift_hash_mismatch",
     "history_drift_merge_receipt",
     "history_drift_missing_stream",
     "history_drift_unreadable_stream",
     "history_drift_version_skew",
+    "history_json_invalid",
     "history_merge_conflict_markers_detected",
+    "history_replay_invalid",
+    "history_salvage_refused",
     "history_stream_over_compact_threshold",
     "history_target_out_of_range",
     "history_timestamp_invalid",
     "history_unknown_author_events",
+    "history_version_mapping_unavailable",
+    "history_version_pruned",
     "host_environment_capacity_fault",
     "host_environment_operation_invalid",
     "host_environment_permission_fault",
@@ -32819,9 +32897,11 @@
     "invalid_reproducible_process_environment",
     "invalid_workspace_snapshot_target",
     "item_already_active",
+    "item_document_encoding_invalid",
     "item_document_invalid",
     "item_document_roundtrip_failed",
     "item_id_collision",
+    "item_identity_reserved",
     "item_not_found",
     "likely_duplicate",
     "linked_artifact_mutation_conflict",

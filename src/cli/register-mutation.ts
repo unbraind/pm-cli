@@ -2937,6 +2937,7 @@ export function registerMutationCommands(
   program
     .command("history-repair")
     .argument("[id]", "Item id (omit with --all)")
+    .option("--salvage-tail", "Recover invalid tail; requires verified prefix")
     .option(
       "--all",
       "Scan every stream for drift and repair each drifted stream in one audited pass",
@@ -2976,6 +2977,7 @@ export function registerMutationCommands(
             typeof options.message === "string" ? options.message : undefined,
           force: Boolean(options.force),
           normalizeProvenance: options.normalizeProvenance === true,
+          salvageTail: options.salvageTail === true,
         };
         // history-repair only re-anchors the audit stream; item content is untouched,
         // so search caches do not need invalidation.

@@ -494,6 +494,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   delete: { type: "integer", minimum: 1 },
   dryRun: { type: "boolean" },
   normalizeProvenance: { type: "boolean" },
+  salvageTail: { type: "boolean" },
   all: { type: "boolean" },
   clear: { type: "boolean" },
   cliOnly: { type: "boolean" },
@@ -1604,6 +1605,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   normalizeProvenance: {
     description:
       "For history-repair: remove invalid legacy provenance observations and emit only aggregate privacy-safe repair evidence.",
+  },
+  salvageTail: {
+    description: "For history-repair with one explicit id: remove an invalid trailing suffix after a verified prefix; refuses interior corruption.",
   },
   all: {
     description:

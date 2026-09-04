@@ -33,6 +33,7 @@ import {
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
+import { isUtf8 } from "node:buffer";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import {
   acquireItemMetadataDerivedIndexLock,
@@ -170,20 +171,70 @@ export async function readLocatedItem(
     warnings?: string[];
   } = {},
 ): Promise<{ raw: string; document: ItemDocument }> {
-  const raw = await fs.readFile(item.itemPath, "utf8");
+  const snapshot = await readLocatedItemSnapshot(item, options);
+  if (snapshot.error !== null) throw snapshot.error;
+  return { raw: snapshot.raw, document: snapshot.document };
+}
+
+/**
+ * Read once and retain a recoverable parse failure beside its exact text snapshot.
+ * Filesystem and merge-conflict errors still throw; callers must explicitly
+ * reconstruct an invalid document before performing any mutation.
+ */
+export async function readLocatedItemSnapshot(
+  item: LocatedItem,
+  options: Parameters<typeof readLocatedItem>[1] = {},
+): Promise<
+  | { raw: string; document: ItemDocument; error: null }
+  | { raw: string; document: null; error: PmCliError }
+> {
+  const bytes = await fs.readFile(item.itemPath);
+  if (!isUtf8(bytes)) {
+    throw new PmCliError(
+      "Item contains invalid UTF-8; preserve a binary backup before recovering it.",
+      EXIT_CODE.CONFLICT,
+      { code: "item_document_encoding_invalid", item_id: item.id, item_path: item.itemPath, byte_length: bytes.length, empty: false },
+    );
+  }
+  const raw = bytes.toString("utf8");
   await runActiveOnReadHooks({
     path: item.itemPath,
     scope: "project",
   });
-  const document = parseItemDocument(raw, {
-    format: item.item_format,
-    schema: options.schema,
-    extensionFieldNames: resolveActiveExtensionFieldNames(
-      options.extensionFieldNames,
-    ),
-    onWarning: (warning) => appendWarning(options.warnings, warning),
-  });
-  return { raw, document };
+  let document: ItemDocument;
+  try {
+    document = parseItemDocument(raw, {
+      format: item.item_format,
+      schema: options.schema,
+      extensionFieldNames: resolveActiveExtensionFieldNames(
+        options.extensionFieldNames,
+      ),
+      onWarning: (warning) => appendWarning(options.warnings, warning),
+    });
+  } catch (error) {
+    if (error instanceof PmCliError && error.code === "item_document_invalid") {
+      return {
+        raw,
+        document: null,
+        error: new PmCliError(
+          `Cannot read ${item.id} at ${item.itemPath}${bytes.length === 0 ? " (zero-length file)" : ""}: ${error.message}`,
+          error.exitCode,
+          {
+            ...error.context,
+            item_id: item.id,
+            item_path: item.itemPath,
+            byte_length: bytes.length,
+            empty: bytes.length === 0,
+            nextSteps: [
+              `Run pm history ${item.id} --full, then pm restore ${item.id} <version> to recover a recorded state.`,
+            ],
+          },
+        ),
+      };
+    }
+    throw error;
+  }
+  return { raw, document, error: null };
 }
 
 /** Implements list all item metadata for the public runtime surface of this module. */

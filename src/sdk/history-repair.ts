@@ -4,6 +4,7 @@
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
+import { salvageHistoryTail, type HistorySalvageReceipt } from "./history/salvage.js";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
 import jsonPatch from "fast-json-patch";
@@ -72,6 +73,8 @@ import {
 
 /** Documents the history repair command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairCommandOptions {
+  /** Remove only an invalid trailing suffix after a verified prefix; never re-anchor or reconcile. */
+  salvageTail?: boolean;
   /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
   /** Value that configures or reports author for this contract. */
@@ -107,6 +110,8 @@ export interface HistoryRepairCommandOptions {
 
 /** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairResult {
+  /** Present when invalid trailing bytes were selected for explicit salvage. */
+  salvage?: HistorySalvageReceipt;
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports dry run for this contract. */
@@ -758,6 +763,21 @@ export async function runHistoryRepair(
     typeRegistry.type_to_folder,
   );
 
+  if (options.salvageTail === true) {
+    return salvageHistoryTail({ pmRoot, subject, settings, typeRegistry, options, author: resolveAuthor(options.author, settings.author_default) });
+  }
+  return repairHistorySubject({ pmRoot, subject, settings, typeRegistry, options });
+}
+
+/** Reanchor or reconcile one resolved subject, separately from byte-preserving salvage. */
+async function repairHistorySubject(params: {
+  pmRoot: string;
+  subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  options: HistoryRepairCommandOptions;
+}): Promise<HistoryRepairResult> {
+  const { pmRoot, subject, settings, typeRegistry, options } = params;
   if (!(await pathExists(subject.historyPath))) {
     throw new PmCliError(
       `No history stream exists for ${subject.id}.`,
@@ -1020,6 +1040,9 @@ export async function runHistoryRepairAll(
   options: HistoryRepairCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryRepairAllResult> {
+  if (options.salvageTail === true) {
+    throw new PmCliError("Tail salvage requires one explicit item ID; --all is not supported.", EXIT_CODE.USAGE);
+  }
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
 

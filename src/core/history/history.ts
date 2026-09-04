@@ -4,6 +4,8 @@
  * Implements append-only history and replay behavior for History.
  */
 import jsonPatch from "fast-json-patch";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
@@ -795,7 +797,8 @@ async function applyHistoryAppendOverride(
 ): Promise<boolean> {
   if (result === false) return true;
   if (typeof result === "string") {
-    await appendLineAtomic(historyPath, serializeHistoryLine(result, entry));
+    const line = serializeHistoryLine(result, entry);
+    await appendHistoryLineWithIdentityReservation(historyPath, line);
     await invalidateHistoryDriftCacheForPath(historyPath);
     await removeHistoryEventIndexForHistoryPath(historyPath);
     return true;
@@ -810,16 +813,40 @@ async function applyHistoryAppendOverride(
   if (record.skip === true) return true;
   const nextHistoryPath =
     typeof record.history_path === "string" ? record.history_path : historyPath;
-  await appendLineAtomic(
-    nextHistoryPath,
-    serializeHistoryLine(
-      typeof record.line === "string" ? record.line : (record.entry ?? entry),
-      entry,
-    ),
+  const line = serializeHistoryLine(
+    typeof record.line === "string" ? record.line : (record.entry ?? entry),
+    entry,
   );
+  await appendHistoryLineWithIdentityReservation(nextHistoryPath, line);
   await invalidateHistoryDriftCacheForPath(nextHistoryPath);
   await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
   return true;
+}
+
+/** Exclusively create genesis streams at their effective destination; never remove a failed partial reservation. */
+async function appendHistoryLineWithIdentityReservation(historyPath: string, line: string): Promise<void> {
+  let record: unknown;
+  try {
+    record = JSON.parse(line);
+  } catch {
+    // Legacy service overrides may provide non-JSON lines; verification diagnoses them.
+    record = null;
+  }
+  if (!isRecord(record) || record.op !== "create") {
+    await appendLineAtomic(historyPath, line);
+    return;
+  }
+  await fs.mkdir(path.dirname(historyPath), { recursive: true });
+  try {
+    await fs.writeFile(historyPath, `${line}\n`, { encoding: "utf8", flag: "wx" });
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    throw new PmCliError("This item identity is reserved by an existing history stream.", EXIT_CODE.CONFLICT, {
+      code: "item_identity_reserved",
+      required: "Choose a new item ID or restore the original item from its history.",
+      nextSteps: ["Run pm history <id> --full, then pm restore <id> <version> to recover the original item."],
+    });
+  }
 }
 
 /** Implements append history entry for the public runtime surface of this module. */
@@ -849,7 +876,7 @@ export async function appendHistoryEntry(
     historyPath,
     normalizedEntry,
     async () => {
-      await appendLineAtomic(
+      await appendHistoryLineWithIdentityReservation(
         historyPath,
         serializeHistoryLine(normalizedEntry, normalizedEntry),
       );

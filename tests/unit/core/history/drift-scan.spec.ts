@@ -63,7 +63,7 @@ async function seedStaleMetadataMatchedCache(
   await mutateStream(historyPath);
   const mutatedStat = await fs.stat(historyPath);
   const forgedCache: DriftCacheFixture = {
-    version: 9,
+    version: 10,
     history_item_hash_version: 3,
     entries: {
       [created.id]: {
@@ -119,7 +119,7 @@ describe("core/history/drift-scan", () => {
       expect(first.driftedItems).toEqual([]);
 
       const cache = await readDriftCache(context.pmPath);
-      expect(cache.version).toBe(9);
+      expect(cache.version).toBe(10);
       expect(cache.history_item_hash_version).toBe(3);
       expect(Object.keys(cache.entries)).toHaveLength(items.length);
       const firstEntry = Object.values(cache.entries)[0];
@@ -515,24 +515,24 @@ describe("core/history/drift-scan", () => {
           history_item_hash_version: 3,
           entries: {},
         }),
-        JSON.stringify({ version: 9, entries: {} }),
+        JSON.stringify({ version: 10, entries: {} }),
         JSON.stringify({
-          version: 9,
+          version: 10,
           history_item_hash_version: 99,
           entries: {},
         }),
         JSON.stringify({
-          version: 9,
+          version: 10,
           history_item_hash_version: 3,
           entries: null,
         }),
         JSON.stringify({
-          version: 9,
+          version: 10,
           history_item_hash_version: 3,
           entries: "not-an-object",
         }),
         JSON.stringify({
-          version: 9,
+          version: 10,
           history_item_hash_version: 3,
           entries: {
             malformed: {

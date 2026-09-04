@@ -4,6 +4,7 @@
  * Implements the pm history command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { historyVersionOffset } from "../../core/history/version-address.js";
 import {
   pathExists,
   computeHistoryDiff,
@@ -77,6 +78,8 @@ export interface HistoryCommandOptions {
 export interface HistoryDiffEntry {
   /** Value that configures or reports index for this contract. */
   index: number;
+  /** Durable version address after compaction; null for unmapped legacy checkpoints. */
+  version?: number | null;
   /** Value that configures or reports ts for this contract. */
   ts: string;
   /** Value that configures or reports op for this contract. */
@@ -120,6 +123,15 @@ export interface HistoryResult {
   verification?: HistoryVerificationResult;
   /** Constant-size provenance completeness metrics. */
   provenance_summary?: HistoryProvenanceSummary;
+  /** Present after compaction; row indices remain physical stream positions. */
+  version_addressing?: {
+    /** Add to a physical one-based index; null when the original mapping is lost. */
+    offset: number | null;
+    /** Earliest reconstructable original version, or null for legacy checkpoints. */
+    first_version: number | null;
+    /** Latest addressable version, including maintenance audit events. */
+    last_version: number | null;
+  };
 }
 
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
@@ -127,11 +139,12 @@ function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   return values.slice(Math.max(0, values.length - limit));
 }
 
+/** Summarize patch fields with physical indices and separately mapped durable versions. */
 function buildDiffEntries(
-  entries: HistoryEntry[],
-  startIndex: number,
+  entries: { entry: HistoryEntry; version: number }[],
+  addressing: HistoryResult["version_addressing"],
 ): HistoryDiffEntry[] {
-  return entries.map((entry, index) => {
+  return entries.map(({ entry, version }) => {
     const changedFields = new Set<string>();
     const patch = normalizeReplayPatchOps(entry.patch);
     for (const op of patch) {
@@ -141,7 +154,8 @@ function buildDiffEntries(
       }
     }
     return {
-      index: startIndex + index + 1,
+      index: version,
+      ...(addressing ? { version: addressing.offset === null ? null : addressing.offset + version } : {}),
       ts: entry.ts,
       op: entry.op,
       author: entry.author,
@@ -151,6 +165,17 @@ function buildDiffEntries(
       ),
     };
   });
+}
+
+/** Describe the checkpoint mapping without changing physical diagnostic indices. */
+function buildVersionAddressing(history: HistoryEntry[]): HistoryResult["version_addressing"] {
+  if (history[0]?.op !== "history_compact_baseline") return undefined;
+  const offset = historyVersionOffset(history, true);
+  return {
+    offset,
+    first_version: offset === null ? null : offset + 1,
+    last_version: offset === null ? null : offset + history.length,
+  };
 }
 
 async function resolveHistoryReadTarget(id: string, global: GlobalOptions) {
@@ -202,6 +227,7 @@ export async function runHistory(
     await resolveHistoryReadTarget(id, global);
 
   const fullHistory = await readHistoryEntries(historyPath, resolvedId);
+  const addressing = buildVersionAddressing(fullHistory);
   const vocabulary = settings.agent_identity!.identity_vocabulary!;
   const provenanceDimensions = resolveHistoryProvenanceDimensions(
     settings.agent_identity!.harness_signals,
@@ -215,24 +241,20 @@ export async function runHistory(
     vocabulary,
     provenanceDimensions,
   );
-  const filteredHistory = fullHistory
-    .map((entry, index) => ({ entry, version: index + 1 }))
+  const filteredHistory = indexHistoryEntries(fullHistory)
     .filter(({ entry }) => matchesProvenance(entry));
   const selectedHistory = limitEntries(filteredHistory, limit);
   const history = selectedHistory.map(({ entry }) => entry);
   const compact = options.compact === true;
   const compactHistory = compact
-    ? buildDiffEntries(
-        history,
-        Math.max(0, fullHistory.length - history.length),
-      )
+    ? buildDiffEntries(selectedHistory, addressing)
     : undefined;
   const provenanceHistory =
     options.provenance === true
-      ? selectedHistory.map(({ entry, version }) =>
+      ? selectedHistory.map(({ entry, durableVersion }) =>
           projectHistoryProvenance(entry, vocabulary, {
             itemId: resolvedId,
-            version,
+            version: durableVersion,
           }),
         )
       : undefined;
@@ -262,6 +284,7 @@ export async function runHistory(
     ),
     count: history.length,
     limit: limit ?? null,
+    version_addressing: addressing,
     ...(options.provenanceSummary === true
       ? {
           provenance_summary: summarizeHistoryProvenance(
@@ -316,4 +339,14 @@ export async function runHistory(
   }
 
   return result;
+}
+
+/** Attach physical and durable coordinates before filtering or limiting the stream. */
+function indexHistoryEntries(history: HistoryEntry[]) {
+  const offset = historyVersionOffset(history, true);
+  return history.map((entry, index) => ({
+    entry,
+    version: index + 1,
+    durableVersion: offset === null ? undefined : offset + index + 1,
+  }));
 }

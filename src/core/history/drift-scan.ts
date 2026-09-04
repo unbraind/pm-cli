@@ -17,6 +17,10 @@ import {
 } from "./history.js";
 import { verifyHistoryChainWithVersion } from "./replay.js";
 import {
+  findHistoryIdentityDiscontinuities,
+  type HistoryIdentityDiscontinuity,
+} from "./identity.js";
+import {
   getWorkspaceHistoryPath,
   inspectWorkspaceHistoryState,
   WORKSPACE_HISTORY_ID,
@@ -25,6 +29,10 @@ import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
 
 /** Documents the drift scan result payload exchanged by command, SDK, and package integrations. */
 export interface DriftScanResult {
+  /** Repeated genesis ordinals and observed sequence, keyed by affected item. */
+  identityDiscontinuities?: Array<
+    HistoryIdentityDiscontinuity & { item_id: string }
+  >;
   /** Value that configures or reports missing streams for this contract. */
   missingStreams: string[];
   /** Value that configures or reports unreadable streams for this contract. */
@@ -45,7 +53,7 @@ export interface DriftScanResult {
   workspaceStateUnreadable: string[];
 }
 
-const DRIFT_CACHE_VERSION = 9;
+const DRIFT_CACHE_VERSION = 10;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
@@ -79,6 +87,7 @@ function getDriftCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", DRIFT_CACHE_FILENAME);
 }
 
+/** Discard unreadable or stale cache envelopes, including prior verification semantics. */
 async function loadDriftCache(
   pmRoot: string,
 ): Promise<DriftCacheEnvelope | null> {
@@ -100,9 +109,9 @@ async function loadDriftCache(
             entry.version_skew !== true) ||
           (entry.chain_ok &&
             entry.version_skew !== true &&
-            (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-              entry.item_hash_version,
-            ) &&
+            (
+              SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]
+            ).includes(entry.item_hash_version) &&
             !entry.latest_hash_comparable),
       )
     ) {
@@ -115,6 +124,7 @@ async function loadDriftCache(
 }
 
 interface StreamVerification {
+  identityDiscontinuities: HistoryIdentityDiscontinuity[];
   latestAfterHash: string;
   chainOk: boolean;
   versionSkew: boolean;
@@ -124,6 +134,9 @@ interface StreamVerification {
 }
 
 interface DriftScanAccumulator {
+  identityDiscontinuities?: Array<
+    HistoryIdentityDiscontinuity & { item_id: string }
+  >;
   missingStreams: string[];
   unreadableStreams: string[];
   hashMismatches: string[];
@@ -244,6 +257,7 @@ async function verifyHistoryStream(
     : verification.item_hash_version;
   return {
     latestAfterHash,
+    identityDiscontinuities: findHistoryIdentityDiscontinuities(entries),
     chainOk: verification.ok,
     versionSkew,
     latestHashComparable:
@@ -286,6 +300,7 @@ async function loadFreshStreamVerification(
   }
 }
 
+/** Reverify invalid streams and content-sensitive cache hits; reuse only compatible healthy evidence. */
 async function resolveStreamVerification(params: {
   itemId: string;
   historyPath: string;
@@ -301,9 +316,8 @@ async function resolveStreamVerification(params: {
       : undefined;
   const canUseCache =
     cacheMetadataMatches(params.cached, params.stat) &&
-    cachedContentHash !== undefined &&
-    params.cached !== undefined;
-  if (!canUseCache || !params.cached) {
+    cachedContentHash !== undefined;
+  if (!canUseCache || !params.cached || !params.cached.chain_ok) {
     return {
       verification: await loadFreshStreamVerification(
         params.itemId,
@@ -334,6 +348,7 @@ async function resolveStreamVerification(params: {
   }
   return {
     verification: {
+      identityDiscontinuities: [],
       latestAfterHash: params.cached.latest_after_hash,
       chainOk: params.cached.chain_ok,
       versionSkew: params.cached.version_skew === true,
@@ -376,6 +391,14 @@ async function scanItemHistory(
     accumulator,
   });
   if (!resolved.verification) return resolved.cacheDirty;
+  if (resolved.verification.identityDiscontinuities.length > 0) {
+    (accumulator.identityDiscontinuities ??= []).push(
+      ...resolved.verification.identityDiscontinuities.map((finding) => ({
+        ...finding,
+        item_id: item.id,
+      })),
+    );
+  }
   if (resolved.verification.versionSkew) {
     accumulator.versionSkews.push(item.id);
   }

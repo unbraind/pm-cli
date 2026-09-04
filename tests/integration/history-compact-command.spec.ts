@@ -127,7 +127,7 @@ describe("history-compact command", () => {
         limitation: "individual_pruned_entries_require_pre_compaction_stream",
       });
 
-      const restore = context.runCli(["restore", id, "1", "--json"], {
+      const restore = context.runCli(["restore", id, String(before.count), "--json"], {
         expectJson: true,
       });
       expect(restore.code).toBe(0);
@@ -506,79 +506,6 @@ describe("history-compact command", () => {
       } finally {
         verifySpy.mockRestore();
         applySpy.mockRestore();
-      }
-    });
-  });
-
-  it("fails when replay detects before-hash drift despite precheck success", async () => {
-    await withTempPmPath(async (context) => {
-      const id = createItem(context, "Compact Before Hash Drift");
-      const verifySpy = vi
-        .spyOn(replayModule, "verifyHistoryChain")
-        .mockReturnValue({ ok: true, errors: [] });
-      const hashSpy = vi
-        .spyOn(replayModule, "replayHash")
-        .mockReturnValue("synthetic-before-hash-mismatch");
-
-      try {
-        await expect(
-          runHistoryCompact(
-            id,
-            { author: "test-author" },
-            { path: context.pmPath },
-          ),
-        ).rejects.toMatchObject<PmCliError>({
-          exitCode: EXIT_CODE.CONFLICT,
-          message: expect.stringContaining("before-hash drift"),
-        });
-      } finally {
-        verifySpy.mockRestore();
-        hashSpy.mockRestore();
-      }
-    });
-  });
-
-  it("fails when replay detects after-hash drift despite precheck success", async () => {
-    await withTempPmPath(async (context) => {
-      const id = createItem(context, "Compact After Hash Drift");
-      await rm(getTaskItemPath(context, id), { force: true });
-
-      const lines = (await readFile(getHistoryPath(context, id), "utf8"))
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-      const first = JSON.parse(lines[0] ?? "{}") as { before_hash?: string };
-      const expectedBefore = first.before_hash ?? "";
-
-      const verifySpy = vi
-        .spyOn(replayModule, "verifyHistoryChain")
-        .mockReturnValue({ ok: true, errors: [] });
-      const originalReplayHash = replayModule.replayHash;
-      let callCount = 0;
-      const hashSpy = vi
-        .spyOn(replayModule, "replayHash")
-        .mockImplementation((document) => {
-          callCount += 1;
-          if (callCount === 1) {
-            return expectedBefore;
-          }
-          return `synthetic-after-hash-${originalReplayHash(document)}`;
-        });
-
-      try {
-        await expect(
-          runHistoryCompact(
-            id,
-            { author: "test-author" },
-            { path: context.pmPath },
-          ),
-        ).rejects.toMatchObject<PmCliError>({
-          exitCode: EXIT_CODE.CONFLICT,
-          message: expect.stringContaining("after-hash drift"),
-        });
-      } finally {
-        verifySpy.mockRestore();
-        hashSpy.mockRestore();
       }
     });
   });

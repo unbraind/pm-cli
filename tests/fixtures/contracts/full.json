@@ -3727,6 +3727,10 @@
           "flag": "--normalize-provenance"
         },
         {
+          "flag": "--salvage-tail",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -17153,6 +17157,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_baseline_unavailable",
+      "class": "generic_failure",
+      "code": "history_baseline_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History baseline unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/projection.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_chain_mismatches"
       ],
@@ -17266,6 +17287,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_json_invalid",
+      "class": "generic_failure",
+      "code": "history_json_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History json invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/read.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_conflict_markers_detected",
       "class": "generic_failure",
       "code": "history_merge_conflict_markers_detected",
@@ -17280,6 +17318,40 @@
         "core/history/read.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_replay_invalid",
+      "class": "generic_failure",
+      "code": "history_replay_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History replay invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/projection.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_salvage_refused",
+      "class": "conflict",
+      "code": "history_salvage_refused",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History salvage refused condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history/salvage.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -17351,6 +17423,40 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_version_mapping_unavailable",
+      "class": "usage",
+      "code": "history_version_mapping_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History version mapping unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/version-address.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_version_pruned",
+      "class": "usage",
+      "code": "history_version_pruned",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History version pruned condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/projection.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -18065,6 +18171,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "item_document_encoding_invalid",
+      "class": "conflict",
+      "code": "item_document_encoding_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Item document encoding invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "item_document_invalid",
       "class": "generic_failure",
       "code": "item_document_invalid",
@@ -18113,6 +18236,23 @@
         "sdk/lifecycle/copy.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "item_identity_reserved",
+      "class": "conflict",
+      "code": "item_identity_reserved",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Item identity reserved condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/history.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -45306,6 +45446,60 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "salvageTail": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "salvageTail"
+                  ]
+                },
+                {
+                  "properties": {
+                    "all": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "all"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "salvageTail": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "salvageTail"
+                  ]
+                },
+                {
+                  "properties": {
+                    "normalizeProvenance": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "normalizeProvenance"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "oneOf": [
           {
             "not": {
@@ -45411,6 +45605,10 @@
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "salvageTail": {
+            "description": "For history-repair with one explicit id: remove an invalid trailing suffix after a verified prefix; refuses interior corruption.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -55691,10 +55889,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.10.1"
+    "x-schema-version": "4.11.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.10.1",
+  "schema_version": "4.11.0",
   "selected": {
     "action": null,
     "availability_only": false,

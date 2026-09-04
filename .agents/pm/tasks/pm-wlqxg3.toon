@@ -2,11 +2,13 @@ id: pm-wlqxg3
 title: "Point-in-time reconstruction gate: prove every item at every recorded version replays exactly from its history stream alone"
 description: "The restorability promise is that any item can be returned to any version at any time, and point-in-time reads already exist. What is not proven is the general case: that for every item in a workspace, and every version in its stream, replaying the stream from the beginning reproduces exactly the state that read returns, using nothing but the immutable history. Today's coverage tests the mechanism on chosen cases; the promise is universal and therefore needs a universal check. Make it a gate: for a workspace corpus that includes real-shaped history — items that were renamed, retyped, reparented, redacted, compacted, restored, merged from divergent branches, and closed and reopened — replay every version of every item from its stream and assert byte-identical agreement with the point-in-time projection, with the item file itself used only as an independent third comparison and never as the source. Disagreement is a data-integrity defect by definition. Compaction and redaction are the interesting cases and must be covered explicitly, since both rewrite what a replay can see and must preserve reconstructability of every version they claim to retain."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[6]: ci,durability,history,integrity,provable-history,testing
 created_at: "2026-07-25T12:32:18.439Z"
-updated_at: "2026-07-28T22:30:33.522Z"
+updated_at: "2026-09-04T21:58:10.399Z"
+closed_at: "2026-09-04T21:05:51.080Z"
+completed_at: "2026-09-04T21:05:51.080Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "For every item and every recorded version in the test corpus, replay from the history stream alone reproduces the point-in-time projection exactly; The current item file is used only as an independent third comparison, never as an input to the replay, asserted by the test's construction; The corpus includes items that were renamed, retyped, reparented, redacted, compacted, restored, merged from divergent branches, and closed and reopened; Compacted streams are covered explicitly: every version the compaction claims to retain still replays exactly, and versions it dropped are reported as intentionally unavailable rather than silently wrong; Redacted streams replay to a state that omits the redacted content while keeping every other field and the chain verifiable; A mismatch fails the gate with the item, version, and diverging field named, so the failure is diagnosable without rerunning by hand"
@@ -18,7 +20,10 @@ outcome: Any recorded state of any item is provably reachable from immutable his
 parent: pm-o2kc
 risk: medium
 confidence: 75
-dependencies[18]:
+resolution: "Establish history-only replay regressions across lifecycle, redaction, repeated compaction, restore and real divergent Git histories using independent snapshots and strict patch folds."
+expected_result: Every retained version in the lifecycle and maintenance fixtures reconstructs exactly without its live item file; intentionally unavailable versions and invalid histories fail explicitly.
+actual_result: "All 8395 tests across 605 files passed. Exact coverage is 62134/62134 statements, 47095/47095 branches, 12903/12903 functions and 59771/59771 lines. Static quality, typecheck, linked PM tests, packed npm/npx/bunx smoke and real temporary-tracker acceptance passed."
+dependencies[23]:
   - id: pm-3z0k
     kind: related
     created_at: "2026-07-25T12:32:18.439Z"
@@ -76,9 +81,75 @@ dependencies[18]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+  - id: pm-96fsma
+    kind: verifies
+    created_at: "2026-09-04T20:00:49.727Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-9j2r3b
+    kind: verifies
+    created_at: "2026-09-04T20:00:49.727Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-e3gn0z
+    kind: verifies
+    created_at: "2026-09-04T20:00:49.727Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-m0yjtg
+    kind: verifies
+    created_at: "2026-09-04T20:00:49.727Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-qw1uw6
+    kind: verifies
+    created_at: "2026-09-04T20:00:49.727Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[12]{created_at,author,text}:
   "2026-07-26T17:18:23.106Z","harness:claude-code","Reconstruction verified end to end on 2026-07-26 against a doubly-mutated item, which is a stronger test than a single-write fixture because it proves the replay composes.\n\npm-j1fj is a closed item from the v2026.6.30 window. Today it received two independent mutations from two different lanes: a release attribution stamp and a set of evidence-derived relationship edges. Reading it at a timestamp before those writes returns release absent, updated_at 2026-06-30T05:34:40.038Z, and 2 dependencies. Reading it now returns release v2026.6.30, updated_at 2026-07-26T17:17:07.733Z, and 5 dependencies. The historical projection is not a stale cache — it is reconstructed from the stream, and it correctly excludes both of today's writes while preserving the pre-existing edges.\n\nWhat this does and does not prove, for the record this item keeps: it demonstrates single-item point-in-time projection over a multi-write day, which is the pm-hib1 capability that already shipped. It does not demonstrate workspace-level projection (pm-5gf0xf) and it does not constitute the reconstruction gate this item owns, because nothing asserts it in CI. It is a positive control worth pinning as a fixture: an item with a create-era baseline, a long quiet period, and two same-day writes from different lanes is exactly the shape a naive implementation gets wrong.\n"
   "2026-07-28T15:14:25.489Z","harness:claude-code","Reconstruction spot-check on a freshly authored stream, 2026-07-28: pm-jkbqt8 with 7 entries replays correctly at every probed version — --at 1 returns the create state with 0 dependencies and the estimate already set, --at 3 returns 10 dependencies after the wiring mutation, --at 7 matches head, and all three report reconstructed true. pm history --verify reports ok true over 7 entries with current_matches_latest true and an empty error list. One reading caveat for whoever builds this gate: the reconstructed projection reports no comments at any version, which is NOT a replay gap — pm get --json omits the comments collection entirely, exactly as it omits notes, so the same item reports 0 through get and 2 through pm comments. A gate that asserts collection equality by diffing pm get output will therefore pass vacuously on comments and notes; it has to read them through their own commands."
+  "2026-09-04T19:42:54.722Z","harness:codex","TDD baseline: the new sandbox integration suite fails all five initial cases on the current build. Repeated compaction invalidates retained numeric addresses, three corrupt-document shapes block restore, and explicit recreation reuses a deleted identity. Tests exercise the SDK and CLI against temporary trackers with real filesystem data."
+  "2026-09-04T19:57:33.730Z","harness:codex","Regression design: a real CLI lifecycle fixture captures independent canonical item files after create, rename, reparent, annotations, append, retype, close and reopen; removes the live file; then compares every version reconstructed from history against each captured state. Recovery, stable repeated compaction and identity negative controls are bundled. Full-suite coverage and static quality are running; no completion claim yet."
+  "2026-09-04T20:03:32.400Z","harness:codex","Integration checkpoint: 50 focused tests pass across lifecycle durability, historical get/append and core replay. Existing compaction expectations were migrated from physical position 1 to the original retained version; the SDK compatibility snapshot explicitly records nullable legacy as_of_version and additive recovery receipts. The first full-suite run remains in flight and is not claimed green."
+  "2026-09-04T20:26:40.249Z","harness:codex","Evidence: 19 real-filesystem durability/maintenance cases passed. The new salvage and version-address modules measured 100/100/100/100 (88 statements, 79 branches, 7 functions, 82 lines) with binary refusal, structural I/O failures and competing writes exercised; this is a targeted result, not yet repo-wide. Additional extension-destination identity guards and two field-frozen legacy-compaction regressions are now included. Full all-source coverage and static quality are running again. No gates or coverage thresholds were lowered."
+  "2026-09-04T20:42:33.028Z","harness:codex","Manual acceptance proof completed in a fresh temporary tracker with the built CLI and public SDK: create six states; compact; read original version 5 unchanged; truncate item to zero bytes; restore original version 6 byte-identically; add 17-byte NUL/incomplete tail; dry-run leaves bytes unchanged; apply preserves the complete verified prefix and appends a matching receipt; history strict verification succeeds; delete then explicit recreation is refused with item_identity_reserved. TypeScript source, public type tests, package and example checks all pass. Packed npm/npx and bunx smoke also passed. Full coverage and static gates remain in progress."
+  "2026-09-04T20:46:16.884Z","harness:codex","Operational preflight: authenticated Sentry/telemetry release gate passed for unbrained/pm-cli, Sentry 14-day blocking total 0, access_ok true; telemetry finish_error_rate_pct 1.26 and failures_without_error_code_rows 0. Registry and installed pm-changelog are both 2026.9.2, runtime activation healthy. Existing published pm-cli 2026.9.4 predates this branch and is not claimed to contain it. Daily automatic release uses serialized concurrency and an existing-day tag guard; exact-tag recovery already succeeded before this work."
+  "2026-09-04T21:04:05.709Z","harness:codex","Final local verification: all 8395 tests in 605 files passed. Exact integer coverage: statements 62134/62134, branches 47095/47095, functions 12903/12903, lines 59771/59771; zero uncovered counts. pnpm quality:static passed in full after serializing dist-producing commands. pnpm typecheck passed. Real temporary-tracker acceptance verified durable compaction addresses, byte-identical recovery from an empty item, non-mutating salvage preview, exact retained-prefix bytes, discarded-suffix digest, strict history verification, and retained-history identity reservation. npm pack smoke exercised installed npm/npx and bunx consumers. Hosted review, merged-main proof, and publication remain separate pending claims."
+  "2026-09-04T21:05:50.474Z","harness:codex","Implementation evidence: Establish history-only replay regressions across lifecycle, redaction, repeated compaction, restore and real divergent Git histories using independent snapshots and strict patch folds. All 8395 tests across 605 files passed. Exact coverage is 62134/62134 statements, 47095/47095 branches, 12903/12903 functions and 59771/59771 lines. Static quality, typecheck, linked PM tests, packed npm/npx/bunx smoke and real temporary-tracker acceptance passed. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+  "2026-09-04T21:14:51.293Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1194, initial implementation head 4c80eb3b6d4d5c52deee2b1bcd0e53f074414c27. Additional final packed smoke passed with 13 packages, package-first dogfood passed, and context quality passed with 55 token surfaces. Latest pm-changelog 2026.9.2 generated all five delivery items under Unreleased and its check passed. Windows-specific enforcement is being completed under pm-96fsma; no Windows result is inferred from Linux coverage."
+  "2026-09-04T21:58:10.399Z","harness:codex","Review update for PR #1194: all 8397 tests across 605 files passed with exact 100/100/100/100 coverage. Full static quality and typecheck passed. Real temporary-tracker acceptance and packed npm/npx/bunx smoke passed. The package remains below its unchanged 20 MB artifact budget by compacting only the distributed JSON manifest; its documented export and parsed data are unchanged. Required Windows CI now executes both history regression suites. CodeRabbit findings are addressed by a metadata-only existence probe, reuse of the verified salvage hash epoch and an explicit identity-aware validation ok flag. Corrupt-item SDK errors now include item ID/path/byte length/empty state, and the real read-only health regression diagnoses both the zero-byte item and corrupt history tail. Hosted final-head checks and renewed bot review remain required before merge; no publication claim is made."
 notes[1]{created_at,author,text}:
   "2026-07-25T20:42:51.419Z","harness:claude-code","Round-trip fidelity probed on the shipped 2026.7.25 build, so this gate's corpus can be built around cases that already hold and the one that does not. Isolated sandbox, one item taken through create, update, dependency add, note_add, files_add, comment_add, update.\n\nBackward-then-forward restore is exact. pm restore <id> 1 reduced the item to its creation state and dropped notes, files, comments, and the dependency row to zero — correct point-in-time semantics, not loss. pm restore <id> 6 then returned every one of them: title, description, the related dependency row, 1 note, 1 comment, 1 file link. Nothing in the annotation or link families needed a separate recovery path.\n\nDelete is a tombstone and is fully reversible. After pm delete <id> --message \"...\": the item file is gone, the history stream is retained, pm get reports not found, pm get <id> --at 1 still returns the full point-in-time item, and pm restore <id> 1 resurrects it with 10 fields restored and it reappears in pm list. The delete op is recorded in the stream (ops: create, comment_add, restore, delete). The read-surface half — that pm get discloses none of this — is filed separately as pm-nb4zwz.\n\nThe corpus gap this leaves is version identity. History entries carry no version field; the record keys are ts, author, author_source, agent_harness, op, patch, before_hash, after_hash, message. Version addressing for restore and --at is therefore ordinal position in the stream, while the stable identity available is after_hash. That is fine in a single lane, and I verified pm get --at 2 is stable across a branch merge, but it means this gate's compaction and merge clauses are asserting something about ordinals rather than about content-addressed states. Worth deciding explicitly in the corpus design whether a retained version's identity is its ordinal or its after_hash, because pruning and reanchoring act on the two differently."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T21:04:06.887Z","harness:codex","Serialize commands that rebuild dist with CLI-based probes: concurrent build replacement can make a probe execute mismatched bundle chunks. Await terminal coverage/static-quality results, then perform one exact-head review inventory; never interpret a partially running log as a completed gate."
+files[2]{path,scope,note}:
+  tests/integration/history-durability.integration.spec.ts,project,Sandbox durability regressions and replay acceptance
+  tests/integration/history-maintenance-replay.integration.spec.ts,project,Every-version independent patch fold across real redaction and divergent Git merge
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,project,300,"harness:codex","2026-09-04T19:59:13.967Z",local_mutation,feat/history-durability-recovery
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts,project,300,"harness:codex","2026-09-04T20:24:50.185Z",local_mutation,feat/history-durability-recovery
+test_runs[1]:
+  - run_id: test-local-mtnfcrcv-xk1zxv
+    kind: test
+    status: passed
+    started_at: "2026-09-04T20:45:52.838Z"
+    finished_at: "2026-09-04T20:46:49.471Z"
+    recorded_at: "2026-09-04T20:46:49.471Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Latest pm-changelog package generates the reviewed five-item delivery changelog
+  docs/HISTORY_RECOVERY.md,project,Replay gate design and recovery contracts
+  docs/TESTING.md,project,Required all-source replay integration gate
+close_reason: Implementation complete with local recurrence controls; closeout is included in the reviewed delivery and merge remains gated on hosted checks and review.
 body: ""

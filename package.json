@@ -76,7 +76,7 @@
       "import": "./dist/cli-bundle/sdk-testing.js",
       "default": "./dist/cli-bundle/sdk-testing.js"
     },
-    "./sdk/public-surface.json": "./sdk/public-surface.json",
+    "./sdk/public-surface.json": "./dist/sdk/public-surface.json",
     "./cli": {
       "types": "./dist/cli/public.d.ts",
       "import": "./dist/cli/public.js",
@@ -95,7 +95,6 @@
     "LICENSE",
     "AGENTS.md",
     "docs/**",
-    "sdk/public-surface.json",
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",
@@ -229,7 +228,7 @@
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-unicorn": "74.0.0",
     "fast-check": "^4.9.0",
-    "greptile": "^3.4.2",
+    "greptile": "^3.5.0",
     "jscpd": "^5.1.2",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",

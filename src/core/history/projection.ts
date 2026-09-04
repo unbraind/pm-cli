@@ -7,10 +7,11 @@
  */
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { historyVersionOffset } from "./version-address.js";
 import type { HistoryEntry, HistoryPatchOp } from "../../types/index.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
-  replayHash,
+  verifyHistoryChain,
   tryApplyReplayPatch,
   type ReplayDocument,
 } from "./replay.js";
@@ -63,7 +64,7 @@ function findHistoryIndexAtTimestamp(
 }
 
 /** Build structured target-range guidance once for every resolver error path. */
-function buildHistoryTargetGuidance(history: readonly HistoryEntry[]) {
+function buildHistoryTargetGuidance(history: readonly HistoryEntry[], offset: number | null) {
   const firstTimestamp = history[0]?.ts ?? null;
   const lastTimestamp = history.at(-1)?.ts ?? null;
   const guidance = {
@@ -82,9 +83,12 @@ function buildHistoryTargetGuidance(history: readonly HistoryEntry[]) {
     },
   };
   if (lastTimestamp !== null) {
-    guidance.examples = ["1", String(history.length), lastTimestamp];
-    guidance.valid_range.first_version = 1;
-    guidance.valid_range.last_version = history.length;
+    guidance.examples = [lastTimestamp];
+    if (offset !== null) {
+      guidance.examples.unshift(String(offset + 1), String(offset + history.length));
+      guidance.valid_range.first_version = offset + 1;
+      guidance.valid_range.last_version = offset + history.length;
+    }
   }
   return { guidance, lastTimestamp };
 }
@@ -144,7 +148,7 @@ export function resolveHistoryTarget(
   const trimmed = target.trim();
   const errorSubject = options.errorSubject ?? "history";
   const errorSubjectTitle = errorSubject === "restore" ? "Restore" : "History";
-  const { guidance, lastTimestamp } = buildHistoryTargetGuidance(history);
+  const { guidance, lastTimestamp } = buildHistoryTargetGuidance(history, historyVersionOffset(history, true));
   if (!trimmed) {
     throw new PmCliError(
       `Missing ${errorSubject} target. Use a timestamp or version number.`,
@@ -153,19 +157,26 @@ export function resolveHistoryTarget(
     );
   }
   if (/^\d+$/.test(trimmed)) {
+    const offset = historyVersionOffset(history);
     const version = Number(trimmed);
+    if (version >= 1 && version <= offset) {
+      throw new PmCliError(`History version ${version} was pruned by compaction.`, EXIT_CODE.USAGE, {
+        ...guidance,
+        code: "history_version_pruned",
+      });
+    }
     if (
       !Number.isSafeInteger(version) ||
       version < 1 ||
-      version > history.length
+      version > offset + history.length
     ) {
       throw new PmCliError(
-        `${errorSubjectTitle} version must be between 1 and ${history.length} for this item.`,
+        `${errorSubjectTitle} version must be between ${offset + 1} and ${offset + history.length} for this item.`,
         EXIT_CODE.USAGE,
         guidance,
       );
     }
-    return { kind: "version", raw: trimmed, historyIndex: version - 1 };
+    return { kind: "version", raw: trimmed, historyIndex: version - offset - 1 };
   }
   const parsedTarget = Date.parse(trimmed);
   if (!Number.isFinite(parsedTarget)) {
@@ -224,6 +235,19 @@ export function replayHistoryToTarget(
   history: readonly HistoryEntry[],
   targetIndex: number,
 ): ReplayDocument {
+  const first = history[0];
+  if (first && first.op !== "create" && first.op !== "history_compact_baseline") {
+    const baseline = tryApplyReplayPatch(EMPTY_REPLAY_DOCUMENT, first.patch);
+    if (!baseline.ok || typeof baseline.document.metadata.id !== "string") {
+      throw new PmCliError("History starts without a reconstructable item baseline.", EXIT_CODE.GENERIC_FAILURE, {
+        code: "history_baseline_unavailable",
+        required: "Recover the original create entry or a complete checkpoint from version control.",
+        nextSteps: ["Run pm history <id> --full to inspect the missing baseline."],
+      });
+    }
+  }
+  const selected = history.slice(0, targetIndex + 1);
+  const verification = verifyHistoryChain([...selected]);
   let document: ReplayDocument = structuredClone(EMPTY_REPLAY_DOCUMENT);
   for (let index = 0; index <= targetIndex; index += 1) {
     const entry = history[index];
@@ -233,19 +257,15 @@ export function replayHistoryToTarget(
         EXIT_CODE.USAGE,
       );
     }
-    if (replayHash(document) !== entry.before_hash) {
-      throw new PmCliError(
-        `History hash mismatch before replay at entry ${index + 1}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
     document = applyHistoryPatch(document, entry.patch, index + 1, entry.op);
-    if (replayHash(document) !== entry.after_hash) {
-      throw new PmCliError(
-        `History hash mismatch after replay at entry ${index + 1}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
+  }
+  if (!verification.ok) {
+    throw new PmCliError(`History cannot be replayed: ${verification.errors.join(", ")}.`, EXIT_CODE.GENERIC_FAILURE, {
+      code: "history_replay_invalid",
+      verification_errors: verification.errors,
+      required: "Inspect the history integrity findings before attempting recovery.",
+      nextSteps: ["Run pm history <id> --verify --full."],
+    });
   }
   return document;
 }
@@ -256,6 +276,13 @@ export function ensureMaterializedHistoryTarget(
   target: ResolvedHistoryTarget,
 ): ReplayDocument {
   if (Object.keys(replayDocument.metadata).length > 0) {
+    if (typeof replayDocument.metadata.id !== "string" || !Array.isArray(replayDocument.metadata.tags)) {
+      throw new PmCliError("History has no complete item baseline for this target.", EXIT_CODE.GENERIC_FAILURE, {
+        code: "history_baseline_unavailable",
+        required: "Recover the original create entry or a complete checkpoint from version control.",
+        nextSteps: ["Run pm history <id> --full to inspect the first recorded state."],
+      });
+    }
     return replayDocument;
   }
   throw new PmCliError(

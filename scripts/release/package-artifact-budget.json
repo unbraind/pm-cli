@@ -10,6 +10,7 @@
     "dist/cli.js",
     "dist/cli-bundle/sdk.js",
     "dist/sdk/index.d.ts",
+    "dist/sdk/public-surface.json",
     "package.json"
   ]
 }

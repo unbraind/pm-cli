@@ -2,22 +2,100 @@ id: pm-e3gn0z
 title: "A deleted item's id is immediately re-mintable, so one immutable history stream can hold two unrelated items and every integrity check still reports verified"
 description: "An item id is not a permanent name. When an item is deleted, pm removes the item file and deliberately retains the immutable history stream, but the id-minting probe only asks whether an item FILE exists for a candidate id. Nothing consults the retained history stream, so any id whose item was deleted is immediately available to be minted again, and the new item's create entry is appended to the dead item's existing chain.\n\nProved deterministically in an isolated sandbox on 2026.7.28 using the reproducible-execution primitives shipped by pm-rbcvt2, which make the minted id a function of the seed:\n\n  run 1, seed fixed-seed-alpha -> creates pm-yanz \"FIRST original item\", one comment added\n  pm delete pm-yanz            -> item file removed, history/pm-yanz.jsonl retained with 3 entries\n  run 2, SAME seed             -> mints pm-yanz again, creates \"SECOND unrelated item\"\n  history/pm-yanz.jsonl        -> 4 entries: create, comment_add, delete, create\n\nTwo unrelated items now share one immutable stream, and every integrity surface reports success:\n\n  pm history pm-yanz --verify --strict-exit -> ok true, entries 4, current_matches_latest true, exit 0\n  pm validate --check-storage-integrity --check-history-drift -> ok true, no warnings\n  pm health --summary -> ok true\n\nPoint-in-time reconstruction then answers two different questions with the same id and reports full confidence in both:\n\n  pm get pm-yanz --at 2 -> title \"FIRST original item\", reconstructed true\n  pm get pm-yanz --at 4 -> title \"SECOND unrelated item\", reconstructed true\n\nThe restore-any-version promise is therefore conditional on something nothing checks. A caller asking for version 2 of pm-yanz receives a different item's state, correctly replayed, with no signal that the id changed subject between version 3 and version 4. A second create entry in a stream is the discriminating symptom and no reader treats it as one.\n\nSeeding made the collision deterministic but is not the cause. The hazard is structural and applies to ordinary random minting: with the default four-character base36 token the space is 1,679,616, the probe is blind to every deleted id, and the probability of recycling grows with both corpus size and delete volume. It also compounds across branches, where the probe cannot see the other branch at all.\n\nThis is distinct from its neighbours and must not be merged with them. pm-khdq (closed) covered the parallel-create TOCTOU where two live creates race for one id and the loser's FILE is overwritten; here there is no race and no file to overwrite. pm-qw1uw6 covers reconstruction CRASHING when a stream opens without a baseline entry; here reconstruction succeeds and returns the wrong subject. pm-nb4zwz covers disclosing a tombstone to a reader who asks for a deleted id; here the tombstone is not merely undisclosed, it is overwritable. pm-wlqxg3 is the universal replay gate and needs this defect fixed before its assertion is even well-formed, because \"every version of every item\" presumes a version belongs to exactly one item."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: history,identity,immutability,integrity,multi-agent,restore
 created_at: "2026-07-28T22:29:55.810Z"
-updated_at: "2026-08-02T21:11:33.376Z"
+updated_at: "2026-09-04T22:58:34.334Z"
+closed_at: "2026-09-04T22:58:33.743Z"
+completed_at: "2026-09-04T22:58:33.743Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "Minting a new id consults every durable record of prior use, including retained history streams for deleted items, so a previously used id is never reissued; A stream that would receive a second create entry is refused at write time with a structured error naming the prior use, rather than accepted and reported as verified; An existing stream containing more than one create entry is reported by pm validate as a data-integrity error with the id and the entry ordinals named, and by pm history --verify as a failed verification rather than ok true; Point-in-time reads across an identity discontinuity either refuse with a structured error or disclose the discontinuity as part of the result, so a caller can never silently receive another item's state; The check is available through the SDK identity primitives rather than only in the CLI, so MCP and other hosts inherit it; A regression fixture reproduces the recycling deterministically through a seeded reproducible execution and asserts the refusal, keeping the negative control permanently executable; The enumeration of write paths that can append a second create entry to one stream includes branch merge as well as re-minting, and the finding names which path produced the stream so remediation is not guessed"
 parent: pm-o2kc
 risk: high
 confidence: high
+resolution: Exclusively create genesis history at the effective destination across SDK and extension writes; retain partial reservations on failure.
+expected_result: Only one concurrent writer can create an identity and all losers receive a typed refusal.
+actual_result: Eight-process manual race and all direct/string/redirected regression cases passed; full exact coverage and static gates passed.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-khdq,discovered_from,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
   pm-nb4zwz,related,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
   pm-qw1uw6,related,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-02T21:11:32.666Z","harness:claude-code","Second, concurrency-native path to the same terminal state (2026-08-02). Re-minting after delete is not the only way one history stream ends up holding two unrelated items: two branches that mint the same id independently produce exactly that, and the merge driver resolves the add/add as an ordinary field conflict — title, description and created_at go to the preferred side, the other item is annihilated into discarded_hash values in a receipt, and the merged stream carries two create entries. This item's first two acceptance criteria cannot prevent it, because across branches there is no shared durable record to consult at mint time; only the third criterion (a stream with more than one create entry is reported) covers the shared terminal state. Filed separately as pm-qx95lz because the cause, the prevention point (merge driver rather than mint probe) and the fix differ; the detector is the one thing the two share."
+  "2026-09-04T19:57:32.342Z","harness:codex","Implementation evidence: generated IDs consult retained history reservations even on the locked-write fast path, appendHistoryEntry refuses second create writes, and chain verification detects duplicate-create ordinals. Deterministic seeded allocation after delete now chooses a different ID. Existing parallel live-file collision guarantees from closed pm-khdq remain separate."
+  "2026-09-04T20:36:46.509Z","harness:codex","Acceptance review: duplicate-create verification already rejects hash-valid remints. Completing the validate --check-history-drift projection with item ID, both genesis ordinals, and observed delete/create versus multiple-genesis sequence; invalidate the old metadata cache so historical cached success cannot hide this invariant. Sequence evidence will not invent an unprovable writer or branch origin."
+  "2026-09-04T20:47:25.502Z","harness:codex","Validation regression passes at the SDK drift-check boundary, including fresh and repeated metadata-cache reads. Public identity diagnostics distinguish delete_then_create, multiple_creates and checkpoint_then_create. The real Git fixture now creates independent same-ID subjects on separate branches and verifies their original branch streams report the second genesis; shared-genesis divergent edits still reconcile and replay every version. Merge collision prevention remains a separate owner, pm-qx95lz; this delivery does not claim that entire policy is implemented."
+  "2026-09-04T21:05:48.838Z","harness:codex","Implementation evidence: Reserve identities through retained history at generated-ID and extension append boundaries; expose typed repeated-genesis diagnostics and strict validation evidence. Seeded regeneration, explicit recreation and all effective extension append forms passed refusal tests. Validly hashed repeated genesis failed SDK verification and strict CLI validation. Real independent Git branches reproduced the distinct add/add origin; branch collision prevention remains separate canonical work. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+  "2026-09-04T21:14:50.740Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1194, initial implementation head 4c80eb3b6d4d5c52deee2b1bcd0e53f074414c27. Final frozen repository validation checked 2637 items and 2652 streams with no drift, identity discontinuities or storage-integrity failures."
+  "2026-09-04T21:30:08.131Z","harness:codex","CodeRabbit PR #1194 findings accepted: replace the whole-stream identity existence read with pathExists, and independently require zero identity discontinuities for validate.check.ok. Existing validly hashed repeated-genesis, seeded-ID and extension-destination fixtures remain the negative controls. Current full test run will finish before source changes are applied."
+  "2026-09-04T21:58:06.636Z","harness:codex","Review update for PR #1194: all 8397 tests across 605 files passed with exact 100/100/100/100 coverage. Full static quality and typecheck passed. Real temporary-tracker acceptance and packed npm/npx/bunx smoke passed. The package remains below its unchanged 20 MB artifact budget by compacting only the distributed JSON manifest; its documented export and parsed data are unchanged. Required Windows CI now executes both history regression suites. CodeRabbit findings are addressed by a metadata-only existence probe, reuse of the verified salvage hash epoch and an explicit identity-aware validation ok flag. Corrupt-item SDK errors now include item ID/path/byte length/empty state, and the real read-only health regression diagnoses both the zero-byte item and corrupt history tail. Hosted final-head checks and renewed bot review remain required before merge; no publication claim is made."
+  "2026-09-04T22:46:49.038Z","harness:codex","Second full review TDD: three eight-writer real filesystem races reproduced duplicate genesis across direct, string override and redirected destinations. Exclusive wx creation now arbitrates the effective destination without trusting a check-then-append gap or deleting a failed partial reservation."
+  "2026-09-04T22:51:59.538Z","harness:codex","Independent temporary-directory manual acceptance also passed across eight separate Node processes through the built public SDK: exactly one genesis writer succeeded, seven received item_identity_reserved, and the stream contains exactly one record. This is separate from the in-process extension/direct concurrency fixtures and uses no mocked filesystem."
+  "2026-09-04T22:58:31.785Z","harness:codex","Final consolidated review-fix proof: 8404 tests / 605 files with exact statements 62140/62140, branches 47102/47102, functions 12903/12903, lines 59778/59778. Full static quality, typecheck and linked tests passed. Fresh temporary-directory recovery and packed npm/npx/bunx smoke passed. The independent eight-process identity race accepted one writer and refused seven. Dependency audit reports zero vulnerabilities. Hosted new-head checks, renewed bot review and merged-main operational proof remain separate required delivery gates."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T20:42:35.256Z","harness:codex",An identity remains allocated while its immutable history exists. Invariant changes also require invalidating metadata-only verification caches. Describe observed record sequences; do not infer branch or writer causality absent recorded provenance.
+files[9]{path,scope,note}:
+  src/core/history/drift-scan.ts,project,Invalidate old cache and surface identity evidence
+  src/core/history/history.ts,project,Refuse second create append
+  src/core/history/identity.ts,project,Public repeated-genesis diagnostic primitive
+  src/core/history/replay.ts,project,Detect discontinuity and report physical ordinals
+  src/core/item/id.ts,project,Reserve identities with retained history during ID allocation
+  src/sdk/governance/validate-history-drift.ts,project,Fail validation for duplicate identity genesis
+  tests/integration/copy-command.spec.ts,project,Preserve locked collision negative control before concurrent history append
+  tests/integration/history-durability.integration.spec.ts,project,Real concurrent exclusive genesis negative controls
+  tests/unit/core/history/drift-scan.spec.ts,project,Current cache-version regression fixtures
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,project,300,"harness:codex","2026-09-04T19:59:11.159Z",local_mutation,feat/history-durability-recovery
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300,"harness:codex","2026-09-04T20:47:26.188Z",local_mutation,feat/history-durability-recovery
+test_runs[3]:
+  - run_id: test-local-mtng02rw-7abc28
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:04:36.501Z"
+    finished_at: "2026-09-04T21:04:57.356Z"
+    recorded_at: "2026-09-04T21:04:57.356Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtnhveru-wb9yua
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:57:07.947Z"
+    finished_at: "2026-09-04T21:57:18.858Z"
+    recorded_at: "2026-09-04T21:57:18.858Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtnjsep7-10l2wv
+    kind: test
+    status: passed
+    started_at: "2026-09-04T22:50:00.408Z"
+    finished_at: "2026-09-04T22:50:58.027Z"
+    recorded_at: "2026-09-04T22:50:58.027Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/HISTORY_RECOVERY.md,project,Permanent identity and imported collision guidance
+close_reason: Atomic identity reservation implemented and negative controls passed; hosted review remains required before merge.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-e3gn0z
+  gate_id: history-identity-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts
+  local_checks[4]: seeded deleted-ID reservation,hash-valid repeated genesis refusal,real independent branch genesis diagnosis,SDK and strict CLI validate identity errors
+  hosted_checks[1]: CI coverage and Windows suites required before merge
 body: ""

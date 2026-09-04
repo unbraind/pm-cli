@@ -183,9 +183,9 @@
     },
     {
       "command": "history-repair",
-      "help_bytes": 856,
-      "estimated_tokens": 214,
-      "maximum_tokens": 214
+      "help_bytes": 929,
+      "estimated_tokens": 233,
+      "maximum_tokens": 233
     },
     {
       "command": "history-compact",
@@ -309,9 +309,9 @@
     },
     {
       "command": "test",
-      "help_bytes": 4664,
-      "estimated_tokens": 1166,
-      "maximum_tokens": 1166
+      "help_bytes": 4651,
+      "estimated_tokens": 1163,
+      "maximum_tokens": 1163
     },
     {
       "command": "test-all",
@@ -357,9 +357,9 @@
     },
     {
       "command": "workspace",
-      "help_bytes": 439,
-      "estimated_tokens": 110,
-      "maximum_tokens": 110
+      "help_bytes": 429,
+      "estimated_tokens": 108,
+      "maximum_tokens": 108
     },
     {
       "command": "contracts",

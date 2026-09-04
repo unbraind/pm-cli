@@ -32,8 +32,28 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
-  it("versions the additive annotation if-absent contract", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.10.1");
+  it("versions the additive single-stream salvage contract", () => {
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.11.0");
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
+      "history-repair",
+    ) as { allOf?: unknown[]; properties?: Record<string, unknown> };
+    expect(schema.properties?.salvageTail).toMatchObject({ type: "boolean" });
+    for (const property of ["all", "normalizeProvenance"]) {
+      expect(schema.allOf).toContainEqual({
+        not: {
+          allOf: [
+            {
+              properties: { salvageTail: { const: true } },
+              required: ["salvageTail"],
+            },
+            {
+              properties: { [property]: { const: true } },
+              required: [property],
+            },
+          ],
+        },
+      });
+    }
   });
 
   it("rejects annotation if-absent edit and delete combinations", () => {

@@ -17,6 +17,7 @@ import {
   type ResolvedHistoryTarget,
 } from "../core/history/projection.js";
 import { readHistoryEntries } from "../core/history/read.js";
+import { historyVersionOffset } from "../core/history/version-address.js";
 import {
   hashDocument,
   hashDocumentVerificationCandidates,
@@ -29,10 +30,14 @@ import {
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry, ItemDocument } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
+export {
+  findHistoryIdentityDiscontinuities,
+  type HistoryIdentityDiscontinuity,
+} from "../core/history/identity.js";
 
 /** Workspace resolution controls accepted by {@link getItemAt}. */
 export interface GetItemAtOptions {
@@ -48,8 +53,8 @@ export interface GetItemAtResult {
   document: ItemDocument;
   /** Always true, preventing consumers from confusing this with current state. */
   reconstructed: true;
-  /** One-based version included in the projection. */
-  as_of_version: number;
+  /** Durable one-based version; null when a legacy checkpoint lost its mapping. */
+  as_of_version: number | null;
   /** Timestamp of the final included history entry. */
   as_of_timestamp: string;
   /** Normalized target resolution metadata shared with restore. */
@@ -177,10 +182,12 @@ export async function getItemAt(
     );
   }
   const targetEntry = history[resolvedTarget.historyIndex];
+  const offset = historyVersionOffset(history, true);
   return {
     document,
     reconstructed: true,
-    as_of_version: resolvedTarget.historyIndex + 1,
+    as_of_version:
+      offset === null ? null : offset + resolvedTarget.historyIndex + 1,
     as_of_timestamp: targetEntry.ts,
     target: resolvedTarget,
     history_length: history.length,

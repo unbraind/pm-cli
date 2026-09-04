@@ -6,6 +6,8 @@
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
+import { readLocatedItemSnapshot } from "../../core/store/item-store.js";
+import { historyVersionOffset } from "../../core/history/version-address.js";
 import {
   pathExists,
   readFileIfExists,
@@ -71,6 +73,18 @@ interface RestoreCurrentState {
   originalRaw: string | null;
 }
 
+/** Read a restore input without discarding unreadable bytes needed for rollback. */
+async function readRestoreItem(
+  located: NonNullable<ResolvedRestoreSubject["located"]>,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  history: HistoryEntry[],
+): Promise<{ raw: string; document: ItemDocument; recovered?: boolean }> {
+  const snapshot = await readLocatedItemSnapshot(located, { schema: settings.schema });
+  return snapshot.error === null
+    ? { raw: snapshot.raw, document: snapshot.document }
+    : { raw: snapshot.raw, document: replayCurrentDocument(history), recovered: true };
+}
+
 /** Documents the restore command options payload exchanged by command, SDK, and package integrations. */
 export interface RestoreCommandOptions {
   /** Value that configures or reports author for this contract. */
@@ -90,6 +104,7 @@ export interface RestoreResult {
     kind: "version" | "timestamp";
     target: string;
     history_index: number;
+    version: number | null;
     entry_ts: string;
     entry_op: string;
   };
@@ -196,6 +211,7 @@ function changedFields(
   return Array.from(fields).sort((a, b) => a.localeCompare(b));
 }
 
+/** Reload item and history under the caller's lock, refusing changes since the recovery snapshot. */
 async function loadRestoreStateUnderLock(params: {
   pmRoot: string;
   resolvedId: string;
@@ -204,8 +220,9 @@ async function loadRestoreStateUnderLock(params: {
   typeToFolder: Record<string, string>;
   historyRawBeforeLock: string | null;
   currentItemRawBeforeLock: string | null;
+  history: HistoryEntry[];
 }): Promise<{
-  loadedItemUnderLock: Awaited<ReturnType<typeof readLocatedItem>> | null;
+  loadedItemUnderLock: Awaited<ReturnType<typeof readRestoreItem>> | null;
   existingItemPath: string | null;
 }> {
   const historyRawUnderLock = await readFileIfExists(
@@ -225,9 +242,7 @@ async function loadRestoreStateUnderLock(params: {
     params.typeToFolder,
   );
   const loadedItemUnderLock = locatedUnderLock
-    ? await readLocatedItem(locatedUnderLock, {
-        schema: params.settings.schema,
-      })
+    ? await readRestoreItem(locatedUnderLock, params.settings, params.history)
     : null;
   if ((loadedItemUnderLock?.raw ?? null) !== params.currentItemRawBeforeLock) {
     throw new PmCliError(
@@ -376,7 +391,7 @@ export async function runRestore(
     );
   }
   const loadedItemBeforeLock = subject.located
-    ? await readLocatedItem(subject.located, { schema: settings.schema })
+    ? await readRestoreItem(subject.located, settings, history)
     : null;
   const currentItemRawBeforeLock = loadedItemBeforeLock?.raw ?? null;
 
@@ -401,6 +416,7 @@ export async function runRestore(
         typeToFolder: typeRegistry.type_to_folder,
         historyRawBeforeLock,
         currentItemRawBeforeLock,
+        history,
       });
     const itemFormat = "toon";
     const currentState = resolveRestoreCurrentState(
@@ -508,17 +524,20 @@ export async function runRestore(
     });
 
     const targetEntry = history[resolvedTarget.historyIndex];
+    const offset = historyVersionOffset(history, true);
     return {
       item: restoredDocument.metadata,
       restored_from: {
         kind: resolvedTarget.kind,
         target: resolvedTarget.raw,
         history_index: resolvedTarget.historyIndex + 1,
+        version: offset === null ? null : offset + resolvedTarget.historyIndex + 1,
         entry_ts: targetEntry.ts,
         entry_op: targetEntry.op,
       },
       changed_fields: restoreChangedFields,
       warnings: [
+        ...(loadedItemUnderLock?.recovered ? ["restore_unreadable_item_recovered"] : []),
         ...subject.historyPolicyWarnings,
         ...ownershipWarnings,
         ...derivedIndexWarnings,

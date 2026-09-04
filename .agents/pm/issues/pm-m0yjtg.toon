@@ -2,11 +2,13 @@ id: pm-m0yjtg
 title: "history-compact renumbers version identifiers, so pm get --at N and pm restore N address a different recorded state after compaction with exit 0 and no signal"
 description: "Version numbers are the only addressing scheme pm offers for the immutable record besides timestamps, and history-compact silently rebases them. Before compaction pm get <id> --at 3 returned the state recorded at entry 3. After 'pm history-compact <id> --before 6' the same command returns the state recorded at the original entry 7, exits 0, and emits no warning, no deprecation, and no mapping. Timestamp addressing behaves correctly across the same boundary (a pruned timestamp is refused with history_target_out_of_range exit 2), so the two addressing schemes diverge: one is stable under compaction and the other silently changes meaning. Every stored reference to a version number - in a comment, a close reason, an external audit record, a script, a downstream tracker - becomes a reference to different content at the moment a stream is compacted, and nothing in the record says so. The synthetic baseline entry records only the free-text message 'history-compact baseline snapshot before 6.' and carries no structured field for the compacted-entry count or the version offset, so no consumer can mechanically translate a pre-compaction version to its post-compaction equivalent or determine that a given version number predates the boundary. The baseline entry is also stamped with the compaction wall-clock time while occupying index 1, so after compaction the stream's index order and timestamp order disagree: index 1 ts 14:55:39 precedes index 2 ts 14:54:53. pm history --verify --strict-exit exits 0 throughout, so no integrity check observes any of this."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:history","area:storage",durability,immutability
 created_at: "2026-08-02T15:01:30.323Z"
-updated_at: "2026-08-07T17:13:33.159Z"
+updated_at: "2026-09-04T22:58:35.475Z"
+closed_at: "2026-09-04T22:58:34.907Z"
+completed_at: "2026-09-04T22:58:34.907Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "A version identifier resolves to the same recorded state before and after compaction, or the pre-boundary identifier is refused with a distinct machine-readable code rather than silently resolving to different content; The compaction baseline entry records the compacted-entry count and the version offset as structured fields, so a reader can mechanically map a pre-compaction version number to its post-compaction equivalent or classify it as pruned; A read or restore targeting a version that predates the compaction boundary is reported as intentionally unavailable, distinguishable by code from an out-of-range target that never existed; The stream's index order and timestamp order agree after compaction, or the baseline entry's timestamp semantics are declared in the format specification and asserted by a test; history --verify fails, or a dedicated check fails, on a stream whose version addressing changed meaning without a recorded offset - proven by a negative-control fixture; The evidence in this item's description is reproduced as a regression test that compacts a stream and asserts version-identifier stability or refusal"
@@ -21,21 +23,97 @@ confidence: high
 severity: high
 environment: "pm 2026.8.2, sandbox PM_PATH, Node 20+, linux"
 repro_steps: pm create Task V1; for i in 2..10 pm update <id> --title V$i; pm get <id> --at 3 -> V3; pm history-compact <id> --before 6; pm get <id> --at 3 -> V7 (exit 0)
-expected_result: "pm get <id> --at 3 returns the same recorded state before and after compaction, or refuses with a pruned-version code"
-actual_result: Before compaction --at 3 returns the state titled V3; after compacting before v6 the same command returns the state titled V7 with exit 0 and no warning
+resolution: "Preserve unknown version mappings as null through default, timestamp and no-op compaction while keeping numeric reads fail closed."
+expected_result: Valid legacy maintenance remains usable without manufacturing durable ordinals.
+actual_result: All three previously failing legacy compaction controls pass with chain verification and numeric refusal; full exact coverage and static gates pass.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4a7m,discovered_from,"2026-08-02T15:01:30.323Z","harness:claude-code","cli:create:dep",detected
   pm-h6wmtc,related,"2026-08-02T15:01:30.323Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,verifies,"2026-08-02T15:01:30.323Z","harness:claude-code","cli:create:dep",detected
   pm-e3gn0z,related,"2026-08-02T15:05:49.747Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-02T15:01:30.323Z","harness:claude-code","Duplicate check before create: searched 'immutable history restore version', 'compaction', 'point in time', and read pm-wlqxg3, pm-h6wmtc, pm-3z0k, pm-9yfo, pm-6l2mza, pm-hib1, pm-4a7m in full. pm-wlqxg3 is the reconstruction GATE and its AC already anticipates this class ('versions it dropped are reported as intentionally unavailable rather than silently wrong') but it is the test that would catch the defect, not the product behaviour - filed separately per the standing gate-vs-product-defect split (precedent pm-0fhw). pm-h6wmtc owns retention POLICY and lawful erasure, not identifier stability. pm-6l2mza (workspace snapshot rewind) is CLOSED and concerns deleting streams, not renumbering within one. pm-3z0k is detached attestation export. No existing item owns version-identifier stability across compaction."
   "2026-08-07T17:13:33.159Z","harness:claude-code","Reproduced live 2026-08-07 in an isolated sandbox, and the reproduction shows the two addressing schemes have opposite safety properties on the same verb.\n\nNine history entries were built on one item, each update setting a distinguishable description. Before compaction, `pm restore <id> 3` exits 0 and yields description \"version 2\", which is the state entry 3 recorded. `pm history-compact <id> --before 6` then reports entries_compacted 5, entries_retained 5, first_retained_entry 6, and rewrites the stream as a synthetic baseline plus the retained tail, renumbered densely from 1. The identical call `pm restore <id> 3` now exits 0 and yields \"version 6\". Same command, same item, same repository, different reconstructed state, no warning and no offset in the envelope.\n\nTwo additional facts that sharpen the AC set rather than widening it. First, `pm restore <id> 1` succeeds and yields \"version 4\": version 1 is now the history_compact_baseline, whose replay reconstructs the state at the compaction boundary, so the earliest addressable version is not the earliest recorded version and nothing says so. Second, the timestamp scheme is correct where the version scheme is not: a pre-boundary ISO timestamp is refused with history_target_out_of_range at exit 2, and an out-of-range high version number (99) is also refused with the same code. So the refusal machinery already exists and is reached from both ends of the range; it cannot fire in the middle because after compaction the numbering is dense from 1 again and a pruned version is indistinguishable from a present one.\n\nThroughout all of it `pm history <id> --verify --strict-exit` exits 0. The record is provably intact and provably mis-addressed at the same time, which is the state AC3 exists to make impossible. The point-in-time read has the same defect as the mutation: `pm get <id> --at 3` returns the post-compaction state with no signal. The mutation is the worse half, because a restore appends a hash-anchored entry whose recorded intent no longer denotes what it denoted when it was written."
-files[2]{path,scope,note}:
+  "2026-09-04T19:57:31.334Z","harness:codex","Implementation evidence: shared durable-version resolver preserves retained addresses through repeated compaction, records checkpoint offsets and last-compacted timestamps, refuses unmapped legacy numeric addresses, and reports physical versus durable coordinates separately. Historical claim-state projection now slices using the resolved physical index. Focused compaction suite passes 45 tests; broader coverage is running."
+  "2026-09-04T20:24:25.111Z","harness:codex","TDD extension: two new negative controls reproduce compaction failure on otherwise verified field-frozen epoch-1 and early epoch-2 streams containing linked-test provenance. Both fail at the compactor current-epoch after-hash check. The durable-address implementation must preserve retained records and respect their recorded hash variants rather than rehashing legacy metadata with the current algorithm."
+  "2026-09-04T20:26:41.286Z","harness:codex","Implementation: compaction keeps retained records verbatim, preserves the checkpoint hash variant and explicit/unversioned epoch marker, and uses the central epoch-aware verifier. Removed redundant current-epoch hash checks and the two mock-only tests that forced them past a successful precheck. Replacement real-stream regressions cover linked-test provenance in epoch 1 and early epoch 2, repeated compaction, stable version addresses and independently captured states."
+  "2026-09-04T21:05:45.317Z","harness:codex","Implementation evidence: Preserve durable version addresses, original retained records and historical hash surfaces through repeated compaction; publish structured offsets and nullable legacy mapping contracts. Repeated-compaction, legacy epoch 1 and early epoch 2 provenance fixtures passed. Retained versions matched independently captured states; unknown legacy timestamp reads and restoration report null version addresses. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+  "2026-09-04T21:14:49.815Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1194, initial implementation head 4c80eb3b6d4d5c52deee2b1bcd0e53f074414c27. SDK nullable legacy version mapping is called out in the PR compatibility section. Release publication is separate from implementation closure."
+  "2026-09-04T21:42:42.088Z","harness:codex","Full-suite recurrence check caught unstable textual SDK signature output for reanchorHistoryEntries after the new hash-version import changed inferred union ordering. The parameter now explicitly names the existing HistoryItemHashVersion alias; accepted 1/2/3 values and runtime behavior are unchanged. Regenerating and testing the real SDK manifest before another full coverage run, rather than accepting a stale compatibility artifact."
+  "2026-09-04T21:58:08.260Z","harness:codex","Review update for PR #1194: all 8397 tests across 605 files passed with exact 100/100/100/100 coverage. Full static quality and typecheck passed. Real temporary-tracker acceptance and packed npm/npx/bunx smoke passed. The package remains below its unchanged 20 MB artifact budget by compacting only the distributed JSON manifest; its documented export and parsed data are unchanged. Required Windows CI now executes both history regression suites. CodeRabbit findings are addressed by a metadata-only existence probe, reuse of the verified salvage hash epoch and an explicit identity-aware validation ok flag. Corrupt-item SDK errors now include item ID/path/byte length/empty state, and the real read-only health regression diagnoses both the zero-byte item and corrupt history tail. Hosted final-head checks and renewed bot review remain required before merge; no publication claim is made."
+  "2026-09-04T22:46:49.624Z","harness:codex","Second full review TDD: default, timestamp and no-op compactions of valid legacy checkpoints without offsets all failed before implementation. They now preserve null version_offset and first_retained_entry while numeric history reads still refuse unknown addresses."
+  "2026-09-04T22:58:32.260Z","harness:codex","Final consolidated review-fix proof: 8404 tests / 605 files with exact statements 62140/62140, branches 47102/47102, functions 12903/12903, lines 59778/59778. Full static quality, typecheck and linked tests passed. Fresh temporary-directory recovery and packed npm/npx/bunx smoke passed. The independent eight-process identity race accepted one writer and refused seven. Dependency audit reports zero vulnerabilities. Hosted new-head checks, renewed bot review and merged-main operational proof remain separate required delivery gates."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T20:42:34.026Z","harness:codex",Compaction must preserve both durable addressing and historical hash surfaces. Valid field-frozen epoch-1/early-epoch-2 records can fail if redundantly checked with the current hash algorithm; retain record contents and seal the checkpoint using its verified historical endpoints.
+files[9]{path,scope,note}:
   src/core/history/projection.ts,project,"Resolves a version number or timestamp to a recorded entry; version resolution is index-relative so it silently rebases after compaction,while timestamp resolution correctly refuses with history_target_out_of_range"
   src/sdk/history-compact.ts,project,Writes the synthetic baseline entry and prunes the stream; the baseline carries only a free-text message and no structured version offset
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- history-compact,project,300
-docs[1]{path,scope,note}:
+  src/core/history/version-address.ts,project,Durable ordinal mapping and legacy refusal
+  src/sdk/history-read.ts,project,Nullable legacy version result
+  src/sdk/query/get.ts,project,Physical claim-state cutoff
+  src/sdk/query/history.ts,project,Explicit physical and durable coordinates
+  tests/integration/history-compact-command.spec.ts,project,Restore original retained address after compaction
+  tests/unit/commands/get-append-command.spec.ts,project,Use durable retained checkpoint address in read regression
+  sdk/public-surface.json,project,Explicit nullable legacy-version SDK migration with compatibility rationale
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- history-compact
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-compact-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-04T19:58:41.466Z"
+      source_kind: local_mutation
+      source_ref: feat/history-durability-recovery
+test_runs[3]:
+  - run_id: test-local-mtnfzd98-9ic3wm
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:04:00.331Z"
+    finished_at: "2026-09-04T21:04:24.284Z"
+    recorded_at: "2026-09-04T21:04:24.284Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- history-compact,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-compact-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtnhvpap-zqn3w0
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:57:19.284Z"
+    finished_at: "2026-09-04T21:57:32.496Z"
+    recorded_at: "2026-09-04T21:57:32.496Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- history-compact,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-compact-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtnjtvtj-dnxwfe
+    kind: test
+    status: passed
+    started_at: "2026-09-04T22:50:59.340Z"
+    finished_at: "2026-09-04T22:52:06.870Z"
+    recorded_at: "2026-09-04T22:52:06.870Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- history-compact,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-compact-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Documents history-compact and restore; must state the version-addressing stability class once declared
+  docs/HISTORY_RECOVERY.md,project,Version migration contract
+close_reason: Legacy compaction review correction implemented with regression proof.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-m0yjtg
+  gate_id: history-durable-version-addressing
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-compact-command.spec.ts
+  local_checks[3]: all retained versions compared after repeated compaction,legacy epoch-1 and early epoch-2 provenance fixtures,pruned and unknown mapping refusals
+  hosted_checks[1]: CI exact coverage and strict quality required before merge
 body: ""

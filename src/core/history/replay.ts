@@ -4,6 +4,7 @@
  * Implements append-only history and replay behavior for Replay.
  */
 import jsonPatch from "fast-json-patch";
+import { findHistoryIdentityDiscontinuities } from "./identity.js";
 import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
@@ -316,7 +317,6 @@ function assertHistoryEntryIntegrity(entry: HistoryEntry, index: number): void {
   }
 }
 
-/** Deterministically verify a history chain: each entry's before_hash must equal the prior replayed after_hash, the patch must strictly apply, and the recorded after_hash must equal the replayed result. */
 /** Verify a chain and report the explicit or auto-detected item hash epoch. */
 export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   ok: boolean;
@@ -326,7 +326,10 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   let replay = cloneEmptyReplayDocument();
   let detectedVersion: HistoryItemHashVersion | undefined;
   let authoritativeExplicitVersion: HistoryItemHashVersion | undefined;
-  const errors: string[] = [];
+  const errors = findHistoryIdentityDiscontinuities(entries).map(
+    (finding) =>
+      `verify_failed:duplicate_create:entry_${finding.repeated_create_index}:prior_${finding.prior_genesis_index}`,
+  );
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
@@ -575,7 +578,7 @@ function applyReanchorPatch(
 /** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
-  itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
+  itemHashVersion: HistoryItemHashVersion = resolveHistoryRepairItemHashVersion(entries),
   options: ReanchorHistoryOptions = {},
 ): ReanchorResult {
   const unsupportedIndex = entries.findIndex((entry) =>

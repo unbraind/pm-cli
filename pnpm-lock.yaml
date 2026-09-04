@@ -81,8 +81,8 @@ importers:
         specifier: ^4.9.0
         version: 4.9.0
       greptile:
-        specifier: ^3.4.2
-        version: 3.4.2
+        specifier: ^3.5.0
+        version: 3.5.0
       jscpd:
         specifier: ^5.1.2
         version: 5.1.2
@@ -1259,8 +1259,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  greptile@3.4.2:
-    resolution: {integrity: sha512-BV7rI+JFMkTtxgejGL/hngoJym/uBa97nfzRcCSWEkhY4xZKOux7QGXDk+SSz43zbJmlqDuTZem2EtFhUflVXA==}
+  greptile@3.5.0:
+    resolution: {integrity: sha512-8DVc+LIhTy2WY7rwl6WSV9XijRJcx/c3xYKNcp/xqsyfSpGVIhOZWdqm2UXyA8zBpxLlVDAmR5u9bLCLmGLOrw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -3176,7 +3176,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  greptile@3.4.2: {}
+  greptile@3.5.0: {}
 
   has-flag@4.0.0: {}
 

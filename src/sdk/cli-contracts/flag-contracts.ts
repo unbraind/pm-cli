@@ -424,6 +424,7 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--all" },
   { flag: "--dry-run" },
   { flag: "--normalize-provenance" },
+  { flag: "--salvage-tail", value_type: "boolean" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
