@@ -1,0 +1,55 @@
+id: pm-e63v1x
+title: Tag-push Release must regenerate the exact-tag changelog before immutable publication
+description: "The v2026.9.4 tag-push Release checked the changelog generated before the tag existed, so pm-changelog correctly added the immutable tag date and the release failed before npm publication. Make every exact-tag release source, including ordinary tag pushes, regenerate CHANGELOG.md from the checked-out immutable tag, fail closed on any other dirty path, and preserve normal branch-source drift checks. Recover the existing tag without moving it or creating a second automatic release."
+type: Issue
+status: closed
+priority: 1
+tags[4]: changelog,exact-tag,release,workflow
+created_at: "2026-09-04T13:15:31.270Z"
+updated_at: "2026-09-04T13:40:10.152Z"
+closed_at: "2026-09-04T13:40:09.610Z"
+completed_at: "2026-09-04T13:40:09.610Z"
+author: "harness:codex"
+parent: pm-e70zh5
+severity: high
+environment: GitHub Actions tag-push Release for immutable v2026.9.4
+repro_steps: "Checkout v2026.9.4; install/build; run pnpm changelog:pm:check (fails); run pnpm changelog:pm and observe the missing release date is added."
+resolution: "Release now regenerates canonical changelog metadata for every exact-tag source under a tracked-path allowlist, while reviewed-main sources retain strict drift checking; tests and documentation cover both paths."
+expected_result: "Ordinary tag pushes and recovery dispatches can publish one immutable release without moving the tag, accepting stale changelog content, or allowing unrelated mutations."
+actual_result: "Focused contracts, exact full coverage, static/security gates, and a clean temporary v2026.9.4 tag-push acceptance all pass; guarded regeneration produced the dated heading and no product mutation besides CHANGELOG.md."
+affected_version: 2026.9.4
+component: release-automation
+regression: true
+customer_impact: "The validated SDK/CLI release cannot reach npm, bunx/npx consumers, or GitHub Release until exact-tag recovery succeeds."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5baq,discovered_from,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
+  pm-7zs0,verifies,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
+  pm-8eebb6,discovered_from,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
+  pm-db8onn,implements,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
+  pm-lwnifd,recurs_from,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-04T13:15:31.270Z","harness:codex","Duplicate check: all-status searches for tag push/changelog/release date/immutable tag found pm-lwnifd, pm-5baq, pm-db8onn, pm-2f80fn, pm-e70zh5, and pm-7zs0. Those own exact-tag recovery, generated alignment, recovery run selection, diagnostics, aggregate reliability, and release-health respectively; none owns ordinary tag-push changelog stabilization. Clean-room evidence: pnpm changelog:pm at immutable v2026.9.4 changes only CHANGELOG.md heading from '## 2026.9.4' to '## 2026.9.4 - 2026-09-04' plus transient managed-extension updated_at."
+  "2026-09-04T13:17:35.982Z","harness:codex","TDD red evidence: focused release automation contract failed exactly because an ordinary tag push with RECOVERY_SOURCE_MODE=tag invoked pnpm changelog:pm:check instead of guarded regeneration. The workflow-presence assertion passed, isolating the defect to source-mode branching."
+  "2026-09-04T13:39:57.878Z","harness:codex","Implementation and verification evidence: source-mode branching now treats every exact-tag source identically, keeps reviewed-main drift checks intact, and guards regeneration so only CHANGELOG.md may change. Focused workflow contracts pass; full coverage passes 603 files and 8,356 tests at exact 100/100/100/100; quality:static, typecheck, docs links, and security scan pass. A clean temporary checkout of immutable v2026.9.4 installed and built successfully, executed the actual extracted tag-push step, generated the dated 2026.9.4 heading, and changed no product path besides CHANGELOG.md (the managed-extension timestamp is transient and explicitly ignored by the guard)."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T13:39:58.430Z","harness:codex","A tag-push workflow cannot validate changelog content produced before the tag existed when the changelog generator derives release metadata from tags. Branch-vs-tag source mode is the stable contract: exact-tag sources regenerate under a mutation allowlist, while reviewed-main sources fail closed on drift."
+files[2]{path,scope,note}:
+  .github/workflows/release.yml,project,Make every exact-tag source regenerate the canonical changelog under a tracked-path mutation guard
+  tests/integration/release-automation-contract.spec.ts,project,Execute tag-push and reviewed-main changelog source modes with mutation negative control
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,240,"harness:codex","2026-09-04T13:18:19.081Z",local_mutation,fix/exact-tag-changelog-stabilization
+  node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-09-04T13:18:19.815Z",local_mutation,fix/exact-tag-changelog-stabilization
+  "pnpm quality:static",project,900,"harness:codex","2026-09-04T13:18:20.488Z",local_mutation,fix/exact-tag-changelog-stabilization
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generate reviewed release notes from terminal PM evidence
+  docs/RELEASING.md,project,Document ordinary tag-push stabilization and exact-tag recovery behavior
+close_reason: "Exact-tag changelog generation is source-mode correct, guarded, contract-tested, and manually proven on immutable v2026.9.4."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-e63v1x
+  gate_id: exact-tag-changelog-source-mode
+  negative_control: "Execute the release changelog step as an ordinary tag push with RECOVERY_SOURCE_MODE=tag; it must regenerate canonical tag metadata, while main-source execution must retain drift checking and the mutation guard must reject every tracked path except CHANGELOG.md."
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static","pnpm security:scan"
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),Release / Validate exact-tag source and generated changelog
+body: ""

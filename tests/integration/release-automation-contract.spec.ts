@@ -867,7 +867,7 @@ exit "\${NPM_STATUS}"
       "utf8",
     );
     expect(workflow).toContain(
-      '[ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" = "tag" ]',
+      '[ "${RECOVERY_SOURCE_MODE}" = "tag" ]',
     );
     expect(workflow).toContain("pnpm changelog:pm");
     expect(workflow).toContain("pnpm changelog:pm:check");
@@ -963,6 +963,16 @@ printf '%s' "\${UNEXPECTED_PATHS}"
         RECOVERY_SOURCE_MODE: "tag",
       });
       expect(ordinaryTagPush.status).toBe(0);
+      expect(await readFile(invocationLog, "utf8")).toContain(
+        "pnpm changelog:pm\n",
+      );
+
+      await writeFile(invocationLog, "", "utf8");
+      const reviewedMainSource = runScenario({
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        RECOVERY_SOURCE_MODE: "main",
+      });
+      expect(reviewedMainSource.status).toBe(0);
       expect(await readFile(invocationLog, "utf8")).toBe(
         "pnpm changelog:pm:check\n",
       );

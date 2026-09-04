@@ -30,7 +30,8 @@ authoritative blocker-recovery run selection by
 [pm-db8onn](../.agents/pm/issues/pm-db8onn.toon), and queued automatic
 same-day recovery by [pm-dm2vfz](../.agents/pm/issues/pm-dm2vfz.toon).
 Bounded Sentry request latency is tracked by
-[pm-b9g2cs](../.agents/pm/issues/pm-b9g2cs.toon).
+[pm-b9g2cs](../.agents/pm/issues/pm-b9g2cs.toon), and exact-tag changelog
+stabilization by [pm-e63v1x](../.agents/pm/issues/pm-e63v1x.toon).
 
 ## Version Policy
 
@@ -360,10 +361,12 @@ git push origin v<version>
 - build, clone-local merge-driver installation, typecheck, test, and coverage
 - generated changelog verification and `pm-changelog` installation before the
   tracker-bearing static gate, so a clean checkout does not misclassify the
-  managed extension's linked files as missing. Recovery of an unpublished
-  immutable tag regenerates only `CHANGELOG.md` with the tagged checkout's
-  canonical package script and fails if that operation changes any other
-  tracked source path (apart from managed-extension install metadata).
+  managed extension's linked files as missing. Every exact-tag source,
+  including an ordinary tag push and recovery of an unpublished immutable tag,
+  regenerates only `CHANGELOG.md` with the tagged checkout's canonical package
+  script and fails if that operation changes any other tracked source path
+  (apart from managed-extension install metadata). Reviewed `main` recovery
+  sources retain the non-mutating drift check.
 - static quality gate (shared complexity, duplication, dead/orphan module, file/folder hygiene, source/exported docstring coverage profile)
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; Sentry requests use the fail-closed bounded `--sentry-request-timeout-ms` contract (default `120000`, maximum `300000`); `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
@@ -458,8 +461,10 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   the existing immutable tag, reapplies the version guard, installs the managed
   changelog extension, regenerates the package changelog with the tagged
   checkout's canonical policy under a tracked-path mutation guard, and permits
-  first publication only from that tagged source. Other registry failures stop
-  before source selection or publication.
+  first publication only from that tagged source. Ordinary tag-push releases
+  use the same guarded regeneration because their tag did not exist when the
+  release commit's changelog was prepared. Other registry failures stop before
+  source selection or publication.
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
