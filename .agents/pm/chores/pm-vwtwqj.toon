@@ -1,0 +1,47 @@
+id: pm-vwtwqj
+title: Refresh compatible @types/node 26.4.1 patch
+description: Adopt the registry-current Node 26 type patch while preserving the published @types/node >=22 consumer range and the separately governed npm-package-arg 14 and TypeScript 7 major migrations.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-04T05:57:54.655Z"
+updated_at: "2026-09-04T06:43:14.157Z"
+closed_at: "2026-09-04T06:43:13.551Z"
+completed_at: "2026-09-04T06:43:13.551Z"
+author: "harness:codex"
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve @types/node 26.4.1; build, typecheck, exact coverage, static quality, packed npx/bunx smoke, audit, and hosted review pass; pnpm outdated contains only npm-package-arg 14 and TypeScript 7 under their canonical open items."
+parent: pm-u9d0
+resolution: Development types resolve @types/node 26.4.1 as a single lockfile instance; the published @types/node dependency remains >=22.
+expected_result: The compatible patch is current without narrowing supported Node runtimes or taking the separately tracked incompatible major upgrades.
+actual_result: "Typecheck, pnpm audit, full exact coverage, static quality, and packed npx/bunx acceptance passed; live outdated state contains only the two existing major-migration items."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2czc,verifies,"2026-09-04T05:58:05.140Z","harness:codex","cli:update:dep",detected
+  pm-do5b,discovered_from,"2026-09-04T05:58:05.140Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-04T05:58:05.140Z","harness:codex","cli:update:dep",detected
+  pm-vwuidf,recurs_from,"2026-09-04T05:58:05.140Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-04T06:03:51.696Z","harness:codex","Implementation evidence: the published dependency range remains @types/node >=22 while the development constraint is ^26.4.1 and the lockfile resolves a single 26.4.1 instance across Vite/Vitest. Complete repository/package/example typecheck passes. Live pnpm outdated now contains only npm-package-arg 14 (pm-ksr40d) and TypeScript 7 (pm-do5b); pnpm audit reports zero vulnerabilities across 424 dependencies and GitHub dependency/code/secret alert inventories are all zero."
+  "2026-09-04T06:23:34.543Z","harness:codex","Final repository verification: pnpm quality:static passed the complete mandatory static gate; node scripts/run-tests.mjs coverage passed 603 files and 8,350 tests at exact 100% statements, branches, functions, and lines; pnpm security:scan, pnpm audit, documentation links, and package-artifact checks passed. GitHub Dependabot, code-scanning, and secret-scanning alert inventories were empty. TypeScript validation passed with @types/node 26.4.1, pnpm audit reports zero vulnerabilities, and pnpm outdated leaves only the already-tracked engine-incompatible npm-package-arg 14 and TypeScript 7 migrations."
+  "2026-09-04T06:42:50.470Z","harness:codex","Terminal closeout evidence: exact-tree coverage passed 603 files and 8,351 tests at 100/100/100/100; full static quality and the packed npx/bunx acceptance passed with the compatible Node type patch present in the workspace."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T06:22:43.791Z","harness:codex","When the same package appears in runtime and development dependencies, pnpm update can rewrite the published compatibility range; inspect and restore the manifest range before regenerating the lockfile."
+files[2]{path,scope,note}:
+  package.json,project,Compatible Node type range refresh
+  pnpm-lock.yaml,project,Resolved Node type patch
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  pnpm typecheck,project,600,"harness:codex","2026-09-04T05:58:09.340Z",local_mutation,feat/merge-decision-integrity-recovery,Repository and packed-package type contracts
+test_runs[1]:
+  - run_id: test-local-mtmjo5ki-1juroa
+    kind: test
+    status: passed
+    started_at: "2026-09-04T05:59:11.595Z"
+    finished_at: "2026-09-04T05:59:53.394Z"
+    recorded_at: "2026-09-04T05:59:53.394Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+close_reason: Refreshed the compatible Node type patch while preserving the published runtime compatibility range.
+body: ""

@@ -44,30 +44,64 @@ const zeta = JSON.stringify({
 });
 
 describe("item merge direction contract", () => {
-  it("produces identical output when ours and theirs are swapped", () => {
+  it("produces identical latest-write output when ours and theirs are swapped", () => {
     const forward = mergeItemDocuments(base, alpha, zeta, {
       format: "json",
-      conflictResolution: "stable_value_order",
+      conflictResolution: "latest_document_update",
     });
     const reversed = mergeItemDocuments(base, zeta, alpha, {
       format: "json",
-      conflictResolution: "stable_value_order",
+      conflictResolution: "latest_document_update",
     });
 
     expect(forward.merged).toBe(reversed.merged);
     expect(forward.conflict_fields).toContain("title");
-    expect(forward.conflict_resolution).toBe("stable_value_order");
+    expect(forward.conflict_resolution).toBe("latest_document_update");
     expect(forward.requested_preference).toBe("ours");
+    expect(forward.requested_preference_applied).toBe(false);
     expect(forward).not.toHaveProperty("preferred");
     expect(forward.conflict_decisions).toContainEqual(
       expect.objectContaining({
         field: "title",
         ours: "alpha",
         theirs: "zeta",
-        retained: "alpha",
-        discarded: "zeta",
+        retained: "zeta",
+        discarded: "alpha",
+        retained_side: "theirs",
+        resolution_basis: "document_updated_at",
       }),
     );
+    expect(JSON.parse(forward.merged).title).toBe("zeta");
+  });
+
+  it("uses stable value order only as the equal-timestamp convergence tie-break", () => {
+    const equalAlpha = JSON.stringify({
+      ...JSON.parse(alpha),
+      updated_at: "2026-08-08T03:00:00.000Z",
+    });
+    const equalZeta = JSON.stringify({
+      ...JSON.parse(zeta),
+      updated_at: "2026-08-08T03:00:00.000Z",
+    });
+    const forward = mergeItemDocuments(base, equalAlpha, equalZeta, {
+      format: "json",
+      conflictResolution: "latest_document_update",
+      preferred: "theirs",
+    });
+    const reversed = mergeItemDocuments(base, equalZeta, equalAlpha, {
+      format: "json",
+      conflictResolution: "latest_document_update",
+      preferred: "ours",
+    });
+
+    expect(forward.merged).toBe(reversed.merged);
     expect(JSON.parse(forward.merged).title).toBe("alpha");
+    expect(forward.conflict_decisions).toContainEqual(
+      expect.objectContaining({
+        field: "title",
+        retained: "alpha",
+        resolution_basis: "stable_value_tiebreak",
+      }),
+    );
   });
 });

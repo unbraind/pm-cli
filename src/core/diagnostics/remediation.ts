@@ -249,9 +249,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "merge_receipt_history_reference_missing",
-    command: "pm health --check-only --full --json",
+    command: "pm merge reconcile --force",
     summary:
-      "One or more append-only history coordinates reference receipt evidence that is no longer present; inspect the bounded item, line, and privacy-safe receipt locator, then recover the named evidence from an authoritative clone or backup without rewriting history.",
+      "Review the bounded coordinates and recover available evidence first; for exact pre-durable clone-local-only references, --force appends an audited disposition and proves the health finding is cleared without rewriting history.",
   },
   {
     code: "validate_merge_decisions_unreviewed",

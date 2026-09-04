@@ -97,7 +97,9 @@ export interface MergeDriverResult {
   item?: {
     fields_from_theirs: string[];
     union_fields: string[];
-    conflict_resolution: "stable_value_order";
+    conflict_resolution: "latest_document_update";
+    /** Item scalars ignore branch-direction preference under the convergent recency policy. */
+    requested_preference_applied: false;
   };
   /** JSON-merge key accounting; present only for the json artifact. */
   json?: {
@@ -242,14 +244,15 @@ export async function runMergeDriver(
       schema: settings?.schema,
       extensionFieldNames,
       preferred,
-      conflictResolution: "stable_value_order",
+      conflictResolution: "latest_document_update",
     });
     merged = itemMerge.merged;
     conflicts.push(...itemMerge.conflict_fields);
     result.item = {
       fields_from_theirs: itemMerge.fields_from_theirs,
       union_fields: itemMerge.union_fields,
-      conflict_resolution: "stable_value_order",
+      conflict_resolution: "latest_document_update",
+      requested_preference_applied: false,
     };
     if (options.itemPath !== undefined) {
       const mergedDocument = parseItemDocument(merged, {
@@ -272,7 +275,7 @@ export async function runMergeDriver(
         cwd: process.cwd(),
         itemPath: options.itemPath,
         preferred,
-        conflictResolution: "stable_value_order",
+        conflictResolution: "latest_document_update",
         fieldsFromTheirs: itemMerge.fields_from_theirs,
         unionFields: itemMerge.union_fields,
         mergedFieldHashes: Object.fromEntries(
@@ -313,7 +316,7 @@ export async function runMergeDriver(
         ? 'Run "pm merge report" to inspect clone-local merge evidence.'
         : `Run "pm merge report" and correlate receipt ${result.receipt.receipt_id} with item ${result.receipt.item_id}; clone-local discarded values are never copied into this result.`;
     guidance.push(
-      `Both branches changed ${conflicts.join(", ")}; the item driver kept the direction-independent stable value. ${receiptGuidance} Review the merged file, re-apply the discarded change if needed, then "git add" it.`,
+      `Both branches changed ${conflicts.join(", ")}; the item driver kept the value from the later document update, with stable value order only as an equal-timestamp tie-break. --prefer does not apply to convergent item scalar conflicts. ${receiptGuidance} Review the merged file, re-apply the discarded change if needed, then "git add" it.`,
     );
   }
   if (artifact === "history" && result.history?.reanchored) {

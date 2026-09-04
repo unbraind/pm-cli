@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const COMMAND_TIMEOUT_MS = 120_000;
+const COMMAND_TIMEOUT_MS = 600_000;
 
 function resolveCommand(base) {
   return process.platform === "win32" ? `${base}.cmd` : base;

@@ -6,7 +6,14 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 
+import {
+  compareTimestampStrings,
+  isRfc3339DateTime,
+} from "../../core/shared/time.js";
 import { isSafeReceiptId } from "../merge/receipts.js";
+
+/** First commit timestamp at which merge receipts gained a tracked durable copy. */
+export const DURABLE_MERGE_RECEIPT_INTRODUCED_AT = "2026-08-09T16:15:18.000Z";
 
 /** One receipt reference discovered at an immutable history coordinate. */
 export interface HistoryMergeReceiptReference {
@@ -18,6 +25,24 @@ export interface HistoryMergeReceiptReference {
   receiptId: string;
   /** Whether the summary is a complete supported preferred-era record. */
   legacySummaryAccepted: boolean;
+  /** Timestamp of the history event that introduced the reference, when valid. */
+  eventTimestamp?: string;
+}
+
+/** Audited disposition for one receipt that a pre-durable writer could never publish. */
+export interface HistoryMergeReceiptDisposition {
+  /** Item whose history contains both the original reference and disposition. */
+  itemId: string;
+  /** Receipt identity explicitly accepted as unrecoverable. */
+  receiptId: string;
+  /** One-based coordinate of the original merge event. */
+  originalHistoryLine: number;
+  /** Timestamp copied from the original merge event for exact matching. */
+  originalEventTimestamp: string;
+  /** One-based coordinate of the later audit event that records this disposition. */
+  auditHistoryLine: number;
+  /** Closed reason vocabulary for this exceptional compatibility path. */
+  reason: "legacy_clone_local_only";
 }
 
 /** Missing-reference coordinate returned to bounded integrity diagnostics. */
@@ -38,6 +63,8 @@ export interface HistoryMergeReceiptReferenceClassification {
   missing: MissingHistoryMergeReceiptReference[];
   /** Complete preferred-era summaries accepted without impossible migration. */
   acceptedLegacyCount: number;
+  /** Pre-durable references accepted by a later explicit audited disposition. */
+  acceptedDispositionCount: number;
 }
 
 /** Return whether an unknown value is a non-array record. */
@@ -179,6 +206,46 @@ export function extractHistoryMergeReceiptReferences(
           receipt,
           historyItemId,
         ),
+        ...(typeof value.ts === "string" && isRfc3339DateTime(value.ts)
+          ? { eventTimestamp: value.ts }
+          : {}),
+      },
+    ];
+  });
+}
+
+/** Extract validated explicit missing-receipt dispositions from one merge audit event. */
+export function extractHistoryMergeReceiptDispositions(
+  value: unknown,
+  historyItemId: string,
+  historyLine: number,
+): HistoryMergeReceiptDisposition[] {
+  if (!isRecord(value) || value.op !== "merge_reconcile") return [];
+  if (!isRecord(value.context) || !isRecord(value.context.merge)) return [];
+  const dispositions = value.context.merge.missing_receipt_dispositions;
+  if (!Array.isArray(dispositions) || dispositions.length > 256) return [];
+  return dispositions.flatMap((disposition) => {
+    if (
+      !isRecord(disposition) ||
+      typeof disposition.receipt_id !== "string" ||
+      !isSafeReceiptId(disposition.receipt_id) ||
+      typeof disposition.original_history_line !== "number" ||
+      !Number.isSafeInteger(disposition.original_history_line) ||
+      disposition.original_history_line < 1 ||
+      typeof disposition.original_event_ts !== "string" ||
+      !isRfc3339DateTime(disposition.original_event_ts) ||
+      disposition.reason !== "legacy_clone_local_only"
+    ) {
+      return [];
+    }
+    return [
+      {
+        itemId: historyItemId,
+        receiptId: disposition.receipt_id,
+        originalHistoryLine: disposition.original_history_line,
+        originalEventTimestamp: disposition.original_event_ts,
+        auditHistoryLine: historyLine,
+        reason: disposition.reason,
       },
     ];
   });
@@ -188,12 +255,36 @@ export function extractHistoryMergeReceiptReferences(
 export function classifyHistoryMergeReceiptReferences(
   references: readonly HistoryMergeReceiptReference[],
   availableReceiptIds: ReadonlySet<string>,
+  dispositions: readonly HistoryMergeReceiptDisposition[] = [],
 ): HistoryMergeReceiptReferenceClassification {
+  const dispositionAuditLineByCoordinate = new Map<string, number>();
+  for (const disposition of dispositions) {
+    const coordinate = `${disposition.itemId}\0${disposition.originalHistoryLine}\0${disposition.receiptId}\0${disposition.originalEventTimestamp}`;
+    dispositionAuditLineByCoordinate.set(
+      coordinate,
+      Math.max(
+        dispositionAuditLineByCoordinate.get(coordinate) ?? 0,
+        disposition.auditHistoryLine,
+      ),
+    );
+  }
+  const dispositionAccepts = (
+    reference: HistoryMergeReceiptReference,
+  ): boolean =>
+    reference.eventTimestamp !== undefined &&
+    compareTimestampStrings(
+      reference.eventTimestamp,
+      DURABLE_MERGE_RECEIPT_INTRODUCED_AT,
+    ) < 0 &&
+    (dispositionAuditLineByCoordinate.get(
+      `${reference.itemId}\0${reference.line}\0${reference.receiptId}\0${reference.eventTimestamp}`,
+    ) ?? 0) > reference.line;
   const missing = references
     .filter(
       (reference) =>
         !reference.legacySummaryAccepted &&
-        !availableReceiptIds.has(reference.receiptId),
+        !availableReceiptIds.has(reference.receiptId) &&
+        !dispositionAccepts(reference),
     )
     .map((reference) => ({
       item_id: reference.itemId,
@@ -211,5 +302,6 @@ export function classifyHistoryMergeReceiptReferences(
     acceptedLegacyCount: references.filter(
       (reference) => reference.legacySummaryAccepted,
     ).length,
+    acceptedDispositionCount: references.filter(dispositionAccepts).length,
   };
 }

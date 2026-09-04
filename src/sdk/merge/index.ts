@@ -18,6 +18,8 @@ export {
   type ItemDocumentMergeResult,
   type JsonDocumentMergeResult,
   type ItemMergeConflictDecision,
+  type ItemScalarConflictResolution,
+  type ItemScalarResolutionBasis,
   type MergePreferredSide,
   type RelationshipStreamMergeResult,
 } from "./three-way.js";

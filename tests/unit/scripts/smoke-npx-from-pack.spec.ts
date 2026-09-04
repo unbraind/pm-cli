@@ -193,7 +193,7 @@ describe("smoke-npx-from-pack", () => {
     await harness.importModule(SCRIPT);
 
     for (const [command, args, options] of execFileSync.mock.calls) {
-      expect(options?.timeout).toBe(120_000);
+      expect(options?.timeout).toBe(600_000);
       const normalizedCommand = baseCommand(command);
       if (normalizedCommand === "npx" || (normalizedCommand === "npm" && ["exec", "install"].includes(args[0] ?? ""))) {
         expect(args).not.toContain("--offline");

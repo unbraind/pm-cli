@@ -23,6 +23,7 @@ import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { isRfc3339DateTime, nowIso } from "../../core/shared/time.js";
 import type {
   ItemMergeConflictDecision,
+  ItemScalarConflictResolution,
   MergePreferredSide,
 } from "./three-way.js";
 import { readBoundedRegularFile } from "./receipt-file-boundary.js";
@@ -41,6 +42,7 @@ const RECEIPT_KEYS = new Set([
   "item_path",
   "item_id",
   "requested_preference",
+  "requested_preference_applied",
   "preferred",
   "conflict_resolution",
   "fields_from_theirs",
@@ -51,6 +53,7 @@ const RECEIPT_KEYS = new Set([
   "created_at",
   "reconciled_at",
   "value_availability",
+  "value_policy",
   "evidence_source",
 ]);
 
@@ -65,7 +68,37 @@ const RECEIPT_DECISION_KEYS = new Set([
   "theirs",
   "retained",
   "discarded",
+  "retained_side",
+  "resolution_basis",
 ]);
+
+const DURABLE_VALUE_POLICY = "bounded_non_sensitive_scalars_v1" as const;
+const REVIEWABLE_BUILTIN_STATUSES = new Set([
+  "open",
+  "in_progress",
+  "blocked",
+  "closed",
+  "canceled",
+]);
+const REVIEWABLE_ORDINAL_FIELDS = new Set(["risk", "confidence", "severity"]);
+const REVIEWABLE_ORDINAL_VALUES = new Set([
+  "low",
+  "medium",
+  "high",
+  "critical",
+]);
+const REVIEWABLE_DURABLE_VALUES_BY_FIELD = new Map<string, ReadonlySet<string>>(
+  [
+    ["priority", new Set([0, 1, 2, 3, 4].map(stableStringify))],
+    ["status", new Set([...REVIEWABLE_BUILTIN_STATUSES].map(stableStringify))],
+    ...[...REVIEWABLE_ORDINAL_FIELDS].map(
+      (field): [string, ReadonlySet<string>] => [
+        field,
+        new Set([...REVIEWABLE_ORDINAL_VALUES].map(stableStringify)),
+      ],
+    ),
+  ],
+);
 
 /** One clone-local merge receipt with recoverable branch values. */
 export interface MergeDecisionReceipt {
@@ -79,10 +112,12 @@ export interface MergeDecisionReceipt {
   item_id: string;
   /** Side requested by the caller; stable-value decisions can retain either side. */
   requested_preference?: MergePreferredSide;
+  /** Whether requested preference participates in item scalar selection. */
+  requested_preference_applied?: boolean;
   /** Legacy schema-v1 key accepted while reading older clone-local receipts. */
   preferred?: MergePreferredSide;
   /** Scalar-conflict selection contract used by the item driver. */
-  conflict_resolution: "preferred_side" | "stable_value_order";
+  conflict_resolution: ItemScalarConflictResolution;
   /** Fields selected cleanly from the other branch. */
   fields_from_theirs: string[];
   /** Collections combined from both branches. */
@@ -98,7 +133,9 @@ export interface MergeDecisionReceipt {
   /** Reconciliation timestamp, when consumed. */
   reconciled_at?: string;
   /** Whether decision values are recoverable locally or represented by hashes only. */
-  value_availability?: "clone_local" | "hash_only";
+  value_availability?: "clone_local" | "hash_only" | "bounded_inline" | "mixed";
+  /** Versioned rule governing which durable scalar previews may be committed. */
+  value_policy?: typeof DURABLE_VALUE_POLICY;
   /** Runtime-only provenance assigned by the reader; serialized values are ignored. */
   evidence_source?: "clone_local" | "durable";
 }
@@ -119,8 +156,10 @@ export interface MergeDecisionReceiptSummary {
   union_fields: string[];
   /** Side requested by the caller; decision hashes prove the actual retained values. */
   requested_preference: MergePreferredSide;
+  /** Whether requested preference participated in item scalar selection. */
+  requested_preference_applied: boolean;
   /** Scalar-conflict selection contract used by the item driver. */
-  conflict_resolution: "preferred_side" | "stable_value_order";
+  conflict_resolution: ItemScalarConflictResolution;
   /** Hashes proving the retained and discarded values without publishing them. */
   decisions: Array<{
     field: string;
@@ -188,7 +227,20 @@ export interface MergeReceiptInvalidEvidence {
     | "candidate_unreadable"
     | "candidate_invalid_json"
     | "schema_or_identity_invalid"
+    | "schema_invalid"
+    | "identity_invalid"
     | "copy_provenance_mismatch";
+  /** Exact validation boundary when schema or identity evidence is rejected. */
+  validation_error?:
+    | "required_fields"
+    | "receipt_id"
+    | "item_id"
+    | "item_path"
+    | "filename"
+    | "collections"
+    | "enums"
+    | "timestamps"
+    | "durable_decisions";
   /** Receipt identity when the bounded filename itself is a valid receipt id. */
   receipt_id?: string;
   /** SHA-256 locator for an unsafe or malformed candidate filename. */
@@ -286,23 +338,32 @@ function hasBoundedJsonStructure(value: unknown): boolean {
 }
 
 function isMergeDecision(value: unknown): value is ItemMergeConflictDecision {
-  return (
-    isRecord(value) &&
-    hasOnlyKeys(value, RECEIPT_DECISION_KEYS) &&
-    typeof value.field === "string" &&
-    value.field.length > 0 &&
-    value.field.length <= 256 &&
-    Object.hasOwn(value, "base") &&
-    Object.hasOwn(value, "ours") &&
-    Object.hasOwn(value, "theirs") &&
-    Object.hasOwn(value, "retained") &&
-    Object.hasOwn(value, "discarded") &&
-    hasBoundedJsonStructure(value.base) &&
-    hasBoundedJsonStructure(value.ours) &&
-    hasBoundedJsonStructure(value.theirs) &&
-    hasBoundedJsonStructure(value.retained) &&
-    hasBoundedJsonStructure(value.discarded)
-  );
+  if (!isRecord(value)) return false;
+  const retainedSides = [undefined, "ours", "theirs"];
+  const resolutionBases = [
+    undefined,
+    "requested_preference",
+    "document_updated_at",
+    "stable_value_tiebreak",
+  ];
+  return [
+    hasOnlyKeys(value, RECEIPT_DECISION_KEYS),
+    typeof value.field === "string",
+    typeof value.field === "string" && value.field.length > 0,
+    typeof value.field === "string" && value.field.length <= 256,
+    Object.hasOwn(value, "base"),
+    Object.hasOwn(value, "ours"),
+    Object.hasOwn(value, "theirs"),
+    Object.hasOwn(value, "retained"),
+    Object.hasOwn(value, "discarded"),
+    hasBoundedJsonStructure(value.base),
+    hasBoundedJsonStructure(value.ours),
+    hasBoundedJsonStructure(value.theirs),
+    hasBoundedJsonStructure(value.retained),
+    hasBoundedJsonStructure(value.discarded),
+    retainedSides.includes(value.retained_side as string | undefined),
+    resolutionBases.includes(value.resolution_basis as string | undefined),
+  ].every(Boolean);
 }
 
 function isMergedFieldHashes(value: unknown): value is Record<string, string> {
@@ -339,16 +400,6 @@ function isSafeReceiptItemPath(value: unknown, itemId: string): boolean {
   );
 }
 
-function hasValidReceiptIdentity(value: Record<string, unknown>): boolean {
-  return !hasOnlyKeys(value, RECEIPT_KEYS) || value.version !== 1
-    ? false
-    : typeof value.id === "string" &&
-        isSafeReceiptId(value.id) &&
-        typeof value.item_id === "string" &&
-        RECEIPT_ITEM_ID_PATTERN.test(value.item_id) &&
-        isSafeReceiptItemPath(value.item_path, value.item_id);
-}
-
 function hasValidReceiptCollections(value: Record<string, unknown>): boolean {
   return !isStringArray(value.fields_from_theirs) ||
     !isStringArray(value.union_fields) ||
@@ -362,15 +413,30 @@ function hasValidReceiptCollections(value: Record<string, unknown>): boolean {
 
 function hasValidReceiptEnums(value: Record<string, unknown>): boolean {
   const preferences = [undefined, "ours", "theirs"];
-  const resolutions = [undefined, "preferred_side", "stable_value_order"];
-  const availabilities = [undefined, "clone_local", "hash_only"];
+  const resolutions = [
+    undefined,
+    "preferred_side",
+    "stable_value_order",
+    "latest_document_update",
+  ];
+  const availabilities = [
+    undefined,
+    "clone_local",
+    "hash_only",
+    "bounded_inline",
+    "mixed",
+  ];
   const sources = [undefined, "clone_local", "durable"];
   return (
     preferences.includes(value.requested_preference as string | undefined) &&
     preferences.includes(value.preferred as string | undefined) &&
+    (value.requested_preference_applied === undefined ||
+      typeof value.requested_preference_applied === "boolean") &&
     resolutions.includes(value.conflict_resolution as string | undefined) &&
     (value.state === "pending" || value.state === "reconciled") &&
     availabilities.includes(value.value_availability as string | undefined) &&
+    (value.value_policy === undefined ||
+      value.value_policy === DURABLE_VALUE_POLICY) &&
     sources.includes(value.evidence_source as string | undefined)
   );
 }
@@ -385,35 +451,110 @@ function hasValidReceiptTimestamps(value: Record<string, unknown>): boolean {
   );
 }
 
-function hasHashOnlyDurableDecisions(receipt: MergeDecisionReceipt): boolean {
-  return (
-    receipt.value_availability === "hash_only" &&
-    receipt.decisions.every(
+function hasDurableDecisionValue(field: string, value: unknown): boolean {
+  if (!isRecord(value) || isPrehashedValue(value) === undefined) return false;
+  const keys = Object.keys(value);
+  if (!keys.every((key) => key === "pm_value_hash" || key === "pm_value")) {
+    return false;
+  }
+  if (!Object.hasOwn(value, "pm_value")) return keys.length === 1;
+  const preview = value.pm_value;
+  const allowed =
+    preview === null ||
+    REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
+      stableStringify(preview),
+    ) === true;
+  return allowed && sha256Hex(stableStringify(preview)) === value.pm_value_hash;
+}
+
+function hasValidDurableDecisions(receipt: MergeDecisionReceipt): boolean {
+  if (
+    !receipt.decisions.every(
       (decision) =>
         decision.base === null &&
         decision.ours === null &&
         decision.theirs === null &&
-        isExactPrehashedValue(decision.retained) &&
-        isExactPrehashedValue(decision.discarded),
+        hasDurableDecisionValue(decision.field, decision.retained) &&
+        hasDurableDecisionValue(decision.field, decision.discarded),
     )
+  ) {
+    return false;
+  }
+  const inlineValueCount = receipt.decisions.reduce(
+    (count, decision) =>
+      count +
+      (isRecord(decision.retained) &&
+      Object.hasOwn(decision.retained, "pm_value")
+        ? 1
+        : 0) +
+      (isRecord(decision.discarded) &&
+      Object.hasOwn(decision.discarded, "pm_value")
+        ? 1
+        : 0),
+    0,
   );
+  const expectedAvailability =
+    inlineValueCount === 0
+      ? "hash_only"
+      : inlineValueCount === receipt.decisions.length * 2
+        ? "bounded_inline"
+        : "mixed";
+  return (
+    receipt.value_availability === expectedAvailability &&
+    (inlineValueCount === 0 || receipt.value_policy === DURABLE_VALUE_POLICY)
+  );
+}
+
+function receiptValidationError(
+  value: unknown,
+  evidenceSource: "clone_local" | "durable",
+): MergeReceiptInvalidEvidence["validation_error"] | null {
+  if (!isRecord(value)) return "required_fields";
+  for (const key of [
+    "version",
+    "id",
+    "item_path",
+    "item_id",
+    "fields_from_theirs",
+    "union_fields",
+    "decisions",
+    "state",
+    "created_at",
+  ]) {
+    if (!Object.hasOwn(value, key)) return "required_fields";
+  }
+  if (value.version !== 1 || !hasOnlyKeys(value, RECEIPT_KEYS)) {
+    return "required_fields";
+  }
+  if (typeof value.id !== "string" || !isSafeReceiptId(value.id)) {
+    return "receipt_id";
+  }
+  if (
+    typeof value.item_id !== "string" ||
+    !RECEIPT_ITEM_ID_PATTERN.test(value.item_id)
+  ) {
+    return "item_id";
+  }
+  if (!isSafeReceiptItemPath(value.item_path, value.item_id)) {
+    return "item_path";
+  }
+  if (!hasValidReceiptCollections(value)) return "collections";
+  if (!hasValidReceiptEnums(value)) return "enums";
+  if (!hasValidReceiptTimestamps(value)) return "timestamps";
+  if (
+    evidenceSource === "durable" &&
+    !hasValidDurableDecisions(value as unknown as MergeDecisionReceipt)
+  ) {
+    return "durable_decisions";
+  }
+  return null;
 }
 
 function isMergeDecisionReceipt(
   value: unknown,
   evidenceSource: "clone_local" | "durable",
 ): value is MergeDecisionReceipt {
-  if (
-    !isRecord(value) ||
-    !hasValidReceiptIdentity(value) ||
-    !hasValidReceiptCollections(value) ||
-    !hasValidReceiptEnums(value) ||
-    !hasValidReceiptTimestamps(value)
-  ) {
-    return false;
-  }
-  const receipt = value as unknown as MergeDecisionReceipt;
-  return evidenceSource !== "durable" || hasHashOnlyDurableDecisions(receipt);
+  return receiptValidationError(value, evidenceSource) === null;
 }
 
 async function readBoundedRegularReceiptFile(
@@ -518,6 +659,9 @@ export function summarizeMergeReceipt(
     union_fields: receipt.union_fields,
     requested_preference:
       receipt.requested_preference ?? receipt.preferred ?? "ours",
+    requested_preference_applied:
+      receipt.requested_preference_applied ??
+      (receipt.conflict_resolution ?? "preferred_side") === "preferred_side",
     conflict_resolution: receipt.conflict_resolution,
     decisions: receipt.decisions.map((decision) => ({
       field: decision.field,
@@ -546,12 +690,19 @@ function isPrehashedValue(value: unknown): string | undefined {
     : undefined;
 }
 
-function isExactPrehashedValue(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    Object.keys(value).length === 1 &&
-    isPrehashedValue(value) !== undefined
-  );
+function durableValueEvidence(
+  field: string,
+  value: unknown,
+): { pm_value_hash: string; pm_value?: unknown } {
+  const pmValueHash = sha256Hex(stableStringify(value));
+  const reviewable =
+    value === null ||
+    REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
+      stableStringify(value),
+    ) === true;
+  return reviewable
+    ? { pm_value_hash: pmValueHash, pm_value: value }
+    : { pm_value_hash: pmValueHash };
 }
 
 /** Persist one item-driver outcome in the clone-local Git directory. */
@@ -559,7 +710,7 @@ export async function writeMergeReceipt(params: {
   cwd: string;
   itemPath: string;
   preferred: MergePreferredSide;
-  conflictResolution?: "preferred_side" | "stable_value_order";
+  conflictResolution?: ItemScalarConflictResolution;
   fieldsFromTheirs: string[];
   unionFields: string[];
   mergedFieldHashes?: Record<string, string>;
@@ -571,11 +722,7 @@ export async function writeMergeReceipt(params: {
   }
   const trimmedItemPath = params.itemPath.trim();
   const itemPath =
-    trimmedItemPath.length >= 2 &&
-    ((trimmedItemPath.startsWith("'") && trimmedItemPath.endsWith("'")) ||
-      (trimmedItemPath.startsWith('"') && trimmedItemPath.endsWith('"')))
-      ? trimmedItemPath.slice(1, -1)
-      : trimmedItemPath;
+    /^(['"])(.*)\1$/su.exec(trimmedItemPath)?.[2] ?? trimmedItemPath;
   const itemId = path.basename(itemPath, path.extname(itemPath));
   const receipt: MergeDecisionReceipt = {
     version: 1,
@@ -583,6 +730,8 @@ export async function writeMergeReceipt(params: {
     item_path: itemPath.replaceAll("\\", "/"),
     item_id: itemId,
     requested_preference: params.preferred,
+    requested_preference_applied:
+      (params.conflictResolution ?? "preferred_side") === "preferred_side",
     conflict_resolution: params.conflictResolution ?? "preferred_side",
     fields_from_theirs: [...params.fieldsFromTheirs],
     union_fields: [...params.unionFields],
@@ -605,18 +754,33 @@ export async function writeMergeReceipt(params: {
   );
   if (trackerRoot !== null) {
     const durableDirectory = durableReceiptDirectory(trackerRoot);
-    const summary = summarizeMergeReceipt(receipt);
+    const durableDecisions = receipt.decisions.map((decision) => ({
+      field: decision.field,
+      base: null,
+      ours: null,
+      theirs: null,
+      retained: durableValueEvidence(decision.field, decision.retained),
+      discarded: durableValueEvidence(decision.field, decision.discarded),
+      retained_side: decision.retained_side,
+      resolution_basis: decision.resolution_basis,
+    }));
+    const inlineValueCount = durableDecisions.reduce(
+      (count, decision) =>
+        count +
+        (Object.hasOwn(decision.retained, "pm_value") ? 1 : 0) +
+        (Object.hasOwn(decision.discarded, "pm_value") ? 1 : 0),
+      0,
+    );
     const durableReceipt: MergeDecisionReceipt = {
       ...receipt,
-      decisions: summary.decisions.map((decision) => ({
-        field: decision.field,
-        base: null,
-        ours: null,
-        theirs: null,
-        retained: { pm_value_hash: decision.retained_hash },
-        discarded: { pm_value_hash: decision.discarded_hash },
-      })),
-      value_availability: "hash_only",
+      decisions: durableDecisions,
+      value_availability:
+        inlineValueCount === 0
+          ? "hash_only"
+          : inlineValueCount === durableDecisions.length * 2
+            ? "bounded_inline"
+            : "mixed",
+      value_policy: DURABLE_VALUE_POLICY,
     };
     await ensureDir(durableDirectory);
     await writeFileAtomic(
@@ -658,14 +822,17 @@ async function readReceiptsFromDirectory(
   const invalidEvidence: MergeReceiptInvalidEvidence[] = [];
   const recordInvalidEvidence = (
     name: string,
-    reason: MergeReceiptInvalidEvidence["reason"],
+    candidate: Pick<MergeReceiptInvalidEvidence, "reason" | "validation_error">,
   ): void => {
     invalidEvidenceCount += 1;
     if (invalidEvidence.length >= RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT) return;
     const receiptId = name.slice(0, -".json".length);
     invalidEvidence.push({
       evidence_source: evidenceSource,
-      reason,
+      reason: candidate.reason,
+      ...(candidate.validation_error === undefined
+        ? {}
+        : { validation_error: candidate.validation_error }),
       ...(isSafeReceiptId(receiptId)
         ? { receipt_id: receiptId }
         : { candidate_name_hash: sha256Hex(name) }),
@@ -681,7 +848,7 @@ async function readReceiptsFromDirectory(
     if (candidate.receipt !== undefined) {
       receipts.push(candidate.receipt);
     } else {
-      recordInvalidEvidence(name, candidate.reason);
+      recordInvalidEvidence(name, candidate);
     }
   }
   return {
@@ -719,7 +886,11 @@ async function inspectReceiptCandidate(
   evidenceSource: "clone_local" | "durable",
 ): Promise<
   | { receipt: MergeDecisionReceipt; reason?: never }
-  | { receipt?: never; reason: MergeReceiptInvalidEvidence["reason"] }
+  | {
+      receipt?: never;
+      reason: MergeReceiptInvalidEvidence["reason"];
+      validation_error?: MergeReceiptInvalidEvidence["validation_error"];
+    }
 > {
   let raw: string | null;
   try {
@@ -734,23 +905,36 @@ async function inspectReceiptCandidate(
   } catch {
     return { reason: "candidate_invalid_json" };
   }
-  if (
-    !isMergeDecisionReceipt(parsed, evidenceSource) ||
-    name !== receiptFileName(parsed.id)
-  ) {
-    return { reason: "schema_or_identity_invalid" };
+  const validationError = receiptValidationError(parsed, evidenceSource);
+  if (validationError !== null) {
+    const identityErrors: ReadonlySet<
+      MergeReceiptInvalidEvidence["validation_error"]
+    > = new Set(["receipt_id", "item_id", "item_path"]);
+    return {
+      reason: identityErrors.has(validationError)
+        ? "identity_invalid"
+        : "schema_invalid",
+      validation_error: validationError,
+    };
+  }
+  const receipt = parsed as MergeDecisionReceipt;
+  if (name !== receiptFileName(receipt.id)) {
+    return { reason: "identity_invalid", validation_error: "filename" };
   }
   const {
     preferred: legacyPreference,
     evidence_source: _serializedEvidenceSource,
     ...receiptWithoutRuntimeKeys
-  } = parsed;
+  } = receipt;
   return {
     receipt: {
       ...receiptWithoutRuntimeKeys,
       requested_preference:
-        parsed.requested_preference ?? legacyPreference ?? "ours",
-      conflict_resolution: parsed.conflict_resolution ?? "preferred_side",
+        receipt.requested_preference ?? legacyPreference ?? "ours",
+      requested_preference_applied:
+        receipt.requested_preference_applied ??
+        (receipt.conflict_resolution ?? "preferred_side") === "preferred_side",
+      conflict_resolution: receipt.conflict_resolution ?? "preferred_side",
       evidence_source: evidenceSource,
     },
   };

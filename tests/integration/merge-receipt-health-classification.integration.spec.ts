@@ -275,8 +275,7 @@ describe("merge receipt health classification", () => {
         counts: { missing_merge_receipt_history_references: 101 },
         missing_merge_receipt_history_reference_details_truncated: true,
         remediation_map: {
-          merge_receipt_history_reference_missing:
-            "pm health --check-only --full --json",
+          merge_receipt_history_reference_missing: "pm merge reconcile --force",
         },
       });
       expect(

@@ -116,7 +116,9 @@ import {
 } from "../merge/receipts.js";
 import {
   classifyHistoryMergeReceiptReferences,
+  extractHistoryMergeReceiptDispositions,
   extractHistoryMergeReceiptReferences,
+  type HistoryMergeReceiptDisposition,
   type HistoryMergeReceiptReference,
 } from "./merge-receipt-history.js";
 import { runHistoryRepair } from "../history-repair.js";
@@ -622,6 +624,7 @@ interface HistoryIntegrityScan {
   conflictMarkers: Array<{ id: string; line: number; marker: string }>;
   invalidJson: Array<{ id: string; line: number }>;
   mergeReceiptReferences: HistoryMergeReceiptReference[];
+  mergeReceiptDispositions: HistoryMergeReceiptDisposition[];
 }
 
 async function scanHistoryIntegrity(
@@ -632,6 +635,8 @@ async function scanHistoryIntegrity(
   const conflictMarkers: HistoryIntegrityScan["conflictMarkers"] = [];
   const invalidJson: HistoryIntegrityScan["invalidJson"] = [];
   const mergeReceiptReferences: HistoryIntegrityScan["mergeReceiptReferences"] =
+    [];
+  const mergeReceiptDispositions: HistoryIntegrityScan["mergeReceiptDispositions"] =
     [];
   let files: string[] = [];
   try {
@@ -671,6 +676,9 @@ async function scanHistoryIntegrity(
             }),
           ),
         );
+        mergeReceiptDispositions.push(
+          ...extractHistoryMergeReceiptDispositions(parsed, itemId, index + 1),
+        );
       } catch {
         invalidJson.push({ id: itemId, line: index + 1 });
       }
@@ -682,6 +690,7 @@ async function scanHistoryIntegrity(
     conflictMarkers,
     invalidJson,
     mergeReceiptReferences,
+    mergeReceiptDispositions,
   };
 }
 
@@ -766,6 +775,7 @@ async function buildIntegrityCheck(
   const historyReceiptClassification = classifyHistoryMergeReceiptReferences(
     historyScan.mergeReceiptReferences,
     availableMergeReceiptIds,
+    historyScan.mergeReceiptDispositions,
   );
   const missingMergeReceiptReferences = historyReceiptClassification.missing;
   const pendingMergeReceipts = mergeReceiptEvidence.receipts.filter(
@@ -869,6 +879,8 @@ async function buildIntegrityCheck(
             missingMergeReceiptReferences.length,
           accepted_legacy_merge_receipt_references:
             historyReceiptClassification.acceptedLegacyCount,
+          accepted_missing_merge_receipt_dispositions:
+            historyReceiptClassification.acceptedDispositionCount,
         },
         item_unreadable: itemScan.unreadable,
         item_conflict_markers: itemScan.conflictMarkers,

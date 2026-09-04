@@ -4,10 +4,21 @@
  * Provides the post-merge SDK workflow that previews or repairs every drifted
  * item-history stream, then verifies history and storage integrity in one call.
  */
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { compareTimestampStrings } from "../../core/shared/time.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
+import { mapWithFixedConcurrency } from "../extension/concurrency.js";
+import { runHealth, type HealthResult } from "../governance/health.js";
+import {
+  DURABLE_MERGE_RECEIPT_INTRODUCED_AT,
+  extractHistoryMergeReceiptReferences,
+} from "../governance/merge-receipt-history.js";
+import { runValidate, type ValidateResult } from "../governance/validate.js";
 import {
   runHistoryRepair,
   runHistoryRepairAll,
@@ -15,15 +26,13 @@ import {
   type HistoryRepairCommandOptions,
   type HistoryRepairResult,
 } from "../history-repair.js";
-import { runValidate, type ValidateResult } from "../governance/validate.js";
+import { findGitWorkspaceRoot } from "./install.js";
 import {
   inspectMergeReceiptEvidence,
   markMergeReceiptReconciled,
   summarizeMergeReceipt,
   type MergeDecisionReceiptSummary,
 } from "./receipts.js";
-import { findGitWorkspaceRoot } from "./install.js";
-import { mapWithFixedConcurrency } from "../extension/concurrency.js";
 
 const RECEIPT_ONLY_REPAIR_CONCURRENCY = 4;
 
@@ -56,6 +65,14 @@ export interface MergeReconcileResult {
     pending_before: number;
     reconciled: number;
     summaries: MergeDecisionReceiptSummary[];
+    /** Missing durable references discovered before this reconciliation. */
+    missing_history_references_before: number;
+    /** Pre-durable references eligible for explicit audited disposition. */
+    legacy_disposition_eligible: number;
+    /** Eligible references dispositioned by this apply pass. */
+    legacy_disposition_recorded: number;
+    /** Missing durable references still blocking health after this pass. */
+    missing_history_references_after: number;
   };
   /** Post-operation history-drift and storage-integrity validation. */
   validation: ValidateResult;
@@ -63,6 +80,150 @@ export interface MergeReconcileResult {
   guidance: string[];
   /** ISO timestamp copied from the validation pass. */
   generated_at: string;
+}
+
+interface MissingReceiptHistoryCoordinate {
+  item_id: string;
+  history_line: number;
+  receipt_id: string;
+}
+
+interface LegacyReceiptDispositionCandidate extends MissingReceiptHistoryCoordinate {
+  original_event_ts: string;
+}
+
+function missingReceiptCoordinates(health: HealthResult): {
+  count: number;
+  coordinates: MissingReceiptHistoryCoordinate[];
+} {
+  const integrity = health.checks.find((check) => check.name === "integrity");
+  const counts = integrity?.details.counts;
+  const count =
+    typeof counts === "object" &&
+    counts !== null &&
+    !Array.isArray(counts) &&
+    typeof (counts as Record<string, unknown>)
+      .missing_merge_receipt_history_references === "number"
+      ? ((counts as Record<string, unknown>)
+          .missing_merge_receipt_history_references as number)
+      : 0;
+  const details =
+    integrity?.details.missing_merge_receipt_history_reference_details;
+  const coordinates = Array.isArray(details)
+    ? details.flatMap((detail) => {
+        if (
+          typeof detail !== "object" ||
+          detail === null ||
+          Array.isArray(detail)
+        ) {
+          return [];
+        }
+        const record = detail as Record<string, unknown>;
+        return typeof record.item_id === "string" &&
+          typeof record.history_line === "number" &&
+          Number.isSafeInteger(record.history_line) &&
+          typeof record.receipt_id === "string"
+          ? [
+              {
+                item_id: record.item_id,
+                history_line: record.history_line,
+                receipt_id: record.receipt_id,
+              },
+            ]
+          : [];
+      })
+    : [];
+  return { count, coordinates };
+}
+
+async function identifyLegacyDispositionCandidates(
+  pmRoot: string,
+  coordinates: readonly MissingReceiptHistoryCoordinate[],
+): Promise<LegacyReceiptDispositionCandidate[]> {
+  const candidates: LegacyReceiptDispositionCandidate[] = [];
+  for (const coordinate of coordinates) {
+    let raw: string;
+    try {
+      raw = await readFile(
+        path.join(pmRoot, "history", `${coordinate.item_id}.jsonl`),
+        "utf8",
+      );
+    } catch {
+      continue;
+    }
+    const line = raw.split(/\r?\n/)[coordinate.history_line - 1];
+    if (line === undefined || line.trim().length === 0) continue;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line) as unknown;
+    } catch {
+      continue;
+    }
+    const reference = extractHistoryMergeReceiptReferences(
+      parsed,
+      coordinate.item_id,
+    ).find((entry) => entry.receiptId === coordinate.receipt_id);
+    if (
+      reference?.eventTimestamp === undefined ||
+      compareTimestampStrings(
+        reference.eventTimestamp,
+        DURABLE_MERGE_RECEIPT_INTRODUCED_AT,
+      ) >= 0
+    ) {
+      continue;
+    }
+    candidates.push({
+      ...coordinate,
+      original_event_ts: reference.eventTimestamp,
+    });
+  }
+  return candidates;
+}
+
+async function recordLegacyReceiptDispositions(params: {
+  candidates: readonly LegacyReceiptDispositionCandidate[];
+  options: MergeReconcileOptions;
+  global: GlobalOptions;
+}): Promise<number> {
+  if (
+    params.options.dryRun === true ||
+    params.options.force !== true ||
+    params.candidates.length === 0
+  ) {
+    return 0;
+  }
+  const byItem = new Map<string, LegacyReceiptDispositionCandidate[]>();
+  for (const candidate of params.candidates) {
+    const itemCandidates = byItem.get(candidate.item_id) ?? [];
+    itemCandidates.push(candidate);
+    byItem.set(candidate.item_id, itemCandidates);
+  }
+  for (const [itemId, itemCandidates] of byItem) {
+    await runHistoryRepair(
+      itemId,
+      {
+        author: params.options.author ?? params.global.author,
+        message:
+          params.options.message ??
+          "accept unrecoverable pre-durable merge receipt references",
+        force: true,
+        auditOperation: "merge_reconcile",
+        forceAuditEntry: true,
+        auditContext: {
+          merge: {
+            missing_receipt_dispositions: itemCandidates.map((candidate) => ({
+              receipt_id: candidate.receipt_id,
+              original_history_line: candidate.history_line,
+              original_event_ts: candidate.original_event_ts,
+              reason: "legacy_clone_local_only",
+            })),
+          },
+        },
+      },
+      params.global,
+    );
+  }
+  return params.candidates.length;
 }
 
 async function runReceiptOnlyRepair(params: {
@@ -179,6 +340,17 @@ export async function runMergeReconcile(
 ): Promise<MergeReconcileResult> {
   const dryRun = options.dryRun === true;
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const preflightHealth = await runHealth(global, {
+    checkOnly: true,
+    full: true,
+    skipVectors: true,
+    skipDrift: true,
+  });
+  const missingBefore = missingReceiptCoordinates(preflightHealth);
+  const legacyDispositionCandidates = await identifyLegacyDispositionCandidates(
+    pmRoot,
+    missingBefore.coordinates,
+  );
   const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
   const receiptEvidence = await inspectMergeReceiptEvidence(
     gitWorkspaceRoot ?? process.cwd(),
@@ -201,6 +373,11 @@ export async function runMergeReconcile(
       },
     );
   }
+  const recordedLegacyDispositionCount = await recordLegacyReceiptDispositions({
+    candidates: legacyDispositionCandidates,
+    options,
+    global,
+  });
   const pendingReceipts = receiptEvidence.receipts;
   const receiptsByItem = new Map<string, typeof pendingReceipts>();
   for (const receipt of pendingReceipts) {
@@ -271,14 +448,28 @@ export async function runMergeReconcile(
     { checkHistoryDrift: true, checkStorageIntegrity: true },
     global,
   );
+  const postflightHealth =
+    recordedLegacyDispositionCount === 0
+      ? preflightHealth
+      : await runHealth(global, {
+          checkOnly: true,
+          full: true,
+          skipVectors: true,
+          skipDrift: true,
+        });
+  const missingAfter = missingReceiptCoordinates(postflightHealth);
   const mergeChecksGreen = validation.checks.every(
     (check) => check.status === "ok",
   );
   const receiptSettlementComplete = dryRun
     ? pendingReceipts.length === 0
     : reconciledReceiptCount === pendingReceipts.length;
-  const ok =
-    repair.totals.failed === 0 && mergeChecksGreen && receiptSettlementComplete;
+  const ok = [
+    repair.totals.failed === 0,
+    mergeChecksGreen,
+    receiptSettlementComplete,
+    missingAfter.count === 0,
+  ].every(Boolean);
   const guidance = dryRun
     ? [
         "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",
@@ -291,6 +482,12 @@ export async function runMergeReconcile(
         ]
       : [
           "Reconciliation remains incomplete; inspect repair failures and non-green validation checks before retrying.",
+          ...(legacyDispositionCandidates.length > 0 &&
+          recordedLegacyDispositionCount === 0
+            ? [
+                "Pre-durable clone-local-only receipt references are eligible for an audited disposition; rerun with --force after reviewing receipts.legacy_disposition_eligible.",
+              ]
+            : []),
           "Do not commit repaired history streams as reconciled until pm merge reconcile returns ok=true.",
         ];
   return {
@@ -301,6 +498,10 @@ export async function runMergeReconcile(
       pending_before: pendingReceipts.length,
       reconciled: reconciledReceiptCount,
       summaries: pendingReceipts.map(summarizeMergeReceipt),
+      missing_history_references_before: missingBefore.count,
+      legacy_disposition_eligible: legacyDispositionCandidates.length,
+      legacy_disposition_recorded: recordedLegacyDispositionCount,
+      missing_history_references_after: missingAfter.count,
     },
     validation,
     guidance,

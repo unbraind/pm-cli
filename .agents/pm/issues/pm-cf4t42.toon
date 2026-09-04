@@ -2,11 +2,13 @@ id: pm-cf4t42
 title: "GH-1186: unrecoverable legacy merge-receipt references block strict health with diagnostic-only remediation"
 description: "A fleet upgrade to pm 2026.9.3 exposes durable history references to receipts that older releases stored only in ignored clone-local runtime directories. Strict health blocks on merge_receipt_history_reference_missing, merge reconcile reports no pending work, and the remediation map points back to health diagnostics. The receipt was never committed and cannot be recovered in another clone."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:41.043Z"
-updated_at: "2026-09-03T18:07:09.388Z"
+updated_at: "2026-09-04T06:43:11.761Z"
+closed_at: "2026-09-04T06:43:11.161Z"
+completed_at: "2026-09-04T06:43:11.161Z"
 author: "harness:codex"
 acceptance_criteria: Legacy clone-local-only receipt references are identified without weakening current receipt validation; a supported audited disposition or version-aware advisory can settle genuinely unrecoverable references; every blocking remediation demonstrably progresses state; schema_or_identity_invalid names the failed identity check and reports stable evidence provenance; mixed-version fleet fixtures and strict-exit negative controls cover the upgrade path
 parent: pm-dj98
@@ -15,13 +17,50 @@ confidence: high
 severity: critical
 environment: pm-cli 2026.9.3 upgrading repositories pinned between 2026.8.26 and 2026.8.31; Node 26.5.0; Linux
 repro_steps: Open a repository whose historical merge_reconcile event references a receipt formerly written only under ignored runtime state; run pm merge reconcile --dry-run and then pm health --strict-exit --require-merge-drivers.
-expected_result: "Every strict-health blocking finding has an executable, auditable remediation or a version-aware advisory classification when the historical evidence is provably unrecoverable."
-actual_result: "Reconcile reports clean and changes nothing while strict health exits 1 for a missing reference; remediation_map names the diagnostic itself, leaving no state-progressing path."
+resolution: "Health classifies coordinate-bound later dispositions; merge reconcile previews eligible legacy references, requires --force to append audit evidence, validates receipt evidence first, verifies postflight health, and reports before/eligible/recorded/after counts."
+expected_result: Every genuinely unrecoverable pre-durable reference has a state-progressing audited remediation while current-era missing or invalid evidence continues to fail closed.
+actual_result: "Unit and integration recovery tests, a real temporary Git conflict/reconciliation workflow, full exact coverage, static quality, and packed acceptance passed."
 component: health/merge-receipts
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-wn3ee5,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-dn8rwl,verifies,"2026-09-04T04:20:49.400Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-09-03T18:06:41.043Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1186. All-status duplicate check searched missing receipt history reference, strict health, reconcile, and remediation. pm-wn3ee5 closed preferred-era shape compatibility and pm-lwmstb closed ordinary pending-receipt settlement, but this fleet report proves the distinct unrecoverable clone-local-reference path still has no remedy. A new recurrence item preserves both shipped baselines."
   "2026-09-03T18:07:09.387Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1186#issuecomment-5530007892"
+  "2026-09-04T05:49:53.199Z","harness:codex","Implementation evidence: history health now classifies missing receipt coordinates precisely and accepts only audited dispositions for pre-durable receipt references, with exact item/receipt/original-line identity and a strictly later disposition event. pm merge reconcile --force appends grouped merge_reconcile history repair events, re-runs health, and refuses malformed, missing, or post-cutoff coordinates. Focused unit/integration/remediation suites recorded 42 passing tests."
+  "2026-09-04T05:49:54.131Z","harness:codex","Manual acceptance evidence: a real temporary Git repository produced an item-file merge conflict through the installed merge driver; the newer document priority 4 was retained over priority 1, receipt policy reported latest_document_update/document_updated_at, a fresh clone exposed bounded_inline review values, dry-run reconciliation reported the legacy reference, and forced reviewed reconciliation returned ok:true with strict health restored."
+  "2026-09-04T06:23:33.457Z","harness:codex","Final repository verification: pnpm quality:static passed the complete mandatory static gate; node scripts/run-tests.mjs coverage passed 603 files and 8,350 tests at exact 100% statements, branches, functions, and lines; pnpm security:scan, pnpm audit, documentation links, and package-artifact checks passed. GitHub Dependabot, code-scanning, and secret-scanning alert inventories were empty. Focused reconciliation, health-classification, remediation, and legacy-history integration tests passed; the real temporary Git workflow also proved fail-closed conflict handling and successful audited reconciliation."
+  "2026-09-04T06:42:49.530Z","harness:codex","Terminal closeout evidence: exact-tree coverage passed 603 files and 8,351 tests at 100/100/100/100; reconciliation now validates receipt evidence before any disposition mutation, and the complete static-quality pipeline passed."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T06:22:42.830Z","harness:codex","A legacy missing-receipt disposition is trustworthy only when it names the exact item, receipt id, and original history line and is appended after that reference; item-level forgiveness permits forged or stale suppression."
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,Govern reconciliation and history classification SDK evolution
+  src/core/diagnostics/remediation.ts,project,Route missing receipt history findings to state-progressing audited reconciliation
+  src/sdk/governance/health.ts,project,Recognize and count exact audited missing-receipt dispositions
+  src/sdk/governance/merge-receipt-history.ts,project,Validate legacy epoch coordinates and explicit disposition evidence
+  src/sdk/merge/reconcile.ts,project,Preview and append audited pre-durable missing-receipt dispositions
+  tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,Prove preview apply audit and green health in a temporary tracker
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Verify bounded missing-reference health diagnostics
+  tests/integration/remediation-registry.spec.ts,project,Require the state-progressing remediation command
+  tests/unit/sdk/governance/merge-receipt-history.spec.ts,project,Prove exact pre-durable disposition classification
+  tests/unit/sdk/merge-reconcile.spec.ts,project,Cover health preflight and expanded reconciliation result
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/merge-receipt-history.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/integration/remediation-registry.spec.ts,project,240,"harness:codex","2026-09-04T04:23:47.862Z",local_mutation,feat/merge-decision-integrity-recovery
+test_runs[1]:
+  - run_id: test-local-mtmj1l6g-ko0miw
+    kind: test
+    status: passed
+    started_at: "2026-09-04T05:42:10.783Z"
+    finished_at: "2026-09-04T05:42:20.536Z"
+    recorded_at: "2026-09-04T05:42:20.536Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/merge-receipt-history.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/integration/remediation-registry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Document legacy cutoff exact audit coordinates and fail-closed modern evidence
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,Document SDK reconciliation disposition result contract
+close_reason: Implemented exact audited recovery for provably pre-durable clone-local-only receipt references.
 body: ""
