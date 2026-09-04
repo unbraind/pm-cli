@@ -27,9 +27,14 @@ import {
   summarizeMergeReceipt,
   writeMergeReceipt,
 } from "../../../src/sdk/merge/receipts.js";
+import {
+  hashItemScalarDecisionValue,
+  ITEM_SCALAR_MISSING_VALUE,
+} from "../../../src/sdk/merge/three-way.js";
 
 const workspaces: string[] = [];
 
+/** Build deterministic filesystem metadata for bounded receipt-file tests. */
 function boundaryStats(params: {
   size: number;
   file?: boolean;
@@ -216,6 +221,59 @@ describe("clone-local merge decision receipts", () => {
         { state: "reconciled" },
         { state: "reconciled" },
         { state: "reconciled" },
+      ],
+    });
+  });
+
+  it("preserves missing scalar evidence across local summaries and durable receipts", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const pmRoot = path.join(workspace, ".agents", "pm");
+    await mkdir(path.join(pmRoot, "tasks"), { recursive: true });
+    await writeFile(path.join(pmRoot, "settings.json"), "{}\n", "utf8");
+
+    const receipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-missing-scalar.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [
+        {
+          field: "assignee",
+          base: "agent-a",
+          ours: ITEM_SCALAR_MISSING_VALUE,
+          theirs: "agent-b",
+          retained: ITEM_SCALAR_MISSING_VALUE,
+          discarded: ITEM_SCALAR_MISSING_VALUE,
+        },
+      ],
+    });
+
+    expect(receipt).not.toBeNull();
+    expect(summarizeMergeReceipt(receipt!).decisions[0]).toMatchObject({
+      retained_hash: hashItemScalarDecisionValue(undefined),
+      discarded_hash: hashItemScalarDecisionValue(undefined),
+    });
+    expect(
+      JSON.parse(
+        await readFile(
+          path.join(pmRoot, "merge-receipts", `${receipt!.id}.json`),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({
+      value_availability: "hash_only",
+      decisions: [
+        {
+          retained: {
+            pm_value_hash: hashItemScalarDecisionValue(undefined),
+          },
+          discarded: {
+            pm_value_hash: hashItemScalarDecisionValue(undefined),
+          },
+        },
       ],
     });
   });
@@ -635,6 +693,7 @@ describe("clone-local merge decision receipts", () => {
   it("rejects every durable value that violates the bounded preview policy", async () => {
     const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
     workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
     const pmRoot = path.join(workspace, ".agents", "pm");
     const receiptDirectory = path.join(pmRoot, "merge-receipts");
     await mkdir(receiptDirectory, { recursive: true });

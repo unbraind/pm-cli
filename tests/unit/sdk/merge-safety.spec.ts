@@ -18,10 +18,6 @@ import {
   sealHistoryRecord,
 } from "../../../src/core/history/history.js";
 import {
-  sha256Hex,
-  stableStringify,
-} from "../../../src/core/shared/serialization.js";
-import {
   historyEntriesToRaw,
   verifyHistoryChain,
 } from "../../../src/core/history/replay.js";
@@ -45,6 +41,7 @@ import {
   PM_GITATTRIBUTES_V2_END,
   PM_GITATTRIBUTES_V2_START,
 } from "../../../src/sdk/index.js";
+import { hashItemScalarDecisionValue } from "../../../src/sdk/merge/three-way.js";
 import type { ItemDocument } from "../../../src/types/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -682,7 +679,7 @@ describe("public merge-safety SDK primitives", () => {
           (receipt) => receipt.item_id === "pm-conflict",
         )?.merged_field_hashes,
       ).toMatchObject({
-        title: sha256Hex(stableStringify(conflictedMergedTitle)),
+        title: hashItemScalarDecisionValue(conflictedMergedTitle),
       });
       expect(conflictedItemResult.guidance[0]).toContain(
         `receipt ${conflictedItemResult.receipt?.receipt_id} with item pm-conflict`,

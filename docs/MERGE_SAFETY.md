@@ -115,6 +115,12 @@ leaf conflicts retain their explicit preferred-side policy. Git keeps the item
 path conflicted so a human or coordinating agent must review the discarded
 value and explicitly `git add` the resolution.
 
+The exact object `{ "pm_item_scalar_missing": true }` is reserved for
+JSON-stable missing-value evidence. Item merge inputs reject that object as a
+present metadata value, while the hashing primitive independently separates
+present and missing domains. This prevents extension data from impersonating a
+deletion without wrapping every ordinary scalar in receipt output.
+
 The driver result's `guidance` always points unresolved conflicts to `pm merge report`. When a clone-local receipt exists, guidance includes its privacy-safe receipt and item ids for exact correlation; discarded values remain confined to the local receipt and never appear in generic logs or tracker history. Tracked by [pm-fbrz7p](../.agents/pm/issues/pm-fbrz7p.toon).
 
 For item conflicts, the driver writes a clone-local receipt below the Git

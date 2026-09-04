@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:41.043Z"
-updated_at: "2026-09-04T08:19:58.985Z"
+updated_at: "2026-09-04T09:23:03.520Z"
 closed_at: "2026-09-04T06:43:11.161Z"
 completed_at: "2026-09-04T06:43:11.161Z"
 author: "harness:codex"
@@ -25,7 +25,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-wn3ee5,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-dn8rwl,verifies,"2026-09-04T04:20:49.400Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-03T18:06:41.043Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1186. All-status duplicate check searched missing receipt history reference, strict health, reconcile, and remediation. pm-wn3ee5 closed preferred-era shape compatibility and pm-lwmstb closed ordinary pending-receipt settlement, but this fleet report proves the distinct unrecoverable clone-local-reference path still has no remedy. A new recurrence item preserves both shipped baselines."
   "2026-09-03T18:07:09.387Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1186#issuecomment-5530007892"
   "2026-09-04T05:49:53.199Z","harness:codex","Implementation evidence: history health now classifies missing receipt coordinates precisely and accepts only audited dispositions for pre-durable receipt references, with exact item/receipt/original-line identity and a strictly later disposition event. pm merge reconcile --force appends grouped merge_reconcile history repair events, re-runs health, and refuses malformed, missing, or post-cutoff coordinates. Focused unit/integration/remediation suites recorded 42 passing tests."
@@ -34,9 +34,10 @@ comments[8]{created_at,author,text}:
   "2026-09-04T06:42:49.530Z","harness:codex","Terminal closeout evidence: exact-tree coverage passed 603 files and 8,351 tests at 100/100/100/100; reconciliation now validates receipt evidence before any disposition mutation, and the complete static-quality pipeline passed."
   "2026-09-04T07:42:10.291Z","harness:codex","Review round 1: CodeRabbit correctly found that --force could settle unrelated unproven pending receipts; settlement now always requires item-specific trusted proof. Its suggested legacySummaryAccepted guard would make disposition impossible because those summaries are already accepted, so the implementation instead requires the exact final pre-durable clone-local schema plus the existing timestamp and coordinate checks."
   "2026-09-04T08:19:58.985Z","harness:codex","Review remediation evidence: forced legacy recovery now requires the final historically exact pre-durable schema and always settles only receipt IDs named by trusted repair proof. Malformed summaries and unrelated unproven receipts are negative controls. All three CodeRabbit threads were answered, reacted to, and resolved."
+  "2026-09-04T09:23:03.520Z","harness:codex","Review round 2 evidence: reconciliation and health fixtures now construct field proof through the public scalar hash contract, preserving trusted-settlement behavior after domain separation. The full receipt/health/reconcile regression set passes."
 learnings[1]{created_at,author,text}:
   "2026-09-04T06:22:42.830Z","harness:codex","A legacy missing-receipt disposition is trustworthy only when it names the exact item, receipt id, and original history line and is appended after that reference; item-level forgiveness permits forged or stale suppression."
-files[10]{path,scope,note}:
+files[11]{path,scope,note}:
   sdk/public-surface.json,project,Govern reconciliation and history classification SDK evolution
   src/core/diagnostics/remediation.ts,project,Route missing receipt history findings to state-progressing audited reconciliation
   src/sdk/governance/health.ts,project,Recognize and count exact audited missing-receipt dispositions
@@ -45,6 +46,7 @@ files[10]{path,scope,note}:
   tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,Prove preview apply audit and green health in a temporary tracker
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Verify bounded missing-reference health diagnostics
   tests/integration/remediation-registry.spec.ts,project,Require the state-progressing remediation command
+  tests/unit/commands/merge-reconcile-command.spec.ts,project,Verify trusted receipt settlement with domain-separated merged-field proof
   tests/unit/sdk/governance/merge-receipt-history.spec.ts,project,Prove exact pre-durable disposition classification
   tests/unit/sdk/merge-reconcile.spec.ts,project,Cover health preflight and expanded reconciliation result
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

@@ -69,9 +69,15 @@ export function encodeItemScalarDecisionValue(value: unknown): unknown {
   return value === undefined ? ITEM_SCALAR_MISSING_VALUE : value;
 }
 
-/** Hash item scalar evidence without conflating absence with the string "undefined". */
+/** Hash scalars in disjoint present/missing domains for collision-free evidence. */
 export function hashItemScalarDecisionValue(value: unknown): string {
-  return sha256Hex(stableStringify(encodeItemScalarDecisionValue(value)));
+  return sha256Hex(
+    stableStringify(
+      value === undefined
+        ? { pm_item_scalar_presence: "missing" }
+        : { pm_item_scalar_presence: "present", value },
+    ),
+  );
 }
 
 /** Restricts the strategy labels reported by the history stream merge. */
@@ -698,13 +704,26 @@ function toMetadataRecord(document: ItemDocument): Record<string, unknown> {
   return { ...(document.metadata as unknown as Record<string, unknown>) };
 }
 
+/** Parse one merge side and reject values reserved for internal absence evidence. */
 function parseItemMergeSide(
   raw: string,
   label: string,
   options: ItemDocumentFormatOptions,
 ): ItemDocument {
   try {
-    return canonicalDocument(parseItemDocument(raw, options), options);
+    const document = canonicalDocument(
+      parseItemDocument(raw, options),
+      options,
+    );
+    const reservedField = Object.entries(
+      document.metadata as unknown as Record<string, unknown>,
+    ).find(([, value]) => isItemScalarMissingValue(value))?.[0];
+    if (reservedField !== undefined) {
+      throw new TypeError(
+        `metadata field ${reservedField} uses the reserved missing-scalar evidence marker`,
+      );
+    }
+    return document;
   } catch (error) {
     throw new PmCliError(
       `Item merge input (${label}) is not a readable item document: ${String(error)}`,

@@ -23,6 +23,7 @@ import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { isRfc3339DateTime, nowIso } from "../../core/shared/time.js";
 import {
   hashItemScalarDecisionValue,
+  isItemScalarMissingValue,
   type ItemMergeConflictDecision,
   type ItemScalarConflictResolution,
   type MergePreferredSide,
@@ -248,6 +249,7 @@ export interface MergeReceiptInvalidEvidence {
   candidate_name_hash?: string;
 }
 
+/** Resolve the clone-local receipt store without crossing a Git worktree boundary. */
 async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync(
@@ -266,6 +268,7 @@ async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
   }
 }
 
+/** Derive the tracker root only when the merged item belongs to this workspace. */
 async function resolveTrackerRootFromItemPath(
   cwd: string,
   itemPath: string,
@@ -281,18 +284,22 @@ async function resolveTrackerRootFromItemPath(
   return null;
 }
 
+/** Locate the tracked durable receipt sidecar directory. */
 function durableReceiptDirectory(pmRoot: string): string {
   return path.join(pmRoot, "merge-receipts");
 }
 
+/** Map a validated opaque receipt identifier to its canonical filename. */
 function receiptFileName(id: string): string {
   return `${id}.json`;
 }
 
+/** Narrow untrusted JSON to a non-array object before schema inspection. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Refuse receipt extensions outside the versioned schema key set. */
 function hasOnlyKeys(
   value: Record<string, unknown>,
   allowed: ReadonlySet<string>,
@@ -300,6 +307,7 @@ function hasOnlyKeys(
   return Object.keys(value).every((key) => allowed.has(key));
 }
 
+/** Validate bounded dense string collections used in receipt coordinates. */
 function isStringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
@@ -311,6 +319,7 @@ function isStringArray(value: unknown): value is string[] {
   );
 }
 
+/** Bound JSON depth and node count before retaining untrusted decision values. */
 function hasBoundedJsonStructure(value: unknown): boolean {
   const pending: Array<{ value: unknown; depth: number }> = [
     { value, depth: 0 },
@@ -338,6 +347,7 @@ function hasBoundedJsonStructure(value: unknown): boolean {
   return true;
 }
 
+/** Validate one clone-local scalar decision and its optional resolution evidence. */
 function isMergeDecision(value: unknown): value is ItemMergeConflictDecision {
   if (!isRecord(value)) return false;
   const retainedSides = [undefined, "ours", "theirs"];
@@ -367,6 +377,7 @@ function isMergeDecision(value: unknown): value is ItemMergeConflictDecision {
   ].every(Boolean);
 }
 
+/** Validate the complete field-to-SHA-256 proof map used during repair. */
 function isMergedFieldHashes(value: unknown): value is Record<string, string> {
   if (!isRecord(value)) return false;
   const entries = Object.entries(value);
@@ -382,6 +393,7 @@ function isMergedFieldHashes(value: unknown): value is Record<string, string> {
   );
 }
 
+/** Require a normalized tracker item path whose basename matches the receipt item. */
 function isSafeReceiptItemPath(value: unknown, itemId: string): boolean {
   if (
     typeof value !== "string" ||
@@ -401,6 +413,7 @@ function isSafeReceiptItemPath(value: unknown, itemId: string): boolean {
   );
 }
 
+/** Validate receipt arrays and optional merged-field proof coverage. */
 function hasValidReceiptCollections(value: Record<string, unknown>): boolean {
   return !isStringArray(value.fields_from_theirs) ||
     !isStringArray(value.union_fields) ||
@@ -412,6 +425,7 @@ function hasValidReceiptCollections(value: Record<string, unknown>): boolean {
         isMergedFieldHashes(value.merged_field_hashes);
 }
 
+/** Validate every closed-domain lifecycle and merge-policy field. */
 function hasValidReceiptEnums(value: Record<string, unknown>): boolean {
   const preferences = [undefined, "ours", "theirs"];
   const resolutions = [
@@ -442,6 +456,7 @@ function hasValidReceiptEnums(value: Record<string, unknown>): boolean {
   );
 }
 
+/** Validate creation and optional settlement timestamps as RFC 3339 values. */
 function hasValidReceiptTimestamps(value: Record<string, unknown>): boolean {
   return (
     typeof value.created_at === "string" &&
@@ -466,7 +481,9 @@ function hasDurableDecisionValue(field: string, value: unknown): boolean {
     REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
       stableStringify(preview),
     ) === true;
-  return allowed && sha256Hex(stableStringify(preview)) === value.pm_value_hash;
+  return (
+    allowed && hashItemScalarDecisionValue(preview) === value.pm_value_hash
+  );
 }
 
 /** Validate durable decision redaction and the declared availability summary. */
@@ -554,6 +571,7 @@ function receiptValidationError(
   return null;
 }
 
+/** Validate a complete receipt against its clone-local or durable evidence policy. */
 function isMergeDecisionReceipt(
   value: unknown,
   evidenceSource: "clone_local" | "durable",
@@ -561,12 +579,14 @@ function isMergeDecisionReceipt(
   return receiptValidationError(value, evidenceSource) === null;
 }
 
+/** Read one receipt through the no-follow bounded regular-file guard. */
 async function readBoundedRegularReceiptFile(
   receiptPath: string,
 ): Promise<string | null> {
   return readBoundedRegularFile(receiptPath, RECEIPT_FILE_MAX_BYTES);
 }
 
+/** Revalidate one receipt and stage its atomic reconciled-state replacement. */
 async function prepareReceiptSettlement(params: {
   receiptPath: string;
   receiptId: string;
@@ -621,6 +641,7 @@ async function prepareReceiptSettlement(params: {
   };
 }
 
+/** Fingerprint immutable receipt provenance while excluding lifecycle state. */
 function receiptProvenanceFingerprint(receipt: MergeDecisionReceipt): string {
   return sha256Hex(
     stableStringify({
@@ -639,6 +660,7 @@ function receiptProvenanceFingerprint(receipt: MergeDecisionReceipt): string {
   );
 }
 
+/** Merge clone-local and durable lifecycle state without losing pending work. */
 function mergeReceiptCopyLifecycle(
   local: MergeDecisionReceipt,
   durable: MergeDecisionReceipt,
@@ -671,14 +693,23 @@ export function summarizeMergeReceipt(
       field: decision.field,
       retained_hash:
         isPrehashedValue(decision.retained) ??
-        hashItemScalarDecisionValue(decision.retained),
+        hashItemScalarDecisionValue(
+          isItemScalarMissingValue(decision.retained)
+            ? undefined
+            : decision.retained,
+        ),
       discarded_hash:
         isPrehashedValue(decision.discarded) ??
-        hashItemScalarDecisionValue(decision.discarded),
+        hashItemScalarDecisionValue(
+          isItemScalarMissingValue(decision.discarded)
+            ? undefined
+            : decision.discarded,
+        ),
     })),
   };
 }
 
+/** Extract a structurally valid precomputed SHA-256 decision hash. */
 function isPrehashedValue(value: unknown): string | undefined {
   if (
     typeof value !== "object" ||
@@ -699,12 +730,14 @@ function durableValueEvidence(
   field: string,
   value: unknown,
 ): { pm_value_hash: string; pm_value?: unknown } {
-  const pmValueHash = hashItemScalarDecisionValue(value);
+  const missing = isItemScalarMissingValue(value);
+  const pmValueHash = hashItemScalarDecisionValue(missing ? undefined : value);
   const reviewable =
-    value === null ||
-    REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
-      stableStringify(value),
-    ) === true;
+    !missing &&
+    (value === null ||
+      REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
+        stableStringify(value),
+      ) === true);
   return reviewable
     ? { pm_value_hash: pmValueHash, pm_value: value }
     : { pm_value_hash: pmValueHash };
@@ -796,6 +829,7 @@ export async function writeMergeReceipt(params: {
   return receipt;
 }
 
+/** Scan one receipt directory with bounded per-candidate failure evidence. */
 async function readReceiptsFromDirectory(
   directory: string,
   evidenceSource: "clone_local" | "durable",
@@ -864,6 +898,7 @@ async function readReceiptsFromDirectory(
   };
 }
 
+/** Distinguish a missing optional receipt store from an unreadable one. */
 async function receiptDirectoryFailureMeansAbsent(
   directory: string,
   error: unknown,
@@ -885,6 +920,7 @@ async function receiptDirectoryFailureMeansAbsent(
   }
 }
 
+/** Inspect one candidate without exposing rejected file contents. */
 async function inspectReceiptCandidate(
   directory: string,
   name: string,

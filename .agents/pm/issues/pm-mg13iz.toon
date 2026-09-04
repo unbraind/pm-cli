@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:37.336Z"
-updated_at: "2026-09-04T08:19:58.456Z"
+updated_at: "2026-09-04T09:23:03.081Z"
 closed_at: "2026-09-04T06:43:09.912Z"
 completed_at: "2026-09-04T06:43:09.912Z"
 author: "harness:codex"
@@ -25,13 +25,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-z1z96w,recurs_from,"2026-09-03T18:06:37.336Z","harness:codex","cli:create:dep",detected
   pm-1j5j21,verifies,"2026-09-04T04:20:48.489Z","harness:codex","cli:update:dep",detected
   pm-rh98vo,recurs_from,"2026-09-04T04:20:48.489Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-03T18:06:37.336Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1185. All-status duplicate check searched discarded value, hash-only, merge report, and value availability. pm-z1z96w shipped truthful proof-backed reconciliation for hash-only receipts and pm-rh98vo shipped durable receipt discovery, but their live resolutions do not provide a readable discarded value. This report is a recurrence/boundary extension and receives a new item linked to both shipped lineages."
   "2026-09-03T18:07:08.922Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1185#issuecomment-5530007658"
   "2026-09-04T05:49:52.771Z","harness:codex","Implementation evidence: durable receipts now use bounded_non_sensitive_scalars_v1. Built-in statuses, bounded priority 0..4, bounded risk/confidence/severity vocabulary, and null may be reviewed inline; all other values remain hash-only. Reader validation shares the writer allowlist and rejects schema, identity, value-policy, or hash mismatches. Fresh-clone tests prove reviewable retained/discarded values survive without ancestor blobs while sensitive free-form values do not leak."
   "2026-09-04T06:23:32.966Z","harness:codex","Final repository verification: pnpm quality:static passed the complete mandatory static gate; node scripts/run-tests.mjs coverage passed 603 files and 8,350 tests at exact 100% statements, branches, functions, and lines; pnpm security:scan, pnpm audit, documentation links, and package-artifact checks passed. GitHub Dependabot, code-scanning, and secret-scanning alert inventories were empty. Focused receipt and fresh-clone reviewability tests passed."
   "2026-09-04T06:42:49.025Z","harness:codex","Terminal closeout evidence: exact-tree coverage passed 603 files and 8,351 tests at 100/100/100/100; durable validation now additionally rejects sidecars whose declared availability or versioned policy does not match their actual inline/hash composition, and the complete static-quality pipeline passed."
   "2026-09-04T08:19:58.456Z","harness:codex","Review remediation evidence: strict durable validation now consumes the collision-free scalar hash primitive while preserving the bounded preview allowlist. Focused merge receipt/governance/reconcile/packaging suite passed 69 tests; repository static-quality and defect-evidence assertions passed."
+  "2026-09-04T09:23:03.081Z","harness:codex","Review round 2 evidence: durable preview validation uses the shared scalar evidence hash; missing retained/discarded values remain hash-only and round-trip to the same missing-domain digest in both privacy-safe summaries and tracked sidecars."
 learnings[1]{created_at,author,text}:
   "2026-09-04T06:22:42.332Z","harness:codex","Fresh-clone reviewability and receipt privacy require one versioned allowlist shared by the writer and reader: bounded non-sensitive scalars may be durable inline, while arbitrary strings remain hash-only."
 files[5]{path,scope,note}:

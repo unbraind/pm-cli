@@ -3,14 +3,11 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  sha256Hex,
-  stableStringify,
-} from "../../../src/core/shared/serialization.js";
-import {
   runMergeReconcile,
   type MergeReconcileResult,
 } from "../../../src/sdk/merge/reconcile.js";
 import { writeMergeReceipt } from "../../../src/sdk/merge/receipts.js";
+import { hashItemScalarDecisionValue } from "../../../src/sdk/merge/three-way.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 async function tamperHistoryChain(historyPath: string): Promise<string> {
@@ -251,7 +248,7 @@ describe("merge reconcile command", () => {
         fieldsFromTheirs: [],
         unionFields: [],
         mergedFieldHashes: {
-          title: sha256Hex(stableStringify("Clean receipt merge")),
+          title: hashItemScalarDecisionValue("Clean receipt merge"),
         },
         decisions: [
           {

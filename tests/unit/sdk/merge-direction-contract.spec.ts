@@ -148,6 +148,9 @@ describe("item merge direction contract", () => {
     expect(hashItemScalarDecisionValue(undefined)).not.toBe(
       hashItemScalarDecisionValue("undefined"),
     );
+    expect(hashItemScalarDecisionValue(undefined)).not.toBe(
+      hashItemScalarDecisionValue(ITEM_SCALAR_MISSING_VALUE),
+    );
   });
 
   it("recognizes only the exact missing-scalar evidence marker", () => {
@@ -164,5 +167,19 @@ describe("item merge direction contract", () => {
     expect(isItemScalarMissingValue({ pm_item_scalar_missing: false })).toBe(
       false,
     );
+  });
+
+  it("rejects a present metadata value that collides with the reserved marker", () => {
+    const reserved = JSON.stringify({
+      ...JSON.parse(alpha),
+      extension_value: ITEM_SCALAR_MISSING_VALUE,
+    });
+
+    expect(() =>
+      mergeItemDocuments(base, reserved, zeta, {
+        format: "json",
+        conflictResolution: "latest_document_update",
+      }),
+    ).toThrow(/reserved missing-scalar evidence marker/u);
   });
 });

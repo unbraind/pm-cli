@@ -10,10 +10,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  sha256Hex,
-  stableStringify,
-} from "../../src/core/shared/serialization.js";
+import { sha256Hex } from "../../src/core/shared/serialization.js";
 import { parseItemDocument } from "../../src/core/item/item-format.js";
 import { sealHistoryRecord } from "../../src/core/history/history.js";
 import {
@@ -21,6 +18,7 @@ import {
   markMergeReceiptReconciled,
   writeMergeReceipt,
 } from "../../src/sdk/merge/receipts.js";
+import { hashItemScalarDecisionValue } from "../../src/sdk/merge/three-way.js";
 import { runHealth } from "../../src/sdk/governance/health.js";
 import {
   runHistoryRepair,
@@ -404,7 +402,7 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["title"],
         unionFields: [],
         mergedFieldHashes: {
-          title: sha256Hex(stableStringify("Changed cross-copy receipt")),
+          title: hashItemScalarDecisionValue("Changed cross-copy receipt"),
         },
         decisions: [],
       });
@@ -543,7 +541,7 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["title"],
         unionFields: [],
         mergedFieldHashes: {
-          title: sha256Hex(stableStringify("Merged lossless receipt")),
+          title: hashItemScalarDecisionValue("Merged lossless receipt"),
         },
         decisions: [],
       });
@@ -809,7 +807,7 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["title"],
         unionFields: [],
         mergedFieldHashes: {
-          title: sha256Hex(stableStringify("Changed unrelated drift")),
+          title: hashItemScalarDecisionValue("Changed unrelated drift"),
         },
         decisions: [],
       });
@@ -959,7 +957,7 @@ describe("merge receipt health classification", () => {
         proveAuthoritativeDurableVariant({
           fields_from_theirs: ["body"],
           merged_field_hashes: {
-            body: sha256Hex(stableStringify(currentItem.body)),
+            body: hashItemScalarDecisionValue(currentItem.body),
           },
         }),
       ).resolves.toMatchObject({
@@ -973,7 +971,7 @@ describe("merge receipt health classification", () => {
           ...cloneLocalReceipt,
           fields_from_theirs: ["body"],
           merged_field_hashes: {
-            body: sha256Hex(stableStringify(currentItem.body)),
+            body: hashItemScalarDecisionValue(currentItem.body),
           },
         }),
       ).resolves.toMatchObject({
@@ -987,8 +985,8 @@ describe("merge receipt health classification", () => {
           ...cloneLocalReceipt,
           fields_from_theirs: ["title", "body"],
           merged_field_hashes: {
-            title: sha256Hex(stableStringify("Merged lossless receipt")),
-            body: sha256Hex(stableStringify(currentItem.body)),
+            title: hashItemScalarDecisionValue("Merged lossless receipt"),
+            body: hashItemScalarDecisionValue(currentItem.body),
           },
         }),
       ).resolves.toMatchObject({
@@ -1081,7 +1079,7 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["status"],
         unionFields: [],
         mergedFieldHashes: {
-          title: sha256Hex(stableStringify("Changed field forgery")),
+          title: hashItemScalarDecisionValue("Changed field forgery"),
         },
         decisions: [],
       });
@@ -1174,8 +1172,8 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["description", "title"],
         unionFields: [],
         mergedFieldHashes: {
-          description: sha256Hex(stableStringify("forged description")),
-          title: sha256Hex(stableStringify("Changed subset forgery")),
+          description: hashItemScalarDecisionValue("forged description"),
+          title: hashItemScalarDecisionValue("Changed subset forgery"),
         },
         decisions: [],
       });
@@ -1248,7 +1246,7 @@ describe("merge receipt health classification", () => {
           fields_from_theirs: ["title"],
           union_fields: [],
           merged_field_hashes: {
-            title: sha256Hex(stableStringify("Changed durable forgery")),
+            title: hashItemScalarDecisionValue("Changed durable forgery"),
           },
           decisions: [],
           state: "pending",
@@ -1389,7 +1387,7 @@ describe("merge receipt health classification", () => {
           fields_from_theirs: ["title"],
           union_fields: [],
           merged_field_hashes: {
-            title: sha256Hex(stableStringify("Merged lossless receipt")),
+            title: hashItemScalarDecisionValue("Merged lossless receipt"),
           },
           decisions: [],
           state: "pending",
@@ -1415,7 +1413,7 @@ describe("merge receipt health classification", () => {
           fields_from_theirs: ["title"],
           union_fields: [],
           merged_field_hashes: {
-            title: sha256Hex(stableStringify("Merged lossless receipt")),
+            title: hashItemScalarDecisionValue("Merged lossless receipt"),
           },
           decisions: [],
           state: "pending",
@@ -1769,7 +1767,7 @@ describe("merge receipt health classification", () => {
           fields_from_theirs: ["title"],
           union_fields: [],
           merged_field_hashes: {
-            title: sha256Hex(stableStringify("Normalized alias target")),
+            title: hashItemScalarDecisionValue("Normalized alias target"),
           },
           decisions: [],
           state: "pending",
@@ -1834,7 +1832,7 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["title"],
         unionFields: [],
         mergedFieldHashes: {
-          title: sha256Hex(stableStringify("Merged disjoint title")),
+          title: hashItemScalarDecisionValue("Merged disjoint title"),
         },
         decisions: [],
       });
@@ -1847,8 +1845,8 @@ describe("merge receipt health classification", () => {
         fieldsFromTheirs: ["description"],
         unionFields: [],
         mergedFieldHashes: {
-          description: sha256Hex(
-            stableStringify("Merged disjoint description"),
+          description: hashItemScalarDecisionValue(
+            "Merged disjoint description",
           ),
         },
         decisions: [],
