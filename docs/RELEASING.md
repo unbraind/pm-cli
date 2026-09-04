@@ -336,10 +336,12 @@ The static phase includes `pnpm sdk:surface:check`,
 `pnpm benchmark:transport:check`. The packaging phase runs
 `pnpm quality:package-artifact`, which evaluates npm's actual packlist against
 the committed unpacked-size, file-count, required-runtime-file, and forbidden
-source-map budgets. Release additionally reruns the packlist gate after Sentry
-debug-ID injection with the separately committed `sentry-injected` ceiling, so
-CI constrains the base build while publication constrains the exact mutated
-artifact users install. Additive SDK exports require a reviewed
+source-map budgets. Release additionally reruns the packlist gate immediately
+after Sentry debug-ID injection and before any Sentry upload or finalization,
+using the separately committed `sentry-injected` ceiling. CI constrains the base
+build, publication constrains the exact mutated artifact users install, and a
+rejected package cannot leave finalized observability artifacts. Additive SDK
+exports require a reviewed
 snapshot refresh. A removal or semantic signature change fails until the
 maintainer supplies
 `pnpm sdk:surface:update -- --acknowledge-breaking "<release rationale>"`;
@@ -359,7 +361,7 @@ git push origin v<version>
 `.github/workflows/release.yml` runs on `v*.*.*` tags and handles:
 
 - full-history checkout
-- manual `workflow_dispatch` by tag for recovery. An isolated anonymous exact-version probe keeps already-published recovery on the reviewed dispatch-time `main` source; when the immutable tag exists but npm publication never completed, recovery checks out that exact tagged source and retains the original version guard
+- manual `workflow_dispatch` by tag for recovery. An isolated anonymous exact-version probe keeps already-published recovery on the reviewed dispatch-time `main` source; when the immutable tag exists but npm publication never completed, recovery preserves the reviewed package gate and budget in runner-temporary storage before checking out that exact tagged source. The controls inspect the untouched tagged package without becoming part of it, so recovery applies the current fail-closed distribution policy while retaining the original version guard and immutable package bytes.
 - pnpm install with frozen lockfile
 - version policy and tag guard
 - secret scan
@@ -376,9 +378,10 @@ git push origin v<version>
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; Sentry requests use the fail-closed bounded `--sentry-request-timeout-ms` contract (default `120000`, maximum `300000`); `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
 - sandboxed `pm` coverage
-- a base npm pack dry run before optional Sentry release metadata and sourcemap
-  upload, followed by a second `sentry-injected` packlist budget over the exact
-  publishable bytes and then the npx tarball smoke test
+- a base npm pack dry run, optional Sentry debug-ID injection, a second
+  `sentry-injected` packlist budget over the exact publishable bytes, and only
+  then optional Sentry release metadata/upload/finalization and the npx tarball
+  smoke test
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads
 - `npm publish --access public --provenance --tag latest`, skipped on retry

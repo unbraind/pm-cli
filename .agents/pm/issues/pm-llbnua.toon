@@ -6,11 +6,11 @@ status: closed
 priority: 1
 tags[4]: distribution,packaging,release,sentry
 created_at: "2026-09-04T14:42:11.523Z"
-updated_at: "2026-09-04T15:11:14.721Z"
-closed_at: "2026-09-04T15:11:14.234Z"
-completed_at: "2026-09-04T15:11:14.234Z"
+updated_at: "2026-09-04T16:01:54.644Z"
+closed_at: "2026-09-04T16:01:54.084Z"
+completed_at: "2026-09-04T16:01:54.084Z"
 author: "harness:codex"
-acceptance_criteria: "CI and release enforce named, reviewable pre-injection and post-injection artifact budgets; the post-injection gate validates the bytes actually published without disabling Sentry debug IDs; negative controls reject an unknown profile and oversize artifacts in either profile; workflow contracts prove the base gate runs before injection and the injected gate runs after it; exact v2026.9.4 recovery passes packaging, npm/npx/bunx and installed-agent acceptance, and GitHub Release verification without moving the immutable tag."
+acceptance_criteria: "CI and release enforce named, reviewable pre-injection and post-injection artifact budgets; the post-injection gate validates the bytes actually published without disabling Sentry debug IDs; negative controls reject an unknown profile and oversize artifacts in either profile; workflow contracts prove the base gate runs before injection and the injected gate runs after it; exact v2026.9.4 recovery passes packaging, npm/npx/bunx and installed-agent acceptance, and GitHub Release verification without moving the immutable tag.; Sentry upload and release finalization occur only after the Sentry-injected artifact gate passes, so a rejected package causes no external observability side effect.; Manual recovery acceptance proves reviewed controls remain outside the immutable tagged working tree and both artifact profiles execute through the preserved path."
 goal: project management = context management
 objective: Make package-size assurance represent the exact artifact users install
 value: The release must preserve Sentry symbolication and artifact-size discipline without a false mismatch between CI and publication environments.
@@ -21,9 +21,9 @@ confidence: high
 severity: high
 environment: GitHub Actions Release exact-tag recovery for v2026.9.4 after Sentry debug-ID injection
 repro_steps: "Build immutable v2026.9.4 and npm pack: 19,926,990 bytes; inject Sentry debug IDs into dist and rerun scripts/release/package-artifact-gate.mjs: hosted run reports 20,140,358 > 20,000,000."
-resolution: "Replaced the single unpacked-size ceiling with named base and sentry-injected profiles, enforced the base pack before Sentry debug-ID injection and the exact publishable pack afterward, emitted the active profile and ceiling, rejected malformed or repeated selectors, preserved shared composition/source-map controls, added workflow and negative-control tests, and documented the release contract."
-expected_result: "CI constrains the reproducible base package, release constrains the exact Sentry-injected bytes before publication, malformed or oversized artifacts fail closed, and immutable v2026.9.4 recovery can retain Sentry symbolication without moving its tag."
-actual_result: "Focused tests, exact 100/100/100/100 repository coverage, tracker-aware static quality, type/docs/security/dependency gates, zero-finding security diff review, and real exact-tag pre/post-injection manual acceptance passed. The base artifact is below 20,000,000 bytes and the Sentry-injected v2026.9.4 artifact is 20,140,358 bytes below its reviewed 20,250,000-byte ceiling with 1,421 files and no source maps."
+resolution: "Added named dual-phase artifact budgets; fail-closed profile parsing and finite numeric validation; base, injection, post-injection gate, then Sentry side-effect ordering; and runner-temporary preservation of the reviewed gate and budget before an exact-tag checkout, without modifying the package tree."
+expected_result: "Normal and recovery releases enforce current reviewed artifact policy over the exact publishable package, reject malformed or oversized artifacts before external observability effects, preserve immutable tag contents, and permit v2026.9.4 publication with Sentry debug IDs."
+actual_result: "Focused tests pass 29/29, full coverage is exact 100/100/100/100 over 603 files and 8,364 tests, direct tracker-aware static quality passes, and isolated v2026.9.4 recovery accepts 19,926,977-byte base and 20,140,345-byte injected artifacts while SHA-256 proving tagged controls unchanged."
 affected_version: 2026.9.4
 component: release-packaging
 regression: true
@@ -34,13 +34,26 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,recurs_from,"2026-09-04T14:42:11.523Z","harness:codex","cli:create:dep",detected
   pm-e63v1x,discovered_from,"2026-09-04T14:42:11.523Z","harness:codex","cli:create:dep",detected
   pm-ygli86,verifies,"2026-09-04T14:42:11.523Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-09-04T14:42:11.523Z","harness:codex","Duplicate check: all-status searches for Sentry/debug-ID/package artifact/budget/release found closed artifact owner pm-998juj, exact-tag recovery pm-e63v1x, open released-artifact acceptance pm-ygli86, release-health reminder pm-7zs0, observability join pm-23lmm5, and aggregate release reliability pm-e70zh5. None models distinct pre-injection and post-injection packlist budgets, so this is the recurrence child under pm-e70zh5. Production evidence: Release 33882558951 passed changelog, coverage, static, context, compatibility, reliability, and Sentry upload, then failed before publication at 20,140,358 > 20,000,000; clean exact-tag pre-injection pack is 19,926,990 bytes."
   "2026-09-04T14:43:48.497Z","harness:codex","TDD red evidence: focused artifact and workflow contracts fail in five expected places. The gate does not emit a named base profile, ignores the Sentry-injected profile and unknown-profile negative control, no longer applies the 100-byte test ceiling after the budget schema change, and release.yml lacks the injected gate and required base-before-injection ordering. Existing unrelated workflow assertions remain green."
   "2026-09-04T14:46:11.671Z","harness:codex","Manual exact-tag acceptance: immutable v2026.9.4 measured 19,926,990 bytes/1,421 files under the base 20,000,000-byte profile. A real sentry-cli debug-ID injection modified the built sources, after which the exact publishable pack measured the hosted failure value 20,140,358 bytes/1,421 files and passed only the separately named 20,250,000-byte sentry-injected profile. Source maps remain forbidden in both profiles."
   "2026-09-04T15:10:50.936Z","harness:codex","Verification evidence: focused unit/workflow suite passed 26 tests; full coverage passed at exactly 61,887/61,887 statements, 46,872/46,872 branches, 12,870/12,870 functions, and 59,544/59,544 lines; tracker-aware pnpm quality:static passed in 415.9s over the complete 2,629-item sandbox clone; typecheck, docs links, secret scan, pnpm high-severity audit, git diff check, and the live base pack gate all passed. The committed base gate measures 19,960,509 bytes/1,423 files on current source. Security diff scan scan_pm_cli_sentry_artifact_diff_20260904T150845Z completed with every changed source/config/workflow/test/doc/tracker surface accounted for and zero reportable findings."
-learnings[1]{created_at,author,text}:
+  "2026-09-04T15:22:56.618Z","harness:codex","Review evidence: Sourcery identified two valid bug risks on PR #1193. First, --profile= silently selected base and a space-separated --profile value was ignored. Second, typeof number accepted Infinity/NaN and could disable the oversize comparison. Reopened the same canonical item before edits; add red tests for both boundaries, fix fail-closed parsing/validation, then rerun and re-request every reviewer."
+  "2026-09-04T15:23:41.686Z","harness:codex","Review TDD red: the expanded artifact-gate suite ran 15 tests with exactly three expected failures. The current gate accepts JSON 1e309 as an infinite ceiling, treats --profile= as base, and ignores space-separated --profile sentry-injected. The other 12 artifact cases remain green."
+  "2026-09-04T15:37:48.264Z","harness:codex","Review resolution evidence: implemented both Sourcery findings on PR #1193. Profile parsing now rejects --profile=, bare/space-separated --profile, repeated selectors, and unknown names instead of silently choosing base. Profile ceilings now reject nonnumeric and non-finite values before comparison. TDD expanded from 12 to 15 artifact cases; focused workflow/artifact verification passes 29 tests. Fresh full suite passes 603 files and 8,364 tests with exact 61,894/61,894 statements, 46,879/46,879 branches, 12,871/12,871 functions, and 59,551/59,551 lines; fresh repo-wide static quality also passes."
+  "2026-09-04T15:38:20.338Z","harness:codex","Review evidence: CodeRabbit independently confirmed the already-fixed non-finite and malformed-selector findings, and found a distinct valid ordering gap. The workflow injects debug IDs, uploads maps, and finalizes the Sentry release within one step before the post-injection package gate. Split mutation from the external side effect so a rejected package cannot leave finalized Sentry artifacts."
+  "2026-09-04T15:39:08.216Z","harness:codex","Workflow-order TDD red: the 14-test CI workflow contract has exactly one expected failure because release.yml has no distinct Inject Sentry debug IDs step and cannot prove base gate < injection < injected gate < Sentry upload/finalization."
+  "2026-09-04T15:40:11.302Z","harness:codex","CodeRabbit ordering resolution: release.yml now separates conditional debug-ID injection from Sentry release creation/upload/finalization. The workflow contract proves base gate < injection < sentry-injected gate < upload/finalization. Focused verification passes all 29 tests and docs links pass. Local actionlint is not installed in this checkout; the parsed YAML contract is green and the pinned hosted actionlint check is required on the updated head."
+  "2026-09-04T15:42:34.420Z","harness:codex","Recovery-path finding: workflow_dispatch starts from reviewed main but Select exact-tag recovery source detaches to the unpublished immutable tag before package gates. v2026.9.4 therefore restores the historical single-ceiling gate and cannot consume the new sentry-injected profile. Preserve reviewed validation controls outside the checkout before detaching, execute them against the untouched tagged tree, and contract-test that recovery neither mutates tag contents nor regresses to historical policy."
+  "2026-09-04T15:43:34.764Z","harness:codex","Recovery-control TDD red: the 14-test workflow contract has exactly one expected failure because release.yml does not preserve the reviewed artifact gate and budget before the exact-tag checkout. The contract also requires both gates to execute through the preserved control path and forbids copying controls back into the tagged working tree."
+  "2026-09-04T15:45:27.400Z","harness:codex","Exact-tag recovery acceptance: extracted immutable v2026.9.4 into an isolated temporary tree, copied the reviewed gate and budget to separate temporary control storage, installed and built the tag, then ran both profiles through the external gate. Base passed at 19,926,977/20,000,000 bytes and Sentry-injected passed at 20,140,345/20,250,000 bytes with 1,421 files. SHA-256 equality confirmed the tag's historical gate and budget were unchanged; reviewed controls never entered the publish tree."
+  "2026-09-04T16:01:52.968Z","harness:codex","Final verification: focused workflow/artifact tests pass 29/29; full coverage passes at exactly 61,894/61,894 statements, 46,879/46,879 branches, 12,871/12,871 functions, and 59,551/59,551 lines. Direct tracker-aware pnpm quality:static passes every blocking assertion including defect evidence, graph composition, SDK surface, CLI transport, and record integrity. A linked schema-context static attempt failed only because that sandbox intentionally contains zero tracker items; the real tracker-context rerun is green and is the applicable repository gate."
+learnings[4]{created_at,author,text}:
   "2026-09-04T15:10:51.423Z","harness:codex","A release mutation boundary needs its own named policy profile: validate the reproducible base build before observability injection, then validate the exact publishable packlist after injection. Sharing one ceiling across both phases makes CI evidence non-representative; disabling debug IDs would instead weaken production diagnostics. Keep composition rules common and only separate the measured size ceilings."
+  "2026-09-04T15:37:48.747Z","harness:codex","Fail-closed option parsing must distinguish absence from malformed presence: nullish defaulting is safe only after rejecting an explicitly empty selector and unsupported syntax. Numeric policy values require finiteness, not merely typeof number, because JSON exponents can deserialize to Infinity."
+  "2026-09-04T15:40:11.847Z","harness:codex","Validation of a mutated artifact must precede external side effects derived from that artifact. Treat injection as the local mutation boundary, then gate, then create/upload/finalize remote observability state."
+  "2026-09-04T16:01:53.492Z","harness:codex","When recovery deliberately switches source revisions mid-job, current policy executables must be preserved before checkout and run from external temporary storage. Restoring them into the tagged tree would contaminate immutable package bytes; relying on relative tagged scripts silently reinstates historical policy."
 files[5]{path,scope,note}:
   .github/workflows/release.yml,project,Gate base artifact before Sentry and exact publishable artifact after debug-ID injection
   scripts/release/package-artifact-budget.json,project,Reviewable base and Sentry-injected unpacked-size ceilings
@@ -51,7 +64,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-04T14:46:10.014Z",local_mutation,fix/sentry-artifact-budget-parity
   node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-09-04T14:46:10.512Z",local_mutation,fix/sentry-artifact-budget-parity
   "pnpm quality:static",project,900,"harness:codex","2026-09-04T14:46:11.011Z",local_mutation,fix/sentry-artifact-budget-parity
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-mtn2q3md-crfoyr
     kind: test
     status: failed
@@ -98,10 +111,23 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mtn4vkcv-st3vct
+    kind: test
+    status: failed
+    started_at: "2026-09-04T15:45:27.831Z"
+    finished_at: "2026-09-04T15:53:31.087Z"
+    recorded_at: "2026-09-04T15:53:31.087Z"
+    passed: 2
+    failed: 1
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+      "pnpm quality:static",schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated release history for the closed dual-phase artifact assurance item
   docs/RELEASING.md,project,Document dual-phase package sizing over actual publishable bytes
-close_reason: Implemented and verified dual-phase package artifact assurance around the Sentry mutation boundary
+close_reason: Implemented and verified reviewed control preservation for immutable exact-tag recovery
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -16,17 +16,21 @@ const budget = {
 async function run(
   report: unknown,
   configuredBudget: unknown = budget,
-  profiles: string[] = [],
+  profileArguments: string[] = [],
 ) {
   const execFileSync = vi.fn(() => JSON.stringify(report));
-  const readFileSync = vi.fn(() => JSON.stringify(configuredBudget));
+  const readFileSync = vi.fn(() =>
+    typeof configuredBudget === "string"
+      ? configuredBudget
+      : JSON.stringify(configuredBudget),
+  );
   vi.doMock("node:child_process", () => ({ execFileSync }));
   vi.doMock("node:fs", () => ({ readFileSync }));
   const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
   const originalArgv = process.argv;
   process.argv = [
     ...originalArgv,
-    ...profiles.map((profile) => `--profile=${profile}`),
+    ...profileArguments,
   ];
   let failure: unknown = null;
   try {
@@ -81,7 +85,7 @@ describe("package artifact gate", () => {
         },
       ],
       budget,
-      ["sentry-injected"],
+      ["--profile=sentry-injected"],
     );
 
     expect(result.failure).toBeNull();
@@ -102,7 +106,7 @@ describe("package artifact gate", () => {
         },
       ],
       budget,
-      ["unbounded"],
+      ["--profile=unbounded"],
     );
 
     expect(String(result.failure)).toContain(
@@ -121,6 +125,10 @@ describe("package artifact gate", () => {
         },
       },
       "not numeric",
+    ],
+    [
+      JSON.stringify(budget).replace('"base":100', '"base":1e309'),
+      "not finite",
     ],
   ])("rejects malformed profile budget %#", async (configuredBudget, message) => {
     const result = await run(
@@ -145,13 +153,31 @@ describe("package artifact gate", () => {
         },
       ],
       budget,
-      ["base", "sentry-injected"],
+      ["--profile=base", "--profile=sentry-injected"],
     );
 
     expect(String(result.failure)).toContain(
       "accepts at most one --profile",
     );
   });
+
+  it.each([["--profile="], ["--profile", "sentry-injected"]])(
+    "rejects malformed profile arguments %#",
+    async (...profileArguments) => {
+      const result = await run(
+        [
+          {
+            unpackedSize: 2,
+            files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+          },
+        ],
+        budget,
+        profileArguments,
+      );
+
+      expect(String(result.failure)).toContain("requires --profile=<name>");
+    },
+  );
 
   it("reports every composition and budget violation together", async () => {
     const result = await run([

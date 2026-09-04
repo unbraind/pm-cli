@@ -26,6 +26,9 @@ function resolveMaxUnpackedSize(budget, profile) {
   if (typeof maxUnpackedSize !== "number") {
     throw new TypeError(`Package artifact profile ${profile} is not numeric`);
   }
+  if (!Number.isFinite(maxUnpackedSize)) {
+    throw new TypeError(`Package artifact profile ${profile} is not finite`);
+  }
   return maxUnpackedSize;
 }
 
@@ -96,13 +99,21 @@ const output = execFileSync(
   { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
 );
 const report = JSON.parse(output);
-const profileArguments = process.argv.filter((argument) =>
-  argument.startsWith("--profile="),
+const profileArguments = process.argv.slice(2).filter((argument) =>
+  argument.startsWith("--profile"),
 );
 if (profileArguments.length > 1) {
   throw new TypeError("Package artifact gate accepts at most one --profile");
 }
-const profile = profileArguments[0]?.slice("--profile=".length) || "base";
+const profileArgument = profileArguments[0];
+if (
+  profileArgument !== undefined &&
+  (!profileArgument.startsWith("--profile=") ||
+    profileArgument.length === "--profile=".length)
+) {
+  throw new TypeError("Package artifact gate requires --profile=<name>");
+}
+const profile = profileArgument?.slice("--profile=".length) ?? "base";
 console.log(
   JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
 );
