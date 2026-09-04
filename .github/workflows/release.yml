@@ -36,6 +36,7 @@ jobs:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       RECOVERY_SOURCE_MODE: ${{ github.event_name == 'workflow_dispatch' && 'main' || 'tag' }}
+      PACKAGE_ARTIFACT_GATE: scripts/release/package-artifact-gate.mjs
 
     steps:
       - name: Checkout
@@ -52,6 +53,16 @@ jobs:
             echo "Exact-tag recovery must be dispatched from ${DEFAULT_BRANCH}; received ${GITHUB_REF_NAME}." >&2
             exit 2
           fi
+
+      - name: Preserve reviewed package artifact controls
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          RELEASE_CONTROLS="${RUNNER_TEMP}/release-controls"
+          mkdir -p "${RELEASE_CONTROLS}"
+          cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"
+          cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"
+          echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs" >> "${GITHUB_ENV}"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
@@ -233,6 +244,23 @@ jobs:
           fi
           node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --sentry-request-timeout-ms 120000 --max-critical 0 --max-high 0
 
+      - name: Base package artifact gate
+        run: node "${PACKAGE_ARTIFACT_GATE}"
+
+      - name: Inject Sentry debug IDs
+        timeout-minutes: 5
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
+            echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry debug-ID injection."
+            exit 0
+          fi
+          pnpm sentry:inject
+
+      - name: Sentry-injected package artifact gate
+        run: node "${PACKAGE_ARTIFACT_GATE}" --profile=sentry-injected
+
       - name: Upload Sentry sourcemaps
         timeout-minutes: 5
         env:
@@ -249,12 +277,8 @@ jobs:
             || pnpm exec sentry-cli releases info "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
           pnpm exec sentry-cli releases set-commits "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" --auto \
             || pnpm exec sentry-cli releases set-commits "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" --local --ignore-missing
-          pnpm sentry:inject
           pnpm sentry:upload
           pnpm exec sentry-cli releases finalize "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
-
-      - name: Packaging smoke check
-        run: node scripts/release/package-artifact-gate.mjs
 
       - name: npx tarball smoke check
         run: pnpm smoke:npx

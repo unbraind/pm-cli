@@ -230,7 +230,7 @@
     "eslint-plugin-unicorn": "74.0.0",
     "fast-check": "^4.9.0",
     "greptile": "^3.4.2",
-    "jscpd": "^5.1.1",
+    "jscpd": "^5.1.2",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.69.0",

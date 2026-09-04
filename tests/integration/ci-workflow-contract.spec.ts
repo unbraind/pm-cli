@@ -588,6 +588,11 @@ describe("GitHub workflow contract", () => {
       "name: Validate exact-tag recovery source",
       'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
       "Exact-tag recovery must be dispatched from ${DEFAULT_BRANCH}; received ${GITHUB_REF_NAME}.",
+      "name: Preserve reviewed package artifact controls",
+      'RELEASE_CONTROLS="${RUNNER_TEMP}/release-controls"',
+      'cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"',
+      'cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"',
+      'echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs" >> "${GITHUB_ENV}"',
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
@@ -629,7 +634,8 @@ describe("GitHub workflow contract", () => {
       "SENTRY_AUTH_TOKEN is not configured",
       "pnpm sentry:inject",
       "pnpm sentry:upload",
-      "run: node scripts/release/package-artifact-gate.mjs",
+      'run: node "${PACKAGE_ARTIFACT_GATE}"',
+      'run: node "${PACKAGE_ARTIFACT_GATE}" --profile=sentry-injected',
       "run: pnpm smoke:npx",
       "run: pnpm dogfood:package-first",
       "fetch-depth: 0",
@@ -688,6 +694,35 @@ describe("GitHub workflow contract", () => {
     expect(releaseWorkflow.indexOf("name: Setup Bun")).toBeLessThan(
       releaseWorkflow.indexOf("name: npx tarball smoke check"),
     );
+    const preserveReleaseControlsIndex = releaseWorkflow.indexOf(
+      "name: Preserve reviewed package artifact controls",
+    );
+    const selectRecoverySourceIndex = releaseWorkflow.indexOf(
+      "name: Select exact-tag recovery source",
+    );
+    expect(preserveReleaseControlsIndex).toBeGreaterThanOrEqual(0);
+    expect(preserveReleaseControlsIndex).toBeLessThan(selectRecoverySourceIndex);
+    expect(releaseWorkflow).not.toContain(
+      'cp "${RELEASE_CONTROLS}/package-artifact-gate.mjs" scripts/release/package-artifact-gate.mjs',
+    );
+    const baseArtifactGateIndex = releaseWorkflow.indexOf(
+      "name: Base package artifact gate",
+    );
+    const sentryInjectionIndex = releaseWorkflow.indexOf(
+      "name: Inject Sentry debug IDs",
+    );
+    const sentryUploadIndex = releaseWorkflow.indexOf(
+      "name: Upload Sentry sourcemaps",
+    );
+    const injectedArtifactGateIndex = releaseWorkflow.indexOf(
+      "name: Sentry-injected package artifact gate",
+    );
+    expect(baseArtifactGateIndex).toBeGreaterThanOrEqual(0);
+    expect(sentryInjectionIndex).toBeGreaterThanOrEqual(0);
+    expect(injectedArtifactGateIndex).toBeGreaterThanOrEqual(0);
+    expect(baseArtifactGateIndex).toBeLessThan(sentryInjectionIndex);
+    expect(sentryInjectionIndex).toBeLessThan(injectedArtifactGateIndex);
+    expect(injectedArtifactGateIndex).toBeLessThan(sentryUploadIndex);
     expect(releaseWorkflow.match(/name: Setup Bun/g)).toHaveLength(1);
     expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
       releaseWorkflow.indexOf("run: pnpm quality:static"),

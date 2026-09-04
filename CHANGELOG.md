@@ -4,8 +4,13 @@
 
 ### Fixed
 
+- Sentry-injected release artifacts exceed the CI package budget because pre- and post-injection packlists share one ceiling ([pm-llbnua](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-llbnua.toon))
 - GH-1190: Windows nightly can publish the event index after an unlocked fallback append ([pm-a7207g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7207g.toon))
 - Tag-push Release must regenerate the exact-tag changelog before immutable publication ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
+
+### Other
+
+- Refresh compatible jscpd 5.1.2 and reconcile the 2026-09-04 dependency census ([pm-gredf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gredf1.toon))
 
 ## 2026.9.4 - 2026-09-04
 

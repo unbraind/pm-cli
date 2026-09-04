@@ -1,6 +1,9 @@
 {
-  "version": 1,
-  "max_unpacked_bytes": 20000000,
+  "version": 2,
+  "max_unpacked_bytes_by_profile": {
+    "base": 20000000,
+    "sentry-injected": 20250000
+  },
   "max_file_count": 1800,
   "forbidden_suffixes": [".map"],
   "required_paths": [
