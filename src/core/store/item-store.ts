@@ -193,7 +193,7 @@ export async function readLocatedItemSnapshot(
     throw new PmCliError(
       "Item contains invalid UTF-8; preserve a binary backup before recovering it.",
       EXIT_CODE.CONFLICT,
-      { code: "item_document_encoding_invalid" },
+      { code: "item_document_encoding_invalid", item_id: item.id, item_path: item.itemPath, byte_length: bytes.length, empty: false },
     );
   }
   const raw = bytes.toString("utf8");

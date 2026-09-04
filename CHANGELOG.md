@@ -4,14 +4,18 @@
 
 ### Fixed
 
+- GH-1171: restore parses the on-disk item before consulting history, so a zero-byte or corrupted item file with an intact stream cannot be rebuilt ([pm-96fsma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-96fsma.toon))
 - history-compact renumbers version identifiers, so pm get --at N and pm restore N address a different recorded state after compaction with exit 0 and no signal ([pm-m0yjtg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m0yjtg.toon))
 - A deleted item's id is immediately re-mintable, so one immutable history stream can hold two unrelated items and every integrity check still reports verified ([pm-e3gn0z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e3gn0z.toon))
-- GH-1171: restore parses the on-disk item before consulting history, so a zero-byte or corrupted item file with an intact stream cannot be rebuilt ([pm-96fsma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-96fsma.toon))
 - Point-in-time reconstruction crashes with an unstructured runtime error when a history stream opens without a baseline entry, so the restore-any-version guarantee fails with no diagnosable condition ([pm-qw1uw6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qw1uw6.toon))
 - Agent skills instruct flags and spellings the runtime refuses, and no guide topic routes the evidence or automation families ([pm-4957pz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4957pz.toon))
 - Sentry-injected release artifacts exceed the CI package budget because pre- and post-injection packlists share one ceiling ([pm-llbnua](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-llbnua.toon))
 - GH-1190: Windows nightly can publish the event index after an unlocked fallback append ([pm-a7207g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7207g.toon))
 - Tag-push Release must regenerate the exact-tag changelog before immutable publication ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
+
+### Security
+
+- Upgrade Greptile review tooling to 3.5.0 with compatible dependency evidence ([pm-o3mczz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o3mczz.toon))
 
 ### Other
 

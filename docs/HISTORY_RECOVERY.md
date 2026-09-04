@@ -31,6 +31,9 @@ numeric addresses. Numeric reads fail with `history_version_mapping_unavailable`
 Use a retained timestamp instead; the SDK then returns `as_of_version: null`.
 SDK consumers must handle this nullable value. `target.historyIndex` is always
 the resolved physical zero-based position, not an original version number.
+Default and timestamp-based compaction remain available for these legacy
+streams. They preserve an unknown offset as `null`, including no-op results;
+compaction never manufactures a numeric mapping from physical positions.
 
 ## Recover an unreadable item file
 
@@ -58,6 +61,8 @@ specific recovery operation above.
 Invalid UTF-8 is a separate refusal (`item_document_encoding_invalid`), not a
 recoverable text parse failure. Preserve a binary backup before recovering such
 a file; text decoding must never silently replace original bytes.
+Its SDK error context identifies the item ID, path, byte length, and nonempty
+state just as text-shape diagnostics do.
 
 ## Recover an invalid history tail
 
@@ -103,6 +108,11 @@ Deleting an item retains its identity reservation through its history file.
 Generated IDs skip those reservations, even under reproducible execution.
 Explicit recreation fails with `item_identity_reserved`; use restore to recover
 the original subject, or create a new ID for unrelated work.
+The first `create` append exclusively creates its effective history file, so
+concurrent SDK callers and extension redirects cannot both reserve it. A failed
+partial first write keeps the reservation for diagnosis; it is never deleted
+to make the identity reusable. Subsequent large-record appenders still need the
+normal item lock or an equivalent caller-owned serialization boundary.
 
 Verification refuses a second `create` event, including one imported through
 branch union, and names both physical ordinals. Point-in-time reads cannot cross

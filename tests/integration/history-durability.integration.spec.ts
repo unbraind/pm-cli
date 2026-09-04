@@ -301,6 +301,56 @@ describe("history durability across storage maintenance", () => {
     },
   );
 
+  it.each(["direct", "string", "redirect"])("atomically reserves concurrent %s genesis writes", async (shape) => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-source", "One identity");
+      const [entry] = await readHistoryEntries(path.join(context.pmPath, "history", "pm-source.jsonl"), "pm-source");
+      const destination = path.join(context.pmPath, "history", "pm-race.jsonl");
+      if (shape !== "direct") setActiveExtensionServices({ overrides: [{
+        layer: "project", name: "concurrent-genesis", service: "history_append",
+        run: () => shape === "string" ? JSON.stringify(entry) : { history_path: destination, entry },
+      }] });
+      try {
+        const outcomes = await Promise.allSettled(Array.from({ length: 8 }, (_, index) => appendHistoryEntry(
+          shape === "redirect" ? path.join(context.pmPath, "history", `pm-writer-${index}.jsonl`) : destination,
+          entry!,
+        )));
+        expect(outcomes.filter(result => result.status === "fulfilled")).toHaveLength(1);
+        for (const result of outcomes) if (result.status === "rejected") expect(result.reason).toMatchObject({ context: { code: "item_identity_reserved" } });
+        expect((await readFile(destination, "utf8")).trim().split("\n")).toHaveLength(1);
+      } finally { setActiveExtensionServices({ overrides: [] }); }
+    });
+  });
+
+  it.each(["default", "timestamp", "noop"])("preserves unknown offsets in legacy %s compaction", async (boundary) => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-legacy-maintenance";
+      createTaskFixture(context, id, "Legacy checkpoint");
+      await runHistoryCompact(id, {}, { path: context.pmPath });
+      const file = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const entries = await readHistoryEntries(file, id);
+      entries[0] = sealHistoryRecord({ ...entries[0]!, context: {} });
+      const raw = `${entries.map(entry => JSON.stringify(entry)).join("\n")}\n`;
+      await writeFile(file, raw);
+      const before = boundary === "default" ? undefined : boundary === "noop" ? entries[0]!.ts : entries[1]!.ts;
+      const result = await runHistoryCompact(id, { before }, { path: context.pmPath });
+      expect(result.changed).toBe(boundary !== "noop");
+      expect(result.compact_boundary.first_retained_entry).toBeNull();
+      expect(result.history.verify_ok).toBe(true);
+      if (boundary === "noop") expect(await readFile(file, "utf8")).toBe(raw);
+      else expect((await readHistoryEntries(file, id))[0]!.context?.history_compaction).toMatchObject({ version_offset: null });
+      await expect(getItemAt(id, "1", { pmRoot: context.pmPath })).rejects.toMatchObject({ context: { code: "history_version_mapping_unavailable" } });
+    });
+  });
+
+  it("preserves filesystem failures when reserving a new identity", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-source", "Original");
+      const [entry] = await readHistoryEntries(path.join(context.pmPath, "history", "pm-source.jsonl"), "pm-source");
+      await expect(appendHistoryEntry(path.join(context.pmPath, "history", `${"x".repeat(300)}.jsonl`), entry!)).rejects.toMatchObject({ code: expect.stringMatching(/^(ENAMETOOLONG|ENOENT)$/) });
+    });
+  });
+
   it("refuses unknown legacy version offsets while allowing timestamp reads", async () => {
     await withTempPmPath(async (context) => {
       const id = "pm-legacy-offset";
@@ -661,7 +711,7 @@ describe("history durability across storage maintenance", () => {
       await expect(
         runRestore(id, "1", {}, { path: context.pmPath }),
       ).rejects.toMatchObject({
-        context: { code: "item_document_encoding_invalid" },
+        context: { code: "item_document_encoding_invalid", item_id: id, item_path: itemFile, byte_length: 3, empty: false },
       });
       expect(await readFile(itemFile)).toEqual(binaryItem);
       await rm(historyFile);

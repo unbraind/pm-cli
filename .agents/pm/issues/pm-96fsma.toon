@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:history","area:restore",github-intake,history-integrity,projection-contract,recovery,regression
 created_at: "2026-09-04T18:24:40.888Z"
-updated_at: "2026-09-04T21:58:06.082Z"
-closed_at: "2026-09-04T21:58:05.539Z"
-completed_at: "2026-09-04T21:58:05.539Z"
+updated_at: "2026-09-04T22:58:36.603Z"
+closed_at: "2026-09-04T22:58:36.076Z"
+completed_at: "2026-09-04T22:58:36.076Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "restore treats an unparseable existing item file exactly like an absent one and replays the requested version from history while reporting why the on-disk document was ignored; pm get on an unparseable item file refuses with a typed error that names pm restore as the remediation; A history salvage mode truncates an invalid stream tail to the last hash-verified entry, records an explicit audit entry, and refuses when any valid entry would be dropped; Fixtures cover a zero-byte item file and a NUL-padded stream tail on Linux and Windows and the point-in-time reconstruction gate replays the recovered item byte-identically"
@@ -19,9 +19,9 @@ reporter: unbraind
 severity: high
 environment: "pm-cli 2026.9.4 and 2026.8.31, Linux ext4 after a disk-full truncation, sandbox tracker"
 repro_steps: "Create an item, update it twice, verify the chain, truncate the .toon to zero bytes, run pm get and pm restore <id> <last-version>, then append NUL bytes to the history stream and retry"
-resolution: "Complete verified recovery and tail salvage, actionable corrupt-item diagnostics, required Windows recurrence coverage and lossless size-compliant SDK manifest packaging."
-expected_result: "Recovery preserves verified bytes and identity, diagnosis names both damaged files, and packaged consumers retain the documented SDK manifest export."
-actual_result: "Focused diagnostics, health, finalizer and workflow-contract regressions passed; full exact coverage, static quality, temporary-tracker acceptance and packed consumers passed. Hosted Windows and renewed review are pending."
+resolution: Recover unreadable text items and verified history tails with byte-preserving evidence; report structured identity/path/size context for text and binary corruption.
+expected_result: Recovery and refusal preserve original bytes and identify the damaged item programmatically.
+actual_result: "Binary negative control, real health diagnostics, temporary recovery, exact coverage, static quality and packed consumers passed. Prior hosted Windows recovery passed; new head must pass again."
 affected_version: 2026.8.31
 component: "sdk/lifecycle/restore, core/item/item-format, history-repair"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -29,7 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-qw1uw6,discovered_from,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,verifies,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
-comments[16]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-09-04T18:26:03.448Z","harness:claude-code","Duplicate check: searched restore from history, zero-byte item, corrupted stream tail, missing item file recovery. The closed v2026.5.1 restore-recovery lineage (linked recurs_from) covered absent files only. Reproduced live on the 2026.9.4 build in a sandbox tracker before filing: three verified history entries, zero-byte item file, get and restore both refuse with the TOON shape error."
   "2026-09-04T19:42:55.221Z","harness:codex","Implementation scope combines verified restoration, invalid-tail salvage, stable addresses, identity reservation, and replay-gate evidence with pm-m0yjtg, pm-qw1uw6, pm-e3gn0z, and pm-wlqxg3. GitHub issue 1171 already links this canonical owner. No duplicate item created."
   "2026-09-04T20:00:51.081Z","harness:codex","Safety contract: salvage is a separate explicit single-stream repair mode, refuses parseable interior records and potentially complete records with attached corruption, preserves verified prefix bytes and hash epoch, binds ownership to a readable current item or verified replay, rechecks snapshots under lock and appends a suffix-digest receipt. It does not normalize provenance or reconcile current state."
@@ -46,6 +46,8 @@ comments[16]{created_at,author,text}:
   "2026-09-04T21:45:39.832Z","harness:codex","Security refresh before the consolidated review update: pnpm security:scan passed; pnpm audit reported zero info/low/moderate/high/critical vulnerabilities across 425 dependencies. Fully paginated GitHub Dependabot, code-scanning and secret-scanning open-alert inventories each returned zero. No security threshold, artifact limit or analyzer policy was relaxed."
   "2026-09-04T21:56:16.150Z","harness:codex","Live telemetry freshness proof at 21:55 UTC: the production aggregate query returned latest_event_at 2026-09-04T21:54:32.269Z and 173 events within the preceding 15 minutes. Only aggregate timestamps/counts were read. Final queue drainage is intentionally deferred until after the last operational PM command."
   "2026-09-04T21:58:04.987Z","harness:codex","Review update for PR #1194: all 8397 tests across 605 files passed with exact 100/100/100/100 coverage. Full static quality and typecheck passed. Real temporary-tracker acceptance and packed npm/npx/bunx smoke passed. The package remains below its unchanged 20 MB artifact budget by compacting only the distributed JSON manifest; its documented export and parsed data are unchanged. Required Windows CI now executes both history regression suites. CodeRabbit findings are addressed by a metadata-only existence probe, reuse of the verified salvage hash epoch and an explicit identity-aware validation ok flag. Corrupt-item SDK errors now include item ID/path/byte length/empty state, and the real read-only health regression diagnoses both the zero-byte item and corrupt history tail. Hosted final-head checks and renewed bot review remain required before merge; no publication claim is made."
+  "2026-09-04T22:46:50.075Z","harness:codex","Second full review TDD: the actual binary UTF-8 refusal fixture failed before item_id, item_path, byte_length and empty=false were added. The new context identifies damage without parsing a message; binary bytes remain unchanged."
+  "2026-09-04T22:58:32.747Z","harness:codex","Final consolidated review-fix proof: 8404 tests / 605 files with exact statements 62140/62140, branches 47102/47102, functions 12903/12903, lines 59778/59778. Full static quality, typecheck and linked tests passed. Fresh temporary-directory recovery and packed npm/npx/bunx smoke passed. The independent eight-process identity race accepted one writer and refused seven. Dependency audit reports zero vulnerabilities. Hosted new-head checks, renewed bot review and merged-main operational proof remain separate required delivery gates."
 files[26]{path,scope,note}:
   .github/workflows/ci.yml,project,Required Windows regression suite must execute the new zero-byte and NUL-tail fixtures
   package.json,project,Preserve the public manifest export while shipping a compact generated representation
@@ -76,7 +78,7 @@ files[26]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,300,"harness:codex","2026-09-04T19:58:40.497Z",local_mutation,feat/history-durability-recovery
   node scripts/run-tests.mjs test -- tests/unit/scripts/finalize-build.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-09-04T21:37:51.066Z",local_mutation,feat/history-durability-recovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtnfyug3-tnahtb
     kind: test
     status: passed
@@ -100,11 +102,23 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/finalize-build.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtnjuz0g-f7yacd
+    kind: test
+    status: passed
+    started_at: "2026-09-04T22:52:07.858Z"
+    finished_at: "2026-09-04T22:52:57.664Z"
+    recorded_at: "2026-09-04T22:52:57.664Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/finalize-build.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated salvage flag budget
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census includes typed history recovery errors
   docs/HISTORY_RECOVERY.md,project,Public CLI and SDK durability contract
-close_reason: Review fixes implemented and locally verified; reviewed merge and publication remain separately gated.
+close_reason: Verified recovery and encoding diagnostics completed; publication is separately gated.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

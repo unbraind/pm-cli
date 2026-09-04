@@ -1,0 +1,45 @@
+id: pm-o3mczz
+title: Upgrade Greptile review tooling to 3.5.0 with compatible dependency evidence
+description: "Update the development-only Greptile CLI from 3.4.2 to 3.5.0 within PR 1194. Verify the published Node engine, release-age policy, lockfile and real CLI execution; preserve review quota as an availability limitation. Revalidate incompatible major updates against their existing canonical owners instead of weakening peers or the supported Node floor."
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,review-tooling,security
+created_at: "2026-09-04T22:46:21.479Z"
+updated_at: "2026-09-04T22:58:37.713Z"
+closed_at: "2026-09-04T22:58:37.209Z"
+completed_at: "2026-09-04T22:58:37.209Z"
+author: "harness:codex"
+acceptance_criteria: Greptile resolves and executes at 3.5.0; Audit remains zero vulnerabilities and mandatory gates pass; Existing major-version compatibility deferrals remain explicitly documented under canonical owners
+parent: pm-u9d0
+resolution: Upgrade the review CLI and lockfile to 3.5.0; preserve canonical incompatible-major deferrals and honest provider-quota evidence.
+expected_result: New review tooling executes correctly and all mandatory local gates remain green.
+actual_result: "Real greptile version/help, 30 review-wrapper tests, zero-vulnerability audit, 8404-test exact coverage and full static/type gates passed; no release-age exclusions or build allowances changed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-obmgi3,recurs_from,"2026-09-04T22:46:21.479Z","harness:codex","cli:create:dep",detected
+  pm-wlqxg3,verifies,"2026-09-04T22:46:21.479Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-04T22:46:21.479Z","harness:codex","Duplicate check: complete all-status corpus of 2637 items with body and no truncation searched for Greptile and 3.5.0. Prior pm-obmgi3 is completed 3.4.1 work and is preserved. Open and in-progress inventories were read before creation; no 3.5.0 owner exists. Registry engines >=22.0.0 fit the supported runtime and publication is older than the pnpm 11 default 24-hour release-age window."
+  "2026-09-04T22:47:40.206Z","harness:codex","Installed Greptile 3.5.0 with normal pnpm install: no release-age exclusions, engine overrides, build permissions or runtime-floor changes. Incompatible majors remain canonical open work: TypeScript 7 under pm-do5b (typescript-eslint 8.69 peer <6.1), Vitest/coverage 5 under pm-fokyhh (@codspeed/vitest-plugin 5.7.1 peer Vitest 3/4), and npm-package-arg 14 under pm-ksr40d (requires Node >=22.22.2 while pm supports >=22.18). No duplicate migration items created and those deferred items are not claimed."
+  "2026-09-04T22:58:33.203Z","harness:codex","Final consolidated review-fix proof: 8404 tests / 605 files with exact statements 62140/62140, branches 47102/47102, functions 12903/12903, lines 59778/59778. Full static quality, typecheck and linked tests passed. Fresh temporary-directory recovery and packed npm/npx/bunx smoke passed. The independent eight-process identity race accepted one writer and refused seven. Dependency audit reports zero vulnerabilities. Hosted new-head checks, renewed bot review and merged-main operational proof remain separate required delivery gates."
+files[2]{path,scope,note}:
+  package.json,project,Update development-only review CLI constraint
+  pnpm-lock.yaml,project,Resolved registry artifact integrity
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm audit,project,240,"harness:codex","2026-09-04T22:46:21.479Z",local_mutation,feat/history-durability-recovery
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/greptile-review-gate.spec.ts tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,240,"harness:codex","2026-09-04T22:47:41.421Z",local_mutation,feat/history-durability-recovery
+test_runs[1]:
+  - run_id: test-local-mtnjq8hu-8in6bb
+    kind: test
+    status: passed
+    started_at: "2026-09-04T22:49:01.211Z"
+    finished_at: "2026-09-04T22:49:16.674Z"
+    recorded_at: "2026-09-04T22:49:16.674Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/greptile-review-gate.spec.ts tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+close_reason: Greptile 3.5.0 installed and verified without relaxing compatibility or security protections.
+body: ""

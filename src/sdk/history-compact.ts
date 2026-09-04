@@ -308,6 +308,7 @@ function buildHistoryCompactEntries(params: {
     params.boundary.compactCount,
   );
   const retained = params.historyEntries.slice(params.boundary.compactCount);
+  const offset = historyVersionOffset(params.historyEntries, true);
   const baselineEntry = createHistoryEntry({
     nowIso: params.historyEntries[params.boundary.compactCount - 1]!.ts,
     author: params.author,
@@ -318,7 +319,7 @@ function buildHistoryCompactEntries(params: {
     context: {
       history_compaction: {
         contract_version: 1,
-        version_offset: historyVersionOffset(params.historyEntries) + params.boundary.compactCount - 1,
+        version_offset: offset === null ? null : offset + params.boundary.compactCount - 1,
         checkpoint_timestamp_semantics: "last_compacted_entry",
         pruned_entry_count: params.boundary.compactCount,
         pruned_stream_digest: hashHistoryStream(
@@ -494,8 +495,9 @@ export async function runHistoryCompact(
     );
   }
 
+  const offset = historyVersionOffset(historyEntries, true);
   const firstRetainedEntry =
-    boundary.retainedCount > 0 ? historyVersionOffset(historyEntries) + boundary.compactCount + 1 : null;
+    boundary.retainedCount > 0 && offset !== null ? offset + boundary.compactCount + 1 : null;
   return {
     id: subject.id,
     dry_run: dryRun,
