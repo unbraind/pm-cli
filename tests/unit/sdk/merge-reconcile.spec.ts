@@ -563,6 +563,12 @@ describe("merge reconciliation SDK", () => {
     expect(result.guidance).toContainEqual(
       expect.stringContaining("each reviewed --force pass"),
     );
+    expect(result.guidance.join(" ")).toContain(
+      "receipts.missing_history_references_after=0",
+    );
+    expect(result.guidance.join(" ")).not.toContain(
+      "missing_history_reference_details_truncated_after",
+    );
     const applied = await runMergeReconcile({}, globalOptions);
     expect(applied.ok).toBe(false);
     expect(applied.guidance).toContainEqual(

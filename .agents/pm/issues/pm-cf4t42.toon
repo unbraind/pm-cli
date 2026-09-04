@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:41.043Z"
-updated_at: "2026-09-04T10:14:20.186Z"
+updated_at: "2026-09-04T10:53:28.047Z"
 closed_at: "2026-09-04T06:43:11.161Z"
 completed_at: "2026-09-04T06:43:11.161Z"
 author: "harness:codex"
@@ -25,7 +25,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-wn3ee5,recurs_from,"2026-09-03T18:06:41.043Z","harness:codex","cli:create:dep",detected
   pm-dn8rwl,verifies,"2026-09-04T04:20:49.400Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-09-03T18:06:41.043Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1186. All-status duplicate check searched missing receipt history reference, strict health, reconcile, and remediation. pm-wn3ee5 closed preferred-era shape compatibility and pm-lwmstb closed ordinary pending-receipt settlement, but this fleet report proves the distinct unrecoverable clone-local-reference path still has no remedy. A new recurrence item preserves both shipped baselines."
   "2026-09-03T18:07:09.387Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1186#issuecomment-5530007892"
   "2026-09-04T05:49:53.199Z","harness:codex","Implementation evidence: history health now classifies missing receipt coordinates precisely and accepts only audited dispositions for pre-durable receipt references, with exact item/receipt/original-line identity and a strictly later disposition event. pm merge reconcile --force appends grouped merge_reconcile history repair events, re-runs health, and refuses malformed, missing, or post-cutoff coordinates. Focused unit/integration/remediation suites recorded 42 passing tests."
@@ -36,6 +36,7 @@ comments[10]{created_at,author,text}:
   "2026-09-04T08:19:58.985Z","harness:codex","Review remediation evidence: forced legacy recovery now requires the final historically exact pre-durable schema and always settles only receipt IDs named by trusted repair proof. Malformed summaries and unrelated unproven receipts are negative controls. All three CodeRabbit threads were answered, reacted to, and resolved."
   "2026-09-04T09:23:03.520Z","harness:codex","Review round 2 evidence: reconciliation and health fixtures now construct field proof through the public scalar hash contract, preserving trusted-settlement behavior after domain separation. The full receipt/health/reconcile regression set passes."
   "2026-09-04T10:14:20.186Z","harness:codex","Review round 3 evidence: automated missing-receipt remediation now publishes only pm merge reconcile --dry-run; --force remains a separately reviewed human step. Bounded health coordinates propagate an explicit repeated-pass warning and keep ok=false while details are truncated. The durable cutoff test now matches every coordinate so it exercises the cutoff rather than a timestamp mismatch."
+  "2026-09-04T10:53:28.047Z","harness:codex","Review evidence: CodeRabbit round four identified a termination hint that named a non-public truncation field. Updated bounded reconciliation guidance to use receipts.missing_history_references_after=0 plus the returned ok=true signal, added a negative regression for the nonexistent field, and passed targeted formatting, ESLint, build, and 13 merge-reconcile tests."
 learnings[1]{created_at,author,text}:
   "2026-09-04T06:22:42.830Z","harness:codex","A legacy missing-receipt disposition is trustworthy only when it names the exact item, receipt id, and original history line and is appended after that reference; item-level forgiveness permits forged or stale suppression."
 files[11]{path,scope,note}:

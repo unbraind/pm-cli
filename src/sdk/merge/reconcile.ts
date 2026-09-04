@@ -482,7 +482,7 @@ export async function runMergeReconcile(
   ].every(Boolean);
   const boundedBatchGuidance =
     missingBefore.truncated || missingAfter.truncated
-      ? "Missing receipt coordinates exceed the bounded detail response; each reviewed --force pass can disposition only the reported eligible batch. Repeat dry-run and --force passes until receipts.missing_history_reference_details_truncated_after=false and missing_history_references_after=0."
+      ? "Missing receipt coordinates exceed the bounded detail response; each reviewed --force pass can disposition only the reported eligible batch. Repeat dry-run and --force passes until receipts.missing_history_references_after=0 and pm merge reconcile returns ok=true."
       : undefined;
   const guidance = (
     dryRun
