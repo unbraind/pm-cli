@@ -630,6 +630,7 @@ describe("GitHub workflow contract", () => {
       "pnpm sentry:inject",
       "pnpm sentry:upload",
       "run: node scripts/release/package-artifact-gate.mjs",
+      "run: node scripts/release/package-artifact-gate.mjs --profile=sentry-injected",
       "run: pnpm smoke:npx",
       "run: pnpm dogfood:package-first",
       "fetch-depth: 0",
@@ -688,6 +689,19 @@ describe("GitHub workflow contract", () => {
     expect(releaseWorkflow.indexOf("name: Setup Bun")).toBeLessThan(
       releaseWorkflow.indexOf("name: npx tarball smoke check"),
     );
+    const baseArtifactGateIndex = releaseWorkflow.indexOf(
+      "name: Base package artifact gate",
+    );
+    const sentryUploadIndex = releaseWorkflow.indexOf(
+      "name: Upload Sentry sourcemaps",
+    );
+    const injectedArtifactGateIndex = releaseWorkflow.indexOf(
+      "name: Sentry-injected package artifact gate",
+    );
+    expect(baseArtifactGateIndex).toBeGreaterThanOrEqual(0);
+    expect(injectedArtifactGateIndex).toBeGreaterThanOrEqual(0);
+    expect(baseArtifactGateIndex).toBeLessThan(sentryUploadIndex);
+    expect(sentryUploadIndex).toBeLessThan(injectedArtifactGateIndex);
     expect(releaseWorkflow.match(/name: Setup Bun/g)).toHaveLength(1);
     expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
       releaseWorkflow.indexOf("run: pnpm quality:static"),

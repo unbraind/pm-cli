@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Sentry-injected release artifacts exceed the CI package budget because pre- and post-injection packlists share one ceiling ([pm-llbnua](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-llbnua.toon))
 - GH-1190: Windows nightly can publish the event index after an unlocked fallback append ([pm-a7207g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7207g.toon))
 - Tag-push Release must regenerate the exact-tag changelog before immutable publication ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
 

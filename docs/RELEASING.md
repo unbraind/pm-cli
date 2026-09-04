@@ -31,7 +31,9 @@ authoritative blocker-recovery run selection by
 same-day recovery by [pm-dm2vfz](../.agents/pm/issues/pm-dm2vfz.toon).
 Bounded Sentry request latency is tracked by
 [pm-b9g2cs](../.agents/pm/issues/pm-b9g2cs.toon), and exact-tag changelog
-stabilization by [pm-e63v1x](../.agents/pm/issues/pm-e63v1x.toon).
+stabilization by [pm-e63v1x](../.agents/pm/issues/pm-e63v1x.toon). Dual-phase
+package sizing around Sentry injection is tracked by
+[pm-llbnua](../.agents/pm/issues/pm-llbnua.toon).
 
 ## Version Policy
 
@@ -334,7 +336,10 @@ The static phase includes `pnpm sdk:surface:check`,
 `pnpm benchmark:transport:check`. The packaging phase runs
 `pnpm quality:package-artifact`, which evaluates npm's actual packlist against
 the committed unpacked-size, file-count, required-runtime-file, and forbidden
-source-map budgets. Additive SDK exports require a reviewed
+source-map budgets. Release additionally reruns the packlist gate after Sentry
+debug-ID injection with the separately committed `sentry-injected` ceiling, so
+CI constrains the base build while publication constrains the exact mutated
+artifact users install. Additive SDK exports require a reviewed
 snapshot refresh. A removal or semantic signature change fails until the
 maintainer supplies
 `pnpm sdk:surface:update -- --acknowledge-breaking "<release rationale>"`;
@@ -371,8 +376,9 @@ git push origin v<version>
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; Sentry requests use the fail-closed bounded `--sentry-request-timeout-ms` contract (default `120000`, maximum `300000`); `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
 - sandboxed `pm` coverage
-- optional Sentry release metadata and sourcemap upload when `SENTRY_AUTH_TOKEN` is configured
-- npm pack dry run and npx tarball smoke test
+- a base npm pack dry run before optional Sentry release metadata and sourcemap
+  upload, followed by a second `sentry-injected` packlist budget over the exact
+  publishable bytes and then the npx tarball smoke test
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads
 - `npm publish --access public --provenance --tag latest`, skipped on retry

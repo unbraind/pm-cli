@@ -233,6 +233,9 @@ jobs:
           fi
           node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --sentry-request-timeout-ms 120000 --max-critical 0 --max-high 0
 
+      - name: Base package artifact gate
+        run: node scripts/release/package-artifact-gate.mjs
+
       - name: Upload Sentry sourcemaps
         timeout-minutes: 5
         env:
@@ -253,8 +256,8 @@ jobs:
           pnpm sentry:upload
           pnpm exec sentry-cli releases finalize "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
 
-      - name: Packaging smoke check
-        run: node scripts/release/package-artifact-gate.mjs
+      - name: Sentry-injected package artifact gate
+        run: node scripts/release/package-artifact-gate.mjs --profile=sentry-injected
 
       - name: npx tarball smoke check
         run: pnpm smoke:npx

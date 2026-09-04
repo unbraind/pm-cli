@@ -11,8 +11,26 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** Validate one npm pack report against the committed distribution budget. */
-export function validatePackageArtifact(report, budget) {
+/** Resolve a named unpacked-size ceiling and reject malformed budget profiles. */
+function resolveMaxUnpackedSize(budget, profile) {
+  if (
+    typeof budget.max_unpacked_bytes_by_profile !== "object" ||
+    budget.max_unpacked_bytes_by_profile === null
+  ) {
+    throw new TypeError("Package artifact budget is missing named size profiles");
+  }
+  if (!Object.hasOwn(budget.max_unpacked_bytes_by_profile, profile)) {
+    throw new RangeError(`Unknown package artifact profile: ${profile}`);
+  }
+  const maxUnpackedSize = budget.max_unpacked_bytes_by_profile[profile];
+  if (typeof maxUnpackedSize !== "number") {
+    throw new TypeError(`Package artifact profile ${profile} is not numeric`);
+  }
+  return maxUnpackedSize;
+}
+
+/** Validate one npm pack report against a named committed distribution budget. */
+export function validatePackageArtifact(report, budget, profile = "base") {
   if (!Array.isArray(report) || report.length !== 1) {
     throw new TypeError("npm pack must return exactly one package report");
   }
@@ -25,6 +43,7 @@ export function validatePackageArtifact(report, budget) {
   ) {
     throw new TypeError("npm pack report is missing files or unpackedSize");
   }
+  const maxUnpackedSize = resolveMaxUnpackedSize(budget, profile);
   const paths = artifact.files
     .map((file) =>
       typeof file === "object" && file !== null && typeof file.path === "string"
@@ -33,9 +52,9 @@ export function validatePackageArtifact(report, budget) {
     )
     .filter(Boolean);
   const violations = [];
-  if (artifact.unpackedSize > budget.max_unpacked_bytes) {
+  if (artifact.unpackedSize > maxUnpackedSize) {
     violations.push(
-      `unpacked_size:${artifact.unpackedSize}>${budget.max_unpacked_bytes}`,
+      `unpacked_size:${artifact.unpackedSize}>${maxUnpackedSize}`,
     );
   }
   if (paths.length > budget.max_file_count) {
@@ -57,9 +76,11 @@ export function validatePackageArtifact(report, budget) {
   }
   return {
     ok: true,
+    profile,
     package: artifact.name,
     version: artifact.version,
     unpacked_size: artifact.unpackedSize,
+    max_unpacked_size: maxUnpackedSize,
     file_count: paths.length,
     forbidden_suffixes: budget.forbidden_suffixes,
   };
@@ -75,4 +96,13 @@ const output = execFileSync(
   { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
 );
 const report = JSON.parse(output);
-console.log(JSON.stringify(validatePackageArtifact(report, budget), null, 2));
+const profileArguments = process.argv.filter((argument) =>
+  argument.startsWith("--profile="),
+);
+if (profileArguments.length > 1) {
+  throw new TypeError("Package artifact gate accepts at most one --profile");
+}
+const profile = profileArguments[0]?.slice("--profile=".length) || "base";
+console.log(
+  JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
+);
