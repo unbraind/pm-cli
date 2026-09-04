@@ -13,12 +13,9 @@
 - GH-1190: Windows nightly can publish the event index after an unlocked fallback append ([pm-a7207g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7207g.toon))
 - Tag-push Release must regenerate the exact-tag changelog before immutable publication ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
 
-### Security
-
-- Upgrade Greptile review tooling to 3.5.0 with compatible dependency evidence ([pm-o3mczz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o3mczz.toon))
-
 ### Other
 
+- Upgrade Greptile review tooling to 3.5.0 with compatible dependency evidence ([pm-o3mczz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o3mczz.toon))
 - Point-in-time reconstruction gate: prove every item at every recorded version replays exactly from its history stream alone ([pm-wlqxg3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wlqxg3.toon))
 - Refresh compatible jscpd 5.1.2 and reconcile the 2026-09-04 dependency census ([pm-gredf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gredf1.toon))
 
