@@ -1,0 +1,33 @@
+id: pm-2bqgs7
+title: "flag-invocation-parity only iterates declared flags, so 21 runtime options across 8 core commands have no flag contract"
+description: "Measured 2026-09-04 on the 2026.9.4 build by walking every option Commander registers in buildCoreCommandProgram() against the flag contract the SDK resolves for the same command. Twenty-one runtime options across eight core commands have no contract row: config --value; list-all --status; next --include-decisions; update-many --status --assignee --parent --blocked-by --blocked-reason --unblock-note plus the three snake_case aliases; append --text; merge --message --force --include-reconciled; learnings --stdin --file --edit --delete; test --list. The item command has no contract resolver at all.\n\nThe parity gate cannot see any of this by construction: verifyCoreFlagInvocationParity filters observed options to declaredFlags.has(flag) before comparing arity, so it iterates its own declared list and indexes into the runtime, the inverse of the direction that would catch drift. Consequences already visible: pm contracts --command merge --flags-only omits --message and --force even though pm merge --help documents both for reconcile; pm contracts --command learnings omits the stdin, file, edit, and delete inputs the help lists; any contract-derived validator reads a skill fence instructing pm merge reconcile --message as an unknown flag.\n\nAcceptance: the parity gate fails on any observed core option absent from the declared contract, with a negative control that seeds one undeclared option; each of the 21 options is declared or removed, with lexicon and help-token budgets re-ratcheted through governance rather than silenced; item receives a contract resolver or leaves the core program; contracts snapshot, MCP declared keys, and completion regenerate from the corrected table."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:cli","area:contracts",denominator,gate,review-feedback,surface-parity
+created_at: "2026-09-04T18:24:52.349Z"
+updated_at: "2026-09-04T18:26:07.993Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The parity gate fails on any observed core option absent from the declared contract with a negative control that seeds one undeclared option; Each of the 21 options is declared or removed with lexicon and help-token budgets re-ratcheted through governance rather than silenced; item receives a contract resolver or leaves the core program; Contracts snapshot, MCP declared keys, and completion regenerate from the corrected table"
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: medium
+environment: pm-cli 2026.9.4 build at 751aa44c0
+repro_steps: "Import buildCoreCommandProgram from the parity script, list each command option long name, and diff against resolveSubcommandFlagContractsForCommand plus the global flag contracts"
+expected_result: Every option the core program registers is declared in the flag contract the SDK resolves for that command
+actual_result: "21 options across config, list-all, next, update-many, append, merge, learnings, and test are undeclared and the item command has no resolver"
+affected_version: 2026.9.4
+component: "scripts/release/flag-invocation-parity, sdk/cli-contracts/flag-contracts"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4957pz,discovered_from,"2026-09-04T18:24:52.349Z","harness:claude-code","cli:create:dep",detected
+  pm-suhxny,recurs_from,"2026-09-04T18:24:52.349Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-09-04T18:24:52.349Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-04T18:26:06.829Z","harness:claude-code","Duplicate check: searched flag contract drift, parity gate declared-only iteration, undeclared runtime options. Closed contract items cover semantic invocation metadata and completion generation, none the observed-versus-declared direction. Population measured by script on the 2026.9.4 build before filing."
+files[2]{path,scope,note}:
+  scripts/release/flag-invocation-parity.mjs,project,filters observations to declared flags before comparing
+  src/sdk/cli-contracts/flag-contracts.ts,project,declared flag tables missing 21 runtime options
+escape_class: review_caught_late
+body: ""

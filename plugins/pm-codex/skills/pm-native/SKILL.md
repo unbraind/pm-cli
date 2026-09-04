@@ -14,7 +14,7 @@ Use MCP tools before shell commands:
 
 - Orient: `pm_context`, `pm_search`, `pm_list`, `pm_get`
 - Mutate: `pm_create`, `pm_update`, `pm_claim`, `pm_release`, `pm_close`
-- Evidence: `pm_comments`, `pm_files`, `pm_docs`, `pm_test`
+- Evidence: `pm_comments`, `pm_notes`, `pm_learnings`, `pm_files`, `pm_docs`, `pm_test`
 - Verify: `pm_validate`, `pm_health`, `pm_contracts`
 - Everything else: `pm_run` with an explicit `action`
 
@@ -37,7 +37,6 @@ Most tools accept:
 ```json
 {
   "cwd": "/repo/root",
-  "author": "codex-agent",
   "options": {
     "limit": "10"
   }
@@ -79,8 +78,8 @@ Load the smallest thing that answers the question. Costs are measured.
 | The whole command surface with per-command ceilings | `pm_contracts` with `summary: true` | ~2.6k tok |
 | An unfamiliar capability family | `pm_run` with `action: "guide", topic: "<topic>", depth: "brief"` | ~0.6-1k tok |
 
-Guide topics: `quickstart`, `commands`, `workflows`, `sdk`, `extensions`,
-`skills`, `harnesses`, `release`, `tokens`, `graph`, `assurance`, `merge`.
+Guide topics are declared at runtime: `pm guide` prints the current index and
+`pm guide <topic> --depth brief` expands one topic. Do not copy the list.
 
 Never load `docs/COMMANDS.md` (~29k tok) or `docs/SDK.md` (~45k tok) whole.
 

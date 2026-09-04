@@ -45,6 +45,8 @@ Validates docs and .agents/skills freshness gates:
 - agentskills frontmatter validity for required skills
 - pm guide topic/doc routing integrity
 - guide command examples match runtime command contracts
+- fenced skill invocations use only flags a contract or package declares
+- every declared capability family has a hand-written guide topic
 `);
 }
 
@@ -603,6 +605,208 @@ export async function validateDeprecatedCommandSpellings(failures, options = {})
   }
 }
 
+/**
+ * Guide topics whose command list is generated from the capability contract.
+ *
+ * They prove reachability, not routing: a family named only here has a
+ * listing and no workflow, which is the gap the family check exists to catch.
+ */
+export const GENERATED_GUIDE_TOPIC_IDS = Object.freeze(["capabilities"]);
+
+/** Instructional markdown roots whose fenced `pm` invocations agents copy verbatim. */
+const SKILL_FLAG_SCAN_DIRECTORIES = Object.freeze([".agents/skills", "plugins"]);
+
+/** Collect the top-level command names a guide topic's examples and workflows invoke. */
+export function guideTopicCommandNames(topic) {
+  const names = new Set();
+  const examples = [
+    ...(topic?.commands ?? []),
+    ...(topic?.workflows ?? []).flatMap((workflow) => workflow?.commands ?? []),
+  ];
+  for (const example of examples) {
+    const match = /^\s*pm\s+([a-z][a-z0-9-]*)/u.exec(example);
+    if (match) names.add(match[1]);
+  }
+  return names;
+}
+
+/**
+ * Map every declared capability family to the hand-written topics that route it.
+ *
+ * The family set comes from the built capability contract and the topic set
+ * from the built guide, never from a list kept here: a hand-maintained topic
+ * list is exactly the artifact that went stale in the skills this check guards.
+ */
+export function mapCapabilityFamilyRouting(families, topics) {
+  const routing = new Map();
+  for (const family of families ?? []) {
+    const commands = new Set(family.commands ?? []);
+    const routedBy = (topics ?? [])
+      .filter((topic) => !GENERATED_GUIDE_TOPIC_IDS.includes(topic.id))
+      .filter((topic) =>
+        [...guideTopicCommandNames(topic)].some((command) => commands.has(command)),
+      )
+      .map((topic) => topic.id);
+    routing.set(family.family, routedBy);
+  }
+  return routing;
+}
+
+/** Read the capability families and guide topics from the built SDK artifacts. */
+export async function loadCapabilityFamilyRoutingInputs() {
+  const [capabilities, guide] = await Promise.all([
+    import("../../dist/sdk/agent-capability-contracts.js"),
+    import("../../dist/sdk/guide-topics.js"),
+  ]);
+  return {
+    families: capabilities.listPmCommandCapabilityGroups(),
+    topics: guide.listGuideTopics(),
+  };
+}
+
+/**
+ * Fail when a capability family is reachable only through the generated listing.
+ *
+ * `options.families` and `options.topics` override the built artifacts so the
+ * vacuous-pass guard and the negative control run without a build.
+ */
+export async function validateCapabilityFamilyRouting(failures, options = {}) {
+  const inputs =
+    options.families && options.topics
+      ? { families: options.families, topics: options.topics }
+      : await loadCapabilityFamilyRoutingInputs();
+  const routing = mapCapabilityFamilyRouting(inputs.families, inputs.topics);
+  if (routing.size === 0) {
+    failures.push(
+      "Capability-family routing check found no families in the built capability contract; the check would pass vacuously",
+    );
+    return;
+  }
+  for (const [family, routedBy] of routing) {
+    if (routedBy.length === 0) {
+      failures.push(
+        `Capability family "${family}" is reachable only through the generated capabilities listing; add a guide topic whose commands or workflows name one of its commands`,
+      );
+    }
+  }
+}
+
+/** Reduce a `pm contracts --flags-only` payload to accepted flags per command path. */
+export function mapCommandFlagTable(flagPayload, globalFlags = []) {
+  const table = new Map();
+  for (const row of flagPayload?.command_flags ?? []) {
+    if (typeof row?.command !== "string") continue;
+    const accepted = new Set(globalFlags);
+    for (const entry of row.flags ?? []) {
+      if (typeof entry?.flag === "string") accepted.add(entry.flag);
+      for (const alias of entry?.aliases ?? []) accepted.add(alias);
+    }
+    table.set(row.command, accepted);
+  }
+  return table;
+}
+
+/** Read the flag table from the built CLI contract and the global flags from the built SDK. */
+export async function loadCommandFlagTable() {
+  const flagContracts = await import("../../dist/sdk/cli-contracts/flag-contracts.js");
+  const globalFlags = [
+    ...flagContracts.GLOBAL_FLAG_CONTRACTS,
+    ...flagContracts.SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
+  ].flatMap((entry) => [entry.flag, ...(entry.aliases ?? [])]);
+  const result = runCommand(
+    process.execPath,
+    ["dist/cli.js", "contracts", "--flags-only", "--json", "--output-budget", "unbounded"],
+    { cwd: REPO_ROOT, capture: true },
+  );
+  return mapCommandFlagTable(
+    parseJson(result.stdout, "pm contracts --flags-only --json --output-budget unbounded"),
+    globalFlags,
+  );
+}
+
+/**
+ * Collect long flags that first-party packages declare in their extension sources.
+ *
+ * A package-provided flag is legal in a skill only once the package is
+ * installed, so it is accepted here rather than treated as a typo; the skill
+ * text is expected to name the installing command beside it.
+ */
+export async function collectPackageDeclaredFlags(relativeDirectory = "packages") {
+  const flags = new Set();
+  let entries;
+  try {
+    entries = await readdir(path.resolve(REPO_ROOT, relativeDirectory), { recursive: true });
+  } catch (error) {
+    if (isMissingError(error)) return flags;
+    throw error;
+  }
+  for (const entry of entries) {
+    const relativePath = String(entry).replaceAll("\\", "/");
+    if (!/^(?!.*node_modules).*\/extensions\/.*\.ts$/u.test(`/${relativePath}`)) continue;
+    const content = await readUtf8(path.posix.join(relativeDirectory, relativePath));
+    for (const match of content.matchAll(/long:\s*"(--[a-z][a-z0-9-]*)"/gu)) {
+      flags.add(match[1]);
+    }
+  }
+  return flags;
+}
+
+/** Resolve the contract command path (`package doctor` before `package`) a fenced invocation targets. */
+export function resolveFlagContractCommand(text, table) {
+  const tokens = text.replace(/^\s*(?:\$\s*)?pm\s+/u, "").split(/\s+/u);
+  const [first, second] = tokens;
+  if (typeof second === "string" && /^[a-z][a-z0-9-]*$/u.test(second) && table.has(`${first} ${second}`)) {
+    return `${first} ${second}`;
+  }
+  return table.has(first) ? first : null;
+}
+
+/** Push one failure per fenced flag that neither the command contract nor a package declares. */
+export function validateFencedFlagSpellingsIn(markdownFile, content, table, packageFlags, failures) {
+  for (const invocation of extractFencedPmInvocations(content)) {
+    const command = resolveFlagContractCommand(invocation.text, table);
+    if (!command) continue;
+    const accepted = table.get(command);
+    for (const flag of invocation.text.match(/(?<![\w-])--[a-z][a-z0-9-]*/gu) ?? []) {
+      if (accepted.has(flag) || packageFlags.has(flag)) continue;
+      failures.push(
+        `${markdownFile}:${invocation.line}: instructs \`${flag}\`, which no contract declares for \`pm ${command}\` (${invocation.text})`,
+      );
+    }
+  }
+}
+
+/**
+ * Fail when a skill instructs a flag the runtime would refuse.
+ *
+ * `options.flagTable` and `options.packageDeclaredFlags` override the built
+ * artifacts so the negative control and the vacuous-pass guard are exercisable
+ * without a build.
+ */
+export async function validateFencedFlagSpellings(failures, options = {}) {
+  const table = options.flagTable ?? (await loadCommandFlagTable());
+  if (table.size === 0) {
+    failures.push(
+      "Fenced-flag check found no command flag contracts in the built CLI; the check would pass vacuously",
+    );
+    return;
+  }
+  const packageFlags = options.packageDeclaredFlags ?? (await collectPackageDeclaredFlags());
+  const files = [];
+  for (const directory of SKILL_FLAG_SCAN_DIRECTORIES) {
+    files.push(...(await collectMarkdownFiles(directory)));
+  }
+  for (const markdownFile of new Set(files)) {
+    validateFencedFlagSpellingsIn(
+      markdownFile,
+      await readUtf8(markdownFile),
+      table,
+      packageFlags,
+      failures,
+    );
+  }
+}
+
 export async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -620,6 +824,8 @@ export async function main() {
     await validatePublicDocBudgets(failures);
     await validateRequiredGuideMentions(failures);
     await validateDeprecatedCommandSpellings(failures);
+    await validateFencedFlagSpellings(failures);
+    await validateCapabilityFamilyRouting(failures);
     await runSkillChecks(failures);
     await runGuideChecks(failures);
   }

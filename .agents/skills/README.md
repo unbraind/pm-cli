@@ -41,7 +41,7 @@ pm guide skills
 pm guide harnesses --depth standard
 ```
 
-Guide topics: `quickstart`, `commands`, `workflows`, `sdk`, `extensions`,
-`skills`, `harnesses`, `release`, `tokens`, `graph`, `assurance`, `merge`.
+Guide topics are declared at runtime: `pm guide` prints the current index and
+`pm guide <topic> --depth brief` expands one topic. Do not copy the list.
 
 Compatibility routing: [Harness compatibility matrix](HARNESS_COMPATIBILITY.md)

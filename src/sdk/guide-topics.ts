@@ -603,6 +603,8 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       "Use this when more than one agent or worktree mutates the same tracker and the results must merge without hand resolution.",
     commands: [
       "pm merge install",
+      "pm merge report",
+      "pm merge reconcile --dry-run",
       "pm claim <ID>",
       "pm release <ID>",
       "pm validate --check-history-drift",
@@ -615,6 +617,18 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
         prompt:
           "Run the merge installer in every fresh clone or worktree before the first branch merge of tracker data.",
         commands: ["pm merge install", "pm health --check-only"],
+      },
+      {
+        name: "Settle A Merge Before Trusting Health",
+        goal: "A lossless merge still leaves pending receipts that strict health reports until they are reconciled.",
+        prompt:
+          "After any branch merge that touched tracker data, read the merge report, preview the reconciliation, then apply it; only then treat a health verdict as a statement about the data.",
+        commands: [
+          "pm merge report",
+          "pm merge reconcile --dry-run",
+          'pm merge reconcile --message "Post-merge history reconciliation"',
+          "pm health --check-only",
+        ],
       },
       {
         name: "Hand Work Between Agents Safely",
@@ -639,6 +653,116 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       },
     ],
     related: ["workflows", "assurance", "commands"],
+  },
+  {
+    id: "evidence",
+    aliases: ["record", "annotations", "learnings", "history-maintenance"],
+    title: "Evidence, Durable Knowledge, and Record Maintenance",
+    summary:
+      "Append comments, notes, learnings, files, docs, and tests to items, and maintain the immutable history those records live in.",
+    intent:
+      "Use this when work must be explained to the next agent, when a durable lesson should outlive the item, or when a history stream needs verification, repair, redaction, compaction, or author attribution.",
+    commands: [
+      'pm comments <ID> "<progress or verification evidence>"',
+      'pm notes <ID> --add "<rationale that belongs on the item>"',
+      'pm learnings <ID> --add "<lesson that should outlive the item>"',
+      "pm append <ID> --body -",
+      "pm files <ID> --add path=<path>,scope=project,note=<why>",
+      "pm history <ID> --verify --strict-exit",
+      "pm history-repair --all --dry-run",
+      "pm history-redact <ID> --literal <secret> --dry-run",
+      "pm history-compact <ID> --dry-run",
+      "pm history-author-acknowledge --all-actionable --dry-run",
+      "pm close-many --ids <ID>,<ID> --reason <text> --dry-run",
+      "pm test-all --status open --limit 10 --progress",
+    ],
+    workflows: [
+      {
+        name: "Record While Working, Not After",
+        goal: "Another agent can rebuild the full situation from the item alone.",
+        prompt:
+          "Add a comment for each verified step, a note for each rationale the item body does not carry, and a learning for each lesson that applies beyond this item. Prefer appending over rewriting.",
+        commands: [
+          'pm comments <ID> "Evidence: <what changed and what passed>"',
+          'pm notes <ID> --add "Decision log: <why this shape>"',
+          'pm learnings <ID> --add "<durable lesson>"',
+          "pm learnings <ID> --limit 5",
+        ],
+      },
+      {
+        name: "Verify And Repair A History Stream",
+        goal: "Every mutation stays provable and the chain re-anchors after drift.",
+        prompt:
+          "Verify the chain with a strict exit before trusting a stream, preview any repair, and record why the repair was needed in the audit message.",
+        commands: [
+          "pm history <ID> --verify --strict-exit",
+          "pm history-repair --all --dry-run",
+          'pm history-repair --all --message "<why the chain drifted>"',
+          "pm validate --check-history-drift",
+        ],
+      },
+      {
+        name: "Redact, Compact, Or Attribute Without Losing Proof",
+        goal: "Sensitive text, stream length, and unknown authors are handled through audited rewrites.",
+        prompt:
+          "Preview every history rewrite with --dry-run, read the receipt, then apply. Compaction renumbers ordinal versions, so record the checkpoint it created.",
+        commands: [
+          "pm history-redact <ID> --literal <secret> --dry-run",
+          "pm history-compact <ID> --dry-run",
+          "pm history-author-acknowledge --all-actionable --dry-run",
+        ],
+      },
+    ],
+    docs: [
+      {
+        path: "docs/COMMANDS.md",
+        purpose: "Annotation, bulk, and history-and-recovery command families.",
+      },
+      {
+        path: "docs/MUTATION_INTEGRITY.md",
+        purpose: "Provenance and content-safety policy every mutation shares.",
+      },
+      {
+        path: "docs/AGENT_GUIDE.md",
+        purpose:
+          "Evidence expectations in the agent loop and self-repair remediation.",
+      },
+    ],
+    related: ["workflows", "assurance", "merge", "graph"],
+  },
+  {
+    id: "automation",
+    aliases: ["calendar", "reminders", "meetings", "events"],
+    title: "Reminders, Events, and Meetings",
+    summary:
+      "Attach time to items so context and agenda views can surface deadlines, meetings, and reminders when they matter.",
+    intent:
+      "Use this when an item needs a due signal, a scheduled event, or a meeting record that later context reads should surface.",
+    commands: [
+      "pm remind <title> --at <when> --parent <ID>",
+      "pm event <title> --start <when> --parent <ID>",
+      "pm meet <title> --start <when> --duration <span> --parent <ID>",
+      "pm context --limit 10",
+    ],
+    workflows: [
+      {
+        name: "Put A Deadline Where Context Will Find It",
+        goal: "Time-bound work surfaces in the agenda section of context reads.",
+        prompt:
+          "Record the reminder or event under the item that owns the work, then confirm it appears in the agenda summary of a context read.",
+        commands: [
+          "pm remind <title> --at <when> --parent <ID>",
+          "pm context --limit 10",
+        ],
+      },
+    ],
+    docs: [
+      {
+        path: "docs/COMMANDS.md",
+        purpose: "Calendar and context command family.",
+      },
+    ],
+    related: ["workflows", "quickstart", "extensions"],
   },
 ];
 

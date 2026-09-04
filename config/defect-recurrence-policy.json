@@ -277,7 +277,7 @@
     },
     {
       "id": "declared-set-versus-hand-maintained-list",
-      "version": 1,
+      "version": 2,
       "title": "A checker or adapter enumerates its own hand-maintained list instead of iterating the artifact the outside world resolves",
       "owner_item_id": "pm-suhxny",
       "escape_class": "production_defect",
@@ -291,12 +291,21 @@
           "scripts/release/command-grammar-gate.mjs",
           "scripts/sdk-surface-snapshot.mjs",
           "scripts/plugin-mcp-smoke-harness.mjs",
-          "sdk/public-surface.json"
+          "sdk/public-surface.json",
+          "scripts/release/docs-skills-gate.mjs",
+          "scripts/release/flag-invocation-parity.mjs",
+          "src/sdk/guide-topics.ts",
+          "src/sdk/agent-capability-contracts.ts",
+          ".agents/skills/**",
+          "plugins/pm-claude/skills/**",
+          "plugins/pm-codex/skills/**"
         ],
         "item_ids": [
           "pm-suhxny",
           "pm-b84irw",
-          "pm-edywqn"
+          "pm-edywqn",
+          "pm-4957pz",
+          "pm-2bqgs7"
         ],
         "tags": [
           "denominator",
@@ -328,7 +337,9 @@
         "pm-xpumg4",
         "pm-7wx1f9",
         "pm-suhxny",
-        "pm-edywqn"
+        "pm-edywqn",
+        "pm-4957pz",
+        "pm-2bqgs7"
       ],
       "budget": {
         "max_escape_rate": 0,

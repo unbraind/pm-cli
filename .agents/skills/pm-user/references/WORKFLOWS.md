@@ -24,12 +24,27 @@ pm comments <ID> "Owner update: <state>"
 pm release <ID>
 ```
 
-## Audit-Friendly Collaboration
+## Recording Durable Knowledge
 
-For non-owner append-only collaboration:
+A comment explains this item; a learning outlives it. Record a lesson the
+moment it is confirmed, on the item that produced it:
 
 ```bash
-pm comments <ID> --add "audit comment" --allow-audit-comment
-pm notes <ID> --add "audit note" --allow-audit-comment
-pm update <ID> --dep "id=<id>,kind=related,author=<author>,created_at=now" --allow-audit-dep-update
+pm learnings <ID> --add "<what turned out to be true and how it was proven>"
+pm learnings <ID> --limit 5
+pm guide evidence --depth brief
+```
+
+## Append-Only Collaboration Between Owners
+
+Comments, notes, and typed dependencies append for any author on a bare
+install; no bypass flag is needed. The review-style flags below are provided by
+the `governance-audit` package and are refused as unknown options until it is
+installed:
+
+```bash
+pm package install governance-audit --project
+pm comments <ID> --add "review comment" --allow-audit-comment
+pm notes <ID> --add "review note" --allow-audit-comment
+pm update <ID> --dep "id=<id>,kind=discovered_from" --allow-audit-dep-update
 ```

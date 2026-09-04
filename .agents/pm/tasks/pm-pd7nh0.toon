@@ -1,0 +1,26 @@
+id: pm-pd7nh0
+title: "MCP 2026-07-28 per-request log level is neither read nor negatively controlled, and the conformance matrix has no row for it"
+description: "The 2026-07-28 key-changes list (item 5) removes logging/setLevel and sets log level per request through the _meta key io.modelcontextprotocol/logLevel; servers MUST NOT emit notifications/message for requests that did not include the field. The literal appears in zero source files and zero tests. pm never emits notifications/message, so the MUST NOT holds vacuously, but nothing proves it and the conformance matrix in docs/MCP_2026_07_28_CONFORMANCE.md assigns the requirement no owner and no evidence row, which is the one shape the matrix promised not to have.\n\nAcceptance: the request-metadata parser accepts and validates the key against the specification level enum and refuses an invalid level with -32602 while leaving the request otherwise processable; a negative control proves no notifications/message frame is emitted on stdio and Streamable HTTP for a request that omits the key, and that a request carrying the key is accepted unchanged; the matrix gains the row with owner and executable evidence; the generated deprecation inventory and the removed-method controls stay green."
+type: Task
+status: open
+priority: 2
+tags[4]: "area:sdk",conformance,mcp,protocol
+created_at: "2026-09-04T18:25:04.356Z"
+updated_at: "2026-09-04T18:26:11.615Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: The request-metadata parser accepts and validates io.modelcontextprotocol/logLevel against the specification enum and refuses an invalid level with -32602; A negative control proves no notifications/message frame is emitted on stdio and Streamable HTTP for a request that omits the key; The conformance matrix gains the row with owner and executable evidence and the deprecation inventory stays green
+parent: pm-rs9vry
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-s00mpf,implements,"2026-09-04T18:25:04.356Z","harness:claude-code","cli:create:dep",detected
+  pm-vae5ec,verifies,"2026-09-04T18:25:04.356Z","harness:claude-code","cli:create:dep",detected
+  pm-vzcisw,discovered_from,"2026-09-04T18:25:04.356Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-04T18:26:10.441Z","harness:claude-code","Duplicate check: searched MCP log level, notifications message, per-request logging metadata. The deprecation-migration chore (linked discovered_from) removed logging setLevel but the per-request key has no owner. Literal census on the 2026.9.4 tree: zero source files, zero tests."
+files[1]{path,scope,note}:
+  src/sdk/mcp/protocol.ts,project,request metadata keys where the log level key must be parsed
+docs[1]{path,scope,note}:
+  docs/MCP_2026_07_28_CONFORMANCE.md,project,matrix row to add
+body: ""

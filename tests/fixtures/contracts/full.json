@@ -4222,6 +4222,15 @@
           "flag": "--dry-run"
         },
         {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--include-reconciled"
+        },
+        {
           "flag": "--output"
         },
         {

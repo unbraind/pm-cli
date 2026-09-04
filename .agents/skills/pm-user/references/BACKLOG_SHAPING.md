@@ -89,7 +89,12 @@ Record evolution explicitly rather than letting it be inferred:
 pm update <NEW> --dep "id=<OLD>,kind=supersedes"
 pm update <FIX> --dep "id=<INCIDENT>,kind=incident_from"
 pm update <TEST> --dep "id=<FEATURE>,kind=verifies"
+pm update <NEW-DEFECT> --dep "id=<CLOSED-DEFECT>,kind=recurs_from"
 ```
+
+Record the lesson where the next agent will read it, on the item that proved
+it, with `pm learnings <ID> --add "..."`; a closed item without its learning
+forces the next reader to rediscover it.
 
 ## Periodic Hygiene
 

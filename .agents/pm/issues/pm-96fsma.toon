@@ -1,0 +1,35 @@
+id: pm-96fsma
+title: "GH-1171: restore parses the on-disk item before consulting history, so a zero-byte or corrupted item file with an intact stream cannot be rebuilt"
+description: "Reproduced on the 2026.9.4 build in a sandbox tracker: create an item, mutate it twice (three history entries, chain verified), then truncate the item file to zero bytes. pm get and pm restore <id> 3 both fail with \"TOON input does not have the shape of an item document\" and the item stays unrecoverable even though the history stream is a complete JSON-patch log of every version. In src/sdk/lifecycle/restore.ts the subject resolver parses the located item file before readHistoryEntries runs, so the existing absent-file fallback (replay the current document from history) is unreachable in exactly the case it exists for: the file is present but empty or corrupt. GH-1171 hit this after a disk-full event that truncated files mid-write.\n\nSecond half from the same report: a NUL-padded tail (the ext4 crash artifact) makes the whole stream unusable. The current diagnostic names the line (\"History for <id> contains invalid JSON at line 4\") but offers no salvage path, and history-repair declines because the chain up to the last valid entry verifies.\n\nAcceptance: (1) restore treats an unparseable existing item file exactly like an absent one, replays the requested version from history, and reports why the on-disk document was ignored; (2) pm get on an unparseable file refuses with a typed error that names pm restore as the remediation; (3) a history salvage mode truncates an invalid tail to the last hash-verified entry, records an explicit audit entry, and refuses when any valid entry would be dropped (negative control: a corrupted middle entry must never be silently cut); (4) fixtures cover a zero-byte item file and a NUL-padded stream tail on Linux and Windows; (5) the point-in-time reconstruction gate replays the recovered item byte-identically."
+type: Issue
+status: open
+priority: 1
+tags[7]: "area:history","area:restore",github-intake,history-integrity,projection-contract,recovery,regression
+created_at: "2026-09-04T18:24:40.888Z"
+updated_at: "2026-09-04T18:26:04.507Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "restore treats an unparseable existing item file exactly like an absent one and replays the requested version from history while reporting why the on-disk document was ignored; pm get on an unparseable item file refuses with a typed error that names pm restore as the remediation; A history salvage mode truncates an invalid stream tail to the last hash-verified entry, records an explicit audit entry, and refuses when any valid entry would be dropped; Fixtures cover a zero-byte item file and a NUL-padded stream tail on Linux and Windows and the point-in-time reconstruction gate replays the recovered item byte-identically"
+parent: pm-o2kc
+risk: medium
+confidence: high
+reporter: unbraind
+severity: high
+environment: "pm-cli 2026.9.4 and 2026.8.31, Linux ext4 after a disk-full truncation, sandbox tracker"
+repro_steps: "Create an item, update it twice, verify the chain, truncate the .toon to zero bytes, run pm get and pm restore <id> <last-version>, then append NUL bytes to the history stream and retry"
+expected_result: "restore replays the requested version from the intact history and reports that the on-disk document was ignored, and an invalid tail can be salvaged to the last verified entry with an audit record"
+actual_result: "Both pm get and pm restore fail with TOON input does not have the shape of an item document, and an invalid tail leaves the stream unusable with no salvage command"
+affected_version: 2026.8.31
+component: "sdk/lifecycle/restore, core/item/item-format, history-repair"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-g6qd,recurs_from,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
+  pm-qw1uw6,discovered_from,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
+  pm-wlqxg3,verifies,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-04T18:26:03.448Z","harness:claude-code","Duplicate check: searched restore from history, zero-byte item, corrupted stream tail, missing item file recovery. The closed v2026.5.1 restore-recovery lineage (linked recurs_from) covered absent files only. Reproduced live on the 2026.9.4 build in a sandbox tracker before filing: three verified history entries, zero-byte item file, get and restore both refuse with the TOON shape error."
+files[2]{path,scope,note}:
+  src/core/item/item-format.ts,project,TOON shape refusal raised for an empty or corrupt item file
+  src/sdk/lifecycle/restore.ts,project,subject resolver parses the located item before reading history
+escape_class: production_defect
+body: ""

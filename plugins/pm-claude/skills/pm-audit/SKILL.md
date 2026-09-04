@@ -94,8 +94,8 @@ Load the smallest thing that answers the question. Costs are measured.
 | The whole command surface with per-command ceilings | `pm_contracts` with `summary: true` | ~2.6k tok |
 | An unfamiliar capability family | `pm_run` with `action: "guide", topic: "<topic>", depth: "brief"` | ~0.6-1k tok |
 
-Guide topics: `quickstart`, `commands`, `workflows`, `sdk`, `extensions`,
-`skills`, `harnesses`, `release`, `tokens`, `graph`, `assurance`, `merge`.
+Guide topics are declared at runtime: `pm guide` prints the current index and
+`pm guide <topic> --depth brief` expands one topic. Do not copy the list.
 
 Never load `docs/COMMANDS.md` (~29k tok) or `docs/SDK.md` (~45k tok) whole.
 

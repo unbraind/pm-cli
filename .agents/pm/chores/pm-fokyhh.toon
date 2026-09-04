@@ -6,8 +6,9 @@ status: open
 priority: 3
 tags[4]: codspeed,dependencies,peer-contract,testing
 created_at: "2026-09-04T16:26:03.878Z"
-updated_at: "2026-09-04T16:26:03.878Z"
+updated_at: "2026-09-04T18:23:48.536Z"
 author: "harness:codex"
+estimated_minutes: 240
 acceptance_criteria: "A current @codspeed/vitest-plugin release accepts Vitest 5; Vitest and coverage-v8 are upgraded as an exact compatible pair; CodSpeed, full exact coverage, cross-platform CI, typecheck, static quality, packed consumers, and vulnerability gates pass."
 parent: pm-92if
 risk: medium

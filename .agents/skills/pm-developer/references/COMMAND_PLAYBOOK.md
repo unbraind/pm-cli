@@ -29,6 +29,16 @@ pm docs <ID> --add path=docs/<doc>.md,scope=project,note="public docs update"
 pm test <ID> --add command="node scripts/run-tests.mjs test -- tests/unit/<file>.spec.ts",scope=project,timeout_seconds=240
 ```
 
+## Durable Knowledge And Record Maintenance
+
+```bash
+pm learnings <ID> --add "<lesson that applies beyond this item>"
+pm learnings <ID> --limit 5
+pm history <ID> --verify --strict-exit
+pm history-repair --all --dry-run
+pm close-many --ids <ID>,<ID> --reason "<shared reason>" --dry-run
+```
+
 ## Close Workflow
 
 ```bash

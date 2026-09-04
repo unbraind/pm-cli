@@ -1,0 +1,61 @@
+id: pm-4957pz
+title: "Agent skills instruct flags and spellings the runtime refuses, and no guide topic routes the evidence or automation families"
+description: "Measured 2026-09-04 against the 2026.9.4 build across all 12 SKILL.md files and 16 references (93 KB).\n\nInstructions the runtime refuses or misroutes: the pm-user WORKFLOWS reference instructs --allow-audit-comment and --allow-audit-dep-update without naming the governance-audit package that provides them, so on a bare install both are unknown options; the pm-extensions skill and its LIFECYCLE reference instruct pm package manage --detail summary at three sites while --detail belongs to package doctor; the TROUBLESHOOTING reference and HARNESS_COMPATIBILITY instruct the deprecated pm extension and pm install spellings inside numbered lists, which the fence-only deprecated-spelling scan cannot see; the Codex native skill shows author: codex-agent in its canonical argument shape two screens above the sentence forbidding it.\n\nRouting that does not exist: no skill or reference names pm learnings, and none of the 13 guide topics names learnings, history-repair, history-redact, history-compact, history-author-acknowledge, close-many, reindex, or test-all. Measured per declared capability family, the evidence family (12 commands) and the automation family (3) are reachable only through the generated capabilities listing, which has no workflow. Nine files carry a hand-maintained literal \"Guide topics:\" list that already omits the capabilities topic the runtime declares.\n\nRoot cause is the gate denominator: the docs-skills gate proves every guide topic names real commands, never that every capability family has a workflow topic, and never that an instructed flag exists. Acceptance: the gate derives the family set from PM_COMMAND_CAPABILITY_CONTRACTS and fails when a family has no non-generated topic (negative control proven); the gate validates every --flag in a fenced skill invocation against the core contract, the global flags, and package-declared flags (negative control proven); evidence and automation guide topics exist with workflows and docs; no agent-facing file carries a literal topic list; every corrected instruction was executed against the built CLI."
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:agent-ux","area:docs",denominator,progressive-disclosure,review-feedback,skills,surface-parity
+created_at: "2026-09-04T18:24:45.154Z"
+updated_at: "2026-09-04T19:08:47.392Z"
+closed_at: "2026-09-04T19:08:46.904Z"
+completed_at: "2026-09-04T19:08:46.904Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "The docs-skills gate derives the family set from PM_COMMAND_CAPABILITY_CONTRACTS and fails when any family has no non-generated guide topic, with a proven negative control; The docs-skills gate validates every --flag in a fenced skill invocation against the core contract, the global flags, and package-declared flags, with a proven negative control; evidence and automation guide topics exist with workflows and docs and the merge topic names reconcile and report; No agent-facing skill or README carries a hand-maintained literal guide topic list and every corrected instruction was executed against the built CLI"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: medium
+environment: "pm-cli 2026.9.4 build, .agents/skills and plugins/*/skills at 751aa44c0"
+repro_steps: "Run pm package manage --detail summary, pm comments <id> --add x --allow-audit-comment on a bare install, grep learnings across .agents/skills and plugins, and compare guide topic commands against PM_COMMAND_CAPABILITY_CONTRACTS families"
+resolution: "Added evidence and automation guide topics plus a merge reconcile workflow, two artifact-derived docs-skills gate checks (capability-family routing and fenced flag spelling) with negative controls, 25 skill corrections including the package prerequisite for review flags and the doctor spelling, the missing merge flag contract rows with a 24 to 27 budget re-ratchet, regenerated contracts and lexicon docs, and the recurrence family triggers."
+expected_result: Every fenced instruction in a skill executes on the build that ships it and every declared capability family is routed by a workflow topic
+actual_result: "All 12 skills and 16 references pass the fenced-flag and deprecated-spelling checks, 9 of 9 capability families route through a non-generated topic, and guide learnings, record, and calendar resolve to the new topics"
+affected_version: 2026.9.4
+component: "docs-skills-gate, sdk/guide-topics, .agents/skills, plugins skills"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f6zjpq,recurs_from,"2026-09-04T18:24:45.154Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-09-04T18:24:45.154Z","harness:claude-code","cli:create:dep",detected
+  pm-q2n4vd,discovered_from,"2026-09-04T18:24:45.154Z","harness:claude-code","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-04T18:26:04.989Z","harness:claude-code","Duplicate check: searched skills coverage, guide topic routing, nonexistent flags in skills, learnings routing. The closed 2026-08-16 skills-routing owner (linked recurs_from) satisfied the family census by hand at the time. No open owner. Every instruction listed in the description was executed against the built 2026.9.4 CLI before filing."
+  "2026-09-04T19:08:45.832Z","harness:claude-code","Shipped. Every instruction listed in the description was executed against the built 2026.9.4 CLI before and after the change. Gate: validateCapabilityFamilyRouting derives families from the built capability contract and refuses any family without a hand-written topic (negative control: an automation family routed only by the generated listing fails; vacuous guard: an empty family set fails). validateFencedFlagSpellings checks every fenced --flag under .agents/skills and plugins against the command contract, the global flags, and package-declared flags (negative control: --bogus and a doctor flag on comments fail; vacuous guard: an empty flag table fails). Guide: evidence (aliases record, annotations, learnings, history-maintenance) and automation (calendar, reminders, meetings, events) topics added; 15 topics render through guide-shell in a sandbox, evidence brief is 3.7 KB. Skills: 19 files corrected, nine literal topic lists replaced by the runtime index pointer, package prerequisite named for the review flags, doctor and package spellings fixed, learnings routed in the developer loop, user capability map, playbook, and backlog shaping. Contract: MERGE_FLAG_CONTRACTS declares --message, --force, --include-reconciled with the merge budget raised 24 to 27; contracts snapshot and FLAG_LEXICON_BUDGETS regenerated. Policy: declared-set family v2 triggers on the gate, the guide, and both skill trees.\n"
+  "2026-09-04T19:08:46.354Z","harness:claude-code","Verification: node scripts/run-tests.mjs coverage 603 files, 8373 tests, exact 100/100/100/100; pnpm quality:static passed including the tracker-context-quality, graph-composition, and record-integrity assurance dry-runs; pnpm lint:eslint and lint:duplicates clean; pnpm security:scan clean; docs-skills gate passed with the two new checks live; contracts snapshot and FLAG_LEXICON_BUDGETS regenerated; 15 guide topics render through guide-shell in a sandbox."
+files[19]{path,scope,note}:
+  .agents/skills/HARNESS_COMPATIBILITY.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-developer/references/COMMAND_PLAYBOOK.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-developer/references/GRAPH_AND_RELATIONSHIPS.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-developer/SKILL.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-extensions/references/LIFECYCLE.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-extensions/references/TROUBLESHOOTING.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-extensions/SKILL.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-user/references/BACKLOG_SHAPING.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-user/references/WORKFLOWS.md,project,skills routing and instruction truthfulness
+  .agents/skills/pm-user/SKILL.md,project,skills routing and instruction truthfulness
+  .agents/skills/README.md,project,skills routing and instruction truthfulness
+  config/defect-recurrence-policy.json,project,skills routing and instruction truthfulness
+  plugins/pm-claude/skills/pm-workflow/SKILL.md,project,skills routing and instruction truthfulness
+  plugins/pm-codex/skills/pm-native/SKILL.md,project,skills routing and instruction truthfulness
+  scripts/release/docs-skills-gate.mjs,project,skills routing and instruction truthfulness
+  src/sdk/cli-contracts/flag-contracts.ts,project,skills routing and instruction truthfulness
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,skills routing and instruction truthfulness
+  src/sdk/guide-topics.ts,project,skills routing and instruction truthfulness
+  tests/fixtures/contracts/full.json,project,skills routing and instruction truthfulness
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts tests/unit/commands/guide-command.spec.ts,project,300,"harness:claude-code","2026-09-04T18:41:09.870Z",local_mutation,main
+  node scripts/release/docs-skills-gate.mjs,project,300,"harness:claude-code","2026-09-04T18:41:10.730Z",local_mutation,main
+docs[1]{path,scope,note}:
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,merge flag budget 24 to 27 regenerated
+close_reason: "Skills instruct only executable spellings and flags, every capability family has a hand-written guide topic, and the docs-skills gate now proves both against the built artifacts with negative controls."
+escape_class: review_caught_late
+body: ""

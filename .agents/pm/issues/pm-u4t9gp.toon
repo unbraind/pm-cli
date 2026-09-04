@@ -1,0 +1,35 @@
+id: pm-u4t9gp
+title: "GH-1169: the unknown-command hint routes to the 15-command root help that hides the target, and test is the only singular collection verb"
+description: "Measured on the 2026.9.4 build, reproducing GH-1169 exactly. Running pm tests <id> returns \"Unknown command tests\", offers \"Did you mean: test?\", and then instructs \"Run pm --help to list commands available in this runtime\". The root help lists 15 of 88 commands; the full surface is only reachable through pm --help --all, which the hint never names. The did-you-mean candidate is the one useful line and it is buried second. Separately, every other per-item collection verb is plural (comments, notes, learnings, files, docs, events) while test alone is singular and has no tests alias in the permanent alias table, so the most natural guess for the collection fails and the unknown-command guidance then routes to the listing that cannot contain the answer.\n\nPrior owner shipped the --all discovery option (closed 2026-08-31, GH-1166) and left the unknown-command hint pointing at the curated listing. The facet-consolidation task under the same epic owns the eventual single-noun grammar; this issue is the bounded, shippable half: (1) the unknown-command refusal must lead with the did-you-mean path and route discovery to pm --help --all (or pm guide capabilities), never to the curated 15; (2) tests becomes a permanent alias of test in PM_COMMAND_ALIAS_CONTRACTS so the plural collection spelling resolves like its six siblings, with completion, contracts, and MCP regenerating from the alias table. Negative control: seeding a hint that names the curated listing must fail the refusal-closure gate."
+type: Issue
+status: open
+priority: 2
+tags[6]: agent-ux,"area:cli","area:contracts",github-intake,regression,surface-parity
+created_at: "2026-09-04T18:23:49.023Z"
+updated_at: "2026-09-04T18:26:02.846Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The unknown-command refusal leads with the did-you-mean candidate and names pm --help --all or pm guide capabilities, never the curated listing alone; tests is a permanent alias of test in PM_COMMAND_ALIAS_CONTRACTS and completion, contracts, and MCP names regenerate from the alias table; A negative control that seeds a hint naming only the curated listing fails the refusal-closure gate; GH-1169 is closed with the shipped release named in its tracker-link comment"
+parent: pm-n7rr
+risk: low
+confidence: high
+reporter: unbraind
+severity: medium
+environment: "pm-cli 2026.9.4 and 2026.8.31, Linux, bare install"
+repro_steps: "Run pm tests <id> on any tracker, read the Next steps block, then count pm --help versus pm --help --all entries"
+expected_result: "The refusal leads with the did-you-mean candidate and routes discovery to the full surface, and pm tests resolves as the plural alias of test"
+actual_result: "Unknown command tests, hint says run pm --help which lists 15 of 88 commands, and no tests alias exists"
+affected_version: 2026.8.31
+component: "cli/commander-usage, cli-contracts/command-aliases"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1kxs,discovered_from,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
+  pm-7f9zkh,recurs_from,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
+  pm-q0kr,verifies,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-04T18:26:01.645Z","harness:claude-code","Duplicate check: searched unknown-command hint, root help count, plural collection alias. Nearest prior owners are the closed GH-1166 root-help item (linked recurs_from) and the open facet-consolidation task under the same epic, which owns the eventual single-noun grammar but not this bounded hint and alias fix. Verified live on the 2026.9.4 build before filing."
+files[2]{path,scope,note}:
+  src/cli/commander-usage.ts,project,unknown-command Next steps hint that names pm --help without --all
+  src/sdk/cli-contracts/command-aliases.ts,project,permanent alias table where tests must map to test
+escape_class: production_defect
+body: ""

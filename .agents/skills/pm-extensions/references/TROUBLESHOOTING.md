@@ -2,9 +2,9 @@
 
 ## Common Diagnostic Sequence
 
-1. `pm extension explore --project`
-2. `pm extension manage --detail summary`
-3. `pm extension doctor --detail deep --trace`
+1. `pm package explore --project`
+2. `pm package manage --project`
+3. `pm package doctor --detail deep --trace`
 4. `pm contracts --runtime-only --availability-only`
 
 ## Symptoms and Checks

@@ -60,6 +60,7 @@ pm files <ID> --add path=<path>,scope=project,note="<why>"
 pm docs  <ID> --add path=<doc>,scope=project,note="<why>"
 pm test  <ID> --add command="node scripts/run-tests.mjs test -- <target>",scope=project,timeout_seconds=240
 pm comments <ID> "Evidence: <what changed and what passed>"
+pm learnings <ID> --add "<lesson that outlives this item>"
 pm test <ID> --run --progress
 pm close <ID> "<reason with evidence>" --validate-close warn
 pm release <ID>
@@ -76,7 +77,9 @@ enters, and use these drift-gated references:
 
 `pm help` shows the bounded core tier. Use `pm guide capabilities`, `pm
 contracts --summary`, or `pm <command> --help --json` for progressive
-disclosure into the wider surface.
+disclosure into the wider surface. Durable lessons and history maintenance
+(`pm learnings`, `pm history --verify`, `history-repair`, `history-redact`,
+`history-compact`, `close-many`) are routed by `pm guide evidence`.
 
 ## Token Discipline
 

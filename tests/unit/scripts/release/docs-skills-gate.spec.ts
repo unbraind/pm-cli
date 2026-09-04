@@ -48,6 +48,46 @@ type DocsModule = {
   ) => Promise<void>;
   validatePublicDocBudgets: (failures: string[]) => Promise<void>;
   runSkillChecks: (failures: string[]) => Promise<void>;
+  GENERATED_GUIDE_TOPIC_IDS: readonly string[];
+  guideTopicCommandNames: (topic?: {
+    commands?: string[];
+    workflows?: { commands?: string[] }[];
+  }) => Set<string>;
+  mapCapabilityFamilyRouting: (
+    families?: { family: string; commands?: string[] }[],
+    topics?: { id: string; commands?: string[]; workflows?: { commands?: string[] }[] }[],
+  ) => Map<string, string[]>;
+  loadCapabilityFamilyRoutingInputs: () => Promise<{
+    families: { family: string; commands: string[] }[];
+    topics: { id: string; commands: string[] }[];
+  }>;
+  validateCapabilityFamilyRouting: (
+    failures: string[],
+    options?: {
+      families?: { family: string; commands?: string[] }[];
+      topics?: { id: string; commands?: string[]; workflows?: { commands?: string[] }[] }[];
+    },
+  ) => Promise<void>;
+  mapCommandFlagTable: (
+    flagPayload?: {
+      command_flags?: { command?: string; flags?: { flag?: string; aliases?: string[] }[] }[];
+    } | null,
+    globalFlags?: string[],
+  ) => Map<string, Set<string>>;
+  loadCommandFlagTable: () => Promise<Map<string, Set<string>>>;
+  collectPackageDeclaredFlags: (relativeDirectory?: string) => Promise<Set<string>>;
+  resolveFlagContractCommand: (text: string, table: Map<string, Set<string>>) => string | null;
+  validateFencedFlagSpellingsIn: (
+    markdownFile: string,
+    content: string,
+    table: Map<string, Set<string>>,
+    packageFlags: Set<string>,
+    failures: string[],
+  ) => void;
+  validateFencedFlagSpellings: (
+    failures: string[],
+    options?: { flagTable?: Map<string, Set<string>>; packageDeclaredFlags?: Set<string> },
+  ) => Promise<void>;
   main: () => Promise<void>;
 };
 
@@ -92,6 +132,17 @@ function mockFsPromises(impl: Partial<typeof import("node:fs/promises")>): void 
 // takes the all-green path; the caller only picks the output mode to assert.
 function mockFullModePassingEnvironment(): void {
   const runCommand = vi.fn((command: string, args: string[]) => {
+    if (args.includes("--flags-only")) {
+      // The fenced-flag check derives its table from this artifact; a table
+      // with one command keeps the vacuous-pass guard quiet on the green path.
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          command_flags: [{ command: "list", flags: [{ flag: "--status" }] }],
+        }),
+        stderr: "",
+      };
+    }
     if (args.includes("contracts")) {
       return { status: 0, stdout: JSON.stringify({ commands: ["list"] }), stderr: "" };
     }
@@ -486,6 +537,179 @@ describe("docs-skills-gate", () => {
       expect(failures.some((entry) => entry.includes("pass vacuously"))).toBe(true);
     });
 
+    it("guideTopicCommandNames reads command position from examples and workflows only", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      expect(mod.guideTopicCommandNames(undefined).size).toBe(0);
+      expect(
+        [
+          ...mod.guideTopicCommandNames({
+            commands: ["pm learnings <ID> --add x", "not a pm example", "  pm history <ID> --verify"],
+            workflows: [{ commands: ["pm close-many --ids a,b"] }, {}],
+          }),
+        ].sort(),
+      ).toEqual(["close-many", "history", "learnings"]);
+    });
+
+    it("mapCapabilityFamilyRouting ignores the generated listing and reports unrouted families", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      expect(mod.mapCapabilityFamilyRouting(undefined, undefined).size).toBe(0);
+      // A family with no topics at all is unrouted, not absent.
+      expect(mod.mapCapabilityFamilyRouting([{ family: "lonely", commands: ["init"] }], undefined)).toEqual(
+        new Map([["lonely", []]]),
+      );
+      const routing = mod.mapCapabilityFamilyRouting(
+        [
+          { family: "evidence", commands: ["learnings", "history-repair"] },
+          { family: "automation", commands: ["meet"] },
+          { family: "empty" },
+        ],
+        [
+          { id: "capabilities", commands: ["pm learnings <ID>", "pm meet <title>"] },
+          { id: "evidence", commands: ["pm learnings <ID> --add x"], workflows: [{ commands: ["pm history-repair --all"] }] },
+          { id: "quickstart", commands: ["pm init"] },
+        ],
+      );
+      expect(routing.get("evidence")).toEqual(["evidence"]);
+      // Named only by the generated listing: reachable, not routed.
+      expect(routing.get("automation")).toEqual([]);
+      expect(routing.get("empty")).toEqual([]);
+    });
+
+    it("validateCapabilityFamilyRouting refuses to pass vacuously and blocks an unrouted family", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const vacuous: string[] = [];
+      await mod.validateCapabilityFamilyRouting(vacuous, { families: [], topics: [] });
+      expect(vacuous.some((entry) => entry.includes("pass vacuously"))).toBe(true);
+
+      const negative: string[] = [];
+      await mod.validateCapabilityFamilyRouting(negative, {
+        families: [{ family: "automation", commands: ["meet"] }],
+        topics: [{ id: "capabilities", commands: ["pm meet <title>"] }],
+      });
+      expect(negative).toEqual([
+        expect.stringContaining('Capability family "automation" is reachable only through the generated capabilities listing'),
+      ]);
+
+      const positive: string[] = [];
+      await mod.validateCapabilityFamilyRouting(positive, {
+        families: [{ family: "automation", commands: ["meet"] }],
+        topics: [{ id: "automation", commands: ["pm meet <title> --start now"] }],
+      });
+      expect(positive).toEqual([]);
+    });
+
+    it("validateCapabilityFamilyRouting passes against the built capability contract and guide", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const inputs = await mod.loadCapabilityFamilyRoutingInputs();
+      expect(inputs.families.length).toBeGreaterThan(0);
+      expect(inputs.topics.map((topic) => topic.id)).toEqual(
+        expect.arrayContaining(["evidence", "automation", "merge"]),
+      );
+      const failures: string[] = [];
+      await mod.validateCapabilityFamilyRouting(failures);
+      expect(failures).toEqual([]);
+    });
+
+    it("mapCommandFlagTable and resolveFlagContractCommand read the contract artifact shape", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      expect(mod.mapCommandFlagTable(null).size).toBe(0);
+      const table = mod.mapCommandFlagTable(
+        {
+          command_flags: [
+            { command: "comments", flags: [{ flag: "--add", aliases: ["--comment"] }, { flag: "--limit" }, {}] },
+            { command: "package doctor", flags: [{ flag: "--detail" }] },
+            { command: "package", flags: [] },
+            { command: "bare" },
+            { flags: [{ flag: "--ignored" }] },
+          ],
+        },
+        ["--json"],
+      );
+      expect([...table.get("comments")!].sort()).toEqual(["--add", "--comment", "--json", "--limit"]);
+      expect([...table.get("bare")!]).toEqual(["--json"]);
+      expect(mod.resolveFlagContractCommand("pm package doctor --detail deep", table)).toBe("package doctor");
+      expect(mod.resolveFlagContractCommand("pm package <name> --project", table)).toBe("package");
+      expect(mod.resolveFlagContractCommand("$ pm comments <ID> --add x", table)).toBe("comments");
+      expect(mod.resolveFlagContractCommand("pm nonexistent --json", table)).toBeNull();
+    });
+
+    it("validateFencedFlagSpellingsIn flags undeclared flags and accepts declared, global, and package flags", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const table = mod.mapCommandFlagTable(
+        { command_flags: [{ command: "comments", flags: [{ flag: "--add" }] }] },
+        ["--json"],
+      );
+      const content = [
+        "```bash",
+        'pm comments <ID> --add "x" --json',
+        "pm comments <ID> --add x --allow-audit-comment",
+        "pm comments <ID> --detail summary",
+        "pm comments <ID>",
+        "pm unknown --whatever",
+        "```",
+        "pm comments <ID> --outside-fence",
+      ].join("\n");
+      const failures: string[] = [];
+      mod.validateFencedFlagSpellingsIn("skills/x.md", content, table, new Set(["--allow-audit-comment"]), failures);
+      expect(failures).toEqual([
+        expect.stringContaining("skills/x.md:4: instructs `--detail`, which no contract declares for `pm comments`"),
+      ]);
+    });
+
+    it("validateFencedFlagSpellings refuses to pass vacuously and reads skills from disk", async () => {
+      mockUtils();
+      mockFsPromises({
+        readdir: vi.fn(async (dir: string) =>
+          String(dir).replaceAll("\\", "/").endsWith(".agents/skills")
+            ? ([{ name: "SKILL.md", isDirectory: () => false, isFile: () => true }] as never)
+            : ([] as never),
+        ) as never,
+        readFile: vi.fn(async () => "```bash\npm comments <ID> --bogus\n```") as never,
+        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
+      });
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const vacuous: string[] = [];
+      await mod.validateFencedFlagSpellings(vacuous, { flagTable: new Map() });
+      expect(vacuous.some((entry) => entry.includes("pass vacuously"))).toBe(true);
+
+      const failures: string[] = [];
+      await mod.validateFencedFlagSpellings(failures, {
+        flagTable: mod.mapCommandFlagTable({ command_flags: [{ command: "comments", flags: [{ flag: "--add" }] }] }),
+        packageDeclaredFlags: new Set(),
+      });
+      expect(failures).toEqual([expect.stringContaining("SKILL.md:2: instructs `--bogus`")]);
+    });
+
+    it("loadCommandFlagTable and collectPackageDeclaredFlags read the built artifacts", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const table = await mod.loadCommandFlagTable();
+      expect(table.get("comments")?.has("--add")).toBe(true);
+      expect(table.get("comments")?.has("--json")).toBe(true);
+      // The merge contract must declare the reconcile flags the skills instruct.
+      expect(table.get("merge")?.has("--message")).toBe(true);
+      const packageFlags = await mod.collectPackageDeclaredFlags();
+      expect(packageFlags.has("--allow-audit-comment")).toBe(true);
+      expect((await mod.collectPackageDeclaredFlags("definitely-missing-dir")).size).toBe(0);
+    });
+
+    it("collectPackageDeclaredFlags rethrows a non-ENOENT read failure", async () => {
+      mockUtils();
+      mockFsPromises({
+        readdir: vi.fn(async () => {
+          throw Object.assign(new Error("denied"), { code: "EACCES" });
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      await expect(mod.collectPackageDeclaredFlags()).rejects.toThrow(/denied/);
+    });
+
     it("validatePublicDocBudgets flags over-budget, multi-h1, duplicate headings", async () => {
       mockUtils();
       const bad = ["# One", "# Two", "## Dup", "## Dup", ...Array.from({ length: 460 }, () => "x")].join("\n");
@@ -826,6 +1050,15 @@ describe("docs-skills-gate", () => {
         const joined = [command, ...args].join(" ");
         if (joined.includes("contracts --runtime-only --availability-only --json")) {
           return { status: 0, stdout: JSON.stringify({ commands: ["guide", "contracts"] }), stderr: "" };
+        }
+        if (joined.includes("contracts --flags-only --json")) {
+          return {
+            status: 0,
+            stdout: JSON.stringify({
+              command_flags: [{ command: "guide", flags: [{ flag: "--depth" }] }],
+            }),
+            stderr: "",
+          };
         }
         if (joined.includes("guide workflows --depth standard --json")) {
           return {

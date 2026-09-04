@@ -4,8 +4,8 @@
 
 ```bash
 pm package explore --project
-pm package manage --detail summary
-pm package doctor --detail deep
+pm package manage --project
+pm package doctor --detail summary
 ```
 
 ## Install and Activate
@@ -21,7 +21,7 @@ pm package doctor --detail summary
 ```bash
 pm package adopt <name> --project
 pm package adopt-all --project
-pm package manage --detail summary
+pm package manage --project
 ```
 
 ## Deactivate / Uninstall

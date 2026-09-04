@@ -242,7 +242,10 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   "history-repair": 26,
   "history-compact": 30,
   "history-author-acknowledge": 28,
-  merge: 24,
+  // 24 -> 27 on 2026-09-04: --message, --force, and --include-reconciled were
+  // already registered at runtime for reconcile and report; declaring them
+  // makes the contract truthful rather than growing the surface.
+  merge: 27,
   schema: 40,
   profile: 22,
   activity: 35,

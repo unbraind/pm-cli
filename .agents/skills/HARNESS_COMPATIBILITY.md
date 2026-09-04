@@ -6,7 +6,7 @@ This repository supports external automation harnesses through shared docs and `
 
 Use the same low-token route in every harness:
 
-1. `pm install guide-shell --project` (enable optional local guide commands)
+1. `pm package install guide-shell --project` (enable optional local guide commands)
 2. `pm guide` (topic index)
 3. `pm guide <topic>` (focused route)
 4. `pm guide <topic> --depth standard|deep` (details only when needed)

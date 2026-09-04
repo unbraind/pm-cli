@@ -86,6 +86,8 @@ the criteria; `--dep` **appends**.
 | Group and count             | `pm aggregate --group-by <field>`        | `commands`   |
 | Lineage and ordering        | `pm deps`, `pm graph <verb>`             | `graph`      |
 | Recent movement             | `pm activity`, `pm events`, `pm history` | `assurance`  |
+| Durable lessons and records | `pm learnings`, `pm notes`, `pm history` | `evidence`   |
+| Deadlines and meetings      | `pm remind`, `pm event`, `pm meet`       | `automation` |
 | Data quality                | `pm validate`, `pm health`               | `assurance`  |
 | Plan a multi-step change    | `pm plan`                                | `workflows`  |
 | Custom types and statuses   | `pm schema`, `pm config`                 | `commands`   |

@@ -57,8 +57,8 @@ pm contracts --runtime-only --availability-only
 
 ```bash
 pm package explore --project              # inspect state first
-pm package manage --detail summary
-pm package doctor --detail deep
+pm package manage --project
+pm package doctor --detail summary
 pm package install <package> --project            # then mutate
 pm contracts --command <extension-command> --flags-only
 pm package doctor --detail deep           # verify after

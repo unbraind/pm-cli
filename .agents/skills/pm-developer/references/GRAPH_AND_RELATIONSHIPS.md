@@ -24,12 +24,14 @@ pm contracts --json --full | jq '.relationship_kind_contracts'
 | `discovered_from` | This item was found while doing that one        | no       | no        |
 | `incident_from`   | This item originates in that recorded incident  | no       | no        |
 | `supersedes`      | This item replaces that one                     | no       | no        |
+| `recurs_from`     | This defect recurs from that closed one         | no       | no        |
 | `commits_to`      | This item lands in that changeset or release    | yes      | no        |
 | `related`         | Associative, non-directional                    | no       | no        |
 
 `related` carries the least information. Prefer a typed kind whenever one
 applies — `discovered_from`, `implements`, and `verifies` are the three that
-most often replace a reflexive `related`.
+most often replace a reflexive `related`. A defect that repeats an earlier
+closed one gets `recurs_from`, which is what the recurrence policy joins on.
 
 ## Adding Edges
 
