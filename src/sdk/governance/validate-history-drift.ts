@@ -20,7 +20,10 @@ export async function buildValidateHistoryDriftCheck(
   const drift = await scanHistoryDrift(pmRoot, items);
   const warningCounts = [
     ["validate_history_drift_missing_streams", drift.missingStreams.length],
-    ["validate_history_drift_unreadable_streams", drift.unreadableStreams.length],
+    [
+      "validate_history_drift_unreadable_streams",
+      drift.unreadableStreams.length,
+    ],
     ["validate_history_drift_hash_mismatches", drift.hashMismatches.length],
     ["validate_history_drift_chain_mismatches", drift.chainMismatches.length],
     ["validate_history_drift_version_skews", drift.versionSkews.length],
@@ -44,16 +47,30 @@ export async function buildValidateHistoryDriftCheck(
     ? Number.POSITIVE_INFINITY
     : DEFAULT_DIAGNOSTIC_LIMIT;
   const driftedItems = drift.driftedItems.slice(0, diagnosticLimit);
+  const identityDiscontinuities = drift.identityDiscontinuities ?? [];
   return {
     check: {
       name: "history_drift",
-      status: warnings.length === 0 ? "ok" : "warn",
+      status:
+        identityDiscontinuities.length > 0
+          ? "error"
+          : warnings.length === 0
+            ? "ok"
+            : "warn",
       ok: warnings.length === 0,
       details: {
+        identity_discontinuities: identityDiscontinuities.slice(
+          0,
+          diagnosticLimit,
+        ),
+        identity_discontinuities_count: identityDiscontinuities.length,
+        identity_discontinuities_truncated:
+          identityDiscontinuities.length > diagnosticLimit,
         checked_items: items.length,
         drifted_items_count: drift.driftedItems.length,
         drifted_items: driftedItems,
-        drifted_items_truncated: driftedItems.length < drift.driftedItems.length,
+        drifted_items_truncated:
+          driftedItems.length < drift.driftedItems.length,
         counts: {
           missing_streams: drift.missingStreams.length,
           unreadable_streams: drift.unreadableStreams.length,

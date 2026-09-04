@@ -752,9 +752,20 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "all",
         "dryRun",
         "normalizeProvenance",
+        "salvageTail",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       oneOfRequired: [["id"], ["all"]],
+      mutuallyExclusiveWhen: [
+        [
+          { property: "salvageTail", schema: { const: true } },
+          { property: "all", schema: { const: true } },
+        ],
+        [
+          { property: "salvageTail", schema: { const: true } },
+          { property: "normalizeProvenance", schema: { const: true } },
+        ],
+      ],
     },
     "history-author-acknowledge": {
       optional: [
@@ -1756,7 +1767,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.10.1" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.11.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1766,7 +1777,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.4.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.5.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

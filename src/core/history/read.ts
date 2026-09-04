@@ -56,6 +56,10 @@ export async function readHistoryEntries(
       throw new PmCliError(
         `History for ${itemId} contains invalid JSON at line ${index + 1}. Repair or restore the history stream and retry.`,
         EXIT_CODE.GENERIC_FAILURE,
+        {
+          code: "history_json_invalid",
+          nextSteps: [`Run pm history-repair ${itemId} --salvage-tail --dry-run to check whether only an invalid suffix is damaged.`],
+        },
       );
     }
   }

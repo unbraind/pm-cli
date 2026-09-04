@@ -8,6 +8,7 @@ import { runCopy } from "../../src/cli/commands/copy.js";
 import { runCreate } from "../../src/cli/commands/create.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import * as historyModule from "../../src/core/history/history.js";
 import { listAllItemMetadata } from "../../src/core/store/item-store.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
@@ -247,7 +248,6 @@ describe("runCopy", () => {
     await withTempPmPath(async (context) => {
       const source = await seedClosedSource(context);
       const before = await listAllItemMetadata(context.pmPath);
-      const historyModule = await import("../../src/core/history/history.js");
       vi.spyOn(historyModule, "appendHistoryEntry").mockRejectedValueOnce(new Error("history-write-failed"));
 
       await expect(runCopy(source.id, {}, { path: context.pmPath })).rejects.toThrow("history-write-failed");
@@ -273,6 +273,9 @@ describe("runCopy", () => {
         },
         { path: context.pmPath },
       );
+      // Model a concurrent writer between its item write and history append.
+      // Completed historical identities are now skipped during allocation.
+      await rm(path.join(context.pmPath, "history", "pm-0000.jsonl"));
       const randomIntSpy = vi
         .spyOn(crypto, "randomInt")
         .mockImplementation(() => 0);

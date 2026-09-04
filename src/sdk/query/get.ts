@@ -115,8 +115,8 @@ export interface GetResult {
   schedule?: Partial<ItemScheduleContext>;
   /** True when the item was reconstructed from immutable history. */
   reconstructed?: true;
-  /** One-based history version represented by a reconstructed read. */
-  as_of_version?: number;
+  /** Durable version, or null when legacy compaction lost the numeric mapping. */
+  as_of_version?: number | null;
   /** Timestamp of the last history entry included in a reconstructed read. */
   as_of_timestamp?: string;
   /** Value that configures or reports tree for this contract. */
@@ -589,7 +589,7 @@ async function resolveGetClaimState(
   return resolveClaimStateContext(
     context.metadata.assignee,
     context.historical
-      ? history.slice(0, context.historical.as_of_version)
+      ? history.slice(0, context.historical.target.historyIndex + 1)
       : history,
   );
 }

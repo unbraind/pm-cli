@@ -146,6 +146,11 @@ boilerplate summaries are rejected.
 
 ## TOON Storage Round-Trip Gate
 
+History-only lifecycle reconstruction and recovery contracts are described in
+[History durability and recovery](HISTORY_RECOVERY.md). Their integration suite
+is part of the required all-source test run and compares historical projections
+against independently captured item files, including after removing those files.
+
 TOON item serialization is a fail-closed storage boundary. Before returning
 bytes to any create, update, merge, migration, or package caller, pm decodes the
 new `@toon-format/toon` output and compares it with the JSON-like canonical

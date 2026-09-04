@@ -835,11 +835,11 @@ describe("runGet and runAppend", () => {
       const checkpoint = await runGet(
         id,
         { path: context.pmPath },
-        { at: "1" },
+        { at: "2" },
       );
       expect(checkpoint).toMatchObject({
         reconstructed: true,
-        as_of_version: 1,
+        as_of_version: 2,
         item: { id, title: "get-time-travel-v2" },
       });
     });

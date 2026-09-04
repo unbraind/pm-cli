@@ -239,7 +239,8 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   history: 35,
   events: 33,
   "history-redact": 27,
-  "history-repair": 26,
+  // One explicit destructive-recovery mode; never overload ordinary reanchoring.
+  "history-repair": 27,
   "history-compact": 30,
   "history-author-acknowledge": 28,
   // 24 -> 27 on 2026-09-04: --message, --force, and --include-reconciled were

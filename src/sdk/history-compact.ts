@@ -9,7 +9,8 @@ import path from "node:path";
 import {
   createHistoryEntry,
   hashHistoryStream,
-  resealHistoryRewrite,
+  sealHistoryRecord,
+  SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
 } from "../core/history/history.js";
 import {
   selectHistoryCompactBulkTargets,
@@ -24,7 +25,7 @@ import {
 import {
   cloneEmptyReplayDocument,
   historyEntriesToRaw,
-  replayHash,
+  replayHashVerificationCandidates,
   replayToItemDocument,
   toReplayDocument,
   verifyHistoryChain,
@@ -32,6 +33,7 @@ import {
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
 import { readHistoryEntries } from "../core/history/read.js";
+import { historyVersionOffset } from "../core/history/version-address.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { lifecycleClassifierFromStatusRegistry } from "../core/governance/metadata-coverage.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
@@ -148,17 +150,18 @@ function parseBeforeBoundary(
 
   if (/^\d+$/.test(raw)) {
     const version = Number.parseInt(raw, 10);
+    const offset = historyVersionOffset(entries);
     if (
       !Number.isSafeInteger(version) ||
-      version < 1 ||
-      version > entries.length + 1
+      version < offset + 1 ||
+      version > offset + entries.length + 1
     ) {
       throw new PmCliError(
-        `history-compact --before version must be between 1 and ${entries.length + 1}.`,
+        `history-compact --before version must be between ${offset + 1} and ${offset + entries.length + 1}.`,
         EXIT_CODE.USAGE,
       );
     }
-    const compactCount = Math.max(0, Math.min(entries.length, version - 1));
+    const compactCount = version - offset - 1;
     return {
       kind: "version",
       raw,
@@ -198,6 +201,7 @@ function parseBeforeBoundary(
   };
 }
 
+/** Fold the already verified stream once, capturing its compaction checkpoint. */
 function replayHistoryAndResolveCheckpoint(
   entries: HistoryEntry[],
   compactCount: number,
@@ -209,57 +213,13 @@ function replayHistoryAndResolveCheckpoint(
   let checkpoint = cloneEmptyReplayDocument();
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    if (replayHash(replay) !== entry.before_hash) {
-      throw new PmCliError(
-        `history-compact detected before-hash drift at entry ${index + 1}; run pm history-repair first.`,
-        EXIT_CODE.CONFLICT,
-      );
-    }
     replay = applyHistoryPatch(replay, entry.patch, index + 1, entry.op);
-    if (replayHash(replay) !== entry.after_hash) {
-      throw new PmCliError(
-        `history-compact detected after-hash drift at entry ${index + 1}; run pm history-repair first.`,
-        EXIT_CODE.CONFLICT,
-      );
-    }
     if (index + 1 === compactCount) {
       checkpoint = structuredClone(replay);
     }
   }
   return {
     checkpoint,
-    finalReplay: replay,
-  };
-}
-
-function reanchorRetainedEntries(
-  retainedEntries: HistoryEntry[],
-  seed: ReplayDocument,
-  retainedEntryOffset: number,
-): {
-  entries: HistoryEntry[];
-  finalReplay: ReplayDocument;
-} {
-  let replay = structuredClone(seed);
-  const rewritten: HistoryEntry[] = [];
-  for (const [index, entry] of retainedEntries.entries()) {
-    const beforeHash = replayHash(replay);
-    replay = applyHistoryPatch(
-      replay,
-      entry.patch,
-      retainedEntryOffset + index + 1,
-      entry.op,
-    );
-    rewritten.push(
-      resealHistoryRewrite(entry, {
-        ...entry,
-        before_hash: beforeHash,
-        after_hash: replayHash(replay),
-      }),
-    );
-  }
-  return {
-    entries: rewritten,
     finalReplay: replay,
   };
 }
@@ -279,12 +239,14 @@ async function loadHistoryCompactCurrentItem(
       matchedChainBefore: null,
     };
   }
+  const lastEntry = historyEntries[historyEntries.length - 1]!;
   return {
     loadedItem,
     currentItemRawBeforeLock: loadedItem.raw,
-    matchedChainBefore:
-      replayHash(toReplayDocument(loadedItem.document)) ===
-      historyEntries[historyEntries.length - 1]?.after_hash,
+    matchedChainBefore: SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.some((version) =>
+      (lastEntry.item_hash_version === undefined || lastEntry.item_hash_version === version) &&
+      replayHashVerificationCandidates(toReplayDocument(loadedItem.document), version).includes(lastEntry.after_hash),
+    ),
   };
 }
 
@@ -343,13 +305,8 @@ function buildHistoryCompactEntries(params: {
     params.boundary.compactCount,
   );
   const retained = params.historyEntries.slice(params.boundary.compactCount);
-  const reanchored = reanchorRetainedEntries(
-    retained,
-    checkpoint,
-    params.boundary.compactCount,
-  );
   const baselineEntry = createHistoryEntry({
-    nowIso: nowIso(),
+    nowIso: params.historyEntries[params.boundary.compactCount - 1]!.ts,
     author: params.author,
     op: "history_compact_baseline",
     before: replayToItemDocument(cloneEmptyReplayDocument()),
@@ -358,6 +315,8 @@ function buildHistoryCompactEntries(params: {
     context: {
       history_compaction: {
         contract_version: 1,
+        version_offset: historyVersionOffset(params.historyEntries) + params.boundary.compactCount - 1,
+        checkpoint_timestamp_semantics: "last_compacted_entry",
         pruned_entry_count: params.boundary.compactCount,
         pruned_stream_digest: hashHistoryStream(
           params.historyEntries.slice(0, params.boundary.compactCount),
@@ -367,7 +326,15 @@ function buildHistoryCompactEntries(params: {
       },
     },
   });
-  const rewrittenEntries = [baselineEntry, ...reanchored.entries];
+  const checkpointEntry = params.historyEntries[params.boundary.compactCount - 1]!;
+  // Preserve the checkpoint's epoch and semantic hash variant. Do not introduce
+  // an explicit epoch into an unversioned stream: it would pin later legacy reads.
+  const rewrittenEntries = [sealHistoryRecord({
+    ...baselineEntry,
+    before_hash: params.historyEntries[0]!.before_hash,
+    after_hash: checkpointEntry.after_hash,
+    item_hash_version: checkpointEntry.item_hash_version,
+  }), ...retained];
   if (!params.dryRun) {
     rewrittenEntries.push(
       createHistoryEntry({
@@ -525,7 +492,7 @@ export async function runHistoryCompact(
   }
 
   const firstRetainedEntry =
-    boundary.retainedCount > 0 ? boundary.compactCount + 1 : null;
+    boundary.retainedCount > 0 ? historyVersionOffset(historyEntries) + boundary.compactCount + 1 : null;
   return {
     id: subject.id,
     dry_run: dryRun,

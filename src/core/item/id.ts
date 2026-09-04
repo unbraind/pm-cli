@@ -73,6 +73,7 @@ async function idExists(
     path.join(pmRoot, folder, `${id}.md`),
     path.join(pmRoot, folder, `${id}.toon`),
   ]);
+  checks.push(path.join(pmRoot, "history", `${id}.jsonl`));
   return (await Promise.all(checks.map((target) => pathExists(target)))).some(
     Boolean,
   );
@@ -123,10 +124,10 @@ export async function generateItemId(
   while (tokenLength <= maxTokenLength) {
     for (let i = 0; i < 32; i += 1) {
       const id = `${normalizePrefix(prefix)}${randomToken(tokenLength)}`;
-      if (
-        options.probeExisting === false ||
-        !(await idExists(pmRoot, id, options.typeToFolder ?? TYPE_TO_FOLDER))
-      ) {
+      const occupied = await (options.probeExisting === false
+        ? pathExists(path.join(pmRoot, "history", `${id}.jsonl`))
+        : idExists(pmRoot, id, options.typeToFolder ?? TYPE_TO_FOLDER));
+      if (!occupied) {
         return id;
       }
       attempts += 1;

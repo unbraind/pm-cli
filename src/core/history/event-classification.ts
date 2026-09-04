@@ -22,6 +22,7 @@ export const MAINTENANCE_HISTORY_OPERATIONS = [
   "history_compact_baseline",
   "history_redact",
   "history_repair",
+  "history_salvage",
   "normalize",
   "release",
   "test_run_track",

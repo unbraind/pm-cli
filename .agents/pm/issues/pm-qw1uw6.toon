@@ -2,18 +2,53 @@ id: pm-qw1uw6
 title: "Point-in-time reconstruction crashes with an unstructured runtime error when a history stream opens without a baseline entry, so the restore-any-version guarantee fails with no diagnosable condition"
 description: "The project's core durability promise is that every mutation is permanently recorded and any item can be restored to any version at any time. That promise is measurably false for at least one item today, and the failure mode is an uncaught runtime error rather than a diagnosable condition.\n\nEvidence, measured on this repository at 2026.7.28:\n\n- pm get pm-lty --at 1 writes nothing to stdout and prints \"Cannot read properties of undefined (reading 'map')\" to stderr, exiting 1. There is no error envelope: no code, no detail, no next_steps, no recovery. Every other pm failure path emits a structured envelope, so a caller cannot classify this one.\n- Cause: reconstruction assumes the stream opens with a document baseline. pm-lty's first recorded entry is op=update at 2026-02-17T23:16:52.972Z whose patch touches only /metadata/updated_at and /metadata/status. There is no create entry and no snapshot, so the base document is undefined and the replay maps over it.\n- Blast radius census over all 2,154 item streams: 42 streams (1.9 percent) do not open with a create entry. 41 of those open with history_compact_baseline and are FINE - that entry carries a full 21-patch snapshot of every field, and pm-0m2m, pm-3kk6 and pm-3u2x all reconstruct correctly at version 1 with reconstructed:true. The compaction feature is sound and is not implicated.\n- The residual is exactly one genuine case: pm-lty, an item that predates create-entry recording. It is reachable through pm get, it is a real canceled Epic, and it is one of the disconnected historical roots tracked by pm-1w6scp.\n\nWhy this is worth an item rather than a note: the population is small but the guarantee is absolute, and the observable behaviour is a crash that violates the error-envelope contract. A caller that scripts point-in-time reads cannot distinguish \"this item has no baseline\" from \"pm is broken\". The correct behaviour is a named, structured condition.\n\nThis is the defect class the reconstruction gate pm-wlqxg3 exists to catch, and it is a concrete negative-control fixture for that gate: today the property \"every item replays at every recorded version\" fails at version 1 for a real item in the flagship workspace."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: core,durability,history
 created_at: "2026-07-28T02:50:59.686Z"
-updated_at: "2026-07-28T02:50:59.686Z"
+updated_at: "2026-09-04T21:05:48.309Z"
+closed_at: "2026-09-04T21:05:47.825Z"
+completed_at: "2026-09-04T21:05:47.825Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Reading any item at any recorded version either returns the reconstructed item or a structured error envelope carrying a code and next steps, never a raw runtime message; A history stream whose first entry carries no document baseline is detected and named as its own condition instead of crashing the read; pm-lty reads successfully at version 1 and at every later recorded version, or returns a named non-crash condition explaining why version 1 has no baseline; Regression coverage includes a stream with no create entry and a stream whose baseline comes from history_compact_baseline; The exit code and envelope shape for a failed point-in-time read conform to the documented error-code contract"
 parent: pm-o2kc
 risk: medium
 confidence: 90
+resolution: Detect absent or incomplete history baselines before materialization and return the named history_baseline_unavailable refusal with recovery guidance.
+expected_result: "Historical reads return a reconstructed document or a typed actionable error, never an undefined metadata runtime crash."
+actual_result: Missing-create and incomplete-baseline negative controls passed alongside complete update-baseline and compacted-baseline compatibility cases. Full repository tests and error-contract checks passed.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-07-28T02:50:59.686Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,discovered_from,"2026-07-28T02:50:59.686Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-04T20:46:15.364Z","harness:codex","Live acceptance proof on the actual legacy pm-lty stream: pm get pm-lty --at 1 --json now exits 1 with code history_baseline_unavailable, a required original create/checkpoint recovery instruction and next_steps; no unstructured runtime crash or manufactured historical state. The real legacy stream was read only and not rewritten."
+  "2026-09-04T21:05:47.197Z","harness:codex","Implementation evidence: Detect absent or incomplete history baselines before materialization and return the named history_baseline_unavailable refusal with recovery guidance. Missing-create and incomplete-baseline negative controls passed alongside complete update-baseline and compacted-baseline compatibility cases. Full repository tests and error-contract checks passed. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+files[1]{path,scope,note}:
+  src/core/history/projection.ts,project,Named absent-baseline refusal before partial-state materialization
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,project,300,"harness:codex","2026-09-04T19:59:12.376Z",local_mutation,feat/history-durability-recovery
+test_runs[1]:
+  - run_id: test-local-mtnfzmcz-h5aod8
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:04:24.729Z"
+    finished_at: "2026-09-04T21:04:36.083Z"
+    recorded_at: "2026-09-04T21:04:36.083Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/HISTORY_RECOVERY.md,project,Missing baseline recovery guidance
+close_reason: Implementation complete with local recurrence controls; closeout is included in the reviewed delivery and merge remains gated on hosted checks and review.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-qw1uw6
+  gate_id: history-baseline-refusal
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts
+  local_checks[3]: missing and incomplete baseline refusals,real pm-lty version 1 named refusal with recovery guidance,checkpoint and complete update baseline compatibility
+  hosted_checks[1]: CI exact coverage and strict quality required before merge
 body: ""

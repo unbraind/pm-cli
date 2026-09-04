@@ -11135,6 +11135,13 @@
     },
     {
       "command": "history-repair",
+      "canonical_flag": "--salvage-tail",
+      "accepted_spellings": [
+        "--salvage-tail"
+      ]
+    },
+    {
+      "command": "history-repair",
       "canonical_flag": "--message",
       "accepted_spellings": [
         "--message"
@@ -11702,6 +11709,27 @@
       "canonical_flag": "--dry-run",
       "accepted_spellings": [
         "--dry-run"
+      ]
+    },
+    {
+      "command": "merge",
+      "canonical_flag": "--message",
+      "accepted_spellings": [
+        "--message"
+      ]
+    },
+    {
+      "command": "merge",
+      "canonical_flag": "--force",
+      "accepted_spellings": [
+        "--force"
+      ]
+    },
+    {
+      "command": "merge",
+      "canonical_flag": "--include-reconciled",
+      "accepted_spellings": [
+        "--include-reconciled"
       ]
     },
     {

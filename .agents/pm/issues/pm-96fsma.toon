@@ -2,11 +2,13 @@ id: pm-96fsma
 title: "GH-1171: restore parses the on-disk item before consulting history, so a zero-byte or corrupted item file with an intact stream cannot be rebuilt"
 description: "Reproduced on the 2026.9.4 build in a sandbox tracker: create an item, mutate it twice (three history entries, chain verified), then truncate the item file to zero bytes. pm get and pm restore <id> 3 both fail with \"TOON input does not have the shape of an item document\" and the item stays unrecoverable even though the history stream is a complete JSON-patch log of every version. In src/sdk/lifecycle/restore.ts the subject resolver parses the located item file before readHistoryEntries runs, so the existing absent-file fallback (replay the current document from history) is unreachable in exactly the case it exists for: the file is present but empty or corrupt. GH-1171 hit this after a disk-full event that truncated files mid-write.\n\nSecond half from the same report: a NUL-padded tail (the ext4 crash artifact) makes the whole stream unusable. The current diagnostic names the line (\"History for <id> contains invalid JSON at line 4\") but offers no salvage path, and history-repair declines because the chain up to the last valid entry verifies.\n\nAcceptance: (1) restore treats an unparseable existing item file exactly like an absent one, replays the requested version from history, and reports why the on-disk document was ignored; (2) pm get on an unparseable file refuses with a typed error that names pm restore as the remediation; (3) a history salvage mode truncates an invalid tail to the last hash-verified entry, records an explicit audit entry, and refuses when any valid entry would be dropped (negative control: a corrupted middle entry must never be silently cut); (4) fixtures cover a zero-byte item file and a NUL-padded stream tail on Linux and Windows; (5) the point-in-time reconstruction gate replays the recovered item byte-identically."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: "area:history","area:restore",github-intake,history-integrity,projection-contract,recovery,regression
 created_at: "2026-09-04T18:24:40.888Z"
-updated_at: "2026-09-04T18:26:04.507Z"
+updated_at: "2026-09-04T21:05:44.780Z"
+closed_at: "2026-09-04T21:05:44.255Z"
+completed_at: "2026-09-04T21:05:44.255Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "restore treats an unparseable existing item file exactly like an absent one and replays the requested version from history while reporting why the on-disk document was ignored; pm get on an unparseable item file refuses with a typed error that names pm restore as the remediation; A history salvage mode truncates an invalid stream tail to the last hash-verified entry, records an explicit audit entry, and refuses when any valid entry would be dropped; Fixtures cover a zero-byte item file and a NUL-padded stream tail on Linux and Windows and the point-in-time reconstruction gate replays the recovered item byte-identically"
@@ -17,8 +19,9 @@ reporter: unbraind
 severity: high
 environment: "pm-cli 2026.9.4 and 2026.8.31, Linux ext4 after a disk-full truncation, sandbox tracker"
 repro_steps: "Create an item, update it twice, verify the chain, truncate the .toon to zero bytes, run pm get and pm restore <id> <last-version>, then append NUL bytes to the history stream and retry"
-expected_result: "restore replays the requested version from the intact history and reports that the on-disk document was ignored, and an invalid tail can be salvaged to the last verified entry with an audit record"
-actual_result: "Both pm get and pm restore fail with TOON input does not have the shape of an item document, and an invalid tail leaves the stream unusable with no salvage command"
+resolution: Recover unreadable UTF-8 item documents from verified history and salvage only an invalid trailing suffix with byte-preserving audit receipts and concurrency guards.
+expected_result: "Zero-byte and malformed text items restore exactly; verified prefixes remain unchanged; interior corruption, complete discarded records, invalid UTF-8 and competing writes refuse without mutation."
+actual_result: "The recovery and negative-control integration fixtures passed; temporary-tracker acceptance confirmed byte-identical restoration, unchanged dry-run bytes, retained-prefix bytes and suffix digest. Windows execution remains a required hosted check before merge."
 affected_version: 2026.8.31
 component: "sdk/lifecycle/restore, core/item/item-format, history-repair"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -26,10 +29,56 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-qw1uw6,discovered_from,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,verifies,"2026-09-04T18:24:40.888Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-04T18:26:03.448Z","harness:claude-code","Duplicate check: searched restore from history, zero-byte item, corrupted stream tail, missing item file recovery. The closed v2026.5.1 restore-recovery lineage (linked recurs_from) covered absent files only. Reproduced live on the 2026.9.4 build in a sandbox tracker before filing: three verified history entries, zero-byte item file, get and restore both refuse with the TOON shape error."
-files[2]{path,scope,note}:
+  "2026-09-04T19:42:55.221Z","harness:codex","Implementation scope combines verified restoration, invalid-tail salvage, stable addresses, identity reservation, and replay-gate evidence with pm-m0yjtg, pm-qw1uw6, pm-e3gn0z, and pm-wlqxg3. GitHub issue 1171 already links this canonical owner. No duplicate item created."
+  "2026-09-04T20:00:51.081Z","harness:codex","Safety contract: salvage is a separate explicit single-stream repair mode, refuses parseable interior records and potentially complete records with attached corruption, preserves verified prefix bytes and hash epoch, binds ownership to a readable current item or verified replay, rechecks snapshots under lock and appends a suffix-digest receipt. It does not normalize provenance or reconcile current state."
+  "2026-09-04T21:05:43.648Z","harness:codex","Implementation evidence: Recover unreadable UTF-8 item documents from verified history and salvage only an invalid trailing suffix with byte-preserving audit receipts and concurrency guards. The recovery and negative-control integration fixtures passed; temporary-tracker acceptance confirmed byte-identical restoration, unchanged dry-run bytes, retained-prefix bytes and suffix digest. Windows execution remains a required hosted check before merge. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+files[19]{path,scope,note}:
+  scripts/release/flag-help-baseline.json,project,Measured bounded help delta
+  scripts/release/flag-spelling-baseline.json,project,Generated compatibility spelling inventory
+  src/cli/register-mutation.ts,project,Thin CLI salvage option
+  src/core/history/event-classification.ts,project,Classify salvage receipts as maintenance
+  src/core/history/read.ts,project,Invalid JSON history salvage guidance
   src/core/item/item-format.ts,project,TOON shape refusal raised for an empty or corrupt item file
+  src/core/store/item-store.ts,project,Actionable typed recovery diagnostics
+  src/sdk/cli-contracts/flag-contracts.ts,project,Canonical salvage flag
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Exact budget for one explicit salvage mode
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Typed salvage parameter documentation
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP salvage option
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated typed recovery diagnostics
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated typed recovery diagnostics
+  src/sdk/history-repair.ts,project,Public repair option and single-stream enforcement
+  src/sdk/history/salvage.ts,project,Verified-tail salvage orchestration with ownership and rollback
   src/sdk/lifecycle/restore.ts,project,subject resolver parses the located item before reading history
+  tests/fixtures/contracts/full.json,project,Generated CLI and MCP salvage contract
+  tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Exact expanded reviewed flag inventory
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Salvage mode schema contract regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,300,"harness:codex","2026-09-04T19:58:40.497Z",local_mutation,feat/history-durability-recovery
+test_runs[1]:
+  - run_id: test-local-mtnfyug3-tnahtb
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:03:49.216Z"
+    finished_at: "2026-09-04T21:03:59.906Z"
+    recorded_at: "2026-09-04T21:03:59.906Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated salvage flag budget
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census includes typed history recovery errors
+  docs/HISTORY_RECOVERY.md,project,Public CLI and SDK durability contract
+close_reason: Implementation complete with local recurrence controls; closeout is included in the reviewed delivery and merge remains gated on hosted checks and review.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-96fsma
+  gate_id: history-durability-replay
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts
+  local_checks[3]: 24 real-filesystem durability and maintenance cases passed,manual temporary-tracker SDK/CLI recovery and salvage passed,pnpm typecheck passed
+  hosted_checks[2]: CI coverage and strict quality gates required before merge,Windows recovery regression required before merge
 body: ""

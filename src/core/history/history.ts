@@ -6,7 +6,7 @@
 import jsonPatch from "fast-json-patch";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
-import { appendLineAtomic } from "../fs/fs-utils.js";
+import { appendLineAtomic, readFileIfExists } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
 import {
@@ -795,7 +795,9 @@ async function applyHistoryAppendOverride(
 ): Promise<boolean> {
   if (result === false) return true;
   if (typeof result === "string") {
-    await appendLineAtomic(historyPath, serializeHistoryLine(result, entry));
+    const line = serializeHistoryLine(result, entry);
+    await assertHistoryAppendIdentity(historyPath, line);
+    await appendLineAtomic(historyPath, line);
     await invalidateHistoryDriftCacheForPath(historyPath);
     await removeHistoryEventIndexForHistoryPath(historyPath);
     return true;
@@ -810,16 +812,32 @@ async function applyHistoryAppendOverride(
   if (record.skip === true) return true;
   const nextHistoryPath =
     typeof record.history_path === "string" ? record.history_path : historyPath;
-  await appendLineAtomic(
-    nextHistoryPath,
-    serializeHistoryLine(
-      typeof record.line === "string" ? record.line : (record.entry ?? entry),
-      entry,
-    ),
+  const line = serializeHistoryLine(
+    typeof record.line === "string" ? record.line : (record.entry ?? entry),
+    entry,
   );
+  await assertHistoryAppendIdentity(nextHistoryPath, line);
+  await appendLineAtomic(nextHistoryPath, line);
   await invalidateHistoryDriftCacheForPath(nextHistoryPath);
   await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
   return true;
+}
+
+/** Enforce identity reservations at the effective append destination, including extension rewrites. */
+async function assertHistoryAppendIdentity(historyPath: string, line: string): Promise<void> {
+  let record: unknown;
+  try {
+    record = JSON.parse(line);
+  } catch {
+    // Legacy service overrides may provide non-JSON lines; verification diagnoses them.
+    return;
+  }
+  if (!isRecord(record) || record.op !== "create" || await readFileIfExists(historyPath) === null) return;
+  throw new PmCliError("This item identity is reserved by an existing history stream.", EXIT_CODE.CONFLICT, {
+    code: "item_identity_reserved",
+    required: "Choose a new item ID or restore the original item from its history.",
+    nextSteps: ["Run pm history <id> --full, then pm restore <id> <version> to recover the original item."],
+  });
 }
 
 /** Implements append history entry for the public runtime surface of this module. */
@@ -827,6 +845,7 @@ export async function appendHistoryEntry(
   historyPath: string,
   entry: HistoryEntry,
 ): Promise<void> {
+  if (entry.op === "create") await assertHistoryAppendIdentity(historyPath, JSON.stringify(entry));
   const override = await runActiveServiceOverride("history_append", {
     history_path: historyPath,
     entry,
