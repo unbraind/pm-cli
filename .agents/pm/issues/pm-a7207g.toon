@@ -1,0 +1,54 @@
+id: pm-a7207g
+title: "GH-1190: Windows nightly can publish the event index after an unlocked fallback append"
+description: "Nightly Validation run 33854480862 on main e486179 failed in Windows Node 24 because the unlocked-fallback append regression resolved instead of rejecting: runtime/history-event-index.json remained physically visible. The prior pm-fqlocp fix made invalidation the portable query invariant but retained a physical-unlink assertion that is nondeterministic under full-suite Windows scheduling. Make the test deterministic without weakening the committed invalidation or incomplete-index refusal contracts, and add it to the required Windows regression gate."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:history","area:tests",ci,windows
+created_at: "2026-09-04T13:19:39.118Z"
+updated_at: "2026-09-04T13:40:11.393Z"
+closed_at: "2026-09-04T13:40:10.772Z"
+completed_at: "2026-09-04T13:40:10.772Z"
+author: "harness:codex"
+parent: pm-o2kc
+severity: high
+environment: GitHub Actions Nightly Validation windows-latest Node 24 run 33854480862 at e486179
+repro_steps: "Run the full nightly suite on Windows Node 24 at e486179; tests/unit/core/history/event-index.spec.ts expects fs.access(runtime/history-event-index.json) to reject after an unlocked fallback append, but Windows can retain the file while committed invalidation correctly prevents queries."
+resolution: Replaced nondeterministic physical file-absence verification with the public invalidation/query-refusal invariant and ratcheted the full event-index regression into the required Windows workflow plus workflow contract.
+expected_result: "Unlocked fallback appends never expose stale derived-index queries, and every PR proves the behavior on Windows without depending on filesystem delete timing."
+actual_result: "The focused event-index and workflow contracts pass, the full 32-test event-index suite passed ten consecutive repetitions, and exact full coverage plus repository static gates pass."
+affected_version: 2026.9.4
+component: history event index tests and Windows CI
+regression: true
+customer_impact: A nondeterministic required nightly blocks release confidence and leaves GitHub issue #1190 open even when the derived-index runtime contract is intact.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7c27ep,implements,"2026-09-04T13:19:51.890Z","harness:codex","cli:update:dep",detected
+  pm-801d,verifies,"2026-09-04T13:19:51.890Z","harness:codex","cli:update:dep",detected
+  pm-fqlocp,recurs_from,"2026-09-04T13:19:51.890Z","harness:codex","cli:update:dep",detected
+  pm-j668gl,recurs_from,"2026-09-04T13:19:51.890Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-04T13:19:39.118Z","harness:codex","Duplicate check: all-status search found closed pm-fqlocp as the exact prior defect, open pm-7c27ep as recurrence-policy governance, and open pm-801d as the derived-index feature. This is a verified post-fix recurrence from GitHub issue #1190 and run 33854480862, so it is tracked separately with recurs_from lineage rather than reopening or duplicating the completed fix."
+  "2026-09-04T13:21:26.408Z","harness:codex","TDD red evidence: the CI workflow contract now requires tests/unit/core/history/event-index.spec.ts in the required Windows regression job and fails because the current job omits it. Production red evidence remains Nightly run 33854480862: the physical SQLite absence assertion resolved on Windows even though committed invalidation is the portable safety invariant."
+  "2026-09-04T13:39:58.924Z","harness:codex","Implementation and verification evidence: the unlocked-fallback regression now asserts queryHistoryEventIndex returns null, the portable public invalidation contract, instead of nondeterministic physical SQLite disappearance. The complete event-index suite passed 10 consecutive 32-test repetitions. The required Windows PR job now runs the full event-index spec and a workflow contract prevents removal. Full coverage passes 603 files and 8,356 tests at exact 100/100/100/100; quality:static, typecheck, docs links, and security scan pass."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T13:39:59.476Z","harness:codex","Derived-index safety is defined by refusing stale queries after invalidation, not by immediate physical deletion on every filesystem. Windows delete-pending timing can retain the file transiently, so required Windows CI must exercise the public refusal invariant directly."
+files[3]{path,scope,note}:
+  .github/workflows/ci.yml,project,Run the full event-index regression on every required Windows PR job
+  tests/integration/ci-workflow-contract.spec.ts,project,Ratchet event-index coverage into the Windows workflow contract
+  tests/unit/core/history/event-index.spec.ts,project,Assert the portable query refusal invariant instead of nondeterministic physical SQLite absence
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-09-04T13:22:09.449Z",local_mutation,fix/exact-tag-changelog-stabilization
+  node scripts/run-tests.mjs coverage,project,900,"harness:codex","2026-09-04T13:22:10.002Z",local_mutation,fix/exact-tag-changelog-stabilization
+  "pnpm quality:static",project,900,"harness:codex","2026-09-04T13:22:10.549Z",local_mutation,fix/exact-tag-changelog-stabilization
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generate reviewed release notes from terminal PM evidence
+close_reason: The event-index recurrence now asserts the portable query-refusal contract and is permanently included in required Windows CI.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-a7207g
+  gate_id: windows-history-event-index-required-regression
+  negative_control: "Remove tests/unit/core/history/event-index.spec.ts from the required Windows regression command or assert physical SQLite absence instead of public query refusal; the workflow contract, focused regression, or hosted Windows job must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/integration/ci-workflow-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Test (Windows),CI / Gates (static),CI / Gates (coverage)
+body: ""

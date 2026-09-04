@@ -195,7 +195,7 @@ jobs:
 
       - name: Verify generated pm changelog
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" = "tag" ]; then
+          if [ "${RECOVERY_SOURCE_MODE}" = "tag" ]; then
             pnpm changelog:pm
             unexpected_paths="$(git diff --name-only -- . \
               ':(exclude)CHANGELOG.md' \
@@ -205,7 +205,7 @@ jobs:
               printf '%s\n' "${unexpected_paths}" >&2
               exit 1
             fi
-            echo "Exact-tag recovery regenerated the package changelog with the tagged checkout's canonical policy."
+            echo "Exact-tag source regenerated the package changelog with the tagged checkout's canonical policy."
           else
             pnpm changelog:pm:check
           fi
