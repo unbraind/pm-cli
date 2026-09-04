@@ -211,6 +211,7 @@ function changedFields(
   return Array.from(fields).sort((a, b) => a.localeCompare(b));
 }
 
+/** Reload item and history under the caller's lock, refusing changes since the recovery snapshot. */
 async function loadRestoreStateUnderLock(params: {
   pmRoot: string;
   resolvedId: string;

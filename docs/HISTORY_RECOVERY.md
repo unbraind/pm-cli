@@ -49,6 +49,12 @@ conflicts are not treated as missing files. A missing initial baseline returns
 `history_baseline_unavailable` with recovery guidance rather than inventing
 metadata from a partial patch.
 
+CLI shape errors name the item ID, file path, and zero-length files. The SDK
+error context also includes byte length and an explicit empty-file flag.
+`pm health --check-only` names malformed item paths and invalid
+history lines without mutating either file; use those diagnostics to select the
+specific recovery operation above.
+
 Invalid UTF-8 is a separate refusal (`item_document_encoding_invalid`), not a
 recoverable text parse failure. Preserve a binary backup before recovering such
 a file; text decoding must never silently replace original bytes.

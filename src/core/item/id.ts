@@ -64,6 +64,7 @@ function randomToken(length: number): string {
   return token;
 }
 
+/** Reserve an identity when either a live item path or its retained history exists. */
 async function idExists(
   pmRoot: string,
   id: string,

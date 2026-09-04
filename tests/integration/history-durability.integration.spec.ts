@@ -851,12 +851,43 @@ describe("history durability across storage maintenance", () => {
         const file = path.join(context.pmPath, "tasks", `${id}.toon`);
         const original = await readFile(file, "utf8");
         await writeFile(file, corrupt);
+        await expect(runGet(id, {}, { path: context.pmPath })).rejects.toMatchObject({
+          context: {
+            code: "item_document_invalid",
+            item_id: id,
+            item_path: file,
+            byte_length: Buffer.byteLength(corrupt),
+            empty: corrupt.length === 0,
+          },
+        });
         const result = await runRestore(id, "1", {}, { path: context.pmPath });
         expect(result.warnings).toContain("restore_unreadable_item_recovered");
         expect(await readFile(file, "utf8")).toBe(original);
       });
     },
   );
+
+  it("names both the empty item and corrupt history tail in read-only health diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-health-damage";
+      createTaskFixture(context, id, "Recoverable context");
+      const file = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const history = await readFile(historyFile, "utf8");
+      await writeFile(file, "");
+      await writeFile(historyFile, `${history}\0\0\0\n`);
+      const health = context.runCli(["health", "--check-only", "--json", "--output-budget", "unbounded"]);
+      expect(JSON.parse(health.stdout)).toMatchObject({
+        ok: false,
+        warnings: expect.arrayContaining([
+          `integrity_item_parse_failed:tasks/${id}.toon`,
+          `integrity_history_invalid_json:${id}:L2`,
+        ]),
+      });
+      expect(await readFile(file, "utf8")).toBe("");
+      expect(await readFile(historyFile, "utf8")).toBe(`${history}\0\0\0\n`);
+    });
+  });
 
   it("reserves a deleted identity against explicit recreation", async () => {
     await withTempPmPath(async (context) => {

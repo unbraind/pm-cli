@@ -139,6 +139,7 @@ function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   return values.slice(Math.max(0, values.length - limit));
 }
 
+/** Summarize patch fields with physical indices and separately mapped durable versions. */
 function buildDiffEntries(
   entries: { entry: HistoryEntry; version: number }[],
   addressing: HistoryResult["version_addressing"],

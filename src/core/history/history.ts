@@ -6,7 +6,7 @@
 import jsonPatch from "fast-json-patch";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
-import { appendLineAtomic, readFileIfExists } from "../fs/fs-utils.js";
+import { appendLineAtomic, pathExists } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
 import {
@@ -832,7 +832,7 @@ async function assertHistoryAppendIdentity(historyPath: string, line: string): P
     // Legacy service overrides may provide non-JSON lines; verification diagnoses them.
     return;
   }
-  if (!isRecord(record) || record.op !== "create" || await readFileIfExists(historyPath) === null) return;
+  if (!isRecord(record) || record.op !== "create" || !(await pathExists(historyPath))) return;
   throw new PmCliError("This item identity is reserved by an existing history stream.", EXIT_CODE.CONFLICT, {
     code: "item_identity_reserved",
     required: "Choose a new item ID or restore the original item from its history.",

@@ -127,6 +127,7 @@ export interface HistoryCompactResult {
   generated_at: string;
 }
 
+/** Translate a durable version or timestamp boundary into physical compacted and retained counts. */
 function parseBeforeBoundary(
   before: string | undefined,
   entries: HistoryEntry[],
@@ -224,6 +225,7 @@ function replayHistoryAndResolveCheckpoint(
   };
 }
 
+/** Snapshot the live item and compare it with the stream's supported historical hash surfaces. */
 async function loadHistoryCompactCurrentItem(
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -281,6 +283,7 @@ function buildHistoryCompactBaselineMessage(
   return `history-compact baseline snapshot before ${boundary.raw}.`;
 }
 
+/** Replace the pruned prefix with a durable-addressed checkpoint while retaining original records and hash semantics. */
 function buildHistoryCompactEntries(params: {
   historyEntries: HistoryEntry[];
   boundary: HistoryCompactBoundary;

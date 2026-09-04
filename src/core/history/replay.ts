@@ -578,7 +578,7 @@ function applyReanchorPatch(
 /** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
-  itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
+  itemHashVersion: HistoryItemHashVersion = resolveHistoryRepairItemHashVersion(entries),
   options: ReanchorHistoryOptions = {},
 ): ReanchorResult {
   const unsupportedIndex = entries.findIndex((entry) =>

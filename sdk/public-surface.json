@@ -1644,6 +1644,20 @@
       ],
       "package_version": "2026.9.4",
       "reason": "Historical reads now expose unknown legacy checkpoint addresses as null instead of inventing a numeric version; salvage and identity diagnostics add public typed capabilities."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "Expose optional item ID, path and byte-length diagnostics; preserve the documented nullable legacy history-version mapping contract."
+    },
+    {
+      "changes": [
+        "signature ./sdk:reanchorHistoryEntries"
+      ],
+      "package_version": "2026.9.4",
+      "reason": "Name the existing HistoryItemHashVersion parameter explicitly so equivalent union printer order does not churn the public reanchor signature; accepted values and runtime behavior are unchanged."
     }
   ],
   "entrypoints": {
@@ -11836,7 +11850,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; item_path?: string; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -13942,7 +13956,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "reanchorHistoryEntries",
-          "signature": "(entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: 1 | 2 | 3, options?: ReanchorHistoryOptions) => ReanchorResult"
+          "signature": "(entries: HistoryEntry[], itemHashVersion?: HistoryItemHashVersion, options?: ReanchorHistoryOptions) => ReanchorResult | calls: (entries: HistoryEntry[], itemHashVersion?: HistoryItemHashVersion, options?: ReanchorHistoryOptions) => ReanchorResult"
         },
         {
           "classification": "supported",

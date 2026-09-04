@@ -577,6 +577,7 @@ function shouldIncludeGetField(params: {
   return depth !== "brief";
 }
 
+/** Derive claim evidence from the selected physical history prefix, excluding future claims. */
 async function resolveGetClaimState(
   context: GetItemContext,
   includeClaimState: boolean,

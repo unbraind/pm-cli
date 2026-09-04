@@ -190,7 +190,11 @@ export async function readLocatedItemSnapshot(
 > {
   const bytes = await fs.readFile(item.itemPath);
   if (!isUtf8(bytes)) {
-    throw new PmCliError("Item contains invalid UTF-8; preserve a binary backup before recovering it.", EXIT_CODE.CONFLICT, { code: "item_document_encoding_invalid" });
+    throw new PmCliError(
+      "Item contains invalid UTF-8; preserve a binary backup before recovering it.",
+      EXIT_CODE.CONFLICT,
+      { code: "item_document_encoding_invalid" },
+    );
   }
   const raw = bytes.toString("utf8");
   await runActiveOnReadHooks({
@@ -209,10 +213,24 @@ export async function readLocatedItemSnapshot(
     });
   } catch (error) {
     if (error instanceof PmCliError && error.code === "item_document_invalid") {
-      return { raw, document: null, error: new PmCliError(error.message, error.exitCode, {
-          ...error.context,
-          nextSteps: [`Run pm history ${item.id} --full, then pm restore ${item.id} <version> to recover a recorded state.`],
-        }) };
+      return {
+        raw,
+        document: null,
+        error: new PmCliError(
+          `Cannot read ${item.id} at ${item.itemPath}${bytes.length === 0 ? " (zero-length file)" : ""}: ${error.message}`,
+          error.exitCode,
+          {
+            ...error.context,
+            item_id: item.id,
+            item_path: item.itemPath,
+            byte_length: bytes.length,
+            empty: bytes.length === 0,
+            nextSteps: [
+              `Run pm history ${item.id} --full, then pm restore ${item.id} <version> to recover a recorded state.`,
+            ],
+          },
+        ),
+      };
     }
     throw error;
   }

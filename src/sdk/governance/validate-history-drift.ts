@@ -57,7 +57,7 @@ export async function buildValidateHistoryDriftCheck(
           : warnings.length === 0
             ? "ok"
             : "warn",
-      ok: warnings.length === 0,
+      ok: identityDiscontinuities.length === 0 && warnings.length === 0,
       details: {
         identity_discontinuities: identityDiscontinuities.slice(
           0,

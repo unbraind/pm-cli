@@ -6,29 +6,32 @@ status: closed
 priority: 1
 tags[6]: history,identity,immutability,integrity,multi-agent,restore
 created_at: "2026-07-28T22:29:55.810Z"
-updated_at: "2026-09-04T21:05:49.951Z"
-closed_at: "2026-09-04T21:05:49.439Z"
-completed_at: "2026-09-04T21:05:49.439Z"
+updated_at: "2026-09-04T21:58:07.820Z"
+closed_at: "2026-09-04T21:58:07.268Z"
+completed_at: "2026-09-04T21:58:07.268Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "Minting a new id consults every durable record of prior use, including retained history streams for deleted items, so a previously used id is never reissued; A stream that would receive a second create entry is refused at write time with a structured error naming the prior use, rather than accepted and reported as verified; An existing stream containing more than one create entry is reported by pm validate as a data-integrity error with the id and the entry ordinals named, and by pm history --verify as a failed verification rather than ok true; Point-in-time reads across an identity discontinuity either refuse with a structured error or disclose the discontinuity as part of the result, so a caller can never silently receive another item's state; The check is available through the SDK identity primitives rather than only in the CLI, so MCP and other hosts inherit it; A regression fixture reproduces the recycling deterministically through a seeded reproducible execution and asserts the refusal, keeping the negative control permanently executable; The enumeration of write paths that can append a second create entry to one stream includes branch merge as well as re-minting, and the finding names which path produced the stream so remediation is not guessed"
 parent: pm-o2kc
 risk: high
 confidence: high
-resolution: Reserve identities through retained history at generated-ID and extension append boundaries; expose typed repeated-genesis diagnostics and strict validation evidence.
-expected_result: Deleted IDs cannot be recycled; a second create cannot silently join one identity stream; readers and validation identify discontinuities and both physical ordinals.
-actual_result: "Seeded regeneration, explicit recreation and all effective extension append forms passed refusal tests. Validly hashed repeated genesis failed SDK verification and strict CLI validation. Real independent Git branches reproduced the distinct add/add origin; branch collision prevention remains separate canonical work."
+resolution: Reserve retained identities using existence checks and make validation success explicitly exclude identity discontinuities.
+expected_result: Identity reservation avoids whole-stream reads and validation status cannot contradict its ok flag.
+actual_result: "All identity and replay regressions passed, including deleted IDs, extension override destinations, repeated genesis, strict CLI validation and divergent Git history. Full exact coverage and static quality passed."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-khdq,discovered_from,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
   pm-nb4zwz,related,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
   pm-qw1uw6,related,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-28T22:29:55.810Z","harness:claude-code","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-02T21:11:32.666Z","harness:claude-code","Second, concurrency-native path to the same terminal state (2026-08-02). Re-minting after delete is not the only way one history stream ends up holding two unrelated items: two branches that mint the same id independently produce exactly that, and the merge driver resolves the add/add as an ordinary field conflict — title, description and created_at go to the preferred side, the other item is annihilated into discarded_hash values in a receipt, and the merged stream carries two create entries. This item's first two acceptance criteria cannot prevent it, because across branches there is no shared durable record to consult at mint time; only the third criterion (a stream with more than one create entry is reported) covers the shared terminal state. Filed separately as pm-qx95lz because the cause, the prevention point (merge driver rather than mint probe) and the fix differ; the detector is the one thing the two share."
   "2026-09-04T19:57:32.342Z","harness:codex","Implementation evidence: generated IDs consult retained history reservations even on the locked-write fast path, appendHistoryEntry refuses second create writes, and chain verification detects duplicate-create ordinals. Deterministic seeded allocation after delete now chooses a different ID. Existing parallel live-file collision guarantees from closed pm-khdq remain separate."
   "2026-09-04T20:36:46.509Z","harness:codex","Acceptance review: duplicate-create verification already rejects hash-valid remints. Completing the validate --check-history-drift projection with item ID, both genesis ordinals, and observed delete/create versus multiple-genesis sequence; invalidate the old metadata cache so historical cached success cannot hide this invariant. Sequence evidence will not invent an unprovable writer or branch origin."
   "2026-09-04T20:47:25.502Z","harness:codex","Validation regression passes at the SDK drift-check boundary, including fresh and repeated metadata-cache reads. Public identity diagnostics distinguish delete_then_create, multiple_creates and checkpoint_then_create. The real Git fixture now creates independent same-ID subjects on separate branches and verifies their original branch streams report the second genesis; shared-genesis divergent edits still reconcile and replay every version. Merge collision prevention remains a separate owner, pm-qx95lz; this delivery does not claim that entire policy is implemented."
   "2026-09-04T21:05:48.838Z","harness:codex","Implementation evidence: Reserve identities through retained history at generated-ID and extension append boundaries; expose typed repeated-genesis diagnostics and strict validation evidence. Seeded regeneration, explicit recreation and all effective extension append forms passed refusal tests. Validly hashed repeated genesis failed SDK verification and strict CLI validation. Real independent Git branches reproduced the distinct add/add origin; branch collision prevention remains separate canonical work. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+  "2026-09-04T21:14:50.740Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1194, initial implementation head 4c80eb3b6d4d5c52deee2b1bcd0e53f074414c27. Final frozen repository validation checked 2637 items and 2652 streams with no drift, identity discontinuities or storage-integrity failures."
+  "2026-09-04T21:30:08.131Z","harness:codex","CodeRabbit PR #1194 findings accepted: replace the whole-stream identity existence read with pathExists, and independently require zero identity discontinuities for validate.check.ok. Existing validly hashed repeated-genesis, seeded-ID and extension-destination fixtures remain the negative controls. Current full test run will finish before source changes are applied."
+  "2026-09-04T21:58:06.636Z","harness:codex","Review update for PR #1194: all 8397 tests across 605 files passed with exact 100/100/100/100 coverage. Full static quality and typecheck passed. Real temporary-tracker acceptance and packed npm/npx/bunx smoke passed. The package remains below its unchanged 20 MB artifact budget by compacting only the distributed JSON manifest; its documented export and parsed data are unchanged. Required Windows CI now executes both history regression suites. CodeRabbit findings are addressed by a metadata-only existence probe, reuse of the verified salvage hash epoch and an explicit identity-aware validation ok flag. Corrupt-item SDK errors now include item ID/path/byte length/empty state, and the real read-only health regression diagnoses both the zero-byte item and corrupt history tail. Hosted final-head checks and renewed bot review remain required before merge; no publication claim is made."
 learnings[1]{created_at,author,text}:
   "2026-09-04T20:42:35.256Z","harness:codex",An identity remains allocated while its immutable history exists. Invariant changes also require invalidating metadata-only verification caches. Describe observed record sequences; do not infer branch or writer causality absent recorded provenance.
 files[8]{path,scope,note}:
@@ -43,7 +46,7 @@ files[8]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,project,300,"harness:codex","2026-09-04T19:59:11.159Z",local_mutation,feat/history-durability-recovery
   node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300,"harness:codex","2026-09-04T20:47:26.188Z",local_mutation,feat/history-durability-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtng02rw-7abc28
     kind: test
     status: passed
@@ -56,9 +59,21 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtnhveru-wb9yua
+    kind: test
+    status: passed
+    started_at: "2026-09-04T21:57:07.947Z"
+    finished_at: "2026-09-04T21:57:18.858Z"
+    recorded_at: "2026-09-04T21:57:18.858Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/core/item/id-generation.spec.ts tests/unit/core/history/history-replay.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/HISTORY_RECOVERY.md,project,Permanent identity and imported collision guidance
-close_reason: Implementation complete with local recurrence controls; closeout is included in the reviewed delivery and merge remains gated on hosted checks and review.
+close_reason: Review fixes implemented and locally verified; reviewed merge and publication remain separately gated.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

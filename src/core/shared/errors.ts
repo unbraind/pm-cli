@@ -51,6 +51,14 @@ export interface PmCliErrorRecoveryPayload {
 export interface PmCliErrorContext {
   /** Value that configures or reports code for this contract. */
   code?: string;
+  /** Item whose document could not be decoded or parsed. */
+  item_id?: string;
+  /** Exact filesystem path of the unreadable item document. */
+  item_path?: string;
+  /** Original document size before decoding or parsing. */
+  byte_length?: number;
+  /** Whether the original item document contained no bytes. */
+  empty?: boolean;
   /** Stable failure class within the operation-specific error code. */
   reason?: string;
   /** Metadata field responsible for a validation failure, when known. */

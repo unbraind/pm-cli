@@ -12,6 +12,7 @@ import { acquireLock } from "../../core/lock/lock.js";
 import {
   createHistoryEntry,
   sealHistoryRecord,
+  type HistoryItemHashVersion,
 } from "../../core/history/history.js";
 import {
   checkHistoryRewriteOwnership,
@@ -111,6 +112,7 @@ export function inspectHistoryTail(raw: string): {
   entries: HistoryEntry[];
   prefix: string;
   receipt: HistorySalvageReceipt | null;
+  itemHashVersion: HistoryItemHashVersion;
 } {
   if (findFirstMergeConflictMarker(raw)) {
     throw new PmCliError(
@@ -152,7 +154,7 @@ export function inspectHistoryTail(raw: string): {
     offset += line.length + 1;
   }
   const verification = verifyHistoryChainWithVersion(entries);
-  if (entries.length === 0 || !verification.ok) {
+  if (!verification.ok || verification.item_hash_version === undefined) {
     throw new PmCliError(
       "History salvage requires a nonempty verified prefix.",
       EXIT_CODE.CONFLICT,
@@ -166,6 +168,7 @@ export function inspectHistoryTail(raw: string): {
   }
   return {
     entries,
+    itemHashVersion: verification.item_hash_version,
     prefix: invalidOffset === undefined ? raw : raw.slice(0, invalidOffset),
     receipt:
       invalidOffset === undefined
@@ -268,9 +271,7 @@ export async function salvageHistoryTail(params: {
     force: options.force,
     settings,
   });
-  const version = verifyHistoryChainWithVersion(
-    selected.entries,
-  ).item_hash_version!;
+  const version = selected.itemHashVersion;
   const dryRun = options.dryRun === true;
   const changed = selected.receipt !== null;
   if (changed && !dryRun) {

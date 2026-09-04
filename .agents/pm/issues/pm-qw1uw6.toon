@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: core,durability,history
 created_at: "2026-07-28T02:50:59.686Z"
-updated_at: "2026-09-04T21:05:48.309Z"
+updated_at: "2026-09-04T21:58:09.892Z"
 closed_at: "2026-09-04T21:05:47.825Z"
 completed_at: "2026-09-04T21:05:47.825Z"
 author: "harness:claude-code"
@@ -21,9 +21,11 @@ actual_result: Missing-create and incomplete-baseline negative controls passed a
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-07-28T02:50:59.686Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,discovered_from,"2026-07-28T02:50:59.686Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-04T20:46:15.364Z","harness:codex","Live acceptance proof on the actual legacy pm-lty stream: pm get pm-lty --at 1 --json now exits 1 with code history_baseline_unavailable, a required original create/checkpoint recovery instruction and next_steps; no unstructured runtime crash or manufactured historical state. The real legacy stream was read only and not rewritten."
   "2026-09-04T21:05:47.197Z","harness:codex","Implementation evidence: Detect absent or incomplete history baselines before materialization and return the named history_baseline_unavailable refusal with recovery guidance. Missing-create and incomplete-baseline negative controls passed alongside complete update-baseline and compacted-baseline compatibility cases. Full repository tests and error-contract checks passed. Repository-wide exact 100/100/100/100 coverage and pnpm quality:static passed without weakening thresholds. All changed surfaces are linked to canonical delivery items. Hosted PR review and merged-main operational verification are pending and must pass before merge; the already published 2026.9.4 artifact does not contain this branch."
+  "2026-09-04T21:14:50.276Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1194, initial implementation head 4c80eb3b6d4d5c52deee2b1bcd0e53f074414c27. Typed baseline refusal is verified with complete-update and compacted-baseline compatibility controls."
+  "2026-09-04T21:58:09.892Z","harness:codex","Review update for PR #1194: all 8397 tests across 605 files passed with exact 100/100/100/100 coverage. Full static quality and typecheck passed. Real temporary-tracker acceptance and packed npm/npx/bunx smoke passed. The package remains below its unchanged 20 MB artifact budget by compacting only the distributed JSON manifest; its documented export and parsed data are unchanged. Required Windows CI now executes both history regression suites. CodeRabbit findings are addressed by a metadata-only existence probe, reuse of the verified salvage hash epoch and an explicit identity-aware validation ok flag. Corrupt-item SDK errors now include item ID/path/byte length/empty state, and the real read-only health regression diagnoses both the zero-byte item and corrupt history tail. Hosted final-head checks and renewed bot review remain required before merge; no publication claim is made."
 files[1]{path,scope,note}:
   src/core/history/projection.ts,project,Named absent-baseline refusal before partial-state materialization
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

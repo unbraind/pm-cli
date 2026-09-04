@@ -87,6 +87,7 @@ function getDriftCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", DRIFT_CACHE_FILENAME);
 }
 
+/** Discard unreadable or stale cache envelopes, including prior verification semantics. */
 async function loadDriftCache(
   pmRoot: string,
 ): Promise<DriftCacheEnvelope | null> {
@@ -299,6 +300,7 @@ async function loadFreshStreamVerification(
   }
 }
 
+/** Reverify invalid streams and content-sensitive cache hits; reuse only compatible healthy evidence. */
 async function resolveStreamVerification(params: {
   itemId: string;
   historyPath: string;
