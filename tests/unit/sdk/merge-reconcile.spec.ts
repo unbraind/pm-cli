@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 
@@ -8,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   runHistoryRepair: vi.fn(),
   runHistoryRepairAll: vi.fn(),
   runValidate: vi.fn(),
+  runHealth: vi.fn(),
   findGitWorkspaceRoot: vi.fn(),
 }));
 
@@ -17,6 +21,9 @@ vi.mock("../../../src/sdk/history-repair.js", () => ({
 }));
 vi.mock("../../../src/sdk/governance/validate.js", () => ({
   runValidate: mocks.runValidate,
+}));
+vi.mock("../../../src/sdk/governance/health.js", () => ({
+  runHealth: mocks.runHealth,
 }));
 vi.mock("../../../src/sdk/merge/install.js", () => ({
   findGitWorkspaceRoot: mocks.findGitWorkspaceRoot,
@@ -42,6 +49,17 @@ describe("merge reconciliation SDK", () => {
   beforeEach(() => {
     mocks.runHistoryRepairAll.mockReset();
     mocks.runValidate.mockReset();
+    mocks.runHealth.mockReset().mockResolvedValue({
+      checks: [
+        {
+          name: "integrity",
+          details: {
+            counts: { missing_merge_receipt_history_references: 0 },
+            missing_merge_receipt_history_reference_details: [],
+          },
+        },
+      ],
+    });
     mocks.listMergeReceipts.mockReset().mockResolvedValue([]);
     mocks.invalidReceiptEvidenceCount.mockReset().mockReturnValue(0);
     mocks.markMergeReceiptReconciled.mockReset();
@@ -289,6 +307,31 @@ describe("merge reconciliation SDK", () => {
     });
   });
 
+  it("does not let force settle an unrelated unproven receipt", async () => {
+    const receipt = {
+      id: "receipt-unproven",
+      item_id: "pm-unproven",
+      state: "pending",
+    };
+    mocks.listMergeReceipts.mockResolvedValue([receipt]);
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [{ id: "pm-unproven" }],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "warn" }],
+      generated_at: "2026-07-21T00:03:45.000Z",
+    });
+
+    const result = await runMergeReconcile({ force: true }, globalOptions);
+
+    expect(mocks.markMergeReceiptReconciled).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      ok: false,
+      receipts: { pending_before: 1, reconciled: 0 },
+    });
+  });
+
   it("isolates receipt-only history failures without consuming receipts", async () => {
     mocks.listMergeReceipts.mockResolvedValue([
       { id: "receipt-error", item_id: "pm-error" },
@@ -407,5 +450,209 @@ describe("merge reconciliation SDK", () => {
       { requireExisting: true },
     );
     expect(result.ok).toBe(true);
+  });
+
+  it("bounds malformed health coordinates and preserves modern missing evidence", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-reconcile-health-"));
+    const pmRoot = path.join(root, ".agents", "pm");
+    const historyRoot = path.join(pmRoot, "history");
+    await mkdir(historyRoot, { recursive: true });
+    await Promise.all([
+      writeFile(path.join(historyRoot, "pm-empty.jsonl"), "\n"),
+      writeFile(path.join(historyRoot, "pm-invalid.jsonl"), "{\n"),
+      writeFile(
+        path.join(historyRoot, "pm-current.jsonl"),
+        `${JSON.stringify({
+          ts: "2026-09-04T00:00:00.000Z",
+          context: { merge: { receipts: [{ receipt_id: "current" }] } },
+        })}\n`,
+      ),
+      writeFile(
+        path.join(historyRoot, "pm-unrelated.jsonl"),
+        '{"ts":"2026-08-06T00:00:00.000Z"}\n',
+      ),
+    ]);
+    mocks.runHealth.mockResolvedValue({
+      checks: [
+        {
+          name: "integrity",
+          details: {
+            missing_merge_receipt_history_reference_details: [
+              null,
+              {},
+              { item_id: "pm-missing", history_line: 1, receipt_id: "lost" },
+              { item_id: "pm-empty", history_line: 1, receipt_id: "lost" },
+              { item_id: "pm-invalid", history_line: 1, receipt_id: "lost" },
+              {
+                item_id: "pm-unrelated",
+                history_line: 1,
+                receipt_id: "lost",
+              },
+              {
+                item_id: "pm-current",
+                history_line: 1,
+                receipt_id: "current",
+              },
+            ],
+          },
+        },
+      ],
+    });
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "ok" }],
+      generated_at: "2026-09-04T00:00:00.000Z",
+    });
+
+    try {
+      await expect(
+        runMergeReconcile({}, { ...globalOptions, path: pmRoot }),
+      ).resolves.toMatchObject({
+        ok: true,
+        receipts: {
+          missing_history_references_before: 0,
+          legacy_disposition_eligible: 0,
+        },
+      });
+      mocks.runHealth.mockResolvedValueOnce({ checks: [] });
+      await expect(
+        runMergeReconcile({}, { ...globalOptions, path: pmRoot }),
+      ).resolves.toMatchObject({
+        receipts: { missing_history_references_before: 0 },
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports bounded missing-reference batches and requires repeated review", async () => {
+    mocks.runHealth.mockResolvedValue({
+      checks: [
+        {
+          name: "integrity",
+          details: {
+            counts: { missing_merge_receipt_history_references: 101 },
+            missing_merge_receipt_history_reference_details: [],
+            missing_merge_receipt_history_reference_details_truncated: true,
+          },
+        },
+      ],
+    });
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "ok" }],
+      generated_at: "2026-09-04T00:00:00.000Z",
+    });
+
+    const result = await runMergeReconcile({ dryRun: true }, globalOptions);
+
+    expect(result).toMatchObject({
+      ok: false,
+      receipts: {
+        missing_history_references_before: 101,
+        legacy_disposition_eligible: 0,
+        missing_history_references_after: 101,
+      },
+    });
+    expect(result.guidance).toContainEqual(
+      expect.stringContaining("each reviewed --force pass"),
+    );
+    expect(result.guidance.join(" ")).toContain(
+      "receipts.missing_history_references_after=0",
+    );
+    expect(result.guidance.join(" ")).not.toContain(
+      "missing_history_reference_details_truncated_after",
+    );
+    const applied = await runMergeReconcile({}, globalOptions);
+    expect(applied.ok).toBe(false);
+    expect(applied.guidance).toContainEqual(
+      expect.stringContaining("each reviewed --force pass"),
+    );
+  });
+
+  it("guides an apply pass to force only after finding an eligible legacy coordinate", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-reconcile-legacy-"));
+    const pmRoot = path.join(root, ".agents", "pm");
+    const historyRoot = path.join(pmRoot, "history");
+    await mkdir(historyRoot, { recursive: true });
+    await writeFile(
+      path.join(historyRoot, "pm-legacy.jsonl"),
+      `${JSON.stringify({
+        ts: "2026-08-06T00:00:00.000Z",
+        context: {
+          merge: {
+            receipts: [
+              {
+                receipt_id: "legacy-lost",
+                item_id: "pm-legacy",
+                item_path: ".agents/pm/tasks/pm-legacy.toon",
+                conflict_fields: ["title"],
+                fields_from_theirs: [],
+                union_fields: [],
+                preferred: "ours",
+                conflict_resolution: "stable_value_order",
+                decisions: [
+                  {
+                    field: "title",
+                    retained_hash: "a".repeat(64),
+                    discarded_hash: "b".repeat(64),
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      })}\n`,
+    );
+    mocks.runHealth.mockResolvedValue({
+      checks: [
+        {
+          name: "integrity",
+          details: {
+            counts: { missing_merge_receipt_history_references: 1 },
+            missing_merge_receipt_history_reference_details: [
+              {
+                item_id: "pm-legacy",
+                history_line: 1,
+                receipt_id: "legacy-lost",
+              },
+            ],
+          },
+        },
+      ],
+    });
+    mocks.runHistoryRepairAll.mockResolvedValue({
+      streams: [],
+      totals: { repaired: 0, skipped_clean: 0, failed: 0 },
+    });
+    mocks.runValidate.mockResolvedValue({
+      checks: [{ status: "ok" }],
+      generated_at: "2026-09-04T00:00:00.000Z",
+    });
+
+    try {
+      const result = await runMergeReconcile(
+        {},
+        { ...globalOptions, path: pmRoot },
+      );
+      expect(result).toMatchObject({
+        ok: false,
+        receipts: {
+          legacy_disposition_eligible: 1,
+          legacy_disposition_recorded: 0,
+        },
+      });
+      expect(result.guidance).toContainEqual(
+        expect.stringContaining("rerun with --force"),
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

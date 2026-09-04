@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1838,
+    "covered_symbols": 1844,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1839
+    "required_symbols": 1845
   },
   "breaking_acknowledgements": [
     {
@@ -1565,6 +1565,39 @@
       ],
       "package_version": "2026.9.2",
       "reason": "Range diagnostics retain their complete declaration and rewrite verification rejects malformed evidence"
+    },
+    {
+      "changes": [
+        "signature ./sdk:classifyHistoryMergeReceiptReferences",
+        "signature ./sdk:HistoryMergeReceiptReference",
+        "signature ./sdk:HistoryMergeReceiptReferenceClassification",
+        "signature ./sdk:ItemDocumentMergeResult",
+        "signature ./sdk:ItemMergeConflictDecision",
+        "signature ./sdk:MergeDecisionReceipt",
+        "signature ./sdk:MergeDecisionReceiptSummary",
+        "signature ./sdk:MergeDriverResult",
+        "signature ./sdk:mergeItemDocuments",
+        "signature ./sdk:MergeReceiptInvalidEvidence",
+        "signature ./sdk:MergeReconcileResult",
+        "signature ./sdk/merge:ItemDocumentMergeResult",
+        "signature ./sdk/merge:ItemMergeConflictDecision",
+        "signature ./sdk/merge:MergeDecisionReceipt",
+        "signature ./sdk/merge:MergeDecisionReceiptSummary",
+        "signature ./sdk/merge:MergeDriverResult",
+        "signature ./sdk/merge:mergeItemDocuments",
+        "signature ./sdk/merge:MergeReceiptInvalidEvidence",
+        "signature ./sdk/merge:MergeReconcileResult"
+      ],
+      "package_version": "2026.9.3",
+      "reason": "2026-09-04 merge integrity evolution: item scalar results and receipts expose recency resolution, bounded durable previews, precise validation, and audited legacy disposition outcomes; legacy receipt shapes remain readable."
+    },
+    {
+      "changes": [
+        "signature ./sdk:extractHistoryMergeReceiptDispositions",
+        "signature ./sdk:HistoryMergeReceiptDisposition"
+      ],
+      "package_version": "2026.9.3",
+      "reason": "2026-09-04 merge disposition hardening: the public extractor requires the audit history coordinate so classification proves dispositions are append-after-reference."
     }
   ],
   "entrypoints": {
@@ -3651,7 +3684,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "classifyHistoryMergeReceiptReferences",
-          "signature": "(references: readonly HistoryMergeReceiptReference[], availableReceiptIds: ReadonlySet<string>) => HistoryMergeReceiptReferenceClassification | calls: (references: readonly HistoryMergeReceiptReference[], availableReceiptIds: ReadonlySet<string>) => HistoryMergeReceiptReferenceClassification"
+          "signature": "(references: readonly HistoryMergeReceiptReference[], availableReceiptIds: ReadonlySet<string>, dispositions?: readonly HistoryMergeReceiptDisposition[]) => HistoryMergeReceiptReferenceClassification | calls: (references: readonly HistoryMergeReceiptReference[], availableReceiptIds: ReadonlySet<string>, dispositions?: readonly HistoryMergeReceiptDisposition[]) => HistoryMergeReceiptReferenceClassification"
         },
         {
           "classification": "advanced_export",
@@ -5814,6 +5847,12 @@
           "signature": "export interface DuplicatesResult extends Omit<DuplicateClustersResult, \"clusters\"> { clusters: ActionableDuplicateCluster[]; guidance: { strategy: \"review_then_close_duplicate\"; command: \"pm close <duplicate-id> --duplicate-of <canonical-id>\"; }; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "DURABLE_MERGE_RECEIPT_INTRODUCED_AT",
+          "signature": "\"2026-08-09T16:15:18.000Z\""
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "DurableGraphCacheEnvelope",
@@ -5860,6 +5899,12 @@
           "kind": "function",
           "name": "emptyImportedDocument",
           "signature": "() => ItemDocument | calls: () => ItemDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "encodeItemScalarDecisionValue",
+          "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
         },
         {
           "classification": "advanced_export",
@@ -6908,6 +6953,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "extractHistoryMergeReceiptDispositions",
+          "signature": "(value: unknown, historyItemId: string, historyLine: number) => HistoryMergeReceiptDisposition[] | calls: (value: unknown, historyItemId: string, historyLine: number) => HistoryMergeReceiptDisposition[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "extractHistoryMergeReceiptReferences",
           "signature": "(value: unknown, historyItemId: string) => Array<Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">> | calls: (value: unknown, historyItemId: string) => Array<Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">>"
         },
@@ -7776,6 +7827,12 @@
           "signature": "(entries: readonly HistoryEntry[]) => string | calls: (entries: readonly HistoryEntry[]) => string"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "hashItemScalarDecisionValue",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "hasMcpClientExtension",
@@ -8078,14 +8135,20 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "HistoryMergeReceiptDisposition",
+          "signature": "export interface HistoryMergeReceiptDisposition { itemId: string; receiptId: string; originalHistoryLine: number; originalEventTimestamp: string; auditHistoryLine: number; reason: \"legacy_clone_local_only\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "HistoryMergeReceiptReference",
-          "signature": "export interface HistoryMergeReceiptReference { itemId: string; line: number; receiptId: string; legacySummaryAccepted: boolean; }"
+          "signature": "export interface HistoryMergeReceiptReference { itemId: string; line: number; receiptId: string; legacySummaryAccepted: boolean; eventTimestamp?: string; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryMergeReceiptReferenceClassification",
-          "signature": "export interface HistoryMergeReceiptReferenceClassification { missing: MissingHistoryMergeReceiptReference[]; acceptedLegacyCount: number; }"
+          "signature": "export interface HistoryMergeReceiptReferenceClassification { missing: MissingHistoryMergeReceiptReference[]; acceptedLegacyCount: number; acceptedDispositionCount: number; }"
         },
         {
           "classification": "supported",
@@ -8532,6 +8595,12 @@
           "signature": "(value: unknown) => value is SuppressedHostOutput | calls: (value: unknown) => value is SuppressedHostOutput"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isItemScalarMissingValue",
+          "signature": "(value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE | calls: (value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "isLegacyMergeReceiptSummary",
@@ -8614,6 +8683,18 @@
           "kind": "function",
           "name": "isPmToolAction",
           "signature": "(value: string) => value is PmToolAction | calls: (value: string) => value is PmToolAction"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isPreDurableCloneLocalReceiptSummary",
+          "signature": "(value: Record<string, unknown>, historyItemId: string) => boolean | calls: (value: Record<string, unknown>, historyItemId: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isPreDurableDispositionEligibleReference",
+          "signature": "(reference: Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">) => boolean | calls: (reference: Omit<HistoryMergeReceiptReference, \"itemId\" | \"line\">) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -8702,6 +8783,12 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "ITEM_SCALAR_MISSING_VALUE",
+          "signature": "Readonly<{ readonly pm_item_scalar_missing: true; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "ITEM_TYPE_VALUES",
           "signature": "readonly [\"Epic\", \"Feature\", \"Task\", \"Chore\", \"Issue\", \"Decision\", \"Event\", \"Reminder\", \"Milestone\", \"Meeting\", \"Plan\"]"
         },
@@ -8733,7 +8820,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocumentMergeResult",
-          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; requested_preference: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; }"
+          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; requested_preference: MergePreferredSide; requested_preference_applied: boolean; conflict_resolution: ItemScalarConflictResolution; }"
         },
         {
           "classification": "advanced_export",
@@ -8769,7 +8856,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMergeConflictDecision",
-          "signature": "export interface ItemMergeConflictDecision { field: string; base: unknown; ours: unknown; theirs: unknown; retained: unknown; discarded: unknown; }"
+          "signature": "export interface ItemMergeConflictDecision { field: string; base: unknown; ours: unknown; theirs: unknown; retained: unknown; discarded: unknown; retained_side?: MergePreferredSide; resolution_basis?: ItemScalarResolutionBasis; }"
         },
         {
           "classification": "supported",
@@ -8806,6 +8893,18 @@
           "kind": "interface",
           "name": "ItemMetadataIndexQueryResult",
           "signature": "export interface ItemMetadataIndexQueryResult { source_cursor: string; total: number; items: ItemMetadata[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ItemScalarConflictResolution",
+          "signature": "export type ItemScalarConflictResolution = \"preferred_side\" | \"stable_value_order\" | \"latest_document_update\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ItemScalarResolutionBasis",
+          "signature": "export type ItemScalarResolutionBasis = \"requested_preference\" | \"document_updated_at\" | \"stable_value_tiebreak\";"
         },
         {
           "classification": "advanced_export",
@@ -9507,13 +9606,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; preferred?: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; merged_field_hashes?: Record<string, string>; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; evidence_source?: \"clone_local\" | \"durable\"; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; requested_preference_applied?: boolean; preferred?: MergePreferredSide; conflict_resolution: ItemScalarConflictResolution; fields_from_theirs: string[]; union_fields: string[]; merged_field_hashes?: Record<string, string>; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\" | \"bounded_inline\" | \"mixed\"; value_policy?: typeof DURABLE_VALUE_POLICY; evidence_source?: \"clone_local\" | \"durable\"; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceiptSummary",
-          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; requested_preference: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
+          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; requested_preference: MergePreferredSide; requested_preference_applied: boolean; conflict_resolution: ItemScalarConflictResolution; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
         },
         {
           "classification": "supported",
@@ -9537,7 +9636,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDriverResult",
-          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; requested_preference: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"stable_value_order\"; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; requested_preference: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"latest_document_update\"; requested_preference_applied: false; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -9585,7 +9684,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "mergeItemDocuments",
-          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult"
+          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: ItemScalarConflictResolution; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: ItemScalarConflictResolution; }) => ItemDocumentMergeResult"
         },
         {
           "classification": "supported",
@@ -9621,7 +9720,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptInvalidEvidence",
-          "signature": "export interface MergeReceiptInvalidEvidence { evidence_source: \"clone_local\" | \"durable\" | \"clone_local_and_durable\"; reason: \"directory_unreadable\" | \"candidate_not_bounded_regular_file\" | \"candidate_unreadable\" | \"candidate_invalid_json\" | \"schema_or_identity_invalid\" | \"copy_provenance_mismatch\"; receipt_id?: string; candidate_name_hash?: string; }"
+          "signature": "export interface MergeReceiptInvalidEvidence { evidence_source: \"clone_local\" | \"durable\" | \"clone_local_and_durable\"; reason: \"directory_unreadable\" | \"candidate_not_bounded_regular_file\" | \"candidate_unreadable\" | \"candidate_invalid_json\" | \"schema_or_identity_invalid\" | \"schema_invalid\" | \"identity_invalid\" | \"copy_provenance_mismatch\"; validation_error?: \"required_fields\" | \"receipt_id\" | \"item_id\" | \"item_path\" | \"filename\" | \"collections\" | \"enums\" | \"timestamps\" | \"durable_decisions\"; receipt_id?: string; candidate_name_hash?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -9645,7 +9744,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileResult",
-          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; summaries: MergeDecisionReceiptSummary[]; }; validation: ValidateResult; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -27092,8 +27191,20 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "encodeItemScalarDecisionValue",
+          "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "findGitWorkspaceRoot",
           "signature": "(cwd: string) => Promise<string | null> | calls: (cwd: string) => Promise<string | null>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "hashItemScalarDecisionValue",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
         },
         {
           "classification": "supported",
@@ -27121,9 +27232,21 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "isItemScalarMissingValue",
+          "signature": "(value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE | calls: (value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "ITEM_LATEST_TIMESTAMP_FIELDS",
           "signature": "readonly [\"updated_at\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ITEM_SCALAR_MISSING_VALUE",
+          "signature": "Readonly<{ readonly pm_item_scalar_missing: true; }>"
         },
         {
           "classification": "supported",
@@ -27135,13 +27258,25 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocumentMergeResult",
-          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; requested_preference: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; }"
+          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; requested_preference: MergePreferredSide; requested_preference_applied: boolean; conflict_resolution: ItemScalarConflictResolution; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMergeConflictDecision",
-          "signature": "export interface ItemMergeConflictDecision { field: string; base: unknown; ours: unknown; theirs: unknown; retained: unknown; discarded: unknown; }"
+          "signature": "export interface ItemMergeConflictDecision { field: string; base: unknown; ours: unknown; theirs: unknown; retained: unknown; discarded: unknown; retained_side?: MergePreferredSide; resolution_basis?: ItemScalarResolutionBasis; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ItemScalarConflictResolution",
+          "signature": "export type ItemScalarConflictResolution = \"preferred_side\" | \"stable_value_order\" | \"latest_document_update\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ItemScalarResolutionBasis",
+          "signature": "export type ItemScalarResolutionBasis = \"requested_preference\" | \"document_updated_at\" | \"stable_value_tiebreak\";"
         },
         {
           "classification": "supported",
@@ -27171,13 +27306,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; preferred?: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; merged_field_hashes?: Record<string, string>; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; evidence_source?: \"clone_local\" | \"durable\"; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; requested_preference?: MergePreferredSide; requested_preference_applied?: boolean; preferred?: MergePreferredSide; conflict_resolution: ItemScalarConflictResolution; fields_from_theirs: string[]; union_fields: string[]; merged_field_hashes?: Record<string, string>; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\" | \"bounded_inline\" | \"mixed\"; value_policy?: typeof DURABLE_VALUE_POLICY; evidence_source?: \"clone_local\" | \"durable\"; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceiptSummary",
-          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; requested_preference: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
+          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; requested_preference: MergePreferredSide; requested_preference_applied: boolean; conflict_resolution: ItemScalarConflictResolution; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
         },
         {
           "classification": "supported",
@@ -27201,7 +27336,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDriverResult",
-          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; requested_preference: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"stable_value_order\"; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; requested_preference: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"latest_document_update\"; requested_preference_applied: false; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -27243,7 +27378,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "mergeItemDocuments",
-          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult"
+          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: ItemScalarConflictResolution; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: ItemScalarConflictResolution; }) => ItemDocumentMergeResult"
         },
         {
           "classification": "supported",
@@ -27273,7 +27408,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptInvalidEvidence",
-          "signature": "export interface MergeReceiptInvalidEvidence { evidence_source: \"clone_local\" | \"durable\" | \"clone_local_and_durable\"; reason: \"directory_unreadable\" | \"candidate_not_bounded_regular_file\" | \"candidate_unreadable\" | \"candidate_invalid_json\" | \"schema_or_identity_invalid\" | \"copy_provenance_mismatch\"; receipt_id?: string; candidate_name_hash?: string; }"
+          "signature": "export interface MergeReceiptInvalidEvidence { evidence_source: \"clone_local\" | \"durable\" | \"clone_local_and_durable\"; reason: \"directory_unreadable\" | \"candidate_not_bounded_regular_file\" | \"candidate_unreadable\" | \"candidate_invalid_json\" | \"schema_or_identity_invalid\" | \"schema_invalid\" | \"identity_invalid\" | \"copy_provenance_mismatch\"; validation_error?: \"required_fields\" | \"receipt_id\" | \"item_id\" | \"item_path\" | \"filename\" | \"collections\" | \"enums\" | \"timestamps\" | \"durable_decisions\"; receipt_id?: string; candidate_name_hash?: string; }"
         },
         {
           "classification": "supported",
@@ -27291,7 +27426,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileResult",
-          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; summaries: MergeDecisionReceiptSummary[]; }; validation: ValidateResult; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",

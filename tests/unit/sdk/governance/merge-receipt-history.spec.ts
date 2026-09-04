@@ -6,8 +6,12 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  classifyHistoryMergeReceiptReferences,
+  extractHistoryMergeReceiptDispositions,
   extractHistoryMergeReceiptReferences,
   isLegacyMergeReceiptSummary,
+  isPreDurableCloneLocalReceiptSummary,
+  isPreDurableDispositionEligibleReference,
 } from "../../../../src/sdk/governance/merge-receipt-history.js";
 
 function legacySummary(): Record<string, unknown> {
@@ -157,6 +161,166 @@ describe("merge receipt history compatibility", () => {
         },
         "pm-receipt",
       ),
-    ).toEqual([{ receiptId: "legacy-receipt", legacySummaryAccepted: true }]);
+    ).toEqual([
+      expect.objectContaining({
+        receiptId: "legacy-receipt",
+        legacySummaryAccepted: true,
+      }),
+    ]);
+  });
+
+  it("requires the exact final pre-durable schema before disposition", () => {
+    const summary = {
+      ...legacySummary(),
+      conflict_resolution: "stable_value_order",
+    };
+    expect(isPreDurableCloneLocalReceiptSummary(summary, "pm-receipt")).toBe(
+      true,
+    );
+    expect(
+      isPreDurableCloneLocalReceiptSummary(
+        { ...summary, item_path: "../pm-receipt.md" },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+    expect(
+      isPreDurableCloneLocalReceiptSummary(
+        { ...summary, conflict_resolution: "unknown" },
+        "pm-receipt",
+      ),
+    ).toBe(false);
+  });
+
+  it("accepts only audited pre-durable missing-receipt dispositions", () => {
+    const [extractedReference] = extractHistoryMergeReceiptReferences(
+      {
+        ts: "2026-08-06T22:21:21.734Z",
+        context: {
+          merge: {
+            receipts: [
+              {
+                ...legacySummary(),
+                conflict_resolution: "stable_value_order",
+              },
+            ],
+          },
+        },
+      },
+      "pm-receipt",
+    );
+    expect(isPreDurableDispositionEligibleReference(extractedReference!)).toBe(
+      true,
+    );
+    const reference = {
+      ...extractedReference!,
+      itemId: "pm-receipt",
+      line: 9,
+    };
+    const dispositions = extractHistoryMergeReceiptDispositions(
+      {
+        ts: "2026-09-04T00:00:00.000Z",
+        op: "merge_reconcile",
+        context: {
+          merge: {
+            missing_receipt_dispositions: [
+              {
+                receipt_id: "legacy-receipt",
+                original_history_line: 9,
+                original_event_ts: "2026-08-06T22:21:21.734Z",
+                reason: "legacy_clone_local_only",
+              },
+            ],
+          },
+        },
+      },
+      "pm-receipt",
+      10,
+    );
+
+    expect(
+      classifyHistoryMergeReceiptReferences([reference], new Set(), [
+        ...dispositions,
+        { ...dispositions[0]!, auditHistoryLine: 11 },
+      ]),
+    ).toEqual({
+      missing: [],
+      acceptedLegacyCount: 0,
+      acceptedDispositionCount: 1,
+    });
+    expect(
+      classifyHistoryMergeReceiptReferences(
+        [reference],
+        new Set(),
+        dispositions.map((disposition) => ({
+          ...disposition,
+          auditHistoryLine: reference.line,
+        })),
+      ).missing,
+    ).toHaveLength(1);
+    expect(
+      classifyHistoryMergeReceiptReferences(
+        [
+          {
+            itemId: reference.itemId,
+            line: reference.line,
+            receiptId: reference.receiptId,
+            legacySummaryAccepted: false,
+            eventTimestamp: reference.eventTimestamp,
+          },
+        ],
+        new Set(),
+        dispositions,
+      ).missing,
+    ).toHaveLength(1);
+    expect(
+      classifyHistoryMergeReceiptReferences(
+        [{ ...reference, eventTimestamp: "2026-08-10T00:00:00.000Z" }],
+        new Set(),
+        dispositions,
+      ).missing,
+    ).toHaveLength(1);
+    expect(
+      classifyHistoryMergeReceiptReferences(
+        [{ ...reference, eventTimestamp: "2026-08-10T00:00:00.000Z" }],
+        new Set(),
+        dispositions.map((disposition) => ({
+          ...disposition,
+          originalEventTimestamp: "2026-08-10T00:00:00.000Z",
+        })),
+      ).missing,
+    ).toHaveLength(1);
+    expect(
+      extractHistoryMergeReceiptDispositions(
+        {
+          op: "update",
+          context: {
+            merge: {
+              missing_receipt_dispositions: [
+                {
+                  receipt_id: "legacy-receipt",
+                  original_history_line: 9,
+                  original_event_ts: "2026-08-06T22:21:21.734Z",
+                  reason: "legacy_clone_local_only",
+                },
+              ],
+            },
+          },
+        },
+        "pm-receipt",
+        10,
+      ),
+    ).toEqual([]);
+    expect(
+      extractHistoryMergeReceiptDispositions(
+        {
+          op: "merge_reconcile",
+          context: {
+            merge: { missing_receipt_dispositions: [null] },
+          },
+        },
+        "pm-receipt",
+        10,
+      ),
+    ).toEqual([]);
   });
 });

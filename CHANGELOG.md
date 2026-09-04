@@ -8,6 +8,10 @@
 
 ### Fixed
 
+- Packed npx smoke timeout rejects valid slow dependency reification ([pm-8eebb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8eebb6.toon))
+- GH-1186: unrecoverable legacy merge-receipt references block strict health with diagnostic-only remediation ([pm-cf4t42](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cf4t42.toon))
+- GH-1185: hash-only merge receipts make discarded scalar values unreachable to the reviewing agent ([pm-mg13iz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mg13iz.toon))
+- GH-1184: scalar merge conflict ordering ignores recency and requested preference ([pm-7wzb6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7wzb6d.toon))
 - Acceptance criteria are documented as merging like tags but are stored as one delimiter-joined scalar, so concurrent criteria additions from different branches are silently discarded ([pm-inn5y5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-inn5y5.toon))
 - GH-1183: Windows nightly event-index lock acquisition and fallback publication are nondeterministic ([pm-fqlocp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fqlocp.toon))
 - GH-1177: Claude session provenance path is derived from invocation cwd instead of the session-start workspace ([pm-l7m7k5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l7m7k5.toon))
@@ -17,6 +21,10 @@
 ### Security
 
 - GH-1178: history hashes exclude record author and agent provenance, so attribution can be rewritten without detection ([pm-javbsq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-javbsq.toon))
+
+### Other
+
+- Refresh compatible @types/node 26.4.1 patch ([pm-vwtwqj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vwtwqj.toon))
 
 ## 2026.9.3 - 2026-09-03
 

@@ -148,7 +148,7 @@ describe("shared remediation registry", () => {
       expect(
         resolveRemediation("merge_receipt_history_reference_missing:1")
           ?.command,
-      ).toBe("pm health --check-only --full --json");
+      ).toBe("pm merge reconcile --dry-run");
     });
 
     it("resolves item format-version warnings to migration and upgrade guidance", () => {

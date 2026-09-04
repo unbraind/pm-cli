@@ -214,7 +214,7 @@ describe("merge reconcile command", () => {
     });
   });
 
-  it("records privacy-safe receipt context on a clean merge stream", async () => {
+  it("records privacy-safe context while accepting a legacy v1 field hash", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
       expect(

@@ -22,7 +22,7 @@ import { splitAcceptanceCriteria } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { stableStringify } from "../../core/shared/serialization.js";
+import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { compareTimestampStrings } from "../../core/shared/time.js";
 import type {
   HistoryEntry,
@@ -33,6 +33,52 @@ import type {
 
 /** Restricts which side of a three-way merge wins an unresolvable conflict. */
 export type MergePreferredSide = "ours" | "theirs";
+
+/** Declares how competing item scalar writes select their retained value. */
+export type ItemScalarConflictResolution =
+  | "preferred_side"
+  | "stable_value_order"
+  | "latest_document_update";
+
+/** Explains the exact evidence used to select one conflicting item scalar. */
+export type ItemScalarResolutionBasis =
+  | "requested_preference"
+  | "document_updated_at"
+  | "stable_value_tiebreak";
+
+/** JSON-stable marker used when a conflict decision refers to an absent scalar. */
+export const ITEM_SCALAR_MISSING_VALUE = Object.freeze({
+  pm_item_scalar_missing: true,
+} as const);
+
+/** Return whether receipt evidence represents an absent item scalar. */
+export function isItemScalarMissingValue(
+  value: unknown,
+): value is typeof ITEM_SCALAR_MISSING_VALUE {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === 1 &&
+    (value as Record<string, unknown>).pm_item_scalar_missing === true
+  );
+}
+
+/** Encode an absent scalar so every decision property survives JSON serialization. */
+export function encodeItemScalarDecisionValue(value: unknown): unknown {
+  return value === undefined ? ITEM_SCALAR_MISSING_VALUE : value;
+}
+
+/** Hash scalars in disjoint present/missing domains for collision-free evidence. */
+export function hashItemScalarDecisionValue(value: unknown): string {
+  return sha256Hex(
+    stableStringify(
+      value === undefined
+        ? { pm_item_scalar_presence: "missing" }
+        : { pm_item_scalar_presence: "present", value },
+    ),
+  );
+}
 
 /** Restricts the strategy labels reported by the history stream merge. */
 export type HistoryMergeStrategy =
@@ -440,6 +486,10 @@ export interface ItemMergeConflictDecision {
   retained: unknown;
   /** Value not retained in the merged item. */
   discarded: unknown;
+  /** Branch coordinate whose value was retained. */
+  retained_side?: MergePreferredSide;
+  /** Evidence class that selected the retained value. */
+  resolution_basis?: ItemScalarResolutionBasis;
 }
 
 /** Documents the item document merge result payload exchanged by command, SDK, and package integrations. */
@@ -456,12 +506,17 @@ export interface ItemDocumentMergeResult {
   conflict_decisions: ItemMergeConflictDecision[];
   /** Side requested by the caller; stable-value decisions can retain either side. */
   requested_preference: MergePreferredSide;
+  /** Whether the requested side participates in item scalar selection under the declared policy. */
+  requested_preference_applied: boolean;
   /** Scalar-conflict selection contract used for this merge. */
-  conflict_resolution: "preferred_side" | "stable_value_order";
+  conflict_resolution: ItemScalarConflictResolution;
 }
 
 function jsonEquals(left: unknown, right: unknown): boolean {
-  return stableStringify(left ?? null) === stableStringify(right ?? null);
+  if (left === undefined || right === undefined) {
+    return left === undefined && right === undefined;
+  }
+  return stableStringify(left) === stableStringify(right);
 }
 
 function unionCollection(
@@ -570,6 +625,14 @@ interface ScalarMergeOutcome {
   conflict: boolean;
 }
 
+type ItemScalarMergeOutcome =
+  | (ScalarMergeOutcome & { conflict: false })
+  | (ScalarMergeOutcome & {
+      conflict: true;
+      resolution_basis: ItemScalarResolutionBasis;
+      retained_side: MergePreferredSide;
+    });
+
 function mergeScalarThreeWay(
   base: unknown,
   ours: unknown,
@@ -592,23 +655,51 @@ function mergeScalarThreeWay(
   };
 }
 
+/** Resolve one item scalar with explicit recency and deterministic tie evidence. */
 function mergeItemScalarThreeWay(
   base: unknown,
   ours: unknown,
   theirs: unknown,
   preferred: MergePreferredSide,
-  conflictResolution: "preferred_side" | "stable_value_order",
-): ScalarMergeOutcome {
+  conflictResolution: ItemScalarConflictResolution,
+  oursUpdatedAt: string,
+  theirsUpdatedAt: string,
+): ItemScalarMergeOutcome {
   const outcome = mergeScalarThreeWay(base, ours, theirs, preferred);
-  if (!outcome.conflict || conflictResolution === "preferred_side") {
-    return outcome;
+  if (!outcome.conflict) {
+    return { ...outcome, conflict: false };
+  }
+  if (conflictResolution === "preferred_side") {
+    return {
+      ...outcome,
+      resolution_basis: "requested_preference",
+      retained_side: outcome.from_theirs ? "theirs" : "ours",
+    };
+  }
+  const timestampOrder = compareTimestampStrings(
+    oursUpdatedAt,
+    theirsUpdatedAt,
+  );
+  if (conflictResolution === "latest_document_update" && timestampOrder !== 0) {
+    const retainTheirs = timestampOrder < 0;
+    return {
+      value: retainTheirs ? theirs : ours,
+      from_theirs: retainTheirs,
+      conflict: true,
+      resolution_basis: "document_updated_at",
+      retained_side: retainTheirs ? "theirs" : "ours",
+    };
   }
   const retainTheirs =
-    stableStringify(theirs).localeCompare(stableStringify(ours)) < 0;
+    stableStringify(encodeItemScalarDecisionValue(theirs)).localeCompare(
+      stableStringify(encodeItemScalarDecisionValue(ours)),
+    ) < 0;
   return {
     value: retainTheirs ? theirs : ours,
     from_theirs: retainTheirs,
     conflict: true,
+    resolution_basis: "stable_value_tiebreak",
+    retained_side: retainTheirs ? "theirs" : "ours",
   };
 }
 
@@ -616,13 +707,26 @@ function toMetadataRecord(document: ItemDocument): Record<string, unknown> {
   return { ...(document.metadata as unknown as Record<string, unknown>) };
 }
 
+/** Parse one merge side and reject values reserved for internal absence evidence. */
 function parseItemMergeSide(
   raw: string,
   label: string,
   options: ItemDocumentFormatOptions,
 ): ItemDocument {
   try {
-    return canonicalDocument(parseItemDocument(raw, options), options);
+    const document = canonicalDocument(
+      parseItemDocument(raw, options),
+      options,
+    );
+    const reservedField = Object.entries(
+      document.metadata as unknown as Record<string, unknown>,
+    ).find(([, value]) => isItemScalarMissingValue(value))?.[0];
+    if (reservedField !== undefined) {
+      throw new TypeError(
+        `metadata field ${reservedField} uses the reserved missing-scalar evidence marker`,
+      );
+    }
+    return document;
   } catch (error) {
     throw new PmCliError(
       `Item merge input (${label}) is not a readable item document: ${String(error)}`,
@@ -663,7 +767,11 @@ function mergeItemUnionField(params: {
             splitAcceptanceCriteria(params.oursValue),
             splitAcceptanceCriteria(params.theirsValue),
           ).join("; ")
-      : unionCollection(params.baseValue, params.oursValue, params.theirsValue);
+        : unionCollection(
+            params.baseValue,
+            params.oursValue,
+            params.theirsValue,
+          );
   params.accumulator.merged[params.field] = union;
   if (!jsonEquals(union, params.oursValue)) {
     params.accumulator.unionFields.push(params.field);
@@ -678,7 +786,9 @@ function mergeItemScalarField(params: {
   oursValue: unknown;
   theirsValue: unknown;
   preferred: MergePreferredSide;
-  conflictResolution: "preferred_side" | "stable_value_order";
+  conflictResolution: ItemScalarConflictResolution;
+  oursUpdatedAt: string;
+  theirsUpdatedAt: string;
   accumulator: ItemMetadataMergeAccumulator;
 }): void {
   const outcome = mergeItemScalarThreeWay(
@@ -687,6 +797,8 @@ function mergeItemScalarField(params: {
     params.theirsValue,
     params.preferred,
     params.conflictResolution,
+    params.oursUpdatedAt,
+    params.theirsUpdatedAt,
   );
   if (outcome.value !== undefined) {
     params.accumulator.merged[params.field] = outcome.value;
@@ -695,11 +807,15 @@ function mergeItemScalarField(params: {
     params.accumulator.conflictFields.push(params.field);
     params.accumulator.conflictDecisions.push({
       field: params.field,
-      base: params.baseValue,
-      ours: params.oursValue,
-      theirs: params.theirsValue,
-      retained: outcome.value,
-      discarded: outcome.from_theirs ? params.oursValue : params.theirsValue,
+      base: encodeItemScalarDecisionValue(params.baseValue),
+      ours: encodeItemScalarDecisionValue(params.oursValue),
+      theirs: encodeItemScalarDecisionValue(params.theirsValue),
+      retained: encodeItemScalarDecisionValue(outcome.value),
+      discarded: encodeItemScalarDecisionValue(
+        outcome.from_theirs ? params.oursValue : params.theirsValue,
+      ),
+      retained_side: outcome.retained_side,
+      resolution_basis: outcome.resolution_basis,
     });
   } else if (outcome.from_theirs) {
     params.accumulator.fieldsFromTheirs.push(params.field);
@@ -711,7 +827,9 @@ function mergeItemMetadataRecords(
   oursRecord: Record<string, unknown>,
   theirsRecord: Record<string, unknown>,
   preferred: MergePreferredSide,
-  conflictResolution: "preferred_side" | "stable_value_order",
+  conflictResolution: ItemScalarConflictResolution,
+  oursUpdatedAt: string,
+  theirsUpdatedAt: string,
 ): ItemMetadataMergeAccumulator {
   const unionFieldSet = new Set<string>([
     ...ITEM_UNION_COLLECTION_FIELDS,
@@ -759,6 +877,8 @@ function mergeItemMetadataRecords(
       theirsValue,
       preferred,
       conflictResolution,
+      oursUpdatedAt,
+      theirsUpdatedAt,
       accumulator,
     });
   }
@@ -785,7 +905,7 @@ export function mergeItemDocuments(
     /** Side that wins unresolvable conflicts (default "ours"). */
     preferred?: MergePreferredSide;
     /** Direction-independent scalar selection used by the Git driver. */
-    conflictResolution?: "preferred_side" | "stable_value_order";
+    conflictResolution?: ItemScalarConflictResolution;
   } = {},
 ): ItemDocumentMergeResult {
   const preferred: MergePreferredSide = options.preferred ?? "ours";
@@ -815,6 +935,8 @@ export function mergeItemDocuments(
     theirsRecord,
     preferred,
     conflictResolution,
+    ours.metadata.updated_at,
+    theirs.metadata.updated_at,
   );
 
   const bodyOutcome = mergeItemScalarThreeWay(
@@ -823,16 +945,22 @@ export function mergeItemDocuments(
     theirs.body,
     preferred,
     conflictResolution,
+    ours.metadata.updated_at,
+    theirs.metadata.updated_at,
   );
   if (bodyOutcome.conflict) {
     conflictFields.push("body");
     conflictDecisions.push({
       field: "body",
-      base: hasBase ? base.body : "",
-      ours: ours.body,
-      theirs: theirs.body,
-      retained: bodyOutcome.value,
-      discarded: bodyOutcome.from_theirs ? ours.body : theirs.body,
+      base: encodeItemScalarDecisionValue(hasBase ? base.body : ""),
+      ours: encodeItemScalarDecisionValue(ours.body),
+      theirs: encodeItemScalarDecisionValue(theirs.body),
+      retained: encodeItemScalarDecisionValue(bodyOutcome.value),
+      discarded: encodeItemScalarDecisionValue(
+        bodyOutcome.from_theirs ? ours.body : theirs.body,
+      ),
+      retained_side: bodyOutcome.retained_side,
+      resolution_basis: bodyOutcome.resolution_basis,
     });
   } else if (bodyOutcome.from_theirs) {
     fieldsFromTheirs.push("body");
@@ -852,6 +980,7 @@ export function mergeItemDocuments(
     union_fields: unionFields,
     conflict_decisions: conflictDecisions,
     requested_preference: preferred,
+    requested_preference_applied: conflictResolution === "preferred_side",
     conflict_resolution: conflictResolution,
   };
 }

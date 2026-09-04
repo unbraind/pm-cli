@@ -2,11 +2,13 @@ id: pm-mg13iz
 title: "GH-1185: hash-only merge receipts make discarded scalar values unreachable to the reviewing agent"
 description: "On pm 2026.9.3, merge decisions retain pm_value_hash while base, ours, and theirs are null and value_availability is hash_only. pm merge report exposes the same data, so explicit acceptance requires out-of-band git archaeology. Low-cardinality hashes are cheaply enumerable while free-text hashes are irrecoverable, providing neither reliable confidentiality nor actionable review evidence."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:37.336Z"
-updated_at: "2026-09-03T18:20:46.654Z"
+updated_at: "2026-09-04T10:14:19.711Z"
+closed_at: "2026-09-04T06:43:09.912Z"
+completed_at: "2026-09-04T06:43:09.912Z"
 author: "harness:codex"
 acceptance_criteria: "A documented bounded policy distinguishes inline, redacted, truncated, and hash-only values; at least one supported SDK/CLI report path returns reviewable discarded evidence when policy permits; receipts never claim recoverability when only a digest exists; low-cardinality and free-text privacy negative controls pass; reconciliation and explicit acceptance remain auditable and backward compatible"
 parent: pm-dj98
@@ -15,12 +17,56 @@ confidence: high
 severity: high
 environment: pm-cli 2026.9.3; Node 26.5.0; Linux; fresh merge-driver install
 repro_steps: "Create divergent scalar values, merge to produce a field decision, then inspect the receipt and pm merge report; confirm base/ours/theirs are null and no command returns the discarded value."
-expected_result: "A bounded privacy policy makes discarded values reviewable through a supported command or records a truthful retrievable reference, while hashes remain available for verification and oversized or sensitive values fail closed."
-actual_result: The only durable evidence is a digest; the agent cannot discover the discarded scalar from pm merge report and must locate historical branch state manually.
+resolution: "Durable receipts now preserve allowlisted low-cardinality scalar previews with hashes, keep arbitrary values hash-only, report truthful availability, and validate policy/composition/identity consistently."
+expected_result: Supported SDK and CLI receipt reads make permitted discarded values reviewable after cloning without leaking free-form values or weakening reconciliation.
+actual_result: "Fresh-clone, privacy, malformed-evidence, composition-policy, health integration, exact coverage, static quality, and packed acceptance tests passed."
 component: sdk/merge-receipts
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-z1z96w,recurs_from,"2026-09-03T18:06:37.336Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-1j5j21,verifies,"2026-09-04T04:20:48.489Z","harness:codex","cli:update:dep",detected
+  pm-rh98vo,recurs_from,"2026-09-04T04:20:48.489Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-09-03T18:06:37.336Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/1185. All-status duplicate check searched discarded value, hash-only, merge report, and value availability. pm-z1z96w shipped truthful proof-backed reconciliation for hash-only receipts and pm-rh98vo shipped durable receipt discovery, but their live resolutions do not provide a readable discarded value. This report is a recurrence/boundary extension and receives a new item linked to both shipped lineages."
   "2026-09-03T18:07:08.922Z","harness:codex","GitHub linkage comment: https://github.com/unbraind/pm-cli/issues/1185#issuecomment-5530007658"
+  "2026-09-04T05:49:52.771Z","harness:codex","Implementation evidence: durable receipts now use bounded_non_sensitive_scalars_v1. Built-in statuses, bounded priority 0..4, bounded risk/confidence/severity vocabulary, and null may be reviewed inline; all other values remain hash-only. Reader validation shares the writer allowlist and rejects schema, identity, value-policy, or hash mismatches. Fresh-clone tests prove reviewable retained/discarded values survive without ancestor blobs while sensitive free-form values do not leak."
+  "2026-09-04T06:23:32.966Z","harness:codex","Final repository verification: pnpm quality:static passed the complete mandatory static gate; node scripts/run-tests.mjs coverage passed 603 files and 8,350 tests at exact 100% statements, branches, functions, and lines; pnpm security:scan, pnpm audit, documentation links, and package-artifact checks passed. GitHub Dependabot, code-scanning, and secret-scanning alert inventories were empty. Focused receipt and fresh-clone reviewability tests passed."
+  "2026-09-04T06:42:49.025Z","harness:codex","Terminal closeout evidence: exact-tree coverage passed 603 files and 8,351 tests at 100/100/100/100; durable validation now additionally rejects sidecars whose declared availability or versioned policy does not match their actual inline/hash composition, and the complete static-quality pipeline passed."
+  "2026-09-04T08:19:58.456Z","harness:codex","Review remediation evidence: strict durable validation now consumes the collision-free scalar hash primitive while preserving the bounded preview allowlist. Focused merge receipt/governance/reconcile/packaging suite passed 69 tests; repository static-quality and defect-evidence assertions passed."
+  "2026-09-04T09:23:03.081Z","harness:codex","Review round 2 evidence: durable preview validation uses the shared scalar evidence hash; missing retained/discarded values remain hash-only and round-trip to the same missing-domain digest in both privacy-safe summaries and tracked sidecars."
+  "2026-09-04T10:14:19.711Z","harness:codex","Review round 3 evidence: exact snapshot verification accepts both the current presence-domain digest and the pre-existing version-1 scalar digest, preserving reconciliation for already-written receipts while all new writer paths retain the collision-free scheme."
+learnings[1]{created_at,author,text}:
+  "2026-09-04T06:22:42.332Z","harness:codex","Fresh-clone reviewability and receipt privacy require one versioned allowlist shared by the writer and reader: bounded non-sensitive scalars may be durable inline, while arbitrary strings remain hash-only."
+files[6]{path,scope,note}:
+  sdk/public-surface.json,project,Govern durable evidence contract evolution
+  src/sdk/history-repair.ts,project,Accept legacy v1 field digests while verifying current presence-domain receipt evidence
+  src/sdk/merge/index.ts,project,Expose receipt decision types through the compact merge entrypoint
+  src/sdk/merge/receipts.ts,project,Persist bounded reviewable durable values with privacy-safe fallback and precise validation
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Exercise receipt validation and health behavior end to end
+  tests/unit/sdk/merge-receipts.spec.ts,project,Prove fresh-clone recoverability privacy and identity diagnostics
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,project,240,"harness:codex","2026-09-04T04:23:35.040Z",local_mutation,feat/merge-decision-integrity-recovery
+test_runs[1]:
+  - run_id: test-local-mtmj1dbi-i8501v
+    kind: test
+    status: passed
+    started_at: "2026-09-04T05:41:45.495Z"
+    finished_at: "2026-09-04T05:42:10.350Z"
+    recorded_at: "2026-09-04T05:42:10.350Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Document bounded durable value policy and availability states
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,Document fresh-clone evidence and validation contracts
+close_reason: Implemented bounded fresh-clone merge decision reviewability with fail-closed privacy and schema validation.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-mg13iz
+  gate_id: fresh-clone-bounded-merge-receipt-evidence
+  negative_control: "Publish an unapproved durable value, misstate value availability, accept a hash mismatch, or remove the fresh-clone evidence assertions; receipt tests, security scan, and exact coverage must fail."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,"pnpm security:scan",node scripts/run-tests.mjs coverage
+  hosted_checks[4]: CI / Gates (static),CI / Gates (coverage),CodeQL,Trivy
 body: ""

@@ -149,7 +149,7 @@
         "provider": "repository-quality/static-quality",
         "provider_args": [
           "--max-eslint-suppressions",
-          "113",
+          "109",
           "--max-coverage-ignore-pragmas",
           "477",
           "--min-docstring-coverage",

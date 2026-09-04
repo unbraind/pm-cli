@@ -13,6 +13,11 @@ compatibility is tracked by
 [pm-wn3ee5](../.agents/pm/issues/pm-wn3ee5.toon).
 Lossless concurrent acceptance-criteria composition is tracked by
 [pm-inn5y5](../.agents/pm/issues/pm-inn5y5.toon).
+Recency-aware scalar convergence, bounded fresh-clone decision evidence, and
+audited pre-durable receipt dispositions are tracked by
+[pm-7wzb6d](../.agents/pm/issues/pm-7wzb6d.toon),
+[pm-mg13iz](../.agents/pm/issues/pm-mg13iz.toon), and
+[pm-cf4t42](../.agents/pm/issues/pm-cf4t42.toon).
 
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
@@ -66,12 +71,12 @@ pm merge install --dry-run --json
 
 ## Artifact semantics
 
-| Artifact                                                         | Driver                              | Merge behavior                                                                                                                                                                                                                                          |
-| ---------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Item `.toon` / `.md`                                             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; append-like collections use set union, `updated_at` uses latest timestamp, scalar conflicts select a stable direction-independent value, and canonical serialization recomputes TOON counts.                                     |
-| `history/*.jsonl`                                                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                            |
-| tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship`                   | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream. |
-| root `settings.json` and nested `**/*.json`                      | `pm-json`                           | Recursively merges objects per key. Arrays compose when both branches preserve the base and add distinct entries, so independent extension installs and evaluation additions merge without weakening edit/removal conflict detection.                   |
+| Artifact                                                         | Driver                              | Merge behavior                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Item `.toon` / `.md`                                             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; append-like collections use set union, `updated_at` uses the latest timestamp, scalar conflicts select the value from the later document update with stable value order as an equal-timestamp tie-break, and canonical serialization recomputes TOON counts. |
+| `history/*.jsonl`                                                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                                                        |
+| tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship`                   | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream.                             |
+| root `settings.json` and nested `**/*.json`                      | `pm-json`                           | Recursively merges objects per key. Arrays compose when both branches preserve the base and add distinct entries, so independent extension installs and evaluation additions merge without weakening edit/removal conflict detection.                                               |
 
 The `tests` collection has an additional execution-safety rule. Its semantic
 identity excludes provenance so the same command/context does not duplicate
@@ -95,17 +100,42 @@ lossless merge does not create a scalar conflict decision. This gives repeated
 `pm update --add-ac` mutations the same multi-branch preservation guarantee as
 native append-like metadata without a storage migration.
 
-When both sides change the same item scalar differently, the driver writes the same stable value regardless of which branch Git labels ours or theirs, but exits nonzero. Item results and receipts expose the caller's `requested_preference`; the per-decision `retained` and `discarded` values or hashes are authoritative because stable value order can retain either side. Readers normalize the legacy receipt key `preferred`, while new receipts no longer emit it. JSON leaf conflicts retain the explicit preferred-side policy. Git keeps either path conflicted so a human or coordinating agent must review the discarded value and explicitly `git add` the resolution. This correction is tracked by [pm-qckpnq](../.agents/pm/issues/pm-qckpnq.toon).
+When both sides change the same item scalar differently, the driver retains the
+value from the document with the later `metadata.updated_at` timestamp. Equal
+timestamps fall back to stable value ordering, so reversing Git's ours/theirs
+labels still converges to the same result. Item results, driver results, and
+receipts expose `conflict_resolution: latest_document_update` and
+`requested_preference_applied: false`; each conflict decision adds
+`retained_side` and `resolution_basis` so review automation can distinguish a
+recency decision from the stable tie-break. The caller's
+`requested_preference` remains observable but does not override item scalar
+convergence. Readers continue to accept legacy `preferred_side` and
+`stable_value_order` receipts and normalize the legacy `preferred` key. JSON
+leaf conflicts retain their explicit preferred-side policy. Git keeps the item
+path conflicted so a human or coordinating agent must review the discarded
+value and explicitly `git add` the resolution.
+
+The exact object `{ "pm_item_scalar_missing": true }` is reserved for
+JSON-stable missing-value evidence. Item merge inputs reject that object as a
+present metadata value, while the hashing primitive independently separates
+present and missing domains. This prevents extension data from impersonating a
+deletion without wrapping every ordinary scalar in receipt output.
 
 The driver result's `guidance` always points unresolved conflicts to `pm merge report`. When a clone-local receipt exists, guidance includes its privacy-safe receipt and item ids for exact correlation; discarded values remain confined to the local receipt and never appear in generic logs or tracker history. Tracked by [pm-fbrz7p](../.agents/pm/issues/pm-fbrz7p.toon).
 
 For item conflicts, the driver writes a clone-local receipt below the Git
 directory and a durable privacy-safe sidecar below `merge-receipts/` in the
 tracker. The local receipt contains retained and discarded values so recovery
-does not depend on a reflog. The tracked sidecar contains only field names and
-value hashes, so fresh clones and CI can still fail closed on an unreviewed
-decision without publishing either value. When both copies exist the SDK
-deduplicates them and prefers the locally recoverable copy:
+does not depend on a reflog. The tracked sidecar applies the versioned
+`bounded_non_sensitive_scalars_v1` policy. Built-in lifecycle statuses,
+priority integers from 0 through 4, bounded risk/confidence/severity ordinals,
+and `null` are stored with both their value and matching hash. All other values
+remain hash-only. `value_availability` distinguishes `bounded_inline`, `mixed`,
+and `hash_only`, while the clone-local receipt remains `clone_local`. This lets
+a fresh-clone reviewer recover ordinary control-plane decisions without
+publishing titles, descriptions, custom statuses, or other potentially private
+content. When both copies exist the SDK deduplicates them and prefers the
+locally recoverable copy:
 
 ```bash
 pm merge report
@@ -123,7 +153,9 @@ that distinction without returning malformed contents.
 loss-aware contract through `complete`, `invalid_evidence_count`, bounded
 `invalid_evidence[]`, `invalid_evidence_truncated`, and
 `clone_local_evidence_resolved`. Each rejected candidate reports a stable
-reason plus its `clone_local`, `durable`, or copy-consistency source. A safe
+reason plus its `clone_local`, `durable`, or copy-consistency source. Schema and
+identity failures additionally expose a bounded `validation_error` such as
+`required_fields`, `item_path`, `filename`, or `durable_decisions`. A safe
 receipt filename is returned as `receipt_id`; unsafe candidate names are
 represented only by `candidate_name_hash`, and malformed contents are never
 returned. The detail list is capped at 100 rows while the count remains exact,
@@ -133,9 +165,17 @@ POSIX instead of treating platform-specific `ENOENT`/`ENOTDIR` spellings as
 equivalent. Full health also cross-checks the privacy-safe receipt summaries in
 append-only history against valid pending and reconciled evidence. Missing
 evidence emits `merge_receipt_history_reference_missing:<n>` with bounded item,
-history-line, and receipt-id-or-hash coordinates. Its remediation enumerates
-the exact references and directs recovery from an authoritative clone or
-backup; it never recommends deleting receipts or rewriting history. The CLI
+history-line, and receipt-id-or-hash coordinates. Recover an available receipt
+from an authoritative clone or backup first. For an exact reference whose
+history-event timestamp predates tracked durable receipts, `pm merge reconcile
+--force` can append a `merge_reconcile` audit event containing the original
+item, line, receipt id, timestamp, and the closed
+`legacy_clone_local_only` reason. Health accepts only that exact coordinate and
+reports it through `accepted_missing_merge_receipt_dispositions`; it never
+rewrites or deletes the original history. The audit event must also occur after
+the referenced history line; an earlier event cannot pre-authorize a later
+missing receipt. Missing post-durable evidence remains blocking and cannot be
+dispositioned through this compatibility path. The CLI
 exits nonzero when evidence is incomplete, even when the valid-receipt count is
 zero. Current SDK implementations always emit the new field, while its optional
 type preserves structural compatibility for existing typed adapters and test
@@ -185,7 +225,8 @@ Serialized source claims are ignored. Receipt readers validate the complete
 bounded schema, safe identifiers, filename and item-path identity, timestamps,
 and bounded decision structure before a sidecar enters health or
 reconciliation. Reads use size-preflighted, no-follow regular-file descriptors;
-durable decisions must retain hash-only values. Qualifying durable-only receipts
+durable decision values must conform to the declared bounded-inline policy or
+remain hash-only. Qualifying durable-only receipts
 are reloaded from the authoritative store and accepted only after exact canonical
 item path, declared-field, and merged-value hash verification. Legacy receipts,
 receipts whose declared fields disagree with their hashes, same-item tampering,
@@ -193,16 +234,19 @@ and drift on unrelated items fail closed to the normal `pm history-repair`
 guidance. Health indexes authoritative evidence once by item and reconciliation
 uses the same per-item groups with a fixed receipt-only worker pool, so committed
 sidecars cannot amplify drift scans into unbounded parallel repair work.
-The machine-executable remediation names the apply command because `--dry-run`
-returns a successful preview without changing the red health state. Operators
-may still run the documented dry-run first; agents that execute the remediation
-field verbatim perform the settlement instead of entering a successful no-op
-loop.
+The machine-executable remediation for a missing receipt reference names
+`pm merge reconcile --dry-run`. It never publishes `--force` as an executable
+hint: the human-readable summary explains that exact eligible pre-durable
+coordinates may be dispositioned by a separately reviewed force pass. Ordinary
+pending lossless receipts retain their unforced apply remediation.
 Apply-mode reconciliation repeats the same proof against the exact
 item snapshot used by the audited history rewrite. The audit event and
 settlement include only the individually proven receipt id, so one valid receipt
 cannot authorize an untrusted same-item sibling. Failed or unproven receipts
 remain pending unless the coordinator explicitly reviews and supplies `--force`.
+Snapshot verification accepts both the current presence-domain digest and the
+legacy version-1 scalar digest, so already-written receipts remain repairable;
+new receipts always use the collision-free presence-domain scheme.
 Receipts with discarded scalar values retain the distinct
 `merge_decisions_unreviewed:<n>` finding. Matching authoritative hash proof
 allows those receipts to settle without `--force`; without qualifying proof,
@@ -212,6 +256,15 @@ an unforced apply command that clears `merge_decisions_unreviewed` when the
 receipt proves the exact current merged values. This prevents routine repair
 from hiding unfinished reconciliation while avoiding redundant force for an
 already-proven canonical snapshot.
+The same `--force` boundary also handles an unrecoverable pre-durable
+clone-local-only history reference. Preview and apply results expose
+`missing_history_references_before`, `legacy_disposition_eligible`,
+`legacy_disposition_recorded`, and `missing_history_references_after`. When
+coordinates exceed the bounded health response, explicit result guidance
+requires repeated dry-run and reviewed force passes until health no longer
+reports truncated coordinate details and the remaining count is zero. An apply
+result cannot return `ok: true` while any missing reference or truncated
+evidence remains.
 It exits nonzero while either merge-critical validation check is non-green, so
 CI and explicit post-merge hooks cannot approve unresolved receipts or drift.
 The apply pass uses the audited history rewrite boundary to append a

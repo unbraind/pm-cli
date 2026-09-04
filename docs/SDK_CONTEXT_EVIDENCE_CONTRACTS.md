@@ -1,6 +1,6 @@
 # SDK Context and Evidence Contracts
 
-Tracked by [pm-gok2km](../.agents/pm/issues/pm-gok2km.toon), [pm-zryb9d](../.agents/pm/issues/pm-zryb9d.toon), [pm-qckpnq](../.agents/pm/issues/pm-qckpnq.toon), [pm-hfqju5](../.agents/pm/issues/pm-hfqju5.toon), [pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon), and [pm-v0a0un](../.agents/pm/issues/pm-v0a0un.toon).
+Tracked by [pm-gok2km](../.agents/pm/issues/pm-gok2km.toon), [pm-zryb9d](../.agents/pm/issues/pm-zryb9d.toon), [pm-qckpnq](../.agents/pm/issues/pm-qckpnq.toon), [pm-hfqju5](../.agents/pm/issues/pm-hfqju5.toon), [pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon), [pm-v0a0un](../.agents/pm/issues/pm-v0a0un.toon), [pm-7wzb6d](../.agents/pm/issues/pm-7wzb6d.toon), [pm-mg13iz](../.agents/pm/issues/pm-mg13iz.toon), and [pm-cf4t42](../.agents/pm/issues/pm-cf4t42.toon).
 
 These contracts keep SDK context truthful, bounded, and reusable across the CLI, MCP, packages, and automation. They are designed around the project principle that project management is context management: a compact response must reveal material omissions, merge evidence must describe what actually survived, and compatibility failures must not masquerade as corruption.
 
@@ -22,7 +22,29 @@ This keeps health diagnostics and lazy runtime behavior on one ownership contrac
 
 ## Merge provenance
 
-Stable-value item merges distinguish a caller request from the outcome. Low-level item results, driver results, clone-local receipts, and privacy-safe summaries expose `requested_preference`. The actual outcome remains in each decision's `retained` and `discarded` values or hashes. New receipts do not emit the ambiguous `preferred` key; readers still ingest legacy schema-v1 receipts and normalize that key to `requested_preference`.
+Item scalar merges distinguish a caller request from the convergent outcome.
+The `latest_document_update` policy selects the branch document with the later
+`metadata.updated_at`; equal timestamps use stable value order. Low-level item
+results, driver results, receipts, and privacy-safe summaries expose
+`requested_preference` plus `requested_preference_applied: false`. Each new
+decision records `retained_side` and `resolution_basis`. New receipts do not
+emit the ambiguous `preferred` key; readers still ingest legacy schema-v1
+receipts and normalize `preferred_side` and `stable_value_order` evidence.
+
+Tracked receipt evidence uses `bounded_non_sensitive_scalars_v1`: built-in
+status, priority 0 through 4, risk/confidence/severity ordinals, and `null` may
+be included beside their verifiable hashes. Every other value remains
+hash-only. Fresh-clone consumers must branch on `value_availability` rather than
+assuming raw values exist. Invalid evidence separates `schema_invalid` from
+`identity_invalid` and adds a bounded `validation_error`, while retaining the
+legacy combined reason in the public union for source compatibility.
+
+`runMergeReconcile` also reports missing history receipt counts before and
+after the operation. With explicit `force`, it can append a narrowly matched
+audit disposition for a missing reference whose original event predates the
+durable-receipt epoch. The item id, original line, receipt id, and timestamp
+must all match, and the audit event must occur later in that history stream;
+current-era missing evidence remains blocking.
 
 ## Claim race classification
 

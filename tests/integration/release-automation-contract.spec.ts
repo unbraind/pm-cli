@@ -12,6 +12,7 @@ const repoRoot = path.resolve(
   "..",
 );
 
+/** Execute one release script from the repository root with explicit environment. */
 function runNodeScript(args: string[], env: NodeJS.ProcessEnv = process.env) {
   return spawnSync(process.execPath, args, {
     cwd: repoRoot,
@@ -51,9 +52,7 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",
     );
-    expect(packageJson.scripts?.lint).toBe(
-      "pnpm quality:static",
-    );
+    expect(packageJson.scripts?.lint).toBe("pnpm quality:static");
     expect(packageJson.scripts?.["lint:codefactor"]).toBe(
       "pnpm quality:static",
     );
@@ -194,6 +193,25 @@ describe("release automation contract", () => {
     }
     expect(staticQualityGate).toContain(
       `export const MAX_ESLINT_SUPPRESSIONS = ${total};`,
+    );
+    const gateRegistry = JSON.parse(
+      await readFile(
+        path.join(repoRoot, "scripts/release/gate-registry.json"),
+        "utf8",
+      ),
+    ) as {
+      automation_inventory: {
+        gate_scripts: Array<{ path: string; provider_args?: string[] }>;
+      };
+    };
+    const registeredGate = gateRegistry.automation_inventory.gate_scripts.find(
+      (entry) => entry.path === "scripts/release/static-quality-gate.mts",
+    );
+    const suppressionArgumentIndex =
+      registeredGate?.provider_args?.indexOf("--max-eslint-suppressions") ?? -1;
+    expect(suppressionArgumentIndex).toBeGreaterThanOrEqual(0);
+    expect(registeredGate?.provider_args?.[suppressionArgumentIndex + 1]).toBe(
+      String(total),
     );
   });
 

@@ -27,9 +27,14 @@ import {
   summarizeMergeReceipt,
   writeMergeReceipt,
 } from "../../../src/sdk/merge/receipts.js";
+import {
+  hashItemScalarDecisionValue,
+  ITEM_SCALAR_MISSING_VALUE,
+} from "../../../src/sdk/merge/three-way.js";
 
 const workspaces: string[] = [];
 
+/** Build deterministic filesystem metadata for bounded receipt-file tests. */
 function boundaryStats(params: {
   size: number;
   file?: boolean;
@@ -220,6 +225,59 @@ describe("clone-local merge decision receipts", () => {
     });
   });
 
+  it("preserves missing scalar evidence across local summaries and durable receipts", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const pmRoot = path.join(workspace, ".agents", "pm");
+    await mkdir(path.join(pmRoot, "tasks"), { recursive: true });
+    await writeFile(path.join(pmRoot, "settings.json"), "{}\n", "utf8");
+
+    const receipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-missing-scalar.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [
+        {
+          field: "assignee",
+          base: "agent-a",
+          ours: ITEM_SCALAR_MISSING_VALUE,
+          theirs: "agent-b",
+          retained: ITEM_SCALAR_MISSING_VALUE,
+          discarded: ITEM_SCALAR_MISSING_VALUE,
+        },
+      ],
+    });
+
+    expect(receipt).not.toBeNull();
+    expect(summarizeMergeReceipt(receipt!).decisions[0]).toMatchObject({
+      retained_hash: hashItemScalarDecisionValue(undefined),
+      discarded_hash: hashItemScalarDecisionValue(undefined),
+    });
+    expect(
+      JSON.parse(
+        await readFile(
+          path.join(pmRoot, "merge-receipts", `${receipt!.id}.json`),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({
+      value_availability: "hash_only",
+      decisions: [
+        {
+          retained: {
+            pm_value_hash: hashItemScalarDecisionValue(undefined),
+          },
+          discarded: {
+            pm_value_hash: hashItemScalarDecisionValue(undefined),
+          },
+        },
+      ],
+    });
+  });
+
   it("is a safe no-op outside Git and ignores damaged receipt files", async () => {
     const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
     workspaces.push(workspace);
@@ -396,30 +454,116 @@ describe("clone-local merge decision receipts", () => {
       { cwd: workspace, encoding: "utf8" },
     ).trim();
     await mkdir(receiptDirectory, { recursive: true });
-    for (const name of ["aaaa-corrupt.json", "bbbb-corrupt.json"]) {
-      await writeFile(
-        path.join(receiptDirectory, name),
+    await Promise.all([
+      writeFile(path.join(receiptDirectory, "aaaa-corrupt.json"), "null\n"),
+      writeFile(
+        path.join(receiptDirectory, "bbbb-corrupt.json"),
         `${JSON.stringify({ version: 1, state: "pending" })}\n`,
-        "utf8",
-      );
-    }
+      ),
+      writeFile(
+        path.join(receiptDirectory, "cccc-corrupt.json"),
+        `${JSON.stringify({
+          version: 1,
+          id: "cccc-corrupt",
+          item_path: ".agents/pm/tasks/pm-corrupt.toon",
+          item_id: "pm-corrupt",
+          fields_from_theirs: [],
+          union_fields: [],
+          decisions: [null],
+          state: "pending",
+          created_at: "2026-09-04T00:00:00.000Z",
+        })}\n`,
+      ),
+      writeFile(
+        path.join(receiptDirectory, "dddd-corrupt.json"),
+        `${JSON.stringify({
+          version: 1,
+          id: "dddd-corrupt",
+          item_path: ".agents/pm/tasks/pm-corrupt.toon",
+          item_id: "pm-corrupt",
+          fields_from_theirs: [],
+          union_fields: [],
+          decisions: [],
+          state: "unknown",
+          created_at: "2026-09-04T00:00:00.000Z",
+        })}\n`,
+      ),
+      ...(
+        [
+          ["eeee-corrupt", { retained_side: "middle" }],
+          ["ffff-corrupt", { resolution_basis: "random" }],
+        ] as const
+      ).map(([id, decisionExtension]) =>
+        writeFile(
+          path.join(receiptDirectory, `${id}.json`),
+          `${JSON.stringify({
+            version: 1,
+            id,
+            item_path: ".agents/pm/tasks/pm-corrupt.toon",
+            item_id: "pm-corrupt",
+            fields_from_theirs: [],
+            union_fields: [],
+            decisions: [
+              {
+                field: "priority",
+                base: 2,
+                ours: 3,
+                theirs: 1,
+                retained: 3,
+                discarded: 1,
+                ...decisionExtension,
+              },
+            ],
+            state: "pending",
+            created_at: "2026-09-04T00:00:00.000Z",
+          })}\n`,
+        ),
+      ),
+    ]);
 
     expect(await listMergeReceipts(workspace)).toEqual([]);
+    const invalidEvidence = [
+      {
+        evidence_source: "clone_local",
+        reason: "schema_invalid",
+        receipt_id: "aaaa-corrupt",
+        validation_error: "required_fields",
+      },
+      {
+        evidence_source: "clone_local",
+        reason: "schema_invalid",
+        receipt_id: "bbbb-corrupt",
+        validation_error: "required_fields",
+      },
+      {
+        evidence_source: "clone_local",
+        reason: "schema_invalid",
+        receipt_id: "cccc-corrupt",
+        validation_error: "collections",
+      },
+      {
+        evidence_source: "clone_local",
+        reason: "schema_invalid",
+        receipt_id: "dddd-corrupt",
+        validation_error: "enums",
+      },
+      {
+        evidence_source: "clone_local",
+        reason: "schema_invalid",
+        receipt_id: "eeee-corrupt",
+        validation_error: "collections",
+      },
+      {
+        evidence_source: "clone_local",
+        reason: "schema_invalid",
+        receipt_id: "ffff-corrupt",
+        validation_error: "collections",
+      },
+    ];
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
-      invalid_evidence_count: 2,
-      invalid_evidence: [
-        {
-          evidence_source: "clone_local",
-          reason: "schema_or_identity_invalid",
-          receipt_id: "aaaa-corrupt",
-        },
-        {
-          evidence_source: "clone_local",
-          reason: "schema_or_identity_invalid",
-          receipt_id: "bbbb-corrupt",
-        },
-      ],
+      invalid_evidence_count: 6,
+      invalid_evidence: invalidEvidence,
       invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
     });
@@ -429,23 +573,60 @@ describe("clone-local merge decision receipts", () => {
       ok: false,
       complete: false,
       count: 0,
-      invalid_evidence_count: 2,
-      invalid_evidence: [
-        {
-          evidence_source: "clone_local",
-          reason: "schema_or_identity_invalid",
-          receipt_id: "aaaa-corrupt",
-        },
-        {
-          evidence_source: "clone_local",
-          reason: "schema_or_identity_invalid",
-          receipt_id: "bbbb-corrupt",
-        },
-      ],
+      invalid_evidence_count: 6,
+      invalid_evidence: invalidEvidence,
       invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
       receipts: [],
     });
+  });
+
+  it("separates valid-schema identity mismatches from schema failures", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const receiptDirectory = execFileSync(
+      "git",
+      [
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "pm-merge-receipts",
+      ],
+      { cwd: workspace, encoding: "utf8" },
+    ).trim();
+    await mkdir(receiptDirectory, { recursive: true });
+    await writeFile(
+      path.join(receiptDirectory, "wrong-file-name.json"),
+      `${JSON.stringify({
+        version: 1,
+        id: "canonical-receipt-name",
+        item_path: ".agents/pm/tasks/pm-identity.toon",
+        item_id: "pm-identity",
+        requested_preference: "ours",
+        conflict_resolution: "latest_document_update",
+        fields_from_theirs: [],
+        union_fields: [],
+        decisions: [],
+        state: "pending",
+        created_at: "2026-09-04T00:00:00.000Z",
+      })}\n`,
+      "utf8",
+    );
+
+    await expect(inspectMergeReceiptEvidence(workspace)).resolves.toMatchObject(
+      {
+        invalid_evidence_count: 1,
+        invalid_evidence: [
+          {
+            evidence_source: "clone_local",
+            reason: "identity_invalid",
+            receipt_id: "wrong-file-name",
+            validation_error: "filename",
+          },
+        ],
+      },
+    );
   });
 
   it.runIf(process.platform !== "win32" && process.getuid?.() !== 0)(
@@ -506,6 +687,131 @@ describe("clone-local merge decision receipts", () => {
       ],
       invalid_evidence_truncated: false,
       clone_local_evidence_resolved: true,
+    });
+  });
+
+  it("rejects every durable value that violates the bounded preview policy", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const pmRoot = path.join(workspace, ".agents", "pm");
+    const receiptDirectory = path.join(pmRoot, "merge-receipts");
+    await mkdir(receiptDirectory, { recursive: true });
+    const hashOnlyValue = { pm_value_hash: "0".repeat(64) };
+    const invalidValues: unknown[] = [
+      "not-an-object",
+      {},
+      { ...hashOnlyValue, extra: true },
+      { ...hashOnlyValue, pm_value: "private-title" },
+      { ...hashOnlyValue, pm_value: 3 },
+    ];
+    await Promise.all(
+      invalidValues.map((retained, index) => {
+        const id = `invalid-durable-${index}`;
+        return writeFile(
+          path.join(receiptDirectory, `${id}.json`),
+          `${JSON.stringify({
+            version: 1,
+            id,
+            item_path: `.agents/pm/tasks/pm-durable-${index}.toon`,
+            item_id: `pm-durable-${index}`,
+            requested_preference: "ours",
+            conflict_resolution: "latest_document_update",
+            fields_from_theirs: [],
+            union_fields: [],
+            decisions: [
+              {
+                field: index === 4 ? "priority" : "title",
+                base: null,
+                ours: null,
+                theirs: null,
+                retained,
+                discarded: hashOnlyValue,
+              },
+            ],
+            state: "pending",
+            created_at: "2026-09-04T00:00:00.000Z",
+            value_availability: "hash_only",
+          })}\n`,
+          "utf8",
+        );
+      }),
+    );
+
+    const evidence = await inspectMergeReceiptEvidence(workspace, { pmRoot });
+    expect(evidence.invalid_evidence_count).toBe(invalidValues.length);
+    expect(evidence.invalid_evidence).toEqual(
+      invalidValues.map((_, index) => ({
+        evidence_source: "durable",
+        reason: "schema_invalid",
+        receipt_id: `invalid-durable-${index}`,
+        validation_error: "durable_decisions",
+      })),
+    );
+  });
+
+  it("rejects durable receipts whose availability or policy misstates their values", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
+    workspaces.push(workspace);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    const pmRoot = path.join(workspace, ".agents", "pm");
+    await mkdir(path.join(pmRoot, "tasks"), { recursive: true });
+    await writeFile(path.join(pmRoot, "settings.json"), "{}\n", "utf8");
+    const receipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-policy.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [
+        {
+          field: "priority",
+          base: 2,
+          ours: 4,
+          theirs: 1,
+          retained: 4,
+          discarded: 1,
+        },
+      ],
+    });
+    expect(receipt).not.toBeNull();
+    const durablePath = path.join(
+      pmRoot,
+      "merge-receipts",
+      `${receipt?.id}.json`,
+    );
+    const durable = JSON.parse(await readFile(durablePath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+
+    delete durable.value_policy;
+    await writeFile(durablePath, `${JSON.stringify(durable)}\n`, "utf8");
+    await expect(
+      inspectMergeReceiptEvidence(workspace, { pmRoot }),
+    ).resolves.toMatchObject({
+      invalid_evidence_count: 1,
+      invalid_evidence: [
+        {
+          reason: "schema_invalid",
+          validation_error: "durable_decisions",
+        },
+      ],
+    });
+
+    durable.value_policy = "bounded_non_sensitive_scalars_v1";
+    durable.value_availability = "mixed";
+    await writeFile(durablePath, `${JSON.stringify(durable)}\n`, "utf8");
+    await expect(
+      inspectMergeReceiptEvidence(workspace, { pmRoot }),
+    ).resolves.toMatchObject({
+      invalid_evidence_count: 1,
+      invalid_evidence: [
+        {
+          reason: "schema_invalid",
+          validation_error: "durable_decisions",
+        },
+      ],
     });
   });
 
@@ -613,6 +919,50 @@ describe("clone-local merge decision receipts", () => {
           retained: "ours-private",
           discarded: "theirs-private",
         },
+        {
+          field: "priority",
+          base: 2,
+          ours: 3,
+          theirs: 1,
+          retained: 3,
+          discarded: 1,
+          retained_side: "ours",
+          resolution_basis: "document_updated_at",
+        },
+      ],
+    });
+    const boundedReceipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-bounded.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [
+        {
+          field: "priority",
+          base: 2,
+          ours: 3,
+          theirs: 1,
+          retained: 3,
+          discarded: 1,
+        },
+      ],
+    });
+    const nullReceipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-null.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [
+        {
+          field: "component",
+          base: "base",
+          ours: null,
+          theirs: "other",
+          retained: null,
+          discarded: "other",
+        },
       ],
     });
     execFileSync("git", ["add", ".agents/pm"], { cwd: workspace });
@@ -625,18 +975,57 @@ describe("clone-local merge decision receipts", () => {
     const clonedReceipts = await listMergeReceipts(clone, {
       pmRoot: path.join(clone, ".agents", "pm"),
     });
-    expect(clonedReceipts).toHaveLength(1);
-    expect(clonedReceipts[0]).toMatchObject({
+    expect(clonedReceipts).toHaveLength(3);
+    const clonedReceipt = clonedReceipts.find(({ id }) => id === receipt?.id);
+    expect(clonedReceipt).toMatchObject({
       id: receipt?.id,
       state: "pending",
-      value_availability: "hash_only",
+      value_availability: "mixed",
+      decisions: [
+        {
+          field: "title",
+          retained: { pm_value_hash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+          discarded: { pm_value_hash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+        },
+        {
+          field: "priority",
+          retained: {
+            pm_value_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+            pm_value: 3,
+          },
+          discarded: {
+            pm_value_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+            pm_value: 1,
+          },
+          retained_side: "ours",
+          resolution_basis: "document_updated_at",
+        },
+      ],
     });
-    const serialized = JSON.stringify(clonedReceipts[0]);
+    expect(
+      clonedReceipts.find(({ id }) => id === boundedReceipt?.id),
+    ).toMatchObject({ value_availability: "bounded_inline" });
+    expect(
+      clonedReceipts.find(({ id }) => id === nullReceipt?.id),
+    ).toMatchObject({
+      value_availability: "mixed",
+      decisions: [
+        {
+          retained: { pm_value: null },
+          discarded: { pm_value_hash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+        },
+      ],
+    });
+    const serialized = JSON.stringify(clonedReceipt);
     expect(serialized).not.toContain("private");
-    expect(summarizeMergeReceipt(clonedReceipts[0]!)).toEqual(
+    expect(summarizeMergeReceipt(clonedReceipt!)).toEqual(
       summarizeMergeReceipt(receipt!),
     );
-    await markMergeReceiptReconciled(clone, clonedReceipts[0]!);
+    await Promise.all(
+      clonedReceipts.map((candidate) =>
+        markMergeReceiptReconciled(clone, candidate),
+      ),
+    );
     expect(
       await listMergeReceipts(clone, {
         pmRoot: path.join(clone, ".agents", "pm"),
@@ -647,7 +1036,22 @@ describe("clone-local merge decision receipts", () => {
         includeReconciled: true,
         pmRoot: path.join(clone, ".agents", "pm"),
       }),
-    ).toMatchObject([{ state: "reconciled", value_availability: "hash_only" }]);
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          state: "reconciled",
+          value_availability: "mixed",
+        }),
+        expect.objectContaining({
+          state: "reconciled",
+          value_availability: "bounded_inline",
+        }),
+        expect.objectContaining({
+          state: "reconciled",
+          value_availability: "mixed",
+        }),
+      ]),
+    );
     await markMergeReceiptReconciled(clone, {
       ...clonedReceipts[0]!,
       id: "durable-sidecar-missing",
