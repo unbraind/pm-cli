@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:agent-ux","area:docs",denominator,progressive-disclosure,review-feedback,skills,surface-parity
 created_at: "2026-09-04T18:24:45.154Z"
-updated_at: "2026-09-04T19:08:47.392Z"
+updated_at: "2026-09-04T19:15:50.574Z"
 closed_at: "2026-09-04T19:08:46.904Z"
 completed_at: "2026-09-04T19:08:46.904Z"
 author: "harness:claude-code"
@@ -58,4 +58,11 @@ docs[1]{path,scope,note}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,merge flag budget 24 to 27 regenerated
 close_reason: "Skills instruct only executable spellings and flags, every capability family has a hand-written guide topic, and the docs-skills gate now proves both against the built artifacts with negative controls."
 escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-4957pz
+  gate_id: docs-skills-gate
+  negative_control: "Route a capability family only through the generated capabilities topic, or instruct a flag no contract or package declares inside a fenced skill invocation; validateCapabilityFamilyRouting and validateFencedFlagSpellings must fail, and an empty family set or empty flag table must fail as vacuous."
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts tests/unit/commands/guide-command.spec.ts,"pnpm quality:docs-skills",node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
