@@ -1,0 +1,40 @@
+id: pm-2h8t6y
+title: "GH-1205: Declare root-only versus inherited extension flag reservation scope"
+description: Clarify the published distinction between root help flags and inherited host-reserved subcommand flags. The existing preflight contract deliberately validates SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; root --explain and command-local --explain can represent separate parser positions. Confirm runtime behavior and expose a typed machine-readable reservation scope for package authors without abruptly breaking existing pm-context or pm-brief commands.
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-05T19:06:25.757Z"
+updated_at: "2026-09-05T19:12:56.439Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Public contract data distinguishes root-only flags from enforced inherited subcommand reservations; Blueprint lint, runtime activation, and package author checks consume the same documented scope; Packed extension tests exercise root --explain and command-local --explain without dropping healthy sibling commands; Any compatibility change has an explicit migration contract and does not silently quarantine existing valid packages"
+value: Reduce recovery ambiguity and preserve trustworthy project context for agents
+outcome: A reproducible SDK contract with actionable CLI recovery and regression evidence
+why_now: New user report GH-1205 during PR #1204 final integration
+parent: pm-ugqx
+risk: medium
+confidence: medium
+severity: medium
+affected_version: 2026.9.5
+component: sdk/extensions
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-huolbk,discovered_from,"2026-09-05T19:06:25.757Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-09-05T19:06:25.757Z","harness:codex","cli:create:dep",detected
+comments[2]:
+  - created_at: "2026-09-05T19:06:25.757Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-huolbk and parent pm-ugqx metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
+    edited_at: "2026-09-05T19:12:56.439Z"
+  - created_at: "2026-09-05T19:10:55.266Z"
+    author: "harness:codex"
+    text: "Intake evidence: GitHub issue #1205 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
+notes[1]{created_at,author,text}:
+  "2026-09-05T19:06:25.757Z","harness:codex",Clarify the published distinction between root help flags and inherited host-reserved subcommand flags. The existing preflight contract deliberately validates SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; root --explain and command-local --explain can represent separate parser positions. Confirm runtime behavior and expose a typed machine-readable reservation scope for package authors without abruptly breaking existing pm-context or pm-brief commands.
+files[2]{path,scope,note}:
+  src/core/extensions/flag-definition-validation.ts,project,Existing implementation boundary to reproduce and improve
+  tests/unit/core/extension-flag-definition-validation.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Existing public contract to preserve and clarify
+body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1205\n\nClarify the published distinction between root help flags and inherited host-reserved subcommand flags. The existing preflight contract deliberately validates SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; root --explain and command-local --explain can represent separate parser positions. Confirm runtime behavior and expose a typed machine-readable reservation scope for package authors without abruptly breaking existing pm-context or pm-brief commands.\n\n## Reported reproduction\n\n## Summary\n\n`--explain` is declared host-owned in the machine-readable contracts, but an extension that declares the same spelling on one of its commands activates successfully and **wins** at runtime. The contract and the runtime disagree, so whether an extension may declare a given host flag depends on which flag it is, with nothing in the published data saying so.\n\n## What the contracts say\n\n```js\nimport { GLOBAL_FLAG_CONTRACTS, SUBCOMMAND_GLOBAL_FLAG_CONTRACTS } from \"@unbrained/pm-cli/sdk/contracts\";\n// → {\"flag\":\"--explain\",\"value_type\":\"boolean\",\"description\":\"Expand root help with command guidance.\"}\n// 43 host-owned contracts in total\n```\n\n## What the runtime does\n\n`pm-context` declares exactly that spelling on its own command:\n\n```js\n{ long: \"--explain\", description: \"Explain emitted items with ranks/scores …\", type: \"boolean\" }\n```\n\nInstalled as an extension on **2026.9.5**, it activates with no error or warning, the command registers, and the extension's flag takes effect — the host's root-help expansion never happens:\n\n```\n$ pm package install pm-context-2026.8.31.tgz\nok: true\n$ pm --help --all | grep context-pack\n  context-pack [options]   Generate a durable pm context pack for handoffs and reviews.\n$ pm context-pack --explain --limit 2\n# pm context explain\nGenerated: 2026-09-05T18:20:14.790Z\nModel: default-weighted-v1\n…\n```\n\n## Why this is a problem rather than a nicety\n\nOther flags in this same contract list *are* enforced: declaring one aborts registration at the offending command, and — as we have been bitten by before — silently drops the extension's **later** sibling commands. So the list is load-bearing for some entries and inert for others, and an extension author cannot tell which from the published data.\n\nThe two failure directions:\n\n1. **Today**: an extension shadows a documented global. A user who has that extension installed gets different behaviour from `--explain` than the host documents, with nothing reporting the conflict.\n2. **Tomorrow**: if enforcement is extended to cover `--explain`, every extension currently declaring it loses a command at activation — silently, and possibly along with unrelated sibling commands registered after it.\n\nWe currently have two packages declaring it (`pm-context`, `pm-brief`), both passing CI, both exposed to (2).\n\n## Expected\n\nPick one and make the contracts say which:\n\n- **Enforce it** — refuse activation with the same clear error used for the other host-owned flags, so the collision surfaces at install time rather than as divergent runtime behaviour; or\n- **Mark it advisory** — add a field to the contract entries distinguishing *reserved and enforced* from *reserved by convention*, so a package-side gate can check the enforced subset instead of the whole list.\n\nThe second matters because the natural way to build such a gate is to iterate `GLOBAL_FLAG_CONTRACTS` and forbid every entry — which is what one of our packages does. That gate is correct against the published contract and currently forces a user-visible flag rename for a collision the runtime does not actually have.\n\n## Environment\n\n@unbrained/pm-cli 2026.9.5, Node 22/26, Linux. Extension installed from a packed tarball into a fresh `pm init` tracker.\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

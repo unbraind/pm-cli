@@ -1,0 +1,40 @@
+id: pm-ao0bu9
+title: "GH-1200: Preview exact receipt proof before merge reconciliation"
+description: Reproduce the reported dry-run/apply disagreement after a legitimate post-receipt comment. Preview must run the same exact-snapshot proof and expose the same refusal code without mutating history. The earlier remediation-registry fix does not own this per-stream proof discrepancy.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-05T19:06:17.234Z"
+updated_at: "2026-09-05T19:12:52.150Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: A real temporary Git repository reproduces a receipt followed by comment_add before reconciliation; Dry-run and apply classify identical inputs with the same proof failure and no optimistic repaired count; Valid lossless and lossy receipts retain their existing audited settlement behavior and dry-run writes nothing
+value: Reduce recovery ambiguity and preserve trustworthy project context for agents
+outcome: A reproducible SDK contract with actionable CLI recovery and regression evidence
+why_now: New user report GH-1200 during PR #1204 final integration
+parent: pm-dj98
+risk: high
+confidence: medium
+severity: high
+affected_version: 2026.9.5
+component: sdk/merge
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dj98,implements,"2026-09-05T19:06:17.234Z","harness:codex","cli:create:dep",detected
+  pm-r0p3at,discovered_from,"2026-09-05T19:06:17.234Z","harness:codex","cli:create:dep",detected
+comments[2]:
+  - created_at: "2026-09-05T19:06:17.234Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-r0p3at and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
+    edited_at: "2026-09-05T19:12:52.150Z"
+  - created_at: "2026-09-05T19:10:51.535Z"
+    author: "harness:codex"
+    text: "Intake evidence: GitHub issue #1200 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
+notes[1]{created_at,author,text}:
+  "2026-09-05T19:06:17.234Z","harness:codex",Reproduce the reported dry-run/apply disagreement after a legitimate post-receipt comment. Preview must run the same exact-snapshot proof and expose the same refusal code without mutating history. The earlier remediation-registry fix does not own this per-stream proof discrepancy.
+files[2]{path,scope,note}:
+  src/sdk/merge/receipts.ts,project,Existing implementation boundary to reproduce and improve
+  tests/unit/sdk/merge-reconcile.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
+body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1200\n\nReproduce the reported dry-run/apply disagreement after a legitimate post-receipt comment. Preview must run the same exact-snapshot proof and expose the same refusal code without mutating history. The earlier remediation-registry fix does not own this per-stream proof discrepancy.\n\n## Reported reproduction\n\n## Summary\n\n`pm merge reconcile --dry-run` and `pm merge reconcile` disagree about the same unchanged inputs, in the direction that makes the dry run useless: the preview reports success for streams the real run then refuses. The divergence is deterministic and reproduces on every invocation.\n\nReproduced on **@unbrained/pm-cli 2026.9.5** (also present on 2026.9.2).\n\n## Observed\n\nSame working tree, no edits between the two commands:\n\n```\n$ pm merge reconcile --dry-run --json\nok: False | totals: {'repaired': 2, 'skipped_clean': 0, 'failed': 0}\n   pm-linear-unfa -> repaired\n   pm-linear-4yle -> repaired\n\n$ pm merge reconcile --json\nok: False | totals: {'repaired': 0, 'skipped_clean': 0, 'failed': 2}\n   pm-linear-unfa -> failed  Merge receipt evidence for pm-linear-unfa does not prove the exact item snapshot (no_receipt_set_proves_snapshot).\n   pm-linear-4yle -> failed  Merge receipt evidence for pm-linear-4yle does not prove the exact item snapshot (no_receipt_set_proves_snapshot).\n```\n\n`repaired: 2 / failed: 0` becomes `repaired: 0 / failed: 2`. Every per-stream `outcome` flips from `repaired` to `failed`.\n\n## Why this matters\n\nThe dry run's stated contract is to preview the real run, and its own guidance tells the operator to rely on it:\n\n> `Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.`\n\nAn agent following that guidance concludes two streams will be repaired and proceeds. Nothing is repaired. Because the failure is about **evidence sufficiency** rather than about writing, the dry run could determine it just as well as the real run — the check is simply not being applied on the preview path.\n\nNote the dry run is not merely optimistic in aggregate: it individually labels each stream `repaired`, which is the field an agent would parse to decide.\n\n## Expected\n\n`--dry-run` should apply the same receipt-evidence validation as the apply path, so a stream that will fail with `no_receipt_set_proves_snapshot` is previewed as `failed` with that same error. If the evidence check genuinely cannot run without writing, the preview should report the outcome as undetermined rather than as `repaired`.\n\n## Detail worth keeping\n\nBoth flagged receipts are of the shape `requested_preference: ours`, `conflict_resolution: stable_value_order`, and both sit in `.git/pm-merge-receipts/` while the item files received later legitimate `comment_add` events. That later edit is what makes the receipt no longer prove the current snapshot — a completely ordinary sequence for a multi-agent repository, so this is the common case rather than a corner case.\n\n`git status` stays clean across both invocations, so the apply path writes nothing when it fails; the divergence is purely in reporting.\n\n## Environment\n\n- @unbrained/pm-cli 2026.9.5, Node 22, Linux\n- 80 items / 83 history streams, 2 clone-local receipts\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."
