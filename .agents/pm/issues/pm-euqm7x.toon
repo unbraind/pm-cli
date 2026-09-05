@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-04T11:51:40.569Z"
-updated_at: "2026-09-04T12:19:33.924Z"
-closed_at: "2026-09-04T12:19:33.416Z"
-completed_at: "2026-09-04T12:19:33.416Z"
+updated_at: "2026-09-05T05:03:41.274Z"
+closed_at: "2026-09-05T04:56:31.693Z"
+completed_at: "2026-09-05T04:56:31.693Z"
 author: "harness:codex"
 acceptance_criteria: "The test-specific evaluator readiness bound is lower than the outer process timeout by at least the full shutdown grace; timeout arithmetic is asserted explicitly; the expected invalid-discovery path and port-reuse cleanup remain required; focused, full coverage, static, and hosted Windows gates pass."
 goal: project management = context management
@@ -20,22 +20,25 @@ risk: low
 confidence: high
 severity: medium
 environment: "GitHub Actions windows-latest, Node 24"
-resolution: "The surviving-server regression now supplies a 4-second evaluator readiness bound under a 10-second harness deadline, derives the real 2-second shutdown grace from the generated evaluator, asserts sufficient headroom, and fails explicitly if spawnSync terminates the evaluator. Its lineage uses recurs_from for the Windows portability predecessor and verifies for both release owners, with no generic related or unnecessary blocks edge."
-expected_result: "The evaluator always reaches its invalid-discovery diagnostic and governed process-tree cleanup before the test harness deadline on Windows, while graph-composition gates accept its precise typed lineage."
-actual_result: "Focused verifier tests passed 31/31, repo coverage passed 603 files and 8,356 tests at exact 100/100/100/100, direct static and graph-composition gates passed, and live data shows four precise dependencies with no blocks or related edge."
+resolution: "The nested published-HTTP server regression derives its readiness bound from the production evaluator, preserves a longer harness deadline with cleanup headroom, requires invalid-discovery diagnostics and port reuse, and accurately identifies the referenced child process tree it verifies."
+expected_result: "Shared SDK and CLI contracts preserve configured workflow semantics, trustworthy recovery evidence, bounded output and deterministic verification."
+actual_result: "PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
 regression: true
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-07pt16,discovered_from,"2026-09-04T11:51:40.569Z","harness:codex","cli:create:dep",detected
   pm-ygli86,verifies,"2026-09-04T11:51:40.569Z","harness:codex","cli:create:dep",detected
   pm-7zs0,verifies,"2026-09-04T12:18:17.141Z","harness:codex","cli:update:dep",detected
   pm-j668gl,recurs_from,"2026-09-04T12:18:17.141Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-04T11:51:40.569Z","harness:codex","Duplicate sweep 2026-09-04: live all-status searches for 'Windows release verifier surviving server intermediate runner stderr' and 'verify-published-release Windows' found the historical portability owners pm-j668gl and pm-07pt16 but no item for this inverted test/evaluator timeout contract. Evidence: main CI run 33867283305 failed with empty stderr at the invalid-discovery assertion; an exact failed-job rerun passed on merge SHA 980dce4e25e2dfdec797d45364a8f0369cfb5adf."
   "2026-09-04T11:52:09.579Z","harness:codex","Root cause: the surviving-server regression inherited the evaluator's 15000 ms default readiness allowance but spawnSync enforced 10000 ms. The evaluator also reserves 2000 ms for governed cleanup, so the harness could terminate 7000 ms before the product contract completed and return empty stderr. The exact-SHA rerun passed, confirming timing sensitivity. Repair will inject a test readiness bound and explicitly assert readiness plus shutdown headroom below the outer deadline while preserving invalid-discovery and port-reuse assertions."
   "2026-09-04T12:02:13.039Z","harness:codex","Verification evidence: the PM-linked focused verifier suite passed 31/31 tests. Repo-wide coverage passed 603 files and 8,356 tests at exact 100/100/100/100. The first PM-linked static run reached the repository assurance stage and correctly refused because schema-isolated linked execution cannot see the source tracker item that owns the working-tree defect; the standalone defect-evidence gate passes against the live tracker. The static link was removed to preserve sandbox isolation, and the final static gate will run directly after terminal evidence and changelog generation."
   "2026-09-04T12:08:08.320Z","harness:codex","Terminal local gates: pnpm quality:static passed the complete repository static suite after the item carried terminal gate evidence and the latest pm-changelog 2026.9.2 generated CHANGELOG.md. The exact coverage run passed 603 files and 8,356 tests at 100% statements, branches, functions, and lines. The exact main SHA rerun 33867283305 also passed Windows, coverage, static, compatibility, smoke, and analyzer jobs, demonstrating the prior failure was intermittent while preserving it as a repaired regression."
   "2026-09-04T12:16:59.908Z","harness:codex","Hosted review evidence: PR #1191 passed Windows, exact coverage, smokes, compatibility, CodeQL, Semgrep, Trivy, DeepScan, CodeFactor, and other analyzers. Gates (static) correctly rejected the first PM graph because one generic related edge exceeded related-to-ceiling (6054 > 6053) and one blocks edge exceeded blocks-ceiling (203 > 202). The graph now states the actual semantics: recurs_from pm-j668gl and verifies pm-7zs0."
   "2026-09-04T12:18:42.923Z","harness:codex","Mutation receipt: the first standalone append succeeded even though its human-readable response exceeded the 768-token diagnostic ceiling; a structured retry correctly reported changed_field_count=0. Live dependency evidence now contains discovered_from pm-07pt16, verifies pm-ygli86, verifies pm-7zs0, and recurs_from pm-j668gl with no blocks or related edge."
+  "2026-09-05T04:47:15.786Z","harness:codex","CI 33944234368 reproduced readiness timeout under the fixture-only 4-second limit. The nested-server cleanup fixture now derives the actual production readiness bound (15 seconds) from the evaluator, while its 25-second harness retains cleanup headroom and a 30-second test deadline. It still requires invalid-discovery diagnostics and immediate port reuse. Removed a meaningless 200ms delay and corrected the title: a referenced child keeps the intermediate runner alive, so this fixture proves nested-tree cleanup, not orphan discovery. Focused verifier suite passes; hosted Windows verification pending."
+  "2026-09-05T04:56:31.106Z","harness:codex","PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
+  "2026-09-05T05:03:41.274Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
 files[2]{path,scope,note}:
   scripts/release/verify-published-release.mjs,project,Authoritative evaluator readiness and shutdown bounds inspected in full
   tests/unit/scripts/release/verify-published-release.spec.ts,project,Deterministic evaluator and harness timeout ordering regression
@@ -71,13 +74,13 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
       "pnpm quality:static",schema,schema,source,local_source_ref
-close_reason: "Eliminated the inverted Windows verifier-test deadline, made harness preemption observable, and preserved precise recurrence and verification lineage."
+close_reason: Completed the connected implementation and review regressions with exact local verification.
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened
   owner: pm-euqm7x
   gate_id: windows-release-verifier-timeout-ordering
-  negative_control: Leave PM_VERIFY_HTTP_READY_TIMEOUT_MS unset so the 15000 ms readiness allowance plus 2000 ms shutdown grace exceeds the 10000 ms spawnSync deadline; the arithmetic assertion and result.error guard must fail.
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts
   local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
   hosted_checks[3]: CI / Windows regression (Node 24),CI / Gates (coverage),CI / Gates (static)
 body: ""

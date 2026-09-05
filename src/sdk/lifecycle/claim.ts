@@ -17,7 +17,6 @@ import {
   resolveAuthor,
   resolveClaimPrincipal,
   normalizeStatusForRegistry,
-  normalizeStatusInput,
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
 import { describeItemOwnershipConflict } from "../ownership-source.js";
@@ -414,7 +413,7 @@ export async function runRelease(
   });
 
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const stillInProgress = normalizeStatusForRegistry(result.item.status, statusRegistry) === normalizeStatusInput("in_progress", statusRegistry);
+  const stillInProgress = normalizeStatusForRegistry(result.item.status, statusRegistry) === normalizeStatusForRegistry(statusRegistry.in_progress_status, statusRegistry);
 
   return {
     item: toItemRecord(result.item),

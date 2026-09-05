@@ -54,6 +54,7 @@ import {
   asRecordOrNull,
   printError,
   printResult,
+  writeStderr,
   maybeRunFirstUseTelemetryPrompt,
   emitTelemetryErrorEvent,
   startTelemetryCommand,
@@ -2696,7 +2697,8 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
         2,
       )
     : formatPmCliErrorForDisplay(errorMessage, enrichedContext);
-  printError(renderedError);
+  if (context.jsonErrors) writeStderr(`${renderedError}\n`);
+  else printError(renderedError);
   const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
     command: context.attemptedCommand,
     errorCode: classification.code,
@@ -2783,7 +2785,8 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     commandResolution,
     resolutionStage: "parse",
   });
-  printError(renderedUsage);
+  if (context.jsonErrors) writeStderr(`${renderedUsage}\n`);
+  else printError(renderedUsage);
   if (loggedHandledErrorToSentry) {
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
   }
@@ -2854,7 +2857,8 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     commandResolution,
     resolutionStage: "parse",
   });
-  printError(renderedUsage);
+  if (context.jsonErrors) writeStderr(`${renderedUsage}\n`);
+  else printError(renderedUsage);
   if (loggedHandledErrorToSentry) {
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
   }

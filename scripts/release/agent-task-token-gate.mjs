@@ -229,6 +229,9 @@ function expectedAccountedDiagnostic(baseline, step) {
   if (recovery.normalized_args[0] !== "--json" || recovery.provided_fields?.[0] !== "--json") {
     fail("Agent-task diagnostic baseline must retain the independently supplied JSON transport flag");
   }
+  if (recovery.attempted_command !== renderPmCommand(recovery.normalized_args)) {
+    fail("Agent-task diagnostic baseline attempted command must match its normalized arguments");
+  }
   const normalizedArgs = ["--json", "--token-accounting", ...recovery.normalized_args.slice(1)];
   return {
     ...baseline,

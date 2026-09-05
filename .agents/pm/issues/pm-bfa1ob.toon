@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,error-contract,token-accounting
 created_at: "2026-08-27T16:44:18.236Z"
-updated_at: "2026-09-05T04:18:39.659Z"
-closed_at: "2026-09-05T04:18:39.090Z"
-completed_at: "2026-09-05T04:18:39.090Z"
+updated_at: "2026-09-05T05:03:40.250Z"
+closed_at: "2026-09-05T04:56:25.556Z"
+completed_at: "2026-09-05T04:56:25.556Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Commander JSON usage errors attach the same bounded token_accounting receipt when requested; accounting-off bytes remain unchanged; CLI order and alias forms behave identically; focused process tests and the golden transcript switch from independent_transport to self_reported.
@@ -18,26 +18,32 @@ confidence: high
 severity: medium
 environment: CLI Commander parse-time usage failures across JSON and TOON transports
 repro_steps: Run pm --json --token-accounting search query --include-body and observe an unknown-option refusal without token_accounting.
-resolution: Attached exact serialized token accounting to Commander and bootstrap JSON refusals after projection and extension enrichment; strengthened independent transcript provenance verification.
-expected_result: Requested accounting matches emitted refusal bytes while accounting-off payloads remain unchanged.
-actual_result: "Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+resolution: "Attached exact serialized accounting to Commander, bootstrap and known JSON refusals after projection and enrichment. SDK writeStderr preserves measured JSON despite active text error formatting. Transcript verification validates baseline attempted_command against normalized_args before independently predicting the accounting flag."
+expected_result: "Shared SDK and CLI contracts preserve configured workflow semantics, trustworthy recovery evidence, bounded output and deterministic verification."
+actual_result: "PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,discovered_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
   pm-t5dt4z,recurs_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
   pm-8pnj,verifies,"2026-09-05T03:31:15.827Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-27T16:44:18.236Z","harness:codex","Duplicate check: exact phrase and all-term searches across every status returned zero matching items. Discovery evidence: pm --json --token-accounting search ... --include-body exits 2 with a structured unknown_option envelope but no token_accounting field; the transcript gate records an explicit independent transport measurement until this separate contract gap is implemented."
   "2026-08-27T16:53:58.663Z","harness:codex","Relationship rationale: pm-bfa1ob was discovered_from pm-8pnj because the versioned transcript observed the missing receipt; it recurs_from pm-t5dt4z because that closed item established self-reported token accounting, and parent pm-srns owns uniform transport envelopes."
   "2026-09-05T03:08:23.655Z","harness:codex",Opt-in refusal accounting measures the final serialized diagnostic; extension failure enrichment recalculates the receipt rather than retaining stale byte counts. Real stderr tests cover option ordering and bootstrap help refusals.
   "2026-09-05T03:22:18.641Z","harness:codex",The executable unknown-option transcript now expects self_reported accounting because diagnostic JSON carries its own final-output receipt. Full-suite first run exposed mixed source/build output during concurrent generation; a stable build and targeted compatibility rerun precede the next coverage run. No coverage threshold or source exclusion changed.
   "2026-09-05T03:27:05.265Z","harness:codex",Real CLI transcript replay passed with self-reported refusal accounting. The gate independently predicts only the added --token-accounting token in three recovery provenance fields; every other field remains exact. Negative tests reject altered recovery commands and malformed baseline transport evidence. This preserves truthful invocation metadata and byte accounting without ignoring payload drift.
   "2026-09-05T04:18:38.551Z","harness:codex","Attached exact serialized token accounting to Commander and bootstrap JSON refusals after projection and extension enrichment; strengthened independent transcript provenance verification. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
-files[7]{path,scope,note}:
+  "2026-09-05T04:47:14.288Z","harness:codex","PR 1195 review negative controls reproduced both baseline attempted_command corruption and an active error_format override replacing accounted JSON. SDK raw stderr transport now preserves JSON after final accounting for bootstrap, Commander, and known errors; baseline attempted_command must equal rendering of normalized_args. All focused regressions pass."
+  "2026-09-05T04:56:22.167Z","harness:codex","PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
+  "2026-09-05T05:03:40.250Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
+files[10]{path,scope,note}:
   docs/agent-task-token-baseline.json,project,Execution contract implementation and regression evidence
   docs/agent-task-transcripts.json,project,Executable regression contract and public SDK surface
   scripts/release/agent-task-token-gate.mjs,project,Strict executable contract regression evidence
+  sdk/public-surface.json,project,Review regression correction and governed public contract
   src/cli/commander-usage.ts,project,Connected SDK and CLI execution contract delivery
   src/cli/help-json-payload.ts,project,Connected SDK and CLI execution contract delivery
+  src/cli/main.ts,project,Review regression correction and governed public contract
+  src/sdk/runtime-primitives.ts,project,Review regression correction and governed public contract
   tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Connected SDK and CLI execution contract delivery
   tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Strict executable contract regression evidence
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
@@ -58,6 +64,13 @@ docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
   docs/README.md,project,Public execution and recovery semantics
   docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
-close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
+close_reason: Completed the connected implementation and review regressions with exact local verification.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-bfa1ob
+  gate_id: accounted-refusal-transcript-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: ""

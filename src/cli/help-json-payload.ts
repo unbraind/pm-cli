@@ -15,7 +15,7 @@ import {
   resolveItemTypeRegistry,
   resolveTypeDefinition,
   EXIT_CODE,
-  printError,
+  writeStderr,
   writeStdout,
 } from "../sdk/runtime-primitives.js";
 import {
@@ -714,7 +714,7 @@ export async function maybeRenderBootstrapJsonHelp(
       const output = bootstrapGlobal.tokenAccounting
         ? attachOutputTokenAccounting(envelope, (value) => `${JSON.stringify(value, null, 2)}\n`)
         : envelope;
-      printError(JSON.stringify(output, null, 2));
+      writeStderr(`${JSON.stringify(output, null, 2)}\n`);
     }
     process.exitCode = EXIT_CODE.USAGE;
     return true;

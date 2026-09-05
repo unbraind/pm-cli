@@ -953,6 +953,7 @@ describe("agent-task transcript token gate", () => {
       { status: 2, stdout: "", stderr: render(baseline) }, accountedTransport, step,
     )).toMatchObject({ output_kind: "refusal" });
     for (const recovery of [
+      { ...baseline.recovery, attempted_command: "pm --json delete pm-important" },
       { ...baseline.recovery, normalized_args: ["list", "--bad"] },
       { ...baseline.recovery, provided_fields: undefined },
       { ...baseline.recovery, provided_fields: ["--wrong"] },

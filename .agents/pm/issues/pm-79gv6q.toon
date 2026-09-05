@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:context",context-management,output-contracts,receipts,token-budget
 created_at: "2026-09-04T18:24:56.659Z"
-updated_at: "2026-09-05T04:18:34.699Z"
+updated_at: "2026-09-05T05:03:38.879Z"
 closed_at: "2026-09-05T04:18:34.122Z"
 completed_at: "2026-09-05T04:18:34.122Z"
 author: "harness:claude-code"
@@ -28,11 +28,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-j1r8gl,recurs_from,"2026-09-04T18:24:56.659Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-09-04T18:24:56.659Z","harness:claude-code","cli:create:dep",detected
   pm-q7qojt,verifies,"2026-09-04T18:24:56.659Z","harness:claude-code","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-04T18:26:08.669Z","harness:claude-code","Duplicate check: searched context summary population, slice versus workspace counts, orient intent truthfulness. Nearest closed lineage is the list --all completeness item (linked verifies) and the activity default-bound item (linked recurs_from). Measured live on the 2631-item tracker before filing: summary.open 53, 4, 4 against 291 open."
   "2026-09-05T03:08:08.605Z","harness:codex",Context population summaries are computed before focus packing; returned_focus explicitly reports bounded selection counts. The omission receipt names the matching-items summary scope. Red then green fixture proves six open items remain six under limit one and orient/handoff.
   "2026-09-05T03:29:29.521Z","harness:codex","Mixed-status subtree acceptance passed: five matching items include three active, one closed, one canceled and one blocked despite limit=1. Calibration now measures 3468 tokens versus 3411 for two-item session orientation; 9624 versus 9780 for 2243 items. Large-workspace delivered identities change from 110 to 105 and suppressed repeats from eight to seven because gate work is held out of execution detail. Global 20000-token budget, complete cursor traversal, structural negative controls, and exact source coverage thresholds remain enforced."
   "2026-09-05T04:18:33.577Z","harness:codex","Separated complete matching-population context counters from bounded returned_focus counters and declared summary scope in omission receipts. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+  "2026-09-05T05:03:38.879Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
 files[4]{path,scope,note}:
   scripts/release/context-intent-calibration.json,project,Measured population and execution role calibration
   src/sdk/output-projection.ts,project,Connected SDK and CLI execution contract delivery
@@ -59,4 +60,11 @@ docs[4]{path,scope,note}:
   docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
 close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
 escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-79gv6q
+  gate_id: context-population-receipts
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/context-population.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/context-population.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: ""

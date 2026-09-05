@@ -1163,10 +1163,12 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     }
   }, 10_000);
 
-  it("kills a surviving server after its intermediate runner exits", async () => {
+  it("kills a nested server after invalid discovery within the production readiness budget", async () => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
-    const readyTimeoutMs = 4_000;
-    const harnessTimeoutMs = 10_000;
+    const readinessMatch = evaluatorScript.match(/configuredReadyTimeout <= (\d+)/u);
+    expect(readinessMatch).not.toBeNull();
+    const readyTimeoutMs = Number(readinessMatch?.[1]);
+    const harnessTimeoutMs = 25_000;
     const shutdownGraceMatch = evaluatorScript.match(
       /const deadline = Date\.now\(\) \+ (\d+);/u,
     );
@@ -1208,7 +1210,6 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         "  env: process.env,",
         '  stdio: "ignore",',
         "});",
-        "await new Promise((resolve) => setTimeout(resolve, 200));",
       ].join("\n"),
       "utf8",
     );
@@ -1240,7 +1241,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     } finally {
       removeRealDirectory(tempRoot, { recursive: true, force: true });
     }
-  }, 15_000);
+  }, 30_000);
 });
 
 describe("scripts/release/verify-published-release: github release", () => {

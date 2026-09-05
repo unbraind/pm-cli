@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { _testOnly } from "../../../src/cli/main.js";
+import { PmCliError } from "../../../src/sdk/runtime-primitives.js";
 import { Command } from "commander";
 import { appendCommanderExtensionFailures, formatCommanderUsageJson } from "../../../src/cli/commander-usage.js";
 import { maybeRenderBootstrapJsonHelp } from "../../../src/cli/help-json-payload.js";
+import { setActiveExtensionServices } from "../../../src/sdk/runtime-primitives.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -28,9 +31,13 @@ describe("unknown command help routing", () => {
         stderr += String(chunk);
         return true;
       });
+      setActiveExtensionServices({ overrides: [{
+        name: "custom-error", layer: "project", service: "error_format",
+        run: () => "custom error text",
+      }] });
       try {
         expect(await maybeRenderBootstrapJsonHelp(root, ["missing", "--help", "--json", "--token-accounting"], new Map())).toBe(true);
-      } finally { capture.mockRestore(); }
+      } finally { capture.mockRestore(); setActiveExtensionServices(null); }
       const { token_accounting: receipt, ...payload } = JSON.parse(stderr);
       expect(payload.code).toBe("unknown_command");
       expect(receipt.total_bytes + receipt.accounting_receipt_bytes).toBe(Buffer.byteLength(stderr));
@@ -38,6 +45,37 @@ describe("unknown command help routing", () => {
       process.argv = previousArgv;
       process.exitCode = previousExitCode;
     }
+  });
+
+  it("preserves machine refusals through active error-format customization", async () => {
+    await withTempPmPath(async (context) => {
+      const previousArgv = process.argv;
+      const previousExitCode = process.exitCode;
+      const errorContext = {
+        error: new Error("unknown option '--unsupported'"),
+        invocationArgv: ["search", "--unsupported", "--json", "--token-accounting"],
+        bootstrapGlobal: { path: context.pmPath, json: true, tokenAccounting: true },
+        bootstrapPmRoot: context.pmPath, jsonErrors: true, attemptedCommand: "search",
+        emitTelemetryCommandError: async () => ({ errorCategory: "usage" as const, commandResolution: "invalid_option" as const }),
+      };
+      let stderr = "";
+      const capture = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => { stderr += String(chunk); return true; });
+      setActiveExtensionServices({ overrides: [{ name: "custom-error", layer: "project", service: "error_format", run: () => "custom error text" }] });
+      try {
+        process.argv = [process.execPath, "pm", ...errorContext.invocationArgv];
+        for (const kind of ["commander", "unknown-help", "known"]) {
+          stderr = "";
+          if (kind === "commander") await _testOnly.handleRunPmCliCommanderUsageError(errorContext, "commander.unknownOption");
+          else if (kind === "unknown-help") await _testOnly.handleUnknownHelpCommandError(errorContext, "commander.helpDisplayed");
+          else await _testOnly.handleRunPmCliKnownError({ ...errorContext, error: new PmCliError("Invalid input", EXIT_CODE.USAGE) }, EXIT_CODE.USAGE);
+          const { token_accounting: receipt } = JSON.parse(stderr);
+          expect(receipt.total_bytes + receipt.accounting_receipt_bytes).toBe(Buffer.byteLength(stderr));
+        }
+      } finally {
+        capture.mockRestore(); setActiveExtensionServices(null);
+        process.argv = previousArgv; process.exitCode = previousExitCode;
+      }
+    });
   });
 
   it("returns usage failures for arbitrary and plausible unknown help paths", async () => {

@@ -19453,6 +19453,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "writeStderr",
+          "signature": "(text: string) => boolean | calls: (text: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "writeStdout",
           "signature": "(text: string) => boolean | calls: (text: string) => boolean"
         },

@@ -65,7 +65,7 @@ than agent execution detail. Population summaries retain all matching work.
 ## Stop Work Explicitly
 
 `release` relinquishes ownership and preserves status. When an in-progress item
-is released, its result includes `released_unclaimed_in_progress` and a concrete
+is released (using the configured workflow status), its result includes `released_unclaimed_in_progress` and a concrete
 `pm pause-task <id>` suggestion. Use `pause-task` when the intended operation is
 to stop work and return it to the configured open state. Consumers should not
 interpret an ownership release as evidence that work has stopped.
@@ -84,7 +84,11 @@ projection and recalculated if extension failures enrich the refusal. The
 receipt measures the emitted diagnostic, including its own receipt overhead.
 Recovery metadata retains the actual invocation, including the accounting flag.
 The executable transcript gate predicts that transport change independently and
-rejects any other payload drift.
+rejects any other payload drift. It also verifies that the accounting-off
+attempted command agrees with its normalized arguments before projection.
+Serialized JSON refusals use the SDK `writeStderr` transport primitive so an
+`error_format` text override cannot replace a measured machine payload.
+Human-readable error formatting remains customizable through `error_format`.
 
 The flag-invocation gate compares registered executable options against SDK
 contracts without filtering out undeclared observations. An option missing from

@@ -6,18 +6,18 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:concurrency",dogfood
 created_at: "2026-07-06T22:02:04.911Z"
-updated_at: "2026-09-05T04:18:41.292Z"
-closed_at: "2026-09-05T04:18:40.766Z"
-completed_at: "2026-09-05T04:18:40.766Z"
+updated_at: "2026-09-05T05:03:40.719Z"
+closed_at: "2026-09-05T04:56:27.565Z"
+completed_at: "2026-09-05T04:56:27.565Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "pm release gains an ergonomic path to also reset status (flag such as --reopen/--status open, or at minimum a one-line hint that the item remains in_progress and unclaimed); pause-task alias behavior is referenced as the existing combined spelling; MCP pm_release mirrors the option; docs + linked tests; default behavior unchanged"
 parent: pm-dj98
 risk: low
 confidence: high
-resolution: Added stable released_unclaimed_in_progress warning and concrete pause-task guidance to the SDK ownership-release result shared by CLI and MCP.
-expected_result: Release preserves status and reports the remaining in-progress state; pause-task performs the explicit combined handoff.
-actual_result: "Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+resolution: "SDK release preserves status and emits released_unclaimed_in_progress with pause-task guidance when the normalized item status equals the configured in-progress workflow role, including custom review statuses."
+expected_result: "Shared SDK and CLI contracts preserve configured workflow semantics, trustworthy recovery evidence, bounded output and deterministic verification."
+actual_result: "PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
 dependencies[6]:
   - id: pm-w8q4
     kind: related
@@ -40,9 +40,12 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-05T03:08:53.184Z","harness:codex",Release preserves its ownership-only mutation contract. Releasing in-progress work emits a stable warning and concrete pause-task guidance so agents can explicitly stop WIP; existing pause-task supplies the atomic lifecycle transition. Real CLI red/green acceptance test records status preservation and actionable hint.
   "2026-09-05T04:18:40.186Z","harness:codex","Added stable released_unclaimed_in_progress warning and concrete pause-task guidance to the SDK ownership-release result shared by CLI and MCP. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+  "2026-09-05T04:47:14.785Z","harness:codex",PR 1195 custom workflow regression reproduced a missing release warning for in_progress_status=review. The SDK compares against the resolved configured workflow role; status remains unchanged. Regression passes.
+  "2026-09-05T04:56:26.993Z","harness:codex","PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
+  "2026-09-05T05:03:40.719Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
 files[5]{path,scope,note}:
   src/sdk/lifecycle/claim.ts,project,Connected SDK and CLI execution contract delivery
   tests/integration/release-readiness-runtime.spec.ts,project,Execution contract implementation and regression evidence
@@ -67,5 +70,13 @@ docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
   docs/README.md,project,Public execution and recovery semantics
   docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
-close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
+close_reason: Completed the connected implementation and review regressions with exact local verification.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ugld
+  gate_id: custom-workflow-release-handoff
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/release-handoff.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/release-handoff.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: "Observed in review #15 on pm-rjqr: codex released its claim after PR #466 merged, the item silently stayed in_progress with claimed_by=none, and it surfaced as phantom WIP until a manual review reset it. pm release only clears the claim; the status transition is a separate manual step that agents forget at end-of-session. Complements pm-w8q4 (after-the-fact detection) by preventing the drift at the moment it happens. pause-task already bundles release+open, but per ADR pm-pbyu it is sugar slated to fold into claim/release flags (pm-eq4x) — this issue is the release-side flag/hint itself."
