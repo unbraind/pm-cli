@@ -281,8 +281,12 @@ The automatic release commit is the sole non-identical-tree derivation. The
 gate requires one parent, the canonical release subject and body, an immutable
 `v<version>` tag resolving to the candidate, the complete expected manifest
 inventory, exact old-version to new-version substitutions in every manifest,
-and an exact `Unreleased` changelog-heading replacement. It then resolves the
-parent through the same exact or reviewed identical-tree analyzer contract.
+and an exact `Unreleased` changelog-heading replacement. The package-generated
+replacement may be `## <version>` or the historical
+`## <version> - <YYYY-MM-DD>` form, with the date matching the calendar version.
+The complete heading must match and every other changelog byte must remain
+unchanged. The gate then resolves the parent through the same exact or reviewed
+identical-tree analyzer contract.
 Added, deleted, renamed, missing, or otherwise modified paths are refused, as
 are malformed manifests, changelog edits, untagged commits, and parents without
 successful analyzer evidence. The receipt reports

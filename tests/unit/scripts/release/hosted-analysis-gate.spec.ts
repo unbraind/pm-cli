@@ -651,8 +651,13 @@ describe("scripts/release/hosted-analysis-gate", () => {
     expect(spawnSync).toHaveBeenCalledTimes(3);
   });
 
-  it("reuses analyzed-parent evidence for the exact tagged release transformation", async () => {
-    mockGeneratedReleaseCandidate();
+  it.each([
+    `## ${RELEASE_VERSION}`,
+    `## ${RELEASE_VERSION} - 2026-08-23`,
+  ])("reuses analyzed-parent evidence for the exact %s release heading", async (heading) => {
+    mockGeneratedReleaseCandidate({
+      candidateChangelog: `# Changelog\n\n${heading}\n\nEntry.\n`,
+    });
     const payload = await runJson(
       [],
       "hostedAnalysisGeneratedReleaseTransform",
@@ -811,6 +816,31 @@ describe("scripts/release/hosted-analysis-gate", () => {
       label: "non-header changelog mutation",
       controls: {
         candidateChangelog: `# Changelog\n\n## ${RELEASE_VERSION} - 2026-08-23\n\nChanged entry.\n`,
+      },
+    },
+    {
+      label: "undated non-header changelog mutation",
+      controls: {
+        candidateChangelog: `# Changelog\n\n## ${RELEASE_VERSION}\n\nChanged entry.\n`,
+      },
+    },
+    {
+      label: "wrong release heading version",
+      controls: {
+        candidateChangelog: "# Changelog\n\n## 2026.8.24\n\nEntry.\n",
+      },
+    },
+    {
+      label: "wrong release heading date",
+      controls: {
+        candidateChangelog: `# Changelog\n\n## ${RELEASE_VERSION} - 2026-08-24\n\nEntry.\n`,
+      },
+    },
+    {
+      label: "partial unreleased heading",
+      controls: {
+        parentChangelog: "# Changelog\n\n## Unreleased notes\n\nEntry.\n",
+        candidateChangelog: `# Changelog\n\n## ${RELEASE_VERSION} - 2026-08-23 notes\n\nEntry.\n`,
       },
     },
     {
