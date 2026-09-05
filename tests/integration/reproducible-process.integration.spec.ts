@@ -17,6 +17,7 @@ const PROCESS_TIMEOUT_MS = 30_000;
 
 const temporaryRoots: string[] = [];
 
+/** Pin process identity and clock while disabling external telemetry and model discovery. */
 function processEnvironment(
   seed = "process-conformance-seed",
 ): NodeJS.ProcessEnv {

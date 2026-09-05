@@ -106,9 +106,17 @@ derived and disposable; item history remains independent. Ledger access refuses
 existing symbolic links, shared hard links, non-regular files, and a redirected
 runtime directory. Appends use a validated descriptor with no-follow opening
 where supported; replacement files are created exclusively with private
-permissions. These checks prevent feedback from being redirected into another
-file in an untrusted checkout. They do not establish a sandbox against an actor
-that already controls the process or can continuously replace ancestor paths.
+permissions. Compaction closes both data handles before replacing the ledger,
+including on Windows.
+
+Feedback persistence requires trusted, stable workspace directory entries and
+ancestors. It is unsafe when an untrusted actor can concurrently replace those
+entries: portable Node filesystem APIs do not pin ancestor directories through
+the whole operation. The link checks reject existing redirections; the lock
+coordinates cooperating SDK writers and is not a security boundary. Before
+using an adversary-writable live workspace, set `PM_CONTEXT_USAGE_DISABLED=1`
+to disable feedback reads and writes, or work in an isolated copy owned by the
+caller. Public feedback API callers can also pass `enabled: false`.
 
 ## Reproducible measurements
 

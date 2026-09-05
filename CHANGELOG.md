@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Reading one item by its primary key scans the whole workspace: pm get is O(corpus) and the projection flags bound the output but not the work ([pm-ydshl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ydshl9.toon))
 - Every pm next and pm context read writes one usage-ledger row per open item under a single global lock, and the compaction trigger is a byte threshold that a count-based retention can never satisfy ([pm-bab3gb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bab3gb.toon))
+- Reading one item by its primary key scans the whole workspace: pm get is O(corpus) and the projection flags bound the output but not the work ([pm-ydshl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ydshl9.toon))
 - Telemetry worker permanently retries JSONB-incompatible Unicode events ([pm-xlb6aw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xlb6aw.toon))
 - Telemetry worker: no Postgres reconnect — ingestion stalls with events stuck in RabbitMQ after postgres restart ([pm-rj3w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rj3w.toon))
 - Metadata index rebuilds and mutations repeatedly scan an unindexed FTS identity column ([pm-gtw5zh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gtw5zh.toon))

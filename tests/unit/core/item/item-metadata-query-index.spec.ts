@@ -47,6 +47,7 @@ describe("item metadata SQLite query index", () => {
     roots.push(root);
     const statements: string[] = [];
     class RecordingDatabase extends DatabaseSync {
+      /** Capture the real executed SQL so query-plan assertions inspect production predicates. */
       override prepare(sql: string) {
         statements.push(sql);
         return super.prepare(sql);

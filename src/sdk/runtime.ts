@@ -3668,6 +3668,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     );
   },
   search: runMcpSearchAction,
+  /** Normalize MCP duplicate controls before delegating to the shared SDK action. */
   duplicates: (ctx) => {
     const status =
       typeof ctx.options.status === "string"

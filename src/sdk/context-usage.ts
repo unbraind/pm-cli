@@ -4,6 +4,9 @@
  * Privacy-minimal, derived context-usage feedback primitives. The JSONL ledger
  * contains only item ids, timestamps, authors, ranks, profiles, and command
  * intents; it never enters item history and is safe to delete or rebuild.
+ * Persistence requires trusted, stable workspace directory entries and
+ * ancestors. For a workspace writable by an untrusted concurrent actor, set
+ * PM_CONTEXT_USAGE_DISABLED=1 or use an isolated copy owned by the caller.
  */
 import { randomUUID } from "node:crypto";
 import {
@@ -78,7 +81,11 @@ export type ContextUsageEvent =
 
 /** Runtime controls for the bounded derived ledger. */
 export interface ContextUsageLedgerOptions {
-  /** Tracker root containing the runtime directory. */
+  /**
+   * Tracker root containing the runtime directory. Its directory entries and
+   * ancestors must remain controlled by trusted cooperating processes during
+   * ledger operations; hostile concurrent path replacement is unsupported.
+   */
   pmRoot: string;
   /** Disable all reads and writes with zero filesystem work. */
   enabled?: boolean;

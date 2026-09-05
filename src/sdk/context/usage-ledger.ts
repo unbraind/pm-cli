@@ -7,7 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { lstat, mkdir, open, rename, rm } from "node:fs/promises";
+import { lstat, mkdir, open, rename, rm, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import { acquireLock } from "../../core/lock/lock.js";
@@ -134,7 +134,11 @@ function retainedText(events: readonly ContextUsageEvent[], byteLimit: number, m
   return lines.reverse().join("");
 }
 
-/** Append once, or compact atomically to a half-full suffix at the high-water mark. */
+/**
+ * Append once, or compact atomically to a half-full suffix at the high-water mark.
+ * Requires trusted, stable workspace directory entries and ancestors; the lock
+ * coordinates cooperating writers and cannot constrain hostile path replacement.
+ */
 export async function appendEvents(
   options: ContextUsageLedgerOptions,
   events: readonly ContextUsageEvent[],
@@ -154,7 +158,7 @@ export async function appendEvents(
   const lockWaitMs = performance.now() - lockStarted;
   try {
     await mkdir(path.dirname(target), { recursive: true });
-    const handle = await openLedger(target, constants.O_WRONLY | constants.O_CREAT | constants.O_APPEND);
+    let handle: FileHandle | undefined = await openLedger(target, constants.O_WRONLY | constants.O_CREAT | constants.O_APPEND);
     try {
       const size = (await handle.stat()).size;
       const previous = deliveryServeId === undefined ? undefined : await readEvents(options);
@@ -175,13 +179,16 @@ export async function appendEvents(
         } finally {
           await replacement.close();
         }
+        // Windows cannot replace the destination while our append handle is open.
+        await handle.close();
+        handle = undefined;
         await rename(temporary, target);
         return { written_bytes: Buffer.byteLength(retained), ledger_bytes: Buffer.byteLength(retained), compacted: true, lock_wait_ms: lockWaitMs };
       } finally {
         await rm(temporary, { force: true });
       }
     } finally {
-      await handle.close();
+      await handle?.close();
     }
   } finally {
     await releaseLock();
