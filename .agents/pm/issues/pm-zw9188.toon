@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:governance",diagnostics,linked-files,scalability,staleness
 created_at: "2026-07-29T04:34:08.230Z"
-updated_at: "2026-09-05T17:53:10.878Z"
-closed_at: "2026-09-05T17:53:10.383Z"
-completed_at: "2026-09-05T17:53:10.383Z"
+updated_at: "2026-09-05T18:34:30.393Z"
+closed_at: "2026-09-05T18:34:29.812Z"
+completed_at: "2026-09-05T18:34:29.812Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The files check partitions stale linked paths by holder lifecycle exactly as dependency_references does, emitting an active count, a legacy closed count, and a legacy terminal count, and it reports status ok when the active partition is empty; The worklist denominator names what it counts: a path count and a link count are separate scalars, the emitted array declares which of the two it is truncating, and no output presents a link-shaped numerator against a path-shaped denominator; One row carries both halves of a repair: for every reported path the holder ids and the inferred destination candidates travel together, so no caller has to join two independently truncated arrays keyed by path; The default summary mode and the verbose mode differ only in length, never in schema, proven by a test that asserts the same row type in both; A stored link that cannot be a workspace-relative path is classified as malformed and excluded from basename move inference, proven by a negative-control fixture holding a comma-joined multi-path literal and a path-colon-note literal, neither of which may produce a moved classification with a destination; The active partition of the repository tracker stays at zero after the fix, and a newly created open item linking a nonexistent path moves it to one, proving the partition is live rather than hardcoded"
@@ -25,12 +25,15 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-7ob5,verifies,"2026-09-05T17:43:45.437Z","harness:codex","cli:update:dep",detected
   pm-92if,verifies,"2026-09-05T17:43:45.437Z","harness:codex","cli:update:dep",detected
   pm-szdc,verifies,"2026-09-05T17:43:45.437Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-29T04:34:08.230Z","harness:claude-code","Duplicate check before create: pm-j8z6 owns reconciling the linked-file DATA after relocations and its acceptance criteria are about a tracker-only migration, not about how the check reports; pm-6olc95 owns the opposite scoping error on graph audit (active-only coverage that under-reports); pm-2ler is CLOSED and shipped exactly this partition for dependency_references, which is the precedent this item asks the files check to adopt; pm-chyh is CLOSED and covered path anchoring, not staleness reporting. Searched keyword and semantic for validate check gating, active holders, terminal informational, missing linked paths; grepped the corpus for missing_linked_paths holders. No existing item owns the reporting contract of the files check."
   "2026-09-05T16:12:56.029Z","harness:codex","negative controls reproduced two baseline failures: malformed multi-path references received moved/deleted inference, and terminal-only stale links kept the files check at warn. Implementing shared public SDK repair rows with lifecycle counters and bounded owners; no historical link mutation required."
   "2026-09-05T17:10:30.660Z","harness:codex","Live repaired corpus proof: 2642 items; active missing paths=0; active missing holder/field links=0; orphaned existing paths=0; historical missing links=1461 across195 paths, all closed. Nine active relocations were proven by git rename ancestry a5be2cda3, migrated through pm files on pm-92if/pm-7ob5/pm-szdc, and claims released. Historical ambiguity remains visible and is never auto-pruned."
   "2026-09-05T17:22:52.005Z","harness:codex","Strict token-budget gate caught validate --counts increasing to1778 tokens against an unchanged1758 ceiling. Added a negative regression for sparse false *_truncated markers while preserving true omission markers, false ordinary settings, and zero counts. The repair targets the shared counts projection rather than relaxing the mandatory budget."
   "2026-09-05T17:53:09.834Z","harness:codex","Final local evidence: 8457 tests across 617 files pass at exact 100% lines/statements/functions/branches (60094/62503/12956/47351 covered). Full quality:static passes, including unchanged token ceilings, docstrings, graph composition, and record integrity. Typecheck, version policy, ShellCheck, credential scan, zero-vulnerability dependency audit, and enforced Trivy scan pass. Final npm/npx and Bun/bunx packed smoke covers all 13 packages; separate temporary installed SDK/CLI acceptance passes. Required Sentry/telemetry gate passes with zero blocking Sentry groups and no failures lacking error codes. PR review and hosted checks are the remaining delivery stage."
+  "2026-09-05T18:16:32.998Z","harness:codex","Review documentation follow-through: add explicit purpose and invariant docstrings to private functions touched by this delivery. Mandatory module/public/member documentation gates already pass; the reviewer uses a broader touched-function denominator. No runtime behavior or quality threshold changes."
+  "2026-09-05T18:18:55.626Z","harness:codex","PR #1204 reviewed false positive: LinkedFileRepairRow inherits classification from MissingLinkedPathRow and preserves it through ...row; the separate classifier lookup contributes optional candidate evidence. Existing regressions prove moved and malformed rows, including absent candidate classifications. The live maintenance evidence intentionally annotates each repaired holder and is also aggregated here with typed verification relationships."
+  "2026-09-05T18:34:29.206Z","harness:codex","PR #1204 round-one dispositions recorded on every original review/comment surface with up/down reactions. Three documentation/test findings fixed; two unsupported findings answered with source and tracker evidence. Regex heading stripping removed after CodeQL alert 38; hosted revalidation remains pending on the next head. Final local proof: 8458 tests in 617 files, exact coverage 60107/60107 lines, 62520/62520 statements, 12957/12957 functions, 47365/47365 branches. All 68 touched named non-test functions have declaration JSDoc. Full static/type/documentation gates, all five PM-linked runs, final npm/npx+Bun/bunx 13-package smoke, separate temporary packed acceptance, dependency audit, and immutable tracked-tree Trivy scan pass. Sourcery substantive review is unavailable under its current quota; Greptile has not responded. These are availability limitations, not approval."
 notes[1]{created_at,author,text}:
   "2026-09-05T17:24:21.049Z","harness:codex","Architecture: pure linked-file lifecycle accounting lives in sdk/governance; validate owns filesystem collection and passes the resolved workspace registry. Paths and holder/field links are counted before projection. Compact and full outputs share row types, with explicit independent path/owner truncation."
 files[8]{path,scope,note}:
@@ -44,7 +47,7 @@ files[8]{path,scope,note}:
   tests/unit/sdk/governance/linked-file-report.spec.ts,project,Lifecycle and bounded worklist regression
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/linked-file-report.spec.ts tests/unit/commands/validate-command.spec.ts,project,240,"harness:codex","2026-09-05T16:31:51.253Z",local_mutation,feat/context-integrity-and-discoverable-governance
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mton3zlx-0zxksb
     kind: test
     status: passed
@@ -67,10 +70,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/governance/linked-file-report.spec.ts tests/unit/commands/validate-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtoq0iy4-9us3b4
+    kind: test
+    status: passed
+    started_at: "2026-09-05T18:32:46.683Z"
+    finished_at: "2026-09-05T18:33:00.652Z"
+    recorded_at: "2026-09-05T18:33:00.652Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/linked-file-report.spec.ts tests/unit/commands/validate-command.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Document lifecycle-aware structured linked-file repair rows
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Joined repair row schema and lifecycle count units
-close_reason: "Implemented and locally verified with linked tests, exact coverage, mandatory quality gates, and packed acceptance."
+close_reason: Completed implementation and review corrections with renewed local verification.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

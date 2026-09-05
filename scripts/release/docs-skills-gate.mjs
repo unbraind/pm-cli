@@ -1,3 +1,4 @@
+/** Enforce documentation navigation and skill/runtime contracts in an isolated acceptance environment. */
 import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -53,6 +54,8 @@ const SKILLS_ROOT = ".agents/skills";
 const REQUIRED_HARNESS_DOC = ".agents/skills/HARNESS_COMPATIBILITY.md";
 const DOC_LINE_LIMITS = new Map([["docs/EXTENSIONS.md", 450]]);
 
+/** Print the supported gate modes and the contract families they validate. */
+
 export function usage() {
   console.log(`Usage:
   node scripts/release/docs-skills-gate.mjs [--json] [--links-only]
@@ -68,6 +71,8 @@ Validates docs and .agents/skills freshness gates:
 `);
 }
 
+/** Decode a runtime artifact and report its source label when JSON is invalid. */
+
 export function parseJson(text, context) {
   try {
     return JSON.parse(text);
@@ -78,6 +83,8 @@ export function parseJson(text, context) {
   }
 }
 
+/** Recognize ENOENT without treating permission or transport failures as absence. */
+
 export function isMissingError(error) {
   return Boolean(
     error &&
@@ -86,6 +93,8 @@ export function isMissingError(error) {
     error.code === "ENOENT",
   );
 }
+
+/** Resolve a repository path and require a regular file; propagate non-absence errors. */
 
 export async function fileExists(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
@@ -100,6 +109,8 @@ export async function fileExists(relativePath) {
   }
 }
 
+/** Accept an existing file or directory while preserving unexpected filesystem failures. */
+
 export async function pathExists(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   try {
@@ -113,6 +124,8 @@ export async function pathExists(relativePath) {
   }
 }
 
+/** Append every missing required document so one gate run reports the full set. */
+
 export async function requireFiles(filePaths, failures) {
   for (const filePath of filePaths) {
     if (!(await fileExists(filePath))) {
@@ -121,10 +134,14 @@ export async function requireFiles(filePaths, failures) {
   }
 }
 
+/** Read repository-relative documentation using a consistent UTF-8 encoding. */
+
 export async function readUtf8(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   return readFile(absolutePath, "utf8");
 }
+
+/** Split only a complete leading YAML fence; leave malformed input intact for diagnostics. */
 
 export function extractFrontmatter(rawContent) {
   if (!rawContent.startsWith("---\n")) {
@@ -138,6 +155,8 @@ export function extractFrontmatter(rawContent) {
   const body = rawContent.slice(closingIndex + 5);
   return { frontmatter, body };
 }
+
+/** Read the flat skill metadata subset, ignoring comments and removing matching quotes. */
 
 export function parseSimpleYamlMap(frontmatter) {
   const values = new Map();
@@ -163,6 +182,8 @@ export function parseSimpleYamlMap(frontmatter) {
   }
   return values;
 }
+
+/** Check skill identity, explicit routing guidance, size, and optional-guide prerequisites. */
 
 export function validateSkillFrontmatter(skillName, rawContent, failures) {
   const { frontmatter, body } = extractFrontmatter(rawContent);
@@ -209,6 +230,8 @@ export function validateSkillFrontmatter(skillName, rawContent, failures) {
   }
 }
 
+/** Collect local skill-reference targets while excluding remote and fragment-only links. */
+
 export function extractRelativeMarkdownLinks(content) {
   const links = [];
   const linkPattern = /\[[^\]]+\]\(([^)]+)\)/g;
@@ -230,9 +253,13 @@ export function extractRelativeMarkdownLinks(content) {
   return links;
 }
 
+/** Walk real directories and return portable Markdown paths without following symlinks. */
+
 export async function collectMarkdownFiles(relativeDirectory) {
   const absoluteDirectory = path.resolve(REPO_ROOT, relativeDirectory);
   const files = [];
+
+  /** Descend directory entries and retain only Markdown files with repository-relative paths. */
 
   async function walk(currentAbsolute, currentRelative) {
     const entries = await readdir(currentAbsolute, { withFileTypes: true });
@@ -250,6 +277,8 @@ export async function collectMarkdownFiles(relativeDirectory) {
   await walk(absoluteDirectory, relativeDirectory.replaceAll("\\", "/"));
   return files;
 }
+
+/** Report missing local targets across every Markdown page belonging to one skill. */
 
 export async function validateSkillLinks(skillName, failures) {
   const skillRoot = `${SKILLS_ROOT}/${skillName}`;
@@ -271,6 +300,8 @@ export async function validateSkillLinks(skillName, failures) {
   }
 }
 
+/** Resolve skill links against their source after removing URL wrappers, queries, and fragments. */
+
 export function resolveMarkdownLink(markdownFile, linkTarget) {
   const cleaned = linkTarget.trim().replace(/^<|>$/g, "");
   if (!cleaned) {
@@ -287,6 +318,8 @@ export function resolveMarkdownLink(markdownFile, linkTarget) {
     path.posix.join(path.posix.dirname(markdownFile), pathWithoutQueryOrAnchor),
   );
 }
+
+/** Combine filesystem existence, rendered anchors, and index reachability without hiding failures. */
 
 export async function validateDocsLinks(failures) {
   const docsMarkdownFiles = await collectMarkdownFiles("docs");
@@ -324,6 +357,8 @@ export async function validateDocsLinks(failures) {
     ),
   );
 }
+
+/** Match the longest declared command prefix before flags and placeholders; distinguish unknown examples from noncommands. */
 
 export function resolveExampleCommandPath(example, availableCommands) {
   const normalized = example.trim();
@@ -364,6 +399,8 @@ export function resolveExampleCommandPath(example, availableCommands) {
   return "";
 }
 
+/** Validate both direct examples and workflow examples against the installed runtime surface. */
+
 export function validateGuideCommands(
   topicResult,
   availableCommands,
@@ -382,6 +419,8 @@ export function validateGuideCommands(
     }
   }
 }
+
+/** Initialize the isolated tracker and install packages so guide examples see their declared commands. */
 
 function initializeGuideRuntime(runtimeEnv) {
   runCommand(
@@ -411,6 +450,8 @@ function initializeGuideRuntime(runtimeEnv) {
   );
 }
 
+/** Read the complete runtime-only availability contract from the isolated guide environment. */
+
 function loadAvailableGuideCommands(runtimeEnv) {
   const contractsResult = runCommand(
     process.execPath,
@@ -438,6 +479,8 @@ function loadAvailableGuideCommands(runtimeEnv) {
   );
 }
 
+/** Require an index-shaped guide response and retain a diagnostic when its envelope is invalid. */
+
 function loadGuideIndex(runtimeEnv, failures) {
   const guideIndexResult = runCommand(
     process.execPath,
@@ -459,6 +502,8 @@ function loadGuideIndex(runtimeEnv, failures) {
   }
   return guideIndex;
 }
+
+/** Check one topic for runtime warnings, required document presence, and executable command examples. */
 
 function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
   const topicId = typeof topic?.id === "string" ? topic.id : null;
@@ -502,6 +547,8 @@ function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
   validateGuideCommands(topicResult, availableCommands, failures);
 }
 
+/** Exercise every guide topic in temporary project/global trackers and always remove the sandbox. */
+
 export async function runGuideChecks(failures) {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-docs-skills-gate-"));
   const runtimeEnv = {
@@ -531,6 +578,8 @@ export async function runGuideChecks(failures) {
   }
 }
 
+/** Require entrypoint docs to name optional guide routing and its package-install prerequisite. */
+
 export async function validateRequiredGuideMentions(failures) {
   for (const filePath of REQUIRED_PM_GUIDE_DOCS) {
     const content = await readUtf8(filePath);
@@ -546,6 +595,8 @@ export async function validateRequiredGuideMentions(failures) {
     }
   }
 }
+
+/** Enforce document line ceilings, a single title, and unique section headings. */
 
 export async function validatePublicDocBudgets(failures) {
   for (const [filePath, maxLines] of DOC_LINE_LIMITS) {
@@ -611,6 +662,8 @@ export async function validateSkillReferenceReachability(
     }
   }
 }
+
+/** Validate each required skill and its reference reachability alongside harness guidance. */
 
 export async function runSkillChecks(failures) {
   if (!(await fileExists(REQUIRED_HARNESS_DOC))) {
@@ -962,6 +1015,8 @@ export async function validateFencedFlagSpellings(failures, options = {}) {
     );
   }
 }
+
+/** Run the requested gate mode, emit all failures together, and return a failing process status when needed. */
 
 export async function main() {
   const { flags } = parseFlags(process.argv.slice(2));

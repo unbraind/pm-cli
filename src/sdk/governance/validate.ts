@@ -436,6 +436,7 @@ export interface ValidateCountsResult extends Omit<ValidateResult, "fixes"> {
   fixes?: ValidateCountsFixesSummary;
 }
 
+/** Recursively omit diagnostic arrays and false truncation markers while preserving zero counts and ordinary false values. */
 function projectValidateCountsRecord(
   record: Readonly<Record<string, unknown>>,
 ): Record<string, unknown> {
@@ -2653,6 +2654,7 @@ function buildLifecycleCheck(
 /* c8 ignore stop */
 
 /* c8 ignore start -- files-check candidate filtering/classification permutations are covered by file-audit integration suites */
+/** Join live filesystem evidence with holder lifecycle, retaining historical rows while warning only on active missing links. */
 async function buildFilesCheck(
   items: ItemWithBody[],
   workspaceRoot: string,
@@ -3365,6 +3367,7 @@ function recordValidateCheck(
   state.warnings.push(...built.warnings);
 }
 
+/** Run only selected checks against one resolved workspace context and collect their typed remediation evidence. */
 async function executeRequestedValidateChecks(params: {
   requestedChecks: Set<ValidateCheckName>;
   options: ValidateCommandOptions;

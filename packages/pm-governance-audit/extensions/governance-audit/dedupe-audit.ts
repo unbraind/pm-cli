@@ -179,8 +179,8 @@ export interface DedupeAuditResult {
   warnings?: string[];
 }
 
+/** Normalize the optional strategy name against the supported audit modes. */
 const parseMode = (raw: string | undefined): DedupeAuditMode => {
-  /** Normalize the optional strategy name against the supported audit modes. */
   const normalized = (raw ?? "title_exact").trim().toLowerCase();
   if (!DEDUPE_AUDIT_MODES.includes(normalized as DedupeAuditMode)) {
     throw new PmCliError(
@@ -206,8 +206,8 @@ const parseStatus = (
   );
 };
 
+/** Parse an optional fuzzy-match threshold on the inclusive zero-to-one scale. */
 const parseThreshold = (raw: string | undefined): number | undefined => {
-  /** Parse an optional fuzzy-match threshold on the inclusive zero-to-one scale. */
   if (raw === undefined) {
     return undefined;
   }
@@ -221,11 +221,11 @@ const parseThreshold = (raw: string | undefined): number | undefined => {
   return parsed;
 };
 
+/** Rank canonical candidates by lifecycle, priority, recency, and identity. */
 const compareCandidates = (
   left: DedupeAuditPreparedCandidate,
   right: DedupeAuditPreparedCandidate,
 ): number => {
-  /** Rank canonical candidates by lifecycle, priority, recency, and identity. */
   const leftTerminal =
     left.terminal ?? isTerminalStatus(left.status, defaultStatusRegistry);
   const rightTerminal =
@@ -244,10 +244,10 @@ const compareCandidates = (
   return left.id.localeCompare(right.id);
 };
 
+/** Project one prepared comparison record into the public candidate shape. */
 const toCandidate = (
   candidate: DedupeAuditPreparedCandidate,
 ): DedupeAuditCandidate => {
-  /** Project one prepared comparison record into the public candidate shape. */
   return {
     id: candidate.id,
     title: candidate.title,
@@ -260,12 +260,12 @@ const toCandidate = (
   };
 };
 
+/** Build an executable close recommendation for one duplicate candidate. */
 const toMergeSuggestion = (
   duplicate: DedupeAuditPreparedCandidate,
   canonical: DedupeAuditPreparedCandidate,
   mode: DedupeAuditMode,
 ): DedupeMergeSuggestion => {
-  /** Build an executable close recommendation for one duplicate candidate. */
   const closeReason = `Duplicate of ${canonical.id}`;
   const message = `Close ${duplicate.id} as duplicate of ${canonical.id} from pm dedupe-audit (${mode}).`;
   const escapedReason = closeReason.replaceAll('"', '\\"');
@@ -279,14 +279,15 @@ const toMergeSuggestion = (
   };
 };
 
+/** Score exact normalized titles first, then fall back to token overlap. */
 const similarityScore = (
   left: DedupeAuditPreparedCandidate,
   right: DedupeAuditPreparedCandidate,
 ): number => {
-  /** Score exact normalized titles first, then fall back to token overlap. */
   return scoreItemSimilarity(left.title, right.title).score;
 };
 
+/** Visit each unordered candidate pair exactly once. */
 const forEachCandidatePair = (
   items: DedupeAuditPreparedCandidate[],
   visit: (
@@ -296,7 +297,6 @@ const forEachCandidatePair = (
     rightIndex: number,
   ) => void,
 ): void => {
-  /** Visit each unordered candidate pair exactly once. */
   for (let leftIndex = 0; leftIndex < items.length; leftIndex += 1) {
     for (
       let rightIndex = leftIndex + 1;
@@ -308,15 +308,16 @@ const forEachCandidatePair = (
   }
 };
 
+/** Select one numeric extreme while preserving a deterministic empty fallback. */
 const extremeOrDefault = (
   values: number[],
   select: (...candidates: number[]) => number,
   fallback: number,
 ): number => {
-  /** Select one numeric extreme while preserving a deterministic empty fallback. */
   return values.length === 0 ? fallback : select(...values);
 };
 
+/** Assemble one deterministic cluster and its optional similarity envelope. */
 const clusterFromMembers = (
   mode: DedupeAuditMode,
   key: string,
@@ -324,7 +325,6 @@ const clusterFromMembers = (
   matchReason: string,
   threshold?: number,
 ): DedupeAuditCluster => {
-  /** Assemble one deterministic cluster and its optional similarity envelope. */
   const sortedMembers = [...members].sort(compareCandidates);
   const canonical = sortedMembers[0];
   const duplicates = sortedMembers.slice(1);
@@ -355,11 +355,11 @@ const clusterFromMembers = (
   return cluster;
 };
 
+/** Group candidates by a caller-defined non-empty comparison key. */
 const collectGroupedCandidates = (
   items: DedupeAuditPreparedCandidate[],
   keyFor: (item: DedupeAuditPreparedCandidate) => string | undefined,
 ): Map<string, DedupeAuditPreparedCandidate[]> => {
-  /** Group candidates by a caller-defined non-empty comparison key. */
   const groups = new Map<string, DedupeAuditPreparedCandidate[]>();
   for (const item of items) {
     const key = keyFor(item);
@@ -371,12 +371,12 @@ const collectGroupedCandidates = (
   return groups;
 };
 
+/** Convert non-singleton candidate groups into deterministic clusters. */
 const clustersFromGroups = (
   groups: Map<string, DedupeAuditPreparedCandidate[]>,
   mode: DedupeAuditMode,
   matchReason: string,
 ): DedupeAuditCluster[] => {
-  /** Convert non-singleton candidate groups into deterministic clusters. */
   return [...groups.entries()]
     .filter(([, members]) => members.length > 1)
     .map(([key, members]) =>
@@ -384,10 +384,10 @@ const clustersFromGroups = (
     );
 };
 
+/** Group candidates that share the same normalized title. */
 const collectExactTitleClusters = (
   items: DedupeAuditPreparedCandidate[],
 ): DedupeAuditCluster[] => {
-  /** Group candidates that share the same normalized title. */
   const groups = collectGroupedCandidates(items, (item) =>
     item.normalized_title.length === 0 ? undefined : item.normalized_title,
   );
@@ -398,10 +398,10 @@ const collectExactTitleClusters = (
   );
 };
 
+/** Group normalized-title duplicates only when they share a parent. */
 const collectParentScopedClusters = (
   items: DedupeAuditPreparedCandidate[],
 ): DedupeAuditCluster[] => {
-  /** Group normalized-title duplicates only when they share a parent. */
   const groups = collectGroupedCandidates(items, (item) =>
     item.parent && item.normalized_title.length > 0
       ? `${item.parent}|${item.normalized_title}`
@@ -414,8 +414,8 @@ const collectParentScopedClusters = (
   );
 };
 
+/** Find and compress one disjoint-set root for fuzzy clustering. */
 const findRoot = (parents: number[], index: number): number => {
-  /** Find and compress one disjoint-set root for fuzzy clustering. */
   let current = index;
   while (parents[current] !== current) {
     parents[current] = parents[parents[current]];
@@ -424,8 +424,8 @@ const findRoot = (parents: number[], index: number): number => {
   return current;
 };
 
+/** Join two fuzzy-cluster roots under the lower deterministic index. */
 const unionRoots = (parents: number[], left: number, right: number): void => {
-  /** Join two fuzzy-cluster roots under the lower deterministic index. */
   const leftRoot = findRoot(parents, left);
   const rightRoot = findRoot(parents, right);
   if (leftRoot === rightRoot) {
@@ -434,11 +434,11 @@ const unionRoots = (parents: number[], left: number, right: number): void => {
   parents[Math.max(leftRoot, rightRoot)] = Math.min(leftRoot, rightRoot);
 };
 
+/** Build transitive fuzzy-title clusters at the requested similarity floor. */
 const collectFuzzyTitleClusters = (
   items: DedupeAuditPreparedCandidate[],
   threshold: number,
 ): DedupeAuditCluster[] => {
-  /** Build transitive fuzzy-title clusters at the requested similarity floor. */
   const parents = items.map((_item, index) => index);
   forEachCandidatePair(items, (left, right, leftIndex, rightIndex) => {
     if (similarityScore(left, right) >= threshold) {
@@ -470,11 +470,11 @@ const collectFuzzyTitleClusters = (
     });
 };
 
+/** Order larger clusters first and break ties by canonical identity. */
 const compareClusters = (
   left: DedupeAuditCluster,
   right: DedupeAuditCluster,
 ): number => {
-  /** Order larger clusters first and break ties by canonical identity. */
   const bySize = right.cluster_size - left.cluster_size;
   if (bySize !== 0) {
     return bySize;
@@ -482,12 +482,12 @@ const compareClusters = (
   return left.canonical.id.localeCompare(right.canonical.id);
 };
 
+/** Dispatch candidate collection to the selected comparison strategy. */
 const collectDedupeClusters = (
   mode: DedupeAuditMode,
   prepared: DedupeAuditPreparedCandidate[],
   fuzzyThreshold: number,
 ): DedupeAuditCluster[] => {
-  /** Dispatch candidate collection to the selected comparison strategy. */
   if (mode === "title_exact") {
     return collectExactTitleClusters(prepared);
   }
@@ -497,11 +497,11 @@ const collectDedupeClusters = (
   return collectFuzzyTitleClusters(prepared, fuzzyThreshold);
 };
 
+/** Precompute normalized fields used by every dedupe comparison strategy. */
 const toPreparedDedupeCandidate = (
   item: ListedItem,
   registry: RuntimeStatusRegistry,
 ): DedupeAuditPreparedCandidate => {
-  /** Precompute normalized fields used by every dedupe comparison strategy. */
   return {
     id: item.id,
     title: item.title,
@@ -520,6 +520,7 @@ const toPreparedDedupeCandidate = (
 const toNullable = <Value>(value: Value | undefined): Value | null =>
   value ?? null;
 
+/** Echo normalized audit filters in the stable public result shape. */
 const buildDedupeAuditFilters = (params: {
   mode: DedupeAuditMode;
   status: ItemStatus | "all" | undefined;
@@ -527,7 +528,6 @@ const buildDedupeAuditFilters = (params: {
   limit: number | undefined;
   fuzzyThreshold: number;
 }): DedupeAuditResult["filters"] => {
-  /** Echo normalized audit filters in the stable public result shape. */
   return {
     mode: params.mode,
     status: toNullable(params.status),

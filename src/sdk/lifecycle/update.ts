@@ -1955,6 +1955,7 @@ function assertMatchingOrderRank(options: UpdateCommandOptions): void {
   }
 }
 
+/** Canonicalize local parent input before self/existence checks; preserve explicit remote locators and explicit unsets. */
 async function resolveParentReferenceForUpdate(params: {
   id: string;
   options: UpdateCommandOptions;
@@ -2068,6 +2069,7 @@ async function collectWorkflowTransitionWarnings(params: {
   return warning ? [warning] : [];
 }
 
+/** Delegate the configured close transition to the closure writer, applying other requested fields first and retaining its evidence. */
 async function routeCloseStatusUpdate(
   context: CloseRouteContext,
 ): Promise<UpdateResult | undefined> {
@@ -2302,6 +2304,7 @@ function applyStatusAndCloseReasonMutations(
   );
 }
 
+/** Resolve priority and type changes against runtime registries before enforcing type-specific options and recording changed fields. */
 function applyPriorityTypeAndOptions(
   document: ItemDocument,
   context: UpdateMutationContext,

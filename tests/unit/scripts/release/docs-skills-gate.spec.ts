@@ -95,6 +95,7 @@ type DocsModule = {
   main: () => Promise<void>;
 };
 
+/** Replace process exit with an assertion-visible error while retaining real release utility behavior. */
 function mockUtils(): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
     const actual = await vi.importActual<typeof ReleaseUtils>(
@@ -109,6 +110,7 @@ function mockUtils(): void {
   });
 }
 
+/** Inject command results into the gate harness while keeping failure diagnostics observable. */
 function mockUtilsWithRun(runCommand: ReturnType<typeof vi.fn>): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
     const actual = await vi.importActual<typeof ReleaseUtils>(
@@ -124,14 +126,15 @@ function mockUtilsWithRun(runCommand: ReturnType<typeof vi.fn>): void {
   });
 }
 
+/** Isolate the exception registry consistently and delegate every other read to the supplied or real filesystem. */
 function mockFsPromises(impl: Partial<typeof FsPromises>): void {
   vi.doMock("node:fs/promises", async () => {
     const actual = await vi.importActual<typeof FsPromises>("node:fs/promises");
     return {
       ...actual, ...impl,
-      readFile: impl.readFile === undefined ? actual.readFile : vi.fn(async (...args: Parameters<typeof actual.readFile>) => {
+      readFile: vi.fn(async (...args: Parameters<typeof actual.readFile>) => {
         if (String(args[0]).endsWith("docs-reachability-exceptions.json")) return "{}";
-        return impl.readFile!(...args);
+        return (impl.readFile ?? actual.readFile)(...args);
       }),
     };
   });
@@ -140,6 +143,7 @@ function mockFsPromises(impl: Partial<typeof FsPromises>): void {
 // Mocks runCommand (passing contracts + empty guide index) and node:fs/promises
 // (valid skills, docs with the required guide markers) so `main` in full mode
 // takes the all-green path; the caller only picks the output mode to assert.
+/** Provide a complete minimal runtime and filesystem fixture for full-mode orchestration assertions. */
 function mockFullModePassingEnvironment(): void {
   const runCommand = vi.fn((command: string, args: string[]) => {
     if (args.includes("--flags-only")) {

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:contracts","area:extensions",dedupe,governance-audit,regression
 created_at: "2026-08-01T20:20:19.401Z"
-updated_at: "2026-09-05T17:53:09.352Z"
-closed_at: "2026-09-05T17:53:08.865Z"
-completed_at: "2026-09-05T17:53:08.865Z"
+updated_at: "2026-09-05T18:34:28.323Z"
+closed_at: "2026-09-05T18:34:27.829Z"
+completed_at: "2026-09-05T18:34:27.829Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Explicit --status all succeeds and considers the same all-lifecycle candidate set as an omitted status filter; Result metadata truthfully records the explicit all sentinel; Help, action contracts, docs, completions, SDK/package handler, focused tests, and packed installed-consumer behavior agree; Configured custom statuses remain accepted and invalid statuses still fail with the declared domain; A regression gate prevents the package-owned parser from drifting from the shared lifecycle-filter contract"
@@ -38,7 +38,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-ugqx,implements,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
   pm-olcoon,blocked_by,"2026-09-05T16:59:43.082Z","harness:codex","cli:update:dep",detected
   pm-olcoon,verifies,"2026-09-05T17:29:28.527Z","harness:codex","cli:update:dep",detected
-comments[6]:
+comments[9]:
   - created_at: "2026-08-01T20:20:19.401Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: all-status searches found closed pm-mp49 as the exact historical owner plus closed core sentinel work pm-i02t; no active recurrence exists. Live 2026-08-01 reproduction: explicit --status all fails while omission considers all 2,263 items. --allow-duplicate is used only to represent this versioned regression without rewriting or reopening the immutable completion record."
@@ -58,6 +58,15 @@ comments[6]:
   - created_at: "2026-09-05T17:53:08.279Z"
     author: "harness:codex"
     text: "Final local evidence: 8457 tests across 617 files pass at exact 100% lines/statements/functions/branches (60094/62503/12956/47351 covered). Full quality:static passes, including unchanged token ceilings, docstrings, graph composition, and record integrity. Typecheck, version policy, ShellCheck, credential scan, zero-vulnerability dependency audit, and enforced Trivy scan pass. Final npm/npx and Bun/bunx packed smoke covers all 13 packages; separate temporary installed SDK/CLI acceptance passes. Required Sentry/telemetry gate passes with zero blocking Sentry groups and no failures lacking error codes. PR review and hosted checks are the remaining delivery stage."
+  - created_at: "2026-09-05T18:16:31.124Z"
+    author: "harness:codex"
+    text: "Review documentation follow-through: add explicit purpose and invariant docstrings to private functions touched by this delivery. Mandatory module/public/member documentation gates already pass; the reviewer uses a broader touched-function denominator. No runtime behavior or quality threshold changes."
+  - created_at: "2026-09-05T18:18:56.282Z"
+    author: "harness:codex"
+    text: "PR #1204 documentation follow-through: moved 20 existing body-local API-purpose comments to declaration JSDoc positions so review tools recognize the same substantive documentation. No dedupe behavior, filtering, ordering, or public data shape changed."
+  - created_at: "2026-09-05T18:34:27.253Z"
+    author: "harness:codex"
+    text: "PR #1204 round-one dispositions recorded on every original review/comment surface with up/down reactions. Three documentation/test findings fixed; two unsupported findings answered with source and tracker evidence. Regex heading stripping removed after CodeQL alert 38; hosted revalidation remains pending on the next head. Final local proof: 8458 tests in 617 files, exact coverage 60107/60107 lines, 62520/62520 statements, 12957/12957 functions, 47365/47365 branches. All 68 touched named non-test functions have declaration JSDoc. Full static/type/documentation gates, all five PM-linked runs, final npm/npx+Bun/bunx 13-package smoke, separate temporary packed acceptance, dependency audit, and immutable tracked-tree Trivy scan pass. Sourcery substantive review is unavailable under its current quota; Greptile has not responded. These are availability limitations, not approval."
 learnings[1]{created_at,author,text}:
   "2026-09-05T17:24:21.666Z","harness:codex",Resolve custom workflow semantics per invocation and carry terminal classification with prepared candidates. Concurrent package calls must never consult mutable process-wide status registries; a real two-workspace regression proves opposite roles for the same status remain isolated.
 files[5]{path,scope,note}:
@@ -68,7 +77,7 @@ files[5]{path,scope,note}:
   tests/unit/commands/dedupe-status-contract.spec.ts,project,Custom status filter regression
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts,project,240,"harness:codex","2026-09-05T16:31:49.042Z",local_mutation,feat/context-integrity-and-discoverable-governance
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mton3npx-1g52w3
     kind: test
     status: passed
@@ -80,9 +89,20 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtoq07tw-i840u2
+    kind: test
+    status: passed
+    started_at: "2026-09-05T18:32:35.241Z"
+    finished_at: "2026-09-05T18:32:46.244Z"
+    recorded_at: "2026-09-05T18:32:46.244Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   packages/pm-governance-audit/README.md,project,Complete population filtering and cluster limits
-close_reason: "Implemented and locally verified with linked tests, exact coverage, mandatory quality gates, and packed acceptance."
+close_reason: Completed implementation and review corrections with renewed local verification.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

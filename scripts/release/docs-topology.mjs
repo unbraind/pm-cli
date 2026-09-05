@@ -1,36 +1,51 @@
 /** Markdown navigation analysis shared by the docs gate and its negative controls. */
 import path from "node:path";
 import GithubSlugger from "github-slugger";
-import { decodeHTML } from "entities";
+import { parseFragment } from "parse5";
 import { Lexer, Parser, Renderer, walkTokens } from "marked";
+
+/** Read text and actual anchor attributes without rendering or executing HTML. */
+function inspectHtml(content) {
+  const pending = [parseFragment(content)];
+  const anchors = [];
+  let text = "";
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (node.nodeName === "#text") text += node.value;
+    for (const attribute of node.attrs ?? []) {
+      if (attribute.name === "id" || attribute.name === "name")
+        anchors.push(attribute.value);
+    }
+    pending.push(...(node.childNodes ?? []).slice().reverse());
+  }
+  return { text, anchors };
+}
 
 /** Read rendered headings, custom HTML anchors and actual links, excluding code examples. */
 export function inspectMarkdown(content) {
   const anchors = new Set();
   const links = [];
+  const navigationLinks = [];
   const slugger = new GithubSlugger();
   const renderer = new Renderer();
   const parser = new Parser({ renderer });
   renderer.image = ({ tokens }) => parser.parseInline(tokens);
   walkTokens(Lexer.lex(content), (token) => {
     if (token.type === "heading") {
-      const text = parser
-        .parseInline(token.tokens)
-        .replace(/<[^>]*>/gu, "");
-      anchors.add(slugger.slug(decodeHTML(text)));
+      const { text } = inspectHtml(parser.parseInline(token.tokens));
+      anchors.add(slugger.slug(text));
     }
     if (token.type === "link" || token.type === "image") {
-      if (!/^(?:[a-z][a-z0-9+.-]*:|\/\/)/iu.test(token.href))
+      if (!/^(?:[a-z][a-z0-9+.-]*:|\/\/)/iu.test(token.href)) {
         links.push(token.href);
+        if (token.type === "link") navigationLinks.push(token.href);
+      }
     }
     if (token.type === "html") {
-      for (const match of token.text.matchAll(
-        /\b(?:id|name)\s*=\s*["']([^"']+)["']/giu,
-      ))
-        anchors.add(match[1]);
+      for (const anchor of inspectHtml(token.text).anchors) anchors.add(anchor);
     }
   });
-  return { anchors, links };
+  return { anchors, links, navigationLinks };
 }
 
 /** Resolve local URL paths and decoded fragments, including fragment-only links. */
@@ -96,6 +111,7 @@ function documentationEdges(parsed, failures) {
   const edges = new Map();
   for (const [name, document] of parsed) {
     const targets = [];
+    const navigationTargets = new Set(document.navigationLinks);
     for (const href of document.links) {
       const target = resolveDocumentationTarget(name, href);
       if (!target) {
@@ -104,7 +120,7 @@ function documentationEdges(parsed, failures) {
       }
       const destination = parsed.get(target.path);
       if (!destination) continue; // Filesystem existence is checked by the caller.
-      targets.push(target.path);
+      if (navigationTargets.has(href)) targets.push(target.path);
       if (target.fragment && !destination.anchors.has(target.fragment))
         failures.push(`Broken documentation anchor "${href}" in ${name}`);
     }

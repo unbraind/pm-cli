@@ -20,7 +20,7 @@ describe("documentation navigation contracts", () => {
     const documents = new Map([
       [
         "docs/README.md",
-        "[bad](%zz.md)\n[asset](image.svg)\n[external](https://example.org)\n![image](image.svg)",
+        "[bad](%zz.md)\n![bad image](%yy.svg)\n[asset](image.svg)\n[external](https://example.org)\n![image](image.svg)",
       ],
       ["README.md", "# Root"],
       ["docs/standalone.md", "# Standalone"],
@@ -32,6 +32,7 @@ describe("documentation navigation contracts", () => {
       ),
     ).toEqual([
       'Malformed documentation URL "%zz.md" in docs/README.md',
+      'Malformed documentation URL "%yy.svg" in docs/README.md',
       "Documentation reachability exception requires a reason: docs/standalone.md",
     ]);
     expect(
@@ -45,7 +46,7 @@ describe("documentation navigation contracts", () => {
   });
   it("extracts real links and GitHub heading anchors without interpreting fenced examples", () => {
     const document = inspectMarkdown(
-      '# A **bold** [heading](target.md)\n## A bold heading\n## Café & tea\n## Cats &amp; Dogs\n## Fish &#38; Chips\n## **A _nested_ heading**\n## `<Type>` &amp; `&amp;`\n## ![Visible](icon.svg)\nSetext\n------\n<a id="manual"></a>\n[local](#manual)\n[ref][r]\n\n[r]: other.md#part\n```md\n# Fake\n[bad](missing.md)\n```',
+      '# A **bold** [heading](target.md)\n## A bold heading\n## Café & tea\n## Cats &amp; Dogs\n## Fish &#38; Chips\n## **A _nested_ heading**\n## `<Type>` &amp; `&amp;`\n## ![Visible](icon.svg)\n## Before <span title="a > b">after</span>\nSetext\n------\n<a id="manual"></a>\n<a id=unquoted></a><a name=legacy></a><!-- id="fake" -->\n[local](#manual)\n[ref][r]\n\n[r]: other.md#part\n```md\n# Fake\n[bad](missing.md)\n```',
     );
     expect([...document.anchors]).toEqual([
       "a-bold-heading",
@@ -56,8 +57,11 @@ describe("documentation navigation contracts", () => {
       "a-nested-heading",
       "type--amp",
       "visible",
+      "before-after",
       "setext",
       "manual",
+      "unquoted",
+      "legacy",
     ]);
     expect(document.links).toEqual([
       "target.md",
@@ -65,6 +69,22 @@ describe("documentation navigation contracts", () => {
       "#manual",
       "other.md#part",
     ]);
+  });
+
+  it("keeps image targets out of navigation while resolving unquoted HTML anchors", () => {
+    const docs = new Map([
+      [
+        "docs/README.md",
+        "![embedded](hidden.md)\n[anchor](#manual)\n<a id=manual></a>",
+      ],
+      ["docs/hidden.md", "# Hidden"],
+    ]);
+    expect(inspectDocumentationGraph(docs)).toEqual([
+      "Unreachable documentation: docs/hidden.md; link it from docs/README.md or a reachable document",
+    ]);
+    expect(inspectMarkdown(docs.get("docs/README.md")!).links).toContain(
+      "hidden.md",
+    );
   });
 
   it("finds unreachable cycles, bad fragments and stale opt-outs while following transitive links", () => {
