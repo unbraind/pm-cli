@@ -26,7 +26,10 @@ function processEnvironment(
     PM_CLOCK_TICK_MS: "1",
     PM_MCP_PROFILE: "full",
     PM_SEED: seed,
-    PM_TELEMETRY_ENABLED: "0",
+    PM_TELEMETRY_DISABLED: "1",
+    PM_TELEMETRY_OTEL_DISABLED: "1",
+    PM_TELEMETRY_PROMPT: "0",
+    PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
   };
 }
 

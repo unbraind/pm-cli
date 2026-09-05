@@ -1,0 +1,48 @@
+id: pm-gtw5zh
+title: Metadata index rebuilds and mutations repeatedly scan an unindexed FTS identity column
+description: "The 100000-item explicit child-read scale control spends minutes rebuilding the optional SQLite projection. A five-second CPU profile attributed 4588 of 4618 samples to SQLite statement execution. insertRow deletes item_search WHERE id for every row although id is UNINDEXED in FTS5, causing a growing full-table scan during rebuild and O(n) individual mutations. Bind FTS rowid to the indexed items identity lookup, preserve update/delete/search parity and invalidate older derived schemas."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-05T10:04:49.937Z"
+updated_at: "2026-09-05T11:14:19.697Z"
+closed_at: "2026-09-05T11:14:19.182Z"
+completed_at: "2026-09-05T11:14:19.182Z"
+author: "harness:codex"
+acceptance_criteria: FTS maintenance uses indexed rowid lookup for rebuild update and delete; real SQLite query plans demonstrate bounded identity lookup with the former predicate as a negative control; update move delete and duplicate-id replacement retain exact search parity; old derived index versions are refused and rebuilt; the 100000-item explicit point-read scale control completes with its full corpus count
+parent: pm-801d
+resolution: Maintain FTS rows through indexed item rowid and migrate the derived index to version 5
+expected_result: Rebuild update and deletion avoid unindexed FTS identity scans while preserving search parity
+actual_result: Real SQLite query-plan negative control and update/delete/replacement tests pass; complete 100000-row cold scan finishes in 48.590 seconds
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fx80w2,verifies,"2026-09-05T10:04:49.937Z","harness:codex","cli:create:dep",detected
+  pm-px153l,discovered_from,"2026-09-05T10:04:49.937Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-05T10:04:49.937Z","harness:codex","Duplicate check: complete all-status corpus title inventory plus FTS delete quadratic and item_search searches and current open/in-progress lists found no matching issue. Closed pm-px153l supplied the existing query index and remains closed; this new measured maintenance-cost regression preserves that lineage."
+  "2026-09-05T10:07:59.441Z","harness:codex","TDD evidence: real SQLite statement instrumentation and EXPLAIN QUERY PLAN failed against the old unindexed FTS predicate. After binding FTS rows to items.rowid, six index tests pass including repeated-id replacement, move/delete behavior, search parity, indexed-delete plans, and v4 refusal. The original 100k benchmark was stopped after diagnosing its repeated FTS scans; it is not accepted as completed evidence and will be rerun on v5."
+  "2026-09-05T10:18:45.390Z","harness:codex","Scale rerun completed successfully: the explicit 100k-item child scan plus cold SQLite rebuild finished in 48.59 seconds and observed all 100000 rows. The earlier unindexed run was interrupted after more than fifteen minutes. This establishes the maintenance regression fix; it does not claim that full filesystem ingestion meets the one-second roadmap target."
+  "2026-09-05T10:37:33.984Z","harness:codex","Graph assurance identified an uncited ordering edge. The existing blocks relation to pm-ydshl9 now cites evidence:point-read-100k-fts-profile through a history-backed update; no threshold or historical edge was weakened."
+  "2026-09-05T10:39:16.126Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
+  "2026-09-05T11:14:17.110Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
+files[2]{path,scope,note}:
+  src/core/store/item-metadata-query-index.ts,project,Indexed rowid FTS maintenance and derived schema migration
+  tests/unit/core/item/item-metadata-query-index.spec.ts,project,Real SQLite query plans and data parity with negative control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts,project,240,"harness:codex","2026-09-05T10:08:01.375Z",local_mutation,feat/scalable-context-reads-and-duplicate-discovery
+test_runs[1]:
+  - run_id: test-local-mtoab2ik-mo2wx7
+    kind: test
+    status: passed
+    started_at: "2026-09-05T11:13:13.212Z"
+    finished_at: "2026-09-05T11:13:18.716Z"
+    recorded_at: "2026-09-05T11:13:18.716Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/BOUNDED_CONTEXT_READS.md,project,Index maintenance and migration contract
+close_reason: Implementation and local acceptance complete; included in the combined reviewed delivery
+body: ""

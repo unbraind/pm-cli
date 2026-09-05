@@ -1,0 +1,48 @@
+id: pm-s8ybl9
+title: Read sessions emit invalid continuation identities from workspace activity rows
+description: "The complete scale fixture now includes real schema workspace history. Context activity can contain the reserved _workspace identity, which the session producer copies into seen_item_ids although the strict session parser rejects that identifier. The following read fails with invalid_read_output_session. Keep non-item activity rows visible but exclude identifiers outside the existing portable item contract from reference-state accumulation; preserve strict validation and count-cap behavior."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-05T10:20:49.596Z"
+updated_at: "2026-09-05T11:14:20.737Z"
+closed_at: "2026-09-05T11:14:20.223Z"
+completed_at: "2026-09-05T11:14:20.223Z"
+author: "harness:codex"
+acceptance_criteria: Every emitted next_state passes the unchanged strict session parser with workspace activity present; nonportable activity rows remain visible and are never replaced by invalid references; valid item identities retain suppression and capacity overflow behavior; full real context calibration observes the complete generated corpus and passes
+parent: pm-4k6b
+resolution: Exclude nonportable workspace activity identities from caller-carried item-reference state
+expected_result: Every emitted continuation remains parseable and preserves visible workspace activity
+actual_result: 32 output-session and contract tests pass; full calibrated context sessions round-trip with all 2243 source rows
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-b0v8fs,recurs_from,"2026-09-05T10:20:49.596Z","harness:codex","cli:create:dep",detected
+  pm-fx80w2,discovered_from,"2026-09-05T10:20:49.596Z","harness:codex","cli:create:dep",detected
+  pm-hid9g1,implements,"2026-09-05T10:20:49.596Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-05T10:20:49.596Z","harness:codex","Duplicate check: all-status seen_item_ids _workspace search returned zero matches. Complete corpus title review and full closed pm-b0v8fs metadata establish earlier capacity-overflow remediation, not this reserved-identity producer defect. Current open/in-progress ownership lists were inspected before creating this distinct recurrence."
+  "2026-09-05T10:24:57.225Z","harness:codex","TDD evidence: workspace activity, blank, spaced and oversized identities made the generated next_state fail the unchanged parser. The producer now retains only parser-valid item ids while preserving all non-item rows in the actual response. Thirty-two focused tests pass, including valid-reference suppression and existing capacity behavior."
+  "2026-09-05T10:37:34.450Z","harness:codex","Verification: output-session regression and existing contracts pass 32 tests. Regenerated calibration checks all 2243 requested rows, where the old fixture silently read 1998. Session output bytes improve from 39024 to 38778 at the large tier and workspace pseudo-identities no longer enter seen_item_ids; calibration budgets are unchanged."
+  "2026-09-05T10:39:16.642Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
+  "2026-09-05T11:14:17.524Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
+files[2]{path,scope,note}:
+  src/sdk/read-output-session.ts,project,Preserve strict continuation identity contract
+  tests/unit/sdk/context/read-cost-bounds.spec.ts,project,Workspace activity and next-state parser round trip
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context/read-cost-bounds.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,240,"harness:codex","2026-09-05T10:24:56.708Z",local_mutation,feat/scalable-context-reads-and-duplicate-discovery
+test_runs[1]:
+  - run_id: test-local-mtoab9hg-jzidnq
+    kind: test
+    status: passed
+    started_at: "2026-09-05T11:13:19.089Z"
+    finished_at: "2026-09-05T11:13:27.748Z"
+    recorded_at: "2026-09-05T11:13:27.748Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context/read-cost-bounds.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/BOUNDED_CONTEXT_READS.md,project,Valid continuation state with visible workspace activity
+close_reason: Implementation and local acceptance complete; included in the combined reviewed delivery
+body: ""

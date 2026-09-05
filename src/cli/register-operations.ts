@@ -454,6 +454,7 @@ async function runDuplicatesAction(
   const threshold = readOptionString(options, "threshold");
   const limit = readOptionString(options, "limit");
   const result = await runDuplicates(globalOptions, {
+    ...(options.exhaustive === true ? { exhaustive: true } : {}),
     status:
       Array.isArray(options.status) && options.status.length > 0
         ? (options.status as string[])
@@ -1050,20 +1051,21 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("duplicates")
     .description(
-      "Find existing duplicate clusters across all statuses without creating an item.",
+      "Find duplicate clusters across all statuses.",
     )
     .option(
       "--status <value>",
-      "Lifecycle status to include (repeatable or comma-separated)",
+      "Statuses (repeatable or comma-separated)",
       collect,
       [],
     )
     .option(
       "--since <value>",
-      "Only inspect items created at or after this time",
+      "Created at or after this time",
     )
-    .option("--threshold <value>", "Minimum similarity score from 0 through 1")
-    .option("--limit <n>", "Maximum duplicate clusters to return")
+    .option("--threshold <value>", "Minimum similarity (0-1)")
+    .option("--limit <n>", "Maximum clusters")
+    .option("--exhaustive", "Score all pairs within the safety bound")
     .action(runDuplicatesAction);
 
   program

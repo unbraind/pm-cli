@@ -11,7 +11,7 @@ import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { ItemMetadata, LinkedFile, LinkScope } from "../../types/index.js";
 
 const QUERY_INDEX_FILENAME = "metadata-query-index.sqlite";
-const QUERY_INDEX_VERSION = "4";
+const QUERY_INDEX_VERSION = "5";
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 function loadDatabaseSync(
@@ -250,16 +250,19 @@ function insertRow(
   database
     .prepare("DELETE FROM item_linked_files WHERE item_id = ?")
     .run(metadata.id);
-  database.prepare("DELETE FROM item_search WHERE id = ?").run(metadata.id);
+  // FTS UNINDEXED columns cannot provide identity lookup. Share the items rowid
+  // so both rebuilding and incremental maintenance use a single indexed row.
+  database.prepare("DELETE FROM item_search WHERE rowid = (SELECT rowid FROM items WHERE id = ?)").run(metadata.id);
   database
     .prepare(
-      "INSERT INTO item_search(id, title, description, tags) VALUES (?, ?, ?, ?)",
+      "INSERT INTO item_search(rowid, id, title, description, tags) SELECT rowid, ?, ?, ?, ? FROM items WHERE id = ?",
     )
     .run(
       metadata.id,
       metadata.title,
       metadata.description,
       metadata.tags.join(" "),
+      metadata.id,
     );
   const insertMetadataKey = database.prepare(
     "INSERT INTO item_metadata_keys(item_id, key) VALUES (?, ?)",
@@ -354,18 +357,18 @@ export async function updateItemMetadataQueryIndex(options: {
     const deleteByPath = database.prepare(
       "DELETE FROM items WHERE relative_path = ?",
     );
-    const findIdByPath = database.prepare(
-      "SELECT id FROM items WHERE relative_path = ?",
+    const findRowidByPath = database.prepare(
+      "SELECT rowid FROM items WHERE relative_path = ?",
     );
-    const deleteSearchById = database.prepare(
-      "DELETE FROM item_search WHERE id = ?",
+    const deleteSearchByRowid = database.prepare(
+      "DELETE FROM item_search WHERE rowid = ?",
     );
     for (const relativePath of options.deletedRelativePaths ?? []) {
-      const deleted = findIdByPath.get(relativePath) as
-        | { id: string }
+      const deleted = findRowidByPath.get(relativePath) as
+        | { rowid: number }
         | undefined;
       deleteByPath.run(relativePath);
-      if (deleted) deleteSearchById.run(deleted.id);
+      if (deleted) deleteSearchByRowid.run(deleted.rowid);
     }
     if (options.row) insertRow(database, options.row);
     writeMetadata(database, "source_cursor", options.sourceCursor);

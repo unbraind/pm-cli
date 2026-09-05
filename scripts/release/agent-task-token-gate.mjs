@@ -61,7 +61,10 @@ function runCli(pmRoot, args) {
       PM_CLOCK: REPLAY_CLOCK,
       PM_CLOCK_TICK_MS: "1",
       PM_SEED: REPLAY_SEED,
-      PM_TELEMETRY: "0",
+      PM_TELEMETRY_DISABLED: "1",
+      PM_TELEMETRY_OTEL_DISABLED: "1",
+      PM_TELEMETRY_PROMPT: "0",
+      PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
     },
   });
 }

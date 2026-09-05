@@ -626,7 +626,6 @@ async function buildGetChildrenRollup(
   context: GetItemContext,
   includeChildren: boolean,
   includeEmpty: boolean,
-  includeSample: boolean,
 ): Promise<ChildRollupContext | undefined> {
   if (!includeChildren) {
     return undefined;
@@ -643,7 +642,6 @@ async function buildGetChildrenRollup(
     context.locatedId,
     corpus,
     statusRegistry,
-    includeSample ? undefined : 0,
   );
   return rollup.count > 0 || includeEmpty ? rollup : undefined;
 }
@@ -727,7 +725,7 @@ export async function runGet(
     context.historical === undefined &&
     (projection.fieldProjection
       ? fieldsIncludeRoot(projection.fields as string[], "children")
-      : projection.depth !== "brief" &&
+      : projection.depth === "deep" &&
         shouldAutoIncludeGetChildren(context.metadata.type));
   const includeSchedule = projection.fieldProjection
     ? fieldsIncludeRoot(projection.fields as string[], "schedule")
@@ -750,7 +748,6 @@ export async function runGet(
     context,
     includeChildren,
     projection.fieldProjection,
-    projection.fieldProjection || projection.depth === "deep",
   );
   if (children !== undefined) {
     result.children = children;

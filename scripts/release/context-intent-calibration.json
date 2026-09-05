@@ -8,17 +8,17 @@
       "item_count": 2,
       "intents": {
         "context": {
-          "delivered_bytes": 3002,
-          "delivered_rows": 4,
+          "delivered_bytes": 3107,
+          "delivered_rows": 5,
           "declared_tokens": 3000,
-          "measured_tokens": 751,
+          "measured_tokens": 777,
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 1492,
+          "delivered_bytes": 1331,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 373,
+          "measured_tokens": 333,
           "degradation": "standard_item"
         },
         "list": {
@@ -46,28 +46,28 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 3468,
-        "remaining_tokens": 16532,
+        "spent_tokens": 3454,
+        "remaining_tokens": 16546,
         "seen_item_count": 2,
         "suppressed_repeat_count": 4,
-        "delivered_bytes": 13867
+        "delivered_bytes": 13811
       }
     },
     {
       "item_count": 2243,
       "intents": {
         "context": {
-          "delivered_bytes": 4178,
+          "delivered_bytes": 4155,
           "delivered_rows": 6,
           "declared_tokens": 3000,
-          "measured_tokens": 1045,
+          "measured_tokens": 1039,
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 1547,
+          "delivered_bytes": 1331,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 387,
+          "measured_tokens": 333,
           "degradation": "standard_item"
         },
         "list": {
@@ -85,40 +85,40 @@
           "degradation": "budget_row_compaction"
         },
         "search": {
-          "delivered_bytes": 6799,
+          "delivered_bytes": 6862,
           "delivered_rows": 27,
           "declared_tokens": 1800,
-          "measured_tokens": 1700,
+          "measured_tokens": 1716,
           "degradation": "budget_row_compaction"
         }
       },
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 9757,
-        "remaining_tokens": 10243,
-        "seen_item_count": 109,
+        "spent_tokens": 9696,
+        "remaining_tokens": 10304,
+        "seen_item_count": 108,
         "suppressed_repeat_count": 8,
-        "delivered_bytes": 39024
+        "delivered_bytes": 38778
       },
       "cursor_walks": {
         "list": {
-          "rows": 1998,
-          "pages": 31,
-          "bytes_per_row": 172.81,
-          "optimized_walk_bytes": 345283,
-          "repeated_metadata_control_bytes": 380173,
-          "unbounded_single_call_bytes": 1558465,
-          "optimized_to_unbounded_ratio": 0.2216
+          "rows": 2243,
+          "pages": 35,
+          "bytes_per_row": 172.77,
+          "optimized_walk_bytes": 387513,
+          "repeated_metadata_control_bytes": 427055,
+          "unbounded_single_call_bytes": 1752330,
+          "optimized_to_unbounded_ratio": 0.2211
         },
         "search": {
-          "rows": 1998,
-          "pages": 66,
-          "bytes_per_row": 202.38,
-          "optimized_walk_bytes": 404348,
-          "repeated_metadata_control_bytes": 454073,
-          "unbounded_single_call_bytes": 1681569,
-          "optimized_to_unbounded_ratio": 0.2405
+          "rows": 2243,
+          "pages": 74,
+          "bytes_per_row": 202.31,
+          "optimized_walk_bytes": 453791,
+          "repeated_metadata_control_bytes": 509636,
+          "unbounded_single_call_bytes": 1890494,
+          "optimized_to_unbounded_ratio": 0.24
         }
       }
     }

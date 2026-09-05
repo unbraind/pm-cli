@@ -1,0 +1,53 @@
+id: pm-fx80w2
+title: Scale fixtures silently omit unregistered Story items from metadata reads
+description: Point-read scale validation generated 10000 items but the SDK child scan read only 9019. The generator includes Story in its weighted type population without registering it in a fresh workspace. Earlier shape conformance measures constructed metadata instead of proving runtime readability. Register every generated type through the SDK and verify exact corpus counts before accepting scale evidence.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-05T09:47:08.719Z"
+updated_at: "2026-09-05T11:14:18.574Z"
+closed_at: "2026-09-05T11:14:18.105Z"
+completed_at: "2026-09-05T11:14:18.105Z"
+author: "harness:codex"
+acceptance_criteria: Every generated type is registered in the generated workspace; SDK reads observe exactly the declared item count including Story; Regression test fails against the unregistered generator; Point-read scale evidence includes a complete explicit scan negative control
+parent: pm-9rxu
+resolution: Register every generated type and seed schema history under the reproducible process environment
+expected_result: Generated metadata and complete SDK reads contain the same population
+actual_result: 1500-row regression and 100000-row explicit scan are complete; 2243-row calibration now reads all 2243 rows
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o87av6,implements,"2026-09-05T09:47:08.719Z","harness:codex","cli:create:dep",detected
+  pm-vv2lti,discovered_from,"2026-09-05T09:47:08.719Z","harness:codex","cli:create:dep",detected
+  pm-ydshl9,verifies,"2026-09-05T09:47:08.719Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-05T09:47:08.719Z","harness:codex","Duplicate check: complete 2638-item all-status corpus plus all-status scale Story fixture and unregistered Story searches and current open/in-progress lists were inspected. Closed pm-vv2lti implemented shape generation; this distinct runtime readability regression is newly observed at 9019 of 10000 items and preserves that closed lineage."
+  "2026-09-05T09:48:24.616Z","harness:codex","TDD negative control: the new point-read corpus test failed with 1418 readable items out of 1500. Registration now derives generated types from the live SDK schema and adds missing types before materialization."
+  "2026-09-05T09:57:30.868Z","harness:codex","Verification: 11 focused tests pass, including the 1500-item runtime completeness regression, byte-identical direct/SDK item and workspace history, malformed-tail retention, real filesystem failure cleanup and omission-safe learning. Fixture schema setup now runs under the SDK deterministic clock and seed."
+  "2026-09-05T10:39:15.658Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
+  "2026-09-05T11:14:16.683Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
+learnings[1]{created_at,author,text}:
+  "2026-09-05T10:59:06.090Z","harness:codex","Scale evidence must compare generated item count with the actual complete read receipt. A manifest count alone concealed unregistered Story rows, invalidating large-population claims and calibrated output baselines."
+files[5]{path,scope,note}:
+  scripts/bench/point-read-costs.mjs,project,Implementation contract and verification evidence for bounded context delivery
+  scripts/bench/scale-workspace.mjs,project,Implementation contract and verification evidence for bounded context delivery
+  scripts/release/context-intent-calibration.json,project,Regenerate evidence using all 2243 readable rows instead of the previous incomplete 1998-row population
+  tests/unit/scripts/point-read-costs.spec.ts,project,Implementation contract and verification evidence for bounded context delivery
+  tests/unit/scripts/scale-workspace.spec.ts,project,Implementation contract and verification evidence for bounded context delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/point-read-costs.spec.ts tests/unit/scripts/scale-workspace.spec.ts,project,240,"harness:codex","2026-09-05T09:49:52.399Z",local_mutation,feat/scalable-context-reads-and-duplicate-discovery
+test_runs[1]:
+  - run_id: test-local-mtoaaxyw-q9k1gh
+    kind: test
+    status: passed
+    started_at: "2026-09-05T11:12:58.821Z"
+    finished_at: "2026-09-05T11:13:12.824Z"
+    recorded_at: "2026-09-05T11:13:12.824Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/point-read-costs.spec.ts tests/unit/scripts/scale-workspace.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/BOUNDED_CONTEXT_READS.md,project,Complete registered fixture populations and measured scan counts
+close_reason: Implementation and local acceptance complete; included in the combined reviewed delivery
+body: ""

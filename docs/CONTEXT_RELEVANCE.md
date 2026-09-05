@@ -1,6 +1,6 @@
 # Context relevance and packing
 
-Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon), [pm-07pt16](../.agents/pm/issues/pm-07pt16.toon), [pm-wv47pf](../.agents/pm/issues/pm-wv47pf.toon), [pm-3hps](../.agents/pm/tasks/pm-3hps.toon), and [pm-801d](../.agents/pm/features/pm-801d.toon).
+Tracked by [pm-bab3gb](../.agents/pm/issues/pm-bab3gb.toon), [pm-4k6b](../.agents/pm/features/pm-4k6b.toon), [pm-07pt16](../.agents/pm/issues/pm-07pt16.toon), [pm-wv47pf](../.agents/pm/issues/pm-wv47pf.toon), [pm-3hps](../.agents/pm/tasks/pm-3hps.toon), and [pm-801d](../.agents/pm/features/pm-801d.toon).
 
 `pm context` and `pm next` share one public SDK relevance pipeline. The built-in
 commands assemble authoritative item metadata, load rebuildable signal rows,
@@ -104,9 +104,13 @@ the same explanation as the ranking it serves.
 ### Delivered usage feedback
 
 Usage affinity learns from post-egress delivery rather than pre-budget packing.
-A versioned serve event records the full propensity rows and a correlation id;
-CLI and `PmClient` egress append a delivery event containing the final
-`result_omitted` decision and exact emitted item ids. A whole-result omission
+A versioned serve event records at most 256 candidate rows in input order,
+plus `candidate_count`, `omitted_row_count`, and a correlation id. The SDK
+receipt keeps the complete candidate set in memory to validate final delivery.
+CLI and `PmClient` egress append the final `result_omitted` decision and emitted
+item ids intersected with the recorded sample. Unsampled items produce no
+exposure or affinity judgment; the sample is deterministic, not an unbiased
+propensity estimate. A whole-result omission
 therefore delivers zero items even when the packer selected rows earlier.
 
 Direct `runContext` and `runNext` calls record only their assembled rows on a
@@ -115,6 +119,14 @@ later CLI or `PmClient` projection appends the correlated delivery decision.
 Legacy serve events have no correlation marker, so the affinity reader ignores
 their inclusion flags and reports them as `untrusted_serving_events` instead of
 training on unverifiable phantom serves.
+
+The physical ledger is capped at 256 KiB. Appends exceeding that ceiling compact
+atomically under the writer lock to a suffix of at most 128 KiB, leaving headroom
+for subsequent requests. Reads consume at most 256 KiB even for oversized legacy
+files, dropping a partial first row. Age and event-count limits also apply.
+`CONTEXT_USAGE_LIMITS` and serving receipt `storage` expose the ceilings, actual
+written bytes, retained bytes, compaction decision, and lock wait to SDK hosts.
+See [bounded context reads](BOUNDED_CONTEXT_READS.md) for cost measurements.
 
 For corpora of at least 10,000 items, `context` automatically allocates a
 bounded fraction of its token budget to recent calendar-epoch and epic-lineage

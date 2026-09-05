@@ -42,6 +42,40 @@ afterEach(async () => {
 });
 
 describe("item metadata SQLite query index", () => {
+  it("maintains FTS identities with indexed rowid plans instead of growing table scans", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-query-rowid-"));
+    roots.push(root);
+    const statements: string[] = [];
+    class RecordingDatabase extends DatabaseSync {
+      override prepare(sql: string) {
+        statements.push(sql);
+        return super.prepare(sql);
+      }
+    }
+    const restore = _testOnly.setDatabaseSync(RecordingDatabase);
+    try {
+      const rows = ["pm-a", "pm-b", "pm-a"].map((id, index) => ({ relativePath: `tasks/${id}.toon`, metadata: metadata(id, { title: `term${index}` }) }));
+      await rebuildItemMetadataQueryIndex({ pmRoot: root, contextFingerprint: "context", sourceCursor: "one", rows });
+      await expect(querySimilarItemMetadataIndex({ pmRoot: root, expectedSourceCursor: "one", query: "term0", limit: 10 })).resolves.toMatchObject({ items: [] });
+      await expect(querySimilarItemMetadataIndex({ pmRoot: root, expectedSourceCursor: "one", query: "term2", limit: 10 })).resolves.toMatchObject({ items: [{ id: "pm-a" }] });
+      await expect(updateItemMetadataQueryIndex({ pmRoot: root, contextFingerprint: "context", expectedSourceCursor: "one", sourceCursor: "two", row: null, deletedRelativePaths: ["tasks/pm-a.toon"] })).resolves.toBe(true);
+      await expect(querySimilarItemMetadataIndex({ pmRoot: root, expectedSourceCursor: "two", query: "term2", limit: 10 })).resolves.toMatchObject({ items: [] });
+      const database = new DatabaseSync(path.join(root, "runtime", "metadata-query-index.sqlite"));
+      try {
+        const deletes = [...new Set(statements.filter((sql) => sql.startsWith("DELETE FROM item_search")))];
+        expect(deletes.length).toBeGreaterThan(0);
+        for (const sql of deletes) {
+          const plan = database.prepare(`EXPLAIN QUERY PLAN ${sql}`).all("pm-b");
+          expect(plan.some((row) => /VIRTUAL TABLE INDEX \d+:=/.test(String(row.detail)))).toBe(true);
+        }
+        const negative = database.prepare("EXPLAIN QUERY PLAN DELETE FROM item_search WHERE id = ?").all("pm-b");
+        expect(negative.some((row) => /VIRTUAL TABLE INDEX \d+:=/.test(String(row.detail)))).toBe(false);
+        database.prepare("UPDATE metadata SET value = '4' WHERE key = 'version'").run();
+      } finally { database.close(); }
+      await expect(queryItemMetadataIndex({ pmRoot: root, expectedSourceCursor: "two" })).resolves.toBeNull();
+    } finally { restore(); }
+  });
+
   it("resolves optional node:sqlite constructors without throwing when unavailable", () => {
     expect(_testOnly.loadDatabaseSync(() => ({ DatabaseSync }))).toBe(
       DatabaseSync,

@@ -236,7 +236,8 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   get: 30,
   graph: 34,
   search: 78,
-  duplicates: 24,
+  // pm-pshhry: one explicit exhaustive-reference mode, with no spare flag allowance.
+  duplicates: 25,
   eval: 25,
   next: 38,
   history: 35,

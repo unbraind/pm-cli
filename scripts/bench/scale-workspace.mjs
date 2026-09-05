@@ -21,6 +21,7 @@ import {
   getHistoryPath,
   getItemPath,
   resolveBuiltinCorpusShape,
+  runWithReproducibleProcessEnvironment,
   serializeItemDocument,
   writeFileAtomic,
 } from "../../dist/cli-bundle/sdk.js";
@@ -321,31 +322,36 @@ export async function generateSyntheticWorkspace(options) {
     author: AUTHOR,
     noExtensions: true,
   });
-  await client.init(undefined, { defaults: true, force: true });
-  for (const type of shape.custom_types) {
-    await client.schemaAddType(type, {
-      description: `Synthetic ${shape.name} corpus type`,
-      author: AUTHOR,
-    });
-  }
-  for (const status of shape.custom_statuses) {
-    await client.schemaAddStatus(status, {
-      description: `Synthetic ${shape.name} corpus status`,
-      role:
-        shape.terminal_statuses.includes(status)
-          ? ["terminal", "terminal_done"]
-          : ["active"],
-      author: AUTHOR,
-    });
-  }
-  for (const field of shape.custom_fields) {
-    await client.schemaAddField(field, {
-      type: "string",
-      commands: ["create", "update", "list", "search", "context"],
-      description: `Synthetic ${shape.name} corpus field`,
-      author: AUTHOR,
-    });
-  }
+  await runWithReproducibleProcessEnvironment({ PM_CLOCK: "2026-01-01T00:00:00.000Z", PM_SEED: String(seed) }, async () => {
+    await client.init(undefined, { defaults: true, force: true });
+    const schema = await client.schemaList();
+    const registeredTypes = new Set([...schema.builtin, ...schema.custom, ...schema.extension].map(({ name }) => name));
+    for (const type of new Set(["Epic", ...WEIGHTED_TYPES, ...shape.custom_types])) {
+      if (registeredTypes.has(type)) continue;
+      await client.schemaAddType(type, {
+        description: `Synthetic ${shape.name} corpus type`,
+        author: AUTHOR,
+      });
+    }
+    for (const status of shape.custom_statuses) {
+      await client.schemaAddStatus(status, {
+        description: `Synthetic ${shape.name} corpus status`,
+        role:
+          shape.terminal_statuses.includes(status)
+            ? ["terminal", "terminal_done"]
+            : ["active"],
+        author: AUTHOR,
+      });
+    }
+    for (const field of shape.custom_fields) {
+      await client.schemaAddField(field, {
+        type: "string",
+        commands: ["create", "update", "list", "search", "context"],
+        description: `Synthetic ${shape.name} corpus field`,
+        author: AUTHOR,
+      });
+    }
+  });
 
   const itemDirectories = new Set(
     ["Epic", ...WEIGHTED_TYPES, ...shape.custom_types].map((type) =>

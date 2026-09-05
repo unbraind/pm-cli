@@ -2,19 +2,79 @@ id: pm-bab3gb
 title: "Every pm next and pm context read writes one usage-ledger row per open item under a single global lock, and the compaction trigger is a byte threshold that a count-based retention can never satisfy"
 description: "The context usage ledger at .agents/pm/runtime/context-usage.jsonl is the substrate the usage-affinity signal reads, and it is written on the read path. Measured at HEAD. One pm next serve entry is 10,377 bytes and carries 200 candidate rows. One pm context serve entry is 16,298 bytes and carries 315 rows, which is exactly the open item count, so the per-read write is O(open items) with no cap on the context surface while next caps at 200. The retention policy in src/sdk/context-usage.ts keeps the last 2,048 events, but compaction is triggered by DEFAULT_COMPACTION_BYTES of 262,144 bytes. The live ledger is 1,224,242 bytes, 4.7 times its own trigger, so the trigger fires on essentially every read and the count-based retention can never bring the file back under it. Each firing acquires the global context-usage-ledger lock, appends, then reads and parses the entire file, filters it, serializes it to a temporary file and renames. At steady state with modern entry sizes the retained set is about 2,048 times 13 kB, roughly 27 MB, so the mature behaviour is a full read-parse-rewrite of a 27 MB file inside a global lock on every context or next call. Extrapolated to the stated target of a million open items, one context read writes a single entry of roughly 50 MB and the ring retains 2,048 of them. Measured contention today: twelve concurrent pm next calls complete in 5,145 ms against a 1,013 ms serial single call, and no entries were lost or corrupted, so this is a throughput ceiling rather than a correctness failure. The write is correctly wrapped in a try block at next.ts:507 and context.ts:2582 so a lock timeout degrades the signal instead of failing the read. This is the cost and scaling of the ledger. It is not the propensity signal correctness, and it is not fleet-amortized assembly, which is pm-tch9cs."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: concurrency,context-management,scale
 created_at: "2026-07-30T17:02:11.546Z"
-updated_at: "2026-07-30T17:03:15.149Z"
+updated_at: "2026-09-05T11:16:57.286Z"
+closed_at: "2026-09-05T11:14:22.345Z"
+completed_at: "2026-09-05T11:14:22.345Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "A serve entry records a bounded number of candidate rows independent of open item count, and the bound is declared in the contract rather than implied by a surface; Retention and compaction are expressed in the same unit, so the trigger threshold is reachable by the policy that follows it and the ledger has a declared steady-state ceiling in bytes; The read path does not rewrite the whole ledger on every serve, proved by measuring bytes written per read at three corpus sizes including the million-item tier; Ledger writes are measured under a concurrent fleet at the scale target and the published numbers state reads per second per workspace and the observed lock wait distribution; A negative control proves the declared ceiling gate fails when a surface reintroduces one row per open item"
 parent: pm-9rxu
 risk: high
 confidence: high
+resolution: Bound persisted context samples and append work with byte-based compaction and measured receipts
+expected_result: Persist at most 256 serving rows and 262144 bytes without rewriting each serve
+actual_result: At 10000/100000/1000000 rows mean written bytes remain about 18KB and each tier compacts 2 of 40 serves; physical ledgers remain below 238KB; throughput and min/p50/p95/max lock waits are published
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,related,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
   pm-uwfs,discovered_from,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-09-05T09:16:32.864Z","harness:codex","TDD evidence: 40 serves over 10,000 candidates produced 18,331,640 ledger bytes before the change. The new bounded persistence regression passes below 262,144 bytes with at most 256 recorded candidate rows. Final-egress delivery remains required for affinity; unrecorded sample rows cannot earn fabricated exposure credit."
+  "2026-09-05T09:57:31.310Z","harness:codex","Scale evidence: 40 serves at each of 10k/100k/1m candidates wrote a mean 18129/18141/18143 ledger bytes, compacted twice per tier, and ended below 238k bytes. Four concurrent writers measured peak lock waits of 99/283/1794ms. Full candidate validation remains O(n) in memory; physical persistence is bounded independently. Unknown candidate properties are stripped and unsampled final ids do not train affinity."
+  "2026-09-05T10:01:55.553Z","harness:codex","Operational verification before PR: Sentry 14-day unresolved query completed with no omitted pages and zero issues; the required reliability gate passed with critical=0 high=0 telemetry finish error rate=1.04 percent and zero failures without error codes. These are live pre-merge checks, not claims about an unpublished artifact."
+  "2026-09-05T10:18:21.280Z","harness:codex","Verification diagnosis: reproducible-process fixtures used PM_TELEMETRY_ENABLED=0, which the runtime does not recognize. Their intended telemetry opt-out was ineffective and real process steps varied from seconds to minutes. Replaced it with the existing canonical disabled/OTEL-disabled/prompt controls and disabled host Ollama auto defaults, matching the shared temporary fixture policy. Timing thresholds and real CLI/MCP execution remain unchanged."
+  "2026-09-05T10:39:15.155Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
+  "2026-09-05T10:56:04.666Z","harness:codex","Full coverage reached exact 100/100/100/100: 59977 lines, 62379 statements, 12940 functions, 47268 branches, zero uncovered. One of 8442 tests failed: real agent-task replay exceeded 180 seconds (856.7 seconds observed) because its subprocess environment used ineffective PM_TELEMETRY=0. Corrected the actual telemetry opt-out controls without changing timeout or transcript assertions. The concurrent benchmark now also exports empirical nearest-rank p50 and p95 lock waits alongside minimum and maximum."
+  "2026-09-05T11:04:53.733Z","harness:codex","Final independent scale rerun: 40 serves across four concurrent SDK tasks per workspace. At 10000/100000/1000000 rows: 46.73/20.82/1.92 serves per second; mean written bytes 18137.75/18149.225/18134.675; minimum lock waits 3.11/18.29/198.10ms, nearest-rank p50 25.15/50.10/809.52ms, p95 84.97/193.86/1367.67ms, maximum 105.66/229.60/1622.77ms. Each tier compacted 2 of 40 serves; physical bytes 237785/237821/237857. These are concurrent tasks sharing the cross-process lock, not four OS processes. Full quality:static passes; final full coverage rerun pending."
+  "2026-09-05T11:14:16.229Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
+learnings[1]{created_at,author,text}:
+  "2026-09-05T10:59:06.486Z","harness:codex",Telemetry test isolation must use the runtime-recognized opt-out variables. An unused PM_TELEMETRY or PM_TELEMETRY_ENABLED flag can silently leave real CLI subprocesses waiting on external sinks; preserve transcript assertions and fix isolation instead of increasing test timeouts.
+files[7]{path,scope,note}:
+  scripts/bench/context-read-costs.mjs,project,Bounded SDK context read implementation and verification
+  scripts/release/agent-task-token-gate.mjs,project,Use actual telemetry opt-out in real CLI transcript replay
+  src/sdk/context-usage.ts,project,Bounded SDK context read implementation and verification
+  src/sdk/context/usage-ledger.ts,project,Bounded SDK context read implementation and verification
+  tests/integration/reproducible-process.integration.spec.ts,project,Use real telemetry opt-out controls so process conformance cannot contact production sinks
+  tests/unit/sdk/context/read-cost-bounds.spec.ts,project,Bounded SDK context read implementation and verification
+  tests/unit/sdk/context/usage-ledger.spec.ts,project,Bounded SDK context read implementation and verification
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/get-append-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-05T09:24:23.853Z"
+      source_kind: local_mutation
+      source_ref: feat/scalable-context-reads-and-duplicate-discovery
+    note: Exact recall and bounded read regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/reproducible-process.integration.spec.ts tests/unit/scripts/context-read-costs.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-05T10:56:04.217Z"
+      source_kind: local_mutation
+      source_ref: feat/scalable-context-reads-and-duplicate-discovery
+test_runs[1]:
+  - run_id: test-local-mtoaamu6-e36r17
+    kind: test
+    status: passed
+    started_at: "2026-09-05T11:12:18.827Z"
+    finished_at: "2026-09-05T11:12:58.398Z"
+    recorded_at: "2026-09-05T11:12:58.398Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/reproducible-process.integration.spec.ts tests/unit/scripts/context-read-costs.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated by pm-changelog 2026.9.2 from completed delivery items; remaining duplicate latency work stays open
+  docs/BOUNDED_CONTEXT_READS.md,project,Implementation contract and verification evidence for bounded context delivery
+  docs/CONTEXT_RELEVANCE.md,project,Implementation contract and verification evidence for bounded context delivery
+close_reason: Implementation and local acceptance complete; included in the combined reviewed delivery
 body: ""

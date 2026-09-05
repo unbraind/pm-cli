@@ -197,6 +197,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   status: { type: "string" },
   since: { type: "string", format: "date-time" },
   cursorMode: { type: "string", enum: ["batch", "row"] },
+  exhaustive: { type: "boolean" },
   threshold: { type: "number", minimum: 0, maximum: 1 },
   filterStatus: { type: "string" },
   filterType: { type: "string" },
@@ -1269,6 +1270,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
     examples: ["2026-01-01T00:00:00.000Z"],
+  },
+  exhaustive: {
+    description: "Compare every duplicate pair within the disclosed safety bound; default prefix filtering preserves exact recall.",
   },
   threshold: {
     description: "Minimum duplicate similarity score from zero through one.",

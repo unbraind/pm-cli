@@ -3674,6 +3674,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
         ? [ctx.options.status]
         : readStringArray(ctx.options.status);
     return runDuplicates(ctx.global, {
+      exhaustive: ctx.options.exhaustive === true,
       ...(status.length === 0 ? {} : { status }),
       since: readString(ctx.options, "since"),
       threshold:

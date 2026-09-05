@@ -69,3 +69,5 @@ export * from "./context-signal-store.js";
 export * from "./context-usage.js";
 export * from "./workspace-memory.js";
 export * from "./duplicates.js";
+
+export { analyzeDuplicateItems, type DuplicateItemInput, type DuplicateItemsAnalysis } from "./similarity.js";
