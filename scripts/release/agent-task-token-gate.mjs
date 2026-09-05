@@ -50,6 +50,7 @@ function parseJsonOutput(result, step, label = step.id) {
   }
 }
 
+/** Capture a real deterministic CLI transcript with isolated tracker roots and external telemetry disabled. */
 function runCli(pmRoot, args) {
   return spawnSync(process.execPath, [CLI_PATH, ...args], {
     cwd: path.dirname(path.dirname(pmRoot)),

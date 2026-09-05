@@ -445,6 +445,7 @@ async function runStatsAction(
   }
 }
 
+/** Parse duplicate CLI controls and render the shared SDK analysis with optional timing. */
 async function runDuplicatesAction(
   options: Record<string, unknown>,
   command: Command,

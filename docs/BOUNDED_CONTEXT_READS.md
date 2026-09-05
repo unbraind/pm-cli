@@ -118,7 +118,15 @@ expected pair counts, reachable byte ceilings, and append headroom. Property
 tests additionally vary thresholds, Unicode, punctuation, and issue identifiers.
 
 The point-read script holds the addressed Epic constant while varying corpus
-size. Its explicit child scan must observe every generated item. Fixture setup
+size. The public `measureItemMetadataReadWork` query SDK wrapper reports actual
+item-store enumeration calls and returned metadata rows, including cache hits.
+Ordinary reads must perform zero enumerations; an explicit child scan must
+observe every generated item. A regression test deliberately enumerates and
+discards the corpus before a normal read, proving that output shape alone cannot
+satisfy this work gate. Measurements preserve operation failures, isolate
+concurrent roots, include nested work, and release their observers on completion.
+They cover item-store enumeration APIs rather than arbitrary extension I/O.
+Fixture setup
 registers all generated types, including `Story`, through the live SDK schema
 and uses deterministic SDK execution for byte-reproducible workspace history.
 

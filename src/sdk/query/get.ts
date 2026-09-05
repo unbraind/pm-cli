@@ -622,6 +622,7 @@ function attachGetLinked(
   };
 }
 
+/** Enumerate hierarchy metadata only when the caller explicitly requested a child rollup. */
 async function buildGetChildrenRollup(
   context: GetItemContext,
   includeChildren: boolean,

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1852,
+    "covered_symbols": 1854,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1853
+    "required_symbols": 1855
   },
   "breaking_acknowledgements": [
     {
@@ -9059,6 +9059,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ItemMetadataReadWork",
+          "signature": "export interface ItemMetadataReadWork { enumeration_calls: number; metadata_rows: number; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "ItemScalarConflictResolution",
           "signature": "export type ItemScalarConflictResolution = \"preferred_side\" | \"stable_value_order\" | \"latest_document_update\";"
@@ -9722,6 +9728,12 @@
           "kind": "function",
           "name": "measureCorpusShapePlan",
           "signature": "(shape: Readonly<CorpusShape>, plans: readonly CorpusShapeItemPlan[]) => CorpusShapeProfile | calls: (shape: Readonly<CorpusShape>, plans: readonly CorpusShapeItemPlan[]) => CorpusShapeProfile"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "measureItemMetadataReadWork",
+          "signature": "<T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }> | calls: <T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }>"
         },
         {
           "classification": "contract_data",
@@ -28643,6 +28655,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ItemMetadataReadWork",
+          "signature": "export interface ItemMetadataReadWork { enumeration_calls: number; metadata_rows: number; }"
+        },
+        {
+          "classification": "supported",
           "kind": "class",
           "name": "JsonFileContextSignalStoreAdapter",
           "signature": "export declare class JsonFileContextSignalStoreAdapter implements ContextSignalStoreAdapter { private readonly filePath; constructor(filePath: string); read(): Promise<unknown | null>; write(snapshot: ContextSignalSnapshot): Promise<void>; }"
@@ -28778,6 +28796,12 @@
           "kind": "value",
           "name": "MAX_CHILD_PROJECTION_ITEMS",
           "signature": "1000000"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "measureItemMetadataReadWork",
+          "signature": "<T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }> | calls: <T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }>"
         },
         {
           "classification": "supported",

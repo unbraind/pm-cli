@@ -1,0 +1,65 @@
+id: pm-xlb6aw
+title: Telemetry worker permanently retries JSONB-incompatible Unicode events
+description: "During verified Postgres reconnect recovery, a retained event containing a JSONB-incompatible Unicode value repeatedly raised SQLSTATE 22P05 and kept worker health failing. Preserve rejected raw JSON durably, acknowledge only after retention succeeds, and verify valid subsequent events still ingest. Reuse telemetry ingestion lineage; do not publish private deployment source or event data."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-05T12:38:33.401Z"
+updated_at: "2026-09-05T12:49:39.618Z"
+closed_at: "2026-09-05T12:46:37.156Z"
+completed_at: "2026-09-05T12:46:37.156Z"
+author: "harness:codex"
+parent: pm-5oj5
+resolution: Durably retain JSONB-incompatible events before acknowledging their broker delivery
+expected_result: "Rejected input must not retry forever or block following valid events, and original JSON must remain retained without duplicate aggregates"
+actual_result: Real Unicode rejection replay retained one original JSON record for two identical inputs while all 23 valid events and aggregate finishes remained exact. Production worker is healthy with the rejected event retained
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-05T12:40:21.883Z","harness:codex","cli:update:dep",detected
+  pm-rj3w,discovered_from,"2026-09-05T12:40:21.883Z","harness:codex","cli:update:dep",detected
+  pm-vhdc,recurs_from,"2026-09-05T12:40:21.883Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-05T12:38:33.401Z","harness:codex","Duplicate check: complete all-status corpus plus request search and live open/in-progress lists found no Unicode rejection owner. pm-vhdc is closed UUID boundary validation; pm-rj3w is the active Postgres reconnect owner that exposed this independent poison-event path."
+  "2026-09-05T12:45:20.317Z","harness:codex","Private acceptance passed: 21 expected rows recover after the disposable Postgres restart with unchanged worker PID; replay leaves 23 valid unique events and 23 aggregate finishes. Two identical JSONB-incompatible events produce exactly one retained original JSON row with SQLSTATE 22P05, and a subsequent valid barrier event ingests. Readiness and the real stale watchdog exit also pass. Private worker digest fc68db96312f9529ee42d4f6acedba5c74272353756e2328c8d0ba475ee098b7. Public CI does not execute this private operational drill; its evidence is separate from the product coverage claim."
+  "2026-09-05T12:46:36.576Z","harness:codex","Deployment verified on the private telemetry host using a worker-only rebuild with saved rollback baselines. The readiness check is healthy; broker and recent database receipts confirm recovery. The original poison event is retained separately rather than counted as a successfully ingested command. Source, drill, health override and runbook remain intentionally ignored; reviewed public tracker records contain aggregate evidence only."
+  "2026-09-05T12:49:39.618Z","harness:codex","PR 1199 review-round closeout: full quality:static, exact 100/100/100/100 coverage across 8444 tests, packed npm/Bun manual acceptance, package-artifact and docs-link gates pass. The latest pm-changelog package regenerated and verified CHANGELOG.md after structured closure. All active owners are released; the broader duplicate latency target remains open. Public source and private operational verification are recorded separately."
+files[2]{path,scope,note}:
+  scripts/prod/telemetry/worker-recovery/reconnect-drill.py,project,Real JSONB Unicode failure and retained replay assertions
+  scripts/prod/telemetry/worker-recovery/worker.py,project,Private durable rejection storage and acknowledgement boundary
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  bash scripts/prod/telemetry/worker-recovery/run-drill.sh,project,240,"harness:codex","2026-09-05T12:40:23.446Z",local_mutation,feat/scalable-context-reads-and-duplicate-discovery,Real database rejection retains original JSON exactly once and permits following valid events
+test_runs[2]:
+  - run_id: test-local-mtodf9k2-pb1k4y
+    kind: test
+    status: failed
+    started_at: "2026-09-05T12:40:23.915Z"
+    finished_at: "2026-09-05T12:40:33.314Z"
+    recorded_at: "2026-09-05T12:40:33.314Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      bash scripts/prod/telemetry/worker-recovery/run-drill.sh,schema,schema,source,local_source_ref
+  - run_id: test-local-mtodikqa-kg5xm6
+    kind: test
+    status: passed
+    started_at: "2026-09-05T12:42:12.036Z"
+    finished_at: "2026-09-05T12:43:07.761Z"
+    recorded_at: "2026-09-05T12:43:07.761Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      bash scripts/prod/telemetry/worker-recovery/run-drill.sh,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  scripts/prod/telemetry/worker-recovery/README.md,project,Private durable rejection and exact replay recovery runbook
+close_reason: "Private implementation, real outage/replay acceptance and production readiness verified"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-xlb6aw
+  gate_id: private-telemetry-reconnect-and-rejection-acceptance
+  negative_control: Original worker retains only 1 of 21 expected rows after isolated Postgres restart; deployed reconnect-only worker retries SQLSTATE 22P05 indefinitely
+  local_checks[1]: bash scripts/prod/telemetry/worker-recovery/run-drill.sh
+  hosted_checks[2]: "Private telemetry host: isolated real Postgres/RabbitMQ outage and replay acceptance","Private telemetry host: worker container readiness and broker/database freshness"
+body: ""

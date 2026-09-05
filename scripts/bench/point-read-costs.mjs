@@ -8,8 +8,15 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { measureItemMetadataReadWork } from "@unbrained/pm-cli/sdk/query";
 import { PmClient } from "@unbrained/pm-cli/sdk/runtime";
 import { generateSyntheticWorkspace } from "./scale-workspace.mjs";
+
+/** Reject hidden corpus enumeration even when a point-read result omits children. */
+export function assertBoundedPointRead(measured) {
+  assert.equal(measured.work.enumeration_calls, 0, "A point read enumerated unrelated item metadata");
+  assert.equal(measured.result.children, undefined, "An unrequested child rollup was emitted");
+}
 
 /** Hold the addressed item constant while varying the unrelated corpus and requested facets. */
 export async function measurePointReadCosts(sizes = [100], iterations = 10) {
@@ -25,21 +32,26 @@ export async function measurePointReadCosts(sizes = [100], iterations = 10) {
       identity ??= projection.item;
       assert.deepEqual(projection.item, identity, "The measured item changed between corpus sizes");
       const timings = {};
+      let ordinaryEnumerations = 0;
       for (const [mode, options] of Object.entries({ standard: {}, brief: { depth: "brief" }, fields: { fields: "id,title" } })) {
         const samples = [];
         for (let index = 0; index < iterations; index += 1) {
           const started = performance.now();
-          const result = await client.get(manifest.sample_ids.get, options);
+          const measured = await measureItemMetadataReadWork(() => client.get(manifest.sample_ids.get, options));
           samples.push(performance.now() - started);
-          assert.equal(result.children, undefined, "An unrequested child scan was reintroduced");
+          assertBoundedPointRead(measured);
+          ordinaryEnumerations += measured.work.enumeration_calls;
         }
         samples.sort((left, right) => left - right);
         timings[mode] = { minimum_ms: samples[0], p95_ms: samples[Math.ceil(samples.length * 0.95) - 1] };
       }
       const started = performance.now();
-      const explicit = await client.get(manifest.sample_ids.get, { fields: "id,children" });
+      const measured = await measureItemMetadataReadWork(() => client.get(manifest.sample_ids.get, { fields: "id,children" }));
+      const explicit = measured.result;
+      assert(measured.work.enumeration_calls > 0, "The explicit scan did not exercise the work observer");
+      assert(measured.work.metadata_rows >= itemCount, "The explicit work observer missed corpus rows");
       assert.equal(explicit.children.scanned, itemCount, "The explicit scan negative control did not see the complete corpus");
-      reports.push({ item_count: itemCount, item_id: manifest.sample_ids.get, iterations, timings, explicit_children_ms: performance.now() - started, explicit_children_scanned: explicit.children.scanned });
+      reports.push({ item_count: itemCount, item_id: manifest.sample_ids.get, iterations, timings, ordinary_metadata_enumerations: ordinaryEnumerations, explicit_metadata_work: measured.work, explicit_children_ms: performance.now() - started, explicit_children_scanned: explicit.children.scanned });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

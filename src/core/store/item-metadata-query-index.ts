@@ -206,6 +206,7 @@ function writeMetadata(
     .run(key, value);
 }
 
+/** Upsert authoritative metadata and replace dependent search, key and linked-file rows in the caller transaction. */
 function insertRow(
   database: DatabaseSync,
   row: ItemMetadataQueryIndexRow,

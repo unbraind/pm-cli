@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,token-efficiency
 created_at: "2026-07-27T04:06:26.179Z"
-updated_at: "2026-09-05T11:20:07.160Z"
-closed_at: "2026-09-05T11:14:21.278Z"
-completed_at: "2026-09-05T11:14:21.278Z"
+updated_at: "2026-09-05T12:49:36.612Z"
+closed_at: "2026-09-05T12:41:01.411Z"
+completed_at: "2026-09-05T12:41:01.411Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A read of one item by its identifier costs work proportional to that item and its own record, not to the number of items in the workspace; Any rollup over other items that pm get chooses to include is either derived from an index or is requested explicitly, and is never computed to be discarded; A narrowed projection narrows the work as well as the output: --fields and --depth brief measurably reduce latency, not only bytes; The behaviour is proven by a measurement that varies corpus size and holds the requested item constant, so a regression that reintroduces the scan is detectable"
@@ -23,9 +23,9 @@ confidence: high
 severity: high
 environment: "pm 2026.7.27, local checkout, .agents/pm at 2118 items and 177MB, warm filesystem cache, timings averaged over repeated runs"
 repro_steps: "Run pm get pm-n7rr --depth standard and read children.scanned; then time pm get pm-n7rr --fields id,title against the same command in a freshly initialised sandbox workspace with PM_PATH and PM_GLOBAL_PATH pointed at a temporary directory"
-resolution: Make container child rollups explicit and preserve SDK projection cost boundaries
-expected_result: Ordinary primary-key reads avoid corpus enumeration; explicit hierarchy reads remain complete
-actual_result: Standard get p95 is 3.686ms at 100000 items; brief and fields minimums are 2.118ms and 2.425ms; explicit scan accounts for every row
+resolution: Explicit SDK hierarchy work with observable metadata enumeration
+expected_result: Ordinary primary-key reads must avoid unrelated corpus enumeration; explicit hierarchy reads remain complete
+actual_result: "At 100/10000/100000 items ordinary enumeration count is zero and explicit enumeration returns every row. Real scan-and-discard negative control, nested/concurrent/failure cleanup and packed npm/Bun SDK checks pass"
 dependencies[8]{id,kind,created_at}:
   pm-801d,related,"2026-07-27T04:06:26.179Z"
   pm-9rxu,implements,"2026-07-27T04:06:26.179Z"
@@ -35,19 +35,27 @@ dependencies[8]{id,kind,created_at}:
   pm-gmdzaa,related,"2026-07-27T04:21:33.262Z"
   pm-o87av6,implements,"2026-07-27T04:21:33.262Z"
   pm-yse5dt,related,"2026-07-27T04:21:33.262Z"
-comments[6]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-05T09:16:33.264Z","harness:codex","TDD evidence: ordinary Epic get previously materialized an unsolicited workspace child rollup. The new regression proves standard reads omit children and explicit fields=id,children still returns the typed hierarchy rollup. Deep reads preserve the full inspection path."
   "2026-09-05T10:18:44.914Z","harness:codex","Complete filesystem scale proof after fixture and FTS repairs: the same Epic id was read ten times per projection at 100/10k/100k items. Standard p95=4.53/3.61/3.69ms; brief=4.24/3.03/11.00ms; narrow fields=3.54/4.08/3.11ms. Routine reads had no children facet. Explicit children scans read exactly 100/10000/100000 rows and took 48ms/4.91s/48.59s including cold derived-index construction. Full output is documented in BOUNDED_CONTEXT_READS."
   "2026-09-05T10:39:14.640Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
   "2026-09-05T11:05:51.986Z","harness:codex","Projection measurements preserve the addressed Epic across 100/10000/100000 items. At 100000 items, minimum standard/brief/fields times were 2.860/2.118/2.425ms; p95 was 3.686/11.000/3.107ms, so brief has a visible tail outlier rather than an unconditional latency guarantee. Explicit scan observes all 100000 rows in 48.590s including cold index rebuild. The deterministic regression requires ordinary get to omit rollup and an explicit children projection to include it."
   "2026-09-05T11:14:15.762Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
   "2026-09-05T11:20:07.160Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1199 contains the combined 52-file SDK/CLI implementation, contracts, tests, documentation and generated changelog. Implementation commit 2cbfbda7c carries passing local full coverage and quality evidence. Use scripts/reviews/pr-review-loop.mjs watch --pr 1199 --repo unbraind/pm-cli --interval 60, inspect all paginated comments/reviews/threads including updatedAt changes, react and reply on the actual surface, and require exact-head hosted analyzer proof before merge. This comment records review routing, not approval or publication."
-files[5]{path,scope,note}:
+  "2026-09-05T11:45:20.653Z","harness:codex","PR 1199 review regression: the initial work-observer test fails with zero observed calls despite a real metadata scan. Instrumented full/light/body item-store enumerations now report successful call and row counts in an async-scoped public SDK measurement, including cached reads; nested scopes contribute to parents and concurrent roots stay isolated. The benchmark asserts zero enumerations for ordinary reads and positive complete enumeration for explicit hierarchy. A real list-and-discard operation followed by get is rejected even though children remain omitted. Focused tests pass after aligning the query source alias with the existing runtime alias."
+  "2026-09-05T12:32:59.410Z","harness:codex","Review regression proof: measureItemMetadataReadWork now observes real full/light/body item-store enumerations across source and published SDK runtime boundaries. A real listAllComplete scan followed by a normal projected get is rejected despite omitted children. Final standalone tiers 100/10000/100000 each performed zero ordinary enumerations and exactly one explicit enumeration returning every corpus row. Nested, concurrent, outside-scope and throwing operations pass without leaking observers. Packed npm and Bun acceptance also verifies both zero-work ordinary and positive-work explicit reads."
+  "2026-09-05T12:41:00.901Z","harness:codex","Review closeout: 8444 tests across 613 files pass. Exact source coverage is 60000/60000 lines, 62406/62406 statements, 12947/12947 functions and 47272/47272 branches. Structured defect escape and gate evidence now accompanies closure; no thresholds or coverage exclusions were relaxed. Hosted re-review follows the next push."
+  "2026-09-05T12:49:36.612Z","harness:codex","PR 1199 review-round closeout: full quality:static, exact 100/100/100/100 coverage across 8444 tests, packed npm/Bun manual acceptance, package-artifact and docs-link gates pass. The latest pm-changelog package regenerated and verified CHANGELOG.md after structured closure. All active owners are released; the broader duplicate latency target remains open. Public source and private operational verification are recorded separately."
+files[9]{path,scope,note}:
   scripts/bench/point-read-costs.mjs,project,Implementation contract and verification evidence for bounded context delivery
+  src/core/store/item-metadata-read-work.ts,project,Real metadata enumeration work measurement and source-consistent SDK verification
+  src/core/store/item-store.ts,project,Real metadata enumeration work measurement and source-consistent SDK verification
+  src/sdk/query.ts,project,Public metadata work measurement export for package consumers
   src/sdk/query/get.ts,project,Bounded SDK context read implementation and verification
   tests/unit/commands/get-append-command.spec.ts,project,Bounded SDK context read implementation and verification
   tests/unit/scripts/point-read-costs.spec.ts,project,Implementation contract and verification evidence for bounded context delivery
   tests/unit/sdk/context/read-cost-bounds.spec.ts,project,Bounded SDK context read implementation and verification
+  vitest.config.ts,project,Real metadata enumeration work measurement and source-consistent SDK verification
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/get-append-command.spec.ts,project,240,"harness:codex","2026-09-05T09:24:25.344Z",local_mutation,feat/scalable-context-reads-and-duplicate-discovery,Exact recall and bounded read regressions
 test_runs[1]:
@@ -65,5 +73,13 @@ test_runs[1]:
 docs[2]{path,scope,note}:
   docs/BOUNDED_CONTEXT_READS.md,project,Implementation contract and verification evidence for bounded context delivery
   docs/COMMANDS.md,project,Implementation contract and verification evidence for bounded context delivery
-close_reason: Implementation and local acceptance complete; included in the combined reviewed delivery
+close_reason: Implemented and verified with full exact coverage plus focused real negative controls
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ydshl9
+  gate_id: bounded-context-read-regressions
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/context/read-cost-bounds.spec.ts tests/unit/scripts/point-read-costs.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/context/read-cost-bounds.spec.ts tests/unit/scripts/point-read-costs.spec.ts,"pnpm quality:static",node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: ""

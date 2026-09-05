@@ -6,19 +6,19 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T10:04:49.937Z"
-updated_at: "2026-09-05T11:20:08.570Z"
-closed_at: "2026-09-05T11:14:19.182Z"
-completed_at: "2026-09-05T11:14:19.182Z"
+updated_at: "2026-09-05T12:49:38.180Z"
+closed_at: "2026-09-05T12:41:04.446Z"
+completed_at: "2026-09-05T12:41:04.446Z"
 author: "harness:codex"
 acceptance_criteria: FTS maintenance uses indexed rowid lookup for rebuild update and delete; real SQLite query plans demonstrate bounded identity lookup with the former predicate as a negative control; update move delete and duplicate-id replacement retain exact search parity; old derived index versions are refused and rebuilt; the 100000-item explicit point-read scale control completes with its full corpus count
 parent: pm-801d
-resolution: Maintain FTS rows through indexed item rowid and migrate the derived index to version 5
-expected_result: Rebuild update and deletion avoid unindexed FTS identity scans while preserving search parity
-actual_result: Real SQLite query-plan negative control and update/delete/replacement tests pass; complete 100000-row cold scan finishes in 48.590 seconds
+resolution: Indexed row-identity FTS maintenance with derived index version 5
+expected_result: Insert/update/delete/replacement must maintain exact search results without scanning unindexed FTS identity columns
+actual_result: Real SQLite query plans and update/delete/replacement controls pass. Complete 100000-item hierarchy scan completes with every row visible
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fx80w2,verifies,"2026-09-05T10:04:49.937Z","harness:codex","cli:create:dep",detected
   pm-px153l,discovered_from,"2026-09-05T10:04:49.937Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-05T10:04:49.937Z","harness:codex","Duplicate check: complete all-status corpus title inventory plus FTS delete quadratic and item_search searches and current open/in-progress lists found no matching issue. Closed pm-px153l supplied the existing query index and remains closed; this new measured maintenance-cost regression preserves that lineage."
   "2026-09-05T10:07:59.441Z","harness:codex","TDD evidence: real SQLite statement instrumentation and EXPLAIN QUERY PLAN failed against the old unindexed FTS predicate. After binding FTS rows to items.rowid, six index tests pass including repeated-id replacement, move/delete behavior, search parity, indexed-delete plans, and v4 refusal. The original 100k benchmark was stopped after diagnosing its repeated FTS scans; it is not accepted as completed evidence and will be rerun on v5."
   "2026-09-05T10:18:45.390Z","harness:codex","Scale rerun completed successfully: the explicit 100k-item child scan plus cold SQLite rebuild finished in 48.59 seconds and observed all 100000 rows. The earlier unindexed run was interrupted after more than fifteen minutes. This establishes the maintenance regression fix; it does not claim that full filesystem ingestion meets the one-second roadmap target."
@@ -26,6 +26,8 @@ comments[7]{created_at,author,text}:
   "2026-09-05T10:39:16.126Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
   "2026-09-05T11:14:17.110Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
   "2026-09-05T11:20:08.570Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1199 contains the combined 52-file SDK/CLI implementation, contracts, tests, documentation and generated changelog. Implementation commit 2cbfbda7c carries passing local full coverage and quality evidence. Use scripts/reviews/pr-review-loop.mjs watch --pr 1199 --repo unbraind/pm-cli --interval 60, inspect all paginated comments/reviews/threads including updatedAt changes, react and reply on the actual surface, and require exact-head hosted analyzer proof before merge. This comment records review routing, not approval or publication."
+  "2026-09-05T12:41:03.890Z","harness:codex","Review closeout: 8444 tests across 613 files pass. Exact source coverage is 60000/60000 lines, 62406/62406 statements, 12947/12947 functions and 47272/47272 branches. Structured defect escape and gate evidence now accompanies closure; no thresholds or coverage exclusions were relaxed. Hosted re-review follows the next push."
+  "2026-09-05T12:49:38.180Z","harness:codex","PR 1199 review-round closeout: full quality:static, exact 100/100/100/100 coverage across 8444 tests, packed npm/Bun manual acceptance, package-artifact and docs-link gates pass. The latest pm-changelog package regenerated and verified CHANGELOG.md after structured closure. All active owners are released; the broader duplicate latency target remains open. Public source and private operational verification are recorded separately."
 files[2]{path,scope,note}:
   src/core/store/item-metadata-query-index.ts,project,Indexed rowid FTS maintenance and derived schema migration
   tests/unit/core/item/item-metadata-query-index.spec.ts,project,Real SQLite query plans and data parity with negative control
@@ -45,5 +47,13 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/BOUNDED_CONTEXT_READS.md,project,Index maintenance and migration contract
-close_reason: Implementation and local acceptance complete; included in the combined reviewed delivery
+close_reason: Implemented and verified with full exact coverage plus focused real negative controls
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gtw5zh
+  gate_id: bounded-context-read-regressions
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts,"pnpm quality:static",node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: ""

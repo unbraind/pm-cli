@@ -71,3 +71,5 @@ export * from "./workspace-memory.js";
 export * from "./duplicates.js";
 
 export { analyzeDuplicateItems, type DuplicateItemInput, type DuplicateItemsAnalysis } from "./similarity.js";
+
+export { measureItemMetadataReadWork, type ItemMetadataReadWork } from "../core/store/item-metadata-read-work.js";

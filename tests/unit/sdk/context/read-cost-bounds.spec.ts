@@ -3,10 +3,12 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  measureItemMetadataReadWork,
   recordContextUsageServing,
   recordContextUsageDelivery,
   runGet,
 } from "../../../../src/sdk/query.js";
+import { listAllItemMetadata, listAllItemMetadataLight, listAllItemMetadataWithBody } from "../../../../src/core/store/item-store.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import { applyReadOutputSessionReferences, attachReadOutputSessionReceipt, parseReadOutputSession, type PmReadOutputSessionReceipt, type PmReadOutputSessionState } from "../../../../src/sdk/read-output-session.js";
 
@@ -37,6 +39,33 @@ describe("agent read cost bounds", () => {
       expect((await runGet(created.item.id, { path: context.pmPath }, {
         fields: "id,children",
       })).children?.count).toBe(1);
+    });
+  });
+
+  it("measures real full, light and body enumeration with isolated nested async scopes", async () => {
+    await withTempPmPath(async (context) => {
+      context.runCli(["create", "--title", "Observed metadata", "--type", "Task"]);
+      const releaseIdle = Promise.withResolvers<void>();
+      const activePromise = measureItemMetadataReadWork(async () => {
+          await listAllItemMetadata(context.pmPath);
+          const nested = await measureItemMetadataReadWork(() => listAllItemMetadataLight(context.pmPath));
+          expect(nested.work).toEqual({ enumeration_calls: 1, metadata_rows: 1 });
+          await listAllItemMetadataWithBody(context.pmPath);
+          return "completed";
+        });
+      const idlePromise = measureItemMetadataReadWork(() => releaseIdle.promise);
+      const active = await activePromise;
+      releaseIdle.resolve();
+      const idle = await idlePromise;
+      const releaseOutside = Promise.withResolvers<void>();
+      const outside = measureItemMetadataReadWork(() => releaseOutside.promise);
+      await listAllItemMetadata(context.pmPath);
+      releaseOutside.resolve();
+      expect((await outside).work.enumeration_calls).toBe(0);
+      expect(active).toEqual({ result: "completed", work: { enumeration_calls: 3, metadata_rows: 3 } });
+      expect(idle.work).toEqual({ enumeration_calls: 0, metadata_rows: 0 });
+      await expect(measureItemMetadataReadWork(() => { throw new Error("operation failed"); })).rejects.toThrow("operation failed");
+      expect((await measureItemMetadataReadWork(() => "after failure")).work.enumeration_calls).toBe(0);
     });
   });
 

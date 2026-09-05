@@ -21,6 +21,7 @@ export function collectDuplicateCandidatePairs(
   exhaustive = false,
 ): Set<string> {
   const candidates = new Set<string>();
+  /** Deduplicate a candidate pair and refuse before publishing an over-budget result. */
   const add = (left: number, right: number): void => {
     candidates.add(`${left}:${right}`);
     if (candidates.size > maxPairs) {

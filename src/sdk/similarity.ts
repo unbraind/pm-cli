@@ -279,6 +279,7 @@ function validateDuplicateClusterOptions(
   return { limit, since };
 }
 
+/** Resolve registered statuses and load the metadata population before applying status and creation-time filters. */
 async function loadDuplicateItems(
   options: FindDuplicateClustersOptions,
   since: Date | undefined,
@@ -394,6 +395,7 @@ function scoreDuplicateCandidates(
   return matches;
 }
 
+/** Group unioned endpoints and their scored evidence once, then deterministically rank and limit complete components. */
 function buildDuplicateClusters(
   items: PreparedDuplicateItem[],
   matches: DuplicateClusterMatch[],

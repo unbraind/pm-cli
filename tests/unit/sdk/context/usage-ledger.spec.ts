@@ -8,6 +8,7 @@ import { readContextUsageAffinity, recordContextUsageDelivery, recordContextUsag
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))); });
 
+/** Create disposable ledger storage with a fixed clock and register cleanup. */
 async function fixture() {
   const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-byte-ledger-"));
   roots.push(pmRoot);
