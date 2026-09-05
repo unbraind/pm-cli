@@ -190,11 +190,10 @@ function collectNextResultItemIds(
     ...(asObjectRecord(record.recommended) === null
       ? []
       : [record.recommended]),
-    ...(Array.isArray(record.ready) ? record.ready : []),
-    ...(Array.isArray(record.decision_needed) ? record.decision_needed : []),
-    ...(Array.isArray(record.blocked) ? record.blocked : []),
-    ...(Array.isArray(record.held_by_others) ? record.held_by_others : []),
   ];
+  for (const key of ["ready", "decision_needed", "gate_needed", "containers", "blocked", "held_by_others"]) {
+    if (Array.isArray(record[key])) rows.push(...record[key]);
+  }
   for (const value of rows) {
     const row = asObjectRecord(value);
     addContextUsageId(ids, row?.id);

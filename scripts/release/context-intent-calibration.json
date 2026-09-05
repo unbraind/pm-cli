@@ -8,10 +8,10 @@
       "item_count": 2,
       "intents": {
         "context": {
-          "delivered_bytes": 2871,
+          "delivered_bytes": 3002,
           "delivered_rows": 4,
           "declared_tokens": 3000,
-          "measured_tokens": 718,
+          "measured_tokens": 751,
           "degradation": "bounded_sections"
         },
         "get": {
@@ -29,10 +29,10 @@
           "degradation": "bounded_fields_and_rows"
         },
         "next": {
-          "delivered_bytes": 1298,
+          "delivered_bytes": 1396,
           "delivered_rows": 0,
           "declared_tokens": 1200,
-          "measured_tokens": 325,
+          "measured_tokens": 349,
           "degradation": "bounded_ranked_rows"
         },
         "search": {
@@ -46,21 +46,21 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 3411,
-        "remaining_tokens": 16589,
+        "spent_tokens": 3468,
+        "remaining_tokens": 16532,
         "seen_item_count": 2,
         "suppressed_repeat_count": 4,
-        "delivered_bytes": 13638
+        "delivered_bytes": 13867
       }
     },
     {
       "item_count": 2243,
       "intents": {
         "context": {
-          "delivered_bytes": 4042,
+          "delivered_bytes": 4178,
           "delivered_rows": 6,
           "declared_tokens": 3000,
-          "measured_tokens": 1011,
+          "measured_tokens": 1045,
           "degradation": "bounded_sections"
         },
         "get": {
@@ -78,10 +78,10 @@
           "degradation": "budget_row_compaction"
         },
         "next": {
-          "delivered_bytes": 4400,
-          "delivered_rows": 9,
+          "delivered_bytes": 4185,
+          "delivered_rows": 8,
           "declared_tokens": 1200,
-          "measured_tokens": 1100,
+          "measured_tokens": 1047,
           "degradation": "budget_row_compaction"
         },
         "search": {
@@ -95,11 +95,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 9780,
-        "remaining_tokens": 10220,
-        "seen_item_count": 110,
+        "spent_tokens": 9757,
+        "remaining_tokens": 10243,
+        "seen_item_count": 109,
         "suppressed_repeat_count": 8,
-        "delivered_bytes": 39117
+        "delivered_bytes": 39024
       },
       "cursor_walks": {
         "list": {

@@ -22,6 +22,8 @@ export interface OutputOmissionReceipt {
   omitted_field_group_count: number;
   /** Withheld groups and the exact opt-in that restores each one. */
   omitted_field_groups: OutputProjectionFieldGroup[];
+  /** Population counted by context summary regardless of bounded focus rows. */
+  summary_scope?: "matching_items";
 }
 
 /** Self-describing projection metadata that built-ins and extensions can use to derive receipts without command-specific code. */
@@ -76,6 +78,8 @@ export const PM_READ_ROW_CONTRACTS = {
       "recommended",
       "ready",
       "decision_needed",
+      "gate_needed",
+      "containers",
       "blocked",
       "held_by_others",
     ],
@@ -320,6 +324,8 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
     "recommended",
     "ready",
     "decision_needed",
+    "gate_needed",
+    "containers",
     "blocked",
     "held_by_others",
   ],
@@ -459,7 +465,7 @@ function resolveContextReceipt(
   result: Record<string, unknown>,
 ): OutputOmissionReceipt | undefined {
   if (!Array.isArray(result.sections_included)) return undefined;
-  return createOutputOmissionReceipt(
+  const receipt = createOutputOmissionReceipt(
     CONTEXT_FIELD_GROUPS,
     new Set(
       result.sections_included.filter(
@@ -467,6 +473,10 @@ function resolveContextReceipt(
       ),
     ),
   );
+  if (isRecord(result.summary) && result.summary.scope === "matching_items") {
+    receipt.summary_scope = "matching_items";
+  }
+  return receipt;
 }
 
 function resolveGetReceipt(

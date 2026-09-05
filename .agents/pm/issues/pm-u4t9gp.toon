@@ -2,11 +2,13 @@ id: pm-u4t9gp
 title: "GH-1169: the unknown-command hint routes to the 15-command root help that hides the target, and test is the only singular collection verb"
 description: "Measured on the 2026.9.4 build, reproducing GH-1169 exactly. Running pm tests <id> returns \"Unknown command tests\", offers \"Did you mean: test?\", and then instructs \"Run pm --help to list commands available in this runtime\". The root help lists 15 of 88 commands; the full surface is only reachable through pm --help --all, which the hint never names. The did-you-mean candidate is the one useful line and it is buried second. Separately, every other per-item collection verb is plural (comments, notes, learnings, files, docs, events) while test alone is singular and has no tests alias in the permanent alias table, so the most natural guess for the collection fails and the unknown-command guidance then routes to the listing that cannot contain the answer.\n\nPrior owner shipped the --all discovery option (closed 2026-08-31, GH-1166) and left the unknown-command hint pointing at the curated listing. The facet-consolidation task under the same epic owns the eventual single-noun grammar; this issue is the bounded, shippable half: (1) the unknown-command refusal must lead with the did-you-mean path and route discovery to pm --help --all (or pm guide capabilities), never to the curated 15; (2) tests becomes a permanent alias of test in PM_COMMAND_ALIAS_CONTRACTS so the plural collection spelling resolves like its six siblings, with completion, contracts, and MCP regenerating from the alias table. Negative control: seeding a hint that names the curated listing must fail the refusal-closure gate."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:contracts",github-intake,regression,surface-parity
 created_at: "2026-09-04T18:23:49.023Z"
-updated_at: "2026-09-04T20:29:51.958Z"
+updated_at: "2026-09-05T05:03:39.810Z"
+closed_at: "2026-09-05T04:18:37.455Z"
+completed_at: "2026-09-05T04:18:37.455Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The unknown-command refusal leads with the did-you-mean candidate and names pm --help --all or pm guide capabilities, never the curated listing alone; tests is a permanent alias of test in PM_COMMAND_ALIAS_CONTRACTS and completion, contracts, and MCP names regenerate from the alias table; A negative control that seeds a hint naming only the curated listing fails the refusal-closure gate; GH-1169 is closed with the shipped release named in its tracker-link comment"
@@ -17,8 +19,9 @@ reporter: unbraind
 severity: medium
 environment: "pm-cli 2026.9.4 and 2026.8.31, Linux, bare install"
 repro_steps: "Run pm tests <id> on any tracker, read the Next steps block, then count pm --help versus pm --help --all entries"
-expected_result: "The refusal leads with the did-you-mean candidate and routes discovery to the full surface, and pm tests resolves as the plural alias of test"
-actual_result: "Unknown command tests, hint says run pm --help which lists 15 of 88 commands, and no tests alias exists"
+resolution: "Implemented permanent tests-to-test alias, complete unknown-command discovery, positional JSON help, and executable incomplete-discovery negative control."
+expected_result: "Unknown-command recovery leads to complete help, tests executes the canonical test action, and item operands do not break help."
+actual_result: "Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
 affected_version: 2026.8.31
 component: "cli/commander-usage, cli-contracts/command-aliases"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -26,11 +29,45 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7f9zkh,recurs_from,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
   pm-q0kr,verifies,"2026-09-04T18:23:49.023Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-04T18:26:01.645Z","harness:claude-code","Duplicate check: searched unknown-command hint, root help count, plural collection alias. Nearest prior owners are the closed GH-1166 root-help item (linked recurs_from) and the open facet-consolidation task under the same epic, which owns the eventual single-noun grammar but not this bounded hint and alias fix. Verified live on the 2026.9.4 build before filing."
   "2026-09-04T20:29:51.958Z","harness:codex","Additional live UX evidence during the history delivery: pm files <id> --help reports Unknown command files while pm files --help resolves correctly. Keep the argument-bearing help-routing case alongside the existing full-discovery and plural-test regression checks; reuse this canonical GH-1169 lineage rather than creating another overlapping intake item. This item remains open and unclaimed because it is not part of the active history implementation."
-files[2]{path,scope,note}:
+  "2026-09-05T03:08:17.663Z","harness:codex",Unknown commands point to complete pm --help --all discovery. tests resolves to test; registered positional operands no longer invalidate hybrid command help. Existing invalid subcommand refusals remain covered. GitHub issue #1169 already has its canonical item link.
+  "2026-09-05T04:18:36.936Z","harness:codex","Implemented permanent tests-to-test alias, complete unknown-command discovery, positional JSON help, and executable incomplete-discovery negative control. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+  "2026-09-05T05:03:39.810Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
+files[7]{path,scope,note}:
+  scripts/release/refusal-closure-gate.mjs,project,Executable regression contract and public SDK surface
   src/cli/commander-usage.ts,project,unknown-command Next steps hint that names pm --help without --all
+  src/cli/help-json-payload.ts,project,Connected SDK and CLI execution contract delivery
   src/sdk/cli-contracts/command-aliases.ts,project,permanent alias table where tests must map to test
+  tests/integration/help-runtime.spec.ts,project,Execution contract implementation and regression evidence
+  tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Executable regression contract and public SDK surface
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,project,240,"harness:codex","2026-09-05T03:08:16.265Z",local_mutation,feat/agent-context-execution-contracts
+test_runs[1]:
+  - run_id: test-local-mtnuodbs-sfxncs
+    kind: test
+    status: passed
+    started_at: "2026-09-05T03:55:38.955Z"
+    finished_at: "2026-09-05T03:55:45.400Z"
+    recorded_at: "2026-09-05T03:55:45.400Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
+  docs/README.md,project,Public execution and recovery semantics
+  docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
+close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-u4t9gp
+  gate_id: unknown-command-complete-discovery
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: ""

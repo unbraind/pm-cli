@@ -218,9 +218,9 @@ describe("runNext", () => {
           (reason) => reason.startsWith("deadline ") && reason.includes("(in "),
         ),
       ).toBe(true);
-      expect(
-        reasons.some((reason) => reason.startsWith("unblocks 1 item(s):")),
-      ).toBe(true);
+      expect(reasons).toContain("unblocks 1 item(s)");
+      expect(result.recommended?.unblocks).toHaveLength(1);
+      expect(reasons.join(" ")).not.toContain(result.recommended!.unblocks[0]);
     });
   });
 

@@ -721,6 +721,8 @@ async function runClaimAction(
             release:
               typeof options.release === "string" ? options.release : undefined,
             includeDecisions: options.includeDecisions === true,
+            includeGates: options.includeGates === true,
+            includeContainers: options.includeContainers === true,
             tokenBudget: (options.tokenBudget ?? options.token_budget) as
               | string
               | number
@@ -1352,6 +1354,8 @@ export function registerOperationCommands(program: Command): void {
       "--include-decisions",
       "Allow --next to claim human-gated Decision items",
     )
+    .option("--include-gates", "Allow --next to claim outcome gates")
+    .option("--include-containers", "Allow --next to claim containers with unfinished descendants")
     .option(
       "--token-budget <n>",
       "Bound the estimated tokens used to rank --next candidates",

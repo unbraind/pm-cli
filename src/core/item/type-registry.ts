@@ -17,7 +17,11 @@ import {
   normalizeItemTypeDefinition as normalizeSharedItemTypeDefinition,
   normalizeItemTypeStringList,
   strictPolicyCommand,
+  parseItemExecutionRole,
 } from "./item-type-definition.js";
+
+/** Default dispatch roles for built-in types whose work requires human input or outcome verification. Custom definitions can override these through the same registry. */
+export const BUILTIN_ITEM_EXECUTION_ROLES: Readonly<Record<string, "human" | "gate">> = Object.freeze({ decision: "human", milestone: "gate" });
 
 /** Fallback required create fields used when callers do not provide an override. */
 export const DEFAULT_REQUIRED_CREATE_FIELDS = [
@@ -293,6 +297,8 @@ export interface ResolvedItemTypeDefinition {
   aliases: string[];
   /** Optional per-type status applied at create time when `--status` is omitted. */
   default_status?: string;
+  /** Effective dispatch role; absent legacy definitions are resolved through the built-in defaults. */
+  execution_role?: ItemTypeDefinition["execution_role"];
   /** Value that configures or reports required create fields for this contract. */
   required_create_fields: string[];
   /** Value that configures or reports required create repeatables for this contract. */
@@ -554,6 +560,7 @@ function coerceTypeDefinitionFromUnknown(
     name,
     description,
     default_status: defaultStatus,
+    execution_role: parseItemExecutionRole(record.execution_role),
     folder,
     aliases: readStringArray(record, "aliases"),
     required_create_fields: readStringArray(record, "required_create_fields"),
@@ -623,6 +630,7 @@ function buildResolvedTypeDefinition(
   );
   const resolvedDefinition: ResolvedItemTypeDefinition = {
     name: keepName,
+    execution_role: normalizedDefinition.execution_role,
     folder,
     aliases: normalizeItemTypeStringList([
       ...(existing?.aliases ?? []),
@@ -664,7 +672,7 @@ function applyTypeDefinitions(
     const existing = target.get(lowerName);
     target.set(
       lowerName,
-      buildResolvedTypeDefinition(normalizedDefinition, existing),
+      buildResolvedTypeDefinition({ ...normalizedDefinition, execution_role: normalizedDefinition.execution_role ?? existing?.execution_role }, existing),
     );
   }
 }
@@ -703,6 +711,7 @@ export function resolveItemTypeRegistry(
   for (const builtin of ITEM_TYPE_VALUES) {
     byLowerName.set(builtin.toLowerCase(), {
       name: builtin,
+      execution_role: BUILTIN_ITEM_EXECUTION_ROLES[builtin.toLowerCase()] ?? "agent",
       folder: TYPE_TO_FOLDER[builtin],
       aliases: [],
       required_create_fields: [...DEFAULT_REQUIRED_CREATE_FIELDS],

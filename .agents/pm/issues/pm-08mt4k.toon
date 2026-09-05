@@ -2,28 +2,131 @@ id: pm-08mt4k
 title: "pm next recommends outcome-milestone gates as actionable work, and summary.containers counts a bucket the envelope never emits"
 description: "The single pm next recommendation is currently pm-w7ccmv, an outcome milestone with zero children that no agent lane can execute, and Milestones also appear in ready[]; separately summary.containers reports 27 with no corresponding envelope key. Both are the same root: item executability is not a declared dimension of the shared actionability definition, unlike the shipped decision_needed precedent."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",context-management,relationships
 created_at: "2026-07-25T17:53:10.100Z"
-updated_at: "2026-07-26T10:54:59.467Z"
+updated_at: "2026-09-05T05:55:14.826Z"
+closed_at: "2026-09-05T05:47:56.223Z"
+completed_at: "2026-09-05T05:47:56.223Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Item executability is a declared, schema-driven dimension of the shared actionability definition rather than a per-type special case, so custom and extension-contributed types inherit it; gate-shaped items (outcome milestones and any type declared non-executable) never appear as pm next recommended or in ready[], and are surfaced in their own envelope bucket with a worklist exactly as decision_needed already is; summary.containers either gains a matching envelope key with rows or is removed, so no summary counter names a bucket that cannot be read; the held-out sets remain reachable through an explicit opt-in flag so no capability is lost; next, context, list-blocked and claim --next all consume the one definition and agree; a spec asserts that a workspace whose only unblocked items are gates returns no recommendation with an explanatory reason rather than recommending a gate"
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-1mwk,related,"2026-07-25T17:53:10.100Z",null,null
-  pm-3oqjnc,related,"2026-07-25T17:53:10.100Z",null,null
-  pm-bzmeaa,related,"2026-07-25T17:53:10.100Z",null,null
-  pm-eqk0,related,"2026-07-25T17:53:10.100Z",null,null
-  pm-p3x4,related,"2026-07-25T17:53:10.100Z",null,null
-  pm-uxkf,related,"2026-07-25T17:53:10.100Z",null,null
-  pm-w7ccmv,discovered_from,"2026-07-25T17:53:10.100Z",null,null
-  pm-g2zz,related,"2026-07-25T17:59:14.353Z",null,null
-  pm-r2suqb,related,"2026-07-25T17:59:14.353Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:57:31.727Z",null,null
+resolution: "Shared SDK execution roles and opt-in selection keep human decisions, gates and containers out of automatic leaf worklists; documented selector classification and indexed the contract guide."
+expected_result: SDK consumers can customize roles and opt into eligible work while understanding selected.ready and report.containers as distinct contracts.
+actual_result: Typed container selection regression and 63 focused checks pass; reviewer verified the actual returned object and withdrew the proposed incompatible Pick change.
+dependencies[12]:
+  - id: pm-1mwk
+    kind: related
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-3oqjnc
+    kind: related
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-bzmeaa
+    kind: related
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-eqk0
+    kind: related
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-p3x4
+    kind: related
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-uxkf
+    kind: related
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-w7ccmv
+    kind: discovered_from
+    created_at: "2026-07-25T17:53:10.100Z"
+  - id: pm-g2zz
+    kind: related
+    created_at: "2026-07-25T17:59:14.353Z"
+  - id: pm-r2suqb
+    kind: related
+    created_at: "2026-07-25T17:59:14.353Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T05:57:31.727Z"
+  - id: pm-eqk0
+    kind: verifies
+    created_at: "2026-09-05T03:31:08.542Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-uxkf
+    kind: verifies
+    created_at: "2026-09-05T03:31:09.788Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[13]{created_at,author,text}:
+  "2026-09-05T03:08:48.403Z","harness:codex","Shared pure actionability resolves schema execution roles agent/human/gate, preserves custom and extension aliases, and emits gate/container worklists. SDK, CLI and generic MCP dispatch share explicit opt-ins. Blockers and ownership still constrain dispatch. Initial gate-only/custom-role regressions reproduced then passed; expanded parity checks are in progress."
+  "2026-09-05T03:13:48.051Z","harness:codex","Full all-status graph evidence: 2638 nodes, 12989 deduplicated directed edges across ten kinds; zero missing nodes, ordering contradictions, isolated active nodes, or active degree-one nodes. Two informational legacy hierarchy exceptions remain classified as historical provenance. No artificial edge padding or duplicate work was introduced. Scheduling roles preserve gate visibility without treating outcome verification as direct execution."
+  "2026-09-05T03:22:17.958Z","harness:codex","Compatibility review: ActionabilityReport consumers constructing records must provide containers, decisions, and gates arrays. SDK surface snapshot update explicitly acknowledges the new required worklists; new settings and selection options are optional. Container opt-in now survives relevance ranking while unresolved blockers still exclude dispatch. New execution acceptance tests live under tests/unit/sdk/execution to preserve the repository directory cap."
+  "2026-09-05T03:42:32.245Z","harness:codex","The first stable full run passed all 8416 tests across 608 suites. Exact coverage remained below 100 because new presentation and opt-in branches lacked direct source execution, so closure is deferred. Added direct SDK release, gate/container truncation and markdown, legacy decision partition, and final diagnostic enrichment cases. Default next output exceeded its fixed 819-token ceiling by 17 tokens; recommendation prose now reports only the downstream count while preserving every ID in the existing unblocks array, eliminating duplicated context instead of raising that ceiling."
+  "2026-09-05T03:51:34.730Z","harness:codex","Exact full coverage passed: 8419 tests, 608 files, statements 62212/62212, branches 47188/47188, functions 12919/12919, lines 59839/59839. Final SDK integration inspection found new gate/container worklists must also enter intent row compaction and final-delivery usage accounting; adding regressions before implementation. The next-default token budget now passes after eliminating duplicated unblocks IDs from recommendation prose. Execute-intent includes a newly visible planning container, which accounts for the remaining measured output increase."
+  "2026-09-05T03:53:43.358Z","harness:codex","TDD integration evidence: new tests first failed because gate/container worklists became receipt-only at 700 tokens and delivered identifiers omitted both buckets; both now pass. Regenerated the measured token manifest to temporary storage and adopted only next-intent-execute (new container visibility and explicit gate/container filters). All other established ceilings, including next-default, remain unchanged; 10 percent headroom policy is unchanged."
+  "2026-09-05T03:58:25.637Z","harness:codex","Measured compaction improvement: the 2243-item calibration now retains 8 next rows instead of 3 within 1047 estimated tokens (previously 1046). The five-command orientation session sees 109 unique items instead of 105 and suppresses 8 repeats instead of 7, spending 9757/20000 tokens. The 2-item calibration is byte-identical. Updated the exact calibration evidence to these semantic results; no runtime budget or gate policy changed."
+  "2026-09-05T04:02:57.258Z","harness:codex","Final verification scheduling correction: a coverage repeat overlapped several expensive acceptance gates and the calibration entrypoint exceeded its unchanged 120-second test limit. Other 8419 tests passed; no complete coverage receipt was produced, so that run is not accepted. The strict ESLint findings were fixed structurally by sharing collection traversal and isolating refusal-corpus selection. Running the complete static gate, then isolated full coverage, then package-first dogfood sequentially; no timeout or threshold is being weakened."
+  "2026-09-05T04:18:32.077Z","harness:codex","Implemented schema/package execution roles, shared SDK classification and explicit selector opt-ins, visible gate/container worklists, context placement, budget compaction, and final-delivery feedback. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+  "2026-09-05T05:03:38.402Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
+  "2026-09-05T05:41:25.923Z","harness:codex","Full PR 1195 rereview clarification: selectActionableEntries intentionally returns ready, decisions and gates. Eligible opted-in containers enter ready, subject to execution role; report.containers retains classification. Existing typed tests prove this. Documented the distinction and moved the execution contract page into the Documentation Map."
+  "2026-09-05T05:47:55.689Z","harness:codex","PR 1195 full rereview corrections passed 63 focused tests, the real 8-task transcript gate with unchanged token ceilings, full typecheck, and the isolated 8422-test coverage suite. Coverage is statements 62222/62222, branches 47193/47193, functions 12920/12920, lines 59846/59846. Hosted CI 33946213771 passed on the previous reviewed head, including Windows; the corrected head will receive a new complete check and review round before merge."
+  "2026-09-05T05:55:14.826Z","harness:codex","Final consolidated rereview correction passed pnpm quality:static after all item closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, and the real 8-task transcript corpus. Latest pm-changelog regenerated the reviewed changelog; no active item ownership remains. The fresh canonical verifier/coverage test run has passed=2, failed=0. New hosted review and publication remain separate subsequent evidence."
 notes[1]{created_at,author,text}:
   "2026-07-26T10:54:59.467Z","harness:claude-code","Context-side instance 2026-07-26: the gate-recommendation defect is not confined to pm next. On this workspace pm context --limit 2 returns pm-doxj, the roadmap-root Milestone, and pm-j82fd3, an outcome-milestone gate, as both of its low_level rows — that is, the two most actionable detail rows an agent is shown are the two least executable items in the tracker. Whatever lifecycle-role or container predicate resolves the pm next half must be shared with context assembly rather than applied at one call site."
+files[24]{path,scope,note}:
+  scripts/release/token-budgets.json,project,Measured execute intent budget includes newly visible planning container; retain all other ceilings
+  sdk/public-surface.json,project,Execution contract implementation and regression evidence
+  src/cli/register-list-query.ts,project,Connected SDK and CLI execution contract delivery
+  src/cli/register-operations.ts,project,Connected SDK and CLI execution contract delivery
+  src/core/extensions/extension-types.ts,project,Connected SDK and CLI execution contract delivery
+  src/core/item/actionability.ts,project,Connected SDK and CLI execution contract delivery
+  src/core/item/item-type-definition.ts,project,Connected SDK and CLI execution contract delivery
+  src/core/item/type-registry.ts,project,Connected SDK and CLI execution contract delivery
+  src/core/store/settings-validator.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/actionability.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/cli-contracts/flag-contracts.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/cli-contracts/tool-schema.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/context-intent-contracts.ts,project,Include gate and container rows in bounded intent compaction
+  src/sdk/context-usage.ts,project,Record final delivered gate and container identifiers for feedback
+  src/sdk/define.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/output-projection.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/query.ts,project,Executable regression contract and public SDK surface
+  src/sdk/query/context.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/query/next.ts,project,Connected SDK and CLI execution contract delivery
+  src/types.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/commands/next-command.spec.ts,project,Exact downstream identity preservation without repeated rationale IDs
+  tests/unit/core/item/actionability.spec.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/sdk/execution/execution-roles.spec.ts,project,Connected SDK and CLI execution contract delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/execution/execution-roles.spec.ts tests/unit/core/item/actionability.spec.ts,project,240,"harness:codex","2026-09-05T03:22:04.383Z",local_mutation,feat/agent-context-execution-contracts
+test_runs[1]:
+  - run_id: test-local-mtnuor08-y0wnef
+    kind: test
+    status: passed
+    started_at: "2026-09-05T03:55:52.880Z"
+    finished_at: "2026-09-05T03:56:03.128Z"
+    recorded_at: "2026-09-05T03:56:03.128Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/execution/execution-roles.spec.ts tests/unit/core/item/actionability.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
+  docs/README.md,project,Public execution and recovery semantics
+  docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
+close_reason: Implementation and review corrections verified; PR publication remains a separate operational claim.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-08mt4k
+  gate_id: execution-role-worklists
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/execution-roles.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/execution-roles.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: "## Evidence (live, 2026-07-25, 2,022-item workspace)\n\n```\n$ pm next --json | jq -c '.recommended | {id,type,title}'\n{\"id\":\"pm-w7ccmv\",\"type\":\"Milestone\",\"title\":\"Outcome milestone: provable history ...\"}\n\n$ pm list --parent pm-w7ccmv --status all --json | jq .count\n0\n\n$ pm next --json | jq -r '.ready[] | \"\\(.id) \\(.type)\"' | head -5\npm-e02lgu Task\npm-kb5h  Chore\npm-5t33or Feature\npm-ed28wi Issue\npm-9rgaal Milestone      <-- second gate in the ready slice\n```\n\nThe single recommendation an agent is told to work next is an outcome milestone with zero children. Outcome milestones are **gates**: they close when the epics beneath them meet their acceptance criteria, they never carry direct execution, and by construction they have no children to walk into. An agent that follows `pm next`, claims the recommendation, and looks for something to do finds nothing — then either releases it as a no-op or, worse, invents work under a gate.\n\n## Two halves, one root\n\n**Half 1 — gate classes are not held out of the actionable set.** The precedent already exists and shipped: Decision-type items are non-executable by an agent lane, so `pm next` routes them to a dedicated `decision_needed` bucket (6 items today) instead of `recommended`/`ready` (pm-eqk0). Milestone gates are the same class of thing and get no such treatment. The fix is not a Milestone special case — it is a declared, schema-driven answer to \"can an agent lane execute an item of this type/shape\", so extension-contributed and custom types inherit it instead of each needing a patch.\n\n**Half 2 — `summary.containers` counts a bucket the envelope never emits.** `pm next --json` reports `summary.containers: 27`, but the envelope keys are `blocked, decision_needed, filters, held_by_others, now, output_default, ready, recommended, summary, truncation` — there is no `containers` key. An agent can see that 27 items were classified as containers and has no way to ask which. Every other classification bucket in this envelope has a worklist; this one is a dead number, which is the same defect shape as the `activity.activity` decoy key (pm-p3x4).\n\n## Why it matters beyond one bad recommendation\n\n`pm next` is the entry point of the agent loop and the intended input to fleet allocation (pm-3oqjnc). A recommender that hands out non-executable gates wastes an entire agent turn per occurrence, and at fleet scale it distributes the same wasted turn across many agents simultaneously. The strategic-reachability work (pm-bzmeaa) deliberately makes every active item reach an outcome milestone through typed edges — which means gates sit near the top of exactly the paths a relevance-ranked recommender favours, so this gets worse as the graph gets healthier, not better.\n\n## Fix direction\n\nExtend the shared actionability definition (`src/sdk/actionability.ts`, shipped by pm-uxkf/PR#579) with a declared executability dimension alongside the existing blocked-vs-ready dimension, so `next`, `context`, `list-blocked`, and `claim --next` all inherit one answer; surface the held-out sets as real envelope keys with worklists; and keep them reachable through an explicit opt-in flag so no capability is removed."

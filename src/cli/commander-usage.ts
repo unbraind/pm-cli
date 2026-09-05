@@ -47,6 +47,7 @@ import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 import { rankCommandPaths } from "../sdk/agent/command-suggestions.js";
 import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
+import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -134,6 +135,8 @@ function getSemanticUnknownOptionSuggestions(
 
 /** Documents the commander usage context payload exchanged by command, SDK, and package integrations. */
 export interface CommanderUsageContext extends CommanderGuidanceContext {
+  /** Normalized invocation retained for recovery and transport accounting. */
+  normalizedInvocationArgs: string[];
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message: string;
   /** Value that configures or reports command name for this contract. */
@@ -169,9 +172,9 @@ export function appendCommanderExtensionFailures(
     const primaryFailure = failures.find(
       (entry) => entry.declared_command_match === true,
     );
-    return JSON.stringify(
-      {
-        ...(JSON.parse(renderedUsage) as Record<string, unknown>),
+    const { token_accounting: priorAccounting, ...usage } = JSON.parse(renderedUsage) as Record<string, unknown>;
+    const enriched = {
+        ...usage,
         ...(primaryFailure
           ? {
               extension_command_failure: {
@@ -184,7 +187,9 @@ export function appendCommanderExtensionFailures(
             }
           : {}),
         failed_extensions: failures,
-      },
+      };
+    return JSON.stringify(
+      priorAccounting === undefined ? enriched : attachOutputTokenAccounting(enriched, (value) => `${JSON.stringify(value, null, 2)}\n`),
       null,
       2,
     );
@@ -613,9 +618,9 @@ function buildUnknownCommandExamples(
 ): string[] {
   const suggestedExamples = suggestedPaths.map((path) => `pm ${path} --help`);
   if (hasConcreteCandidates) {
-    return [...new Set([...suggestedExamples, "pm --help"])];
+    return [...new Set([...suggestedExamples, "pm --help --all"])];
   }
-  return [...new Set(["pm --help", ...suggestedExamples])];
+  return [...new Set(["pm --help --all", ...suggestedExamples])];
 }
 
 /** Implements build unknown command guidance from runtime for the public runtime surface of this module. */
@@ -665,7 +670,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
     unknownCommandExamples: examples,
     unknownCommandNextSteps: [
       ...(didYouMean ? [didYouMean] : []),
-      'Run "pm --help" to list commands available in this runtime, including active extensions.',
+      'Run "pm --help --all" to list every command available in this runtime, including active extensions.',
       "Use one of the suggested command paths above with --help to inspect valid flags and usage.",
       ...(optionalPackageHint ? [optionalPackageHint] : []),
     ],
@@ -736,12 +741,10 @@ export function isKnownHelpCommandPath(
   for (const [tokenIndex, token] of commandPathTokens.entries()) {
     const next = resolveChildCommandByToken(current, token);
     if (!next) {
-      if (current.commands.some((candidate) => candidate.name() !== "help")) {
-        return false;
-      }
       const declaredArguments = current.registeredArguments;
       return (
         declaredArguments.length > 0 &&
+        (current.commands.length === 0 || declaredArguments[0]?.required === true) &&
         (declaredArguments.at(-1)?.variadic === true ||
           commandPathTokens.length - tokenIndex <= declaredArguments.length)
       );
@@ -1123,8 +1126,12 @@ export async function formatCommanderUsageJson(
       failedExtensions: usageContext.failedExtensions,
     },
   );
+  const projected = lean ? projectLeanErrorEnvelope(envelope) : envelope;
+  const accountingRequested = parseBootstrapGlobalOptions(
+    usageContext.normalizedInvocationArgs,
+  ).tokenAccounting === true;
   return JSON.stringify(
-    lean ? projectLeanErrorEnvelope(envelope) : envelope,
+    accountingRequested ? attachOutputTokenAccounting(projected, (value) => `${JSON.stringify(value, null, 2)}\n`) : projected,
     null,
     2,
   );

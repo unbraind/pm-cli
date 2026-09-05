@@ -1019,6 +1019,8 @@ export interface SchemaItemTypeDefinition {
   description?: string;
   /** Initial status assigned when the contributed item type is created. */
   default_status?: string;
+  /** Dispatch role inherited by next, context, and automatic claims. Gates track outcomes; human roles require decisions. */
+  execution_role?: "agent" | "human" | "gate";
   /** Value that configures or reports required create fields for this contract. */
   required_create_fields?: string[];
   /** Value that configures or reports required create repeatables for this contract. */

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
@@ -13,7 +14,9 @@ import {
   main,
   runIfMain,
   scorePmRefusalCatalogClosure,
+  scoreUnknownCommandDiscovery,
   verifyExecutableRefusalClosure,
+  verifyUnknownCommandDiscovery,
 } from "../../../scripts/release/refusal-closure-gate.mjs";
 
 const SAMPLE_CONTRACT = {
@@ -60,6 +63,19 @@ function createSuccessfulOptions(errorEnvelope = {}) {
 }
 
 describe("executable refusal closure gate", () => {
+  it("rejects curated-only discovery and malformed unknown-command guidance", () => {
+    expect(verifyUnknownCommandDiscovery(undefined, spawnSync, process.env, true)).toMatchObject({
+      ok: false, findings: [expect.objectContaining({ code: "incomplete_command_discovery" })],
+    });
+    for (const next_steps of [["pm --help"], undefined, [42], []]) {
+      expect(scoreUnknownCommandDiscovery({ code: "unknown_command", next_steps })).toMatchObject({ ok: false });
+    }
+    for (const next_steps of [["pm --help --all"], ["pm guide capabilities"]]) {
+      expect(scoreUnknownCommandDiscovery({ code: "unknown_command", next_steps })).toMatchObject({ ok: true, findings: [] });
+    }
+    expect(scoreUnknownCommandDiscovery({ code: "wrong", next_steps: ["pm --help --all"] })).toMatchObject({ ok: false });
+  });
+
   it("fails the catalog ratchet when executable evidence regresses", () => {
     expect(scorePmRefusalCatalogClosure([])).toMatchObject({
       catalogRatchet: { ok: false, baseline: 18, actual: 0 },

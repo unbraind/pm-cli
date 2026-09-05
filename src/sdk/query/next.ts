@@ -11,6 +11,8 @@
 import {
   collectBlockedByIds,
   computeActionabilityReport,
+  resolveItemExecutionRole,
+  selectActionableEntries,
   type ActionableEntry,
 } from "../actionability.js";
 import {
@@ -25,7 +27,10 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
+  resolveItemTypeRegistry,
 } from "../runtime-primitives.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "./parsers.js";
 import {
@@ -96,6 +101,10 @@ export interface NextOptions {
   tokenBudget?: string | number;
   /** Include human-gated Decision items in the claimable ready queue. */
   includeDecisions?: boolean;
+  /** Opt into gate-shaped leaf work; blockers and ownership restrictions still apply. */
+  includeGates?: boolean;
+  /** Opt into containers with unfinished descendants; blockers and ownership restrictions still apply. */
+  includeContainers?: boolean;
   /** Internal caller override used to align claim-next ranking with --author. */
   callerAuthor?: string;
   [key: string]: unknown;
@@ -147,6 +156,7 @@ interface NextSummary {
   candidates: number;
   containers: number;
   decision_needed: number;
+  gate_needed?: number;
   held_by_others: number;
 }
 
@@ -162,6 +172,10 @@ export interface NextResult {
   ready: NextActionableItem[];
   /** Human-gated decisions kept visible without dispatching them to agents. */
   decision_needed: NextActionableItem[];
+  /** Outcome gates held out of autonomous dispatch. */
+  gate_needed?: NextActionableItem[];
+  /** Containers with unfinished descendants, retained as readable worklists. */
+  containers?: NextActionableItem[];
   /** Value that configures or reports blocked for this contract. */
   blocked: NextActionableItem[];
   /** Value that configures or reports held by others for this contract. */
@@ -182,6 +196,8 @@ export interface NextResult {
     blocked_limit: number;
     ready_only: boolean;
     include_decisions: boolean;
+    include_gates?: boolean;
+    include_containers?: boolean;
     token_budget: number;
   };
   /** Value that configures or reports suggestions for this contract. */
@@ -196,6 +212,8 @@ export interface NextResult {
   truncation?: {
     decision_needed_total?: number;
     held_by_others_total?: number;
+    gate_needed_total?: number;
+    containers_total?: number;
   };
 }
 
@@ -304,9 +322,7 @@ function buildRecommendationReasons(
     reasons.push(`advances ${item.parent.trim()}`);
   }
   if (entry.unblocks.length > 0) {
-    reasons.push(
-      `unblocks ${entry.unblocks.length} item(s): ${entry.unblocks.join(", ")}`,
-    );
+    reasons.push(`unblocks ${entry.unblocks.length} item(s)`);
   }
   return reasons;
 }
@@ -345,15 +361,16 @@ export const _testOnlyNextCommand = {
 export function partitionDecisionEntries(
   ready: ActionableEntry[],
   includeDecisions: boolean,
+  typeRegistry?: ItemTypeRegistry,
 ): { agent: ActionableEntry[]; decisions: ActionableEntry[] } {
   const decisions = ready.filter(
-    (entry) => entry.item.type.trim().toLowerCase() === "decision",
+    (entry) => resolveItemExecutionRole(entry.item.type, typeRegistry) === "human",
   );
   return {
     agent: includeDecisions
       ? ready
       : ready.filter(
-          (entry) => entry.item.type.trim().toLowerCase() !== "decision",
+          (entry) => resolveItemExecutionRole(entry.item.type, typeRegistry) !== "human",
         ),
     decisions: includeDecisions ? [] : decisions,
   };
@@ -470,15 +487,20 @@ function buildNextRecommendation(params: {
 function buildNextSuggestions(
   recommended: NextRecommendation | null,
   blockedRows: NextActionableItem[],
+  gateCount: number,
 ): string[] | undefined {
   if (recommended !== null) {
     return undefined;
   }
+  const gateGuidance = gateCount > 0
+    ? ["No executable recommendation: outcome gates require verification. Inspect gate_needed, or use pm next --include-gates to opt in."]
+    : [];
   if (blockedRows.length > 0) {
     const blockedWithReferences = blockedRows.find(
       (item) => item.blockers.length > 0,
     );
     return [
+      ...gateGuidance,
       blockedWithReferences
         ? `${blockedRows.length} item(s) are blocked; unblock the top one by closing ${blockedWithReferences.blockers.map((blocker) => blocker.id).join(", ")}`
         : `${blockedRows.length} item(s) are blocked; add blocker context or move the top item back to an active status`,
@@ -487,6 +509,7 @@ function buildNextSuggestions(
     ];
   }
   return [
+    ...gateGuidance,
     'pm create --type Task --title "..." to add a new work item',
     "pm list --status in_progress to review work already underway",
     "pm context --depth deep for the full project snapshot",
@@ -554,6 +577,7 @@ async function finalizeNextResult(params: {
   result: NextResult;
   recommended: NextRecommendation | null;
   blockedRows: NextActionableItem[];
+  gateCount: number;
   candidatesWarnings: string[] | undefined;
   corpusWarnings: string[] | undefined;
   readyRanking: Awaited<
@@ -585,6 +609,7 @@ async function finalizeNextResult(params: {
   params.result.suggestions = buildNextSuggestions(
     params.recommended,
     params.blockedRows,
+    params.gateCount,
   );
   await attachNextUsageFeedback({
     result: params.result,
@@ -624,6 +649,7 @@ async function rankReadyEntriesWithRelevance(
   callerAuthor: string,
   pmRoot: string,
   tokenBudget: number,
+  includeContainers: boolean,
 ): Promise<{
   projectedReady: ActionableEntry[];
   ranking: Awaited<
@@ -637,7 +663,7 @@ async function rankReadyEntriesWithRelevance(
     (entry) => !hasCompletedDescendants(entry.item, childrenByParent),
   );
   const structuralReady =
-    concreteReady.length > 0 ? concreteReady : rankedReady;
+    includeContainers || concreteReady.length === 0 ? rankedReady : concreteReady;
   const usage = await readContextUsageAffinity({
     pmRoot,
     author: callerAuthor,
@@ -673,7 +699,7 @@ async function rankReadyEntriesWithRelevance(
   return {
     projectedReady,
     ranking,
-    completedContainer: concreteReady.length === 0,
+    completedContainer: concreteReady.length === 0 && !includeContainers,
     packing,
     featureStore,
   };
@@ -706,6 +732,7 @@ export async function runNext(
     settings.author_default,
   );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);
   const tokenBudget = resolveContextTokenBudget(
@@ -743,14 +770,11 @@ export async function runNext(
   );
   const corpus = corpusList.items as ItemMetadata[];
 
-  const report = computeActionabilityReport(candidates, corpus, statusRegistry);
+  const report = computeActionabilityReport(candidates, corpus, statusRegistry, typeRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const partitionedByDecision = partitionDecisionEntries(
-    report.ready,
-    options.includeDecisions === true,
-  );
+  const selected = selectActionableEntries(report, statusRegistry, options, typeRegistry);
   const callerPartition = partitionCallerOwnedReady(
-    partitionedByDecision.agent,
+    selected.ready,
     settings.author_default,
     callerAuthor,
   );
@@ -776,6 +800,7 @@ export async function runNext(
     callerAuthor,
     pmRoot,
     tokenBudget,
+    options.includeContainers === true,
   );
 
   const readyRows = projectedReady.map((entry, index) =>
@@ -785,12 +810,14 @@ export async function runNext(
     toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1),
   );
   const decisionRows = rankNextReadyEntries(
-    partitionedByDecision.decisions,
+    selected.decisions,
     childrenByParent,
     statusRegistry,
   ).map((entry, index) =>
     toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1),
   );
+  const gateRows = rankNextReadyEntries(selected.gates, childrenByParent, statusRegistry).map((entry, index) => toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1));
+  const containerRows = rankNextReadyEntries(report.containers, childrenByParent, statusRegistry).map((entry, index) => toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1));
 
   const recommended = buildNextRecommendation({
     projectedReady,
@@ -803,7 +830,9 @@ export async function runNext(
     decisionRows.length,
     callerPartition.held.length,
     limit,
-  );
+  ) ?? {};
+  if (gateRows.length > limit) truncation.gate_needed_total = gateRows.length;
+  if (containerRows.length > limit) truncation.containers_total = containerRows.length;
 
   const result: NextResult = {
     output_default: "toon",
@@ -811,6 +840,8 @@ export async function runNext(
     recommended,
     ready: readyRows.slice(1, limit + 1),
     decision_needed: decisionRows.slice(0, limit),
+    gate_needed: gateRows.slice(0, limit),
+    containers: containerRows.slice(0, limit),
     blocked: readyOnly ? [] : blockedRows.slice(0, blockedLimit),
     held_by_others: callerPartition.held.slice(0, limit),
     summary: {
@@ -821,6 +852,7 @@ export async function runNext(
       candidates: report.active_count,
       containers: report.container_count,
       decision_needed: decisionRows.length,
+      gate_needed: gateRows.length,
       held_by_others: callerPartition.held.length,
     },
     filters: {
@@ -836,15 +868,18 @@ export async function runNext(
       blocked_limit: blockedLimit,
       ready_only: readyOnly,
       include_decisions: options.includeDecisions === true,
+      include_gates: options.includeGates === true,
+      include_containers: options.includeContainers === true,
       token_budget: tokenBudget,
     },
-    truncation,
+    truncation: Object.keys(truncation).length > 0 ? truncation : undefined,
   };
 
   return finalizeNextResult({
     result,
     recommended,
     blockedRows,
+    gateCount: gateRows.length,
     candidatesWarnings: candidatesList.warnings,
     corpusWarnings: corpusList.warnings,
     readyRanking,
@@ -863,6 +898,9 @@ export async function runNext(
  */
 export function renderNextMarkdown(result: NextResult): string {
   const lines: string[] = ["# pm next", "", ...renderNextSummaryLines(result)];
+  for (const [title, rows] of [["Gate verification needed", result.gate_needed], ["Containers", result.containers]] as const) {
+    if (rows && rows.length > 0) lines.push(...renderNextSection(title, rows.map((item) => `- ${formatNextLine(item)}`), ""));
+  }
   lines.push(
     ...renderNextSection(
       "Recommended",

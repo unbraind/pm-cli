@@ -514,6 +514,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     ],
   },
   includeDecisions: { type: "boolean" },
+  includeGates: { type: "boolean" },
+  includeContainers: { type: "boolean" },
   explainRanking: { type: "boolean" },
   noTags: { type: "boolean" },
   noExtensionHealth: { type: "boolean" },
@@ -890,6 +892,12 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   string,
   { description: string; examples?: unknown[] }
 > = {
+  includeGates: {
+    description: "Opt next or claim-next into outcome gates. Blocker and ownership restrictions still apply.",
+  },
+  includeContainers: {
+    description: "Opt next or claim-next into containers with unfinished descendants. Blocker and ownership restrictions still apply.",
+  },
   action: {
     description: "Tool action to execute.",
   },

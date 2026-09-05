@@ -15,7 +15,7 @@ import {
   resolveItemTypeRegistry,
   resolveTypeDefinition,
   EXIT_CODE,
-  printError,
+  writeStderr,
   writeStdout,
 } from "../sdk/runtime-primitives.js";
 import {
@@ -46,7 +46,9 @@ import { formatCommanderErrorForJson } from "./error-guidance.js";
 import {
   BUILTIN_TYPE_HELP_VALUES,
   buildUnknownCommandGuidanceFromRuntime,
+  isKnownHelpCommandPath,
 } from "./commander-usage.js";
+import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { resolveCreateExplicitEmptyFlag } from "../sdk/agent/create-option-policy.js";
 import {
   formatPmPositionalActionFlagTip,
@@ -148,7 +150,8 @@ function resolveCommandFromPathTokens(
       (commandName) => commandName === requestedPath,
     ) &&
     !hasSubcommandFlagContractsForCommand(requestedPath) &&
-    !resolvePmPositionalActionContract(requestedPath)
+    !resolvePmPositionalActionContract(requestedPath) &&
+    !isKnownHelpCommandPath(root, pathTokens)
   ) {
     return null;
   }
@@ -598,7 +601,7 @@ function buildJsonHelpPayload(
       ? requestedCommandPath
       : commanderPath;
   const positionalAction = resolvePmPositionalActionContract(resolvedPath);
-  const projectedPath = positionalAction?.command ?? resolvedPath;
+  const projectedPath = positionalAction?.command ?? commanderPath;
   const commandPath = projectedPath.length > 0 ? projectedPath : undefined;
   const rootCommandPath = commandPath?.split(" ")[0];
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
@@ -708,7 +711,10 @@ export async function maybeRenderBootstrapJsonHelp(
           providedOptionFlags: extractProvidedOptionFlags(argv),
         },
       );
-      printError(JSON.stringify(envelope, null, 2));
+      const output = bootstrapGlobal.tokenAccounting
+        ? attachOutputTokenAccounting(envelope, (value) => `${JSON.stringify(value, null, 2)}\n`)
+        : envelope;
+      writeStderr(`${JSON.stringify(output, null, 2)}\n`);
     }
     process.exitCode = EXIT_CODE.USAGE;
     return true;

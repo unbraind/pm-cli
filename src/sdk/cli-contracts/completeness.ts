@@ -170,6 +170,7 @@ const ACTION_POSITIONAL_PARAMETERS: Readonly<
 const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
 > = {
+  append: { "--text": "body" },
   assurance: {
     "--tree": "treeId",
     "--owner": "owner",
@@ -209,7 +210,7 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   docs: { "--note": "addNote" },
   comments: { "--full-history": "full" },
   notes: { "--file": "text", "--full-history": "full" },
-  learnings: { "--full-history": "full" },
+  learnings: { "--file": "text", "--full-history": "full" },
   gc: { "--scope": "gcScope" },
   contracts: { "--action": "contractAction" },
   schema: {

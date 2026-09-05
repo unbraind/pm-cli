@@ -2,11 +2,13 @@ id: pm-bfa1ob
 title: Commander usage refusals omit token_accounting even when --token-accounting is parsed
 description: "The CLI attaches token_accounting to successful commands and runtime PmCliError failures, but Commander usage failures such as an unknown option render before the accounting attachment path. A caller explicitly requesting --json --token-accounting therefore receives no receipt. The agent-task transcript gate currently measures these refusals independently and labels that boundary; the CLI should eventually make the self-reported contract uniform without changing exit semantics."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,error-contract,token-accounting
 created_at: "2026-08-27T16:44:18.236Z"
-updated_at: "2026-08-28T20:44:40.653Z"
+updated_at: "2026-09-05T05:55:15.271Z"
+closed_at: "2026-09-05T05:47:54.755Z"
+completed_at: "2026-09-05T05:47:54.755Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Commander JSON usage errors attach the same bounded token_accounting receipt when requested; accounting-off bytes remain unchanged; CLI order and alias forms behave identically; focused process tests and the golden transcript switch from independent_transport to self_reported.
@@ -16,13 +18,62 @@ confidence: high
 severity: medium
 environment: CLI Commander parse-time usage failures across JSON and TOON transports
 repro_steps: Run pm --json --token-accounting search query --include-body and observe an unknown-option refusal without token_accounting.
-expected_result: Every structured refusal requested with token accounting includes the same bounded accounting receipt regardless of whether Commander or the SDK error transport produced it.
-actual_result: Commander usage failures exit with a structured envelope before token accounting is attached.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Accounted JSON refusal transport preserves machine payloads and exact token receipts; detailed recovery projection now rejects malformed paired evidence and explicitly validates compact recovery contracts.
+expected_result: Self-reported refusals must fail closed for missing recovery arrays unless the transcript declares and verifies compact mode; advertised recovery remains executable.
+actual_result: Paired malformed negative controls reproduced the escape before the fix and now reject; all 8 real transcript tasks and exact full coverage pass.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,discovered_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
   pm-t5dt4z,recurs_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-8pnj,verifies,"2026-09-05T03:31:15.827Z","harness:codex","cli:update:dep",detected
+comments[12]{created_at,author,text}:
   "2026-08-27T16:44:18.236Z","harness:codex","Duplicate check: exact phrase and all-term searches across every status returned zero matching items. Discovery evidence: pm --json --token-accounting search ... --include-body exits 2 with a structured unknown_option envelope but no token_accounting field; the transcript gate records an explicit independent transport measurement until this separate contract gap is implemented."
   "2026-08-27T16:53:58.663Z","harness:codex","Relationship rationale: pm-bfa1ob was discovered_from pm-8pnj because the versioned transcript observed the missing receipt; it recurs_from pm-t5dt4z because that closed item established self-reported token accounting, and parent pm-srns owns uniform transport envelopes."
+  "2026-09-05T03:08:23.655Z","harness:codex",Opt-in refusal accounting measures the final serialized diagnostic; extension failure enrichment recalculates the receipt rather than retaining stale byte counts. Real stderr tests cover option ordering and bootstrap help refusals.
+  "2026-09-05T03:22:18.641Z","harness:codex",The executable unknown-option transcript now expects self_reported accounting because diagnostic JSON carries its own final-output receipt. Full-suite first run exposed mixed source/build output during concurrent generation; a stable build and targeted compatibility rerun precede the next coverage run. No coverage threshold or source exclusion changed.
+  "2026-09-05T03:27:05.265Z","harness:codex",Real CLI transcript replay passed with self-reported refusal accounting. The gate independently predicts only the added --token-accounting token in three recovery provenance fields; every other field remains exact. Negative tests reject altered recovery commands and malformed baseline transport evidence. This preserves truthful invocation metadata and byte accounting without ignoring payload drift.
+  "2026-09-05T04:18:38.551Z","harness:codex","Attached exact serialized token accounting to Commander and bootstrap JSON refusals after projection and extension enrichment; strengthened independent transcript provenance verification. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+  "2026-09-05T04:47:14.288Z","harness:codex","PR 1195 review negative controls reproduced both baseline attempted_command corruption and an active error_format override replacing accounted JSON. SDK raw stderr transport now preserves JSON after final accounting for bootstrap, Commander, and known errors; baseline attempted_command must equal rendering of normalized_args. All focused regressions pass."
+  "2026-09-05T04:56:22.167Z","harness:codex","PR 1195 review corrections passed 210 focused tests and full coverage: 8422 tests in 608 files; statements 62222/62222, branches 47190/47190, functions 12920/12920, lines 59845/59845. Full typecheck and ESLint pass. Context evaluation including all token surfaces and the temporary Node/Bun SDK/CLI manual workflow pass. Hosted verification of this corrected head and publication remain subsequent claims."
+  "2026-09-05T05:03:40.250Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1195 . Final corrected source passed the complete pnpm quality:static suite after structured defect evidence and all terminal closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, 55 token surfaces, and temporary Node/Bun manual workflows. All original review findings have explicit reactions and responses; three valid edge cases have reproduced red/green regressions and the pre-publication closure objection was withdrawn. GitHub dependency/code/secret alerts are zero. This source will now receive a fresh hosted review/check round; publication remains separate."
+  "2026-09-05T05:41:25.019Z","harness:codex","The paired negative control reproduced this gap and now fails closed for missing/non-array normalized_args or provided_fields. Real replay also exposed the legitimate compact unknown_context_intent refusal. Its transcript now explicitly expects recovery.recovery_mode=compact; only that declared and verified mode preserves the compact shape, and its suggested_retry_args are still executed and checked in the next step. Merely adding recovery_mode=compact to an undeclared malformed pair remains a failing negative control. The corpus digest alone was updated; token ceilings are unchanged."
+  "2026-09-05T05:47:54.238Z","harness:codex","PR 1195 full rereview corrections passed 63 focused tests, the real 8-task transcript gate with unchanged token ceilings, full typecheck, and the isolated 8422-test coverage suite. Coverage is statements 62222/62222, branches 47193/47193, functions 12920/12920, lines 59846/59846. Hosted CI 33946213771 passed on the previous reviewed head, including Windows; the corrected head will receive a new complete check and review round before merge."
+  "2026-09-05T05:55:15.271Z","harness:codex","Final consolidated rereview correction passed pnpm quality:static after all item closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, and the real 8-task transcript corpus. Latest pm-changelog regenerated the reviewed changelog; no active item ownership remains. The fresh canonical verifier/coverage test run has passed=2, failed=0. New hosted review and publication remain separate subsequent evidence."
+files[10]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,Execution contract implementation and regression evidence
+  docs/agent-task-transcripts.json,project,Executable regression contract and public SDK surface
+  scripts/release/agent-task-token-gate.mjs,project,Strict executable contract regression evidence
+  sdk/public-surface.json,project,Review regression correction and governed public contract
+  src/cli/commander-usage.ts,project,Connected SDK and CLI execution contract delivery
+  src/cli/help-json-payload.ts,project,Connected SDK and CLI execution contract delivery
+  src/cli/main.ts,project,Review regression correction and governed public contract
+  src/sdk/runtime-primitives.ts,project,Review regression correction and governed public contract
+  tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Strict executable contract regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,project,240,"harness:codex","2026-09-05T03:08:22.554Z",local_mutation,feat/agent-context-execution-contracts
+test_runs[1]:
+  - run_id: test-local-mtnuoijg-3qe0ou
+    kind: test
+    status: passed
+    started_at: "2026-09-05T03:55:45.956Z"
+    finished_at: "2026-09-05T03:55:52.156Z"
+    recorded_at: "2026-09-05T03:55:52.156Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
+  docs/README.md,project,Public execution and recovery semantics
+  docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
+close_reason: Implementation and review corrections verified; PR publication remains a separate operational claim.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-bfa1ob
+  gate_id: accounted-refusal-transcript-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: ""

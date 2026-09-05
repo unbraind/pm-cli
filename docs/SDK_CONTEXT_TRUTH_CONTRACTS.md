@@ -1,7 +1,9 @@
 # SDK Context Truth Contracts
 
 Tracker references: [pm-23xkss](../.agents/pm/issues/pm-23xkss.toon) and
-[pm-r8u2g6](../.agents/pm/issues/pm-r8u2g6.toon).
+[pm-r8u2g6](../.agents/pm/issues/pm-r8u2g6.toon),
+[pm-79gv6q](../.agents/pm/issues/pm-79gv6q.toon), and
+[pm-08mt4k](../.agents/pm/issues/pm-08mt4k.toon).
 
 ## Agent Quick Context
 
@@ -68,3 +70,24 @@ silently route tracker files through the wrong merge behavior. Run
 This policy does not weaken storage, history, merge-fence, or pending-receipt
 checks. It only distinguishes an optional never-installed clone capability
 from a broken capability that the repository appears to rely on.
+
+## Population and Focus Are Separate
+
+`context.summary.scope` is `matching_items`: lifecycle totals describe all items
+matching the request filters and parent subtree before the focus limit, intent
+projection, and token packing. Without filters this is the workspace population.
+`active_items`, `in_progress`, `open`, and `blocked` use that same population as
+`total_items`, `closed`, and `canceled`. `open` includes active statuses other than
+in-progress; `blocked` is an overlapping classification that includes unresolved
+dependency edges as well as blocked lifecycle states.
+
+`summary.returned_focus` reports the bounded focus selection. The existing
+`high_level` and `low_level` counts describe their emitted rows. An orient or
+handoff response limited to one row can therefore still report hundreds of open
+items. `omission_receipt.summary_scope` repeats `matching_items` so a consumer
+reading projection metadata cannot confuse omitted detail with absent work.
+
+Never infer a population count from an array length. To visit individual items,
+follow the response's continuation and omission receipts. To schedule work, use
+the shared [execution contracts](SDK_EXECUTION_CONTRACTS.md), which keep human
+input, gates, and containers visible without dispatching them by default.

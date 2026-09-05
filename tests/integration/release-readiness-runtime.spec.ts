@@ -1586,6 +1586,8 @@ describe("release readiness runtime coverage", () => {
         "released_by",
         "previous_assignee",
         "forced",
+        "warnings",
+        "suggestions",
       ]);
 
       const appendResult = context.runCli(
