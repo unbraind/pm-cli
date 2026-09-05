@@ -195,6 +195,32 @@ post-merge observations on GitHub without changing repository state when no
 tracked closeout update is required. See [Releasing](RELEASING.md#reviewed-delivery-closeout)
 for the release contract.
 
+## Review and Analyzer Proof
+
+Use the [review helper](../scripts/reviews/pr-review-loop.mjs) to wait for
+terminal checks, then inspect its paginated inventory of comments, reviews,
+inline threads, edits, reactions, and resolution state. Inspect failed-check
+details in the receipt even when the helper itself exits successfully.
+
+```bash
+node scripts/reviews/pr-review-loop.mjs watch --pr <number> --repo unbraind/pm-cli --interval 60
+node scripts/release/hosted-analysis-gate.mjs --repo unbraind/pm-cli --sha <full-40-character-head-sha> --json
+```
+
+Both receipts must pass for the exact current head before merge. A successful
+CodeFactor check can still contain a notice: the stricter analyzer gate requires
+zero outstanding annotations and verifies DeepScan plus branch protection.
+Do not substitute a green check conclusion for that proof. This escape and its
+correction are recorded in [pm-08mt4k](../.agents/pm/issues/pm-08mt4k.toon).
+
+Use the helper's `acknowledge-inline` operation for actionable inline findings
+and `acknowledge` for top-level comments or review summaries. Rate valid feedback
+positively and explain false or stale findings on their actual review surface.
+After each push, request the reviewers again and wait for terminal results;
+provider quota or skipped reviews are limitations, not approvals. Before merge,
+run `inventory` once more to catch new or edited feedback, and require all
+findings to have an explicit disposition.
+
 ## Documentation Rules for Agents
 
 - Keep [README](../README.md) short.

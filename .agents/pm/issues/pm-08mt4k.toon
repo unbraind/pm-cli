@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",context-management,relationships
 created_at: "2026-07-25T17:53:10.100Z"
-updated_at: "2026-09-05T05:55:14.826Z"
-closed_at: "2026-09-05T05:47:56.223Z"
-completed_at: "2026-09-05T05:47:56.223Z"
+updated_at: "2026-09-05T07:15:07.980Z"
+closed_at: "2026-09-05T07:15:07.353Z"
+completed_at: "2026-09-05T07:15:07.353Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Item executability is a declared, schema-driven dimension of the shared actionability definition rather than a per-type special case, so custom and extension-contributed types inherit it; gate-shaped items (outcome milestones and any type declared non-executable) never appear as pm next recommended or in ready[], and are surfaced in their own envelope bucket with a worklist exactly as decision_needed already is; summary.containers either gains a matching envelope key with rows or is removed, so no summary counter names a bucket that cannot be read; the held-out sets remain reachable through an explicit opt-in flag so no capability is lost; next, context, list-blocked and claim --next all consume the one definition and agree; a spec asserts that a workspace whose only unblocked items are gates returns no recommendation with an explanatory reason rather than recommending a gate"
 parent: pm-mpbb
 risk: medium
 confidence: high
-resolution: "Shared SDK execution roles and opt-in selection keep human decisions, gates and containers out of automatic leaf worklists; documented selector classification and indexed the contract guide."
-expected_result: SDK consumers can customize roles and opt into eligible work while understanding selected.ready and report.containers as distinct contracts.
-actual_result: Typed container selection regression and 63 focused checks pass; reviewer verified the actual returned object and withdrew the proposed incompatible Pick change.
+resolution: "Shared SDK execution roles and visible worklists preserve delivered identities; context-usage traversal avoids a redundant array allocation, and the agent guide now requires the review helper plus exact-head zero-annotation analyzer proof before merge."
+expected_result: Preserve all selection and egress behavior and prevent a successful analyzer check with outstanding notices from being mistaken for release eligibility.
+actual_result: "44 focused regressions, ESLint, build and record integrity pass. Hosted checks on 3e949c195 pass; exact-commit analysis reports zero CodeFactor annotations and zero new DeepScan issues. Guide links and explicit full-SHA instructions pass, with the updated head subject to another hosted check and review round."
 dependencies[12]:
   - id: pm-1mwk
     kind: related
@@ -61,7 +61,7 @@ dependencies[12]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[13]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-09-05T03:08:48.403Z","harness:codex","Shared pure actionability resolves schema execution roles agent/human/gate, preserves custom and extension aliases, and emits gate/container worklists. SDK, CLI and generic MCP dispatch share explicit opt-ins. Blockers and ownership still constrain dispatch. Initial gate-only/custom-role regressions reproduced then passed; expanded parity checks are in progress."
   "2026-09-05T03:13:48.051Z","harness:codex","Full all-status graph evidence: 2638 nodes, 12989 deduplicated directed edges across ten kinds; zero missing nodes, ordering contradictions, isolated active nodes, or active degree-one nodes. Two informational legacy hierarchy exceptions remain classified as historical provenance. No artificial edge padding or duplicate work was introduced. Scheduling roles preserve gate visibility without treating outcome verification as direct execution."
   "2026-09-05T03:22:17.958Z","harness:codex","Compatibility review: ActionabilityReport consumers constructing records must provide containers, decisions, and gates arrays. SDK surface snapshot update explicitly acknowledges the new required worklists; new settings and selection options are optional. Container opt-in now survives relevance ranking while unresolved blockers still exclude dispatch. New execution acceptance tests live under tests/unit/sdk/execution to preserve the repository directory cap."
@@ -75,6 +75,9 @@ comments[13]{created_at,author,text}:
   "2026-09-05T05:41:25.923Z","harness:codex","Full PR 1195 rereview clarification: selectActionableEntries intentionally returns ready, decisions and gates. Eligible opted-in containers enter ready, subject to execution role; report.containers retains classification. Existing typed tests prove this. Documented the distinction and moved the execution contract page into the Documentation Map."
   "2026-09-05T05:47:55.689Z","harness:codex","PR 1195 full rereview corrections passed 63 focused tests, the real 8-task transcript gate with unchanged token ceilings, full typecheck, and the isolated 8422-test coverage suite. Coverage is statements 62222/62222, branches 47193/47193, functions 12920/12920, lines 59846/59846. Hosted CI 33946213771 passed on the previous reviewed head, including Windows; the corrected head will receive a new complete check and review round before merge."
   "2026-09-05T05:55:14.826Z","harness:codex","Final consolidated rereview correction passed pnpm quality:static after all item closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, and the real 8-task transcript corpus. Latest pm-changelog regenerated the reviewed changelog; no active item ownership remains. The fresh canonical verifier/coverage test run has passed=2, failed=0. New hosted review and publication remain separate subsequent evidence."
+  "2026-09-05T06:52:30.012Z","harness:codex","Post-merge release proof refused main 22a7a1a9b: CodeFactor check 101263771803 is success but has one notice at src/sdk/context-usage.ts:190 (unicorn/no-useless-spread). The required hosted-analysis gate correctly rejects any outstanding annotation. The local installed Unicorn rule did not report this conditional-array shape even when enabled explicitly. The pre-merge process missed running the stricter existing hosted-analysis command; no gate is being weakened. Fix the redundant outer array in a reviewed follow-up and run the exact-head hosted-analysis gate before merging it."
+  "2026-09-05T06:54:20.886Z","harness:codex","Removed the redundant outer array/spread from collectNextResultItemIds while preserving the fresh mutable accumulator and all visible-row traversal. Existing context-usage packing, final-egress, relevance and execution-role regressions pass, as does complete ESLint. The current main release gate remains correctly refused until this source correction lands with explicit zero-annotation analyzer proof. Before the follow-up merge, run hosted-analysis-gate on the exact new PR head, not only gh pr checks success states."
+  "2026-09-05T07:15:04.120Z","harness:codex","Follow-up PR https://github.com/unbraind/pm-cli/pull/1196 passed all required checks and the stricter exact-head analyzer gate on 3e949c195ff5f7b7a515d3dfb704297bcf8f9d18: CodeFactor reports one issue fixed, zero outstanding annotations, and DeepScan reports zero new issues with strict branch protection verified. Added the reusable scripts/reviews/pr-review-loop.mjs watch/inventory/acknowledgement sequence and mandatory full-SHA hosted-analysis check to docs/AGENT_GUIDE.md so future sessions inspect notices before merge. Guide link/content checks and build pass; the documentation update will receive a fresh hosted check/review round."
 notes[1]{created_at,author,text}:
   "2026-07-26T10:54:59.467Z","harness:claude-code","Context-side instance 2026-07-26: the gate-recommendation defect is not confined to pm next. On this workspace pm context --limit 2 returns pm-doxj, the roadmap-root Milestone, and pm-j82fd3, an outcome-milestone gate, as both of its low_level rows — that is, the two most actionable detail rows an agent is shown are the two least executable items in the tracker. Whatever lifecycle-role or container predicate resolves the pm next half must be shared with context assembly rather than applied at one call site."
 files[24]{path,scope,note}:
@@ -102,8 +105,24 @@ files[24]{path,scope,note}:
   tests/unit/commands/next-command.spec.ts,project,Exact downstream identity preservation without repeated rationale IDs
   tests/unit/core/item/actionability.spec.ts,project,Connected SDK and CLI execution contract delivery
   tests/unit/sdk/execution/execution-roles.spec.ts,project,Connected SDK and CLI execution contract delivery
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/execution/execution-roles.spec.ts tests/unit/core/item/actionability.spec.ts,project,240,"harness:codex","2026-09-05T03:22:04.383Z",local_mutation,feat/agent-context-execution-contracts
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/execution/execution-roles.spec.ts tests/unit/core/item/actionability.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-05T03:22:04.383Z"
+      source_kind: local_mutation
+      source_ref: feat/agent-context-execution-contracts
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts tests/integration/context-usage-egress.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-05T06:52:56.922Z"
+      source_kind: local_mutation
+      source_ref: fix/context-usage-array-allocation
+    note: Context usage collection and final egress after redundant allocation removal
 test_runs[1]:
   - run_id: test-local-mtnuor08-y0wnef
     kind: test
@@ -120,7 +139,7 @@ docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
   docs/README.md,project,Public execution and recovery semantics
   docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
-close_reason: Implementation and review corrections verified; PR publication remains a separate operational claim.
+close_reason: "Execution-role implementation, context allocation correction and reusable pre-merge analyzer workflow verified."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

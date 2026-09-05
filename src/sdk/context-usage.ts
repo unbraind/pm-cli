@@ -186,11 +186,9 @@ function collectNextResultItemIds(
   record: Record<PropertyKey, unknown>,
   ids: Set<string>,
 ): void {
-  const rows = [
-    ...(asObjectRecord(record.recommended) === null
-      ? []
-      : [record.recommended]),
-  ];
+  const rows = asObjectRecord(record.recommended) === null
+    ? []
+    : [record.recommended];
   for (const key of ["ready", "decision_needed", "gate_needed", "containers", "blocked", "held_by_others"]) {
     if (Array.isArray(record[key])) rows.push(...record[key]);
   }
