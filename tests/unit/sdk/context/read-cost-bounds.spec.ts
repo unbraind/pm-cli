@@ -42,6 +42,16 @@ describe("agent read cost bounds", () => {
     });
   });
 
+  it("preserves explicit empty child rollups for deep and full container reads", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Empty container", "--type", "Epic", "--json"], { expectJson: true }).json as { item: { id: string } };
+      for (const projection of [{ depth: "deep" }, { depth: "full" }, { full: true }, { fields: "id,children" }]) {
+        expect((await runGet(created.item.id, { path: context.pmPath }, projection)).children).toMatchObject({ count: 0, scanned: 1 });
+      }
+      expect((await runGet(created.item.id, { path: context.pmPath })).children).toBeUndefined();
+    });
+  });
+
   it("measures real full, light and body enumeration with isolated nested async scopes", async () => {
     await withTempPmPath(async (context) => {
       context.runCli(["create", "--title", "Observed metadata", "--type", "Task"]);

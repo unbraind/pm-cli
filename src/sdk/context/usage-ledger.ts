@@ -6,7 +6,8 @@
  * for subsequent serves without rewriting on every context request.
  */
 import { randomUUID } from "node:crypto";
-import { appendFile, mkdir, open, rename, rm, stat, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, mkdir, open, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import { acquireLock } from "../../core/lock/lock.js";
@@ -65,11 +66,38 @@ function bounds(options: ContextUsageLedgerOptions) {
   return { maxBytes, maxEvents, cutoff: resolveNow(options).ms - retentionDays * 86_400_000 };
 }
 
+/** Open only a private regular ledger, refusing redirected runtime directories and file links. */
+async function openLedger(target: string, flags: number) {
+  if (!(await lstat(path.dirname(target))).isDirectory()) {
+    throw new ContextUsageValidationError("Context usage runtime must be a real directory");
+  }
+  try {
+    if ((await lstat(target)).isSymbolicLink()) {
+      throw new ContextUsageValidationError("Context usage ledger must not be a symbolic link");
+    }
+  } catch (error) {
+    if (!isFileMissingError(error)) throw error;
+  }
+  // Unsupported platform flags contribute zero to the numeric bit mask. The
+  // lstat check also rejects existing links where no-follow is unavailable.
+  const handle = await open(target, flags | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
+  try {
+    const metadata = await handle.stat();
+    if (!metadata.isFile() || metadata.nlink !== 1) {
+      throw new ContextUsageValidationError("Context usage ledger must be an unshared regular file");
+    }
+    return handle;
+  } catch (error) {
+    await handle.close();
+    throw error;
+  }
+}
+
 /** Read only a bounded file suffix, dropping a partial first JSONL row. */
 export async function readEvents(options: ContextUsageLedgerOptions): Promise<ContextUsageEvent[]> {
   const policy = bounds(options);
   try {
-    const handle = await open(path.join(options.pmRoot, "runtime", "context-usage.jsonl"), "r");
+    const handle = await openLedger(path.join(options.pmRoot, "runtime", "context-usage.jsonl"), constants.O_RDONLY);
     try {
       const size = (await handle.stat()).size;
       const start = Math.max(0, size - policy.maxBytes);
@@ -126,27 +154,34 @@ export async function appendEvents(
   const lockWaitMs = performance.now() - lockStarted;
   try {
     await mkdir(path.dirname(target), { recursive: true });
-    const previous = deliveryServeId === undefined ? undefined : await readEvents(options);
-    if (previous?.some((event) => event.kind === "delivery" && event.serve_id === deliveryServeId)) {
-      return { written_bytes: 0, ledger_bytes: (await stat(target)).size, compacted: false, lock_wait_ms: lockWaitMs };
-    }
-    let size = 0;
-    try { size = (await stat(target)).size; } catch (error) {
-      if (!isFileMissingError(error)) throw error;
-    }
-    const customRetention = options.maxEvents !== undefined || options.retentionDays !== undefined;
-    if (!customRetention && size + Buffer.byteLength(appended) <= policy.maxBytes) {
-      await appendFile(target, appended, "utf8");
-      return { written_bytes: Buffer.byteLength(appended), ledger_bytes: size + Buffer.byteLength(appended), compacted: false, lock_wait_ms: lockWaitMs };
-    }
-    const retained = retainedText([...(previous ?? await readEvents(options)), ...current], retainedBytes, policy.maxEvents);
-    const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
+    const handle = await openLedger(target, constants.O_WRONLY | constants.O_CREAT | constants.O_APPEND);
     try {
-      await writeFile(temporary, retained, "utf8");
-      await rename(temporary, target);
-      return { written_bytes: Buffer.byteLength(retained), ledger_bytes: Buffer.byteLength(retained), compacted: true, lock_wait_ms: lockWaitMs };
+      const size = (await handle.stat()).size;
+      const previous = deliveryServeId === undefined ? undefined : await readEvents(options);
+      if (previous?.some((event) => event.kind === "delivery" && event.serve_id === deliveryServeId)) {
+        return { written_bytes: 0, ledger_bytes: size, compacted: false, lock_wait_ms: lockWaitMs };
+      }
+      const customRetention = options.maxEvents !== undefined || options.retentionDays !== undefined;
+      if (!customRetention && size + Buffer.byteLength(appended) <= policy.maxBytes) {
+        await handle.writeFile(appended, "utf8");
+        return { written_bytes: Buffer.byteLength(appended), ledger_bytes: size + Buffer.byteLength(appended), compacted: false, lock_wait_ms: lockWaitMs };
+      }
+      const retained = retainedText([...(previous ?? await readEvents(options)), ...current], retainedBytes, policy.maxEvents);
+      const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
+      const replacement = await open(temporary, "wx", 0o600);
+      try {
+        try {
+          await replacement.writeFile(retained, "utf8");
+        } finally {
+          await replacement.close();
+        }
+        await rename(temporary, target);
+        return { written_bytes: Buffer.byteLength(retained), ledger_bytes: Buffer.byteLength(retained), compacted: true, lock_wait_ms: lockWaitMs };
+      } finally {
+        await rm(temporary, { force: true });
+      }
     } finally {
-      await rm(temporary, { force: true });
+      await handle.close();
     }
   } finally {
     await releaseLock();

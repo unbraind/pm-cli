@@ -25,7 +25,8 @@ Request hierarchy work explicitly with `--fields id,children`, `--tree`, or a
 deep/full container read. These paths preserve registered hierarchy semantics,
 including inverse and custom relationship kinds, rather than treating only the
 scalar `parent` field as authoritative. An omitted `children` facet carries a
-restore selector in the omission receipt.
+restore selector in the omission receipt. Explicit deep/full and child-field
+projections retain a zero-count rollup for an empty container.
 
 Caller-carried output sessions retain only portable item identities in
 `next_state.seen_item_ids`. Workspace activity such as `_workspace` remains
@@ -101,7 +102,13 @@ Serving receipt `storage` reports actual `written_bytes`, `ledger_bytes`,
 `compacted`, and `lock_wait_ms`. Written bytes count ledger data rather than lock
 metadata or filesystem block allocation. The receipt is attached to results
 through a non-JSON symbol and does not inflate normal CLI output. Storage is
-derived and disposable; item history remains independent.
+derived and disposable; item history remains independent. Ledger access refuses
+existing symbolic links, shared hard links, non-regular files, and a redirected
+runtime directory. Appends use a validated descriptor with no-follow opening
+where supported; replacement files are created exclusively with private
+permissions. These checks prevent feedback from being redirected into another
+file in an untrusted checkout. They do not establish a sandbox against an actor
+that already controls the process or can continuously replace ancestor paths.
 
 ## Reproducible measurements
 

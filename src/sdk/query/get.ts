@@ -626,7 +626,6 @@ function attachGetLinked(
 async function buildGetChildrenRollup(
   context: GetItemContext,
   includeChildren: boolean,
-  includeEmpty: boolean,
 ): Promise<ChildRollupContext | undefined> {
   if (!includeChildren) {
     return undefined;
@@ -639,12 +638,11 @@ async function buildGetChildrenRollup(
     undefined,
     context.settings.schema,
   );
-  const rollup = buildItemChildrenRollup(
+  return buildItemChildrenRollup(
     context.locatedId,
     corpus,
     statusRegistry,
   );
-  return rollup.count > 0 || includeEmpty ? rollup : undefined;
 }
 
 function attachGetSchedule(
@@ -748,7 +746,6 @@ export async function runGet(
   const children = await buildGetChildrenRollup(
     context,
     includeChildren,
-    projection.fieldProjection,
   );
   if (children !== undefined) {
     result.children = children;

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,token-efficiency
 created_at: "2026-07-27T04:06:26.179Z"
-updated_at: "2026-09-05T12:49:36.612Z"
-closed_at: "2026-09-05T12:41:01.411Z"
-completed_at: "2026-09-05T12:41:01.411Z"
+updated_at: "2026-09-05T13:32:21.166Z"
+closed_at: "2026-09-05T13:23:48.931Z"
+completed_at: "2026-09-05T13:23:48.931Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A read of one item by its identifier costs work proportional to that item and its own record, not to the number of items in the workspace; Any rollup over other items that pm get chooses to include is either derived from an index or is requested explicitly, and is never computed to be discarded; A narrowed projection narrows the work as well as the output: --fields and --depth brief measurably reduce latency, not only bytes; The behaviour is proven by a measurement that varies corpus size and holds the requested item constant, so a regression that reintroduces the scan is detectable"
@@ -23,9 +23,9 @@ confidence: high
 severity: high
 environment: "pm 2026.7.27, local checkout, .agents/pm at 2118 items and 177MB, warm filesystem cache, timings averaged over repeated runs"
 repro_steps: "Run pm get pm-n7rr --depth standard and read children.scanned; then time pm get pm-n7rr --fields id,title against the same command in a freshly initialised sandbox workspace with PM_PATH and PM_GLOBAL_PATH pointed at a temporary directory"
-resolution: Explicit SDK hierarchy work with observable metadata enumeration
-expected_result: Ordinary primary-key reads must avoid unrelated corpus enumeration; explicit hierarchy reads remain complete
-actual_result: "At 100/10000/100000 items ordinary enumeration count is zero and explicit enumeration returns every row. Real scan-and-discard negative control, nested/concurrent/failure cleanup and packed npm/Bun SDK checks pass"
+resolution: Explicit complete child rollups and observable zero-enumeration ordinary reads
+expected_result: Ordinary reads avoid unrelated metadata work while explicit deep/full/fields requests preserve empty and populated rollups
+actual_result: All explicit empty-container selectors pass; published SDK 100/10000/100000 tiers retain zero ordinary enumerations and complete explicit scans
 dependencies[8]{id,kind,created_at}:
   pm-801d,related,"2026-07-27T04:06:26.179Z"
   pm-9rxu,implements,"2026-07-27T04:06:26.179Z"
@@ -35,7 +35,7 @@ dependencies[8]{id,kind,created_at}:
   pm-gmdzaa,related,"2026-07-27T04:21:33.262Z"
   pm-o87av6,implements,"2026-07-27T04:21:33.262Z"
   pm-yse5dt,related,"2026-07-27T04:21:33.262Z"
-comments[10]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-09-05T09:16:33.264Z","harness:codex","TDD evidence: ordinary Epic get previously materialized an unsolicited workspace child rollup. The new regression proves standard reads omit children and explicit fields=id,children still returns the typed hierarchy rollup. Deep reads preserve the full inspection path."
   "2026-09-05T10:18:44.914Z","harness:codex","Complete filesystem scale proof after fixture and FTS repairs: the same Epic id was read ten times per projection at 100/10k/100k items. Standard p95=4.53/3.61/3.69ms; brief=4.24/3.03/11.00ms; narrow fields=3.54/4.08/3.11ms. Routine reads had no children facet. Explicit children scans read exactly 100/10000/100000 rows and took 48ms/4.91s/48.59s including cold derived-index construction. Full output is documented in BOUNDED_CONTEXT_READS."
   "2026-09-05T10:39:14.640Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
@@ -46,6 +46,10 @@ comments[10]{created_at,author,text}:
   "2026-09-05T12:32:59.410Z","harness:codex","Review regression proof: measureItemMetadataReadWork now observes real full/light/body item-store enumerations across source and published SDK runtime boundaries. A real listAllComplete scan followed by a normal projected get is rejected despite omitted children. Final standalone tiers 100/10000/100000 each performed zero ordinary enumerations and exactly one explicit enumeration returning every corpus row. Nested, concurrent, outside-scope and throwing operations pass without leaking observers. Packed npm and Bun acceptance also verifies both zero-work ordinary and positive-work explicit reads."
   "2026-09-05T12:41:00.901Z","harness:codex","Review closeout: 8444 tests across 613 files pass. Exact source coverage is 60000/60000 lines, 62406/62406 statements, 12947/12947 functions and 47272/47272 branches. Structured defect escape and gate evidence now accompanies closure; no thresholds or coverage exclusions were relaxed. Hosted re-review follows the next push."
   "2026-09-05T12:49:36.612Z","harness:codex","PR 1199 review-round closeout: full quality:static, exact 100/100/100/100 coverage across 8444 tests, packed npm/Bun manual acceptance, package-artifact and docs-link gates pass. The latest pm-changelog package regenerated and verified CHANGELOG.md after structured closure. All active owners are released; the broader duplicate latency target remains open. Public source and private operational verification are recorded separately."
+  "2026-09-05T13:14:09.577Z","harness:codex","Round 2 negative control fails on an empty Epic: explicit deep/full projection returns undefined children instead of a count-zero rollup. All enabled child rollups are now explicit requests, so removed the obsolete includeEmpty branch and preserve empty results consistently across deep, full and fields selectors while ordinary reads still enumerate zero metadata."
+  "2026-09-05T13:23:48.323Z","harness:codex","Round 2 corrections pass the full source coverage gate with zero uncovered counts, plus focused real filesystem and empty-container regressions. npm/Bun packed acceptance and complete point-read work controls pass. No security suppression, token ceiling increase or coverage waiver was added."
+  "2026-09-05T13:29:36.977Z","harness:codex","Final regression evidence: 8446 tests pass with exact 100/100/100/100 source coverage. Deep/full/fields empty-container results retain count-zero rollups; ordinary point reads still perform zero metadata enumerations. Clean-clone tracker assurance passes without raising any baseline or adding private deployment files."
+  "2026-09-05T13:32:21.166Z","harness:codex","Full quality:static completed successfully after preserving empty deep/full rollups. Full source coverage, complete point-read measurements, installed npm/Bun acceptance and clean-clone tracker assurance pass. The next push requests fresh reviews for all available providers."
 files[9]{path,scope,note}:
   scripts/bench/point-read-costs.mjs,project,Implementation contract and verification evidence for bounded context delivery
   src/core/store/item-metadata-read-work.ts,project,Real metadata enumeration work measurement and source-consistent SDK verification
@@ -73,7 +77,7 @@ test_runs[1]:
 docs[2]{path,scope,note}:
   docs/BOUNDED_CONTEXT_READS.md,project,Implementation contract and verification evidence for bounded context delivery
   docs/COMMANDS.md,project,Implementation contract and verification evidence for bounded context delivery
-close_reason: Implemented and verified with full exact coverage plus focused real negative controls
+close_reason: Current-head review findings corrected and verified with full exact coverage
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

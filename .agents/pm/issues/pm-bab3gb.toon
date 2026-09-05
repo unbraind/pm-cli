@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags[3]: concurrency,context-management,scale
 created_at: "2026-07-30T17:02:11.546Z"
-updated_at: "2026-09-05T12:49:37.080Z"
-closed_at: "2026-09-05T12:41:02.885Z"
-completed_at: "2026-09-05T12:41:02.885Z"
+updated_at: "2026-09-05T13:32:20.722Z"
+closed_at: "2026-09-05T13:23:47.196Z"
+completed_at: "2026-09-05T13:23:47.196Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "A serve entry records a bounded number of candidate rows independent of open item count, and the bound is declared in the contract rather than implied by a surface; Retention and compaction are expressed in the same unit, so the trigger threshold is reachable by the policy that follows it and the ledger has a declared steady-state ceiling in bytes; The read path does not rewrite the whole ledger on every serve, proved by measuring bytes written per read at three corpus sizes including the million-item tier; Ledger writes are measured under a concurrent fleet at the scale target and the published numbers state reads per second per workspace and the observed lock wait distribution; A negative control proves the declared ceiling gate fails when a surface reintroduces one row per open item"
 parent: pm-9rxu
 risk: high
 confidence: high
-resolution: Bounded sampled feedback persistence with append headroom and measured storage receipts
-expected_result: Persisted feedback must remain bounded independently of candidate population and train only delivered sampled identities
-actual_result: "Up to one million candidate rows retain at most 256 sampled rows per serve and 256 KiB per ledger. Full delivery validation, real lock/compaction tests and full coverage pass"
+resolution: Bounded feedback persistence with protected regular-file access
+expected_result: Feedback remains byte-bounded and cannot be redirected through existing file or runtime-directory links
+actual_result: "Real linked-file, hard-link, redirected-directory, append/compaction and lock-recovery controls pass alongside full exact coverage"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,related,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
   pm-uwfs,discovered_from,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-09-05T09:16:32.864Z","harness:codex","TDD evidence: 40 serves over 10,000 candidates produced 18,331,640 ledger bytes before the change. The new bounded persistence regression passes below 262,144 bytes with at most 256 recorded candidate rows. Final-egress delivery remains required for affinity; unrecorded sample rows cannot earn fabricated exposure credit."
   "2026-09-05T09:57:31.310Z","harness:codex","Scale evidence: 40 serves at each of 10k/100k/1m candidates wrote a mean 18129/18141/18143 ledger bytes, compacted twice per tier, and ended below 238k bytes. Four concurrent writers measured peak lock waits of 99/283/1794ms. Full candidate validation remains O(n) in memory; physical persistence is bounded independently. Unknown candidate properties are stripped and unsampled final ids do not train affinity."
   "2026-09-05T10:01:55.553Z","harness:codex","Operational verification before PR: Sentry 14-day unresolved query completed with no omitted pages and zero issues; the required reliability gate passed with critical=0 high=0 telemetry finish error rate=1.04 percent and zero failures without error codes. These are live pre-merge checks, not claims about an unpublished artifact."
@@ -34,6 +34,10 @@ comments[11]{created_at,author,text}:
   "2026-09-05T11:20:07.629Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1199 contains the combined 52-file SDK/CLI implementation, contracts, tests, documentation and generated changelog. Implementation commit 2cbfbda7c carries passing local full coverage and quality evidence. Use scripts/reviews/pr-review-loop.mjs watch --pr 1199 --repo unbraind/pm-cli --interval 60, inspect all paginated comments/reviews/threads including updatedAt changes, react and reply on the actual surface, and require exact-head hosted analyzer proof before merge. This comment records review routing, not approval or publication."
   "2026-09-05T12:41:02.381Z","harness:codex","Review closeout: 8444 tests across 613 files pass. Exact source coverage is 60000/60000 lines, 62406/62406 statements, 12947/12947 functions and 47272/47272 branches. Structured defect escape and gate evidence now accompanies closure; no thresholds or coverage exclusions were relaxed. Hosted re-review follows the next push."
   "2026-09-05T12:49:37.080Z","harness:codex","PR 1199 review-round closeout: full quality:static, exact 100/100/100/100 coverage across 8444 tests, packed npm/Bun manual acceptance, package-artifact and docs-link gates pass. The latest pm-changelog package regenerated and verified CHANGELOG.md after structured closure. All active owners are released; the broader duplicate latency target remains open. Public source and private operational verification are recorded separately."
+  "2026-09-05T13:14:09.123Z","harness:codex","Round 2 security finding validated: the previous reader accepts external sentinel contents through a valid ledger symlink, and path-based append follows the same destination. Replaced append with a regular-file descriptor using no-follow and nonblocking flags where supported; refuse existing symbolic links, shared hard links and redirected runtime directories. Atomic replacement files use exclusive creation and private permissions. Real filesystem regression covers read refusal, append and compaction refusal, unchanged sentinel bytes and lock recovery."
+  "2026-09-05T13:23:46.633Z","harness:codex","Round 2 corrections pass the full source coverage gate with zero uncovered counts, plus focused real filesystem and empty-container regressions. npm/Bun packed acceptance and complete point-read work controls pass. No security suppression, token ceiling increase or coverage waiver was added."
+  "2026-09-05T13:29:36.513Z","harness:codex","Clean-clone verification now passes all tracker-context-quality assertions under the CI runtime defaults, including the unchanged missing-linked-paths ceiling of 195. Full product suite: 8446 tests in 613 files; exact 60017/60017 lines, 62422/62422 statements, 12948/12948 functions and 47276/47276 branches. Packed npm/Bun acceptance, complete point-read tiers, package-artifact and docs-link gates pass."
+  "2026-09-05T13:32:20.722Z","harness:codex","Full quality:static completed successfully after security hardening and structured reclosure. Clean-clone tracker-context-quality also passes under CI defaults with the unchanged 195 missing-path ceiling. The next reviewed head includes safe descriptor access and real sentinel protection; no outstanding local verification failure remains."
 learnings[1]{created_at,author,text}:
   "2026-09-05T10:59:06.486Z","harness:codex",Telemetry test isolation must use the runtime-recognized opt-out variables. An unused PM_TELEMETRY or PM_TELEMETRY_ENABLED flag can silently leave real CLI subprocesses waiting on external sinks; preserve transcript assertions and fix isolation instead of increasing test timeouts.
 files[7]{path,scope,note}:
@@ -79,7 +83,7 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated by pm-changelog 2026.9.2 from completed delivery items; remaining duplicate latency work stays open
   docs/BOUNDED_CONTEXT_READS.md,project,Implementation contract and verification evidence for bounded context delivery
   docs/CONTEXT_RELEVANCE.md,project,Implementation contract and verification evidence for bounded context delivery
-close_reason: Implemented and verified with full exact coverage plus focused real negative controls
+close_reason: Current-head review findings corrected and verified with full exact coverage
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

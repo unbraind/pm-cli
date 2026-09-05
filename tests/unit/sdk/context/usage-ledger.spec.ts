@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -40,6 +40,7 @@ describe("bounded feedback persistence", () => {
     const event: ContextUsageEvent = { kind: "touch", at: options.now, author: "agent", item_id: "pm-a", intent: "get" };
     await expect(appendEvents(options, [{ ...event, intent: "x".repeat(40_000) }])).rejects.toThrow("byte ceiling");
     await mkdir(options.target);
+    expect(await readEvents(options)).toEqual([]);
     await expect(appendEvents({ ...options, maxEvents: 2 }, [event])).rejects.toThrow();
     await rm(options.target, { recursive: true });
     await symlink(options.target, options.target);
@@ -52,6 +53,35 @@ describe("bounded feedback persistence", () => {
     await appendEvents({ ...options, maxBytes: 1024 }, many);
     expect((await stat(options.target)).size).toBeLessThanOrEqual(1024);
     expect((await readEvents(options)).at(-1)?.kind).toBe("touch");
+  });
+
+  it("refuses redirected and non-regular ledger storage without changing external data", async () => {
+    const options = await fixture();
+    const sentinel = path.join(options.pmRoot, "sentinel.jsonl");
+    const event: ContextUsageEvent = { kind: "touch", at: options.now, author: "agent", item_id: "pm-sentinel", intent: "get" };
+    const original = `${JSON.stringify(event)}\n`;
+    await writeFile(sentinel, original);
+    await symlink(sentinel, options.target);
+    expect(await readEvents(options)).toEqual([]);
+    for (const controls of [{}, { maxEvents: 1 }]) {
+      await expect(appendEvents({ ...options, ...controls }, [event])).rejects.toThrow();
+      expect(await readFile(sentinel, "utf8")).toBe(original);
+    }
+    await rm(options.target);
+    await link(sentinel, options.target);
+    await expect(appendEvents(options, [event])).rejects.toThrow();
+    expect(await readEvents(options)).toEqual([]);
+    expect(await readFile(sentinel, "utf8")).toBe(original);
+    await rm(options.target);
+    await rm(path.dirname(options.target), { recursive: true });
+    const outside = await mkdtemp(path.join(os.tmpdir(), "pm-external-ledger-"));
+    roots.push(outside);
+    const outsideTarget = path.join(outside, "context-usage.jsonl");
+    await writeFile(outsideTarget, original);
+    await symlink(outside, path.dirname(options.target), "junction");
+    await expect(appendEvents(options, [event])).rejects.toThrow();
+    expect(await readEvents(options)).toEqual([]);
+    expect(await readFile(outsideTarget, "utf8")).toBe(original);
   });
 
   it("discloses sample omissions and learns only from sampled final deliveries", async () => {
