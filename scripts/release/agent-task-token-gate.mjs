@@ -50,6 +50,7 @@ function parseJsonOutput(result, step, label = step.id) {
   }
 }
 
+/** Capture a real deterministic CLI transcript with isolated tracker roots and external telemetry disabled. */
 function runCli(pmRoot, args) {
   return spawnSync(process.execPath, [CLI_PATH, ...args], {
     cwd: path.dirname(path.dirname(pmRoot)),
@@ -61,7 +62,10 @@ function runCli(pmRoot, args) {
       PM_CLOCK: REPLAY_CLOCK,
       PM_CLOCK_TICK_MS: "1",
       PM_SEED: REPLAY_SEED,
-      PM_TELEMETRY: "0",
+      PM_TELEMETRY_DISABLED: "1",
+      PM_TELEMETRY_OTEL_DISABLED: "1",
+      PM_TELEMETRY_PROMPT: "0",
+      PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
     },
   });
 }

@@ -17,6 +17,7 @@ const PROCESS_TIMEOUT_MS = 30_000;
 
 const temporaryRoots: string[] = [];
 
+/** Pin process identity and clock while disabling external telemetry and model discovery. */
 function processEnvironment(
   seed = "process-conformance-seed",
 ): NodeJS.ProcessEnv {
@@ -26,7 +27,10 @@ function processEnvironment(
     PM_CLOCK_TICK_MS: "1",
     PM_MCP_PROFILE: "full",
     PM_SEED: seed,
-    PM_TELEMETRY_ENABLED: "0",
+    PM_TELEMETRY_DISABLED: "1",
+    PM_TELEMETRY_OTEL_DISABLED: "1",
+    PM_TELEMETRY_PROMPT: "0",
+    PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
   };
 }
 

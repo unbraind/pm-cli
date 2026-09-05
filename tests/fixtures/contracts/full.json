@@ -3006,6 +3006,10 @@
       "command": "duplicates",
       "flags": [
         {
+          "flag": "--exhaustive",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--status",
           "list": true,
           "repeatable": true
@@ -16565,14 +16569,14 @@
       "class": "conflict",
       "code": "duplicate_sweep_cost_limit",
       "emitting_commands": [
-        "*"
+        "duplicate-candidates"
       ],
       "exit_code": 4,
       "meaning": "Duplicate sweep cost limit condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/similarity.ts"
+        "sdk/query/duplicate-candidates.ts"
       ],
       "stability": "stable"
     },
@@ -44153,6 +44157,10 @@
             "const": "duplicates",
             "description": "Tool action to execute."
           },
+          "exhaustive": {
+            "description": "Compare every duplicate pair within the disclosed safety bound; default prefix filtering preserves exact recall.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -56019,10 +56027,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.12.0"
+    "x-schema-version": "4.13.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.12.0",
+  "schema_version": "4.13.0",
   "selected": {
     "action": null,
     "availability_only": false,

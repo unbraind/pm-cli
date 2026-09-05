@@ -112,8 +112,8 @@ describe("SDK item similarity governance", () => {
         source: "metadata_scan",
         cost: {
           item_count: 8,
-          candidate_pairs: 5,
-          scored_pairs: 5,
+          candidate_pairs: 4,
+          scored_pairs: 4,
         },
       });
       expect(

@@ -33,7 +33,7 @@ interface CompletenessBaseline {
 
 describe("action-scoped MCP schema parity", () => {
   it("versions the additive single-stream salvage contract", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.12.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.13.0");
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
       "history-repair",
     ) as { allOf?: unknown[]; properties?: Record<string, unknown> };
@@ -54,6 +54,12 @@ describe("action-scoped MCP schema parity", () => {
         },
       });
     }
+  });
+
+  it("exposes exact exhaustive duplicate analysis to every tool transport", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("duplicates") as SchemaWithProperties;
+    expect(schema.properties?.exhaustive).toMatchObject({ type: "boolean" });
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.duplicates.optional).toContain("exhaustive");
   });
 
   it("rejects annotation if-absent edit and delete combinations", () => {

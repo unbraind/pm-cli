@@ -536,7 +536,7 @@ describe("runGet and runAppend", () => {
     });
   });
 
-  it("adds a deterministic child status rollup for every parent-capable item type", async () => {
+  it("adds a deterministic child status rollup only when explicitly requested", async () => {
     await withTempPmPath(async (context) => {
       const epicId = createTask(context, {
         title: "get-children-rollup-epic",
@@ -613,18 +613,19 @@ describe("runGet and runAppend", () => {
       );
 
       const standard = await runGet(epicId, { path: context.pmPath });
-      expect(standard.children).toMatchObject({
+      expect(standard.children).toBeUndefined();
+      const projected = await runGet(epicId, { path: context.pmPath }, { fields: "id,children", depth: "standard" });
+      expect(projected.children).toMatchObject({
         count: 2,
         active: 1,
         by_status: {
           open: 1,
           closed: 1,
         },
-        sample: [],
-        sample_limit: 0,
-        truncated: true,
-        next_offset: 0,
-        continuation: expect.stringContaining("--offset 0 --limit 20"),
+        sample: expect.arrayContaining([expect.objectContaining({ id: openChildId })]),
+        truncated: false,
+        next_offset: null,
+        continuation: null,
       });
       const deep = await runGet(
         epicId,

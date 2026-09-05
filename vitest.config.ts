@@ -89,6 +89,12 @@ export default defineConfig({
           new URL("./src/sdk/runtime.ts", import.meta.url),
         ),
       },
+      {
+        find: /^@unbrained\/pm-cli\/sdk\/query$/,
+        replacement: fileURLToPath(
+          new URL("./src/sdk/query.ts", import.meta.url),
+        ),
+      },
     ],
   },
   test: {

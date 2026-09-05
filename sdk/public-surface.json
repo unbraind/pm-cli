@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1847,
+    "covered_symbols": 1854,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1848
+    "required_symbols": 1855
   },
   "breaking_acknowledgements": [
     {
@@ -1690,6 +1690,29 @@
       ],
       "package_version": "2026.9.4",
       "reason": "pm-08mt4k adds schema execution roles and required actionability buckets; pm-79gv6q population summaries; pm-2bqgs7 corrects declared CLI contracts; pm-ugld additive release guidance. Consumers constructing ActionabilityReport must supply containers, decisions, and gates."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContextUsageEvent",
+        "signature ./sdk:ContextUsageLedgerOptions",
+        "signature ./sdk:ContextUsageServingReceipt",
+        "signature ./sdk:DuplicateClustersResult",
+        "signature ./sdk:DuplicatesCommandOptions",
+        "signature ./sdk:FindDuplicateClustersOptions",
+        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/governance:DuplicateClustersResult",
+        "signature ./sdk/governance:FindDuplicateClustersOptions",
+        "signature ./sdk/query:ContextUsageEvent",
+        "signature ./sdk/query:ContextUsageLedgerOptions",
+        "signature ./sdk/query:ContextUsageServingReceipt",
+        "signature ./sdk/query:DuplicatesCommandOptions",
+        "signature ./sdk/runtime:DuplicatesCommandOptions"
+      ],
+      "package_version": "2026.9.5",
+      "reason": "Add exact duplicate cost receipts and exhaustive mode, bounded usage options and persistence receipts, and advance additive tool schema versions; existing invocation shapes remain supported."
     }
   ],
   "entrypoints": {
@@ -2151,6 +2174,12 @@
           "kind": "interface",
           "name": "AnalyzeDefectChangeRiskOptions",
           "signature": "export interface AnalyzeDefectChangeRiskOptions { cursor?: string; limit?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeDuplicateItems",
+          "signature": "(input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"exhaustive\" | \"limit\" | \"threshold\">) => DuplicateItemsAnalysis | calls: (input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"threshold\" | \"limit\" | \"exhaustive\">) => DuplicateItemsAnalysis"
         },
         {
           "classification": "supported",
@@ -4488,6 +4517,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "CONTEXT_USAGE_LIMITS",
+          "signature": "{ readonly max_serving_rows: 256; readonly max_bytes: 262144; readonly max_event_bytes: 32768; readonly retained_byte_fraction: 0.5; readonly max_events: 2048; readonly retention_days: 30; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "ContextAgendaEvent",
           "signature": "export type ContextAgendaEvent = CalendarRow | (Pick<CalendarRow, \"at\" | \"date\" | \"kind\" | \"item_id\"> & { reference_only: true; reminder_text?: string | null; event_title?: string | null; event_recurring?: boolean | null; });"
@@ -4760,19 +4795,19 @@
           "classification": "supported",
           "kind": "type",
           "name": "ContextUsageEvent",
-          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
+          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; candidate_count?: number; omitted_row_count?: number; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageLedgerOptions",
-          "signature": "export interface ContextUsageLedgerOptions { pmRoot: string; enabled?: boolean; maxEvents?: number; retentionDays?: number; now?: string; }"
+          "signature": "export interface ContextUsageLedgerOptions { pmRoot: string; enabled?: boolean; maxEvents?: number; maxBytes?: number; retentionDays?: number; now?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageServingReceipt",
-          "signature": "export interface ContextUsageServingReceipt { serve_id: string; author: string; surface: ContextRelevanceSurface; rows: readonly ContextUsageServingRow[]; }"
+          "signature": "export interface ContextUsageServingReceipt { serve_id: string; author: string; surface: ContextRelevanceSurface; rows: readonly ContextUsageServingRow[]; recorded_item_ids?: readonly string[]; storage?: ContextUsageWriteReceipt; }"
         },
         {
           "classification": "supported",
@@ -4785,6 +4820,12 @@
           "kind": "class",
           "name": "ContextUsageValidationError",
           "signature": "export declare class ContextUsageValidationError extends TypeError { readonly code = \"context_usage_validation_failed\"; constructor(message: string); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextUsageWriteReceipt",
+          "signature": "export interface ContextUsageWriteReceipt { written_bytes: number; ledger_bytes: number; compacted: boolean; lock_wait_ms: number; }"
         },
         {
           "classification": "contract_data",
@@ -5900,7 +5941,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicateClustersResult",
-          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; filters: { statuses: string[] | null; since: string | null; }; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
+          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; filters: { statuses: string[] | null; since: string | null; }; cost: { item_count: number; algorithm: \"prefix_exact\" | \"exhaustive\"; possible_pairs: number; pair_limit: number; recall_guarantee: \"exact\"; candidate_pairs: number; scored_pairs: number; }; }"
         },
         {
           "classification": "supported",
@@ -5913,6 +5954,18 @@
           "kind": "interface",
           "name": "DuplicateItemIdRow",
           "signature": "export interface DuplicateItemIdRow { id: string; paths: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DuplicateItemInput",
+          "signature": "export type DuplicateItemInput = Pick<ItemMetadata, \"id\" | \"title\" | \"status\" | \"type\">;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DuplicateItemsAnalysis",
+          "signature": "export type DuplicateItemsAnalysis = Omit<DuplicateClustersResult, \"source\" | \"filters\">;"
         },
         {
           "classification": "supported",
@@ -5936,7 +5989,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicatesCommandOptions",
-          "signature": "export interface DuplicatesCommandOptions { status?: readonly string[]; since?: string; threshold?: number; limit?: number; }"
+          "signature": "export interface DuplicatesCommandOptions { exhaustive?: boolean; status?: readonly string[]; since?: string; threshold?: number; limit?: number; }"
         },
         {
           "classification": "supported",
@@ -7184,7 +7237,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FindDuplicateClustersOptions",
-          "signature": "export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions { statuses?: readonly string[]; since?: string; }"
+          "signature": "export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions { exhaustive?: boolean; statuses?: readonly string[]; since?: string; }"
         },
         {
           "classification": "supported",
@@ -9006,6 +9059,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ItemMetadataReadWork",
+          "signature": "export interface ItemMetadataReadWork { enumeration_calls: number; metadata_rows: number; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "ItemScalarConflictResolution",
           "signature": "export type ItemScalarConflictResolution = \"preferred_side\" | \"stable_value_order\" | \"latest_document_update\";"
@@ -9669,6 +9728,12 @@
           "kind": "function",
           "name": "measureCorpusShapePlan",
           "signature": "(shape: Readonly<CorpusShape>, plans: readonly CorpusShapeItemPlan[]) => CorpusShapeProfile | calls: (shape: Readonly<CorpusShape>, plans: readonly CorpusShapeItemPlan[]) => CorpusShapeProfile"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "measureItemMetadataReadWork",
+          "signature": "<T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }> | calls: <T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }>"
         },
         {
           "classification": "contract_data",
@@ -11600,7 +11665,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.6.0\""
+          "signature": "\"1.7.0\""
         },
         {
           "classification": "supported",
@@ -11738,7 +11803,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.12.0\""
+          "signature": "\"4.13.0\""
         },
         {
           "classification": "contract_data",
@@ -21920,7 +21985,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.6.0\""
+          "signature": "\"1.7.0\""
         },
         {
           "classification": "contract_data",
@@ -21992,7 +22057,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.12.0\""
+          "signature": "\"4.13.0\""
         },
         {
           "classification": "contract_data",
@@ -24529,6 +24594,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "analyzeDuplicateItems",
+          "signature": "(input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"exhaustive\" | \"limit\" | \"threshold\">) => DuplicateItemsAnalysis | calls: (input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"threshold\" | \"limit\" | \"exhaustive\">) => DuplicateItemsAnalysis"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "applyAssurancePreset",
           "signature": "(pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
         },
@@ -25142,13 +25213,25 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicateClustersResult",
-          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; filters: { statuses: string[] | null; since: string | null; }; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
+          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; filters: { statuses: string[] | null; since: string | null; }; cost: { item_count: number; algorithm: \"prefix_exact\" | \"exhaustive\"; possible_pairs: number; pair_limit: number; recall_guarantee: \"exact\"; candidate_pairs: number; scored_pairs: number; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicateItemIdRow",
           "signature": "export interface DuplicateItemIdRow { id: string; paths: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DuplicateItemInput",
+          "signature": "export type DuplicateItemInput = Pick<ItemMetadata, \"id\" | \"title\" | \"status\" | \"type\">;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DuplicateItemsAnalysis",
+          "signature": "export type DuplicateItemsAnalysis = Omit<DuplicateClustersResult, \"source\" | \"filters\">;"
         },
         {
           "classification": "supported",
@@ -25220,7 +25303,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FindDuplicateClustersOptions",
-          "signature": "export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions { statuses?: readonly string[]; since?: string; }"
+          "signature": "export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions { exhaustive?: boolean; statuses?: readonly string[]; since?: string; }"
         },
         {
           "classification": "supported",
@@ -27775,6 +27858,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "analyzeDuplicateItems",
+          "signature": "(input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"exhaustive\" | \"limit\" | \"threshold\">) => DuplicateItemsAnalysis | calls: (input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"threshold\" | \"limit\" | \"exhaustive\">) => DuplicateItemsAnalysis"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "applyContextTagProjection",
           "signature": "(result: ContextResult, noTags: boolean) => void | calls: (result: ContextResult, noTags: boolean) => void"
         },
@@ -28035,6 +28124,12 @@
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_WARNING_DETAILS",
           "signature": "{ readonly context_signal_store_invalid: { readonly code: \"context_signal_store_invalid\"; readonly meaning: \"The persisted context-signal snapshot was unreadable or invalid and was rebuilt from authoritative items.\"; readonly recovery_command: \"pm context\"; readonly recovery_effect: \"Re-read context and confirm the rebuilt snapshot can be loaded without the warning.\"; }; readonly context_signal_store_stale: { readonly code: \"context_signal_store_stale\"; readonly meaning: \"The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.\"; readonly recovery_command: \"pm context\"; readonly recovery_effect: \"Re-read context and confirm the rebuilt snapshot is now fresh.\"; }; readonly context_signal_store_write_failed: { readonly code: \"context_signal_store_write_failed\"; readonly meaning: \"Context signals were rebuilt in memory, but the derived snapshot could not be persisted.\"; readonly recovery_command: \"pm context\"; readonly recovery_effect: \"Retry the derived snapshot write and confirm the warning clears after storage access is restored.\"; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "CONTEXT_USAGE_LIMITS",
+          "signature": "{ readonly max_serving_rows: 256; readonly max_bytes: 262144; readonly max_event_bytes: 32768; readonly retained_byte_fraction: 0.5; readonly max_events: 2048; readonly retention_days: 30; }"
         },
         {
           "classification": "supported",
@@ -28304,19 +28399,19 @@
           "classification": "supported",
           "kind": "type",
           "name": "ContextUsageEvent",
-          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
+          "signature": "export type ContextUsageEvent = { kind: \"serve\"; schema_version?: 2; serve_id?: string; at: string; author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; candidate_count?: number; omitted_row_count?: number; result_omitted?: boolean; packed_item_ids?: string[]; delivered_item_ids?: string[]; } | { kind: \"delivery\"; schema_version: 2; serve_id: string; at: string; author: string; surface: ContextRelevanceSurface; result_omitted: boolean; delivered_item_ids: string[]; } | { kind: \"touch\"; at: string; author: string; item_id: string; intent: string; };"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageLedgerOptions",
-          "signature": "export interface ContextUsageLedgerOptions { pmRoot: string; enabled?: boolean; maxEvents?: number; retentionDays?: number; now?: string; }"
+          "signature": "export interface ContextUsageLedgerOptions { pmRoot: string; enabled?: boolean; maxEvents?: number; maxBytes?: number; retentionDays?: number; now?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextUsageServingReceipt",
-          "signature": "export interface ContextUsageServingReceipt { serve_id: string; author: string; surface: ContextRelevanceSurface; rows: readonly ContextUsageServingRow[]; }"
+          "signature": "export interface ContextUsageServingReceipt { serve_id: string; author: string; surface: ContextRelevanceSurface; rows: readonly ContextUsageServingRow[]; recorded_item_ids?: readonly string[]; storage?: ContextUsageWriteReceipt; }"
         },
         {
           "classification": "supported",
@@ -28329,6 +28424,12 @@
           "kind": "class",
           "name": "ContextUsageValidationError",
           "signature": "export declare class ContextUsageValidationError extends TypeError { readonly code = \"context_usage_validation_failed\"; constructor(message: string); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextUsageWriteReceipt",
+          "signature": "export interface ContextUsageWriteReceipt { written_bytes: number; ledger_bytes: number; compacted: boolean; lock_wait_ms: number; }"
         },
         {
           "classification": "supported",
@@ -28398,9 +28499,21 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "DuplicateItemInput",
+          "signature": "export type DuplicateItemInput = Pick<ItemMetadata, \"id\" | \"title\" | \"status\" | \"type\">;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DuplicateItemsAnalysis",
+          "signature": "export type DuplicateItemsAnalysis = Omit<DuplicateClustersResult, \"source\" | \"filters\">;"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "DuplicatesCommandOptions",
-          "signature": "export interface DuplicatesCommandOptions { status?: readonly string[]; since?: string; threshold?: number; limit?: number; }"
+          "signature": "export interface DuplicatesCommandOptions { exhaustive?: boolean; status?: readonly string[]; since?: string; threshold?: number; limit?: number; }"
         },
         {
           "classification": "supported",
@@ -28542,6 +28655,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ItemMetadataReadWork",
+          "signature": "export interface ItemMetadataReadWork { enumeration_calls: number; metadata_rows: number; }"
+        },
+        {
+          "classification": "supported",
           "kind": "class",
           "name": "JsonFileContextSignalStoreAdapter",
           "signature": "export declare class JsonFileContextSignalStoreAdapter implements ContextSignalStoreAdapter { private readonly filePath; constructor(filePath: string); read(): Promise<unknown | null>; write(snapshot: ContextSignalSnapshot): Promise<void>; }"
@@ -28677,6 +28796,12 @@
           "kind": "value",
           "name": "MAX_CHILD_PROJECTION_ITEMS",
           "signature": "1000000"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "measureItemMetadataReadWork",
+          "signature": "<T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }> | calls: <T>(operation: () => T | Promise<T>) => Promise<{ result: T; work: Readonly<ItemMetadataReadWork>; }>"
         },
         {
           "classification": "supported",
@@ -29960,7 +30085,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicatesCommandOptions",
-          "signature": "export interface DuplicatesCommandOptions { status?: readonly string[]; since?: string; threshold?: number; limit?: number; }"
+          "signature": "export interface DuplicatesCommandOptions { exhaustive?: boolean; status?: readonly string[]; since?: string; threshold?: number; limit?: number; }"
         },
         {
           "classification": "supported",

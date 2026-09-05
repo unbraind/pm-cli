@@ -198,7 +198,9 @@ function summarizeReadOutputSessionRows(result: Record<string, unknown>): {
         continue;
       }
       const itemId = itemIdFromRow(row);
-      if (itemId !== undefined) deliveredIds.add(itemId);
+      // Activity can contain workspace pseudo-identities. Preserve those rows
+      // in the response, but only carry ids the next invocation can consume.
+      if (itemId !== undefined && ITEM_ID_PATTERN.test(itemId)) deliveredIds.add(itemId);
     }
   }
   return { deliveredIds, suppressedRepeatCount };

@@ -752,8 +752,8 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "conflict",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/similarity.ts"],
-    emitting_commands: ["*"],
+    sources: ["sdk/query/duplicate-candidates.ts"],
+    emitting_commands: ["duplicate-candidates"],
     canonical_code: "duplicate_sweep_cost_limit",
     aliases: [],
   },

@@ -173,12 +173,18 @@ Use `context` first for a compact active-work snapshot. Use `search` when the re
 Use `duplicates --status all` for a true whole-history duplicate check. The
 result echoes `filters.statuses: null` for the unrestricted corpus; named or
 custom statuses are normalized through the runtime status registry and an
-unknown status fails instead of returning a false-clean result.
+unknown status fails instead of returning a false-clean result. The default
+lossless prefix filter preserves every pair that meets the canonical similarity
+threshold. `--exhaustive` compares all pairs for small-corpus verification. Both
+modes disclose the algorithm, possible and scored pair counts, exact recall
+guarantee, and safety ceiling; exceeding that ceiling refuses without returning
+a partial result. Review clusters before closing anything: title similarity is
+evidence for investigation, not proof that work is interchangeable.
 As a read-only structured surface, `duplicates` accepts the universal output
 controls, including `--output-format json`, `--lean`, projection/amount
 controls, and token accounting, while its default TOON output remains bounded.
 Tracked by [pm-gh1076](../.agents/pm/issues/pm-gh1076.toon).
-Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. The universal `--output-include` selector can request stored collections directly, for example `pm get <id> --output-include comments,learnings,tests`; the same bare and `item.<field>` grammar works through CLI, SDK, and MCP transports. Standard/deep reads expose a normalized `schedule` facet (`deadline`, `start_at`, `end_at`, `location`, reminders, and events) when scheduling metadata exists. Container-oriented built-ins (Epic, Feature, Milestone, and Plan) plus custom types automatically expose type-agnostic child counts and continuation metadata. Standard depth keeps that rollup counts-only; `--depth deep|full` or an explicit `--fields id,children` request adds the deterministic bounded child sample. Built-in leaf reads avoid a workspace scan unless children are explicitly requested. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
+Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. The universal `--output-include` selector can request stored collections directly, for example `pm get <id> --output-include comments,learnings,tests`; the same bare and `item.<field>` grammar works through CLI, SDK, and MCP transports. Standard/deep reads expose a normalized `schedule` facet (`deadline`, `start_at`, `end_at`, `location`, reminders, and events) when scheduling metadata exists. Standard reads of every item type avoid a workspace child scan. For container-oriented built-ins (Epic, Feature, Milestone, and Plan) and custom types, `--depth deep|full` adds type-agnostic child counts, a bounded sample, and continuation metadata. An explicit `--fields id,children` requests that rollup for any type. See [bounded context reads](BOUNDED_CONTEXT_READS.md) for the cost contract. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
 
 When the strongest duplicate match is terminal because the same work recurred,
 reuse its lineage instead of creating or copying another item:

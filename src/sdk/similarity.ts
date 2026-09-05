@@ -14,6 +14,7 @@ import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { readItemMetadataDerivedIndexState } from "../core/store/item-metadata-cache.js";
 import { querySimilarItemMetadataIndex } from "../core/store/item-metadata-query-index.js";
+import { collectDuplicateCandidatePairs, MAX_DUPLICATE_CANDIDATE_PAIRS } from "./query/duplicate-candidates.js";
 import type { ItemMetadata } from "../types/index.js";
 import {
   prepareSimilarityText,
@@ -38,7 +39,7 @@ const MAX_SIMILARITY_LIMIT = 20;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.8;
 const DEFAULT_DUPLICATE_CLUSTER_LIMIT = 100;
 const MAX_DUPLICATE_CLUSTER_LIMIT = 1_000;
-const MAX_BATCH_PAIR_EVALUATIONS = 1_000_000;
+
 
 /** Candidate content accepted by the similarity primitive. */
 export interface SimilarItemCandidate {
@@ -94,6 +95,8 @@ export interface SimilarItemsResult {
 
 /** Query controls for one all-status duplicate-cluster sweep. */
 export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions {
+  /** Compare every pair as an exact oracle; retains the declared safety bound. */
+  exhaustive?: boolean;
   /** Lifecycle statuses to include; omit to inspect every status. */
   statuses?: readonly string[];
   /** Inclusive ISO timestamp lower bound on item creation. */
@@ -143,6 +146,14 @@ export interface DuplicateClustersResult {
   cost: {
     /** Items retained after filters. */
     item_count: number;
+    /** Algorithm used to generate candidates before canonical scoring. */
+    algorithm: "prefix_exact" | "exhaustive";
+    /** Pairs in the exhaustive population, including pairs pruned without scoring. */
+    possible_pairs: number;
+    /** Safety ceiling, exceeded only by an explicit refusal. */
+    pair_limit: number;
+    /** Every qualifying pair is retained by candidate generation. */
+    recall_guarantee: "exact";
     /** Candidate pairs sharing at least one deterministic signal. */
     candidate_pairs: number;
     /** Candidate pairs scored. */
@@ -151,7 +162,7 @@ export interface DuplicateClustersResult {
 }
 
 interface PreparedDuplicateItem {
-  item: ItemMetadata;
+  item: Pick<ItemMetadata, "id" | "title" | "status" | "type">;
   prepared: PreparedSimilarityText;
 }
 
@@ -268,11 +279,12 @@ function validateDuplicateClusterOptions(
   return { limit, since };
 }
 
-async function loadPreparedDuplicateItems(
+/** Resolve registered statuses and load the metadata population before applying status and creation-time filters. */
+async function loadDuplicateItems(
   options: FindDuplicateClustersOptions,
   since: Date | undefined,
 ): Promise<{
-  items: PreparedDuplicateItem[];
+  items: ItemMetadata[];
   statuses: string[] | undefined;
 }> {
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
@@ -325,49 +337,9 @@ async function loadPreparedDuplicateItems(
           (!allowedStatuses || allowedStatuses.has(item.status)) &&
           (!since || new Date(item.created_at).getTime() >= since.getTime()),
       )
-      .sort((left, right) => left.id.localeCompare(right.id))
-      .map((item) => ({ item, prepared: prepareSimilarityText(item.title) })),
+,
     statuses: effectiveStatuses,
   };
-}
-
-function collectDuplicateCandidatePairs(
-  items: PreparedDuplicateItem[],
-  maxPairEvaluations = MAX_BATCH_PAIR_EVALUATIONS,
-): Set<string> {
-  const candidates = new Set<string>();
-  const indexes = [
-    new Map<string, number[]>(),
-    new Map<string, number[]>(),
-    new Map<string, number[]>(),
-  ];
-  for (const [index, entry] of items.entries()) {
-    const signals = [
-      [entry.prepared.normalized],
-      entry.prepared.issueCodes,
-      entry.prepared.tokens,
-    ];
-    for (const [signalKind, values] of signals.entries()) {
-      for (const value of values) {
-        const matches = indexes[signalKind].get(value) ?? [];
-        for (const other of matches) candidates.add(`${other}:${index}`);
-        if (candidates.size > maxPairEvaluations) {
-          throw new PmCliError(
-            `Duplicate sweep exceeded ${MAX_BATCH_PAIR_EVALUATIONS} candidate pairs; narrow it with statuses or since.`,
-            EXIT_CODE.CONFLICT,
-            {
-              code: "duplicate_sweep_cost_limit",
-              required:
-                "Narrow the batch duplicate query until its deterministic candidate set fits the disclosed safety bound.",
-            },
-          );
-        }
-        matches.push(index);
-        indexes[signalKind].set(value, matches);
-      }
-    }
-  }
-  return candidates;
 }
 
 /** Internal deterministic seams used to prove bounded batch behavior without building a million-pair fixture. */
@@ -423,6 +395,7 @@ function scoreDuplicateCandidates(
   return matches;
 }
 
+/** Group unioned endpoints and their scored evidence once, then deterministically rank and limit complete components. */
 function buildDuplicateClusters(
   items: PreparedDuplicateItem[],
   matches: DuplicateClusterMatch[],
@@ -436,12 +409,19 @@ function buildDuplicateClusters(
     component.push(index);
     components.set(root, component);
   }
+  const rootsById = new Map(items.map(({ item }, index) => [item.id, union.findRoot(index)]));
+  const matchesByRoot = new Map<number, DuplicateClusterMatch[]>();
+  for (const match of matches) {
+    // Scored matches have already joined both endpoints in the union above.
+    const root = rootsById.get(match.left_id)!;
+    const rows = matchesByRoot.get(root) ?? [];
+    rows.push(match);
+    matchesByRoot.set(root, rows);
+  }
   return [...components.values()]
     .filter((component) => component.length > 1)
     .map((component): DuplicateCluster => {
-      const ids = new Set(component.map((index) => items[index].item.id));
-      const clusterMatches = matches
-        .filter((match) => ids.has(match.left_id) && ids.has(match.right_id))
+      const clusterMatches = (matchesByRoot.get(union.findRoot(component[0])) ?? [])
         .sort(
           (left, right) =>
             right.score - left.score ||
@@ -551,17 +531,33 @@ export async function findSimilarItems(
   };
 }
 
-/** Find connected duplicate clusters with one metadata read and one prepared representation per item. */
-export async function findDuplicateClusters(
-  options: FindDuplicateClustersOptions = {},
-): Promise<DuplicateClustersResult> {
-  const { threshold } = validateSimilarityOptions({
-    ...options,
-    limit: undefined,
-  });
-  const { limit, since } = validateDuplicateClusterOptions(options);
-  const { items, statuses } = await loadPreparedDuplicateItems(options, since);
-  const candidates = collectDuplicateCandidatePairs(items);
+/** Minimal metadata accepted from package-owned or remote project stores. */
+export type DuplicateItemInput = Pick<ItemMetadata, "id" | "title" | "status" | "type">;
+
+/** Exact in-memory duplicate analysis, independent of a filesystem workspace. */
+export type DuplicateItemsAnalysis = Omit<DuplicateClustersResult, "source" | "filters">;
+
+/**
+ * Cluster caller-owned metadata using the same scorer and safety bounds as the CLI.
+ * Candidate filtering is lossless; exhaustive mode provides an independent pair
+ * population for recall checks. Inputs are copied, sorted and never mutated.
+ */
+export function analyzeDuplicateItems(
+  input: readonly DuplicateItemInput[],
+  options: Pick<FindDuplicateClustersOptions, "threshold" | "limit" | "exhaustive"> = {},
+): DuplicateItemsAnalysis {
+  const { threshold } = validateSimilarityOptions({ ...options, limit: undefined });
+  const { limit } = validateDuplicateClusterOptions(options);
+  const ids = new Set<string>();
+  for (const item of input) {
+    if (!item.id.trim() || ids.has(item.id)) {
+      throw new PmCliError("Duplicate analysis requires unique non-empty item ids.", EXIT_CODE.USAGE);
+    }
+    ids.add(item.id);
+  }
+  const items = [...input].sort((left, right) => left.id.localeCompare(right.id))
+    .map((item) => ({ item, prepared: prepareSimilarityText(item.title) }));
+  const candidates = collectDuplicateCandidatePairs(items, MAX_DUPLICATE_CANDIDATE_PAIRS, threshold, options.exhaustive === true);
   const union = createDuplicateUnionFind(items.length);
   const matches = scoreDuplicateCandidates(items, candidates, threshold, union);
   const clusters = buildDuplicateClusters(items, matches, union, limit);
@@ -569,16 +565,29 @@ export async function findDuplicateClusters(
     clusters,
     count: clusters.length,
     threshold,
-    source: "metadata_scan",
-    filters: {
-      statuses: statuses ?? null,
-      since: options.since ?? null,
-    },
     cost: {
       item_count: items.length,
+      algorithm: options.exhaustive === true || threshold === 0 ? "exhaustive" : "prefix_exact",
+      possible_pairs: items.length * (items.length - 1) / 2,
+      pair_limit: MAX_DUPLICATE_CANDIDATE_PAIRS,
+      recall_guarantee: "exact",
       candidate_pairs: candidates.size,
       scored_pairs: candidates.size,
     },
+  };
+}
+
+/** Find connected duplicate clusters with one metadata read and shared package analysis. */
+export async function findDuplicateClusters(
+  options: FindDuplicateClustersOptions = {},
+): Promise<DuplicateClustersResult> {
+  validateSimilarityOptions({ ...options, limit: undefined });
+  const { since } = validateDuplicateClusterOptions(options);
+  const { items, statuses } = await loadDuplicateItems(options, since);
+  return {
+    ...analyzeDuplicateItems(items, options),
+    source: "metadata_scan",
+    filters: { statuses: statuses ?? null, since: options.since ?? null },
   };
 }
 

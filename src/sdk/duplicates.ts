@@ -14,6 +14,8 @@ import {
 
 /** Options shared by the `pm duplicates` command and SDK action. */
 export interface DuplicatesCommandOptions {
+  /** Compare all pairs instead of using lossless prefix filtering. */
+  exhaustive?: boolean;
   /** Lifecycle statuses to include; omitted means every status. */
   status?: readonly string[];
   /** Inclusive creation timestamp lower bound. */
@@ -51,6 +53,7 @@ export async function runDuplicates(
 ): Promise<DuplicatesResult> {
   const result = await findDuplicateClusters({
     pmRoot: resolvePmRoot(process.cwd(), global.path),
+    exhaustive: options.exhaustive,
     ...(options.status === undefined
       ? {}
       : {

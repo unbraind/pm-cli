@@ -4,6 +4,7 @@
  * Reads and writes tracker storage with format-aware helpers for Item Store.
  */
 import fs from "node:fs/promises";
+import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
 import path from "node:path";
 import {
   getActiveExtensionRegistrations,
@@ -253,6 +254,7 @@ export async function listAllItemMetadata(
     warnings,
     schema,
   );
+  recordItemMetadataEnumeration(documents.length);
   return documents.map((document) => document.metadata);
 }
 
@@ -277,6 +279,7 @@ export async function listAllItemMetadataLight(
     warnings,
     schema,
   );
+  recordItemMetadataEnumeration(documents.length);
   return documents.map((document) => document.metadata);
 }
 
@@ -301,6 +304,7 @@ export async function listAllItemMetadataWithBody(
       forceSourceScan: options.forceSourceScan,
     },
   );
+  recordItemMetadataEnumeration(candidates.length);
   return candidates.map((candidate) => ({
     ...candidate.metadata,
     // includeBody:true guarantees candidate bodies are materialized.

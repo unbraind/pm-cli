@@ -3668,12 +3668,14 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     );
   },
   search: runMcpSearchAction,
+  /** Normalize MCP duplicate controls before delegating to the shared SDK action. */
   duplicates: (ctx) => {
     const status =
       typeof ctx.options.status === "string"
         ? [ctx.options.status]
         : readStringArray(ctx.options.status);
     return runDuplicates(ctx.global, {
+      exhaustive: ctx.options.exhaustive === true,
       ...(status.length === 0 ? {} : { status }),
       since: readString(ctx.options, "since"),
       threshold:
